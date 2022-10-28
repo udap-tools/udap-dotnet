@@ -1,0 +1,151 @@
+﻿#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.Options;
+using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Asn1.X509;
+using Udap.Common;
+using Udap.Common.Extensions;
+using Udap.Common.Models;
+
+namespace Udap.Metadata.Server;
+
+public class FileCertificateStore : ICertificateStore
+{
+    private readonly IOptionsMonitor<UdapFileCertStoreManifest> _manifest;
+    private string _resourceServerName;
+    private bool _resolved;
+
+    public FileCertificateStore(IOptionsMonitor<UdapFileCertStoreManifest> manifest, string resourceServerName)
+    {
+        _manifest = manifest;
+        _resourceServerName = resourceServerName;
+
+        _manifest.OnChange(x =>
+        {
+            _resolved = false;
+        });
+    }
+    public ICertificateStore Resolve()
+    {
+        if (_resolved == false)
+        {
+            LoadCertificates(_manifest.CurrentValue);
+        }
+        _resolved = true;
+
+        return this;
+    }
+
+    public X509Certificate2Collection RootCAs { get; set; } = new X509Certificate2Collection();
+
+    public ICollection<Anchor> Anchors { get; set; } = new List<Anchor>();
+    public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new List<IssuedCertificate>();
+
+    // TODO convert to Lazy<T> to protect from race conditions
+
+    private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
+    {
+        Anchors = new List<Anchor>();
+        IssuedCertificates = new List<IssuedCertificate>();
+
+        var communities = manifestCurrentValue
+            .ResourceServers
+            .SingleOrDefault(r => r.Name == _resourceServerName)
+            ?.Communities;
+        
+        if (communities == null) return;
+
+        foreach (var community in communities)
+        {
+            if (community.RootCAFilePaths.Any())
+            {
+                foreach (var communityRootCaFilePath in community.RootCAFilePaths)
+                {
+                    RootCAs.Add(new X509Certificate2(communityRootCaFilePath));
+                }
+            }
+
+            foreach (var communityAnchor in community.Anchors)
+            {
+                var path = Path.Combine(AppContext.BaseDirectory, communityAnchor.FilePath);
+
+                if (!File.Exists(path))
+                {
+                    throw new FileNotFoundException($"Cannot find file: {path}");
+                }
+
+                Anchors.Add(new Anchor
+                {
+                    Community = community.Name,
+                    Certificate = new X509Certificate2(path).ToPemFormat()
+                });
+            }
+
+            foreach (var communityIssuer in community.IssuedCerts)
+            {
+                var path = Path.Combine(AppContext.BaseDirectory, communityIssuer.FilePath);
+
+                if (!File.Exists(path))
+                {
+                    throw new FileNotFoundException($"Cannot find file: {path}");
+                }
+                
+                var certificates = new X509Certificate2Collection();
+                certificates.Import(path, communityIssuer.Password);
+                
+                foreach (var cert in certificates)
+                {
+                    var extension = cert.Extensions.FirstOrDefault(e => e.Oid.FriendlyName == "Basic Constraints") as X509BasicConstraintsExtension;
+                    var subjectIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
+                    
+                    //
+                    // dotnet 7.0
+                    //
+                    // var authorityIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid.Value == "2.5.29.35") as X509AuthorityKeyIdentifierExtension;
+                    
+                    string? authorityIdentifierValue = null;
+
+                    Asn1Object? exValue = cert.GetExtensionValue("2.5.29.35");
+                    if (exValue != null)
+                    {
+                        var aki = AuthorityKeyIdentifier.GetInstance(exValue);
+                        byte[] keyId = aki.GetKeyIdentifier();
+                        authorityIdentifierValue = keyId.CreateByteStringRep();
+                    }
+                    
+
+                    if (extension != null)
+                    {
+                        if (extension.CertificateAuthority)
+                        {
+                            if (authorityIdentifierValue == null || 
+                                subjectIdentifier.SubjectKeyIdentifier == authorityIdentifierValue)
+                            {
+                                RootCAs.Add(cert);
+                            }
+                            else
+                            {
+                                Anchors.Add(new Anchor(cert) { Community = community.Name });
+                            }
+                        }
+                    }
+                }
+
+                IssuedCertificates.Add(new IssuedCertificate
+                {
+                    Community = community.Name,
+                    Certificate = certificates.First()
+                });
+            }
+        }
+    }
+}
+

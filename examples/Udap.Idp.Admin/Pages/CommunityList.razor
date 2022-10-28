@@ -1,0 +1,123 @@
+﻿@page "/CommunityList"
+
+
+
+@inject ISnackbar Snackbar
+
+<MudTable Items="@Communities" Dense="@false" Hover="@true" ReadOnly="@false" CanCancelEdit="@true" 
+          Filter="new Func<Community,bool>(FilterFunc)"
+          SortLabel="Sort By" CommitEditTooltip="Commit Edit"
+          OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))" 
+          RowEditPreview="BackupItem" 
+          RowEditCancel="ResetItemToOriginalValues"
+          RowEditCommit="ItemHasBeenCommitted" 
+          IsEditRowSwitchingBlocked="@true" 
+          ApplyButtonPosition="@TableApplyButtonPosition.Start" >
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Communities</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <ColGroup>
+        <col style="width:50px;" />
+        <col style="width:80px;" />
+        <col />
+        <col class="fa-align-right" />        
+    </ColGroup>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Community, object>(x=>x.Name)">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Community, object>(x=>x.Enabled)">Enabled</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Community, object>(x=>x.Default)">Default</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Community, object>(x=>x.Anchors?.Count())">Anchors</MudTableSortLabel></MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Enabled">@context.Enabled</MudTd>
+        <MudTd DataLabel="Default">@context.Default</MudTd>
+        <MudTd  DataLabel="Anchors"><span class="ma-6">@context.Anchors?.Count()</span>
+      <span >
+                @if (context.Anchors.Any())
+            {
+                <MudFab Label="View Anchors"
+                        Size="Size.Small"
+                        Icon="@Icons.Material.Filled.Preview" 
+                        Color="Color.Inherit" 
+                        OnClick="() => ShowAnchor(context)"
+                class="ma-2" />
+            }
+            <MudFab Label="Edit Anchors" 
+                    Size="Size.Small"
+                    Icon="@Icons.Material.Filled.Edit" 
+                    Color="Color.Inherit"
+                    Link="/AnchorEdit" 
+                    OnClick="() => CommunityState.SetState(context)"
+                class="ma-2" />
+      </span>
+    </MudTd>
+    </RowTemplate>
+    <ChildRowContent>
+        @if (context.ShowAnchors)
+        {
+            <MudTr>
+                <td colspan="4">
+                    <MudCard Elevation="0">
+                        <MudCardContent Class="pa-0">
+                            <MudTable Items="@context.Anchors" 
+                                Context="AnchorContext" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                                <ColGroup>
+                                    <col />
+                                    <col />
+                                    <col />
+                                    <col />
+                                </ColGroup>
+                                <HeaderContent>
+                                    <MudTh>Name</MudTh>
+                                    <MudTh>Enabled</MudTh>
+                                    <MudTh>Begin Date</MudTh>
+                                    <MudTh>End Date</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd  DataLabel="Name">@AnchorContext.Name
+                                        <MudInputControl ></MudInputControl>
+                                    </MudTd>
+                                    <MudTd DataLabel="Enabled">@AnchorContext.Enabled</MudTd>
+                                    <MudTd DataLabel="Begin Date">@AnchorContext.BeginDate</MudTd>
+                                    <MudTd DataLabel="End Date">@AnchorContext.EndDate</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudCardContent>
+                    </MudCard>
+                </td>
+            </MudTr>
+        }
+    </ChildRowContent>    
+    <RowEditingTemplate>
+        <MudTd DataLabel="Name">@context.Name</MudTd>
+        <MudTd DataLabel="Enabled">
+            <MudTextField @bind-Value="@context.Enabled" Required />
+        </MudTd>
+        <MudTd DataLabel="Default">
+            <MudTextField @bind-Value="@context.Default" Required />
+        </MudTd>        
+    </RowEditingTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+
+<MudExpansionPanels Style="flex: 1;">
+    <MudExpansionPanel Text="Show inline-edit event log">
+        @foreach (var message in editEvents)
+        {
+            <MudText>@message</MudText>
+        }
+        @if (editEvents.Count > 0)
+        {
+            <div class="d-flex">
+                <MudSpacer />
+                <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="ClearEventLog">Clear event log</MudButton>
+            </div>
+        }
+    </MudExpansionPanel>
+</MudExpansionPanels>

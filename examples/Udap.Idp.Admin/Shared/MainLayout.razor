@@ -1,0 +1,54 @@
+﻿@inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime;
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<PageTitle>Udap.Idp.Admin</PageTitle>
+
+<MudLayout>
+    <MudAppBar Elevation="2" Color="Color.Transparent">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+                
+        <MudImage Class="cursor-pointer mud-ripple ma-2" Src="images/hl7/icon-fhir-24.png" Alt="Fhir Icon" Size="Size.Small"
+                  @onclick="@GoToIG" />
+        <MudAvatar Class="cursor-pointer mud-ripple" Image="https://avatars.githubusercontent.com/u/77421324" Alt="UDAP Avatar" Size="Size.Small"
+                   @onclick="@GoToUdapOrg" />
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" 
+                       Link="https://github.com/udap-tools/udap-dotnet/" Target="_blank" />
+    </MudAppBar>
+    
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="1">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">Udap Admin</MudText>
+        </MudDrawerHeader>
+        <NavMenu />
+    </MudDrawer>
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="my-16 pt-16">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+
+@code {
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    async Task GoToIG()
+    {
+        await JSRuntime.InvokeVoidAsync("open", "http://hl7.org/fhir/us/udap-security/", "_blank");
+    }
+    
+    async Task GoToUdapOrg()
+    {
+        await JSRuntime.InvokeVoidAsync("open", "http://udap.org/", "_blank");
+    }
+}

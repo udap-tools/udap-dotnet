@@ -1,0 +1,61 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <UserSecretsId>e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="certstores\localhost\**" />
+    <EmbeddedResource Remove="certstores\localhost\**" />
+    <None Remove="certstores\localhost\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\ProjectDirectory.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\ProjectDirectory.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
+    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
+    <PackageReference Include="xunit" Version="2.4.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="3.1.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="certstores\Kestrel\FhirLabs\" />
+    <Folder Include="certstores\Kestrel\IdentityServer\" />
+    <Folder Include="certstores\Kestrel\WeatherAPI\" />
+    <Folder Include="certstores\localhost_community\" />
+    <Folder Include="certstores\surefhirlabs_community\anchors\" />
+    <Folder Include="certstores\surefhirlabs_community\crl\" />
+    <Folder Include="certstores\surefhirlabs_community\issued\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Udap.Common\Udap.Common.csproj" />
+  </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="echo $(MSBuildProjectDirectory)" />
+    <Exec Command="echo $(MSBuildProjectDirectory) &gt; $(MSBuildProjectDirectory)\Resources\ProjectDirectory.txt" />
+  </Target>
+
+</Project>

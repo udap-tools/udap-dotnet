@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "SelfHost": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sslPort": 5002,
+      "applicationUrl": "https://udap.idp.securedcontrols.net:5002"
+    }
+  }
+}

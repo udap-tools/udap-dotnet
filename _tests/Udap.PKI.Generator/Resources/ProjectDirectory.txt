@@ -1,1 +1,1 @@
-C:\Source\GitHub\udap-tools\udap-dotnet\_tests\Udap.PKI.Generator 
+C:\Source\Github\udap-tools\udap-dotnet\_tests\Udap.PKI.Generator 

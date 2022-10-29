@@ -67,7 +67,7 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<program>
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();
-            logging.AddXUnit(Output);
+            logging.AddXUnit(Output!);
         });
 
         return base.CreateHost(builder);
@@ -77,11 +77,11 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<program>
 
 public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixture>
 {
-    private ApiForCommunityTestFixture? _fixture;
+    private readonly ApiForCommunityTestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
-    private FakeChainValidatorDiagnostics _diagnosticsChainValidator = new FakeChainValidatorDiagnostics();
+    private readonly FakeChainValidatorDiagnostics _diagnosticsChainValidator = new FakeChainValidatorDiagnostics();
 
-    public UdapControllerCommunityTest(ApiForCommunityTestFixture fixture, ITestOutputHelper? testOutputHelper)
+    public UdapControllerCommunityTest(ApiForCommunityTestFixture fixture, ITestOutputHelper testOutputHelper)
     {
         if (fixture == null) throw new ArgumentNullException(nameof(fixture));
         fixture.Output = testOutputHelper;
@@ -97,7 +97,9 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         System.Diagnostics.Trace.WriteLine(response.ToString());
 
         response.StatusCode.Should().Be(HttpStatusCode.OK, "Should be status ok");
-        response.Content.Headers.ContentType.MediaType.Should().Be("text/html", "Should be status ok");
+        var contentType = response.Content.Headers.ContentType;
+        contentType.Should().NotBeNull(); 
+        contentType!.MediaType.Should().Be("text/html", "Should be status ok");
 
         var result = await response.Content.ReadAsStringAsync();
         result
@@ -124,7 +126,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     [Fact]
     public void signed_metatdataContentTest()
     {
-        var jwt = new JwtSecurityToken(_fixture.WellKnownUdap.SignedMetadata);
+        var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
         var x5CArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
 
@@ -132,10 +134,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         // var x5cArray = new string[1];
         // x5cArray[0] = "MIIFVzCCAz+gAwIBAgIEAQIDBDANBgkqhkiG9w0BAQsFADBzMQswCQYDVQQGEwJVUzEPMA0GA1UECBMGT3JlZ29uMREwDwYDVQQHEwhQb3J0bGFuZDEUMBIGA1UEChMLSG9ibyBDb2RpbmcxDzANBgNVBAsTBkFuY2hvcjEZMBcGA1UEAxMQVURBUC1UZXN0LUFuY2hvcjAeFw0yMjA4MzEyMDI4NDBaFw0yNDA5MDEyMDI4NDBaMG8xCzAJBgNVBAYTAlVTMQ8wDQYDVQQIEwZPcmVnb24xETAPBgNVBAcTCFBvcnRsYW5kMRQwEgYDVQQKEwtIb2JvIENvZGluZzENMAsGA1UECxMEVURBUDEXMBUGA1UEAxMOd2VhdGhlcmFwaS5sYWIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkU61gOhliibnE2L2SMX4bNE/WqVxpgdRyW2Ii7kbdW5f/eATAhWjrm1koKrCiR9/fH6hK/HEYPBgT/QKU6fTEgBjJEf51ouGHEZzYkEldKMZCjZnxCYRYbF+PhflhnLyj0R0NagH2OFzrrKj3qwPZ3WDSUDC/kxh7YNWJGnOo33bhD+gh+SYdq598cJiXsyfL1N9iTstXYKCKwmP+iJNQ5dV14dbDm693XlVe/G3JwADNzxRoIRVe9Yb9KcE7o7BIy18jUjJySfrAa3Y3Z9jX5ng89CVI3HHiQ9fVHrZjkYUaqe+0c88Asg3op3HPQNyk6bjKxgU7tHfZm5O+KyM9AgMBAAGjgfYwgfMwDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCBsAwHQYDVR0OBBYEFGYofTfZyODDCPMoMV7QaUpVGNKHMB8GA1UdIwQYMBaAFEKu+NexBjBGKrtMYo6DzwUKs4tJMD0GA1UdHwQ2MDQwMqAwoC6GLGh0dHA6Ly9jZXJ0cy53ZWF0aGVyYXBpLmxhYi9jcmwvY3JsX2xpc3QuY3JsMCsGA1UdEQQkMCKGIGh0dHBzOi8vd2VhdGhlcmFwaS5sYWI6NTAyMS9maGlyMCoGA1UdJQEB/wQgMB4GCCsGAQUFBwMCBggrBgEFBQcDAQYIKwYBBQUHAwgwDQYJKoZIhvcNAQELBQADggIBADaTQff7z0BZNgoKDkjxzZNKfUsHfWIsuOe8zfAfYzXAqUiyBWl8pdrL7EW9JoKLchQPC5grWW8uUfzknD3El0QGLgXNvm+imsk0NXaH0R9vEIafJhGXkZWIZx61GekoUQ8+7xEbf9gr5BGA3jMWAtkO6+LvZuhdkTd1k2RlVpl39Yx56Ivg/KpgRXM1PyISl1obbC/b5PCQ/t4kysTmkU9GVz1Z7+rUPcCP+fKFblsLLToVgxA13ozYRAF9/k2V9n/ZiHSOJmwPwLwBs9yHwsdefBlQ9G0Rzm9oU89G5o74HNlhInqD4wQspm+uhewwIAzRkGfL+t992nn1il8rt+VnnZ97rMIZ+cCjyvB0JmlsRQlngRt9cJbHp0OAo5jD8WJwbwgJ0Z3qClCvxZVwT9H5c+klre31ef61XrC0foPkX3TBSytnWh2iQkAdME6ChKl2RZKac2V4zCG8JgSRcP85lDooigsnBk5Sqmf3cifxm29Fte4X/0JG1IpSCLFLcaLyj2me0mVUNDnzIalLaBwwY4kNLPEppJhlFUUV16efaHwOesSQJvGk77tCGaGsG3kPUQcOa0tb2lYJho0Jnq6xymcNZuUQ5PLXmq6l7/gGJ7AqCb1fDghF0PlTwOkh+ZFiaja1YxzN9SsqsR9hyAUJt0mpzqzLNXjWa3PAcy+P";
 
-        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray.First()));
+        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()));
         var tokenHandler = new JwtSecurityTokenHandler();
 
-        tokenHandler.ValidateToken(_fixture.WellKnownUdap.SignedMetadata, new TokenValidationParameters
+        tokenHandler.ValidateToken(_fixture.WellKnownUdap?.SignedMetadata, new TokenValidationParameters
         {
             RequireSignedTokens = true,
             ValidateIssuer = true,
@@ -180,7 +182,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     [Fact]
     public void ValidateChainTest()
     {
-        var jwt = new JwtSecurityToken(_fixture.WellKnownUdap.SignedMetadata);
+        var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
         var x5cArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
@@ -189,10 +191,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         // var x5cArray = new string[1];
         // x5cArray[0] = "MIIFVzCCAz+gAwIBAgIEAQIDBDANBgkqhkiG9w0BAQsFADBzMQswCQYDVQQGEwJVUzEPMA0GA1UECBMGT3JlZ29uMREwDwYDVQQHEwhQb3J0bGFuZDEUMBIGA1UEChMLSG9ibyBDb2RpbmcxDzANBgNVBAsTBkFuY2hvcjEZMBcGA1UEAxMQVURBUC1UZXN0LUFuY2hvcjAeFw0yMjA4MzEyMDI4NDBaFw0yNDA5MDEyMDI4NDBaMG8xCzAJBgNVBAYTAlVTMQ8wDQYDVQQIEwZPcmVnb24xETAPBgNVBAcTCFBvcnRsYW5kMRQwEgYDVQQKEwtIb2JvIENvZGluZzENMAsGA1UECxMEVURBUDEXMBUGA1UEAxMOd2VhdGhlcmFwaS5sYWIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkU61gOhliibnE2L2SMX4bNE/WqVxpgdRyW2Ii7kbdW5f/eATAhWjrm1koKrCiR9/fH6hK/HEYPBgT/QKU6fTEgBjJEf51ouGHEZzYkEldKMZCjZnxCYRYbF+PhflhnLyj0R0NagH2OFzrrKj3qwPZ3WDSUDC/kxh7YNWJGnOo33bhD+gh+SYdq598cJiXsyfL1N9iTstXYKCKwmP+iJNQ5dV14dbDm693XlVe/G3JwADNzxRoIRVe9Yb9KcE7o7BIy18jUjJySfrAa3Y3Z9jX5ng89CVI3HHiQ9fVHrZjkYUaqe+0c88Asg3op3HPQNyk6bjKxgU7tHfZm5O+KyM9AgMBAAGjgfYwgfMwDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCBsAwHQYDVR0OBBYEFGYofTfZyODDCPMoMV7QaUpVGNKHMB8GA1UdIwQYMBaAFEKu+NexBjBGKrtMYo6DzwUKs4tJMD0GA1UdHwQ2MDQwMqAwoC6GLGh0dHA6Ly9jZXJ0cy53ZWF0aGVyYXBpLmxhYi9jcmwvY3JsX2xpc3QuY3JsMCsGA1UdEQQkMCKGIGh0dHBzOi8vd2VhdGhlcmFwaS5sYWI6NTAyMS9maGlyMCoGA1UdJQEB/wQgMB4GCCsGAQUFBwMCBggrBgEFBQcDAQYIKwYBBQUHAwgwDQYJKoZIhvcNAQELBQADggIBADaTQff7z0BZNgoKDkjxzZNKfUsHfWIsuOe8zfAfYzXAqUiyBWl8pdrL7EW9JoKLchQPC5grWW8uUfzknD3El0QGLgXNvm+imsk0NXaH0R9vEIafJhGXkZWIZx61GekoUQ8+7xEbf9gr5BGA3jMWAtkO6+LvZuhdkTd1k2RlVpl39Yx56Ivg/KpgRXM1PyISl1obbC/b5PCQ/t4kysTmkU9GVz1Z7+rUPcCP+fKFblsLLToVgxA13ozYRAF9/k2V9n/ZiHSOJmwPwLwBs9yHwsdefBlQ9G0Rzm9oU89G5o74HNlhInqD4wQspm+uhewwIAzRkGfL+t992nn1il8rt+VnnZ97rMIZ+cCjyvB0JmlsRQlngRt9cJbHp0OAo5jD8WJwbwgJ0Z3qClCvxZVwT9H5c+klre31ef61XrC0foPkX3TBSytnWh2iQkAdME6ChKl2RZKac2V4zCG8JgSRcP85lDooigsnBk5Sqmf3cifxm29Fte4X/0JG1IpSCLFLcaLyj2me0mVUNDnzIalLaBwwY4kNLPEppJhlFUUV16efaHwOesSQJvGk77tCGaGsG3kPUQcOa0tb2lYJho0Jnq6xymcNZuUQ5PLXmq6l7/gGJ7AqCb1fDghF0PlTwOkh+ZFiaja1YxzN9SsqsR9hyAUJt0mpzqzLNXjWa3PAcy+P";
 
-        var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
+        var cert = new X509Certificate2(Convert.FromBase64String(x5cArray!.First()));
         var tokenHandler = new JwtSecurityTokenHandler();
 
-        tokenHandler.ValidateToken(_fixture.WellKnownUdap.SignedMetadata, new TokenValidationParameters
+        tokenHandler.ValidateToken(_fixture.WellKnownUdap?.SignedMetadata, new TokenValidationParameters
         {
             RequireSignedTokens = true,
             ValidateIssuer = true,
@@ -219,7 +221,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     [Fact]
     public void ValidateChainOffLineRevocationTest()
     {
-        var jwt = new JwtSecurityToken(_fixture.WellKnownUdap.SignedMetadata);
+        var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
         var x5cArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
@@ -228,10 +230,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         // var x5cArray = new string[1];
         // x5cArray[0] = "MIIFVzCCAz+gAwIBAgIEAQIDBDANBgkqhkiG9w0BAQsFADBzMQswCQYDVQQGEwJVUzEPMA0GA1UECBMGT3JlZ29uMREwDwYDVQQHEwhQb3J0bGFuZDEUMBIGA1UEChMLSG9ibyBDb2RpbmcxDzANBgNVBAsTBkFuY2hvcjEZMBcGA1UEAxMQVURBUC1UZXN0LUFuY2hvcjAeFw0yMjA4MzEyMDI4NDBaFw0yNDA5MDEyMDI4NDBaMG8xCzAJBgNVBAYTAlVTMQ8wDQYDVQQIEwZPcmVnb24xETAPBgNVBAcTCFBvcnRsYW5kMRQwEgYDVQQKEwtIb2JvIENvZGluZzENMAsGA1UECxMEVURBUDEXMBUGA1UEAxMOd2VhdGhlcmFwaS5sYWIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkU61gOhliibnE2L2SMX4bNE/WqVxpgdRyW2Ii7kbdW5f/eATAhWjrm1koKrCiR9/fH6hK/HEYPBgT/QKU6fTEgBjJEf51ouGHEZzYkEldKMZCjZnxCYRYbF+PhflhnLyj0R0NagH2OFzrrKj3qwPZ3WDSUDC/kxh7YNWJGnOo33bhD+gh+SYdq598cJiXsyfL1N9iTstXYKCKwmP+iJNQ5dV14dbDm693XlVe/G3JwADNzxRoIRVe9Yb9KcE7o7BIy18jUjJySfrAa3Y3Z9jX5ng89CVI3HHiQ9fVHrZjkYUaqe+0c88Asg3op3HPQNyk6bjKxgU7tHfZm5O+KyM9AgMBAAGjgfYwgfMwDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCBsAwHQYDVR0OBBYEFGYofTfZyODDCPMoMV7QaUpVGNKHMB8GA1UdIwQYMBaAFEKu+NexBjBGKrtMYo6DzwUKs4tJMD0GA1UdHwQ2MDQwMqAwoC6GLGh0dHA6Ly9jZXJ0cy53ZWF0aGVyYXBpLmxhYi9jcmwvY3JsX2xpc3QuY3JsMCsGA1UdEQQkMCKGIGh0dHBzOi8vd2VhdGhlcmFwaS5sYWI6NTAyMS9maGlyMCoGA1UdJQEB/wQgMB4GCCsGAQUFBwMCBggrBgEFBQcDAQYIKwYBBQUHAwgwDQYJKoZIhvcNAQELBQADggIBADaTQff7z0BZNgoKDkjxzZNKfUsHfWIsuOe8zfAfYzXAqUiyBWl8pdrL7EW9JoKLchQPC5grWW8uUfzknD3El0QGLgXNvm+imsk0NXaH0R9vEIafJhGXkZWIZx61GekoUQ8+7xEbf9gr5BGA3jMWAtkO6+LvZuhdkTd1k2RlVpl39Yx56Ivg/KpgRXM1PyISl1obbC/b5PCQ/t4kysTmkU9GVz1Z7+rUPcCP+fKFblsLLToVgxA13ozYRAF9/k2V9n/ZiHSOJmwPwLwBs9yHwsdefBlQ9G0Rzm9oU89G5o74HNlhInqD4wQspm+uhewwIAzRkGfL+t992nn1il8rt+VnnZ97rMIZ+cCjyvB0JmlsRQlngRt9cJbHp0OAo5jD8WJwbwgJ0Z3qClCvxZVwT9H5c+klre31ef61XrC0foPkX3TBSytnWh2iQkAdME6ChKl2RZKac2V4zCG8JgSRcP85lDooigsnBk5Sqmf3cifxm29Fte4X/0JG1IpSCLFLcaLyj2me0mVUNDnzIalLaBwwY4kNLPEppJhlFUUV16efaHwOesSQJvGk77tCGaGsG3kPUQcOa0tb2lYJho0Jnq6xymcNZuUQ5PLXmq6l7/gGJ7AqCb1fDghF0PlTwOkh+ZFiaja1YxzN9SsqsR9hyAUJt0mpzqzLNXjWa3PAcy+P";
 
-        var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
+        var cert = new X509Certificate2(Convert.FromBase64String(x5cArray!.First()));
         var tokenHandler = new JwtSecurityTokenHandler();
 
-        tokenHandler.ValidateToken(_fixture.WellKnownUdap.SignedMetadata, new TokenValidationParameters
+        tokenHandler.ValidateToken(_fixture.WellKnownUdap?.SignedMetadata, new TokenValidationParameters
         {
             RequireSignedTokens = true,
             ValidateIssuer = true,
@@ -278,7 +280,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     {
         var certStore = _fixture.Services.GetService<ICertificateStore>();
 
-        var anchors = certStore.Resolve().Anchors
+        var anchors = certStore!.Resolve().Anchors
             .Where(c => c.Community == _fixture.Community)
             .OrderBy(c => X509Certificate2.CreateFromPem(c.Certificate).NotBefore)
             .Select(c => c.Certificate);

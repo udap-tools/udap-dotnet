@@ -15,8 +15,8 @@ public class IssuedCertFile
     /// <summary>
     /// Relative path
     /// </summary>
-    public string FilePath { get; set; }
+    public string? FilePath { get; set; }
 
-    public string Password { get; set; }
+    public string? Password { get; set; }
 
 }

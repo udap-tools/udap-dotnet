@@ -22,6 +22,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Udap.Common;
 using Xunit.Abstractions;
+using static System.Net.Mime.MediaTypeNames;
 using program = WeatherApi.Program;
 
 namespace WebApi.Tests.WeatherApi;
@@ -29,9 +30,9 @@ namespace WebApi.Tests.WeatherApi;
 public class ApiTestFixture : WebApplicationFactory<program> 
 {
     private UdapMetadata? _wellKnownUdap;
-    public ITestOutputHelper Output { get; set; }
+    public ITestOutputHelper Output { get; set; } = null!;
 
-    public UdapMetadata? WellKnownUdap
+    public UdapMetadata WellKnownUdap
     {
         get
         {
@@ -49,7 +50,7 @@ public class ApiTestFixture : WebApplicationFactory<program>
                 });
             }
 
-            return _wellKnownUdap;
+            return _wellKnownUdap!;
         }
     }
 
@@ -68,10 +69,10 @@ public class ApiTestFixture : WebApplicationFactory<program>
 
 public class UdapControllerTests : IClassFixture<ApiTestFixture>
 {
-    private ApiTestFixture? _fixture;
+    private ApiTestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
 
-    public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper? output, ITestOutputHelper testOutputHelper)
+    public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper output, ITestOutputHelper testOutputHelper)
     {
         //
         // Tests json once
@@ -98,18 +99,22 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     [Fact]
     public void udap_versions_supportedTest()
     {
-        _fixture.WellKnownUdap.UdapVersionsSupported.Single().Should().Be("1");
+        var udapVerSupported = _fixture.WellKnownUdap.UdapVersionsSupported?.SingleOrDefault();
+        udapVerSupported.Should().Be("1");
     }
 
 
     [Fact]
     public void udap_authorization_extensions_supportedTest()
     {
-        _fixture.WellKnownUdap.UdapAuthorizationExtensionsSupported.Single(c => c == "hl7-b2b").Should()
-            .NotBeNullOrEmpty();
+        var extensions = _fixture.WellKnownUdap.UdapAuthorizationExtensionsSupported;
+        extensions.Should().NotBeNullOrEmpty();
 
-        _fixture.WellKnownUdap.UdapAuthorizationExtensionsSupported.Single(c => c == "acme-ext").Should()
-            .NotBeNullOrEmpty();
+        var hl7B2B = extensions!.SingleOrDefault(c => c == "hl7-b2b");
+        hl7B2B.Should().NotBeNullOrEmpty();
+
+        var acmeExt = extensions!.SingleOrDefault(c => c == "acme-ext");
+        acmeExt.Should().NotBeNullOrEmpty();
     }
 
     /// <summary>
@@ -118,7 +123,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     [Fact]
     public void udap_authorization_extensions_requiredTest()
     {
-        _fixture.WellKnownUdap.UdapAuthorizationExtensionsRequired.Contains("hl7-b2b");
+        _fixture.WellKnownUdap.UdapAuthorizationExtensionsRequired.Should().Contain("hl7-b2b");
     }
 
     /// <summary>
@@ -127,12 +132,14 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     [Fact]
     public void udap_certifications_supportedTest()
     {
-        var certificationsSupported = _fixture.WellKnownUdap.UdapCertificationsSupported.Single(c => c == "http://MyUdapCertification");
-        var uriCertificationsSupported = new Uri(certificationsSupported);
+        var certificationsSupported = _fixture.WellKnownUdap.UdapCertificationsSupported?.SingleOrDefault(c => c == "http://MyUdapCertification");
+        certificationsSupported.Should().NotBeNullOrEmpty();
+        var uriCertificationsSupported = new Uri(certificationsSupported!);
         uriCertificationsSupported.Should().Be("http://MyUdapCertification");
 
-        certificationsSupported = _fixture.WellKnownUdap.UdapCertificationsSupported.Single(c => c == "http://MyUdapCertification2");
-        uriCertificationsSupported = new Uri(certificationsSupported);
+        certificationsSupported = _fixture.WellKnownUdap.UdapCertificationsSupported?.SingleOrDefault(c => c == "http://MyUdapCertification2");
+        certificationsSupported.Should().NotBeNullOrEmpty();
+        uriCertificationsSupported = new Uri(certificationsSupported!);
         uriCertificationsSupported.Should().Be("http://MyUdapCertification2");
     }
 
@@ -142,8 +149,8 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     [Fact]
     public void udap_certifications_requiredTest()
     {
-        var certificationsSupported = _fixture.WellKnownUdap.UdapCertificationsRequired.Single();
-        var uriCertificationsSupported = new Uri(certificationsSupported);
+        var certificationsSupported = _fixture.WellKnownUdap.UdapCertificationsRequired?.Single();
+        var uriCertificationsSupported = new Uri(certificationsSupported!);
         uriCertificationsSupported.Should().Be("http://MyUdapCertification");
     }
 
@@ -151,11 +158,12 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     public void grant_types_supportedTest()
     {
         var grantTypes = _fixture.WellKnownUdap.GrantTypesSupported;
+        grantTypes.Should().NotBeNullOrEmpty();
 
-        grantTypes.Length.Should().Be(3);
-        grantTypes.Should().Contain("authorization_code");
-        grantTypes.Should().Contain("refresh_token");
-        grantTypes.Should().Contain("client_credentials");
+        grantTypes!.Length.Should().Be(3);
+        grantTypes!.Should().Contain("authorization_code");
+        grantTypes!.Should().Contain("refresh_token");
+        grantTypes!.Should().Contain("client_credentials");
     }
 
     [Fact]
@@ -192,21 +200,21 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     [Fact]
     public void token_endpoint_auth_methods_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.TokenEndpointAuthMethodsSupported.Single();
+        var scopesSupported = _fixture.WellKnownUdap.TokenEndpointAuthMethodsSupported?.Single();
         scopesSupported.Should().Be("private_key_jwt");
     }
 
     [Fact]
     public void token_endpoint_auth_signing_alg_values_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.TokenEndpointAuthSigningAlgValuesSupported.Single();
+        var scopesSupported = _fixture.WellKnownUdap.TokenEndpointAuthSigningAlgValuesSupported?.Single();
         scopesSupported.Should().Be(UdapConstants.SupportedAlgorithm.RS256);
     }
 
     [Fact]
     public void registration_endpoint_jwt_signing_alg_values_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.RegistrationEndpointJwtSigningAlgValuesSupported.Single();
+        var scopesSupported = _fixture.WellKnownUdap.RegistrationEndpointJwtSigningAlgValuesSupported?.Single();
         scopesSupported.Should().Be(UdapConstants.SupportedAlgorithm.RS256);
     }
 
@@ -217,7 +225,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
 
         var pattern = @"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+\/=]*$";
         var regex = new Regex(pattern);
-        regex.IsMatch(signedMetatData).Should().BeTrue("signed_metadata is not a valid JWT");
+        regex.IsMatch(signedMetatData!).Should().BeTrue("signed_metadata is not a valid JWT");
     }
 
     [Fact]
@@ -228,12 +236,14 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var payload = jwt.Payload;
         var signature = jwt.RawSignature;
 
-        var x5cArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
+        var x5CArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
+
+        x5CArray.Should().NotBeNull();
 
         // bad keys
         //x5cArray[0] = "MIIFJDCCBAygAwIBAgIIUFnObaPiufEwDQYJKoZIhvcNAQELBQAwgbMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRIwEAYDVQQHDAlTYW4gRGllZ28xEzARBgNVBAoMCkVNUiBEaXJlY3QxPzA9BgNVBAsMNlRlc3QgUEtJIENlcnRpZmljYXRpb24gQXV0aG9yaXR5IChjZXJ0cy5lbXJkaXJlY3QuY29tKTElMCMGA1UEAwwcRU1SIERpcmVjdCBUZXN0IENsaWVudCBTdWJDQTAeFw0yMTAxMTUyMTQ1MTRaFw0yNDAxMTYyMTQ1MTRaMIGlMQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTETMBEGA1UECgwKRU1SIERpcmVjdDEzMDEGA1UECwwqVURBUCBUZXN0IENlcnRpZmljYXRlIE5PVCBGT1IgVVNFIFdJVEggUEhJMTcwNQYDVQQDDC5odHRwczovL3N0YWdlLmhlYWx0aHRvZ28ubWU6ODE4MS9maGlyL3I0L3N0YWdlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt9j718Yu8HjoIdSvLTloVLnFLdfdL7T/BylPcIpcKhB7zJvNzZOpq8T/fXhc9b4p6cY6gBPBq1Vnax4zTCAP/te5W6FfoRoKhKqpExuYmgIw0lE8a4UAnHVwPOAvuKS3abGzYfLxxUc4PFXp4HrBx/QWOMqR408GlbSYG0wpeifhMx1VD8TFmU13FmFqgP3cEHjT7RxulfJnPcPPXZ8b5tZIkQMlApJRULVnHEBcICixaRWCJjzzArgoFUydPiAfMZELi80W4n0Wn/WduSYZqwQAosI7AfS3NINd44w8kek1X9WVwX/QtcAVuCXvSFoqoIAa3l4kBCQIHmY9UhltZwIDAQABo4IBRjCCAUIwWQYIKwYBBQUHAQEETTBLMEkGCCsGAQUFBzAChj1odHRwOi8vY2VydHMuZW1yZGlyZWN0LmNvbS9jZXJ0cy9FTVJEaXJlY3RUZXN0Q2xpZW50U3ViQ0EuY3J0MB0GA1UdDgQWBBRZmXqpQzFDSamfvPKiKtjg9gp8cTAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFKOVbWu9K1HN4c/lkG/XJk+/3T7eMEwGA1UdHwRFMEMwQaA/oD2GO2h0dHA6Ly9jZXJ0cy5lbXJkaXJlY3QuY29tL2NybC9FTVJEaXJlY3RUZXN0Q2xpZW50U3ViQ0EuY3JsMA4GA1UdDwEB/wQEAwIHgDA5BgNVHREEMjAwhi5odHRwczovL3N0YWdlLmhlYWx0aHRvZ28ubWU6ODE4MS9maGlyL3I0L3N0YWdlMA0GCSqGSIb3DQEBCwUAA4IBAQAePi+wIAPubt2Fk2jbELZt/bgkc7KTGC5C4sLX25NNYyzvHh0kwmHvgBx3thCv7uOvf/nbmhnk+l3EmgdaB1ZjzcjLMFc7xec9YJWsegzEkR2pzYQp/41cmhTfwNSnXxUSZrBtqInx+mALi9r96lg6RpqQh+DxlToC2vreW7Fy3pFa3DQKFN6j6azYTj5ljqrGprKQRh/iyqRvY+j+BC44Wl+POfBVObwtf71irMuLsSCmMptPGFGTqQdtLYbFjkB4wowiFfEe0PYL+N015iPZA4wimlXbau4XaEvipnIsWxqzT30RbQgrrOw7zN1QjGRURBbdBkMrgLkzmfGxhjuV";
 
-        var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
+        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()));
 
         var tokenHandler = new JwtSecurityTokenHandler();
 
@@ -245,7 +255,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
             IssuerSigningKey = new X509SecurityKey(cert),
             ValidAlgorithms = new[] { tokenHeader.Alg },
             ValidateAudience = false
-        }, out SecurityToken valdatedToken);
+        }, out SecurityToken validatedToken);
 
         var issClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.Issuer);
         issClaim.ValueType.Should().Be(ClaimValueTypes.String);

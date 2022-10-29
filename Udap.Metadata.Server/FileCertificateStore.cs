@@ -28,7 +28,7 @@ public class FileCertificateStore : ICertificateStore
         _manifest = manifest;
         _resourceServerName = resourceServerName;
 
-        _manifest.OnChange(x =>
+        _manifest.OnChange(_ =>
         {
             _resolved = false;
         });
@@ -75,6 +75,11 @@ public class FileCertificateStore : ICertificateStore
 
             foreach (var communityAnchor in community.Anchors)
             {
+                if (communityAnchor.FilePath == null)
+                {
+                    throw new Exception($"Missing file path in on of the anchors {nameof(community.Anchors)}");
+                }
+
                 var path = Path.Combine(AppContext.BaseDirectory, communityAnchor.FilePath);
 
                 if (!File.Exists(path))
@@ -91,6 +96,11 @@ public class FileCertificateStore : ICertificateStore
 
             foreach (var communityIssuer in community.IssuedCerts)
             {
+                if (communityIssuer.FilePath == null)
+                {
+                    throw new Exception($"Missing file path in on of the anchors {nameof(community.IssuedCerts)}");
+                }
+
                 var path = Path.Combine(AppContext.BaseDirectory, communityIssuer.FilePath);
 
                 if (!File.Exists(path))
@@ -103,8 +113,8 @@ public class FileCertificateStore : ICertificateStore
                 
                 foreach (var cert in certificates)
                 {
-                    var extension = cert.Extensions.FirstOrDefault(e => e.Oid.FriendlyName == "Basic Constraints") as X509BasicConstraintsExtension;
-                    var subjectIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
+                    var extension = cert.Extensions.FirstOrDefault(e => e.Oid?.FriendlyName == "Basic Constraints") as X509BasicConstraintsExtension;
+                    var subjectIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
                     
                     //
                     // dotnet 7.0
@@ -127,7 +137,7 @@ public class FileCertificateStore : ICertificateStore
                         if (extension.CertificateAuthority)
                         {
                             if (authorityIdentifierValue == null || 
-                                subjectIdentifier.SubjectKeyIdentifier == authorityIdentifierValue)
+                                subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
                             {
                                 RootCAs.Add(cert);
                             }

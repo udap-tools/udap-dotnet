@@ -32,8 +32,8 @@
     <PackageReference Include="IdentityModel" Version="6.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\Udap.Custom.TrustStore\Udap.Custom.TrustStore.csproj" />
-  </ItemGroup>
+  <!-- <ItemGroup> -->
+  <!--   <ProjectReference Include="..\Udap.Custom.TrustStore\Udap.Custom.TrustStore.csproj" /> -->
+  <!-- </ItemGroup> -->
 
 </Project>

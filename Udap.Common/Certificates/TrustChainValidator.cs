@@ -20,9 +20,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using Udap.Common.Extensions;
-#if !NET5_0_OR_GREATER && !Linux
-using Udap.Custom.TrustStore;
-#endif
+// #if !NET5_0_OR_GREATER && !Linux
+// using Udap.Custom.TrustStore;
+// #endif
 
 namespace Udap.Common.Certificates
 {
@@ -162,7 +162,7 @@ namespace Udap.Common.Certificates
 
                 X509Chain chainBuilder;
 
-#if NET5_0_OR_GREATER
+// #if NET5_0_OR_GREATER
 
                 chainBuilder = new X509Chain();
                
@@ -170,38 +170,38 @@ namespace Udap.Common.Certificates
                 {
                     chainPolicy.CustomTrustStore.Clear();
                     chainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-                    chainPolicy.CustomTrustStore.AddRange(trustedRoots);
+                    chainPolicy.CustomTrustStore.AddRange(trustedRoots!);
                 }
                 
                 chainBuilder.ChainPolicy = chainPolicy;
-                chainBuilder.ChainPolicy.ExtraStore.AddRange(communityTrustAnchors);
+                chainBuilder.ChainPolicy.ExtraStore.AddRange(communityTrustAnchors!);
                 chainBuilder.Build(certificate);
-#else
-                if (IsNewerThanWin2008R2())
-                {
-                    chainBuilder = new X509Chain();
-                    //
-                    // The state of this code will terminate the chain at the community trust anchor.
-                    // The weakness in this is a revoked anchor will not be validated.  At least that I believe that is the case. 
-                    // Well I guess if I changed this to include the trustedRoots it would be correct but still if you don't 
-                    // it terminates and ignores the CRL.  
-                    // I might get rid of all all this complexity.  Just want this history here for now.
-                    //
-                    using (var secureChainEngine = new X509ChainEngine(communityTrustAnchors?.Enumerate()))
-                    {
-                        secureChainEngine.BuildChain(certificate, chainPolicy, out chainBuilder);
-                    }
-                }
-                else
-                {
-                    //
-                    // Stuck putting Certificates in the Machine Store other wise Windows will not trust them
-                    //
-                     chainBuilder = new X509Chain();
-                     chainBuilder.ChainPolicy = chainPolicy;
-                     chainBuilder.Build(certificate);
-                }
-#endif
+// #else
+//                 if (IsNewerThanWin2008R2())
+//                 {
+//                     chainBuilder = new X509Chain();
+//                     //
+//                     // The state of this code will terminate the chain at the community trust anchor.
+//                     // The weakness in this is a revoked anchor will not be validated.  At least that I believe that is the case. 
+//                     // Well I guess if I changed this to include the trustedRoots it would be correct but still if you don't 
+//                     // it terminates and ignores the CRL.  
+//                     // I might get rid of all all this complexity.  Just want this history here for now.
+//                     //
+//                     using (var secureChainEngine = new X509ChainEngine(communityTrustAnchors?.Enumerate()))
+//                     {
+//                         secureChainEngine.BuildChain(certificate, chainPolicy, out chainBuilder);
+//                     }
+//                 }
+//                 else
+//                 {
+//                     //
+//                     // Stuck putting Certificates in the Machine Store other wise Windows will not trust them
+//                     //
+//                      chainBuilder = new X509Chain();
+//                      chainBuilder.ChainPolicy = chainPolicy;
+//                      chainBuilder.Build(certificate);
+//                 }
+// #endif
 
 
                 // We're using the system class as a helper to build the chain
@@ -280,6 +280,7 @@ namespace Udap.Common.Certificates
                 }
                 catch
                 {
+                    // ignored
                 }
             }
         }
@@ -296,6 +297,7 @@ namespace Udap.Common.Certificates
                 }
                 catch
                 {
+                    // ignored
                 }
             }
         }
@@ -312,6 +314,7 @@ namespace Udap.Common.Certificates
                 }
                 catch
                 {
+                    // ignored
                 }
             }
         }

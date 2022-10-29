@@ -8,7 +8,6 @@
 #endregion
 
 using System.Text.Json.Serialization;
-using IdentityModel;
 
 namespace Udap.Common;
 
@@ -29,7 +28,7 @@ public class UdapMetadata
     /// A fixed array with one string element
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapVersionsSupported)]
-    public string[] UdapVersionsSupported { get; set; }
+    public string[]? UdapVersionsSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -45,7 +44,7 @@ public class UdapMetadata
     /// "udap_to" for UDAP Tiered OAuth for User Authentication.
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapProfilesSupported)]
-    public string[] UdapProfilesSupported { get; set; }
+    public string[]? UdapProfilesSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -56,7 +55,7 @@ public class UdapMetadata
     /// ["hl7-b2b"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapAuthorizationExtensionsSupported)]
-    public string[] UdapAuthorizationExtensionsSupported { get; set; }
+    public string[]? UdapAuthorizationExtensionsSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#f0ad4e;">conditional</span><br/>
@@ -69,7 +68,7 @@ public class UdapMetadata
     /// ["hl7-b2b"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapAuthorizationExtensionsRequired)]
-    public string[] UdapAuthorizationExtensionsRequired { get; set; }
+    public string[]? UdapAuthorizationExtensionsRequired { get; set; }
 
     /// <summary>
     ///  <span style="background-color:#5cb85c;">required</span><br/>
@@ -77,7 +76,7 @@ public class UdapMetadata
     /// ["https://www.example.com/udap/profiles/example-certification"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapCertificationsSupported)]
-    public string[] UdapCertificationsSupported { get; set; }
+    public string[]? UdapCertificationsSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#f0ad4e;">conditional</span><br/>
@@ -87,7 +86,7 @@ public class UdapMetadata
     /// ["https://www.example.com/udap/profiles/example-certification"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapCertificationsRequired)]
-    public string[] UdapCertificationsRequired { get; set; }
+    public string[]? UdapCertificationsRequired { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -97,7 +96,7 @@ public class UdapMetadata
     /// See <see cref="IdentityModel.OidcConstants.GrantTypes"/> for supported grant types
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.GrantTypesSupported)]
-    public string[] GrantTypesSupported { get; set; }
+    public string[]? GrantTypesSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5bc0de;">optional</span><br/>
@@ -107,7 +106,7 @@ public class UdapMetadata
     /// ["openid", "launch/patient", "system/Patient.read", "system/AllergyIntolerance.read", "system/Procedures.read"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.ScopesSupported)]
-    public string[] ScopesSupported { get; set; }
+    public string[]? ScopesSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#f0ad4e;">conditional</span><br/>
@@ -116,7 +115,7 @@ public class UdapMetadata
     /// the string "authorization_code"
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.AuthorizationEndpoint)]
-    public string AuthorizationEndpoint { get; set; }
+    public string? AuthorizationEndpoint { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -124,7 +123,7 @@ public class UdapMetadata
     /// UDAP JWT-Based Client Authentication.
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.TokenEndpoint)]
-    public string TokenEndpoint { get; set; }
+    public string? TokenEndpoint { get; set; }
 
 
     /// <summary>
@@ -132,7 +131,7 @@ public class UdapMetadata
     /// Fixed array with one value: ["private_key_jwt"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported)]
-    public string[] TokenEndpointAuthMethodsSupported { get; set; }
+    public string[]? TokenEndpointAuthMethodsSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -142,7 +141,7 @@ public class UdapMetadata
     /// ["RS256", "ES384"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported)]
-    public string[] TokenEndpointAuthSigningAlgValuesSupported { get; set; }
+    public string[]? TokenEndpointAuthSigningAlgValuesSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -152,7 +151,7 @@ public class UdapMetadata
     /// ["RS256", "ES384"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.RegistrationEndpoint)]
-    public string RegistrationEndpoint { get; set; }
+    public string? RegistrationEndpoint { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5bc0de;">recommended</span><br/>
@@ -162,7 +161,7 @@ public class UdapMetadata
     /// ["RS256", "ES384"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.RegistrationEndpointJwtSigningAlgValuesSupported)]
-    public string[] RegistrationEndpointJwtSigningAlgValuesSupported { get; set; }
+    public string[]? RegistrationEndpointJwtSigningAlgValuesSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -170,5 +169,5 @@ public class UdapMetadata
     /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#signed-metadata-elements">[Section 2.3].</a>
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.SignedMetadata)]
-    public string SignedMetadata { get; set; }
+    public string? SignedMetadata { get; set; }
 }

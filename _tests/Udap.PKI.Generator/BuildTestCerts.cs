@@ -272,7 +272,7 @@ namespace Udap.PKI.Generator
 
                             // clientCertWithKey.FriendlyName = "WeatherApiClient";  //dotnet Windows only
                             var clientBytes = weatherApiCertPackage.Export(X509ContentType.Pkcs12, "udap-test");
-                            File.WriteAllBytes($"{SurefhirlabsUdapIssued}/WeatherApiClient.pfx", clientBytes);
+                            File.WriteAllBytes($"{SurefhirlabsUdapIssued}/WeatherApiClient.pfx", clientBytes!);
                             char[] clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
                             File.WriteAllBytes($"{SurefhirlabsUdapIssued}/WeatherApiClient.cer", clientPem.Select(c => (byte)c).ToArray());
                         }

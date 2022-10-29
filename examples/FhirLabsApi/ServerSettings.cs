@@ -11,8 +11,8 @@ namespace FhirLabsApi
 {
     public class ServerSettings
     {
-        public string[] AllowedOrigins { get; set; }
-        public string ServerBaseDirectory { get; set; }
+        public string[]? AllowedOrigins { get; set; }
+        public string? ServerBaseDirectory { get; set; }
     }
 
     public static class ConfigurationExtension

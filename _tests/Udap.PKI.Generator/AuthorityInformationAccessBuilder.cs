@@ -14,7 +14,7 @@ namespace Udap.PKI.Generator
 {
     public sealed class AuthorityInformationAccessBuilder
     {
-        private List<byte[]> _encodedUrls;
+        private List<byte[]> _encodedUrls = new List<byte[]>();
         private readonly List<byte[]> _encodedSequences = new List<byte[]>();
         /// <summary>
         /// Adding ObjectIdentifier (OID) 1.3.6.1.5.5.7.48.2
@@ -26,8 +26,7 @@ namespace Udap.PKI.Generator
                 throw new ArgumentNullException(nameof(uri));
             
             AsnWriter writer = new AsnWriter(AsnEncodingRules.DER);
-            _encodedUrls = new List<byte[]>();
-
+            
             writer.WriteObjectIdentifier("1.3.6.1.5.5.7.48.2");
             _encodedUrls.Add(writer.Encode());
 

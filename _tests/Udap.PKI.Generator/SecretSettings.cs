@@ -11,6 +11,6 @@ namespace Udap.PKI.Generator
 {
     internal class SecretSettings
     {
-        public string CertPassword { get; set; }
+        public string? CertPassword { get; set; }
     }
 }

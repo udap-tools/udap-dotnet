@@ -1,0 +1,1 @@
+﻿Do not delete.  Resource folder needed in source control.

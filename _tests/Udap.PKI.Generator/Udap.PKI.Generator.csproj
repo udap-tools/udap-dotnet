@@ -16,11 +16,11 @@
     <None Remove="certstores\localhost\**" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(DesignTimeBuild)' != 'true'">
     <None Remove="Resources\ProjectDirectory.txt" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(DesignTimeBuild)' != 'true'">
     <EmbeddedResource Include="Resources\ProjectDirectory.txt" />
   </ItemGroup>
 
@@ -47,7 +47,6 @@
     <Folder Include="certstores\surefhirlabs_community\anchors\" />
     <Folder Include="certstores\surefhirlabs_community\crl\" />
     <Folder Include="certstores\surefhirlabs_community\issued\" />
-    <Folder Include="Resources\" />
   </ItemGroup>
 
   <ItemGroup>

@@ -47,6 +47,7 @@
     <Folder Include="certstores\surefhirlabs_community\anchors\" />
     <Folder Include="certstores\surefhirlabs_community\crl\" />
     <Folder Include="certstores\surefhirlabs_community\issued\" />
+    <Folder Include="Resources\" />
   </ItemGroup>
 
   <ItemGroup>

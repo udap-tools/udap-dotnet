@@ -9,6 +9,7 @@
 
 using System.Reflection;
 using System.Resources;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -182,7 +183,7 @@ namespace Udap.PKI.Generator
                     anchorReq.CertificateExtensions.Add(
                         new X509SubjectKeyIdentifierExtension(anchorReq.PublicKey, false));
 
-                    AddAuthorityKeyIdentifier(caCert, anchorReq);
+                    AddAuthorityKeyIdentifier(caCert, anchorReq, _testOutputHelper);
                     anchorReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsAnchorCdp));
 
 
@@ -239,7 +240,7 @@ namespace Udap.PKI.Generator
                         req.CertificateExtensions.Add(
                             new X509SubjectKeyIdentifierExtension(req.PublicKey, false));
                         
-                        AddAuthorityKeyIdentifier(anchorCertWithoutKey, req);
+                        AddAuthorityKeyIdentifier(anchorCertWithoutKey, req, _testOutputHelper);
 
                         req.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
 
@@ -300,7 +301,7 @@ namespace Udap.PKI.Generator
                         sureFhirLabsClientReq.CertificateExtensions.Add(
                             new X509SubjectKeyIdentifierExtension(sureFhirLabsClientReq.PublicKey, false));
 
-                        AddAuthorityKeyIdentifier(anchorCertWithoutKey, sureFhirLabsClientReq);
+                        AddAuthorityKeyIdentifier(anchorCertWithoutKey, sureFhirLabsClientReq, _testOutputHelper);
 
                         sureFhirLabsClientReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
 
@@ -365,7 +366,7 @@ namespace Udap.PKI.Generator
                         sslReq.CertificateExtensions.Add(
                             new X509SubjectKeyIdentifierExtension(sslReq.PublicKey, false));
 
-                        AddAuthorityKeyIdentifier(anchorCertWithoutKey, sslReq);
+                        AddAuthorityKeyIdentifier(anchorCertWithoutKey, sslReq, _testOutputHelper);
                         sslReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
 
                         subAltNameBuilder = new SubjectAlternativeNameBuilder();
@@ -420,7 +421,7 @@ namespace Udap.PKI.Generator
                         sureFhirSSLReq.CertificateExtensions.Add(
                             new X509SubjectKeyIdentifierExtension(sureFhirSSLReq.PublicKey, false));
 
-                        AddAuthorityKeyIdentifier(anchorCertWithoutKey, sureFhirSSLReq);
+                        AddAuthorityKeyIdentifier(anchorCertWithoutKey, sureFhirSSLReq, _testOutputHelper);
                         sureFhirSSLReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
 
                         subAltNameBuilder = new SubjectAlternativeNameBuilder();
@@ -477,7 +478,7 @@ namespace Udap.PKI.Generator
                         idProviderSureFhirSSLReq.CertificateExtensions.Add(
                             new X509SubjectKeyIdentifierExtension(idProviderSureFhirSSLReq.PublicKey, false));
 
-                        AddAuthorityKeyIdentifier(anchorCertWithoutKey, idProviderSureFhirSSLReq);
+                        AddAuthorityKeyIdentifier(anchorCertWithoutKey, idProviderSureFhirSSLReq, _testOutputHelper);
                         idProviderSureFhirSSLReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
 
                         subAltNameBuilder = new SubjectAlternativeNameBuilder();
@@ -586,7 +587,7 @@ namespace Udap.PKI.Generator
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Depends on ordering")]
         public void TestCrl()
         {
             var bytes = File.ReadAllBytes($"{SurefhirlabsCrl}/{SureFhirLabsPkcsFileCrl}");
@@ -604,7 +605,7 @@ namespace Udap.PKI.Generator
         /// <summary>
         /// https://stage.healthtogo.me:8181/fhir/r4/stage
         /// </summary>
-        [Fact]
+        [Fact(Skip = "Ignore")]
         public void Generate_healthtogo_me()
         {
             var fileNameSuffix = "stage.healthtogo.me";
@@ -630,7 +631,7 @@ namespace Udap.PKI.Generator
             sureFhirLabsClientReq.CertificateExtensions.Add(
                 new X509SubjectKeyIdentifierExtension(sureFhirLabsClientReq.PublicKey, false));
 
-            AddAuthorityKeyIdentifier(sureFhirLabsAnchor, sureFhirLabsClientReq);
+            AddAuthorityKeyIdentifier(sureFhirLabsAnchor, sureFhirLabsClientReq, _testOutputHelper);
 
             sureFhirLabsClientReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
 
@@ -748,7 +749,7 @@ namespace Udap.PKI.Generator
                     anchorReq.CertificateExtensions.Add(
                         new X509SubjectKeyIdentifierExtension(anchorReq.PublicKey, false));
 
-                    AddAuthorityKeyIdentifier(caCert, anchorReq);
+                    AddAuthorityKeyIdentifier(caCert, anchorReq, _testOutputHelper);
                     anchorReq.CertificateExtensions.Add(MakeCdp("http://certs.weatherapi.lab/crl/UDAP-Localhost-CA.crl"));
 
                     var subAltNameBuilder = new SubjectAlternativeNameBuilder();
@@ -790,7 +791,7 @@ namespace Udap.PKI.Generator
                         fhirLabsReq.CertificateExtensions.Add(
                             new X509SubjectKeyIdentifierExtension(fhirLabsReq.PublicKey, false));
 
-                        AddAuthorityKeyIdentifier(anchorCert, fhirLabsReq);
+                        AddAuthorityKeyIdentifier(anchorCert, fhirLabsReq, _testOutputHelper);
 
                         fhirLabsReq.CertificateExtensions.Add(MakeCdp(LocalhostCdp));
 
@@ -851,7 +852,7 @@ namespace Udap.PKI.Generator
                         weatherApiReq.CertificateExtensions.Add(
                             new X509SubjectKeyIdentifierExtension(weatherApiReq.PublicKey, false));
 
-                        AddAuthorityKeyIdentifier(anchorCert, weatherApiReq);
+                        AddAuthorityKeyIdentifier(anchorCert, weatherApiReq, _testOutputHelper);
 
                         weatherApiReq.CertificateExtensions.Add(MakeCdp(LocalhostCdp));
 
@@ -932,7 +933,7 @@ namespace Udap.PKI.Generator
             return new X509Extension("2.5.29.31", payload, critical: false);
         }
 
-        private static void AddAuthorityKeyIdentifier(X509Certificate2 caCert, CertificateRequest anchorReq)
+        private static void AddAuthorityKeyIdentifier(X509Certificate2 caCert, CertificateRequest anchorReq, ITestOutputHelper testOutputHelper)
         {
             //
             // Found way to generate intermediate below
@@ -941,7 +942,7 @@ namespace Udap.PKI.Generator
             // https://blog.rassie.dk/2018/04/creating-an-x-509-certificate-chain-in-c/
             //
 
-            var issuerSubjectKey = caCert.Extensions["Subject Key Identifier"].RawData;
+            var issuerSubjectKey = caCert.Extensions?["2.5.29.15"].RawData;
             var segment = new ArraySegment<byte>(issuerSubjectKey, 2, issuerSubjectKey.Length - 2);
             var authorityKeyIdentifier = new byte[segment.Count + 4];
             // these bytes define the "KeyID" part of the AuthorityKeyIdentifier

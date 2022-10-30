@@ -216,3 +216,4 @@ BlazorIDServerDemo/IdentityProvider/AspIdUsers.db
 *.crt
 *.p12
 examples/Udap.Idp/keys/*.json
+_tests/Udap.PKI.Generator/Resources/ProjectDirectory.txt

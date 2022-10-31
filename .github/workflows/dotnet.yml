@@ -27,6 +27,6 @@ jobs:
     - name: Generate PKI
       run: dotnet test _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj --no-restore
     - name: Build
-      run: dotnet build --no-restore
-#     - name: Test
-#       run: dotnet test --no-build --verbosity normal
+      run: dotnet build Udap_No_PKI_Generator.sln --no-restore 
+    - name: Test
+      run: dotnet test Udap_No_PKI_Generator.sln --no-build --verbosity normal

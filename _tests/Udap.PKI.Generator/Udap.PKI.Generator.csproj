@@ -42,7 +42,7 @@
   <ItemGroup>
     <Folder Include="certstores\Kestrel\FhirLabs\" />
     <Folder Include="certstores\Kestrel\IdentityServer\" />
-    <Folder Include="certstores\Kestrel\WeatherAPI\" />
+    <Folder Include="certstores\Kestrel\WeatherApi\" />
     <Folder Include="certstores\localhost_community\" />
     <Folder Include="certstores\surefhirlabs_community\anchors\" />
     <Folder Include="certstores\surefhirlabs_community\crl\" />

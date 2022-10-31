@@ -398,6 +398,11 @@ namespace Udap.PKI.Generator
 
                             SureFhirLabsSslWeatherApi.EnsureDirectoryExists();
                             var clientBytes = sslCert.Export(X509ContentType.Pkcs12, "udap-test");
+
+                            Console.WriteLine("*************************************");
+                            Console.WriteLine($"{SureFhirLabsSslWeatherApi}/weatherapi.lab.pfx");
+                            Console.WriteLine("*************************************");
+
                             File.WriteAllBytes($"{SureFhirLabsSslWeatherApi}/weatherapi.lab.pfx", clientBytes);
                             char[] certificatePem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
                             File.WriteAllBytes($"{SureFhirLabsSslWeatherApi}/weatherapi.lab.cer", certificatePem.Select(c => (byte)c).ToArray());

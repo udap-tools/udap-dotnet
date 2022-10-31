@@ -88,7 +88,7 @@ namespace Udap.PKI.Generator
 
         private static string SureFhirLabsPkcsFileCrl { get; } = "surefhirlabs.crl";
         private static string SureFhirLabsAnchorPkcsFileCrl { get; } = "surefhirlabsanchor.crl";
-        private static string SureFhirLabsSslWeatherApi { get; } = $"{BaseDir}/certstores/Kestrel/WeatherAPI";
+        private static string SureFhirLabsSslWeatherApi { get; } = $"{BaseDir}/certstores/Kestrel/WeatherApi";
         private static string SureFhirLabsSslFhirLabs { get; } = $"{BaseDir}/certstores/Kestrel/FhirLabs";
         private static string SureFhirLabsSslIdentityServer { get; } = $"{BaseDir}/certstores/Kestrel/IdentityServer";
 

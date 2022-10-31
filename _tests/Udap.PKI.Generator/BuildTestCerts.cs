@@ -117,9 +117,9 @@ namespace Udap.PKI.Generator
         [Fact]
         public void MakeCaWithAnchorUdapAndSSLForDefaultCommunity()
         {
-            _testOutputHelper.WriteLine("*************************************");
-            _testOutputHelper.WriteLine(_baseDir);
-            _testOutputHelper.WriteLine("*************************************");
+            Console.WriteLine("*************************************");
+            Console.WriteLine(_baseDir);
+            Console.WriteLine("*************************************");
 
             //
             // https://stackoverflow.com/a/48210587/6115838

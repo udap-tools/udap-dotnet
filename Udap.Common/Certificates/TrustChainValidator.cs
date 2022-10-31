@@ -62,7 +62,7 @@ namespace Udap.Common.Certificates
 
         private static X509ChainStatusFlags BuildDefaultProblemFlags()
         {
-            if (IsNewerThanWin2008R2())
+            if (IsNewerThanWin2008R2OrLinux())
             {
                 return X509ChainStatusFlags.NotTimeValid |
                        X509ChainStatusFlags.Revoked |
@@ -71,7 +71,8 @@ namespace Udap.Common.Certificates
                        X509ChainStatusFlags.CtlNotTimeValid |
                        X509ChainStatusFlags.OfflineRevocation |
                        X509ChainStatusFlags.CtlNotSignatureValid |
-                       X509ChainStatusFlags.RevocationStatusUnknown; // can't trust the chain to even check revocation.
+                       X509ChainStatusFlags.RevocationStatusUnknown | // can't trust the chain to check revocation.
+                       X509ChainStatusFlags.PartialChain;
             }
 
             return X509ChainStatusFlags.NotTimeValid |
@@ -84,9 +85,10 @@ namespace Udap.Common.Certificates
 
         // X509ChainEngine, which is used for CRL validation, requires Windows 2012 to run due to required changes in the CERT_CHAIN_ENGINE_CONFIG structure.
         // For more information on version numbers, see https://msdn.microsoft.com/en-us/library/windows/desktop/ms724832.aspx
-        private static bool IsNewerThanWin2008R2()
+        private static bool IsNewerThanWin2008R2OrLinux()
         {
-            return Environment.OSVersion.Version.Major > 6 ||
+            return Environment.OSVersion.Platform.Equals(PlatformID.Unix) ||
+                   Environment.OSVersion.Version.Major > 6 ||
                    (Environment.OSVersion.Version.Major >= 6 &&
                     Environment.OSVersion.Version.Minor >= 2);
         }
@@ -175,7 +177,7 @@ namespace Udap.Common.Certificates
                 
                 chainBuilder.ChainPolicy = chainPolicy;
                 chainBuilder.ChainPolicy.ExtraStore.AddRange(communityTrustAnchors!);
-                chainBuilder.Build(certificate);
+                var result = chainBuilder.Build(certificate);
 // #else
 //                 if (IsNewerThanWin2008R2())
 //                 {
@@ -221,6 +223,14 @@ namespace Udap.Common.Certificates
                 foreach (var chainElement in chainElements)
                 {
                     bool isAnchor = communityTrustAnchors?.FindByThumbprint(chainElement.Certificate.Thumbprint) != null;
+
+                    if (this.ChainElementHasProblems(chainElement))
+                    {
+                        this.NotifyProblem(chainElement);
+
+                        // Whoops... problem with at least one cert in the chain. Stop immediately
+                        return false;
+                    }
 
                     if (isAnchor)
                     {

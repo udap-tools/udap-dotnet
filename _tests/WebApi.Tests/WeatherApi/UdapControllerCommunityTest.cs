@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using IdentityModel;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -61,6 +62,16 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<program>
         }
     }
 
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        //
+        // Linux needs to know how to find appsettings file in web api under test.
+        // Still works with Windows but what a pain.  This feels fragile
+        // TODO: 
+        //
+        builder.UseSetting("contentRoot", "../../../../../examples/WeatherApi");
+    }
+
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.UseEnvironment("Development");
@@ -69,7 +80,7 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<program>
             logging.ClearProviders();
             logging.AddXUnit(Output!);
         });
-
+        
         return base.CreateHost(builder);
     }
 }
@@ -270,7 +281,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         ValidateCertificateChain(cert, problemFlags).Should().BeFalse();
 
         _diagnosticsChainValidator.ActualErrorMessages.Any(m =>
-                m.Contains("revocation server was offline"))
+                m.Contains("RevocationStatusUnknown"))
             .Should().BeTrue();
     }
 
@@ -296,7 +307,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         return validator.IsTrustedCertificate(issuedCertificate2, anchors?.Select(a =>
             X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
-            trustedRoots);
+            trustedRoots.ToArray().ToX509Collection());
     }
 
     public class FakeChainValidatorDiagnostics
@@ -315,7 +326,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             foreach (var chainElementStatus in chainElement.ChainElementStatus
                          .Where(s => (s.Status & TrustChainValidator.DefaultProblemFlags) != 0))
             {
-                var problem = $"Trust ERROR {chainElementStatus.StatusInformation}, {chainElement.Certificate}";
+                var problem = $"Trust ERROR ({chainElementStatus.Status}){chainElementStatus.StatusInformation}, {chainElement.Certificate}";
                 _actualErrorMessages.Add(problem);
                 Called = true;
             }

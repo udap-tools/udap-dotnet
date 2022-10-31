@@ -22,10 +22,6 @@ using Udap.Metadata.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var config = new ConfigurationBuilder()
-    .AddJsonFile("appsettings.json", false, true)
-    .AddUserSecrets<List<string>>()
-    .Build();
 
 builder.WebHost.UseKestrel((b, so) =>
 {
@@ -43,6 +39,7 @@ builder.WebHost.UseKestrel((b, so) =>
     so.ListenAnyIP(5016);
 
 });
+
 
 // Add services to the container.
 
@@ -164,10 +161,10 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.UseEndpoints(endpoints =>
-{
-    endpoints.MapSwagger();
-});
+// app.UseEndpoints(endpoints =>
+// {
+//     endpoints.MapSwagger();
+// });
 
 
 app.Run();

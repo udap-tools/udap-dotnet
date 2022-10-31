@@ -15,40 +15,40 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="CertStore\anchors\" />
-    <Folder Include="CertStore\issued\" />
-    <Folder Include="CertStore\roots\" />
+    <Folder Include="CertStore/anchors/" />
+    <Folder Include="CertStore/issued/" />
+    <Folder Include="CertStore/roots/" />
   </ItemGroup>
 
   <ItemGroup> <!-- SureFhir Community -->
-    <None Include="..\..\_tests\Udap.PKI.Generator\certstores\surefhirlabs_community\anchors\SureFhirLabs_Anchor.cer" Link="CertStore\anchors\SureFhirLabs_Anchor.cer">
+    <None Include="../../_tests/Udap.PKI.Generator/certstores/surefhirlabs_community/anchors/SureFhirLabs_Anchor.cer" Link="CertStore/anchors/SureFhirLabs_Anchor.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\_tests\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\WeatherApiClient.pfx" Link="CertStore\issued\WeatherApiClient.pfx">
+    <None Include="../../_tests/Udap.PKI.Generator/certstores/surefhirlabs_community/issued/WeatherApiClient.pfx" Link="CertStore/issued/WeatherApiClient.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup> <!-- Localhost Community -->
-    <None Include="..\..\_tests\Udap.PKI.Generator\certstores\localhost_community\anchorLocalhostCert.cer" Link="CertStore\anchors\anchorLocalhostCert.cer">
+    <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/anchorLocalhostCert.cer" Link="CertStore/anchors/anchorLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\_tests\Udap.PKI.Generator\certstores\localhost_community\weatherApiClientLocalhostCert.pfx" Link="CertStore\issued\weatherApiClientLocalhostCert.pfx">
+    <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/weatherApiClientLocalhostCert.pfx" Link="CertStore/issued/weatherApiClientLocalhostCert.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\_tests\Udap.PKI.Generator\certstores\localhost_community\caLocalhostCert.cer" Link="CertStore\roots\caLocalhostCert.cer">
+    <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/caLocalhostCert.cer" Link="CertStore/roots/caLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup> <!-- SSL Certificate -->
-    <None Include="..\..\_tests\Udap.PKI.Generator\certstores\Kestrel\WeatherApi\weatherapi.lab.pfx" Link="weatherapi.lab.pfx">
+    <None Include="../../_tests/Udap.PKI.Generator/certstores/Kestrel/WeatherApi/weatherapi.lab.pfx" Link="weatherapi.lab.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
+    <ProjectReference Include="../../Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
   </ItemGroup>
 
 </Project>

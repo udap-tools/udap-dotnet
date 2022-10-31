@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using IdentityModel;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -59,6 +60,16 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<program>
 
             return _wellKnownUdap;
         }
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        //
+        // Linux needs to know how to find appsettings file in web api under test.
+        // Still works with Windows but what a pain.  This feels fragile
+        // TODO: 
+        //
+        builder.UseSetting("contentRoot", "../../../../../examples/FhirLabsApi");
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
@@ -251,7 +262,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                            X509ChainStatusFlags.InvalidBasicConstraints |
                            X509ChainStatusFlags.CtlNotTimeValid |
                            // X509ChainStatusFlags.OfflineRevocation |
-                           X509ChainStatusFlags.CtlNotSignatureValid;
+                           X509ChainStatusFlags.CtlNotSignatureValid |
+                           X509ChainStatusFlags.PartialChain;
         // X509ChainStatusFlags.RevocationStatusUnknown;
 
         //
@@ -267,7 +279,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                        X509ChainStatusFlags.CtlNotTimeValid |
                        X509ChainStatusFlags.OfflineRevocation |
                        X509ChainStatusFlags.CtlNotSignatureValid |
-                       X509ChainStatusFlags.RevocationStatusUnknown;
+                       X509ChainStatusFlags.RevocationStatusUnknown |
+                       X509ChainStatusFlags.PartialChain;
 
         ValidateCertificateChain(cert, problemFlags).Should().BeFalse();
 
@@ -294,7 +307,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         validator.Untrusted += certificate2 => _testOutputHelper.WriteLine("Untrusted: " + certificate2.Subject);
 
         return validator.IsTrustedCertificate(issuedCertificate2, anchors.Select(a =>
-            X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection());
+            X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
+            certStore?.Resolve().RootCAs.ToArray().ToX509Collection()); 
     }
 
     public class FakeChainValidatorDiagnostics

@@ -3,22 +3,22 @@
     "FhirLabsApi": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "swagger",
+      "launchUrl": "fhir/r4/swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "dotnetRunMessages": true,
-      "applicationUrl": "https://fhirlabs.net:7016/fhir/r4;http://fhirlabs.net:5016/fhir/r4"
+      "applicationUrl": "https://fhirlabs.net:7016;http://fhirlabs.net:5016",
+      "dotnetRunMessages": true
     },
     "FhirLabsApi2": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "swagger",
+      "launchUrl": "fhir/r4/swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7016/fhir/r4;http://localhost:5016/fhir/r4"
+      "applicationUrl": "https://localhost:7016;http://localhost:5016"
     },
     "Docker": {
       "commandName": "Docker",
@@ -26,11 +26,17 @@
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/swagger",
       "publishAllPorts": true,
       "useSSL": true
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "launchBrowser": true,
+      "launchUrl": "fhir/r4/swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:7016;http://localhost:5016"
+      },
+      "distributionName": "Ubuntu-22.04"
     }
   },
-  "$schema": "https://json.schemastore.org/launchsettings.json",
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true
-  }
+  "$schema": "https://json.schemastore.org/launchsettings.json"
 }

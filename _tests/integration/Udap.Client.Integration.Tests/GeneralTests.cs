@@ -320,7 +320,7 @@ namespace Udap.Client.Integration.Tests
             return validator.IsTrustedCertificate(
                 issuedCertificate2,
                 anchors.Select(a => X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
-                roots);
+                roots.ToArray().ToX509Collection());
         }
 
         public class FakeChainValidatorDiagnostics
@@ -338,7 +338,7 @@ namespace Udap.Client.Integration.Tests
                 foreach (var chainElementStatus in chainElement.ChainElementStatus
                              .Where(s => (s.Status & TrustChainValidator.DefaultProblemFlags) != 0))
                 {
-                    var problem = string.Format("Trust ERROR {0}, {1}", chainElementStatus.StatusInformation, chainElement.Certificate);
+                    var problem = $"Trust ERROR ({chainElementStatus.Status}){chainElementStatus.StatusInformation}, {chainElement.Certificate}";
                     _actualErrorMessages.Add(problem);
                     Called = true;
                 }

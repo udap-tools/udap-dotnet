@@ -14,6 +14,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using IdentityModel;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -52,6 +53,16 @@ public class ApiTestFixture : WebApplicationFactory<program>
 
             return _wellKnownUdap!;
         }
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        //
+        // Linux needs to know how to find appsettings file in web api under test.
+        // Still works with Windows but what a pain.  This feels fragile
+        // TODO: 
+        //
+        builder.UseSetting("contentRoot", "../../../../../examples/WeatherApi");
     }
 
     protected override IHost CreateHost(IHostBuilder builder)

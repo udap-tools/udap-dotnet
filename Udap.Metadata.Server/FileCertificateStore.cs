@@ -44,18 +44,15 @@ public class FileCertificateStore : ICertificateStore
         return this;
     }
 
-    public X509Certificate2Collection RootCAs { get; set; } = new X509Certificate2Collection();
+    public ICollection<X509Certificate2> RootCAs { get; set; } = new HashSet<X509Certificate2>();
 
-    public ICollection<Anchor> Anchors { get; set; } = new List<Anchor>();
-    public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new List<IssuedCertificate>();
+    public ICollection<Anchor> Anchors { get; set; } = new HashSet<Anchor>();
+    public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new HashSet<IssuedCertificate>();
 
     // TODO convert to Lazy<T> to protect from race conditions
 
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
     {
-        Anchors = new List<Anchor>();
-        IssuedCertificates = new List<IssuedCertificate>();
-
         var communities = manifestCurrentValue
             .ResourceServers
             .SingleOrDefault(r => r.Name == _resourceServerName)
@@ -69,7 +66,7 @@ public class FileCertificateStore : ICertificateStore
             {
                 foreach (var communityRootCaFilePath in community.RootCAFilePaths)
                 {
-                    RootCAs.Add(new X509Certificate2(communityRootCaFilePath));
+                    RootCAs.Add(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, communityRootCaFilePath)));
                 }
             }
 
@@ -87,10 +84,9 @@ public class FileCertificateStore : ICertificateStore
                     throw new FileNotFoundException($"Cannot find file: {path}");
                 }
 
-                Anchors.Add(new Anchor
+                Anchors.Add(new Anchor(new X509Certificate2(path))
                 {
                     Community = community.Name,
-                    Certificate = new X509Certificate2(path).ToPemFormat()
                 });
             }
 
@@ -113,7 +109,7 @@ public class FileCertificateStore : ICertificateStore
                 
                 foreach (var cert in certificates)
                 {
-                    var extension = cert.Extensions.FirstOrDefault(e => e.Oid?.FriendlyName == "Basic Constraints") as X509BasicConstraintsExtension;
+                    var extension = cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") as X509BasicConstraintsExtension;
                     var subjectIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
                     
                     //

@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Linq;
 using System.Reflection;
 using System.Resources;
 using System.Runtime.CompilerServices;
@@ -113,7 +114,6 @@ namespace Udap.PKI.Generator
         /// <summary>
         /// default community uri = udap://surefhir.labs
         /// </summary>
-        // [Fact(Skip = "Remove skip to run.  This will reset all certs if ran.  That is OK, but you probably don't want this to happen on accident. ")]
         [Fact]
         public void MakeCaWithAnchorUdapAndSSLForDefaultCommunity()
         {
@@ -587,79 +587,6 @@ namespace Udap.PKI.Generator
             }
         }
 
-        [Fact(Skip = "Depends on ordering")]
-        public void TestCrl()
-        {
-            var bytes = File.ReadAllBytes($"{SurefhirlabsCrl}/{SureFhirLabsPkcsFileCrl}");
-            var crl = new X509CrlParser().ReadCrl(bytes);
-
-            foreach (X509CrlEntry crlEntry in crl.GetRevokedCertificates())
-            {
-                if (crlEntry.GetCertificateIssuer() != null)
-                {
-                    Assert.Fail("certificate issuer CRL entry extension is not null");
-                }
-            }
-        }
-        
-        /// <summary>
-        /// https://stage.healthtogo.me:8181/fhir/r4/stage
-        /// </summary>
-        [Fact(Skip = "Ignore")]
-        public void Generate_healthtogo_me()
-        {
-            var fileNameSuffix = "stage.healthtogo.me";
-            var sureFhirLabsAnchor = new X509Certificate2($"{SurefhirlabsUdapAnchors}/SureFhirLabs_Anchor.pfx", DefaultPKCS12Password);
-
-
-            using RSA rsahealthtogo = RSA.Create(2048);
-
-            var sureFhirLabsClientReq = new CertificateRequest(
-                            "CN=stage.healthtogo.me, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                            rsahealthtogo,
-                            HashAlgorithmName.SHA256,
-                            RSASignaturePadding.Pkcs1);
-
-            sureFhirLabsClientReq.CertificateExtensions.Add(
-                new X509BasicConstraintsExtension(false, false, 0, true));
-
-            sureFhirLabsClientReq.CertificateExtensions.Add(
-                new X509KeyUsageExtension(
-                    X509KeyUsageFlags.DigitalSignature,
-                    true));
-
-            sureFhirLabsClientReq.CertificateExtensions.Add(
-                new X509SubjectKeyIdentifierExtension(sureFhirLabsClientReq.PublicKey, false));
-
-            AddAuthorityKeyIdentifier(sureFhirLabsAnchor, sureFhirLabsClientReq, _testOutputHelper);
-
-            sureFhirLabsClientReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
-
-            var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-            subAltNameBuilder.AddUri(new Uri("https://stage.healthtogo.me:8181/fhir/r4/stage")); //Same as iss claim
-            var x509Extension = subAltNameBuilder.Build();
-            sureFhirLabsClientReq.CertificateExtensions.Add(x509Extension);
-            
-            using var clientCert = sureFhirLabsClientReq.Create(
-                sureFhirLabsAnchor,
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow.AddYears(1),
-                new byte[] { 1, 2, 3, 4 });
-            // Do something with these certs, like export them to PFX,
-            // or add them to an X509Store, or whatever.
-            var clientCertWithKey = clientCert.CopyWithPrivateKey(rsahealthtogo);
-
-            SurefhirlabsUdapIssued.EnsureDirectoryExists();
-
-            // clientCertWithKey.FriendlyName = "WeatherApiClient";  //dotnet Windows only
-            byte[] clientBytes = clientCertWithKey.Export(X509ContentType.Pkcs12, "udap-test");
-            File.WriteAllBytes($"{SurefhirlabsUdapIssued}/{fileNameSuffix}.pfx", clientBytes);
-            char[] clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
-            File.WriteAllBytes($"{SurefhirlabsUdapIssued}/{fileNameSuffix}.cer", clientPem.Select(c => (byte)c).ToArray());
-        }
-
-
-
         //
         // Community:localhost:: Certificate Store File Constants  Community used for unit tests
         //
@@ -702,7 +629,6 @@ namespace Udap.PKI.Generator
         /// WeatherApi Client   => 
         /// FhirLabsApi Client  =>  
         /// </summary>
-        // [Fact(Skip = "Remove skip to run.  This will reset all certs if ran.  That is OK, but you probably don't want this to happen on accident. ")]
         [Fact]
         public void MakeCaWithAnchorUdapForLocalhostCommunity()
         {
@@ -820,12 +746,18 @@ namespace Udap.PKI.Generator
                             File.WriteAllBytes($"{LocalhostCertStore}/anchorLocalhostCert.pfx", anchorBytes);
                             char[] anchorPem = PemEncoding.Write("CERTIFICATE", anchorCert.RawData);
                             File.WriteAllBytes($"{LocalhostCertStore}/anchorLocalhostCert.cer", anchorPem.Select(c => (byte)c).ToArray());
-                            
-                            
-                            var clientBytes = clientCertWithKey.Export(X509ContentType.Pkcs12, "udap-test");
+
+
+                            var certPackage = new X509Certificate2Collection();
+                            certPackage.Add(clientCertWithKey);
+                            certPackage.Add(anchorCert);
+                            certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
+
+                            var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
                             File.WriteAllBytes($"{LocalhostCertStore}/fhirLabsApiClientLocalhostCert.pfx", clientBytes);
                             char[] clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
                             File.WriteAllBytes($"{LocalhostCertStore}/fhirLabsApiClientLocalhostCert.cer", clientPem.Select(c => (byte)c).ToArray());
+
                         }
 
                         //
@@ -941,8 +873,9 @@ namespace Udap.PKI.Generator
             // https://github.com/rwatjen/AzureIoTDPSCertificates/blob/711429e1b6dee7857452233a73f15c22c2519a12/src/DPSCertificateTool/CertificateUtil.cs#L69
             // https://blog.rassie.dk/2018/04/creating-an-x-509-certificate-chain-in-c/
             //
+            string? oidValue = new Oid("Subject Key Identifier").Value;
 
-            var issuerSubjectKey = caCert.Extensions?["2.5.29.15"].RawData;
+            var issuerSubjectKey = caCert.Extensions?["2.5.29.14"].RawData;
             var segment = new ArraySegment<byte>(issuerSubjectKey, 2, issuerSubjectKey.Length - 2);
             var authorityKeyIdentifier = new byte[segment.Count + 4];
             // these bytes define the "KeyID" part of the AuthorityKeyIdentifier
@@ -954,7 +887,23 @@ namespace Udap.PKI.Generator
             anchorReq.CertificateExtensions.Add(new X509Extension("2.5.29.35", authorityKeyIdentifier, false));
         }
 
+
+        [Fact(Skip = "Depends on ordering")]
+        public void TestCrl()
+        {
+            var bytes = File.ReadAllBytes($"{SurefhirlabsCrl}/{SureFhirLabsPkcsFileCrl}");
+            var crl = new X509CrlParser().ReadCrl(bytes);
+
+            foreach (X509CrlEntry crlEntry in crl.GetRevokedCertificates())
+            {
+                if (crlEntry.GetCertificateIssuer() != null)
+                {
+                    Assert.Fail("certificate issuer CRL entry extension is not null");
+                }
+            }
+        }
         
+
         [Fact(Skip = "Ignore")]
         public void ListStoreNames()
         {

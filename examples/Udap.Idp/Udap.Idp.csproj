@@ -19,7 +19,7 @@
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\..\Udap.Server\Udap.Server.csproj" />
+    <ProjectReference Include="../../Udap.Server/Udap.Server.csproj" />
   </ItemGroup>
   
   <ItemGroup>

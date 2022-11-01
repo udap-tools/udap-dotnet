@@ -5,9 +5,8 @@ on:
     branches: [ "develop" ]
 
 env:
-    NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
     REPOSITORY_URL: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
-
+    NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}   
 jobs:
   build:
 
@@ -39,7 +38,5 @@ jobs:
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview${{ github.run_id }} ./Udap.Server/Udap.Server.csproj 
     - name: Publish the package to GPR
       run: |
-        echo ${{ env.REPOSITORY_URL }} 
-        echo pwd
         dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg 
         dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg 

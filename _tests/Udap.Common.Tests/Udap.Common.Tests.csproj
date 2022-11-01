@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -8,6 +8,19 @@
     <IsPackable>false</IsPackable>
     <UserSecretsId >e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="C:\Users\Joseph.Shook\.nuget\packages\microsoft.testplatform.testhost\17.1.0\build\netcoreapp2.1\x64\Microsoft.TestPlatform.PlatformAbstractions.dll" />
+    <Content Remove="C:\Users\Joseph.Shook\.nuget\packages\microsoft.testplatform.testhost\17.1.0\build\netcoreapp2.1\x64\testhost.dll" />
+    <Content Remove="C:\Users\Joseph.Shook\.nuget\packages\microsoft.testplatform.testhost\17.1.0\build\netcoreapp2.1\x64\testhost.exe" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="C:\Users\Joseph.Shook\.nuget\packages\xunit.runner.visualstudio\2.4.3\build\netcoreapp2.1\xunit.runner.reporters.netcoreapp10.dll" />
+    <None Remove="C:\Users\Joseph.Shook\.nuget\packages\xunit.runner.visualstudio\2.4.3\build\netcoreapp2.1\xunit.runner.utility.netcoreapp10.dll" />
+    <None Remove="C:\Users\Joseph.Shook\.nuget\packages\xunit.runner.visualstudio\2.4.3\build\netcoreapp2.1\xunit.runner.visualstudio.dotnetcore.testadapter.dll" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <None Include="..\..\..\..\..\udap-tools\udap-dotnet\_tests\Udap.PKI.Generator\certstores\localhost_community\fhirLabsApiClientLocalhostCert.pfx" Link="fhirLabsApiClientLocalhostCert.pfx" />

@@ -1,24 +1,13 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
-
 on:
   push:
-    # branches: [ "main" ]
-    branches-ignore:
-      - 'develop'
-  pull_request:
-    branches: [ "main" ]
-
+    branches: [ "develop" ]
 jobs:
   build:
-
     runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
@@ -35,4 +24,12 @@ jobs:
       run: dotnet test --framework net6.0 _tests/Udap.Common.Tests/Udap.Common.Tests.csproj --no-build --verbosity normal
     - name: Test WebApi.Tests
       run: dotnet test --framework net6.0 _tests/WebApi.Tests/WebApi.Tests.csproj --no-build --verbosity normal
-
+    
+    - name: Create nuget package for GPR
+      run: |
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=$GITHUB_RUN_ID Udap.Metadata.Server/Udap.Metadata.Server.csproj --output .
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=$GITHUB_RUN_ID Udap.Server\Udap.Server.csproj --output .
+    - name: Publish the package to GPR
+      run: |
+        dotnet nuget push Udap.Metadata.Server/bin/Release/net6.0/*.symbols.nupkg
+        dotnet nuget push Udap.Server/bin/Release/net6.0/*.symbols.nupkg

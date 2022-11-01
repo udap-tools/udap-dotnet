@@ -21,7 +21,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />
   </ItemGroup>
 

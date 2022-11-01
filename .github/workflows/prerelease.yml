@@ -36,5 +36,5 @@ jobs:
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview${{ github.run_id }} Udap.Server/Udap.Server.csproj --output .
     - name: Publish the package to GPR
       run: |
-        dotnet nuget push Udap.Metadata.Server/bin/Release/net6.0/*.symbols.nupkg
-        dotnet nuget push Udap.Server/bin/Release/net6.0/*.symbols.nupkg
+        dotnet nuget push Udap.Metadata.Server/bin/Release/*.symbols.nupkg
+        dotnet nuget push Udap.Server/bin/Release/*.symbols.nupkg

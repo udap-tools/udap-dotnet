@@ -68,7 +68,7 @@ namespace Udap.Common.Tests
             builder.ConfigureLogging(logging =>
             {
                 logging.ClearProviders();
-                // logging.AddXUnit(Output!);
+                logging.AddXUnit(Output!);
             });
 
             return base.CreateHost(builder);

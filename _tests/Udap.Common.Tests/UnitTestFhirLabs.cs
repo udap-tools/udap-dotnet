@@ -59,7 +59,7 @@ namespace Udap.Common.Tests.FhirLabs
             // Still works with Windows but what a pain.  This feels fragile
             // TODO: 
             //
-            builder.UseSetting("contentRoot", "../../../../../examples/FhirApi");
+            builder.UseSetting("contentRoot", "../../../../../examples/FhirLabsApi");
         }
 
         protected override IHost CreateHost(IHostBuilder builder)
@@ -68,7 +68,7 @@ namespace Udap.Common.Tests.FhirLabs
             builder.ConfigureLogging(logging =>
             {
                 logging.ClearProviders();
-                // logging.AddXUnit(Output!);
+                logging.AddXUnit(Output!);
             });
 
             return base.CreateHost(builder);
@@ -99,6 +99,37 @@ namespace Udap.Common.Tests.FhirLabs
         public async Task OpenApiTest()
         {
             _testOutputHelper.WriteLine("Hello");
+
+
+            var response = await _fixture.CreateClient().GetAsync($"fhir/r4/Swagger/Index.html");
+
+            System.Diagnostics.Trace.WriteLine(response.ToString());
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK, "Should be status ok");
+            var contentType = response.Content.Headers.ContentType;
+            contentType.Should().NotBeNull();
+            contentType!.MediaType.Should().Be("text/html", "Should be status ok");
+
+            var result = await response.Content.ReadAsStringAsync();
+            result
+                .Should()
+                .Contain(
+                    "./swagger-ui.css",
+                    "Does not seem to be the standard swagger ui html");
+
+            //
+            // TODO
+            // This last part doesn't actually catch failures.  I would need to render the html 
+            // some how to finish the test.
+            // To make this fail just change one of the helper methods in udapController from
+            // private to public.
+
+
+            result
+                .Should()
+                .NotContain(
+                    "Failed to load API definition",
+                    "Swagger UI Failed to load.");
         }
     }
 }

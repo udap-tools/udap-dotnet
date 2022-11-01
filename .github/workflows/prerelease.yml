@@ -7,19 +7,21 @@ on:
 env:
     NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
     REPOSITORY_URL: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
-    
+
 jobs:
   build:
 
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x      
+        dotnet-version: 6.0.x   
+        source-url: ${{ env.REPOSITORY_URL }}
+      env:
+          NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}   
     # - name: Restore dependencies
     #   run: dotnet restore Udap.sln
     # - name: Generate PKI
@@ -39,5 +41,5 @@ jobs:
       run: |
         echo ${{ env.REPOSITORY_URL }} 
         echo pwd
-        dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg --source ${{ env.REPOSITORY_URL }} 
-        dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg --source ${{ env.REPOSITORY_URL }} 
+        dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg 
+        dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg 

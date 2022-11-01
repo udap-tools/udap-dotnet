@@ -28,7 +28,7 @@ using Xunit.Abstractions;
 using program = FhirLabsApi.Program;
 
 
-namespace WebApi.Tests.FhirLabsApi;
+namespace WebApi.Community.Tests.FhirLabsApi;
 
 public class ApiForCommunityTestFixture : WebApplicationFactory<program>
 {

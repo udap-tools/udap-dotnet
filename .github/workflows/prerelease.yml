@@ -1,20 +1,30 @@
 on:
   push:
-    tags:
-    - "v[0-9]+.[0-9]+.[0-9]+-preview[0-9][0-9][0-9]"
+    branches: [ "develop" ]
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 5
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x
-    - name: Set VERSION variable from tag
-      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
+        dotnet-version: |
+          6.0.x
+          7.0.x
+    - name: Restore dependencies
+      run: dotnet restore Udap.sln
+    - name: Generate PKI
+      run: dotnet test _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj --no-restore
+    - name: Build
+      run: dotnet build Udap.sln --no-restore 
+    - name: Test Udap.Common.Tests
+      run: dotnet test --framework net6.0 _tests/Udap.Common.Tests/Udap.Common.Tests.csproj --no-build --verbosity normal
+    - name: Test WebApi.Tests
+      run: dotnet test --framework net6.0 _tests/WebApi.Tests/WebApi.Tests.csproj --no-build --verbosity normal
+    
     - name: Create nuget package for GPR
       run: |
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=$GITHUB_RUN_ID Udap.Metadata.Server/Udap.Metadata.Server.csproj --output .

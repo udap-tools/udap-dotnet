@@ -17,6 +17,8 @@ jobs:
         dotnet-version: |
           6.0.x
           7.0.x
+      env:
+        NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
     - name: Restore dependencies
       run: dotnet restore Udap.sln
     - name: Generate PKI
@@ -30,8 +32,8 @@ jobs:
     
     - name: Create nuget package for GPR
       run: |
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=$GITHUB_RUN_ID Udap.Metadata.Server/Udap.Metadata.Server.csproj --output .
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=$GITHUB_RUN_ID Udap.Server\Udap.Server.csproj --output .
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview$GITHUB_RUN_ID Udap.Metadata.Server/Udap.Metadata.Server.csproj --output .
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview$GITHUB_RUN_ID Udap.Server\Udap.Server.csproj --output .
     - name: Publish the package to GPR
       run: |
         dotnet nuget push Udap.Metadata.Server/bin/Release/net6.0/*.symbols.nupkg

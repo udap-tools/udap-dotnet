@@ -28,7 +28,7 @@ using Xunit.Abstractions;
 using program = WeatherApi.Program;
 
 
-namespace WebApi.Tests.WeatherApi;
+namespace WebApi.Community.Tests.WeatherApi;
 
 public class ApiForCommunityTestFixture : WebApplicationFactory<program>
 {

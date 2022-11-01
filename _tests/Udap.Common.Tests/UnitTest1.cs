@@ -14,7 +14,7 @@ namespace Udap.Common.Tests
         [Fact]
         public void Test1()
         {
-
+            Assert.True(File.Exists("../../../../Udap.PKI.Generator/certstores/localhost_community/anchorLocalhostCert.cer"));
         }
     }
 }

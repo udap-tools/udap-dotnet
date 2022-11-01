@@ -94,15 +94,15 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         _testOutputHelper = testOutputHelper;
     }
 
-    /// <summary>
-    /// 200 response.
-    /// Well formed Json
-    /// </summary>
-    [Fact]
-    public void UdapWellKnownConfigIsAvailable()
-    {
-        _fixture.WellKnownUdap.Should().NotBeNull();
-    }
+    // /// <summary>
+    // /// 200 response.
+    // /// Well formed Json
+    // /// </summary>
+    // [Fact]
+    // public void UdapWellKnownConfigIsAvailable()
+    // {
+    //     _fixture.WellKnownUdap.Should().NotBeNull();
+    // }
 
     // /// <summary>
     // /// udap_versions_supported must contain a fixed array with one string

@@ -71,9 +71,12 @@ jobs:
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
 
     - run: |
-        echo "Run, Build Application using script"
-        dotnet build Udap.sln
-
+        echo "Run, Build Application"
+        dotnet restore Udap.sln
+        echo "Generate PKI"
+        dotnet test _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj --no-restore
+        dotnet build Udap.sln --no-restore 
+          
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
       with:

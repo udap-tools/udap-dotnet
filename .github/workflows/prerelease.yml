@@ -4,6 +4,10 @@ on:
   push:
     branches: [ "develop" ]
 
+env:
+    NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+    REPOSITORY_URL: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+
 jobs:
   build:
 
@@ -11,10 +15,10 @@ jobs:
     timeout-minutes: 5
     steps:
     - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+    - uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: 6.0.x       
+        dotnet-version: 6.0.x     
+        source-url: ${{ REPOSITORY_URL }}  
     # - name: Restore dependencies
     #   run: dotnet restore Udap.sln
     # - name: Generate PKI
@@ -28,9 +32,15 @@ jobs:
     
     - name: Create nuget package for GPR
       run: |
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview${{ github.run_id }} ./Udap.Metadata.Server/Udap.Metadata.Server.csproj 
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview${{ github.run_id }} ./Udap.Server/Udap.Server.csproj 
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview${{ github.GITHUB_RUN_NUMBER }} ./Udap.Metadata.Server/Udap.Metadata.Server.csproj 
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview${{ github.GITHUB_RUN_NUMBER }} ./Udap.Server/Udap.Server.csproj 
+    # - name: Publish the package to GPR
+    #   run: |
+    #     dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+    #     dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
     - name: Publish the package to GPR
       run: |
-        dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+        echo ${{ env.REPOSITORY_URL }} 
+        echo $PWD
+        dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg 
+        dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg 

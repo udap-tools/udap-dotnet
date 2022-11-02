@@ -4,7 +4,8 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>   
+    <LangVersion>latest</LangVersion>
+    <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
   </PropertyGroup>
 
 

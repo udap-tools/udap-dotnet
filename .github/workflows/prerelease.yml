@@ -42,6 +42,5 @@ jobs:
     - name: Publish the package to GPR
       run: |
         echo ${{ env.REPOSITORY_URL }} 
-        echo $PWD
-        dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg 
-        dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg 
+        dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
+        dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}

@@ -6,16 +6,18 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Udap.Server</AssemblyName>
     <RootNamespace>Udap.Server</RootNamespace>
+    <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Duende.IdentityServer" Version="6.1.4" />
-    <PackageReference Include="Duende.IdentityServer.AspNetIdentity" Version="6.1.4" />
-    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="6.1.7" />
+    <PackageReference Include="AutoMapper" Version="12.0.0" />
+    <PackageReference Include="Duende.IdentityServer" Version="6.2.0-preview.1" />
+    <PackageReference Include="Duende.IdentityServer.AspNetIdentity" Version="6.2.0-preview.1" />
+    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="6.2.0-preview.1" />
     <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection" Version="6.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.10" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.22.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.25.0" />
   </ItemGroup>
 
   <ItemGroup>

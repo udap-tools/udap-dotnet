@@ -5,7 +5,9 @@ name: .NET
 
 on:
   push:
-    branches: [ "main" ]
+    # branches: [ "main" ]
+    branches-ignore:
+      - 'develop'
   pull_request:
     branches: [ "main" ]
 
@@ -13,9 +15,10 @@ jobs:
   build:
 
     runs-on: ubuntu-22.04
-
+    timeout-minutes: 5
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v3
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
@@ -32,6 +35,4 @@ jobs:
       run: dotnet test --framework net6.0 _tests/Udap.Common.Tests/Udap.Common.Tests.csproj --no-build --verbosity normal
     - name: Test WebApi.Tests
       run: dotnet test --framework net6.0 _tests/WebApi.Tests/WebApi.Tests.csproj --no-build --verbosity normal
-    # - name: Test Udap.Common.Tests
-    #   run: dotnet test --framework net6.0 _tests/WebApi.Community.Tests/WebApi.Community.Tests.csproj --no-build --verbosity normal
 

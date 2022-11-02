@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Udap.Server</AssemblyName>
     <RootNamespace>Udap.Server</RootNamespace>
+    <RepositoryUrl>https://github.com/JoeShook/Udap.Server</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

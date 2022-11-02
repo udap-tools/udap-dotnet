@@ -1,0 +1,48 @@
+name: Develop GPR
+
+on:
+  push:
+    branches: [ "develop" ]
+
+env:
+  REPOSITORY_URL: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x     
+        source-url: ${{ env.REPOSITORY_URL }}
+      env:
+        NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+
+    - name: Restore dependencies
+      run: dotnet restore Udap.sln
+    - name: Generate PKI
+      run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj --no-restore
+    - name: Build
+      run: dotnet build Udap.sln --no-restore 
+    - name: Test Udap.Common.Tests
+      run: dotnet test -c Release --framework net6.0 _tests/Udap.Common.Tests/Udap.Common.Tests.csproj --no-build --verbosity normal
+    - name: Test WebApi.Tests
+      run: dotnet test -c Release --framework net6.0 _tests/WebApi.Tests/WebApi.Tests.csproj --no-build --verbosity normal
+    
+    - name: Create nuget package for GPR
+      run: |
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview.${{ github.run_number }} ./Udap.Metadata.Server/Udap.Metadata.Server.csproj 
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview.${{ github.run_number }} ./Udap.Server/Udap.Server.csproj 
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-preview.${{ github.run_number }} ./Udap.Client/Udap.Client.csproj
+    # - name: Publish the package to GPR
+    #   run: |
+    #     dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+    #     dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+    - name: Publish the package to GPR
+      run: |
+        dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
+        dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
+        dotnet nuget push ./Udap.Client/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}\

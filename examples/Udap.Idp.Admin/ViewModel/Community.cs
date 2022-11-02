@@ -23,7 +23,7 @@ namespace Udap.Idp.Admin.ViewModel
 
     public class Anchor
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public bool Enabled { get; set; }
         public string Name { get; set; }
         public string Community { get; set; }

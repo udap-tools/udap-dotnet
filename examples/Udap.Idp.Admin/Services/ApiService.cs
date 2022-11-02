@@ -18,7 +18,7 @@ namespace Udap.Idp.Admin.Services
 
         public async Task<ICollection<Community>> GetCommunities()
         {
-            var response = await HttpClient.GetFromJsonAsync<ICollection<Community>>("api/community");
+            var response = await HttpClient.GetFromJsonAsync<ICollection<Common.Models.Community>>("api/community");
 
             var communities = _mapper.Map<ICollection<Community>>(response);
 
@@ -27,14 +27,14 @@ namespace Udap.Idp.Admin.Services
 
         internal async Task<Anchor> Save(Anchor anchorView)
         {
-            var anchor = _mapper.Map<Anchor>(anchorView);
+            var anchor = _mapper.Map<Common.Models.Anchor>(anchorView);
             
 
             var response = await HttpClient.PostAsJsonAsync("api/anchor", anchor).ConfigureAwait(false);
             
             if (response.IsSuccessStatusCode)
             {
-                var anchorModel = await response.Content.ReadFromJsonAsync<Anchor>();
+                var anchorModel = await response.Content.ReadFromJsonAsync<Common.Models.Anchor>();
                 return _mapper.Map<Anchor>(anchorModel);
             }
             else
@@ -45,7 +45,7 @@ namespace Udap.Idp.Admin.Services
             }
         }
 
-        public async Task<bool> Delete(int anchorId, CancellationToken token = default)
+        public async Task<bool> Delete(long anchorId, CancellationToken token = default)
         {
             var response = await HttpClient.DeleteAsync($"/api/anchor/{anchorId}");
             

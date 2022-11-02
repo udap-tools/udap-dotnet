@@ -5,8 +5,8 @@ on:
     branches: [ "develop" ]
 
 env:
-    NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-    REPOSITORY_URL: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
+  NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  REPOSITORY_URL: https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json
 
 jobs:
   build:
@@ -18,7 +18,7 @@ jobs:
     - uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x     
-        source-url: ${{ REPOSITORY_URL }}  
+        source-url: ${{ REPOSITORY_URL }}
     # - name: Restore dependencies
     #   run: dotnet restore Udap.sln
     # - name: Generate PKI

@@ -8,12 +8,12 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Authors>JoeShook</Authors>
+    <Authors>Joseph Shook</Authors>
     <Copyright>Copyright © Joseph.Shook@Surescripts.com 2022</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
-    <PackageTags>UDAP;FHIR</PackageTags>
+    <PackageTags>UDAP;FHIR;HL7</PackageTags>
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
   </PropertyGroup>
 

@@ -4,7 +4,16 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Authors>JoeShook</Authors>
+    <Copyright>Copyright © Joseph.Shook@Surescripts.com 2022</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
+    <PackageTags>UDAP;FHIR</PackageTags>
+    <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +32,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />
+    <None Include="docs\README.md" Pack="true" PackagePath="\"/>
   </ItemGroup>
 
 </Project>

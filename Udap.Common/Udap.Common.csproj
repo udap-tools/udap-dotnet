@@ -8,7 +8,16 @@
     <IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
     <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
     <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+    <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Authors>JoeShook</Authors>
+    <Copyright>Copyright © Joseph.Shook@Surescripts.com 2022</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
+    <PackageTags>UDAP;FHIR</PackageTags>
+    <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(IsWindows)'=='true'">
@@ -33,8 +42,8 @@
     <PackageReference Include="IdentityModel" Version="6.0.0" />
   </ItemGroup>
 
-  <!-- <ItemGroup> -->
-  <!--   <ProjectReference Include="..\Udap.Custom.TrustStore\Udap.Custom.TrustStore.csproj" /> -->
-  <!-- </ItemGroup> -->
+  <ItemGroup>
+    <None Include="docs\README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 
 </Project>

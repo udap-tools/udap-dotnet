@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
@@ -19,11 +20,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Metadata.Server;
 using Xunit.Abstractions;
 using program = WeatherApi.Program;
 
@@ -49,13 +49,7 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<program>
 
                 response.StatusCode.Should().Be(HttpStatusCode.OK);
                 var content = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                _wellKnownUdap = JsonConvert.DeserializeObject<UdapMetadata>(content, new JsonSerializerSettings
-                {
-                    ContractResolver = new DefaultContractResolver
-                    {
-                        NamingStrategy = new SnakeCaseNamingStrategy()
-                    }
-                });
+                _wellKnownUdap = System.Text.Json.JsonSerializer.Deserialize<UdapMetadata>(content);
             }
 
             return _wellKnownUdap;
@@ -139,8 +133,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     {
         var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
-        var x5CArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
-
+        var x5CArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
+        
         // bad keys
         // var x5cArray = new string[1];
         // x5cArray[0] = "MIIFVzCCAz+gAwIBAgIEAQIDBDANBgkqhkiG9w0BAQsFADBzMQswCQYDVQQGEwJVUzEPMA0GA1UECBMGT3JlZ29uMREwDwYDVQQHEwhQb3J0bGFuZDEUMBIGA1UEChMLSG9ibyBDb2RpbmcxDzANBgNVBAsTBkFuY2hvcjEZMBcGA1UEAxMQVURBUC1UZXN0LUFuY2hvcjAeFw0yMjA4MzEyMDI4NDBaFw0yNDA5MDEyMDI4NDBaMG8xCzAJBgNVBAYTAlVTMQ8wDQYDVQQIEwZPcmVnb24xETAPBgNVBAcTCFBvcnRsYW5kMRQwEgYDVQQKEwtIb2JvIENvZGluZzENMAsGA1UECxMEVURBUDEXMBUGA1UEAxMOd2VhdGhlcmFwaS5sYWIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkU61gOhliibnE2L2SMX4bNE/WqVxpgdRyW2Ii7kbdW5f/eATAhWjrm1koKrCiR9/fH6hK/HEYPBgT/QKU6fTEgBjJEf51ouGHEZzYkEldKMZCjZnxCYRYbF+PhflhnLyj0R0NagH2OFzrrKj3qwPZ3WDSUDC/kxh7YNWJGnOo33bhD+gh+SYdq598cJiXsyfL1N9iTstXYKCKwmP+iJNQ5dV14dbDm693XlVe/G3JwADNzxRoIRVe9Yb9KcE7o7BIy18jUjJySfrAa3Y3Z9jX5ng89CVI3HHiQ9fVHrZjkYUaqe+0c88Asg3op3HPQNyk6bjKxgU7tHfZm5O+KyM9AgMBAAGjgfYwgfMwDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCBsAwHQYDVR0OBBYEFGYofTfZyODDCPMoMV7QaUpVGNKHMB8GA1UdIwQYMBaAFEKu+NexBjBGKrtMYo6DzwUKs4tJMD0GA1UdHwQ2MDQwMqAwoC6GLGh0dHA6Ly9jZXJ0cy53ZWF0aGVyYXBpLmxhYi9jcmwvY3JsX2xpc3QuY3JsMCsGA1UdEQQkMCKGIGh0dHBzOi8vd2VhdGhlcmFwaS5sYWI6NTAyMS9maGlyMCoGA1UdJQEB/wQgMB4GCCsGAQUFBwMCBggrBgEFBQcDAQYIKwYBBQUHAwgwDQYJKoZIhvcNAQELBQADggIBADaTQff7z0BZNgoKDkjxzZNKfUsHfWIsuOe8zfAfYzXAqUiyBWl8pdrL7EW9JoKLchQPC5grWW8uUfzknD3El0QGLgXNvm+imsk0NXaH0R9vEIafJhGXkZWIZx61GekoUQ8+7xEbf9gr5BGA3jMWAtkO6+LvZuhdkTd1k2RlVpl39Yx56Ivg/KpgRXM1PyISl1obbC/b5PCQ/t4kysTmkU9GVz1Z7+rUPcCP+fKFblsLLToVgxA13ozYRAF9/k2V9n/ZiHSOJmwPwLwBs9yHwsdefBlQ9G0Rzm9oU89G5o74HNlhInqD4wQspm+uhewwIAzRkGfL+t992nn1il8rt+VnnZ97rMIZ+cCjyvB0JmlsRQlngRt9cJbHp0OAo5jD8WJwbwgJ0Z3qClCvxZVwT9H5c+klre31ef61XrC0foPkX3TBSytnWh2iQkAdME6ChKl2RZKac2V4zCG8JgSRcP85lDooigsnBk5Sqmf3cifxm29Fte4X/0JG1IpSCLFLcaLyj2me0mVUNDnzIalLaBwwY4kNLPEppJhlFUUV16efaHwOesSQJvGk77tCGaGsG3kPUQcOa0tb2lYJho0Jnq6xymcNZuUQ5PLXmq6l7/gGJ7AqCb1fDghF0PlTwOkh+ZFiaja1YxzN9SsqsR9hyAUJt0mpzqzLNXjWa3PAcy+P";
@@ -194,7 +188,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
-        var x5cArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
+        var x5cArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
 
         // bad keys
         // var x5cArray = new string[1];
@@ -233,7 +227,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
-        var x5cArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
+        var x5cArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
 
         // bad keys
         // var x5cArray = new string[1];

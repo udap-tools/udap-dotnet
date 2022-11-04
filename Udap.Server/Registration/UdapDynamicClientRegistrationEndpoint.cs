@@ -41,7 +41,7 @@ public class UdapDynamicClientRegistrationEndpoint
         //
         // Can't tell if this is truly required from specifications.
         // Maybe search the DCR RFC's
-        // National Directory seems to be missing this header.
+        // National Directory client seems to be missing this header.
         // Maybe discuss this at the next UDAP meeting.
         //
         if (!context.Request.HasJsonContentType())

@@ -14,12 +14,23 @@ namespace Udap.Metadata.Server
 {
     public static class ServiceCollectionExtensions
     {
-        public static IMvcBuilder UseUdapMetaData(
+        public static IMvcBuilder UseUdapMetaDataServer(
             this IMvcBuilder mvcBuilder,
-            ConfigurationManager configuration)
+            ConfigurationManager configuration,
+            UdapMetadata? udapMetadata = null )
         {
             var services = mvcBuilder.Services;
             services.Configure<UdapConfig>(configuration.GetSection("UdapConfig"));
+
+            if (udapMetadata != null)
+            {
+                services.AddSingleton(udapMetadata);
+            }
+            else
+            {
+                mvcBuilder.Services.AddSingleton<UdapMetadata>();
+
+            }
 
             var assembly = typeof(UdapController).Assembly;
             return mvcBuilder.AddApplicationPart(assembly);

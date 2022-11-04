@@ -15,8 +15,10 @@ using FluentAssertions;
 using IdentityModel.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Moq;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
@@ -296,7 +298,10 @@ namespace Udap.Client.Integration.Tests
             // UDAP CertStore
             services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
             services.AddSingleton<ICertificateStore>(sp =>
-                new FileCertificateStore(sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), "FhirLabsApi"));
+                new FileCertificateStore(
+                    sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
+                    new Mock<ILogger<FileCertificateStore>>().Object,
+                    "FhirLabsApi"));
             
 
             var sp = services.BuildServiceProvider();

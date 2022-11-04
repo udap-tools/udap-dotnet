@@ -11,8 +11,10 @@ using System.IO;
 using IdentityModel.AspNetCore.OAuth2Introspection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Common;
 using Udap.Metadata.Server;
@@ -34,15 +36,24 @@ builder.WebHost.UseKestrel((b, so) =>
 
 // Add services to the container.
 
+var udapMetaData = MyCustomUdapMetadata.Build(builder.
+    Configuration.GetSection("UdapConfig").Get<UdapConfig>());
+
 builder.Services
     .AddControllers()
-    .UseUdapMetaData(builder.Configuration);
+    .UseUdapMetaDataServer(builder.Configuration, udapMetaData);
 
     
 // UDAP CertStore
-builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection("UdapFileCertStoreManifest"));
+builder.Services
+    .Configure<UdapFileCertStoreManifest>(builder
+        .Configuration.GetSection("UdapFileCertStoreManifest"));
+
 builder.Services.AddSingleton<ICertificateStore>(sp => 
-    new FileCertificateStore(sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), "WeatherApi"));
+    new FileCertificateStore(
+        sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
+        sp.GetRequiredService<ILogger<FileCertificateStore>>(),
+        "WeatherApi"));
 
 //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //    .AddJwtBearer(options =>

@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
@@ -19,11 +20,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Metadata.Server;
 using Xunit.Abstractions;
 using program = FhirLabsApi.Program;
 
@@ -49,13 +49,7 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<program>
 
                 response.StatusCode.Should().Be(HttpStatusCode.OK);
                 var content = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                _wellKnownUdap = JsonConvert.DeserializeObject<UdapMetadata>(content, new JsonSerializerSettings
-                {
-                    ContractResolver = new DefaultContractResolver
-                    {
-                        NamingStrategy = new SnakeCaseNamingStrategy()
-                    }
-                });
+                _wellKnownUdap = JsonSerializer.Deserialize<UdapMetadata>(content);
             }
 
             return _wellKnownUdap;
@@ -139,7 +133,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     {
         var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
-        var x5CArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
+        var x5CArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
 
         // bad keys
         // var x5cArray = new string[1];
@@ -196,7 +190,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
-        var x5cArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
+        var x5cArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
 
         // bad keys
         // var x5cArray = new string[1];
@@ -235,7 +229,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
-        var x5cArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
+        var x5cArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
 
         // bad keys
         // var x5cArray = new string[1];
@@ -308,7 +302,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         return validator.IsTrustedCertificate(issuedCertificate2, anchors.Select(a =>
             X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
-            certStore?.Resolve().RootCAs.ToArray().ToX509Collection()); 
+            certStore.Resolve().RootCAs.ToArray().ToX509Collection()); 
     }
 
     public class FakeChainValidatorDiagnostics

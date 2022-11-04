@@ -9,7 +9,9 @@
 
 namespace Udap.Metadata.Server
 {
-
+    /// <summary>
+    /// Configurable data typically loaded from AppSettings.
+    /// </summary>
     public class UdapConfig
     {
         public List<UdapMetadataConfig> UdapMetadataConfigs { get; set; } = new();

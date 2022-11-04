@@ -8,6 +8,7 @@
 #endregion
 
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
@@ -20,13 +21,20 @@ namespace Udap.Metadata.Server;
 public class FileCertificateStore : ICertificateStore
 {
     private readonly IOptionsMonitor<UdapFileCertStoreManifest> _manifest;
-    private string _resourceServerName;
+    private readonly ILogger<FileCertificateStore> _logger;
+    private string? _resourceServerName;
     private bool _resolved;
+    
 
-    public FileCertificateStore(IOptionsMonitor<UdapFileCertStoreManifest> manifest, string resourceServerName)
+    public FileCertificateStore(
+        IOptionsMonitor<UdapFileCertStoreManifest> manifest,
+        ILogger<FileCertificateStore> logger,
+        string? resourceServerName = null)
     {
         _manifest = manifest;
         _resourceServerName = resourceServerName;
+        _logger = logger;
+        ;
 
         _manifest.OnChange(_ =>
         {
@@ -53,11 +61,26 @@ public class FileCertificateStore : ICertificateStore
 
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
     {
-        var communities = manifestCurrentValue
-            .ResourceServers
-            .SingleOrDefault(r => r.Name == _resourceServerName)
-            ?.Communities;
+        ICollection<Common.Metadata.Community>? communities;
+
+        if (_resourceServerName == null)
+        {
+            _logger.LogInformation($"Loading first ResourceServers from UdapFileCertStoreManifest:ResourceServers.");
+            
+            communities = manifestCurrentValue.ResourceServers.FirstOrDefault()?.Communities;
+        }
+        else
+        {
+            _logger.LogInformation($"Loading UdapFileCertStoreManifest:ResourceServers:Name {_resourceServerName}.");
+
+            communities = manifestCurrentValue
+                .ResourceServers
+                .SingleOrDefault(r => r.Name == _resourceServerName)
+                ?.Communities;
+        }
         
+        _logger.LogInformation($"{communities?.Count ?? 0} communities loaded");
+
         if (communities == null) return;
 
         foreach (var community in communities)
@@ -135,10 +158,14 @@ public class FileCertificateStore : ICertificateStore
                             if (authorityIdentifierValue == null || 
                                 subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
                             {
+                                _logger.LogInformation($"Round root ca in {path} certificate.  Will add the root to roots if not already explicitly loaded.");
+
                                 RootCAs.Add(cert);
                             }
                             else
                             {
+                                _logger.LogInformation($"Round intermediate ca in {path} certificate.  Will add if not already explicitly loaded.");
+
                                 Anchors.Add(new Anchor(cert) { Community = community.Name });
                             }
                         }

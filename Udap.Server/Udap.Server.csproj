@@ -33,6 +33,7 @@
     <ProjectReference Include="..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />
     <None Include="docs\README.md" Pack="true" PackagePath="\"/>
+    <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

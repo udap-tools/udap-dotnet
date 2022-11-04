@@ -18,4 +18,9 @@
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="docs\README.md" Pack="true" PackagePath="\"/>
+    <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
 </Project>

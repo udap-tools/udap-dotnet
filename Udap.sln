@@ -47,6 +47,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.PKI.Generator", "_test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Client.Integration.Tests", "_tests\integration\Udap.Client.Integration.Tests\Udap.Client.Integration.Tests.csproj", "{D6969882-CD8D-4374-ADCF-65E937EE4D32}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UdapServer.Tests", "_tests\UdapServer.Tests\UdapServer.Tests.csproj", "{D617C732-6C2E-4AEF-8E1A-A4328EC32104}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -113,6 +115,10 @@ Global
 		{D6969882-CD8D-4374-ADCF-65E937EE4D32}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D6969882-CD8D-4374-ADCF-65E937EE4D32}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D6969882-CD8D-4374-ADCF-65E937EE4D32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D617C732-6C2E-4AEF-8E1A-A4328EC32104}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D617C732-6C2E-4AEF-8E1A-A4328EC32104}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D617C732-6C2E-4AEF-8E1A-A4328EC32104}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D617C732-6C2E-4AEF-8E1A-A4328EC32104}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -129,6 +135,7 @@ Global
 		{1B6A6580-E21F-4E4B-AC78-56728385D3B8} = {640C178B-FA29-49AD-8245-FA7EE934D522}
 		{DA8D6B73-3C01-4FDE-8822-97943443AC24} = {640C178B-FA29-49AD-8245-FA7EE934D522}
 		{D6969882-CD8D-4374-ADCF-65E937EE4D32} = {C363B74D-4CD0-4329-865D-90383D9D7780}
+		{D617C732-6C2E-4AEF-8E1A-A4328EC32104} = {640C178B-FA29-49AD-8245-FA7EE934D522}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4C22E2C0-B5D3-497F-BAD0-EB769D6D6CD1}

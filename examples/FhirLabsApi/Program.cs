@@ -75,7 +75,7 @@ builder.Services
         // need this to serialize udap metadata becaue UseFhirServerController clears OutputFormatters
         options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));
     })
-    .UseUdapMetaData(builder.Configuration)
+    .UseUdapMetaDataServer(builder.Configuration)
     .AddNewtonsoftJson(options =>
     {
         options.SerializerSettings.ContractResolver = new DefaultContractResolver
@@ -91,7 +91,10 @@ builder.Services
 // UDAP CertStore
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection("UdapFileCertStoreManifest"));
 builder.Services.AddSingleton<ICertificateStore>(sp =>
-    new FileCertificateStore(sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), "FhirLabsApi"));
+    new FileCertificateStore(
+        sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
+        sp.GetRequiredService<ILogger<FileCertificateStore>>(),
+        "FhirLabsApi"));
 
 
 //

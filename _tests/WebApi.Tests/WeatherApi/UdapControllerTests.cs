@@ -20,8 +20,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Udap.Common;
+using Udap.Metadata.Server;
 using Xunit.Abstractions;
 using static System.Net.Mime.MediaTypeNames;
 using program = WeatherApi.Program;
@@ -42,13 +42,7 @@ public class ApiTestFixture : WebApplicationFactory<program>
                 var response = CreateClient().GetAsync(".well-known/udap").GetAwaiter().GetResult();
                 response.StatusCode.Should().Be(HttpStatusCode.OK);
                 var content = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                _wellKnownUdap = JsonConvert.DeserializeObject<UdapMetadata>(content, new JsonSerializerSettings
-                {
-                    ContractResolver = new DefaultContractResolver
-                    {
-                        NamingStrategy = new SnakeCaseNamingStrategy()
-                    }
-                });
+                _wellKnownUdap = System.Text.Json.JsonSerializer.Deserialize<UdapMetadata>(content);
             }
 
             return _wellKnownUdap!;
@@ -171,10 +165,10 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var grantTypes = _fixture.WellKnownUdap.GrantTypesSupported;
         grantTypes.Should().NotBeNullOrEmpty();
 
-        grantTypes!.Length.Should().Be(3);
-        grantTypes!.Should().Contain("authorization_code");
-        grantTypes!.Should().Contain("refresh_token");
-        grantTypes!.Should().Contain("client_credentials");
+        grantTypes.Count.Should().Be(3);
+        grantTypes.Should().Contain("authorization_code");
+        grantTypes.Should().Contain("refresh_token");
+        grantTypes.Should().Contain("client_credentials");
     }
 
     [Fact]

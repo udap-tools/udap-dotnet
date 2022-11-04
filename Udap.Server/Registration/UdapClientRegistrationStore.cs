@@ -8,22 +8,26 @@
 #endregion
 
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Udap.Common.Models;
 using Udap.Server.DbContexts;
 using Udap.Server.Mappers;
 
 namespace Udap.Server.Registration
 {
-    /// <inheritdoc /> TODO: missing admin interface for adding Anchors to store.
+    /// <inheritdoc /> 
     public class UdapClientRegistrationStore : IUdapClientRegistrationStore
     {
-        private IUdapDbAdminContext _dbContext;
+        private readonly IUdapDbAdminContext _dbContext;
+        private ILogger<UdapClientRegistrationStore> _logger;
 
-        public UdapClientRegistrationStore(IUdapDbAdminContext dbContext)
+        public UdapClientRegistrationStore(IUdapDbAdminContext dbContext, ILogger<UdapClientRegistrationStore> logger)
         {
             _dbContext = dbContext;
+            _logger = logger;
         }
 
         public async Task<Duende.IdentityServer.Models.Client?> GetClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
@@ -89,10 +93,13 @@ namespace Udap.Server.Registration
         }
 
 
+        // TODO: This doesn't even load roots. 
         public async Task<X509Certificate2Collection> GetRootCertificates(string? community, CancellationToken token = default)
         {
             var roots = await GetRoots(community, token).ConfigureAwait(false);
-
+            
+            _logger.LogInformation($"Found {roots?.Count() ?? 0} roots for community, {community}");
+            
             return new X509Certificate2Collection(roots.Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());
         }
 
@@ -100,8 +107,24 @@ namespace Udap.Server.Registration
         public async Task<X509Certificate2Collection> GetAnchorsCertificates(string? community, CancellationToken token = default)
         {
             var anchors = await GetAnchors(community, token).ConfigureAwait(false);
-            
+
+            _logger.LogInformation($"Found {anchors?.Count() ?? 0} anchors for community, {community}");
+            _logger.LogDebug(ShowSummary(anchors));
+
             return new X509Certificate2Collection(anchors.Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());
+        }
+
+        private string ShowSummary(IEnumerable<Anchor> anchors)
+        {
+            var sb = new StringBuilder();
+            sb.Append("Resolved Anchors: | ");
+
+            foreach (var anchor in anchors)
+            {
+                sb.Append($"{anchor.Name} |");
+            }
+
+            return sb.ToString();
         }
     }
 }

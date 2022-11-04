@@ -12,7 +12,6 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -24,18 +23,17 @@ namespace Udap.Metadata.Server
     [Route(".well-known/udap")]
     public class UdapController : ControllerBase
     {
-        private readonly UdapConfig _udapConfig;
+        private readonly UdapMetadata _udapMetadata;
         private readonly ICertificateStore _certificateStore;
         private readonly ILogger<UdapController> _logger;
 
         public UdapController(
-            IConfiguration configuration,
-            IOptionsMonitor<UdapConfig> udapConfig,
+            UdapMetadata udapMetadata,
             ICertificateStore certificateStore,
             ILogger<UdapController> logger)
         {
+            _udapMetadata = udapMetadata;
             _certificateStore = certificateStore;
-            _udapConfig = udapConfig.CurrentValue;
             _logger = logger;
         }
 
@@ -44,18 +42,12 @@ namespace Udap.Metadata.Server
         public IActionResult Get([FromQuery] string? community)
         {
             UdapMetadataConfig? udapMetadataConfig;
+            udapMetadataConfig = _udapMetadata.GetUdapMetadataConfig(community);
 
-            //todo: probably need a first class resolver to substitute config files for DB
-            if (community == null)
-            {
-                udapMetadataConfig = _udapConfig.UdapMetadataConfigs.FirstOrDefault();
-            }
-            else
-            {
-                udapMetadataConfig = _udapConfig.UdapMetadataConfigs
-                    .SingleOrDefault(c => c.Community == community);
-            }
-             
+            _udapMetadata.AuthorizationEndpoint = udapMetadataConfig.SignedMetadataConfig.AuthorizationEndpoint;
+            _udapMetadata.TokenEndpoint = udapMetadataConfig.SignedMetadataConfig.TokenEndpoint;
+            _udapMetadata.RegistrationEndpoint = udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint;
+            
 
             if (udapMetadataConfig == null)
             {
@@ -64,57 +56,9 @@ namespace Udap.Metadata.Server
                 return NotFound();
             }
 
-            var udapMetadata = new UdapMetadata();
+            _udapMetadata.SignedMetadata = SignMetaData(udapMetadataConfig);
 
-            udapMetadata.UdapVersionsSupported = new[] { UdapConstants.UdapVersionsSupportedValue };
-            udapMetadata.UdapProfilesSupported = new[]
-            {
-                UdapConstants.UdapProfilesSupportedValues.UdapDcr,
-                UdapConstants.UdapProfilesSupportedValues.UdapAuthn,
-                UdapConstants.UdapProfilesSupportedValues.UdapAuthz,
-                UdapConstants.UdapProfilesSupportedValues.UdapTo
-            };
-
-            udapMetadata.UdapAuthorizationExtensionsSupported = new[]
-            {
-                UdapConstants.UdapAuthorizationExtensions.Hl7B2B,
-                "acme-ext"
-            };
-            udapMetadata.UdapAuthorizationExtensionsRequired = new[]
-            {
-                UdapConstants.UdapAuthorizationExtensions.Hl7B2B
-            };
-            udapMetadata.UdapCertificationsSupported = new[]
-            {
-                "http://MyUdapCertification", "http://MyUdapCertification2"
-            };
-            udapMetadata.UdapCertificationsRequired = new[] { "http://MyUdapCertification" };
-            udapMetadata.GrantTypesSupported = new[]
-            {
-                OidcConstants.GrantTypes.AuthorizationCode,
-                OidcConstants.GrantTypes.RefreshToken,
-                OidcConstants.GrantTypes.ClientCredentials
-            };
-            udapMetadata.ScopesSupported = new[]
-            {
-                OidcConstants.StandardScopes.OpenId,
-                UdapConstants.FhirScopes.SystemPatientRead,
-                UdapConstants.FhirScopes.SystemAllergyIntoleranceRead,
-                UdapConstants.FhirScopes.SystemProcedureRead,
-                "system/Observation.read"
-            };
-
-            //TODO: Fix config and multi community
-            udapMetadata.AuthorizationEndpoint = udapMetadataConfig.SignedMetadataConfig.AuthorizationEndpoint;
-            udapMetadata.TokenEndpoint = udapMetadataConfig.SignedMetadataConfig.TokenEndpoint;
-            udapMetadata.RegistrationEndpoint = udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint;
-            udapMetadata.TokenEndpointAuthMethodsSupported = new[] { UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue };
-            udapMetadata.TokenEndpointAuthSigningAlgValuesSupported = new[] { UdapConstants.SupportedAlgorithm.RS256 };
-            udapMetadata.RegistrationEndpointJwtSigningAlgValuesSupported = new[] { UdapConstants.SupportedAlgorithm.RS256 };
-
-            udapMetadata.SignedMetadata = SignMetaData(udapMetadataConfig);
-
-            return Ok(udapMetadata);
+            return Ok(_udapMetadata);
         }
 
         /// <summary>
@@ -179,6 +123,7 @@ namespace Udap.Metadata.Server
 
             if (entity == null)
             {
+                _logger.LogInformation($"Missing certificate for community: {udapMetadataConfig.Community}");
                 return null;
             }
 

@@ -2,7 +2,7 @@
 
 UDAP reference implementation for .NET.  
 
-In short UDAP is a PKI extension profile to OAuth2.  On or more PKI's would be hosted by a `Community`.  Joining a `Community` results in a public/private key issued to a client.  The client also chooses to explicitly trust one of the issuing certificates in that chain by installing in your client.  In addition all certificate chain validation including certificate revocation to a trusted root are performed.
+In short UDAP is a PKI extension profile to OAuth2.  One or more PKIs can be hosted by a `Community`.  Joining a `Community` results in a public/private key issued to a client.  The client also chooses to explicitly trust one of the issuing certificates in that chain by installing in your client.  In addition, all certificate chain validation including certificate revocation to a trusted root are performed.
 
 Note: This is a new project.  It will take me some time to document.  It should be very active in code changes and document additions.  But feel free to try it out and add issues and/or pull requests.
 
@@ -13,15 +13,21 @@ I am using .NET 7 for a couple projects in here.  In a few weeks .NET 7 will be 
 
 ## What does it support
 
-The repository contains components and example uses to support the following items from [Security for Scalable Registration, Authentication, and Authorization](http://hl7.org/fhir/us/udap-security/).  The intent is to also support generic UDAP, but the driving force at this time is support for auto registration to FHIR servers.
+The repository contains components and example uses to support the following items from [Security for Scalable Registration, Authentication, and Authorization](http://hl7.org/fhir/us/udap-security/).  The intent is to also support generic UDAP, but the driving force currently is supporting auto registration to FHIR servers.
 
 | Feature                 | Supported           | Comments                                               |
 |-------------------------|---------------------|--------------------------------------------------------|
-| [Discovery](http://hl7.org/fhir/us/udap-security/discovery.html) | ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) | Highly functional.  Could use some advanced tests such as certificate revokation. |
+| [Discovery](http://hl7.org/fhir/us/udap-security/discovery.html) | ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) | Highly functional.  Could use some advanced tests such as certificate revocation. |
 | [Registration](http://hl7.org/fhir/us/udap-security/registration.html)| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)  |  Functional but needs a lot more tests |
 | [Consumer-Facing](http://hl7.org/fhir/us/udap-security/consumer.html)| Not Started | |
 | [Business-to-Business](http://hl7.org/fhir/us/udap-security/b2b.html)| In progress | |
 | [Tiered OAuth for User Authentication](http://hl7.org/fhir/us/udap-security/user.html) | Not Started | |
+
+### PKI support
+
+Part of this repository is a xUnit test project that will generate a couple PKI hierarchies for testing UDAP.  The test is called `Udap.PKI.Generator`.  I think showing the mechanics of what it takes to build out a PKI for UDAP will aid education and provide the flexibility to test interesting use cases.  Run all the tests in the `Udap.PKI.Generator` project.  The results include a folder with root a root certificate authority that issues intermediate certificates, certificate revocation lists, used certificates for community members and certs for web TLS certs.  Each of the example web services located in the [examples](/examples) use MSBuild `Link`s to link to certificates appropriate to its PKI needs.  So, if you would like to change something in the PKI just edit and run the tests.  All examples will automatically pick up the changes.  To enable crl lookup and AIA, Certification Authority Issuer resolution I just mapped crl, cert and anchor as static content via something like IIS on my Windows box.  I may create a dotnet core app to make this easier and it into ci/cd better but this is where I am at so far.
+
+I am not sure if this will stay in unit test form or not, but for now this is the technique.  
 
 ## Components (Nuget packages)
 
@@ -82,7 +88,7 @@ Issuer and Subject must match the issued certificates, Subject Alternative Name 
   }
 ```
 
-To serve UDAP metadata, certificates will be loaded through an implementation of ```ICertificatStore```.  Below is a built-in file based implementation for lab experiments.  
+To serve UDAP metadata, certificates will be loaded through an implementation of ```ICertificatStore```.  Below is a built-in file-based implementation for lab experiments.  
 
 ```csharp
 // UDAP CertStore
@@ -90,7 +96,7 @@ builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetS
 builder.Services.AddSingleton<ICertificateStore, FileCertificateStore>();
 ```
 
-To continue this example copy the following files from the Udap.PKI.Generator xUnit project output to the following directory structure at the root of the WebApi1 project.  Ensure each file's "Copy to Output Directory" is set to copy.
+To continue this example, copy the following files from the Udap.PKI.Generator test project output to the following directory structure at the root of the WebApi1 project.  Ensure each file's "Copy to Output Directory" is set to copy.
 
 - CertStore
   - anchors
@@ -144,7 +150,7 @@ dotnet run
 ```
 Navigate to http://localhost:5079/.well-known/udap or http://localhost:5079/swagger.
 
-A this point a success would result in a result similar to the following json.  Ensure the signed_metadata contains a signed JWT token.
+A this point a success would result in a result similar to the following json.  Ensure the signed_metadata property contains a signed JWT token.
 
 ```json
 {
@@ -204,10 +210,6 @@ A this point a success would result in a result similar to the following json.  
 ### Udap.Idp.Server
 
 ## Build and test
-
-### PKI support
-
-Part of this repository is a xUnit test project that will generate a couple PKI hierarchies for testing UDAP.  The test is called `Udap.PKI.Generator`.  I think showing the mechanics of what it takes to build out a PKI for UDAP will aid education and provide the flexibility to test interesting use cases.  Run all the tests in the `Udap.PKI.Generator` project.  I am not sure if this will stay in unit test form or not, but for now this is the technique.  
 
 ### Running tests
 

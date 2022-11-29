@@ -1,11 +1,24 @@
-#region (c) 2022 Joseph Shook. All rights reserved.
-// /*
-//  Authors:
-//     Joseph Shook   Joseph.Shook@Surescripts.com
-// 
-//  See LICENSE in the project root for license information.
-// */
-#endregion
+# Udap.Server
+
+![UDAP logo](https://avatars.githubusercontent.com/u/77421324?s=48&v=4)
+
+## 📦 This package
+
+This package is intended to be used with Duende's Identity Server.  Duende must be licensed if you are using it for anything more than testing and you make more than 1 million dollars a year.  I am willing to build samples using other identity providers.  Keep in mind `Udap.Server` is meant to add auto registration only.  Then it relies on Identity Server for identity rather than build a complete identity provider server.  There is great value Duende provides that would take a very long time to get correct.  
+
+This package contains a few extension methods and two endpoints.  The first endpoint is an UDAP metadata endpoint, implementing Duende's IEndpointHandler interface allowing /.well-known/udap to render metadata.  The only thing of interest in this endpoint is the registration_endpoint which points to the next endpoint, `UdapDynamicClientRegistrationEndpoint`.  This code is a simple endpoint called as a delegate using the dotnet minimal api technique.  
+
+Program.cs could look like this.
+
+**TODO**
+Work to do here to demonstrate how to use.
+
+- Update readme
+- Instructions on creating database.  `dotnet run /seed` from Udap.Idp.Admin
+- Need to finish loading root CAs into database
+- Add and test other DBs like SQL, PostgreSql and CockroachDB.  Maybe Windows Store? :smirk:
+
+```csharp
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,24 +37,6 @@ internal static class HostingExtensions
         {
             sslPort = 5002;
         }
-
-        //
-        // Running localhost:5002 when UseKestrel confiratio below is commented
-        // Uncomment and to run your own cert.  
-        //
-
-        // builder.WebHost.UseKestrel((webHostBuilderContext, kestrelServerOptions) =>
-        // {
-        //     kestrelServerOptions.ListenAnyIP(sslPort, listenOpt =>
-        //     {
-        //         listenOpt.UseHttps(
-        //             Path.Combine(
-        //                 Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? string.Empty,
-        //                 webHostBuilderContext.Configuration["SslFileLocation"]),
-        //             webHostBuilderContext.Configuration["CertPassword"]);
-        //     });
-        // });
-
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -111,3 +106,6 @@ internal static class HostingExtensions
         return app;
     }
 }
+
+
+```

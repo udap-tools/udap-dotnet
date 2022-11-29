@@ -292,9 +292,9 @@ namespace Udap.Client.Integration.Tests
                 .AddJsonFile("appsettings.json", false, true)
                 .AddUserSecrets<GeneralTests>()
             .Build();
-    
-            var services = new ServiceCollection();
 
+            var services = new ServiceCollection();
+            
             // UDAP CertStore
             services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
             services.AddSingleton<ICertificateStore>(sp =>

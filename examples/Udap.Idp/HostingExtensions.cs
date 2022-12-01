@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using AspNetCoreRateLimit;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -44,7 +45,20 @@ internal static class HostingExtensions
 
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        
+        // needed to load configuration from appsettings.json
+        builder.Services.AddOptions();
 
+        // needed to store rate limit counters and ip rules
+        builder.Services.AddMemoryCache();
+
+        //load general configuration from appsettings.json
+        builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+        
+        // inject counter and rules stores
+        builder.Services.AddInMemoryRateLimiting();
+
+        
         // uncomment if you want to add a UI
         builder.Services.AddRazorPages();
 
@@ -77,18 +91,23 @@ internal static class HostingExtensions
                     sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
             });
 
+        // configuration (resolvers, counter key builders)
+        builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
         return builder.Build();
     }
     
     public static WebApplication ConfigurePipeline(this WebApplication app)
-    { 
+    {
+        app.UseIpRateLimiting();
+
         app.UseSerilogRequestLogging();
     
         if (app.Environment.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
         }
-
+        
         // uncomment if you want to add a UI
         app.UseStaticFiles();
         app.UseRouting();

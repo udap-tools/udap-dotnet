@@ -135,7 +135,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
     }
 
     [Fact]
-    public async Task RegisrationSuccessTest()
+    public async Task RegisrationSuccessWeatherApiTest()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
@@ -544,7 +544,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         var discoJsonFormatted =
             JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
-        // _testOutputHelper.WriteLine(discoJsonFormatted);
+        _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint);
 
@@ -575,8 +575,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
             .Single(c => c.Type == UdapConstants.Discovery.RegistrationEndpoint)
             .Value.Should().Be(regEndpoint);
 
-        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "TestCerts"),
-            "fhirlabs.net.client.pfx");
+        var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
 
         var manifest = _fixture.TestConfig.GetSection("UdapFileCertStoreManifest").Get<UdapFileCertStoreManifest>();
 

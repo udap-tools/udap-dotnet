@@ -10,6 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="TestCerts\**" />
+    <EmbeddedResource Remove="TestCerts\**" />
+    <None Remove="TestCerts\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="appsettings.json" />
   </ItemGroup>
 
@@ -22,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\anchorLocalhostCert.cer" Link="TestCerts\anchorLocalhostCert.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\anchorLocalhostCert.cer" Link="CertStore\anchors\anchorLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\Udap.PKI.Generator\certstores\localhost_community\weatherApiClientLocalhostCert.pfx" Link="CertStore\issued\weatherApiClientLocalhostCert.pfx">
@@ -31,18 +37,12 @@
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\anchors\SureFhirLabs_Anchor.cer" Link="CertStore\anchors\SureFhirLabs_Anchor.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.client.pfx" Link="TestCerts\fhirlabs.net.client.pfx">
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.client.pfx" Link="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\roots\SureFhirLabs_CA.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Resource Include="CertStore\anchors\EMRDirectTestCA.crt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Resource>
   </ItemGroup>
 
   <ItemGroup>
@@ -98,7 +98,6 @@
   <ItemGroup>
     <Folder Include="CertStore\issued\" />
     <Folder Include="CertStore\roots\" />
-    <Folder Include="TestCerts\" />
   </ItemGroup>
 
 </Project>

@@ -16,6 +16,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
+using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Crypto.Prng;
@@ -81,13 +82,19 @@ namespace Udap.PKI.Generator
         private static string SureFhirLabsAnchorCdp { get; } = "http://crl.fhircerts.net/crl/surefhirlabsanchor.crl";
 
         private static string SureFhirLabsCaPublicCertHosted { get; } = $"http://crl.fhircerts.net/certs/SureFhirLabs_CA.cer";
-        private static string SureFhirLabsAnchorPublicCertHosted { get; } = "http://crl.fhircerts.net/anchors/SureFhirLabs_Anchor.cer";
+        private static string SureFhirLabsAnchorPublicCertHosted { get; } = "http://crl.fhircerts.net/certs/anchors/SureFhirLabs_Anchor.cer";
 
         private static string SurefhirlabsUdapAnchors { get; } = $"{SureFhirLabsCertStore}/anchors";
         private static string SurefhirlabsUdapIssued { get; } = $"{SureFhirLabsCertStore}/issued";
 
         private static string SureFhirLabsPkcsFileCrl { get; } = "surefhirlabs.crl";
+
+        private static string sureFhirClientCrlFilename = $"{SurefhirlabsCrl}/{SureFhirLabsPkcsFileCrl}";
+
         private static string SureFhirLabsAnchorPkcsFileCrl { get; } = "surefhirlabsanchor.crl";
+
+        private static string sureFhirAnchorCrlFilename = $"{SurefhirlabsCrl}/{SureFhirLabsAnchorPkcsFileCrl}";
+
         private static string SureFhirLabsSslWeatherApi { get; } = $"{BaseDir}/certstores/Kestrel/WeatherApi";
         private static string SureFhirLabsSslFhirLabs { get; } = $"{BaseDir}/certstores/Kestrel/FhirLabs";
         private static string SureFhirLabsSslIdentityServer { get; } = $"{BaseDir}/certstores/Kestrel/IdentityServer";
@@ -193,7 +200,7 @@ namespace Udap.PKI.Generator
 
 
                     var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-                    subAltNameBuilder.AddUri(new Uri("udap://surefhir.labs")); // My way of embedding a community uri in anchor cert
+                    subAltNameBuilder.AddUri(new Uri("udap://surefhir.labs")); // embedding a community uri in anchor cert
                     var x509Extension = subAltNameBuilder.Build();
                     anchorReq.CertificateExtensions.Add(x509Extension);
 
@@ -202,6 +209,7 @@ namespace Udap.PKI.Generator
                     var aiaExtension = authorityInfoAccessBuilder.Build();
                     anchorReq.CertificateExtensions.Add(aiaExtension);
 
+                    
                     //
                     // UDAP client certificate for simple ASP.NET WebApi project
                     // weatherapi.lab
@@ -210,7 +218,7 @@ namespace Udap.PKI.Generator
                                caCert,
                                DateTimeOffset.UtcNow.AddDays(-1),
                                DateTimeOffset.UtcNow.AddYears(5),
-                               new ReadOnlySpan<byte>(new byte[] { 1, 2, 3, 4 })))
+                               new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
                     {
                         var anchorCertWithKey = anchorCertWithoutKey.CopyWithPrivateKey(anchor);
 
@@ -262,7 +270,7 @@ namespace Udap.PKI.Generator
                                    anchorCertWithKey,
                                    DateTimeOffset.UtcNow.AddDays(-1),
                                    DateTimeOffset.UtcNow.AddYears(2),
-                                   new byte[] { 1, 2, 3, 4 }))
+                                   new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
                         {
                             // Do something with these certs, like export them to PFX,
                             // or add them to an X509Store, or whatever.
@@ -323,7 +331,7 @@ namespace Udap.PKI.Generator
                                    anchorCertWithKey,
                                    DateTimeOffset.UtcNow.AddDays(-1),
                                    DateTimeOffset.UtcNow.AddYears(2),
-                                   new byte[] { 1, 2, 3, 4 }))
+                                   new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
                         {
                             // Do something with these certs, like export them to PFX,
                             // or add them to an X509Store, or whatever.
@@ -390,7 +398,7 @@ namespace Udap.PKI.Generator
                                    anchorCertWithKey,
                                    DateTimeOffset.UtcNow.AddDays(-1),
                                    DateTimeOffset.UtcNow.AddYears(2),
-                                   new byte[] { 1, 2, 3, 4 }))
+                                   new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
                         {
                             // Do something with these certs, like export them to PFX,
                             // or add them to an X509Store, or whatever.
@@ -450,7 +458,7 @@ namespace Udap.PKI.Generator
                                    anchorCertWithKey,
                                    DateTimeOffset.UtcNow.AddDays(-1),
                                    DateTimeOffset.UtcNow.AddYears(2),
-                                   new byte[] { 1, 2, 3, 4 }))
+                                   new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
                         {
                             // Do something with these certs, like export them to PFX,
                             // or add them to an X509Store, or whatever.
@@ -507,7 +515,7 @@ namespace Udap.PKI.Generator
                                    anchorCertWithKey,
                                    DateTimeOffset.UtcNow.AddDays(-1),
                                    DateTimeOffset.UtcNow.AddYears(2),
-                                   new byte[] { 1, 2, 3, 4 }))
+                                   new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
                         {
                             // Do something with these certs, like export them to PFX,
                             // or add them to an X509Store, or whatever.
@@ -538,21 +546,22 @@ namespace Udap.PKI.Generator
 
                         crlAnchorGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
                             false,
-                            new AuthorityKeyIdentifierStructure(bouncyCaCert));
+                            new AuthorityKeyIdentifierStructure(bouncyCaCert.GetPublicKey()));
 
-                        crlAnchorGen.AddExtension(X509Extensions.CrlNumber,
-                            false,
-                            new CrlNumber(BigInteger.One));
+                        var nextsureFhirAnchorCrlNum = GetNextCrlNumber(sureFhirAnchorCrlFilename);
 
-                        var anchorRandomGenerator = new CryptoApiRandomGenerator();
-                        var anchorRandom = new SecureRandom(anchorRandomGenerator);
+                        crlAnchorGen.AddExtension(X509Extensions.CrlNumber, false, nextsureFhirAnchorCrlNum);
 
-                        var anchorAkp = DotNetUtilities.GetKeyPair(anchorCertWithKey.GetRSAPrivateKey()).Private;
-                        
-                        var anchorCrl = crlAnchorGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", anchorAkp, anchorRandom));
+                        // var anchorRandomGenerator = new CryptoApiRandomGenerator();
+                        // var anchorRandom = new SecureRandom(anchorRandomGenerator);
+
+                        var anchorAkp = DotNetUtilities.GetKeyPair(caCert.GetRSAPrivateKey()).Private;
+
+                        // var anchorCrl = crlAnchorGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", anchorAkp, anchorRandom));
+                        var anchorCrl = crlAnchorGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", anchorAkp));
 
                         SurefhirlabsCrl.EnsureDirectoryExists();
-                        File.WriteAllBytes($"{SurefhirlabsCrl}/{SureFhirLabsAnchorPkcsFileCrl}", anchorCrl.GetEncoded());
+                        File.WriteAllBytes(sureFhirAnchorCrlFilename, anchorCrl.GetEncoded());
 
                         #endregion
 
@@ -573,28 +582,48 @@ namespace Udap.PKI.Generator
 
                         crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
                             false,
-                            new AuthorityKeyIdentifierStructure(bouncyAnchorCert));
+                            new AuthorityKeyIdentifierStructure(bouncyAnchorCert.GetPublicKey()));
 
-                        crlGen.AddExtension(X509Extensions.CrlNumber,
-                            false,
-                            new CrlNumber(BigInteger.One));
+                        var nextSureFhirClientCrlNum = GetNextCrlNumber(sureFhirClientCrlFilename);
 
-                        var randomGenerator = new CryptoApiRandomGenerator();
-                        var random = new SecureRandom(randomGenerator);
+                        crlGen.AddExtension(X509Extensions.CrlNumber, false, nextSureFhirClientCrlNum);
+                        
+
+                        // var randomGenerator = new CryptoApiRandomGenerator();
+                        // var random = new SecureRandom(randomGenerator);
 
                         var Akp = DotNetUtilities.GetKeyPair(anchorCertWithKey.GetRSAPrivateKey()).Private;
                         
                         //var crl = crlGen.Generate(Akp, random);
-                        var crl = crlGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", Akp, random));
+                        var crl = crlGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", Akp));
 
                         SurefhirlabsCrl.EnsureDirectoryExists();
-                        File.WriteAllBytes($"{SurefhirlabsCrl}/{SureFhirLabsPkcsFileCrl}", crl.GetEncoded());
+                        File.WriteAllBytes(sureFhirClientCrlFilename, crl.GetEncoded());
 
                         #endregion
                     }
                 }
             }
         }
+
+        private static CrlNumber GetNextCrlNumber(string fileName)
+        {
+            var nextCrlNum = new CrlNumber(BigInteger.One);
+
+            if (File.Exists(fileName))
+            {
+                byte[] buf = File.ReadAllBytes(fileName);
+                var crlParser = new X509CrlParser();
+                var prevCrl = crlParser.ReadCrl(buf);
+                var prevCrlNum = prevCrl.GetExtensionValue(X509Extensions.CrlNumber);
+                var asn1Object = X509ExtensionUtilities.FromExtensionValue(prevCrlNum);
+                var prevCrlNumVal = DerInteger.GetInstance(asn1Object).PositiveValue;
+                nextCrlNum = new CrlNumber(prevCrlNumVal.Add(BigInteger.One));
+            }
+
+            return nextCrlNum;
+        }
+
 
         //
         // Community:localhost:: Certificate Store File Constants  Community used for unit tests
@@ -698,7 +727,7 @@ namespace Udap.PKI.Generator
                                caCert,
                                DateTimeOffset.UtcNow.AddDays(-1),
                                DateTimeOffset.UtcNow.AddYears(5),
-                               new ReadOnlySpan<byte>(new byte[] { 1, 2, 3, 4 })))
+                               new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
                     {
                         var anchorCertWithKey = anchorCert.CopyWithPrivateKey(anchor);
 
@@ -739,7 +768,7 @@ namespace Udap.PKI.Generator
                                    anchorCertWithKey,
                                    DateTimeOffset.UtcNow.AddDays(-1),
                                    DateTimeOffset.UtcNow.AddYears(2),
-                                   new byte[] { 1, 2, 3, 4 }))
+                                   new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
                         {
                             // Do something with these certs, like export them to PFX,
                             // or add them to an X509Store, or whatever.
@@ -806,7 +835,7 @@ namespace Udap.PKI.Generator
                                    anchorCertWithKey,
                                    DateTimeOffset.UtcNow.AddDays(-1),
                                    DateTimeOffset.UtcNow.AddYears(2),
-                                   new byte[] { 1, 2, 3, 4 }))
+                                   new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
                         {
 
                             var clientCertWithKey = clientCert.CopyWithPrivateKey(rsaWeatherApiClient);
@@ -824,18 +853,18 @@ namespace Udap.PKI.Generator
 
         private void UpdateWindowsMachineStore(X509Certificate2 certificate)
         {
-            // var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
-            // store.Open(OpenFlags.ReadWrite);
-            //
-            // var oldCert = store.Certificates.SingleOrDefault(c => c.Subject == certificate.Subject);
-            //
-            // if (oldCert != null)
-            // {
-            //     store.Remove(oldCert);
-            // }
-            //
-            // store.Add(certificate);
-            // store.Close();
+            var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
+            store.Open(OpenFlags.ReadWrite);
+            
+            var oldCert = store.Certificates.SingleOrDefault(c => c.Subject == certificate.Subject);
+            
+            if (oldCert != null)
+            {
+                store.Remove(oldCert);
+            }
+            
+            store.Add(certificate);
+            store.Close();
         }
 
         private static X509Extension MakeCdp(string url)
@@ -882,7 +911,7 @@ namespace Udap.PKI.Generator
             // https://github.com/rwatjen/AzureIoTDPSCertificates/blob/711429e1b6dee7857452233a73f15c22c2519a12/src/DPSCertificateTool/CertificateUtil.cs#L69
             // https://blog.rassie.dk/2018/04/creating-an-x-509-certificate-chain-in-c/
             //
-            string? oidValue = new Oid("Subject Key Identifier").Value;
+            
 
             var issuerSubjectKey = caCert.Extensions?["2.5.29.14"].RawData;
             var segment = new ArraySegment<byte>(issuerSubjectKey, 2, issuerSubjectKey.Length - 2);

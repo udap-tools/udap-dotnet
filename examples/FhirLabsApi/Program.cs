@@ -18,6 +18,7 @@ using Hl7.Fhir.NetCoreApi;
 using Hl7.Fhir.WebApi;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Udap.Common;
@@ -91,6 +92,16 @@ builder.Services
         options.SerializerSettings.Formatting = Formatting.Indented;
     });
 
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.Authority = "https://localhost:5002";
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false
+        };
+    });
 
 // UDAP CertStore
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection("UdapFileCertStoreManifest"));
@@ -110,6 +121,11 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 
 app.UsePathBase(new PathString("/fhir/r4"));
+
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.Use(async (context, next) =>
 {
@@ -136,7 +152,8 @@ app.Use(async (context, next) =>
     await next.Invoke();
 });
 
-app.UseRouting();
+
+
 
 #if NET7_0
 app.UseRateLimiter();
@@ -158,13 +175,14 @@ app.UseCors(config =>
 });
 
 
-app.UseAuthentication();
-app.UseAuthorization();
 
 #if NET6_0
-app.MapControllers();
+app.MapControllers()
+    .RequireAuthorization();
 #else
-app.MapControllers().RequireRateLimiting(RateLimitExtensions.GetPolicy);
+app.MapControllers()
+    .RequireAuthorization()
+    .RequireRateLimiting(RateLimitExtensions.GetPolicy);
 #endif
 
 app.Run();

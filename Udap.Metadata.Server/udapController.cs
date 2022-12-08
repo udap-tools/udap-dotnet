@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -21,6 +22,7 @@ using Udap.Common;
 namespace Udap.Metadata.Server
 {
     [Route(".well-known/udap")]
+    [AllowAnonymous]
     public class UdapController : ControllerBase
     {
         private readonly UdapMetadata _udapMetadata;

@@ -173,6 +173,7 @@ namespace Udap.Common.Certificates
                     chainPolicy.CustomTrustStore.Clear();
                     chainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
                     chainPolicy.CustomTrustStore.AddRange(trustedRoots!);
+
                 }
                 
                 chainBuilder.ChainPolicy = chainPolicy;

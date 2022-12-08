@@ -206,13 +206,8 @@ MessagingApi/web.config
 Web/web.config
 *.db-shm
 *.db-wal
-BlazorIDServerDemo/IdentityProvider/Data/keys/
-BlazorIDServerDemo/migrations/UdapDb/Udap.db
 *.cer
-BlazorIDServerDemo/IdentityProvider/keys/
 *.crl
-BlazorIDServerDemo/Udap.Idp.db
-BlazorIDServerDemo/IdentityProvider/AspIdUsers.db
 *.crt
 *.p12
 examples/Udap.Idp/keys/*.json

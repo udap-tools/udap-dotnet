@@ -853,18 +853,18 @@ namespace Udap.PKI.Generator
 
         private void UpdateWindowsMachineStore(X509Certificate2 certificate)
         {
-            var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
-            store.Open(OpenFlags.ReadWrite);
-            
-            var oldCert = store.Certificates.SingleOrDefault(c => c.Subject == certificate.Subject);
-            
-            if (oldCert != null)
-            {
-                store.Remove(oldCert);
-            }
-            
-            store.Add(certificate);
-            store.Close();
+            // var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
+            // store.Open(OpenFlags.ReadWrite);
+            //
+            // var oldCert = store.Certificates.SingleOrDefault(c => c.Subject == certificate.Subject);
+            //
+            // if (oldCert != null)
+            // {
+            //     store.Remove(oldCert);
+            // }
+            //
+            // store.Add(certificate);
+            // store.Close();
         }
 
         private static X509Extension MakeCdp(string url)

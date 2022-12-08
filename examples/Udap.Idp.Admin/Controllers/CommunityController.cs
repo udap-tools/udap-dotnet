@@ -17,7 +17,7 @@ namespace Udap.Idp.Admin.Controllers
             _dbService = dbService;
         }
 
-        // GET: api/<CommnityController>
+        // GET: api/<CommunityController>
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Community>>> GetAsync(CancellationToken token)
         {
@@ -33,7 +33,7 @@ namespace Udap.Idp.Admin.Controllers
             return Ok(communities);
         }
 
-        // GET api/<CommnityController>/5
+        // GET api/<CommunityController>/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Community>> Get(int id, CancellationToken token)
         {
@@ -48,20 +48,20 @@ namespace Udap.Idp.Admin.Controllers
             return Ok(community);
         }
 
-        // POST api/<CommnityController>
+        // POST api/<CommunityController>
         [HttpPost]
         public void Post([FromBody] Anchor value, CancellationToken token)
         {
 
         }
 
-        // PUT api/<CommnityController>/5
+        // PUT api/<CommunityController>/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody] Anchor value, CancellationToken token)
         {
         }
 
-        // DELETE api/<CommnityController>/5
+        // DELETE api/<CommunityController>/5
         [HttpDelete("{id}")]
         public void Delete(int id, CancellationToken token)
         {

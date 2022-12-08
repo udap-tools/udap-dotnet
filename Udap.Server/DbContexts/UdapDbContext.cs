@@ -10,7 +10,7 @@
 using Duende.IdentityServer.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Options;
 
@@ -20,6 +20,7 @@ public interface IUdapDbAdminContext : IDisposable
 {
     DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; }
     DbSet<Anchor> Anchors { get; set; }
+    DbSet<RootCertificate> RootCertificates { get; set; }
     DbSet<Community> Communities { get; set; }
     DbSet<Certification> Certifications { get; set; }
     /// <summary>
@@ -33,6 +34,7 @@ public interface IUdapDbContext : IDisposable
 {
     DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; }
     DbSet<Anchor> Anchors { get; set; }
+    DbSet<RootCertificate> RootCertificates { get; set; }
     DbSet<Community> Communities { get; set; }
     DbSet<Certification> Certifications { get; set; }
 }
@@ -56,6 +58,7 @@ public class UdapDbContext<TContext> : DbContext, IUdapDbAdminContext, IUdapDbCo
     
 
     public DbSet<Anchor> Anchors { get; set; }
+    public DbSet<RootCertificate> RootCertificates { get; set; }
 
     public DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; }
     public DbSet<Community> Communities { get; set; }

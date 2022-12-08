@@ -10,7 +10,7 @@
 using Duende.IdentityServer.EntityFramework.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 using Udap.Server.Options;
 
 namespace Udap.Server.Extensions

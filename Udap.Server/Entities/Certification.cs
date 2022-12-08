@@ -7,7 +7,7 @@
 // */
 #endregion
 
-namespace Udap.Server.Entitiies;
+namespace Udap.Server.Entities;
 
 public class Certification
 {

@@ -8,7 +8,7 @@
 #endregion
 
 using AutoMapper;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 
 namespace Udap.Server.Mappers
 {

@@ -7,7 +7,7 @@
 // */
 #endregion
 
-namespace Udap.Server.Entitiies;
+namespace Udap.Server.Entities;
 
 public class Community
 {
@@ -26,6 +26,7 @@ public class Community
     /// </summary>
     public ICollection<Anchor>? Anchors { get; set; }
 
+    public ICollection<RootCertificate> RootCertificates { get; set; }
     /// <summary>
     /// A community may have named certifications.  This is a list of possible
     /// certifications.

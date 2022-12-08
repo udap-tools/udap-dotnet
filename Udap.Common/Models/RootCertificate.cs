@@ -1,21 +1,12 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
-// /*
-//  Authors:
-//     Joseph Shook   Joseph.Shook@Surescripts.com
-// 
-//  See LICENSE in the project root for license information.
-// */
-#endregion
-
-using System.Security.Cryptography.X509Certificates;
+﻿using System.Security.Cryptography.X509Certificates;
 using Udap.Common.Extensions;
 
 namespace Udap.Common.Models;
 
-public class Anchor : IEquatable<Anchor>
+public class RootCertificate : IEquatable<RootCertificate>
 {
-    public Anchor(){}
-    public Anchor(X509Certificate2 cert, string? name = null)
+    public RootCertificate() { }
+    public RootCertificate(X509Certificate2 cert, string? name = null)
     {
         Certificate = cert.ToPemFormat();
         BeginDate = cert.NotBefore;
@@ -52,7 +43,7 @@ public class Anchor : IEquatable<Anchor>
     /// <param name="other">An object to compare with this object.</param>
     /// <returns>
     /// <see langword="true" /> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <see langword="false" />.</returns>
-    public bool Equals(Anchor? other)
+    public bool Equals(RootCertificate? other)
     {
         if (other == null) return false;
         return other.Thumbprint == this.Thumbprint;
@@ -64,7 +55,7 @@ public class Anchor : IEquatable<Anchor>
     /// <see langword="true" /> if the specified object  is equal to the current object; otherwise, <see langword="false" />.</returns>
     public override bool Equals(object? obj)
     {
-        if (obj is Anchor anchor) return Equals(anchor);
+        if (obj is RootCertificate rootCertificate) return Equals(rootCertificate);
         return false;
     }
 }

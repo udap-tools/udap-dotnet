@@ -45,10 +45,46 @@ namespace Udap.Idp.Admin.Services
             }
         }
 
-        public async Task<bool> Delete(long anchorId, CancellationToken token = default)
+        public async Task<bool> DeleteAnchor(long anchorId, CancellationToken token = default)
         {
             var response = await HttpClient.DeleteAsync($"/api/anchor/{anchorId}");
             
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+
+            // var joe = await response.Content.ReadAsStringAsync();
+            var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>(new JsonSerializerOptions { WriteIndented = true }, token);
+
+            throw new Exception(JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+
+        internal async Task<Anchor> Save(RootCertificate anchorView)
+        {
+            var anchor = _mapper.Map<Common.Models.RootCertificate>(anchorView);
+
+
+            var response = await HttpClient.PostAsJsonAsync("api/rootCertificate", anchor).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var anchorModel = await response.Content.ReadFromJsonAsync<Common.Models.Anchor>();
+                return _mapper.Map<Anchor>(anchorModel);
+            }
+            else
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>().ConfigureAwait(false);
+
+                throw new Exception(JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions { WriteIndented = true }));
+            }
+        }
+
+        public async Task<bool> DeleteRootCertificate(long rootCertificateId, CancellationToken token = default)
+        {
+            var response = await HttpClient.DeleteAsync($"/api/rootCertificate/{rootCertificateId}");
+
             if (response.IsSuccessStatusCode)
             {
                 return true;

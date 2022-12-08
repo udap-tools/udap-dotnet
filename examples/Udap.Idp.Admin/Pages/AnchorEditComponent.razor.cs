@@ -9,52 +9,46 @@ using Udap.Idp.Admin.ViewModel;
 
 namespace Udap.Idp.Admin.Pages;
 
-public partial class AnchorEdit
+public partial class AnchorEditComponent
 {
+    [Inject] ApiService ApiService { get; set; }
 
-    [Inject] ApiService apiService { get; set; }
+    [Inject] CommunityState CommunityState { get; set; }
 
-    [Inject] CommunityState communityState { get; set; }
+    [Inject] NavigationManager NavManager { get; set; }
 
-    [Inject] NavigationManager navManager { get; set; }
+    [Inject] private IJSRuntime Js { get; set; }
 
-    [Inject] private IJSRuntime js { get; set; }
+    ErrorBoundary? ErrorBoundary { get; set; }
 
-    ErrorBoundary? errorBoundary { get; set; }
-
-    private List<string> editEvents = new();
-    private Anchor anchorBeforeEdit;
-    private Community Community;
-    private Anchor? anchorRowInEdit;
-    private bool anchorRowIsInEditMode;
+    private List<string> _editEvents = new();
+    private Anchor _anchorBeforeEdit;
+    private Community? _community;
+    private Anchor? _anchorRowInEdit;
+    private bool _anchorRowIsInEditMode;
     private ElementReference? newAnchorRowElement;
-    private MudBlazor.MudTable<ICollection<Anchor>> table;
-    
+    private MudBlazor.MudTable<ICollection<Anchor>> _table;
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
-
-        if (communityState.Community == null)
-        {
-            navManager.NavigateTo("/CommunityList");
-        }
-
-        Community = communityState?.Community;
+        
+        _community = CommunityState.Community;
     }
 
     protected override void OnParametersSet()
     {
-         errorBoundary?.Recover();
+        ErrorBoundary?.Recover();
     }
 
     private void ClearEventLog()
     {
-        editEvents.Clear();
+        _editEvents.Clear();
     }
 
     private void AddEditionEvent(string message)
     {
-        editEvents.Add(message);
+        _editEvents.Add(message);
         StateHasChanged();
     }
 
@@ -62,7 +56,7 @@ public partial class AnchorEdit
     {
         try
         {
-            anchorBeforeEdit = new()
+            _anchorBeforeEdit = new()
             {
                 Id = ((Anchor)anchor).Id,
                 Name = ((Anchor)anchor).Name,
@@ -72,7 +66,7 @@ public partial class AnchorEdit
                 Community = ((Anchor)anchor).Community
             };
 
-            
+
             AddEditionEvent($"RowEditPreview event: made a backup of Community {((Anchor)anchor).Name}");
         }
         catch (Exception e)
@@ -80,7 +74,7 @@ public partial class AnchorEdit
             throw;
         }
 
-        anchorRowIsInEditMode = true;
+        _anchorRowIsInEditMode = true;
 
     }
 
@@ -89,10 +83,10 @@ public partial class AnchorEdit
         var anchorTyped = (Anchor)anchor;
         anchorTyped.BeginDate = anchorTyped.Certificate.NotBefore;
         anchorTyped.EndDate = anchorTyped.Certificate.NotAfter;
-        var resultAnchor = apiService.Save(anchorTyped).GetAwaiter().GetResult();
+        var resultAnchor = ApiService.Save(anchorTyped).GetAwaiter().GetResult();
         AddEditionEvent($"RowEditCommit event: Changes to Community {((Anchor)anchor).Name} committed");
-        anchorRowInEdit.Id = resultAnchor.Id; //bind up the new id...
-        anchorRowIsInEditMode = false;
+        _anchorRowInEdit.Id = resultAnchor.Id; //bind up the new id...
+        _anchorRowIsInEditMode = false;
 
         StateHasChanged();
     }
@@ -103,16 +97,16 @@ public partial class AnchorEdit
         {
             if (((Anchor)anchor).Id == 0)
             {
-                Community.Anchors.Remove((Anchor)anchor);
-                AddEditionEvent($"RowEditCancel event: Editing of new Anchor cancelled");                
+                _community.Anchors.Remove((Anchor)anchor);
+                AddEditionEvent($"RowEditCancel event: Editing of new Anchor cancelled");
             }
 
-            ((Anchor)anchor).Id = anchorBeforeEdit.Id;
-            ((Anchor)anchor).Name = anchorBeforeEdit.Name;
-            ((Anchor)anchor).Enabled = anchorBeforeEdit.Enabled;
-            ((Anchor)anchor).Certificate = anchorBeforeEdit.Certificate;
-            ((Anchor)anchor).Thumbprint = anchorBeforeEdit.Thumbprint;
-            ((Anchor)anchor).Community = anchorBeforeEdit.Community;
+            ((Anchor)anchor).Id = _anchorBeforeEdit.Id;
+            ((Anchor)anchor).Name = _anchorBeforeEdit.Name;
+            ((Anchor)anchor).Enabled = _anchorBeforeEdit.Enabled;
+            ((Anchor)anchor).Certificate = _anchorBeforeEdit.Certificate;
+            ((Anchor)anchor).Thumbprint = _anchorBeforeEdit.Thumbprint;
+            ((Anchor)anchor).Community = _anchorBeforeEdit.Community;
 
             AddEditionEvent($"RowEditCancel event: Editing of Anchor {((ViewModel.Anchor)anchor).Name} cancelled");
         }
@@ -121,37 +115,37 @@ public partial class AnchorEdit
             throw;
         }
 
-        anchorRowIsInEditMode = false;
+        _anchorRowIsInEditMode = false;
         StateHasChanged();
     }
 
     private async Task AddAnchor()
     {
-        anchorRowInEdit = new ViewModel.Anchor()
+        _anchorRowInEdit = new ViewModel.Anchor()
         {
-            Community = communityState.Community.Name
+            Community = CommunityState.Community.Name
         };
 
-        Community.Anchors.Add(anchorRowInEdit);
+        _community.Anchors.Add(_anchorRowInEdit);
         await Task.Delay(1);
         StateHasChanged();
 
-        await js.InvokeVoidAsync("UdapAdmin.setFocus", "AnchorId:0");
+        await Js.InvokeVoidAsync("UdapAdmin.setFocus", "AnchorId:0");
 
         StateHasChanged();
     }
 
     private async Task<bool> DeleteAnchor(Anchor anchor)
     {
-        if (await js.InvokeAsync<bool>("confirm", $"Do you want to delete the {anchor.Name} Record?"))
+        if (await Js.InvokeAsync<bool>("confirm", $"Do you want to delete the {anchor.Name} Record?"))
         {
-            var result = await apiService.Delete(anchor.Id);
+            var result = await ApiService.DeleteAnchor(anchor.Id);
 
             if (true)
             {
-                anchorRowIsInEditMode = false;
-                Community.Anchors.Remove(anchor);
-                anchorRowInEdit = null;
+                _anchorRowIsInEditMode = false;
+                _community.Anchors.Remove(anchor);
+                _anchorRowInEdit = null;
                 StateHasChanged();
                 return true;
             }
@@ -169,15 +163,15 @@ public partial class AnchorEdit
         var certBytes = ms.ToArray();
 
         var cert = new X509Certificate2(certBytes);
-        
-        anchorRowInEdit.Certificate = cert;
-        
-        if(anchorRowInEdit.Name == null)
+
+        _anchorRowInEdit.Certificate = cert;
+
+        if (_anchorRowInEdit.Name == null)
         {
-            anchorRowInEdit.Name = cert.GetNameInfo(X509NameType.SimpleName, false);
-            anchorRowInEdit.CommunityId = Community.Id;
-            anchorRowInEdit.Community = Community.Name;
-            anchorRowInEdit.Thumbprint = cert.Thumbprint;
+            _anchorRowInEdit.Name = cert.GetNameInfo(X509NameType.SimpleName, false);
+            _anchorRowInEdit.CommunityId = _community.Id;
+            _anchorRowInEdit.Community = _community.Name;
+            _anchorRowInEdit.Thumbprint = cert.Thumbprint;
         }
     }
 }

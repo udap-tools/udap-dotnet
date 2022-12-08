@@ -7,15 +7,15 @@
 // */
 #endregion
 
-namespace Udap.Server.Entitiies;
+namespace Udap.Server.Entities;
 
 /// <summary>
 /// This is an "associate" table, to map a many to many relationship 
 /// </summary>
-public class CommunityCertification
+public class AnchorCertification
 {
-    public virtual Community Community { get; set; }
-    public long CommunityId { get; set; }
+    public virtual Anchor Anchor { get; set; }
+    public long AnchorId { get; set; }
     public virtual Certification Certification { get; set; }
     public long CertificationId { get; set; }
 }

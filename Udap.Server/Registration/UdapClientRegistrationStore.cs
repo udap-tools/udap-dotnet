@@ -46,7 +46,7 @@ namespace Udap.Server.Registration
 
         public async Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default)
         {
-            List<Entitiies.Anchor> anchors;
+            List<Entities.Anchor> anchors;
 
             if (community == null)
             {
@@ -70,7 +70,7 @@ namespace Udap.Server.Registration
 
         public async Task<IEnumerable<Anchor>> GetRoots(string? community, CancellationToken token = default)
         {
-            List<Entitiies.Anchor> anchors;
+            List<Entities.Anchor> anchors;
 
             if (community == null)
             {

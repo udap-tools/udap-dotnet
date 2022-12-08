@@ -18,7 +18,7 @@ using Udap.Common.Extensions;
 using Udap.Idp;
 using Udap.Server;
 using Udap.Server.DbContexts;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Registration;
 

@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Udap.Common;
 using Udap.Server.DbContexts;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 
 namespace Udap.Idp.Admin.Services.DataBase;
 
@@ -17,9 +17,9 @@ public interface IAnchorService
 public class AnchorService: IAnchorService
 {
     private IUdapDbAdminContext _dbContext;
-    IUdapAdminAnchorValidator _validator;
+    IUdapCertificateValidator<Anchor> _validator;
 
-    public AnchorService(IUdapDbAdminContext dbContext, IUdapAdminAnchorValidator validator)
+    public AnchorService(IUdapDbAdminContext dbContext, IUdapCertificateValidator<Anchor> validator)
     {
         _dbContext = dbContext;
         _validator = validator;
@@ -34,7 +34,7 @@ public class AnchorService: IAnchorService
             var anchors = await _dbContext.Anchors
                 .Include(a => a.Community)
                 .Where(a => a.Thumbprint == anchor.Thumbprint)
-                .ToListAsync();
+                .ToListAsync(cancellationToken: token);
 
             if (anchors.Any())
             {
@@ -52,7 +52,7 @@ public class AnchorService: IAnchorService
     {
         var anchor = await _dbContext.Anchors
             .Include(a => a.AnchorCertifications)
-            .SingleAsync(d => d.Id == id, token);
+            .SingleOrDefaultAsync(d => d.Id == id, token);
 
         if (anchor == null)
         {
@@ -83,6 +83,3 @@ public class AnchorService: IAnchorService
         throw new NotImplementedException();
     }
 }
-
-
-

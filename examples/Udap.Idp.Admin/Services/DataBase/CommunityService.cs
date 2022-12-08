@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Udap.Server.DbContexts;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 
 namespace Udap.Idp.Admin.Services.DataBase
 {
@@ -44,6 +44,7 @@ namespace Udap.Idp.Admin.Services.DataBase
         {
             return await _dbContext.Communities
                 .Include(c => c.Anchors)
+                .Include(c => c.RootCertificates)
                 .ToListAsync(cancellationToken: token);
         }
 

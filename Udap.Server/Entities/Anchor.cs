@@ -7,9 +7,9 @@
 // */
 #endregion
 
-namespace Udap.Server.Entitiies;
+namespace Udap.Server.Entities;
 
-public class Anchor
+public class Anchor : ICertificateValidateMarker
 {
     public long Id { get; set; }
 
@@ -27,21 +27,4 @@ public class Anchor
     public long CommunityId { get; set; }
 
     public virtual ICollection<AnchorCertification> AnchorCertifications { get; set; }
-}
-
-public class UdapRootCAs
-{
-    public long Id { get; set; }
-
-    public bool Enabled { get; set; }
-    public string Name { get; set; }
-    /// <summary>
-    /// Base64 Der encoded
-    /// </summary>
-    public string X509Certificate { get; set; }
-    public string Thumbprint { get; set; }
-    public DateTime BeginDate { get; set; }
-    public DateTime EndDate { get; set; }
-
-    public List<Community> Communities { get; set; }
 }

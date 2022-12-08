@@ -10,11 +10,11 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Polly;
 using Serilog;
-using Udap.Idp.Admin.Data;
 using Udap.Idp.Admin.Services;
 using Udap.Idp.Admin.Services.DataBase;
 using Udap.Idp.Admin.Services.State;
 using Udap.Server.DbContexts;
+using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using ILogger = Serilog.ILogger;
 
@@ -38,8 +38,7 @@ public static class HostingExtensions
 
         builder.Services.AddRazorPages();
         builder.Services.AddServerSideBlazor();
-        builder.Services.AddSingleton<WeatherForecastService>();
-
+        
         builder.Services.AddUdapDbContext<UdapDbContext>(options =>
         {
             options.UdapDbContext = b => b.UseSqlite(connectionString)
@@ -49,7 +48,8 @@ public static class HostingExtensions
         builder.Services.AddScoped<ICommunityService, CommunityService>();
         builder.Services.AddScoped<IAnchorService, AnchorService>();
         builder.Services.AddScoped<IUdapAdminCommunityValidator, UdapAdminCommunityValidator>();
-        builder.Services.AddScoped<IUdapAdminAnchorValidator, UdapAdminAnchorValidator>();
+        builder.Services.AddScoped<IUdapCertificateValidator<Anchor>, UdapAdminAnchorValidator>();
+        builder.Services.AddScoped<IUdapCertificateValidator<RootCertificate>, UdapAdminRootCertificateValidator>();
 
         var httpClientBuilder = builder.Services.AddHttpClient<ApiService>(client =>
         {

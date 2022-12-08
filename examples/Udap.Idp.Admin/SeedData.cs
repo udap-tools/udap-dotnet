@@ -12,7 +12,7 @@ using Duende.IdentityServer.EntityFramework.Storage;
 using Microsoft.EntityFrameworkCore;
 using Udap.Server;
 using Udap.Server.DbContexts;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Registration;
 using ILogger = Serilog.ILogger;

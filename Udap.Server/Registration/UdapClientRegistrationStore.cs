@@ -68,39 +68,22 @@ namespace Udap.Server.Registration
             return anchors.Select(a => a.ToModel());
         }
 
-        public async Task<IEnumerable<Anchor>> GetRoots(string? community, CancellationToken token = default)
+        public async Task<X509Certificate2Collection?> GetRootCertificates(CancellationToken token = default)
         {
-            List<Entities.Anchor> anchors;
+            var roots = await _dbContext.RootCertificates.ToListAsync(token).ConfigureAwait(false);
+            
+            _logger.LogInformation($"Found {roots?.Count() ?? 0} root certificates");
 
-            if (community == null)
+            if (roots != null)
             {
-                anchors = await _dbContext.Communities
-                    .Where(c => c.Default)
-                    .Include(a => a.Anchors)
-                    .SelectMany(c => c.Anchors)
-                    .ToListAsync(token);
+                return new X509Certificate2Collection(roots
+                    .Select(a => X509Certificate2.CreateFromPem(a.X509Certificate)).ToArray());
+
             }
             else
             {
-                anchors = await _dbContext.Communities
-                    .Where(c => c.Name == community)
-                    .Include(c => c.Anchors)
-                    .SelectMany(c => c.Anchors)
-                    .ToListAsync(token);
+                return null;
             }
-
-            return anchors.Select(a => a.ToModel());
-        }
-
-
-        // TODO: This doesn't even load roots. 
-        public async Task<X509Certificate2Collection> GetRootCertificates(string? community, CancellationToken token = default)
-        {
-            var roots = await GetRoots(community, token).ConfigureAwait(false);
-            
-            _logger.LogInformation($"Found {roots?.Count() ?? 0} roots for community, {community}");
-            
-            return new X509Certificate2Collection(roots.Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());
         }
 
 

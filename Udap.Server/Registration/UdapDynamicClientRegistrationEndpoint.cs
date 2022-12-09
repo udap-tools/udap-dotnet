@@ -69,7 +69,7 @@ public class UdapDynamicClientRegistrationEndpoint
 
         var community = context.Request.Query[UdapConstants.Community];
         
-        var rootCertificates = await _store.GetRootCertificates(community);
+        var rootCertificates = await _store.GetRootCertificates();
         var communityTrustAnchors = await _store.GetAnchorsCertificates(community);
         var result = await _validator.ValidateAsync(request, communityTrustAnchors, rootCertificates);
 

@@ -25,8 +25,7 @@ public class Community
     /// there could be two for a short time.
     /// </summary>
     public ICollection<Anchor>? Anchors { get; set; }
-
-    public ICollection<RootCertificate> RootCertificates { get; set; }
+    
     /// <summary>
     /// A community may have named certifications.  This is a list of possible
     /// certifications.

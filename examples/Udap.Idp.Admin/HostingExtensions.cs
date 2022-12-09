@@ -16,6 +16,7 @@ using Udap.Idp.Admin.Services.State;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 using Udap.Server.Extensions;
+
 using ILogger = Serilog.ILogger;
 
 namespace Udap.Idp.Admin;
@@ -47,13 +48,14 @@ public static class HostingExtensions
 
         builder.Services.AddScoped<ICommunityService, CommunityService>();
         builder.Services.AddScoped<IAnchorService, AnchorService>();
+        builder.Services.AddScoped<IRootCertificateService, RootCertificateService>();
         builder.Services.AddScoped<IUdapAdminCommunityValidator, UdapAdminCommunityValidator>();
         builder.Services.AddScoped<IUdapCertificateValidator<Anchor>, UdapAdminAnchorValidator>();
         builder.Services.AddScoped<IUdapCertificateValidator<RootCertificate>, UdapAdminRootCertificateValidator>();
 
         var httpClientBuilder = builder.Services.AddHttpClient<ApiService>(client =>
         {
-            client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("ASPNETCORE_URLS").Split(';').First());
+            client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(';').FirstOrDefault() ?? string.Empty);
         });
         if (! builder.Environment.IsDevelopment())
         {

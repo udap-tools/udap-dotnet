@@ -17,8 +17,6 @@ public class RootCertificate : IEquatable<RootCertificate>
     public long Id { get; set; }
     public bool Enabled { get; set; }
     public string Name { get; set; }
-    public string? Community { get; set; }
-    public long CommunityId { get; set; }
     public string Certificate { get; set; }
     public string Thumbprint { get; set; }
     public DateTime BeginDate { get; set; }

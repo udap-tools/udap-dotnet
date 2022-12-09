@@ -44,7 +44,6 @@ namespace Udap.Idp.Admin.Services.DataBase
         {
             return await _dbContext.Communities
                 .Include(c => c.Anchors)
-                .Include(c => c.RootCertificates)
                 .ToListAsync(cancellationToken: token);
         }
 

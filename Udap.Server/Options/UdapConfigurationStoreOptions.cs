@@ -32,6 +32,15 @@ namespace Udap.Server.Options
         public TableConfiguration Anchor { get; set; } = new TableConfiguration("UdapAnchors");
 
         /// <summary>
+        /// Gets or sets the RootCertificate table configuration.
+        /// </summary>
+        /// <value>
+        /// The client.
+        /// </value>
+        public TableConfiguration RootCertificate { get; set; } = new TableConfiguration("UdapRootCertificates");
+
+
+        /// <summary>
         /// Gets or sets the Community table configuration.
         /// </summary>
         /// <value>

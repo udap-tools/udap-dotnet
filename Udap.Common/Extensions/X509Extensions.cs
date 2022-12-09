@@ -200,7 +200,7 @@ namespace Udap.Common.Extensions
             return builder.ToString();
         }
 
-        public static string ToPemFormat(this X509Certificate2 cert)
+        public static string ToPemFormat(this X509Certificate2? cert)
         {
             var pem = new StringBuilder();
             pem.AppendLine("-----BEGIN CERTIFICATE-----");

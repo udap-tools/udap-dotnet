@@ -103,128 +103,26 @@ public class AnchorController : ControllerBase
 
     // PUT api/<AnchorController>/5
     [HttpPut("{id}")]
-    public void Put(int id, [FromBody] Anchor value, CancellationToken token)
-    {
-    }
-
-    // DELETE api/<AnchorController>/5
-    [HttpDelete("{id}")]
-    public async Task<ActionResult<bool>> Delete(int id, CancellationToken token)
-    {
-        var response = await _anchorService.Delete(id, token);
-
-        if (response)
-        {
-            return Ok();
-        }
-
-        return NotFound();
-    }
-}
-
-
-
-[Route("api/[controller]")]
-[ApiController]
-public class RootCertificateController : ControllerBase
-{
-    IAnchorService _anchorService;
-    ILogger<AnchorController> _logger;
-
-    public RootCertificateController(IAnchorService anchorService, ILogger<AnchorController> logger)
-    {
-        _anchorService = anchorService;
-        _logger = logger;
-    }
-
-    // GET: api/<AnchorController>
-    [HttpGet]
-    public async Task<ActionResult<IEnumerable<Anchor>>> GetAsync(CancellationToken token)
-    {
-        var entitities = await _anchorService.Get(token);
-
-        if (!entitities.Any())
-        {
-            return NotFound();
-        }
-
-        var communities = entitities.Select(e => e.ToModel());
-
-        return Ok(communities);
-    }
-
-    // GET api/<AnchorController>/5
-    [HttpGet("{id}")]
-    public async Task<ActionResult<Anchor>> Get(int id, CancellationToken token)
-    {
-        var entity = await _anchorService.Get(id, token);
-
-        if (entity == null)
-        {
-            return NotFound();
-        }
-        var anchor = entity.ToModel();
-
-        return Ok(anchor);
-    }
-
-    // POST api/<AnchorController>
-    [HttpPost]
-    public async Task<ActionResult<Anchor>> Post([FromBody] Anchor value, CancellationToken token)
+    public async Task<ActionResult> Put(int id, [FromBody] Anchor value, CancellationToken token)
     {
         try
         {
-            var result = await _anchorService.Add(value.ToEntity(), token).ConfigureAwait(false);
+            await _anchorService.Update(value.ToEntity(), token).ConfigureAwait(false);
 
-            return Created(result.Id.ToString(), result.ToModel());
+            return NoContent(); // https://www.rfc-editor.org/rfc/rfc9110.html#name-204-no-content
+            // Although... https://blog.ploeh.dk/2013/04/30/rest-lesson-learned-avoid-204-responses/
         }
         catch (DbUpdateException ex)
         {
-            _logger.LogError(ex, "Error calling {0}", nameof(Post));
+            _logger.LogError(ex, "Error calling {0}", nameof(Put));
 
-            //
-            // TODO: Waiting to see if Hellang ProblemDetails package adds some nice
-            // extension helpers for Dotnet 7.0
-            // remember dotnet 7.0 now has problem details built in.
-            //
-
-            // if (ex.InnerException != null &&
-            //     (ex.InnerException.Message.Contains("duplicate")
-            //      || ex.InnerException.Message.Contains("UNIQUE")))
-            // {
-            //     var problemDetails = new ProblemDetails()
-            //     {
-            //         Status = StatusCodes.Status409Conflict,
-            //         Detail = UdapStoreError.UniqueConstraint.ToString(),
-            //         Type = "https://httpstatuses.com/409"
-            //     };
-            //
-            //     throw new (problemDetails);
-            // }
-            // else
-            // {
-            //     var problemDetails = new ProblemDetails()
-            //     {
-            //         Status = StatusCodes.Status400BadRequest,
-            //         Detail = "Check the logs",
-            //         Type = "https://httpstatuses.com/400"
-            //     };
-            //
-            //     throw new Exception(problemDetails);
-            // }
             throw;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error calling {0}", nameof(Get));
+            _logger.LogError(ex, "Error calling {0}", nameof(Put));
             throw;
         }
-    }
-
-    // PUT api/<AnchorController>/5
-    [HttpPut("{id}")]
-    public void Put(int id, [FromBody] Anchor value, CancellationToken token)
-    {
     }
 
     // DELETE api/<AnchorController>/5

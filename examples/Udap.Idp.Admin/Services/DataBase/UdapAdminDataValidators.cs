@@ -14,7 +14,7 @@ public class UdapAdminCommunityValidator : IUdapAdminCommunityValidator
 
 public interface IUdapCertificateValidator<in T> where T : ICertificateValidateMarker
 {
-    bool Validate(T certificateContainer);
+    bool Validate(T rootCertificate);
 }
 
 public class UdapAdminAnchorValidator : IUdapCertificateValidator<Anchor>
@@ -44,21 +44,21 @@ public class UdapAdminAnchorValidator : IUdapCertificateValidator<Anchor>
 
 public class UdapAdminRootCertificateValidator : IUdapCertificateValidator<RootCertificate>
 {
-    public bool Validate(RootCertificate anchor)
+    public bool Validate(RootCertificate rootCertificate)
     {
-        if (anchor == null)
+        if (rootCertificate == null)
         {
-            throw new ArgumentNullException(nameof(anchor));
+            throw new ArgumentNullException(nameof(rootCertificate));
         }
 
-        var cert = X509Certificate2.CreateFromPem(anchor.X509Certificate);
+        var cert = X509Certificate2.CreateFromPem(rootCertificate.X509Certificate);
 
-        if (anchor.BeginDate != cert.NotBefore)
+        if (rootCertificate.BeginDate != cert.NotBefore)
         {
             throw new Exception("Invalid begin date.");
         }
 
-        if (anchor.EndDate != cert.NotAfter)
+        if (rootCertificate.EndDate != cert.NotAfter)
         {
             throw new Exception("Invalid end date.");
         }

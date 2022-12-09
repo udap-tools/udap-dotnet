@@ -13,6 +13,4 @@ public class RootCertificate : ICertificateValidateMarker
     public string Thumbprint { get; set; }
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
-
-    public List<Community> Communities { get; set; }
 }

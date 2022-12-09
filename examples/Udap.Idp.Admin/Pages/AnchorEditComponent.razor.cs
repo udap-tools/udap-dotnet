@@ -15,8 +15,6 @@ public partial class AnchorEditComponent
 
     [Inject] CommunityState CommunityState { get; set; }
 
-    [Inject] NavigationManager NavManager { get; set; }
-
     [Inject] private IJSRuntime Js { get; set; }
 
     ErrorBoundary? ErrorBoundary { get; set; }
@@ -80,15 +78,29 @@ public partial class AnchorEditComponent
 
     private void ItemHasBeenCommitted(object anchor)
     {
-        var anchorTyped = (Anchor)anchor;
-        anchorTyped.BeginDate = anchorTyped.Certificate.NotBefore;
-        anchorTyped.EndDate = anchorTyped.Certificate.NotAfter;
-        var resultAnchor = ApiService.Save(anchorTyped).GetAwaiter().GetResult();
-        AddEditionEvent($"RowEditCommit event: Changes to Community {((Anchor)anchor).Name} committed");
-        _anchorRowInEdit.Id = resultAnchor.Id; //bind up the new id...
-        _anchorRowIsInEditMode = false;
+        var anchorView = (Anchor)anchor;
 
+        if (anchorView.Id > 0)
+        {
+            UpdateRecord(anchorView);
+        }
+        else
+        {
+            anchorView.BeginDate = anchorView.Certificate.NotBefore;
+            anchorView.EndDate = anchorView.Certificate.NotAfter;
+            var resultAnchor = ApiService.Save(anchorView).GetAwaiter().GetResult();
+            AddEditionEvent($"RowEditCommit event: Adding Anchor {((Anchor)anchor).Name} committed");
+            _anchorRowInEdit.Id = resultAnchor.Id; //bind up the new id...
+        }
+        
+        _anchorRowIsInEditMode = false;
         StateHasChanged();
+    }
+
+    private void UpdateRecord(Anchor anchorView)
+    {
+        ApiService.Update(anchorView).GetAwaiter().GetResult();
+        AddEditionEvent($"RowEditCommit event: Updating anchor {anchorView.Name} committed");
     }
 
     private void ResetItemToOriginalValues(object anchor)

@@ -12,6 +12,16 @@ CREATE TABLE "UdapCommunities" (
     "Default" INTEGER NOT NULL
 );
 
+CREATE TABLE "UdapRootCertificates" (
+    "Id" INTEGER NOT NULL CONSTRAINT "PK_UdapRootCertificates" PRIMARY KEY AUTOINCREMENT,
+    "Enabled" INTEGER NOT NULL,
+    "Name" TEXT NOT NULL,
+    "X509Certificate" TEXT NOT NULL,
+    "Thumbprint" TEXT NOT NULL,
+    "BeginDate" TEXT NOT NULL,
+    "EndDate" TEXT NOT NULL
+);
+
 CREATE TABLE "UdapAnchors" (
     "Id" INTEGER NOT NULL CONSTRAINT "PK_UdapAnchors" PRIMARY KEY AUTOINCREMENT,
     "Enabled" INTEGER NOT NULL,
@@ -56,7 +66,7 @@ CREATE INDEX "IX_UdapCertifications_CommunityId" ON "UdapCertifications" ("Commu
 CREATE INDEX "IX_UdapCommunityCertification_CertificationId" ON "UdapCommunityCertification" ("CertificationId");
 
 INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
-VALUES ('20221020210028_Udap', '6.0.10');
+VALUES ('20221208223455_InitialUdap', '7.0.0');
 
 COMMIT;
 

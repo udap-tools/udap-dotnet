@@ -33,7 +33,7 @@ public interface IUdapClientRegistrationStore
 
     Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default);
 
-    Task<X509Certificate2Collection?> GetRootCertificates(string? community, CancellationToken token = default);
+    Task<X509Certificate2Collection?> GetRootCertificates(CancellationToken token = default);
 
     Task<X509Certificate2Collection> GetAnchorsCertificates(string? community, CancellationToken token = default);
 }

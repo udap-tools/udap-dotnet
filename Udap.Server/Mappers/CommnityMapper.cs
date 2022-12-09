@@ -13,9 +13,9 @@ using Udap.Server.Entities;
 namespace Udap.Server.Mappers
 {
     //TODO: check if this is the best way:: https://jimmybogard.com/automapper-usage-guidelines/
-    public static class CommnityMappers
+    public static class CommnityMapper
     {
-        static CommnityMappers()
+        static CommnityMapper()
         {
             Mapper = new MapperConfiguration(cfg =>
                 {
@@ -67,7 +67,8 @@ namespace Udap.Server.Mappers
                          EndDate = anchor.EndDate,
                          Enabled = anchor.Enabled,
                          Certificate = anchor.X509Certificate,
-                         Community = anchor.Community.Name
+                         Community = anchor.Community.Name,
+                         CommunityId = anchor.CommunityId
                      }).ToHashSet()
                  )
                  .ForAllMembers(opt => opt.Ignore());

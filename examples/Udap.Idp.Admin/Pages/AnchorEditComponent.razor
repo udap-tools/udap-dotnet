@@ -1,6 +1,4 @@
-﻿<h3>Anchor Edit</h3>
-
-@inject ISnackbar Snackbar
+﻿@inject ISnackbar Snackbar
 
 <InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 
@@ -21,7 +19,7 @@
         <MudFab Icon="@Icons.Material.Filled.Add"
                 Color="Color.Inherit"
                 @onclick="AddAnchor"
-                Label="Add Anchor"
+                Label="Add"
                 disabled="@_anchorRowIsInEditMode" />
       </ToolBarContent>
       <ColGroup>
@@ -47,7 +45,7 @@
                 {
             <MudTd DataLabel="Name">@context.Name</MudTd>
                 }
-        <MudTd DataLabel="Enabled">@context.Enabled</MudTd>
+        <MudTd DataLabel="Enabled"><MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" /></MudTd>
         <MudTd DataLabel="Certificate">@context.Certificate?.GetNameInfo(X509NameType.SimpleName, false) </MudTd>
         <MudTd DataLabel="Certificate">@context.Thumbprint </MudTd>
         <MudTd @onclick:stopPropagation="true" Style="">
@@ -69,7 +67,7 @@
           <MudTextField @bind-Value="@context.Name" Required />
         </MudTd>
         <MudTd DataLabel="Enabled">
-          <MudTextField @bind-Value="@context.Enabled" Required />
+            <MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" />
         </MudTd>
         <MudTd DataLabel="Thumbprint">@context.Thumbprint</MudTd>
         <MudTd DataLable="Certificate">

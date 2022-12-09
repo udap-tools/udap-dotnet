@@ -1,20 +1,14 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
-// /*
-//  Authors:
-//     Joseph Shook   Joseph.Shook@Surescripts.com
-// 
-//  See LICENSE in the project root for license information.
-// */
-#endregion
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-using Microsoft.EntityFrameworkCore.Migrations;
-
 namespace Udap.Server.Migrations.UdapDb
 {
-    public partial class Udap : Migration
+    /// <inheritdoc />
+    public partial class InitialUdap : Migration
     {
+        /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
@@ -30,6 +24,24 @@ namespace Udap.Server.Migrations.UdapDb
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_UdapCommunities", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UdapRootCertificates",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Enabled = table.Column<bool>(type: "INTEGER", nullable: false),
+                    Name = table.Column<string>(type: "TEXT", nullable: false),
+                    X509Certificate = table.Column<string>(type: "TEXT", nullable: false),
+                    Thumbprint = table.Column<string>(type: "TEXT", nullable: false),
+                    BeginDate = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UdapRootCertificates", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -144,6 +156,7 @@ namespace Udap.Server.Migrations.UdapDb
                 column: "CertificationId");
         }
 
+        /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
@@ -151,6 +164,9 @@ namespace Udap.Server.Migrations.UdapDb
 
             migrationBuilder.DropTable(
                 name: "UdapCommunityCertification");
+
+            migrationBuilder.DropTable(
+                name: "UdapRootCertificates");
 
             migrationBuilder.DropTable(
                 name: "UdapAnchors");

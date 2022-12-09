@@ -2,6 +2,7 @@
 using Udap.Common;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
+using Udap.Server.Mappers;
 
 namespace Udap.Idp.Admin.Services.DataBase;
 
@@ -10,7 +11,7 @@ public interface IAnchorService
     Task<ICollection<Anchor>> Get(CancellationToken token = default);
     Task<Anchor> Get(int? id, CancellationToken token = default);
     Task<Anchor> Add(Anchor anchor, CancellationToken token = default);
-    Task<Anchor> Update(Anchor anchor, CancellationToken token = default);
+    Task Update(Anchor anchor, CancellationToken token = default);
     Task<bool> Delete(long? id, CancellationToken token = default);
 }
 
@@ -78,8 +79,16 @@ public class AnchorService: IAnchorService
         return await _dbContext.Anchors.ToListAsync(cancellationToken: token);
     }
 
-    public Task<Anchor> Update(Anchor anchor, CancellationToken token)
+    public async Task Update(Anchor anchor, CancellationToken token)
     {
-        throw new NotImplementedException();
+        // _validator.Validate(anchor);
+        // var storedAnchor = await _dbContext.Anchors.SingleAsync(a => a.Id == anchor.Id, cancellationToken: token);
+        // var entry = _dbContext.Anchors.Entry(storedAnchor);
+        // entry.CurrentValues.SetValues(anchor);
+        // await _dbContext.SaveChangesAsync(token);
+
+        _validator.Validate(anchor);
+        _dbContext.Anchors.Update(anchor);
+        await _dbContext.SaveChangesAsync(token);
     }
 }

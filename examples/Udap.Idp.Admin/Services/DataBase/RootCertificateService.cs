@@ -11,7 +11,7 @@ public interface IRootCertificateService
     Task<ICollection<RootCertificate>> Get(CancellationToken token = default);
     Task<RootCertificate> Get(int? id, CancellationToken token = default);
     Task<RootCertificate> Add(RootCertificate rootCertificate, CancellationToken token = default);
-    Task<RootCertificate> Update(RootCertificate rootCertificate, CancellationToken token = default);
+    Task Update(RootCertificate rootCertificate, CancellationToken token = default);
     Task<bool> Delete(long? id, CancellationToken token = default);
 }
 
@@ -80,8 +80,10 @@ public class RootCertificateService : IRootCertificateService
         return await _dbContext.RootCertificates.ToListAsync(cancellationToken: token);
     }
 
-    public Task<RootCertificate> Update(RootCertificate rootCertificate, CancellationToken token)
+    public async Task Update(RootCertificate rootCertificate, CancellationToken token)
     {
-        throw new NotImplementedException();
+        _validator.Validate(rootCertificate);
+        _dbContext.RootCertificates.Update(rootCertificate);
+        await _dbContext.SaveChangesAsync(token);
     }
 }

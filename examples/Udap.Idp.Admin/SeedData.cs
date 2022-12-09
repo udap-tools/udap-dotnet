@@ -10,6 +10,7 @@
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Storage;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
 using Udap.Server;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
@@ -24,6 +25,8 @@ public static class SeedData
     public static void EnsureSeedData(string connectionString, ILogger logger)
     {
         var services = new ServiceCollection();
+
+        services.AddLogging(c => c.AddSerilog());
 
         services.AddOperationalDbContext(options =>
         {

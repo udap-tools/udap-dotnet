@@ -48,6 +48,13 @@ namespace Udap.Server.Extensions
                     .HasConstraintName("FK_AnchorCertification_Anchor");
             });
 
+            modelBuilder.Entity<RootCertificate>(anchor =>
+            {
+                anchor.ToTable(storeOptions.RootCertificate);
+                anchor.HasKey(x => x.Id);
+            });
+
+
             modelBuilder.Entity<Community>(community =>
             {
                 community.ToTable(storeOptions.Community);

@@ -1,13 +1,10 @@
-﻿<h3>Root Certs Edit</h3>
+﻿@inject ISnackbar Snackbar
 
-
-@inject ISnackbar Snackbar
-
-<InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
+<InputFile id="fileInputForRootCertificate" OnChange="UploadFilesAsync" hidden />
 
 <ErrorBoundary @ref="ErrorBoundary">
   <ChildContent>
-    <MudTable Items="@_community.RootCertificates" Dense="@false" Hover="@true" ReadOnly="@false" CanCancelEdit="@true"
+    <MudTable Items="@_rootCertificates" Dense="@false" Hover="@true" ReadOnly="@false" CanCancelEdit="@true"
               SortLabel="Sort By" CommitEditTooltip="Commit Edit"
               OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))"
               RowEditPreview="BackupItem"
@@ -22,7 +19,7 @@
         <MudFab Icon="@Icons.Material.Filled.Add"
                 Color="Color.Inherit"
                 @onclick="AddRootCertificate"
-                Label="Add RootCertificate"
+                Label="Add"
                 disabled="@_rootCertificateRowIsInEditMode" />
       </ToolBarContent>
       <ColGroup>
@@ -48,7 +45,7 @@
                 {
             <MudTd DataLabel="Name">@context.Name</MudTd>
                 }
-        <MudTd DataLabel="Enabled">@context.Enabled</MudTd>
+        <MudTd DataLabel="Enabled"><MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" /></MudTd>
         <MudTd DataLabel="Certificate">@context.Certificate?.GetNameInfo(X509NameType.SimpleName, false) </MudTd>
         <MudTd DataLabel="Certificate">@context.Thumbprint </MudTd>
         <MudTd @onclick:stopPropagation="true" Style="">
@@ -70,7 +67,7 @@
           <MudTextField @bind-Value="@context.Name" Required />
         </MudTd>
         <MudTd DataLabel="Enabled">
-          <MudTextField @bind-Value="@context.Enabled" Required />
+            <MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" />
         </MudTd>
         <MudTd DataLabel="Thumbprint">@context.Thumbprint</MudTd>
         <MudTd DataLable="Certificate">
@@ -88,7 +85,7 @@
                   Color="Color.Success"
                   Icon="@Icons.Filled.AttachFile"
                   Label="Upload Certificate"
-                  for="fileInput" />
+                  for="fileInputForRootCertificate" />
         </MudTd>
       </RowEditingTemplate>
       <PagerContent>

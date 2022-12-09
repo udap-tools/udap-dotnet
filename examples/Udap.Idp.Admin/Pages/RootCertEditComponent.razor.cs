@@ -15,25 +15,23 @@ public partial class RootCertEditComponent
 
     [Inject] CommunityState CommunityState { get; set; }
 
-    [Inject] NavigationManager NavManager { get; set; }
-
     [Inject] private IJSRuntime Js { get; set; }
 
     ErrorBoundary? ErrorBoundary { get; set; }
 
     private List<string> _editEvents = new();
     private RootCertificate _rootCertificateBeforeEdit;
-    private Community? _community;
+    private ICollection<RootCertificate> _rootCertificates;
     private RootCertificate? _rootCertificateRowInEdit;
     private bool _rootCertificateRowIsInEditMode;
     private ElementReference? _newRootCertificateRowElement;
-    private MudBlazor.MudTable<ICollection<RootCertificate>> _table;
+    private MudBlazor.MudTable<ICollection<RootCertificate>> table;
 
     protected override void OnInitialized()
     {
         base.OnInitialized();
 
-        _community = CommunityState.Community;
+        _rootCertificates = CommunityState.RootCertificates;
     }
 
     protected override void OnParametersSet()
@@ -62,8 +60,7 @@ public partial class RootCertEditComponent
                 Name = ((RootCertificate)rootCertificate).Name,
                 Enabled = ((RootCertificate)rootCertificate).Enabled,
                 Certificate = ((RootCertificate)rootCertificate).Certificate,
-                Thumbprint = ((RootCertificate)rootCertificate).Thumbprint,
-                Community = ((RootCertificate)rootCertificate).Community
+                Thumbprint = ((RootCertificate)rootCertificate).Thumbprint
             };
 
 
@@ -79,16 +76,31 @@ public partial class RootCertEditComponent
 
     private void ItemHasBeenCommitted(object rootCertificate)
     {
-        var rootCertificateTyped = (RootCertificate)rootCertificate;
-        rootCertificateTyped.BeginDate = rootCertificateTyped.Certificate.NotBefore;
-        rootCertificateTyped.EndDate = rootCertificateTyped.Certificate.NotAfter;
-        var resultRootCertificate = ApiService.Save(rootCertificateTyped).GetAwaiter().GetResult();
-        AddEditionEvent($"RowEditCommit event: Changes to Community {((RootCertificate)rootCertificate).Name} committed");
-        _rootCertificateRowInEdit.Id = resultRootCertificate.Id; //bind up the new id...
-        _rootCertificateRowIsInEditMode = false;
+        var rootCertificateView = (RootCertificate)rootCertificate;
 
+        if (rootCertificateView.Id > 0)
+        {
+            UpdateRecord(rootCertificateView);
+        }
+        else
+        {
+            rootCertificateView.BeginDate = rootCertificateView.Certificate.NotBefore;
+            rootCertificateView.EndDate = rootCertificateView.Certificate.NotAfter;
+            var resultRootCertificate = ApiService.Save(rootCertificateView).GetAwaiter().GetResult();
+            AddEditionEvent($"RowEditCommit event: Adding root certificate {rootCertificateView.Name} committed");
+            _rootCertificateRowInEdit.Id = resultRootCertificate.Id; //bind up the new id...
+        }
+
+        _rootCertificateRowIsInEditMode = false;
         StateHasChanged();
     }
+
+    private void UpdateRecord(RootCertificate rootCertificateView)
+    {
+        ApiService.Update(rootCertificateView).GetAwaiter().GetResult();
+        AddEditionEvent($"RowEditCommit event: Updating root certificate {rootCertificateView.Name} committed");
+    }
+
 
     private void ResetItemToOriginalValues(object rootCertificate)
     {
@@ -96,7 +108,7 @@ public partial class RootCertEditComponent
         {
             if (((RootCertificate)rootCertificate).Id == 0)
             {
-                _community.RootCertificates.Remove((RootCertificate)rootCertificate);
+                _rootCertificates.Remove((RootCertificate)rootCertificate);
                 AddEditionEvent($"RowEditCancel event: Editing of new RootCertificate cancelled");
             }
 
@@ -105,8 +117,7 @@ public partial class RootCertEditComponent
             ((RootCertificate)rootCertificate).Enabled = _rootCertificateBeforeEdit.Enabled;
             ((RootCertificate)rootCertificate).Certificate = _rootCertificateBeforeEdit.Certificate;
             ((RootCertificate)rootCertificate).Thumbprint = _rootCertificateBeforeEdit.Thumbprint;
-            ((RootCertificate)rootCertificate).Community = _rootCertificateBeforeEdit.Community;
-
+            
             AddEditionEvent($"RowEditCancel event: Editing of RootCertificate {((ViewModel.RootCertificate)rootCertificate).Name} cancelled");
         }
         catch
@@ -120,12 +131,9 @@ public partial class RootCertEditComponent
 
     private async Task AddRootCertificate()
     {
-        _rootCertificateRowInEdit = new ViewModel.RootCertificate()
-        {
-            Community = CommunityState.Community.Name
-        };
+        _rootCertificateRowInEdit = new ViewModel.RootCertificate() {};
 
-        _community.RootCertificates.Add(_rootCertificateRowInEdit);
+        _rootCertificates.Add(_rootCertificateRowInEdit);
         await Task.Delay(1);
         StateHasChanged();
 
@@ -138,12 +146,12 @@ public partial class RootCertEditComponent
     {
         if (await Js.InvokeAsync<bool>("confirm", $"Do you want to delete the {rootCertificate.Name} Record?"))
         {
-            var result = await ApiService.DeleteAnchor(rootCertificate.Id);
+            var result = await ApiService.DeleteRootCertificate(rootCertificate.Id);
 
             if (true)
             {
                 _rootCertificateRowIsInEditMode = false;
-                _community.RootCertificates.Remove(rootCertificate);
+                _rootCertificates.Remove(rootCertificate);
                 _rootCertificateRowInEdit = null;
                 StateHasChanged();
                 return true;
@@ -168,8 +176,6 @@ public partial class RootCertEditComponent
         if (_rootCertificateRowInEdit.Name == null)
         {
             _rootCertificateRowInEdit.Name = cert.GetNameInfo(X509NameType.SimpleName, false);
-            _rootCertificateRowInEdit.CommunityId = _community.Id;
-            _rootCertificateRowInEdit.Community = _community.Name;
             _rootCertificateRowInEdit.Thumbprint = cert.Thumbprint;
         }
     }

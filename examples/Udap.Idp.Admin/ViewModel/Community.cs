@@ -43,8 +43,6 @@ namespace Udap.Idp.Admin.ViewModel
         public long Id { get; set; }
         public bool Enabled { get; set; }
         public string? Name { get; set; }
-        public string? Community { get; set; }
-        public long CommunityId { get; set; }
         public X509Certificate2? Certificate { get; set; }
         public string? Thumbprint { get; set; }
         public DateTime? BeginDate { get; set; }

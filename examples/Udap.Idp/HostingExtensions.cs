@@ -8,12 +8,21 @@
 #endregion
 
 using AspNetCoreRateLimit;
+using Duende.IdentityServer;
+using Duende.IdentityServer.EntityFramework.Stores;
+using Duende.IdentityServer.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 using Udap.Server;
 using Udap.Server.Extensions;
+using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.Registration;
+using Udap.Server.Services;
+using Udap.Server.Services.Default;
+using Udap.Server.Validation.Default;
 
 namespace Udap.Idp;
 
@@ -80,7 +89,10 @@ internal static class HostingExtensions
             })
             .AddInMemoryIdentityResources(Config.IdentityResources)
             .AddInMemoryApiScopes(Config.ApiScopes)
-            .AddInMemoryClients(Config.Clients)
+            // .AddInMemoryClients(Config.Clients)
+            .AddClientStore<ClientStore>()
+            .AddUdapJwtBearerClientAuthentication()
+            .AddJwtBearerClientAuthentication()
             //TODO remove
             .AddTestUsers(TestUsers.Users)
             .AddUdapDiscovery()
@@ -91,8 +103,40 @@ internal static class HostingExtensions
                     sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
             });
 
+        builder.Services.AddSingleton<IScopeService, DefaultScopeService>();
+        builder.Services.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
+
         // configuration (resolvers, counter key builders)
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+        // builder.Services.AddTransient<IClientSecretValidator, AlwaysPassClientValidator>();
+
+
+        builder.Services.AddOpenTelemetryTracing(builder =>
+        {
+            builder
+                .AddSource(IdentityServerConstants.Tracing.Basic)
+                .AddSource(IdentityServerConstants.Tracing.Cache)
+                .AddSource(IdentityServerConstants.Tracing.Services)
+                .AddSource(IdentityServerConstants.Tracing.Stores)
+                .AddSource(IdentityServerConstants.Tracing.Validation)
+
+                .SetResourceBuilder(
+                    ResourceBuilder.CreateDefault()
+                        .AddService("Udap.Idp.Main"))
+
+                //.SetSampler(new AlwaysOnSampler())
+                .AddHttpClientInstrumentation()
+                .AddAspNetCoreInstrumentation()
+                .AddSqlClientInstrumentation()
+                // .AddConsoleExporter();
+                .AddOtlpExporter(otlpOptions =>
+                {
+                    otlpOptions.Endpoint = new Uri("http://localhost:4317");
+                });
+
+        });
+
 
         return builder.Build();
     }

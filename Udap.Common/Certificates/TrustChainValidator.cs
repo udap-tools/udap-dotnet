@@ -1,4 +1,13 @@
-﻿/*
+﻿#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+/*
 
 Author: Joseph.Shook@Surescripts.com
 
@@ -16,11 +25,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
  
 */
 
-
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using Udap.Common.Extensions;
-
 
 namespace Udap.Common.Certificates
 {
@@ -105,15 +112,19 @@ namespace Udap.Common.Certificates
 
 
         public bool IsTrustedCertificate(
+            string clientName,
             X509Certificate2 certificate,
             X509Certificate2Collection? communityTrustAnchors,
+            out X509ChainElementCollection? chainElements,
             X509Certificate2Collection? trustedRoots = null)
         {
+            chainElements = null;
+
             if (certificate == null)
             {
                 throw new ArgumentNullException(nameof(certificate));
             }
-
+            
             // if there are no anchors we should always fail
             if (communityTrustAnchors.IsNullOrEmpty())
             {
@@ -135,14 +146,7 @@ namespace Udap.Common.Certificates
                 // Again more to test here.
                 //
 
-                // if (this.HasCertificateResolver)
-                // {
-                //     this.ResolveIntermediateIssuers(certificate, chainPolicy.ExtraStore);
-                // }
-
-                X509Chain chainBuilder;
-
-                chainBuilder = new X509Chain();
+                var chainBuilder = new X509Chain();
 
                 if (!trustedRoots.IsNullOrEmpty())
                 {
@@ -156,10 +160,18 @@ namespace Udap.Common.Certificates
                 chainBuilder.ChainPolicy.ExtraStore.AddRange(communityTrustAnchors!);
                 var result = chainBuilder.Build(certificate);
 
+                if (result)
+                {
+
+                }
+                else
+                {
+                    _logger.LogWarning($"Client");
+                }
 
                 // We're using the system class as a helper to build the chain
                 // However, we will review each item in the chain ourselves, because we have our own rules...
-                var chainElements = chainBuilder.ChainElements;
+                chainElements = chainBuilder.ChainElements;
 
                 // If we don't have a trust chain, then we obviously have a problem...
                 if (chainElements.IsNullOrEmpty())
@@ -200,7 +212,7 @@ namespace Udap.Common.Certificates
                     }
                 }
 
-                return foundAnchor;
+                return foundAnchor && result;  
             }
             catch (Exception ex)
             {
@@ -215,7 +227,7 @@ namespace Udap.Common.Certificates
         private bool ChainElementHasProblems(X509ChainElement chainElement)
         {
             // If the builder finds problems with the cert, it will provide a list of "status" flags for the cert
-            X509ChainStatus[] chainElementStatus = chainElement.ChainElementStatus;
+            var chainElementStatus = chainElement.ChainElementStatus;
 
             // If the list is empty or the list is null, then there were NO problems with the cert
             if (chainElementStatus.IsNullOrEmpty())

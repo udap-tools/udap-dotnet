@@ -10,6 +10,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
+using Udap.Client.Client.Messages;
 using Udap.Common;
 
 namespace Udap.Server.Registration;
@@ -53,7 +54,7 @@ public class UdapDynamicClientRegistrationEndpoint
         UdapRegisterRequest request;
         try
         {
-            request = await context.Request.ReadFromJsonAsync<UdapRegisterRequest>();
+            request = await context.Request.ReadFromJsonAsync<UdapRegisterRequest>() ?? throw new ArgumentNullException();
         }
         catch (Exception)
         {

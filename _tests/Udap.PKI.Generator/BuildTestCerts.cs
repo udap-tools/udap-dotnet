@@ -952,6 +952,12 @@ namespace Udap.PKI.Generator
                 _testOutputHelper.WriteLine(name.ToString());
             }
         }
+
+        [Fact]
+        public void CompareKid()
+        {
+
+        }
        
     }
 }

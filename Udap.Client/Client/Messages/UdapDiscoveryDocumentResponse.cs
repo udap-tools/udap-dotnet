@@ -70,6 +70,10 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
 
     public string JwksUri => TryGetString(UdapConstants.Discovery.JwksUri);
     public string AuthorizeEndpoint => TryGetString(UdapConstants.Discovery.AuthorizationEndpoint);
+
+    /// <summary>
+    /// The FHIR Authorization Server's token endpoint URL
+    /// </summary>
     public string TokenEndpoint => TryGetString(UdapConstants.Discovery.TokenEndpoint);
     public string RegistrationEndpoint => TryGetString(UdapConstants.Discovery.RegistrationEndpoint);
 

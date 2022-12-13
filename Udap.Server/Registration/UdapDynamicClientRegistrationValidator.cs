@@ -12,6 +12,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Duende.IdentityServer.Models;
 using IdentityModel;
+using Microsoft.Extensions.Logging;
+using Udap.Client.Client.Messages;
+using Udap.Common;
 using Udap.Common.Certificates;
 
 namespace Udap.Server.Registration;
@@ -22,37 +25,51 @@ namespace Udap.Server.Registration;
 public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistrationValidator
 {
     private TrustChainValidator _trustChainValidator;
-    
+    private readonly ILogger _logger;
 
-    public UdapDynamicClientRegistrationValidator(TrustChainValidator trustChainValidator)
+    public UdapDynamicClientRegistrationValidator(
+        TrustChainValidator trustChainValidator,
+        ILogger<UdapDynamicClientRegistrationValidator> logger)
     {
         _trustChainValidator = trustChainValidator;
+        _logger = logger;
 
     }
     /// <inheritdoc />
-    public Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
-        UdapRegisterRequest request, 
+    public async Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
+        UdapRegisterRequest request,
         X509Certificate2Collection communityTrustAnchors,
         X509Certificate2Collection? communityRoots = null
         )
     {
+        using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
+
+        _logger.LogDebug("Start client validation");
+
         var handler = new JwtSecurityTokenHandler();
         var jwtSecurityToken = handler.ReadToken(request.SoftwareStatement) as JwtSecurityToken;
 
+        if (jwtSecurityToken == null)
+        {
+            _logger.LogError("No security token found");
+
+            return new UdapDynamicClientRegistrationValidationResult(Constants.TokenErrors.MissingSecurityToken);
+        }
+
         var document = new UdapDynamicClientRegistrationDocument();
         document.AddClaims(jwtSecurityToken.Claims);
-        
-        if (!ValidateChain(jwtSecurityToken, communityTrustAnchors, communityRoots))
-        {
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult("Untrusted", "Certificate is not a member of community"));
-        }
-        
+
         var client = new Duende.IdentityServer.Models.Client
         {
             //TODO: Maybe inject a componnet to generate the clientID so a user can use their own technique.
             ClientId = CryptoRandom.CreateUniqueId()
         };
-        
+
+        if (!ValidateChain(client, jwtSecurityToken, communityTrustAnchors, communityRoots))
+        {
+            return new UdapDynamicClientRegistrationValidationResult("Untrusted", "Certificate is not a member of community");
+        }
+
         //////////////////////////////
         // validate grant types
         //////////////////////////////
@@ -68,24 +85,25 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         // we only support the two above grant types
         if (client.AllowedGrantTypes.Count == 0)
         {
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
-                UdapDynamicClientRegistrationErrors.InvalidClientMetadata, 
-                "unsupported grant type"));
+            return new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                "unsupported grant type");
         }
 
+        //TODO: Ensure test covers this and follows Security IG: http://hl7.org/fhir/us/udap-security/b2b.html#refresh-tokens
         if (document.GrantTypes.Contains(OidcConstants.GrantTypes.RefreshToken))
         {
             if (client.AllowedGrantTypes.Count == 1 &&
                 client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
             {
-                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
-                    UdapDynamicClientRegistrationErrors.InvalidClientMetadata, 
-                    "client credentials does not support refresh tokens"));
+                return new UdapDynamicClientRegistrationValidationResult(
+                    UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                    "client credentials does not support refresh tokens");
             }
 
             client.AllowOfflineAccess = true;
         }
-        
+
         //////////////////////////////
         // validate redirect URIs
         //////////////////////////////
@@ -101,31 +119,34 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     }
                     else
                     {
-                        return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                        return new UdapDynamicClientRegistrationValidationResult(
                             UdapDynamicClientRegistrationErrors.InvalidRedirectUri,
-                            "malformed redirect URI"));
+                            "malformed redirect URI");
                     }
                 }
             }
             else
             {
-                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
-                    UdapDynamicClientRegistrationErrors.InvalidRedirectUri, 
-                    "redirect URI required for authorization_code grant type"));
+                return new UdapDynamicClientRegistrationValidationResult(
+                    UdapDynamicClientRegistrationErrors.InvalidRedirectUri,
+                    "redirect URI required for authorization_code grant type");
             }
         }
+
+
 
         if (client.AllowedGrantTypes.Count == 1 &&
             client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
         {
+            //TODO: find the RFC reference for this rule and add a Test
             if (document.RedirectUris.Any())
             {
-                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
-                    UdapDynamicClientRegistrationErrors.InvalidRedirectUri, 
-                    "redirect URI not compatible with client_credentials grant type"));
+                return new UdapDynamicClientRegistrationValidationResult(
+                    UdapDynamicClientRegistrationErrors.InvalidRedirectUri,
+                    "redirect URI not compatible with client_credentials grant type");
             }
         }
-        
+
         //////////////////////////////
         // validate scopes
         //////////////////////////////
@@ -137,37 +158,77 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         {
             var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             // todo: ideally scope names get checked against configuration store?
-            
+
             foreach (var scope in scopes)
             {
                 client.AllowedScopes.Add(scope);
             }
         }
-        
-        
+
+
         if (!string.IsNullOrWhiteSpace(document.ClientName))
         {
             client.ClientName = document.ClientName;
         }
-        
+
         // validation successful - return client
-        return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document)); 
+        return new UdapDynamicClientRegistrationValidationResult(client, document);
     }
 
     private bool ValidateChain(
-        JwtSecurityToken jwtSecurityToken, 
-        X509Certificate2Collection communityTrustAnchors, 
+        Duende.IdentityServer.Models.Client client,
+        JwtSecurityToken jwtSecurityToken,
+        X509Certificate2Collection communityTrustAnchors,
         X509Certificate2Collection? rootCertificates)
     {
-        var x5cArray = JsonSerializer.Deserialize<string[]>(jwtSecurityToken.Header.X5c) ;
+        var x5cArray = JsonSerializer.Deserialize<string[]>(jwtSecurityToken.Header.X5c);
 
         if (!x5cArray.Any())
         {
             throw new ArgumentNullException("JsonSerializer.Deserialize<string[]>(jwtSecurityToken.Header.X5c)");
         }
 
-        X509Certificate2 cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
-        
-        return _trustChainValidator.IsTrustedCertificate(cert, communityTrustAnchors, rootCertificates);
+        // TODO: not test cases for x5c with intermediate certificates.  
+        var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
+
+        if (_trustChainValidator.IsTrustedCertificate(
+                client.ClientName,
+                cert,
+                communityTrustAnchors,
+                out X509ChainElementCollection? chainElements,
+                rootCertificates))
+        {
+            if (chainElements == null)
+            {
+                _logger.LogError("Missing chain elements");
+
+                return false;
+            }
+
+            client.ClientSecrets = new List<Secret>()
+            {
+                new()
+                {
+                    Expiration = chainElements.First().Certificate.NotAfter,
+                    Type = UdapServerConstants.SecretTypes.Udapx5c,
+                    Value = SerializeTox5c(chainElements)
+                }
+            };
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static string SerializeTox5c(X509ChainElementCollection chainElements)
+    {
+        return JsonSerializer.Serialize
+                ( chainElements
+                    .Skip(1)
+                    .Select(ce => 
+                        Convert.ToBase64String(ce.Certificate.Export(X509ContentType.Cert))
+                    )
+                );
     }
 }

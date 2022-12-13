@@ -21,11 +21,10 @@ public class UdapDynamicClientRegistrationValidationResult
         Document = document;
     }
 
-    public UdapDynamicClientRegistrationValidationResult(string error, string errorDescription)
+    public UdapDynamicClientRegistrationValidationResult(string error, string errorDescription = null)
     {
         ArgumentNullException.ThrowIfNull(error);
-        ArgumentNullException.ThrowIfNull(errorDescription);
-
+        
         Error = error;
         ErrorDescription = errorDescription;
     }

@@ -22,6 +22,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;

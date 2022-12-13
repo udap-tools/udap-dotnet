@@ -15,6 +15,7 @@ namespace Udap.Server.Registration;
 
 public static class UdapConfigurationEndpointExtensions
 {
+    //TODO: this was not used.  Make sure it is used or drop it.
     public static IEndpointConventionBuilder MapUdapDynamicClientRegistration(this IEndpointRouteBuilder endpoints, string path)
     {
         using var scope = endpoints.ServiceProvider.CreateScope();

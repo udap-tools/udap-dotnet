@@ -87,9 +87,11 @@ internal static class HostingExtensions
                 options.ConfigureDbContext = b => b.UseSqlite(connectionString,
                     sql => sql.MigrationsAssembly(migrationsAssembly));
             })
-            .AddInMemoryIdentityResources(Config.IdentityResources)
-            .AddInMemoryApiScopes(Config.ApiScopes)
+            // .AddInMemoryIdentityResources(Config.IdentityResources)
+            // .AddInMemoryApiScopes(Config.ApiScopes)
             // .AddInMemoryClients(Config.Clients)
+            
+            .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
             .AddUdapJwtBearerClientAuthentication()
             .AddJwtBearerClientAuthentication()

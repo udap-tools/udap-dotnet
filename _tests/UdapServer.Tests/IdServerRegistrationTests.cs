@@ -9,6 +9,7 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
@@ -36,6 +37,7 @@ using Udap.Idp;
 using Udap.Metadata.Server;
 using Udap.Server.Registration;
 using Xunit.Abstractions;
+using static IdentityModel.OidcConstants;
 
 namespace UdapServer.Tests;
 
@@ -531,9 +533,9 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
             return chain.Build(cert);
         };
 
-        using var client = new HttpClient(handler);
+        using var fhirLabsClient = new HttpClient(handler);
 
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://fhirlabs.net:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
@@ -551,7 +553,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint);
 
-        //Get signed payload and compare registration_endpoint
+        // Get signed payload and compare registration_endpoint
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
@@ -635,7 +637,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
-
+        
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -731,6 +733,14 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
 
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
+
+        fhirLabsClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
+        var patientResponse = fhirLabsClient.GetAsync("https://fhirlabs.net:7016/fhir/r4/Patient");
+
+        patientResponse.Result.EnsureSuccessStatusCode();
+        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+
     }
 
     private string BuildHl7B2BExtensions()

@@ -160,15 +160,6 @@ namespace Udap.Common.Certificates
                 chainBuilder.ChainPolicy.ExtraStore.AddRange(communityTrustAnchors!);
                 var result = chainBuilder.Build(certificate);
 
-                if (result)
-                {
-
-                }
-                else
-                {
-                    _logger.LogWarning($"Client");
-                }
-
                 // We're using the system class as a helper to build the chain
                 // However, we will review each item in the chain ourselves, because we have our own rules...
                 chainElements = chainBuilder.ChainElements;
@@ -212,7 +203,13 @@ namespace Udap.Common.Certificates
                     }
                 }
 
-                return foundAnchor && result;  
+                if (foundAnchor && !result)
+                {
+                    _logger.LogWarning($"Client:: {clientName} Problem Flags set:: {_problemFlags.ToString()} ChainStatus:: {chainElements.Summarize()}");
+                    
+                }
+
+                return foundAnchor;  
             }
             catch (Exception ex)
             {

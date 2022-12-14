@@ -16,6 +16,7 @@ using FhirLabsApi.Extensions;
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
 using Hl7.Fhir.WebApi;
+using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -92,8 +93,8 @@ builder.Services
         options.SerializerSettings.Formatting = Formatting.Indented;
     });
 
-builder.Services.AddAuthentication("Bearer")
-    .AddJwtBearer("Bearer", options =>
+builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
+    .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>
     {
         options.Authority = "https://localhost:5002";
 

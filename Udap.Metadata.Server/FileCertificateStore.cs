@@ -158,13 +158,13 @@ public class FileCertificateStore : ICertificateStore
                             if (authorityIdentifierValue == null || 
                                 subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
                             {
-                                _logger.LogInformation($"Round root ca in {path} certificate.  Will add the root to roots if not already explicitly loaded.");
+                                _logger.LogInformation($"Found root ca in {path} certificate.  Will add the root to roots if not already explicitly loaded.");
 
                                 RootCAs.Add(cert);
                             }
                             else
                             {
-                                _logger.LogInformation($"Round intermediate ca in {path} certificate.  Will add if not already explicitly loaded.");
+                                _logger.LogInformation($"Found intermediate ca in {path} certificate.  Will add if not already explicitly loaded.");
 
                                 Anchors.Add(new Anchor(cert) { Community = community.Name });
                             }

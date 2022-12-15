@@ -213,3 +213,5 @@ Web/web.config
 examples/Udap.Idp/keys/*.json
 _tests/Udap.PKI.Generator/Resources/ProjectDirectory.txt
 NuGet.Config
+*.db
+.tye/process_store

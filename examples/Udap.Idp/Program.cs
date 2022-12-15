@@ -27,7 +27,7 @@ try
 
     var app = builder
         .ConfigureServices()
-        .ConfigurePipeline();
+        .ConfigurePipeline(args);
     
     app.Run();
 }

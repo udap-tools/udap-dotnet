@@ -87,12 +87,17 @@ namespace Udap.Server.Registration
         }
 
 
-        public async Task<X509Certificate2Collection> GetAnchorsCertificates(string? community, CancellationToken token = default)
+        public async Task<X509Certificate2Collection?> GetAnchorsCertificates(string? community, CancellationToken token = default)
         {
-            var anchors = await GetAnchors(community, token).ConfigureAwait(false);
+            var anchors = (await GetAnchors(community, token).ConfigureAwait(false)).ToList();
 
-            _logger.LogInformation($"Found {anchors?.Count() ?? 0} anchors for community, {community}");
+            _logger.LogInformation($"Found {anchors.Count} anchors for community, {community}");
             _logger.LogDebug(ShowSummary(anchors));
+
+            if (!anchors.Any())
+            {
+                return null;
+            }
 
             return new X509Certificate2Collection(anchors.Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());
         }

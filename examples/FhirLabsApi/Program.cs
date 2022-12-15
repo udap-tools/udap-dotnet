@@ -102,7 +102,9 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
         {
             ValidateAudience = false
         };
+        
     });
+    
 
 // UDAP CertStore
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection("UdapFileCertStoreManifest"));

@@ -15,10 +15,13 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using AspNetCoreRateLimit;
 using Duende.IdentityServer.EntityFramework.Entities;
 using FluentAssertions;
+using FluentAssertions.Common;
 using IdentityModel;
 using IdentityModel.Client;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -37,6 +40,7 @@ using Udap.Idp;
 using Udap.Metadata.Server;
 using Udap.Server.Registration;
 using Xunit.Abstractions;
+using static System.Formats.Asn1.AsnWriter;
 using static IdentityModel.OidcConstants;
 
 namespace UdapServer.Tests;
@@ -86,15 +90,13 @@ public class ApiTestFixture : WebApplicationFactory<Program>
         // Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORT", "5001");
         Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "http://localhost");
         builder.UseEnvironment("Development");
-
+        
         builder.ConfigureServices(services =>
         {
             //
             // Fix-up TrustChainValidator to ignore certificate revocation
             //
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType ==
-                     typeof(TrustChainValidator));
+            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(TrustChainValidator));
 
             if (descriptor != null)
             {
@@ -109,17 +111,22 @@ public class ApiTestFixture : WebApplicationFactory<Program>
                     RevocationMode = X509RevocationMode.NoCheck // This is the change unit testing with no revocation endpoint to host the revocation list.
                 },
                 Output.ToLogger<TrustChainValidator>()));
-
         });
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();
             logging.AddXUnit(Output);
         });
+        
 
         var app = base.CreateHost(builder);
 
         return app;
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.UseSetting("skipRateLimiting", null);
     }
 }
 
@@ -142,6 +149,9 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
     [Fact]
     public async Task RegisrationSuccessWeatherApiTest()
     {
+        // var clientPolicyStore = _fixture.Services.GetService<IIpPolicyStore>();
+        //
+        //
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
 
@@ -518,8 +528,6 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
     [Fact]
     public async Task RegisrationSuccess_FhirLabs_Test()
     {
-        using var _ = _fixture.CreateClient();
-
         var handler = new HttpClientHandler();
         //
         // Interesting discussion if you are into this sort of stuff

@@ -117,7 +117,7 @@ public static class HostingExtensions
         {
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             Log.Information("Seeding database...");
-            SeedData.EnsureSeedData(connectionString, logger);
+            SeedData.EnsureSeedData(connectionString, args[1], logger);
             Log.Information("Done seeding database.");
 
             return true;

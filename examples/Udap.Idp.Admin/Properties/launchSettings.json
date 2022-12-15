@@ -11,7 +11,7 @@
     },
     "/seed": {
       "commandName": "Project",
-      "commandLineArgs": "/seed",
+      "commandLineArgs": "/seed ../../../../../_tests/Udap.PKI.Generator/certstores",
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

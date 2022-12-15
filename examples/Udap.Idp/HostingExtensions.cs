@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Diagnostics;
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
@@ -143,9 +144,12 @@ internal static class HostingExtensions
         return builder.Build();
     }
     
-    public static WebApplication ConfigurePipeline(this WebApplication app)
+    public static WebApplication ConfigurePipeline(this WebApplication app, string[] args)
     {
-        app.UseIpRateLimiting();
+        if (!args.Any(a => a.Contains("skipRateLimiting")))
+        {
+            app.UseIpRateLimiting();
+        }
 
         app.UseSerilogRequestLogging();
     

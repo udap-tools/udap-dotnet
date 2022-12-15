@@ -35,5 +35,5 @@ public interface IUdapClientRegistrationStore
 
     Task<X509Certificate2Collection?> GetRootCertificates(CancellationToken token = default);
 
-    Task<X509Certificate2Collection> GetAnchorsCertificates(string? community, CancellationToken token = default);
+    Task<X509Certificate2Collection?> GetAnchorsCertificates(string? community, CancellationToken token = default);
 }

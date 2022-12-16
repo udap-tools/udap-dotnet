@@ -17,6 +17,23 @@
       },
       "sslPort": 5002,
       "applicationUrl": "https://securedcontrols.net:5002"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
+      "publishAllPorts": true,
+      "useSSL": true
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "launchBrowser": true,
+      "launchUrl": "https://localhost:5002",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:5002"
+      },
+      "distributionName": "Ubuntu-20.04"
     }
   }
 }

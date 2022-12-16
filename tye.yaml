@@ -12,19 +12,20 @@ services:
   - protocol: https
     name: https
     port: 5021
-    routes: 
+    routes:
      - /swagger
   - protocol: http
     name: http
     port: 5020
   buildProperties:
   - name: TargetFramework
-    value: net7.0  
+    value: net7.0
+
 - name: fhirlabsapi
   project: examples/FhirLabsApi/FhirLabsApi.csproj
   buildProperties:
   - name: TargetFramework
-    value: net7.0
+    value: net7.0 
   bindings:
   - protocol: https
     name: https
@@ -32,12 +33,16 @@ services:
     port: 7016
     routes: 
      - /fhir/r4/.well-known/udap
+     - /fhir/r4/.well-known/udap/communities
+     - /fhir/r4/.well-known/udap/communities/ashtml
+
 - name: udap-idp
   project: examples/Udap.Idp/Udap.Idp.csproj
   bindings:
   - protocol: https
     name: https
     port: 5002
+
 - name: udap-idp-admin
   project: examples/Udap.Idp.Admin/Udap.Idp.Admin.csproj
   bindings:

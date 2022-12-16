@@ -183,7 +183,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
     [Fact]
-    public void ValidateChainTest()
+    public async Task ValidateChainTest()
     {
         var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
@@ -217,12 +217,12 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                                   // X509ChainStatusFlags.OfflineRevocation |
                                   X509ChainStatusFlags.CtlNotSignatureValid;
 
-        ValidateCertificateChain(cert, problemFlags).Should().BeTrue();
+        (await ValidateCertificateChain(cert, problemFlags)).Should().BeTrue();
         _diagnosticsChainValidator.Called.Should().BeFalse();
     }
 
     [Fact]
-    public void ValidateChainOffLineRevocationTest()
+    public async Task ValidateChainOffLineRevocationTest()
     {
         var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
         var tokenHeader = jwt.Header;
@@ -260,7 +260,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         //
         // Trusted anchor
         //
-        ValidateCertificateChain(cert, problemFlags).Should().BeTrue();
+        (await ValidateCertificateChain(cert, problemFlags)).Should().BeTrue();
 
 
         problemFlags = X509ChainStatusFlags.NotTimeValid |
@@ -272,20 +272,20 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                        X509ChainStatusFlags.CtlNotSignatureValid |
                        X509ChainStatusFlags.RevocationStatusUnknown;
 
-        ValidateCertificateChain(cert, problemFlags).Should().BeFalse();
+        (await ValidateCertificateChain(cert, problemFlags)).Should().BeFalse();
 
         _diagnosticsChainValidator.ActualErrorMessages.Any(m =>
                 m.Contains("RevocationStatusUnknown"))
             .Should().BeTrue();
     }
 
-    private bool ValidateCertificateChain(X509Certificate2 issuedCertificate2, X509ChainStatusFlags problemFlags)
+    private async Task<bool> ValidateCertificateChain(X509Certificate2 issuedCertificate2, X509ChainStatusFlags problemFlags)
     {
-        var certStore = _fixture.Services.GetService<ICertificateStore>();
+        var certStore = await _fixture.Services.GetService<ICertificateStore>()!.Resolve();
 
-        var trustedRoots = certStore?.Resolve().RootCAs;
+        var trustedRoots = certStore.RootCAs;
 
-        var anchors = certStore?.Resolve().Anchors
+        var anchors = certStore.Anchors
             .Where(c => c.Community == _fixture.Community)
             .OrderBy(c => X509Certificate2.CreateFromPem(c.Certificate).NotBefore)
             .Select(c => c.Certificate);

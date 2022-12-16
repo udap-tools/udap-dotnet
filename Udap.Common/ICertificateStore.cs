@@ -20,5 +20,5 @@ public interface ICertificateStore
 
     ICollection<IssuedCertificate> IssuedCertificates { get; set; }
 
-    ICertificateStore Resolve();
+    Task<ICertificateStore> Resolve();
 }

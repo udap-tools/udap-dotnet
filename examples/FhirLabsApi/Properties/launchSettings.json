@@ -23,7 +23,7 @@
     "Docker": {
       "commandName": "Docker",
       "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/swagger",
+      "launchUrl": "https://fhirlabs.net:7016/fhir/r4/.well-known/udap",
       "publishAllPorts": true,
       "useSSL": true
     },
@@ -35,7 +35,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ASPNETCORE_URLS": "https://localhost:7016;http://localhost:5016"
       },
-      "distributionName": "Ubuntu-22.04"
+      "distributionName": "Ubuntu-20.04"
     }
   },
   "$schema": "https://json.schemastore.org/launchsettings.json"

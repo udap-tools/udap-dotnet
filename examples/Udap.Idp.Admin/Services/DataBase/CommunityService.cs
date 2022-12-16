@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Udap.Server.DbContexts;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 
 namespace Udap.Idp.Admin.Services.DataBase
 {

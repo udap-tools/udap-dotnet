@@ -299,15 +299,18 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         validator.Problem += element => _testOutputHelper.WriteLine("Problem: " + element.ChainElementStatus.Summarize(problemFlags));
         validator.Untrusted += certificate2 => _testOutputHelper.WriteLine("Untrusted: " + certificate2.Subject);
 
-        return validator.IsTrustedCertificate(issuedCertificate2, anchors?.Select(a =>
+        return validator.IsTrustedCertificate(
+            "client_name",
+            issuedCertificate2, 
+            anchors?.Select(a =>
             X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
+            out X509ChainElementCollection? chainElements,
             trustedRoots.ToArray().ToX509Collection());
     }
 
     public class FakeChainValidatorDiagnostics
     {
         public bool Called;
-        
 
         private readonly List<string> _actualErrorMessages = new List<string>();
         public List<string> ActualErrorMessages

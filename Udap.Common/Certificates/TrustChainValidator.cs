@@ -1,4 +1,13 @@
-﻿/*
+﻿#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+/*
 
 Author: Joseph.Shook@Surescripts.com
 
@@ -16,13 +25,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
  
 */
 
-
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using Udap.Common.Extensions;
-// #if !NET5_0_OR_GREATER && !Linux
-// using Udap.Custom.TrustStore;
-// #endif
 
 namespace Udap.Common.Certificates
 {
@@ -30,7 +35,7 @@ namespace Udap.Common.Certificates
     // Notes:   Follow up on this https://stackoverflow.com/questions/59382619/online-revocation-checking-using-custom-root-in-x509chain
     //          .NET 6.0 should be able to avoid the UdapWindowStore package.  Only .Net Framework and .Net less than 5.0 will need UdapWindowsStore.
     //
-    
+
     public class TrustChainValidator
     {
         private X509ChainPolicy _validationPolicy;
@@ -62,35 +67,15 @@ namespace Udap.Common.Certificates
 
         private static X509ChainStatusFlags BuildDefaultProblemFlags()
         {
-            if (IsNewerThanWin2008R2OrLinux())
-            {
-                return X509ChainStatusFlags.NotTimeValid |
-                       X509ChainStatusFlags.Revoked |
-                       X509ChainStatusFlags.NotSignatureValid |
-                       X509ChainStatusFlags.InvalidBasicConstraints |
-                       X509ChainStatusFlags.CtlNotTimeValid |
-                       X509ChainStatusFlags.OfflineRevocation |
-                       X509ChainStatusFlags.CtlNotSignatureValid |
-                       X509ChainStatusFlags.RevocationStatusUnknown | // can't trust the chain to check revocation.
-                       X509ChainStatusFlags.PartialChain;
-            }
-
             return X509ChainStatusFlags.NotTimeValid |
                    X509ChainStatusFlags.Revoked |
                    X509ChainStatusFlags.NotSignatureValid |
                    X509ChainStatusFlags.InvalidBasicConstraints |
                    X509ChainStatusFlags.CtlNotTimeValid |
-                   X509ChainStatusFlags.CtlNotSignatureValid;
-        }
-
-        // X509ChainEngine, which is used for CRL validation, requires Windows 2012 to run due to required changes in the CERT_CHAIN_ENGINE_CONFIG structure.
-        // For more information on version numbers, see https://msdn.microsoft.com/en-us/library/windows/desktop/ms724832.aspx
-        private static bool IsNewerThanWin2008R2OrLinux()
-        {
-            return Environment.OSVersion.Platform.Equals(PlatformID.Unix) ||
-                   Environment.OSVersion.Version.Major > 6 ||
-                   (Environment.OSVersion.Version.Major >= 6 &&
-                    Environment.OSVersion.Version.Minor >= 2);
+                   X509ChainStatusFlags.OfflineRevocation |
+                   X509ChainStatusFlags.CtlNotSignatureValid |
+                   X509ChainStatusFlags.RevocationStatusUnknown | // can't trust the chain to check revocation.
+                   X509ChainStatusFlags.PartialChain;
         }
 
         /// <summary>
@@ -127,15 +112,19 @@ namespace Udap.Common.Certificates
 
 
         public bool IsTrustedCertificate(
-            X509Certificate2 certificate, 
-            X509Certificate2Collection? communityTrustAnchors, 
+            string clientName,
+            X509Certificate2 certificate,
+            X509Certificate2Collection? communityTrustAnchors,
+            out X509ChainElementCollection? chainElements,
             X509Certificate2Collection? trustedRoots = null)
         {
+            chainElements = null;
+
             if (certificate == null)
             {
                 throw new ArgumentNullException(nameof(certificate));
             }
-
+            
             // if there are no anchors we should always fail
             if (communityTrustAnchors.IsNullOrEmpty())
             {
@@ -157,58 +146,23 @@ namespace Udap.Common.Certificates
                 // Again more to test here.
                 //
 
-                // if (this.HasCertificateResolver)
-                // {
-                //     this.ResolveIntermediateIssuers(certificate, chainPolicy.ExtraStore);
-                // }
+                var chainBuilder = new X509Chain();
 
-                X509Chain chainBuilder;
-
-// #if NET5_0_OR_GREATER
-
-                chainBuilder = new X509Chain();
-               
                 if (!trustedRoots.IsNullOrEmpty())
                 {
                     chainPolicy.CustomTrustStore.Clear();
                     chainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
                     chainPolicy.CustomTrustStore.AddRange(trustedRoots!);
+
                 }
-                
+
                 chainBuilder.ChainPolicy = chainPolicy;
                 chainBuilder.ChainPolicy.ExtraStore.AddRange(communityTrustAnchors!);
                 var result = chainBuilder.Build(certificate);
-// #else
-//                 if (IsNewerThanWin2008R2())
-//                 {
-//                     chainBuilder = new X509Chain();
-//                     //
-//                     // The state of this code will terminate the chain at the community trust anchor.
-//                     // The weakness in this is a revoked anchor will not be validated.  At least that I believe that is the case. 
-//                     // Well I guess if I changed this to include the trustedRoots it would be correct but still if you don't 
-//                     // it terminates and ignores the CRL.  
-//                     // I might get rid of all all this complexity.  Just want this history here for now.
-//                     //
-//                     using (var secureChainEngine = new X509ChainEngine(communityTrustAnchors?.Enumerate()))
-//                     {
-//                         secureChainEngine.BuildChain(certificate, chainPolicy, out chainBuilder);
-//                     }
-//                 }
-//                 else
-//                 {
-//                     //
-//                     // Stuck putting Certificates in the Machine Store other wise Windows will not trust them
-//                     //
-//                      chainBuilder = new X509Chain();
-//                      chainBuilder.ChainPolicy = chainPolicy;
-//                      chainBuilder.Build(certificate);
-//                 }
-// #endif
-
 
                 // We're using the system class as a helper to build the chain
                 // However, we will review each item in the chain ourselves, because we have our own rules...
-                var chainElements = chainBuilder.ChainElements;
+                chainElements = chainBuilder.ChainElements;
 
                 // If we don't have a trust chain, then we obviously have a problem...
                 if (chainElements.IsNullOrEmpty())
@@ -249,7 +203,13 @@ namespace Udap.Common.Certificates
                     }
                 }
 
-                return foundAnchor;
+                if (foundAnchor && !result)
+                {
+                    _logger.LogWarning($"Client:: {clientName} Problem Flags set:: {_problemFlags.ToString()} ChainStatus:: {chainElements.Summarize()}");
+                    
+                }
+
+                return foundAnchor;  
             }
             catch (Exception ex)
             {
@@ -264,7 +224,7 @@ namespace Udap.Common.Certificates
         private bool ChainElementHasProblems(X509ChainElement chainElement)
         {
             // If the builder finds problems with the cert, it will provide a list of "status" flags for the cert
-            X509ChainStatus[] chainElementStatus = chainElement.ChainElementStatus;
+            var chainElementStatus = chainElement.ChainElementStatus;
 
             // If the list is empty or the list is null, then there were NO problems with the cert
             if (chainElementStatus.IsNullOrEmpty())
@@ -286,7 +246,7 @@ namespace Udap.Common.Certificates
                 try
                 {
                     this.Untrusted(cert);
-                    
+
                 }
                 catch
                 {

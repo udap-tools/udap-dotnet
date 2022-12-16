@@ -119,7 +119,7 @@ namespace Udap.Common.Extensions
             {
                 throw new ArgumentException("value was null or empty", nameof(thumbprint));
             }
-            
+
             return certs.Find(x => x.Thumbprint == thumbprint);
         }
 
@@ -184,10 +184,10 @@ namespace Udap.Common.Extensions
         }
 
         public static string Summarize(this X509ChainStatus[] chainStatuses, X509ChainStatusFlags problemFlags)
-        {           
+        {
             var builder = new StringBuilder();
-            
-            
+
+
             foreach (var status in chainStatuses)
             {
                 if ((status.Status & problemFlags) != 0)
@@ -200,7 +200,27 @@ namespace Udap.Common.Extensions
             return builder.ToString();
         }
 
-        public static string ToPemFormat(this X509Certificate2 cert)
+        public static string Summarize(this X509ChainElementCollection chainElementCollection)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine();
+
+            foreach (var element in chainElementCollection)
+            {
+                foreach (var status in element.ChainElementStatus)
+                {
+
+                    if ((status.Status) != 0)
+                    {
+                        builder.AppendLine($"SubAltName:: {element.Certificate.GetNameInfo(X509NameType.UrlName, false)} ({status.Status}) {status.StatusInformation}");
+                    }
+                }
+            }
+
+            return builder.ToString();
+        }
+
+        public static string ToPemFormat(this X509Certificate2? cert)
         {
             var pem = new StringBuilder();
             pem.AppendLine("-----BEGIN CERTIFICATE-----");

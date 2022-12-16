@@ -19,18 +19,6 @@ using Udap.Common;
 
 namespace Udap.Server.Registration;
 
-public class UdapRegisterRequest
-{
-    [JsonPropertyName(UdapConstants.RegistrationRequestBody.SoftwareStatement)]
-    public string SoftwareStatement { get; set; }
-
-    [JsonPropertyName(UdapConstants.RegistrationRequestBody.Certifications)]
-    public string[] Certifications { get; set; }
-
-    [JsonPropertyName(UdapConstants.RegistrationRequestBody.Udap)]
-    public string Udap { get; set; }
-}
-
 public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
 {
     private string? _clientId;

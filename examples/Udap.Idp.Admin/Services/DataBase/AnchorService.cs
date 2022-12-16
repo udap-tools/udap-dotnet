@@ -1,7 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Udap.Common;
 using Udap.Server.DbContexts;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
+using Udap.Server.Mappers;
 
 namespace Udap.Idp.Admin.Services.DataBase;
 
@@ -10,16 +11,16 @@ public interface IAnchorService
     Task<ICollection<Anchor>> Get(CancellationToken token = default);
     Task<Anchor> Get(int? id, CancellationToken token = default);
     Task<Anchor> Add(Anchor anchor, CancellationToken token = default);
-    Task<Anchor> Update(Anchor anchor, CancellationToken token = default);
+    Task Update(Anchor anchor, CancellationToken token = default);
     Task<bool> Delete(long? id, CancellationToken token = default);
 }
 
 public class AnchorService: IAnchorService
 {
     private IUdapDbAdminContext _dbContext;
-    IUdapAdminAnchorValidator _validator;
+    IUdapCertificateValidator<Anchor> _validator;
 
-    public AnchorService(IUdapDbAdminContext dbContext, IUdapAdminAnchorValidator validator)
+    public AnchorService(IUdapDbAdminContext dbContext, IUdapCertificateValidator<Anchor> validator)
     {
         _dbContext = dbContext;
         _validator = validator;
@@ -34,7 +35,7 @@ public class AnchorService: IAnchorService
             var anchors = await _dbContext.Anchors
                 .Include(a => a.Community)
                 .Where(a => a.Thumbprint == anchor.Thumbprint)
-                .ToListAsync();
+                .ToListAsync(cancellationToken: token);
 
             if (anchors.Any())
             {
@@ -52,7 +53,7 @@ public class AnchorService: IAnchorService
     {
         var anchor = await _dbContext.Anchors
             .Include(a => a.AnchorCertifications)
-            .SingleAsync(d => d.Id == id, token);
+            .SingleOrDefaultAsync(d => d.Id == id, token);
 
         if (anchor == null)
         {
@@ -78,11 +79,16 @@ public class AnchorService: IAnchorService
         return await _dbContext.Anchors.ToListAsync(cancellationToken: token);
     }
 
-    public Task<Anchor> Update(Anchor anchor, CancellationToken token)
+    public async Task Update(Anchor anchor, CancellationToken token)
     {
-        throw new NotImplementedException();
+        // _validator.Validate(anchor);
+        // var storedAnchor = await _dbContext.Anchors.SingleAsync(a => a.Id == anchor.Id, cancellationToken: token);
+        // var entry = _dbContext.Anchors.Entry(storedAnchor);
+        // entry.CurrentValues.SetValues(anchor);
+        // await _dbContext.SaveChangesAsync(token);
+
+        _validator.Validate(anchor);
+        _dbContext.Anchors.Update(anchor);
+        await _dbContext.SaveChangesAsync(token);
     }
 }
-
-
-

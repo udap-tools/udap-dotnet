@@ -22,13 +22,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Idp;
 using Udap.Server;
 using Udap.Server.DbContexts;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Options;
 using Udap.Server.Registration;
@@ -412,7 +413,7 @@ namespace UdapServer.Tests
             var validator = sp.GetRequiredService<IUdapDynamicClientRegistrationValidator>();
 
             
-            var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "TestCerts"), "WeatherApiClient.pfx");
+            var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "WeatherApiClientLocalhostCert.pfx"); 
             var clientCert = new X509Certificate2(cert, "udap-test");
             var securityKey = new X509SecurityKey(clientCert);
             var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
@@ -469,8 +470,14 @@ namespace UdapServer.Tests
 
             var store = sp.GetRequiredService<IUdapClientRegistrationStore>();
             var communityAnchors = await store.GetAnchorsCertificates("http://localhost");
-            var trustedRoots = await store.GetRootCertificates("http://localhost");
-            var result = await validator.ValidateAsync(requestBody, communityAnchors, null);
+            // TODO Store still needs a trusted roots place to store data
+            // var trustedRoots = await store.GetRootCertificates("http://localhost");
+            var trustedRoots = new X509Certificate2Collection();
+            trustedRoots.Add(new X509Certificate2(
+                Path.Combine(AppContext.BaseDirectory, "CertStore/roots", "caLocalhostCert.cer")
+            ));
+            
+            var result = await validator.ValidateAsync(requestBody, communityAnchors, trustedRoots);
 
             result.IsError.Should().BeFalse($"{result.Error} : {result.ErrorDescription}");
             result.Document.Should().BeEquivalentTo(document);

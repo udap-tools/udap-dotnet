@@ -8,6 +8,7 @@
 #endregion
 
 using System.Security.Cryptography.X509Certificates;
+using Udap.Client.Client.Messages;
 
 namespace Udap.Server.Registration;
 

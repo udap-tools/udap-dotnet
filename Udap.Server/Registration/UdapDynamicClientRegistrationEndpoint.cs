@@ -10,6 +10,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
+using Udap.Client.Client.Messages;
 using Udap.Common;
 
 namespace Udap.Server.Registration;
@@ -53,7 +54,7 @@ public class UdapDynamicClientRegistrationEndpoint
         UdapRegisterRequest request;
         try
         {
-            request = await context.Request.ReadFromJsonAsync<UdapRegisterRequest>();
+            request = await context.Request.ReadFromJsonAsync<UdapRegisterRequest>() ?? throw new ArgumentNullException();
         }
         catch (Exception)
         {
@@ -69,7 +70,7 @@ public class UdapDynamicClientRegistrationEndpoint
 
         var community = context.Request.Query[UdapConstants.Community];
         
-        var rootCertificates = await _store.GetRootCertificates(community);
+        var rootCertificates = await _store.GetRootCertificates();
         var communityTrustAnchors = await _store.GetAnchorsCertificates(community);
         var result = await _validator.ValidateAsync(request, communityTrustAnchors, rootCertificates);
 

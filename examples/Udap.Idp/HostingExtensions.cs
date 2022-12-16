@@ -7,12 +7,23 @@
 // */
 #endregion
 
+using System.Diagnostics;
+using AspNetCoreRateLimit;
+using Duende.IdentityServer;
+using Duende.IdentityServer.EntityFramework.Stores;
+using Duende.IdentityServer.Validation;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 using Udap.Server;
 using Udap.Server.Extensions;
+using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.Registration;
+using Udap.Server.Services;
+using Udap.Server.Services.Default;
+using Udap.Server.Validation.Default;
 
 namespace Udap.Idp;
 
@@ -44,7 +55,20 @@ internal static class HostingExtensions
 
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        
+        // needed to load configuration from appsettings.json
+        builder.Services.AddOptions();
 
+        // needed to store rate limit counters and ip rules
+        builder.Services.AddMemoryCache();
+
+        //load general configuration from appsettings.json
+        builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
+        
+        // inject counter and rules stores
+        builder.Services.AddInMemoryRateLimiting();
+
+        
         // uncomment if you want to add a UI
         builder.Services.AddRazorPages();
 
@@ -64,9 +88,14 @@ internal static class HostingExtensions
                 options.ConfigureDbContext = b => b.UseSqlite(connectionString,
                     sql => sql.MigrationsAssembly(migrationsAssembly));
             })
-            .AddInMemoryIdentityResources(Config.IdentityResources)
-            .AddInMemoryApiScopes(Config.ApiScopes)
-            .AddInMemoryClients(Config.Clients)
+            // .AddInMemoryIdentityResources(Config.IdentityResources)
+            // .AddInMemoryApiScopes(Config.ApiScopes)
+            // .AddInMemoryClients(Config.Clients)
+            
+            .AddResourceStore<ResourceStore>()
+            .AddClientStore<ClientStore>()
+            .AddUdapJwtBearerClientAuthentication()
+            .AddJwtBearerClientAuthentication()
             //TODO remove
             .AddTestUsers(TestUsers.Users)
             .AddUdapDiscovery()
@@ -77,18 +106,58 @@ internal static class HostingExtensions
                     sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
             });
 
+        builder.Services.AddSingleton<IScopeService, DefaultScopeService>();
+        builder.Services.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
+
+        // configuration (resolvers, counter key builders)
+        builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
+        // builder.Services.AddTransient<IClientSecretValidator, AlwaysPassClientValidator>();
+
+
+        builder.Services.AddOpenTelemetryTracing(builder =>
+        {
+            builder
+                .AddSource(IdentityServerConstants.Tracing.Basic)
+                .AddSource(IdentityServerConstants.Tracing.Cache)
+                .AddSource(IdentityServerConstants.Tracing.Services)
+                .AddSource(IdentityServerConstants.Tracing.Stores)
+                .AddSource(IdentityServerConstants.Tracing.Validation)
+
+                .SetResourceBuilder(
+                    ResourceBuilder.CreateDefault()
+                        .AddService("Udap.Idp.Main"))
+
+                //.SetSampler(new AlwaysOnSampler())
+                .AddHttpClientInstrumentation()
+                .AddAspNetCoreInstrumentation()
+                .AddSqlClientInstrumentation()
+                // .AddConsoleExporter();
+                .AddOtlpExporter(otlpOptions =>
+                {
+                    otlpOptions.Endpoint = new Uri("http://localhost:4317");
+                });
+
+        });
+
+
         return builder.Build();
     }
     
-    public static WebApplication ConfigurePipeline(this WebApplication app)
-    { 
+    public static WebApplication ConfigurePipeline(this WebApplication app, string[] args)
+    {
+        if (!args.Any(a => a.Contains("skipRateLimiting")))
+        {
+            app.UseIpRateLimiting();
+        }
+
         app.UseSerilogRequestLogging();
     
         if (app.Environment.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
         }
-
+        
         // uncomment if you want to add a UI
         app.UseStaticFiles();
         app.UseRouting();

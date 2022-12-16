@@ -15,7 +15,7 @@ namespace Udap.Server.Migrations.UdapDb
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "7.0.0");
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.Client", b =>
                 {
@@ -163,7 +163,10 @@ namespace Udap.Server.Migrations.UdapDb
 
                     b.HasKey("Id");
 
-                    b.ToTable("Clients", null, t => t.ExcludeFromMigrations());
+                    b.ToTable("Clients", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientClaim", b =>
@@ -185,7 +188,10 @@ namespace Udap.Server.Migrations.UdapDb
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("ClientClaims", null, t => t.ExcludeFromMigrations());
+                    b.ToTable("ClientClaims", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientCorsOrigin", b =>
@@ -204,7 +210,10 @@ namespace Udap.Server.Migrations.UdapDb
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("ClientCorsOrigins", null, t => t.ExcludeFromMigrations());
+                    b.ToTable("ClientCorsOrigins", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientGrantType", b =>
@@ -223,7 +232,10 @@ namespace Udap.Server.Migrations.UdapDb
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("ClientGrantTypes", null, t => t.ExcludeFromMigrations());
+                    b.ToTable("ClientGrantTypes", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientIdPRestriction", b =>
@@ -242,7 +254,10 @@ namespace Udap.Server.Migrations.UdapDb
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("ClientIdPRestrictions", null, t => t.ExcludeFromMigrations());
+                    b.ToTable("ClientIdPRestrictions", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientPostLogoutRedirectUri", b =>
@@ -261,7 +276,10 @@ namespace Udap.Server.Migrations.UdapDb
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("ClientPostLogoutRedirectUris", null, t => t.ExcludeFromMigrations());
+                    b.ToTable("ClientPostLogoutRedirectUris", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientProperty", b =>
@@ -283,7 +301,10 @@ namespace Udap.Server.Migrations.UdapDb
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("ClientProperties", null, t => t.ExcludeFromMigrations());
+                    b.ToTable("ClientProperties", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientRedirectUri", b =>
@@ -302,7 +323,10 @@ namespace Udap.Server.Migrations.UdapDb
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("ClientRedirectUris", null, t => t.ExcludeFromMigrations());
+                    b.ToTable("ClientRedirectUris", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientScope", b =>
@@ -321,7 +345,10 @@ namespace Udap.Server.Migrations.UdapDb
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("ClientScopes", null, t => t.ExcludeFromMigrations());
+                    b.ToTable("ClientScopes", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientSecret", b =>
@@ -352,10 +379,13 @@ namespace Udap.Server.Migrations.UdapDb
 
                     b.HasIndex("ClientId");
 
-                    b.ToTable("ClientSecrets", null, t => t.ExcludeFromMigrations());
+                    b.ToTable("ClientSecrets", null, t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.Anchor", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Anchor", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -392,7 +422,7 @@ namespace Udap.Server.Migrations.UdapDb
                     b.ToTable("UdapAnchors", (string)null);
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.AnchorCertification", b =>
+            modelBuilder.Entity("Udap.Server.Entities.AnchorCertification", b =>
                 {
                     b.Property<long>("AnchorId")
                         .HasColumnType("INTEGER");
@@ -407,7 +437,7 @@ namespace Udap.Server.Migrations.UdapDb
                     b.ToTable("UdapAnchorCertification", (string)null);
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.Certification", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Certification", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -428,7 +458,7 @@ namespace Udap.Server.Migrations.UdapDb
                     b.ToTable("UdapCertifications", (string)null);
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.Community", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Community", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -450,7 +480,7 @@ namespace Udap.Server.Migrations.UdapDb
                     b.ToTable("UdapCommunities", (string)null);
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.CommunityCertification", b =>
+            modelBuilder.Entity("Udap.Server.Entities.CommunityCertification", b =>
                 {
                     b.Property<long>("CommunityId")
                         .HasColumnType("INTEGER");
@@ -463,6 +493,38 @@ namespace Udap.Server.Migrations.UdapDb
                     b.HasIndex("CertificationId");
 
                     b.ToTable("UdapCommunityCertification", (string)null);
+                });
+
+            modelBuilder.Entity("Udap.Server.Entities.RootCertificate", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("BeginDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Thumbprint")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("X509Certificate")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("UdapRootCertificates", (string)null);
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientClaim", b =>
@@ -564,9 +626,9 @@ namespace Udap.Server.Migrations.UdapDb
                     b.Navigation("Client");
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.Anchor", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Anchor", b =>
                 {
-                    b.HasOne("Udap.Server.Entitiies.Community", "Community")
+                    b.HasOne("Udap.Server.Entities.Community", "Community")
                         .WithMany("Anchors")
                         .HasForeignKey("CommunityId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -576,15 +638,15 @@ namespace Udap.Server.Migrations.UdapDb
                     b.Navigation("Community");
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.AnchorCertification", b =>
+            modelBuilder.Entity("Udap.Server.Entities.AnchorCertification", b =>
                 {
-                    b.HasOne("Udap.Server.Entitiies.Anchor", "Anchor")
+                    b.HasOne("Udap.Server.Entities.Anchor", "Anchor")
                         .WithMany("AnchorCertifications")
                         .HasForeignKey("AnchorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("FK_AnchorCertification_Anchor");
 
-                    b.HasOne("Udap.Server.Entitiies.Certification", "Certification")
+                    b.HasOne("Udap.Server.Entities.Certification", "Certification")
                         .WithMany("AnchorCertifications")
                         .HasForeignKey("CertificationId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -595,22 +657,22 @@ namespace Udap.Server.Migrations.UdapDb
                     b.Navigation("Certification");
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.Certification", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Certification", b =>
                 {
-                    b.HasOne("Udap.Server.Entitiies.Community", null)
+                    b.HasOne("Udap.Server.Entities.Community", null)
                         .WithMany("Certifications")
                         .HasForeignKey("CommunityId");
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.CommunityCertification", b =>
+            modelBuilder.Entity("Udap.Server.Entities.CommunityCertification", b =>
                 {
-                    b.HasOne("Udap.Server.Entitiies.Certification", "Certification")
+                    b.HasOne("Udap.Server.Entities.Certification", "Certification")
                         .WithMany("CommunityCertifications")
                         .HasForeignKey("CertificationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("FK_CommunityCertification_Certification");
 
-                    b.HasOne("Udap.Server.Entitiies.Community", "Community")
+                    b.HasOne("Udap.Server.Entities.Community", "Community")
                         .WithMany("CommunityCertifications")
                         .HasForeignKey("CommunityId")
                         .HasConstraintName("FK_CommunityCertification_Community");
@@ -641,19 +703,19 @@ namespace Udap.Server.Migrations.UdapDb
                     b.Navigation("RedirectUris");
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.Anchor", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Anchor", b =>
                 {
                     b.Navigation("AnchorCertifications");
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.Certification", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Certification", b =>
                 {
                     b.Navigation("AnchorCertifications");
 
                     b.Navigation("CommunityCertifications");
                 });
 
-            modelBuilder.Entity("Udap.Server.Entitiies.Community", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Community", b =>
                 {
                     b.Navigation("Anchors");
 

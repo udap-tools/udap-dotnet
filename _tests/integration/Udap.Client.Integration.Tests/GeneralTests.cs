@@ -323,8 +323,10 @@ namespace Udap.Client.Integration.Tests
             validator.Untrusted += certificate2 => _testOutputHelper.WriteLine("Untrusted: " + certificate2.Subject);
             
             return validator.IsTrustedCertificate(
+                "client_name",
                 issuedCertificate2,
                 anchors.Select(a => X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
+                out X509ChainElementCollection? chainElements,
                 roots.ToArray().ToX509Collection());
         }
 

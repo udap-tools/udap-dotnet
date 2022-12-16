@@ -10,11 +10,16 @@
 using System.Net;
 using System.Text.Json;
 using FhirLabsApi;
+#if NET7_0
+using FhirLabsApi.Extensions;
+#endif
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
 using Hl7.Fhir.WebApi;
+using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Udap.Common;
@@ -68,6 +73,7 @@ builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(s => {
 
 
 builder.Services
+    
     .UseFhirServerController( /*systemService,*/ options =>
     {
         // An example HTML formatter that puts the raw XML on the output
@@ -87,6 +93,18 @@ builder.Services
         options.SerializerSettings.Formatting = Formatting.Indented;
     });
 
+builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
+    .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>
+    {
+        options.Authority = "https://localhost:5002";
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false
+        };
+        
+    });
+    
 
 // UDAP CertStore
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection("UdapFileCertStoreManifest"));
@@ -96,12 +114,10 @@ builder.Services.AddSingleton<ICertificateStore>(sp =>
         sp.GetRequiredService<ILogger<FileCertificateStore>>(),
         "FhirLabsApi"));
 
+#if NET7_0
+builder.AddRateLimiting();
+#endif
 
-//
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-//
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
@@ -109,6 +125,10 @@ var app = builder.Build();
 
 app.UsePathBase(new PathString("/fhir/r4"));
 
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.Use(async (context, next) =>
 {
@@ -135,16 +155,14 @@ app.Use(async (context, next) =>
     await next.Invoke();
 });
 
-app.UseSwagger();
-app.UseSwaggerUI(options => {
-    options.SwaggerEndpoint("v1/swagger.json", "FhirLabs V1");
-});
 
-app.UseRouting();
 
+
+#if NET7_0
+app.UseRateLimiter();
+#endif
 
 app.UseHttpsRedirection();
-
 
 //
 // Diagram to decide where cors middleware should be applied.
@@ -160,15 +178,15 @@ app.UseCors(config =>
 });
 
 
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
 
-// app.UseEndpoints(endpoints =>
-// {
-//     endpoints.MapSwagger();
-// });
-
+#if NET6_0
+app.MapControllers()
+    .RequireAuthorization();
+#else
+app.MapControllers()
+    .RequireAuthorization()
+    .RequireRateLimiting(RateLimitExtensions.GetPolicy);
+#endif
 
 app.Run();
 

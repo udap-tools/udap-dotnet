@@ -9,6 +9,16 @@
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7087;http://localhost:5253"
     },
+    "/seed": {
+      "commandName": "Project",
+      "commandLineArgs": "/seed ../../../../../_tests/Udap.PKI.Generator/certstores",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7087;http://localhost:5253"
+    },
     "WSL": {
       "commandName": "WSL2",
       "launchBrowser": true,

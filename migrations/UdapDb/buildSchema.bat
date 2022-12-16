@@ -1,5 +1,7 @@
-﻿rmdir /S /Q "UdapServer"
-rmdir /S /Q "../../UdapServer/Migrations"
+﻿rem  Run from this directory.  This always starts over.  Some day I will have to retain history.  Maybe... 
+
+rmdir /S /Q "Udap/Server"
+rmdir /S /Q "../../Udap.Server/Migrations"
 
 dotnet ef migrations add InitialUdap  -c UdapDbContext -o Udap/Server/Migrations/UdapDb   --namespace=Udap.Server.Migrations.UdapDb
 

@@ -9,12 +9,19 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using AspNetCoreRateLimit;
+using Duende.IdentityServer.EntityFramework.Entities;
 using FluentAssertions;
+using FluentAssertions.Common;
 using IdentityModel;
+using IdentityModel.Client;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
@@ -33,6 +40,8 @@ using Udap.Idp;
 using Udap.Metadata.Server;
 using Udap.Server.Registration;
 using Xunit.Abstractions;
+using static System.Formats.Asn1.AsnWriter;
+using static IdentityModel.OidcConstants;
 
 namespace UdapServer.Tests;
 
@@ -81,15 +90,13 @@ public class ApiTestFixture : WebApplicationFactory<Program>
         // Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORT", "5001");
         Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "http://localhost");
         builder.UseEnvironment("Development");
-
+        
         builder.ConfigureServices(services =>
         {
             //
             // Fix-up TrustChainValidator to ignore certificate revocation
             //
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType ==
-                     typeof(TrustChainValidator));
+            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(TrustChainValidator));
 
             if (descriptor != null)
             {
@@ -104,17 +111,22 @@ public class ApiTestFixture : WebApplicationFactory<Program>
                     RevocationMode = X509RevocationMode.NoCheck // This is the change unit testing with no revocation endpoint to host the revocation list.
                 },
                 Output.ToLogger<TrustChainValidator>()));
-
         });
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();
             logging.AddXUnit(Output);
         });
+        
 
         var app = base.CreateHost(builder);
 
         return app;
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.UseSetting("skipRateLimiting", null);
     }
 }
 
@@ -135,8 +147,11 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
     }
 
     [Fact]
-    public async Task RegisrationSuccessTest()
+    public async Task RegisrationSuccessWeatherApiTest()
     {
+        // var clientPolicyStore = _fixture.Services.GetService<IIpPolicyStore>();
+        //
+        //
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
 
@@ -159,10 +174,10 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
 
         var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
         var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
 
         var jwtId = CryptoRandom.CreateUniqueId();
         //
@@ -267,10 +282,10 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
 
         var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
         var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
 
         var jwtId = CryptoRandom.CreateUniqueId();
         //
@@ -357,10 +372,10 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
 
         var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
         var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
 
         var jwtId = CryptoRandom.CreateUniqueId();
         //
@@ -450,10 +465,10 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
 
         var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
         var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
 
         var jwtId = CryptoRandom.CreateUniqueId();
         //
@@ -513,8 +528,6 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
     [Fact]
     public async Task RegisrationSuccess_FhirLabs_Test()
     {
-        using var _ = _fixture.CreateClient();
-
         var handler = new HttpClientHandler();
         //
         // Interesting discussion if you are into this sort of stuff
@@ -528,9 +541,9 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
             return chain.Build(cert);
         };
 
-        using var client = new HttpClient(handler);
+        using var fhirLabsClient = new HttpClient(handler);
 
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://fhirlabs.net:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
@@ -548,35 +561,45 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint);
 
-        //Get signed payload and compare registration_endpoint
+        // Get signed payload and compare registration_endpoint
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
         var jwt = new JwtSecurityToken(metadata.SignedMetadata);
         var tokenHeader = jwt.Header;
-        var tokenHandler = new JwtSecurityTokenHandler();
 
-        var x5CArray = JsonNode.Parse(tokenHeader.X5c).AsArray();
+
+        // var tokenHandler = new JwtSecurityTokenHandler();
+
+        // Update JwtSecurityToken to JsonWebTokenHandler
+        // See: https://stackoverflow.com/questions/60455167/why-we-have-two-classes-for-jwt-tokens-jwtsecuritytokenhandler-vs-jsonwebtokenha
+        // See: https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/945
+        //
+        var tokenHandler = new JsonWebTokenHandler();
+
+        var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray.First().ToString()));
 
-        tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
-        {
-            RequireSignedTokens = true,
-            ValidateIssuer = true,
-            ValidIssuers = new[] { "https://fhirlabs.net:7016/fhir/r4" }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-            ValidateAudience = false, // No aud for UDAP metadata
-            ValidateLifetime = true,
-            IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
-
-        }, out SecurityToken valdatedToken);
+        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
+            {
+                RequireSignedTokens = true,
+                ValidateIssuer = true,
+                ValidIssuers = new[]
+                {
+                    "https://fhirlabs.net:7016/fhir/r4"
+                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                ValidateAudience = false, // No aud for UDAP metadata
+                ValidateLifetime = true,
+                IssuerSigningKey = new X509SecurityKey(publicCert),
+                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+            } // , out SecurityToken validatedToken
+        );
 
         jwt.Payload.Claims
             .Single(c => c.Type == UdapConstants.Discovery.RegistrationEndpoint)
             .Value.Should().Be(regEndpoint);
 
-        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "TestCerts"),
-            "fhirlabs.net.client.pfx");
+        var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
 
         var manifest = _fixture.TestConfig.GetSection("UdapFileCertStoreManifest").Get<UdapFileCertStoreManifest>();
 
@@ -594,10 +617,10 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
 
         var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
         var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
 
         var jwtId = CryptoRandom.CreateUniqueId();
         //
@@ -622,7 +645,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
-
+        
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -649,11 +672,87 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
-        var documentAsJson = JsonSerializer.Serialize(document);
+        // var documentAsJson = JsonSerializer.Serialize(document);
         var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        // _testOutputHelper.WriteLine(result);
+        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(result));
         // result.Should().BeEquivalentTo(documentAsJson);
 
-        _testOutputHelper.WriteLine(result.ClientId);
+        // _testOutputHelper.WriteLine(result.ClientId);
+
+
+        //
+        //
+        //  B2B section.  Obtain an Access Token
+        //
+        //
+
+        var idpDisco = await idpClient.GetDiscoveryDocumentAsync("https://localhost:5002");
+
+        idpDisco.IsError.Should().BeFalse(idpDisco.Error);
+        
+
+
+
+        //
+        // Get Access Token
+        //
+
+        var jwtPayload = new JwtPayload(
+            result.ClientId,
+            disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+            },
+            now.ToUniversalTime(),
+            now.AddMinutes(5).ToUniversalTime()
+            );
+
+        //
+        // All of this is the same as above, during registration
+        //
+        jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+        encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
+        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
+
+        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+        
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = disco.TokenEndpoint,
+            //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+        
+        var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
+
+        fhirLabsClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
+        var patientResponse = fhirLabsClient.GetAsync("https://fhirlabs.net:7016/fhir/r4/Patient");
+
+        patientResponse.Result.EnsureSuccessStatusCode();
+        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+
+    }
+
+    private string BuildHl7B2BExtensions()
+    {
+        return "{\"version\": \"1\", \"subject_name\": \"todo.  more work to do here\"}";
     }
 }

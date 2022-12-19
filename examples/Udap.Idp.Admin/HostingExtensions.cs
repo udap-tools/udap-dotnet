@@ -33,10 +33,7 @@ public static class HostingExtensions
 
         builder.Services.AddControllers();
         builder.Services.AddProblemDetails();
-
-        builder.Services.AddAutoMapper(
-            typeof(Program));
-
+        builder.Services.AddAutoMapper(typeof(Program));
         builder.Services.AddRazorPages();
         builder.Services.AddServerSideBlazor();
         

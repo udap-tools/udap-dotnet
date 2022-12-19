@@ -1,0 +1,121 @@
+﻿@page "/RootCerts"
+@using System.Security.Cryptography.X509Certificates
+
+@inject ISnackbar Snackbar
+
+<InputFile id="fileInputForRootCertificate" OnChange="UploadFilesAsync" hidden />
+
+<ErrorBoundary @ref="ErrorBoundary">
+  <ChildContent>
+    <MudTable Items="@_rootCertificates" Dense="@false" Hover="@true" ReadOnly="@false" CanCancelEdit="@true"
+              SortLabel="Sort By" CommitEditTooltip="Commit Edit"
+              OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))"
+              RowEditPreview="BackupItem"
+              RowEditCancel="ResetItemToOriginalValues"
+              RowEditCommit="ItemHasBeenCommitted"
+              IsEditRowSwitchingBlocked="@true"
+              ApplyButtonPosition="@TableApplyButtonPosition.Start">
+      <ToolBarContent>
+          <MudText Typo="Typo.h6">Root Certificates</MudText>
+        <MudSpacer />
+
+        <MudFab Icon="@Icons.Material.Filled.GeneratingTokens"
+                Color="Color.Inherit"
+                @onclick="AddRootCertificate"
+                Label="Create"
+                disabled="@_rootCertificateRowIsInEditMode" />
+      </ToolBarContent>
+      <ColGroup>
+        <col style="width:0px" />
+        <col />
+        <col />
+        <col />
+        <col />
+      </ColGroup>
+      <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<RootCertificate, object>(x=>x.Name)">Subject</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=>x.Enabled)">Enabled</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=>x.Certificate.Thumbprint)">Thumbprint</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=>x.Certificate.GetNameInfo(X509NameType.SimpleName, false))">Certificate Name</MudTableSortLabel></MudTh>
+        <MudTh />
+      </HeaderContent>
+      <RowTemplate>
+                @if (context.Id == 0)
+                {
+            <MudTd DataLabel="Name" id="@($"RootCertificateId:{context.Id}")">@context.Name</MudTd>
+                }
+                else
+                {
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+                }
+        <MudTd DataLabel="Enabled"><MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" /></MudTd>
+        <MudTd DataLabel="Certificate">@context.Certificate?.GetNameInfo(X509NameType.SimpleName, false) </MudTd>
+        <MudTd DataLabel="Certificate">@context.Thumbprint </MudTd>
+        <MudTd @onclick:stopPropagation="true" Style="">
+                    @if (context.Id != 0)
+                    {
+              <MudFab HtmlTag="label"
+                  Size="Size.Small"
+                  Color="Color.Warning"
+                  Icon="@Icons.Filled.DeleteForever"
+                  Label="Delete"
+                  class="ma-2"
+                  OnClick="@(() => DeleteRootCertificate(context))"
+                  Disabled="@_rootCertificateRowIsInEditMode" />
+                    }
+        </MudTd>
+      </RowTemplate>
+      <RowEditingTemplate>
+        <MudTd DataLabel="Name">
+          <MudTextField @bind-Value="@context.Name" Required />
+        </MudTd>
+        <MudTd DataLabel="Enabled">
+            <MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" />
+        </MudTd>
+        <MudTd DataLabel="Thumbprint">@context.Thumbprint</MudTd>
+        <MudTd DataLable="Certificate">
+
+                    @if (context.Certificate != null)
+                    {
+              <MudText>
+                            @context.Certificate?.GetNameInfo(X509NameType.SimpleName, false)
+              </MudText>
+                    }
+        </MudTd>
+        <MudTd>
+          <MudFab HtmlTag="label"
+                  Size="Size.Small"
+                  Color="Color.Success"
+                  Icon="@Icons.Filled.AttachFile"
+                  Label="Upload Certificate"
+                  for="fileInputForRootCertificate" />
+        </MudTd>
+      </RowEditingTemplate>
+      <PagerContent>
+        <MudTablePager />
+      </PagerContent>
+    </MudTable>
+  </ChildContent>
+  <ErrorContent Context="ex">
+    <pre class="blazor-error-boundary">
+            @ex.Message
+      </pre>
+  </ErrorContent>
+</ErrorBoundary>
+
+<MudExpansionPanels Style="flex: 1;">
+  <MudExpansionPanel Text="Show inline-edit event log">
+        @foreach (var message in _editEvents)
+        {
+        <MudText>@message</MudText>
+        }
+        @if (_editEvents.Count > 0)
+        {
+        <div class="d-flex">
+          <MudSpacer />
+          <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="ClearEventLog">Clear event log</MudButton>
+        </div>
+        }
+  </MudExpansionPanel>
+</MudExpansionPanels>
+

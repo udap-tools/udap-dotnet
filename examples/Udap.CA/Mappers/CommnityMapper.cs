@@ -59,22 +59,20 @@ namespace Udap.CA.Mappers
 
                 
                 
-            CreateMap<ICollection<Anchor>, ICollection<ViewModel.Anchor>>()
+            CreateMap<ICollection<RootCertificate>, ICollection<ViewModel.RootCertificate>>()
                  .ConstructUsing(src =>
-                     // var dest = new HashSet<Model.Models.Anchor>();
-                     src.Select(anchor => new ViewModel.Anchor()
+                     src.Select(rootCertificate => new ViewModel.RootCertificate()
                      {
-                         Id = anchor.Id,
-                         Subject = anchor.Subject,
-                         SubjectAltName = anchor.SubjectAltName,
-                         CertificateRevocation = anchor.CertificateRevocation,
-                         CertificateAuthIssuerUri = anchor.CertificateAuthIssuerUri,
-                         Thumbprint = anchor.Thumbprint,
-                         BeginDate = anchor.BeginDate,
-                         EndDate = anchor.EndDate,
-                         Enabled = anchor.Enabled,
-                         Certificate = X509Certificate2.CreateFromPem(anchor.X509Certificate),
-                         RootCertificateId = anchor.RootCertificateId
+                         Id = rootCertificate.Id,
+                         CommunityId = rootCertificate.CommunityId,
+                         Name = rootCertificate.Name,
+                         Url = rootCertificate.Url,
+                         Thumbprint = rootCertificate.Thumbprint,
+                         BeginDate = rootCertificate.BeginDate,
+                         EndDate = rootCertificate.EndDate,
+                         Enabled = rootCertificate.Enabled,
+                         Certificate = X509Certificate2.CreateFromPem(rootCertificate.X509Certificate),
+                         
                      }).ToHashSet()
                  )
                  .ForAllMembers(opt => opt.Ignore());

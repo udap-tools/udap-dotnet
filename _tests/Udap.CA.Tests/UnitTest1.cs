@@ -10,6 +10,7 @@ using System.Text;
 using Udap.CA.Services;
 using Udap.Common.Extensions;
 using System.IO;
+using Udap.Common;
 
 
 namespace Udap.CA.Tests;
@@ -58,7 +59,7 @@ public class UnitTest1
     public X509Certificate2 GenerateIntermediateCertTest()
     {
         var rootCertificate = GenerateRootCertTest();
-
+        
         var subject = "CN=SureFhir-TestAnchor, OU=Anchor, O=Fhir Coding, L=Portland, S=Oregon, C=US";
         var subjectAltName = new Uri("http://fhirwalker.com");
         var crl = new Uri("http://crl.fhircerts.net/crl/SureFhir-TestAnchor.crl");

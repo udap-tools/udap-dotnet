@@ -9,8 +9,13 @@ public class CertificateUtilities : IDisposable
     private X509Certificate2 _certificate;
     private RSA _rsaKey;
 
-    public CertificateUtilities()
+    public CertificateUtilities(RSA? rsa = null)
     {
+        if (rsa != null)
+        {
+            _rsaKey = rsa;
+        }
+
         _rsaKey = RSA.Create(4096);
     }
 

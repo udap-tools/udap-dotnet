@@ -51,26 +51,21 @@ public class RootCertificateService
         }
 
         entity.Enabled = rootCertificate.Enabled;
-        entity.Name = rootCertificate.Name;
-        entity.Certificate = rootCertificate.Certificate.Export(X509ContentType.Pkcs12);
-        entity.Thumbprint = rootCertificate.Certificate.Thumbprint;
-        entity.BeginDate = rootCertificate.Certificate.NotBefore;
-        entity.EndDate = rootCertificate.Certificate.NotAfter;
-
+        
         await _dbContext.SaveChangesAsync(token);
     }
 
     public async Task<bool> Delete(int id, CancellationToken token = default)
     {
-        var community = await _dbContext.Communities
+        var rootCertificate = await _dbContext.RootCertificates
             .SingleOrDefaultAsync(d => d.Id == id, token);
 
-        if (community == null)
+        if (rootCertificate == null)
         {
             return false;
         }
 
-        _dbContext.Communities.Remove(community);
+        _dbContext.RootCertificates.Remove(rootCertificate);
 
         await _dbContext.SaveChangesAsync(token);
 

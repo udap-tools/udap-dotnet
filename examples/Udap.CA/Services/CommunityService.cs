@@ -22,6 +22,7 @@ public class CommunityService
     public async Task<ICollection<ViewModel.Community>> Get(CancellationToken token = default)
     {
         var communties = await _dbContext.Communities
+            .Include(c => c.RootCertificates)
             .ToListAsync(cancellationToken: token);
 
         return _autoMapper.Map<ICollection<ViewModel.Community>>(communties);

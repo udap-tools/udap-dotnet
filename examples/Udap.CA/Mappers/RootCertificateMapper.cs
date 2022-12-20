@@ -8,8 +8,10 @@
 #endregion
 
 using AutoMapper;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Udap.CA.Entities;
+using Udap.Common;
 
 namespace Udap.CA.Mappers;
 
@@ -54,18 +56,34 @@ public class RootCertificateMapperProfile : Profile
         CreateMap<RootCertificate, ViewModel.RootCertificate>(MemberList.Destination)
             .ConstructUsing(src => new ViewModel.RootCertificate())
 
-
             .ForMember(model => model.Certificate, opts =>
+                opts.MapFrom(entity => X509Certificate2.CreateFromPem(entity.X509Certificate)))
+            
+
+            /*
+             * .ForMember(model => model.Certificate, opts =>
                 opts.MapFrom(entity => new X509Certificate2(
                     entity.Certificate,
                     entity.Secret,
                     X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.Exportable
                 )))
+             */
 
             .ReverseMap()
 
-            .ForMember(entity => entity.Certificate, opts =>
-                opts.MapFrom(model => model.Certificate.Export(X509ContentType.Pkcs12)));
+            .ForMember(entity => entity.RSAPriateKey, opts =>
+                opts.MapFrom(model =>
+                    PemEncoding.WriteString(
+                        PemLabels.RsaPrivateKey,
+                        model.Certificate.Export(X509ContentType.Pkcs12, model.Secret))))
+
+            .ForMember(entity => entity.X509Certificate, opts =>
+                opts.MapFrom(model =>
+                    PemEncoding.WriteString(
+                        PemLabels.X509Certificate,
+                        model.Certificate.Export(X509ContentType.Cert))));
+        
+        // model.Certificate.Export(X509ContentType.Pkcs12, model.Secret)));
 
     }
 }

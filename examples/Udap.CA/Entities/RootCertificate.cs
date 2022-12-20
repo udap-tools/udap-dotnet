@@ -13,10 +13,12 @@ public class RootCertificate
     public string Name { get; set; }
     /// <summary>
     /// Certificate Bytes
-    /// If CertSecurityLevel <see cref="CertSecurityLevel.Software"/>, store in PKCS12 format;
-    /// If CertSecurityLevel <see cref="CertSecurityLevel.Fips1402"/>, store in PKCS1 format; 
+    /// If CertSecurityLevel <see cref="CertSecurityLevel.Software"/>, store in RSAPriateKey pem format and X509Certificate format;
+    /// If CertSecurityLevel <see cref="CertSecurityLevel.Fips1402"/>, store in X509Certificate pem format only; 
     /// </summary>
-    public byte[] Certificate { get; set; }
+    public string RSAPriateKey { get; set; }
+
+    public string X509Certificate { get; set; }
 
     /// <summary>
     /// Default to Software type.  This will always be a PKCS12 format.

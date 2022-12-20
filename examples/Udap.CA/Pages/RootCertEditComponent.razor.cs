@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using MudBlazor;
 using Udap.CA.Services;
 using Udap.CA.Services.State;
 using Udap.CA.ViewModel;
+using static MudBlazor.CategoryTypes;
 
 namespace Udap.CA.Pages;
 
@@ -20,10 +22,11 @@ public partial class RootCertEditComponent
     ErrorBoundary? ErrorBoundary { get; set; }
 
     private List<string> _editEvents = new();
-    private RootCertificate _rootCertificateBeforeEdit;
+    private RootCertificate _rootCertificateBeforeEdit = new RootCertificate();
     private ICollection<RootCertificate> _rootCertificates;
-    private RootCertificate? _rootCertificateRowInEdit;
+    public RootCertificate _rootCertificateRowInEdit { get; set; }
     private bool _rootCertificateRowIsInEditMode;
+    private bool _rootFormActive;
     private ElementReference? _newRootCertificateRowElement;
     private MudBlazor.MudTable<ICollection<RootCertificate>> table;
 
@@ -132,13 +135,8 @@ public partial class RootCertEditComponent
     private async Task AddRootCertificate()
     {
         _rootCertificateRowInEdit = new ViewModel.RootCertificate() {};
-
-        _rootCertificates.Add(_rootCertificateRowInEdit);
+        _rootFormActive = true;
         await Task.Delay(1);
-        StateHasChanged();
-
-        await Js.InvokeVoidAsync("UdapCA.setFocus", "RootCertificateId:0");
-
         StateHasChanged();
     }
 
@@ -160,24 +158,23 @@ public partial class RootCertEditComponent
         return false;
     }
 
-    private async Task UploadFilesAsync(InputFileChangeEventArgs e)
+    MudForm? rootCertForm;
+    
+    private async Task Submit()
     {
-        long maxFileSize = 1024 * 10;
+        await rootCertForm?.Validate()!;
 
-        var uploadStream = await new StreamContent(e.File.OpenReadStream(maxFileSize)).ReadAsStreamAsync();
-        var ms = new MemoryStream();
-        await uploadStream.CopyToAsync(ms);
-        var certBytes = ms.ToArray();
-
-        var cert = new X509Certificate2(certBytes);
-
-        _rootCertificateRowInEdit.Certificate = cert;
-
-        if (_rootCertificateRowInEdit.Name == null)
+        if (rootCertForm.IsValid)
         {
-            _rootCertificateRowInEdit.Name = cert.GetNameInfo(X509NameType.SimpleName, false);
-            _rootCertificateRowInEdit.Thumbprint = cert.Thumbprint;
+            var generator = new CertificateUtilities();
+            var rootCert = generator.GenerateRootCA(_rootCertificateRowInEdit.Name);
+            _rootCertificateRowInEdit.Certificate = rootCert;
+            _rootCertificateRowInEdit.Thumbprint = rootCert.Thumbprint;
+            _rootCertificateRowInEdit.CommunityId = CommunityState.Community.Id;
+            var cert = await RootCertService.Create(_rootCertificateRowInEdit);
+            Snackbar.Add("Cert Generated!");
+
+            _rootFormActive = false;
         }
     }
 }
-

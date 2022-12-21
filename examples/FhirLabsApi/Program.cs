@@ -10,9 +10,7 @@
 using System.Net;
 using System.Text.Json;
 using FhirLabsApi;
-#if NET7_0
 using FhirLabsApi.Extensions;
-#endif
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
 using Hl7.Fhir.WebApi;
@@ -28,22 +26,22 @@ using Udap.Metadata.Server;
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.WebHost.UseKestrel((b, so) =>
-{
+// builder.WebHost.UseKestrel((b, so) =>
+// {
     
 
-    so.ListenAnyIP(7016, listenOpt =>
-    {
-        listenOpt.UseHttps(
-            Path.Combine(
-                Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? string.Empty, 
-                b.Configuration["SslFileLocation"]),
-            b.Configuration["CertPassword"]);
-    });
+    // so.ListenAnyIP(7016, listenOpt =>
+    // {
+    //     listenOpt.UseHttps(
+    //         Path.Combine(
+    //             Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? string.Empty, 
+    //             b.Configuration["SslFileLocation"]),
+    //         b.Configuration["CertPassword"]);
+    // });
+    //
+    // so.ListenAnyIP(5016);
 
-    so.ListenAnyIP(5016);
-
-});
+// });
 
 
 // Add services to the container.
@@ -114,10 +112,8 @@ builder.Services.AddSingleton<ICertificateStore>(sp =>
         sp.GetRequiredService<ILogger<FileCertificateStore>>(),
         "FhirLabsApi"));
 
-#if NET7_0
-builder.AddRateLimiting();
-#endif
 
+builder.AddRateLimiting();
 
 var app = builder.Build();
 
@@ -156,13 +152,9 @@ app.Use(async (context, next) =>
 });
 
 
-
-
-#if NET7_0
 app.UseRateLimiter();
-#endif
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 //
 // Diagram to decide where cors middleware should be applied.
@@ -179,14 +171,9 @@ app.UseCors(config =>
 
 
 
-#if NET6_0
-app.MapControllers()
-    .RequireAuthorization();
-#else
 app.MapControllers()
     .RequireAuthorization()
     .RequireRateLimiting(RateLimitExtensions.GetPolicy);
-#endif
 
 app.Run();
 

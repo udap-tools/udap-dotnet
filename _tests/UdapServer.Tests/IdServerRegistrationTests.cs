@@ -740,13 +740,19 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         
         var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
 
+        _testOutputHelper.WriteLine("Authorization Token Response");
+        _testOutputHelper.WriteLine("---------------------");
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
 
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirLabsClient.GetAsync("https://fhirlabs.net:7016/fhir/r4/Patient");
+        var patientResponse = fhirLabsClient.GetAsync("https://fhirlabs.net:7016/fhir/r4/Patient/$count-em");
 
         patientResponse.Result.EnsureSuccessStatusCode();
+
+        
         _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
 
     }

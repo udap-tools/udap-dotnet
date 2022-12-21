@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "applicationName": "udap",
+            "name": "Debug with Tye",
+            "preLaunchTask": "tye-run",
+            "request": "launch",
+            "type": "tye",
+            "watch": true
+        }
+    ]
+}

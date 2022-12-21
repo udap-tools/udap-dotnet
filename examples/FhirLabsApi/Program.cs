@@ -26,8 +26,8 @@ using Udap.Metadata.Server;
 var builder = WebApplication.CreateBuilder(args);
 
 
-builder.WebHost.UseKestrel((b, so) =>
-{
+// builder.WebHost.UseKestrel((b, so) =>
+// {
     
 
     // so.ListenAnyIP(7016, listenOpt =>
@@ -41,7 +41,7 @@ builder.WebHost.UseKestrel((b, so) =>
     //
     // so.ListenAnyIP(5016);
 
-});
+// });
 
 
 // Add services to the container.
@@ -154,7 +154,7 @@ app.Use(async (context, next) =>
 
 app.UseRateLimiter();
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 //
 // Diagram to decide where cors middleware should be applied.

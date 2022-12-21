@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>../..</DockerfileContext>
+    <DockerfileContext>..\..</DockerfileContext>
     <DockerfileRunArguments>-p "5002:5002" </DockerfileRunArguments>
   </PropertyGroup>
   

@@ -3,7 +3,7 @@
     "FhirLabsApi": {
       "commandName": "Project",
       "launchBrowser": true,
-      "launchUrl": "fhir/r4/.well-known/udap",
+      "launchUrl": "fhir/r4/.well-known/udap/communities/ashtml",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
@@ -23,9 +23,12 @@
     "Docker": {
       "commandName": "Docker",
       "launchBrowser": true,
-      "launchUrl": "https://fhirlabs.net:7016/fhir/r4/.well-known/udap",
+      "launchUrl": "http://fhirlabs.net:5016/fhir/r4/.well-known/udap",
       "publishAllPorts": true,
-      "useSSL": true
+      "useSSL": false,
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
     },
     "WSL": {
       "commandName": "WSL2",

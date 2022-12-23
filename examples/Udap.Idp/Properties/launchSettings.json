@@ -23,7 +23,10 @@
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
       "publishAllPorts": true,
-      "useSSL": true
+      "useSSL": false,
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "http://*:8080"
+      }
     },
     "WSL": {
       "commandName": "WSL2",

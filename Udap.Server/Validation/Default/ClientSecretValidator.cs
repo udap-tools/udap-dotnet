@@ -37,6 +37,7 @@ public class UdapClientSecretValidator : IClientSecretValidator
     /// <param name="parser">The parser.</param>
     /// <param name="validator">The validator.</param>
     /// <param name="events">The events.</param>
+    /// <para name="scopeService">The service to lookup scopes if not supplied in HttpContext</para>
     /// <param name="logger">The logger.</param>
     public UdapClientSecretValidator(
         IClientStore clients, 

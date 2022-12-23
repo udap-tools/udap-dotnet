@@ -5,31 +5,35 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>..\..</DockerfileContext>
-    <DockerfileRunArguments>-p "5002:5002" </DockerfileRunArguments>
+    <DockerfileRunArguments>-p "5002:8080" </DockerfileRunArguments>
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="AspNetCoreRateLimit" Version="4.0.2" />
+    <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
     <PackageReference Include="Duende.IdentityServer" Version="6.2.0" />
     <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="6.2.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.0">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.1">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
-    <PackageReference Include="OpenTelemetry" Version="1.3.1" />
-    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.3.1" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.3.1" />
+    <PackageReference Include="OpenTelemetry" Version="1.3.2" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.3.2" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.3.2" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc9" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc9" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.0.0-rc9" />
     <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.0.0-rc9.9" />
-    <PackageReference Include="Serilog.AspNetCore" Version="6.0.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
   </ItemGroup>
-  
-  <ItemGroup>
+
+  <!-- <ItemGroup Condition="true"> -->
+  <!--   <PackageReference Include="Udap.Server" Version="0.0.3-preview*" /> -->
+  <!-- </ItemGroup> -->
+
+  <ItemGroup Condition="true">
     <ProjectReference Include="../../Udap.Server/Udap.Server.csproj" />
   </ItemGroup>
   

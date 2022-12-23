@@ -1,10 +1,11 @@
-﻿#nullable disable
-
+﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Udap.Idp.Data.Migrations.IdentityServer.PersistedGrantDb
+#nullable disable
+
+namespace IdentityServerDb.Migrations.PersistedGrantDb
 {
-    public partial class InitialIdentityServerPersistedGrantDbMigration : Migration
+    public partial class Grants : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -12,15 +13,15 @@ namespace Udap.Idp.Data.Migrations.IdentityServer.PersistedGrantDb
                 name: "DeviceCodes",
                 columns: table => new
                 {
-                    UserCode = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    DeviceCode = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    SubjectId = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
-                    SessionId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
-                    ClientId = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
-                    CreationTime = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Expiration = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Data = table.Column<string>(type: "TEXT", maxLength: 50000, nullable: false)
+                    UserCode = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    DeviceCode = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    SubjectId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    SessionId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ClientId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Expiration = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Data = table.Column<string>(type: "nvarchar(max)", maxLength: 50000, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -31,14 +32,14 @@ namespace Udap.Idp.Data.Migrations.IdentityServer.PersistedGrantDb
                 name: "Keys",
                 columns: table => new
                 {
-                    Id = table.Column<string>(type: "TEXT", nullable: false),
-                    Version = table.Column<int>(type: "INTEGER", nullable: false),
-                    Created = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Use = table.Column<string>(type: "TEXT", nullable: true),
-                    Algorithm = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    IsX509Certificate = table.Column<bool>(type: "INTEGER", nullable: false),
-                    DataProtected = table.Column<bool>(type: "INTEGER", nullable: false),
-                    Data = table.Column<string>(type: "TEXT", nullable: false)
+                    Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    Version = table.Column<int>(type: "int", nullable: false),
+                    Created = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Use = table.Column<string>(type: "nvarchar(450)", nullable: true),
+                    Algorithm = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    IsX509Certificate = table.Column<bool>(type: "bit", nullable: false),
+                    DataProtected = table.Column<bool>(type: "bit", nullable: false),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -49,18 +50,18 @@ namespace Udap.Idp.Data.Migrations.IdentityServer.PersistedGrantDb
                 name: "PersistedGrants",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Key = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
-                    Type = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
-                    SubjectId = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
-                    SessionId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
-                    ClientId = table.Column<string>(type: "TEXT", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
-                    CreationTime = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Expiration = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    ConsumedTime = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    Data = table.Column<string>(type: "TEXT", maxLength: 50000, nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Key = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Type = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    SubjectId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    SessionId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ClientId = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    CreationTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Expiration = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ConsumedTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Data = table.Column<string>(type: "nvarchar(max)", maxLength: 50000, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -71,17 +72,17 @@ namespace Udap.Idp.Data.Migrations.IdentityServer.PersistedGrantDb
                 name: "ServerSideSessions",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Key = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    Scheme = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    SubjectId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
-                    SessionId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
-                    DisplayName = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
-                    Created = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Renewed = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Expires = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    Data = table.Column<string>(type: "TEXT", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Key = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Scheme = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    SubjectId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    SessionId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    DisplayName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Created = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Renewed = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Expires = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Data = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -118,7 +119,8 @@ namespace Udap.Idp.Data.Migrations.IdentityServer.PersistedGrantDb
                 name: "IX_PersistedGrants_Key",
                 table: "PersistedGrants",
                 column: "Key",
-                unique: true);
+                unique: true,
+                filter: "[Key] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PersistedGrants_SubjectId_ClientId_Type",

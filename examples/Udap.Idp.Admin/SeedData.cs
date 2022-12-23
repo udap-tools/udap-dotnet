@@ -45,19 +45,25 @@ public static class SeedData
 
         services.AddOperationalDbContext(options =>
         {
-            options.ConfigureDbContext = db => db.UseSqlite(connectionString,
+            // options.ConfigureDbContext = db => db.UseSqlite(connectionString,
+            //     sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
+            options.ConfigureDbContext = db => db.UseSqlServer(connectionString,
                 sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
         });
         services.AddConfigurationDbContext(options =>
         {
-            options.ConfigureDbContext = db => db.UseSqlite(connectionString,
+            // options.ConfigureDbContext = db => db.UseSqlite(connectionString,
+            //     sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
+            options.ConfigureDbContext = db => db.UseSqlServer(connectionString,
                 sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
         });
 
         services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
         services.AddUdapDbContext(options =>
         {
-            options.UdapDbContext = db => db.UseSqlite(connectionString,
+            // options.UdapDbContext = db => db.UseSqlite(connectionString,
+            //     sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
+            options.UdapDbContext = db => db.UseSqlServer(connectionString,
                 sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
         });
 

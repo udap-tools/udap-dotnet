@@ -42,7 +42,10 @@ public static class HostingExtensions
         
         builder.Services.AddUdapDbContext<UdapDbContext>(options =>
         {
-            options.UdapDbContext = b => b.UseSqlite(connectionString)
+            // options.UdapDbContext = b => b.UseSqlite(connectionString)
+            //     .LogTo(Console.WriteLine, LogLevel.Information);
+
+            options.UdapDbContext = b => b.UseSqlServer(connectionString)
                 .LogTo(Console.WriteLine, LogLevel.Information);
         });
 
@@ -55,8 +58,18 @@ public static class HostingExtensions
 
         var httpClientBuilder = builder.Services.AddHttpClient<ApiService>(client =>
         {
-            client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(';').FirstOrDefault() ?? string.Empty);
+            bool isInDockerContainer = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true");
+
+            if (isInDockerContainer)
+            {
+                client.BaseAddress = new Uri("http://localhost:8080");
+            }
+            else
+            {
+                client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(';').FirstOrDefault() ?? string.Empty);
+            } 
         });
+
         if (! builder.Environment.IsDevelopment())
         {
             httpClientBuilder.AddTransientHttpErrorPolicy(builder => builder.WaitAndRetryAsync(new[]

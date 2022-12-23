@@ -541,11 +541,12 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
             return chain.Build(cert);
         };
 
-        using var fhirLabsClient = new HttpClient(handler);
+        // using var fhirLabsClient = new HttpClient(handler);
+        using var fhirLabsClient = new HttpClient();
 
         var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
         {
-            Address = "https://fhirlabs.net:7016/fhir/r4",
+            Address = "https://localhost:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
                 ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
@@ -586,7 +587,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
                 ValidateIssuer = true,
                 ValidIssuers = new[]
                 {
-                    "https://fhirlabs.net:7016/fhir/r4"
+                    "https://localhost:7016/fhir/r4"
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
@@ -748,7 +749,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
 
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirLabsClient.GetAsync("https://fhirlabs.net:7016/fhir/r4/Patient/$count-em");
+        var patientResponse = fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
 
         patientResponse.Result.EnsureSuccessStatusCode();
 

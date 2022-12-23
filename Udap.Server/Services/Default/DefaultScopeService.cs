@@ -29,7 +29,9 @@ public class DefaultScopeService: IScopeService
     /// <returns></returns>
     public async Task Resolve(HttpContext context, Duende.IdentityServer.Models.Client client)
     {
-        if (client.ClientSecrets.All(s => s.Type == UdapServerConstants.SecretTypes.Udapx5c))
+        if (client.ClientSecrets.All(s => 
+                s.Type == UdapServerConstants.SecretTypes.Udapx5c ||
+                s.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem))
         {
             var form = (await context.Request.ReadFormAsync()).AsNameValueCollection();
             form.Set(OidcConstants.TokenRequest.Scope, client.AllowedScopes.ToSpaceSeparatedString());

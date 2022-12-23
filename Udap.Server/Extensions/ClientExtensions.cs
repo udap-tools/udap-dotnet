@@ -23,7 +23,7 @@ public static class ClientExtensions
     /// </summary>
     /// <param name="secrets">The secrets</param>
     /// <returns>List{X509Certificate2Collection}</returns>
-    public static Task<List<X509Certificate2Collection>> GetUdapChainsAsync(this IEnumerable<Secret> secrets)
+    public static Task<List<X509Certificate2>> GetUdapChainsAsync(this IEnumerable<Secret> secrets)
     {
         var secretList = secrets.ToList().AsReadOnly();
         var certificates = GetCertificates(secretList).ToList();
@@ -31,31 +31,43 @@ public static class ClientExtensions
         return Task.FromResult(certificates);
     }
 
-    private static IEnumerable<X509Certificate2Collection> GetCertificates(IEnumerable<Secret> secrets)
+    private static IEnumerable<X509Certificate2> GetCertificates(IEnumerable<Secret> secrets)
     {
-        var joe = secrets
-            .Where(s => s.Type == UdapServerConstants.SecretTypes.Udapx5c)
-            .Select(s =>
-            {
-                var x5CArray = JsonNode.Parse(s.Value)?.AsArray();
+        //
+        // While ClientSecrets.Value column is only varchar(4000) this technique will tend to fail for truncation
+        //
 
-                if (x5CArray == null)
-                {
-                    return null;
-                }
+        // var joe = secrets
+        //     .Where(s => s.Type == UdapServerConstants.SecretTypes.Udapx5c)
+        //     .Select(s =>
+        //     {
+        //         var x5CArray = JsonNode.Parse(s.Value)?.AsArray();
+        //
+        //         if (x5CArray == null)
+        //         {
+        //             return null;
+        //         }
+        //
+        //         var certChain = new X509Certificate2Collection();
+        //         foreach (var item in x5CArray)
+        //         {
+        //             certChain.Add(new X509Certificate2(Convert.FromBase64String(item.ToString())));
+        //         }
+        //
+        //         return certChain;
+        //     })
+        //     .Where(c => c != null)
+        //     .ToList();
+        //
+        // return joe;
 
-                var certChain = new X509Certificate2Collection();
-                foreach (var item in x5CArray)
-                {
-                    certChain.Add(new X509Certificate2(Convert.FromBase64String(item.ToString())));
-                }
 
-                return certChain;
-            })
-            .Where(c => c != null)
-            .ToList();
+        var certificates = secrets
+            .Where(s => s.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem &&
+                        s.Expiration > DateTime.Now.ToUniversalTime())
+            .Select(s => new X509Certificate2(Convert.FromBase64String(s.Value)));
 
-        return joe;
+        return certificates;
     }
 
     public static Task<List<SecurityKey>> GetUdapKeysAsync(this ParsedSecret secret)

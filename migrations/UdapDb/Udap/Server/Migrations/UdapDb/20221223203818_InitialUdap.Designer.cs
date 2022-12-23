@@ -12,7 +12,7 @@ using Udap.Server.DbContexts;
 namespace Udap.Server.Migrations.UdapDb
 {
     [DbContext(typeof(UdapDbContext))]
-    [Migration("20221223081321_InitialUdap")]
+    [Migration("20221223203818_InitialUdap")]
     partial class InitialUdap
     {
         /// <inheritdoc />
@@ -415,17 +415,17 @@ namespace Udap.Server.Migrations.UdapDb
 
             modelBuilder.Entity("Udap.Server.Entities.Anchor", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("BeginDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<long>("CommunityId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("CommunityId")
+                        .HasColumnType("int");
 
                     b.Property<bool>("Enabled")
                         .HasColumnType("bit");
@@ -454,11 +454,11 @@ namespace Udap.Server.Migrations.UdapDb
 
             modelBuilder.Entity("Udap.Server.Entities.AnchorCertification", b =>
                 {
-                    b.Property<long>("AnchorId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("AnchorId")
+                        .HasColumnType("int");
 
-                    b.Property<long>("CertificationId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("CertificationId")
+                        .HasColumnType("int");
 
                     b.HasKey("AnchorId", "CertificationId");
 
@@ -469,14 +469,14 @@ namespace Udap.Server.Migrations.UdapDb
 
             modelBuilder.Entity("Udap.Server.Entities.Certification", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<long?>("CommunityId")
-                        .HasColumnType("bigint");
+                    b.Property<int?>("CommunityId")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -492,11 +492,11 @@ namespace Udap.Server.Migrations.UdapDb
 
             modelBuilder.Entity("Udap.Server.Entities.Community", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Default")
                         .HasColumnType("bit");
@@ -516,11 +516,11 @@ namespace Udap.Server.Migrations.UdapDb
 
             modelBuilder.Entity("Udap.Server.Entities.CommunityCertification", b =>
                 {
-                    b.Property<long>("CommunityId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("CommunityId")
+                        .HasColumnType("int");
 
-                    b.Property<long>("CertificationId")
-                        .HasColumnType("bigint");
+                    b.Property<int>("CertificationId")
+                        .HasColumnType("int");
 
                     b.HasKey("CommunityId", "CertificationId");
 
@@ -531,11 +531,11 @@ namespace Udap.Server.Migrations.UdapDb
 
             modelBuilder.Entity("Udap.Server.Entities.RootCertificate", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint");
+                        .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("BeginDate")
                         .HasColumnType("datetime2");

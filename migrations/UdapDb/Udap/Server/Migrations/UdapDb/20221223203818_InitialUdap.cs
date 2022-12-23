@@ -15,7 +15,7 @@ namespace Udap.Server.Migrations.UdapDb
                 name: "UdapCommunities",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Enabled = table.Column<bool>(type: "bit", nullable: false),
@@ -30,7 +30,7 @@ namespace Udap.Server.Migrations.UdapDb
                 name: "UdapRootCertificates",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Enabled = table.Column<bool>(type: "bit", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -48,7 +48,7 @@ namespace Udap.Server.Migrations.UdapDb
                 name: "UdapAnchors",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Enabled = table.Column<bool>(type: "bit", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -56,7 +56,7 @@ namespace Udap.Server.Migrations.UdapDb
                     Thumbprint = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     BeginDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    CommunityId = table.Column<long>(type: "bigint", nullable: false)
+                    CommunityId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -73,10 +73,10 @@ namespace Udap.Server.Migrations.UdapDb
                 name: "UdapCertifications",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "bigint", nullable: false)
+                    Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    CommunityId = table.Column<long>(type: "bigint", nullable: true)
+                    CommunityId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -92,8 +92,8 @@ namespace Udap.Server.Migrations.UdapDb
                 name: "UdapAnchorCertification",
                 columns: table => new
                 {
-                    AnchorId = table.Column<long>(type: "bigint", nullable: false),
-                    CertificationId = table.Column<long>(type: "bigint", nullable: false)
+                    AnchorId = table.Column<int>(type: "int", nullable: false),
+                    CertificationId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -116,8 +116,8 @@ namespace Udap.Server.Migrations.UdapDb
                 name: "UdapCommunityCertification",
                 columns: table => new
                 {
-                    CommunityId = table.Column<long>(type: "bigint", nullable: false),
-                    CertificationId = table.Column<long>(type: "bigint", nullable: false)
+                    CommunityId = table.Column<int>(type: "int", nullable: false),
+                    CertificationId = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {

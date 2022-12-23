@@ -17,6 +17,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Certificates;
+using Udap.Common.Extensions;
 using Udap.Server.Extensions;
 
 namespace Udap.Server.Validation.Default;
@@ -80,7 +81,7 @@ public class UdapJwtSecretValidator : ISecretValidator
             return fail;
         }
 
-        List<X509Certificate2Collection> certChainList;
+        List<X509Certificate2> certChainList;
 
         try
         {
@@ -167,29 +168,17 @@ public class UdapJwtSecretValidator : ISecretValidator
         ///
         /// PKI chain validation, including CRL checking
         ///
-        
-        foreach (var certChain in certChainList.AsReadOnly())
+        if (_trustChainValidator.IsTrustedCertificate(
+                parsedSecret.Id,
+                parsedSecret.GetUdapEndCertAsync(),
+                new X509Certificate2Collection(certChainList.ToArray()),
+                out X509ChainElementCollection? _,
+                new X509Certificate2Collection(certChainList.ToRootCertArray())))
         {
-            if (_trustChainValidator.IsTrustedCertificate(
-                    parsedSecret.Id,
-                    parsedSecret.GetUdapEndCertAsync(),
-                    certChain,
-                    out X509ChainElementCollection? _,
-                    new X509Certificate2Collection(){certChain.Last()}))
-            {
-                return success; 
-            }
+            return success;
         }
 
-        //
-        // Inject scopes into Request Form
-        // UDAP registers scope during dynamic client registration
-        // UDAP spec does not pass scopes during Access Token request.
-        // http://hl7.org/fhir/us/udap-security/b2b.html#client-credentials-grant 
-        //
         
-
-
         return fail;
     }
 }

@@ -16,10 +16,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 using System.Diagnostics;
+using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.X509;
 
 namespace Udap.Common.Extensions
 {
@@ -252,6 +255,43 @@ namespace Udap.Common.Extensions
             return null;
         }
 
+        public static X509Certificate2[]  ToRootCertArray(this List<X509Certificate2> certificates)
+        {
+            X509Certificate2Collection caCerts = new X509Certificate2Collection();
+
+            foreach (var x509Cert in certificates)
+            {
+                var extension = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") as X509BasicConstraintsExtension;
+                var subjectIdentifier = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
+
+                //
+                // dotnet 7.0
+                //
+                // var authorityIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid.Value == "2.5.29.35") as X509AuthorityKeyIdentifierExtension;
+
+                string? authorityIdentifierValue = null;
+
+                Asn1Object? exValue = x509Cert.GetExtensionValue("2.5.29.35");
+                if (exValue != null)
+                {
+                    var aki = AuthorityKeyIdentifier.GetInstance(exValue);
+                    byte[] keyId = aki.GetKeyIdentifier();
+                    authorityIdentifierValue = keyId.CreateByteStringRep();
+                }
+
+                if (extension != null && extension.CertificateAuthority)
+                {
+                    if (authorityIdentifierValue == null ||
+                        subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
+                    {
+                        caCerts.Add(x509Cert);
+                    }
+                }
+            }
+            
+            return caCerts.ToArray();
+        }
+        
         /// <summary>
         /// Converts an encoded internal octet string object to a DERObject
         /// </summary>
@@ -271,5 +311,6 @@ namespace Udap.Common.Extensions
                 }
             }
         }
+
     }
 }

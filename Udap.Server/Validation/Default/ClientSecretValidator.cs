@@ -113,8 +113,13 @@ public class UdapClientSecretValidator : IClientSecretValidator
 
         _logger.LogDebug("Client validation success");
 
-
         // resolve scopes
+        //
+        // Inject scopes into Request Form
+        // UDAP registers scope during dynamic client registration
+        // UDAP spec does not pass scopes during Access Token request.
+        // http://hl7.org/fhir/us/udap-security/b2b.html#client-credentials-grant 
+        //
         await _scopeService.Resolve(context, client);
         
 

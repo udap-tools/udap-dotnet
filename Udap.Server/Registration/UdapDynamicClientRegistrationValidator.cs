@@ -205,30 +205,21 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 return false;
             }
 
-            client.ClientSecrets = new List<Secret>()
+            var clientSecrets = client.ClientSecrets = new List<Secret>();
+
+            foreach (var chainElement in chainElements.Skip(1))
             {
-                new()
+                clientSecrets.Add(new()
                 {
                     Expiration = chainElements.First().Certificate.NotAfter,
-                    Type = UdapServerConstants.SecretTypes.Udapx5c,
-                    Value = SerializeTox5c(chainElements)
-                }
-            };
+                    Type = UdapServerConstants.SecretTypes.Udap_X509_Pem,
+                    Value = Convert.ToBase64String(chainElement.Certificate.Export(X509ContentType.Cert))
+                });
+            }
 
             return true;
         }
 
         return false;
-    }
-
-    private static string SerializeTox5c(X509ChainElementCollection chainElements)
-    {
-        return JsonSerializer.Serialize
-                ( chainElements
-                    .Skip(1)
-                    .Select(ce => 
-                        Convert.ToBase64String(ce.Certificate.Export(X509ContentType.Cert))
-                    )
-                );
     }
 }

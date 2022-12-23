@@ -12,7 +12,7 @@ BEGIN TRANSACTION;
 GO
 
 CREATE TABLE [UdapCommunities] (
-    [Id] bigint NOT NULL IDENTITY,
+    [Id] int NOT NULL IDENTITY,
     [Name] nvarchar(200) NOT NULL,
     [Enabled] bit NOT NULL,
     [Default] bit NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE [UdapCommunities] (
 GO
 
 CREATE TABLE [UdapRootCertificates] (
-    [Id] bigint NOT NULL IDENTITY,
+    [Id] int NOT NULL IDENTITY,
     [Enabled] bit NOT NULL,
     [Name] nvarchar(max) NOT NULL,
     [X509Certificate] nvarchar(max) NOT NULL,
@@ -33,31 +33,31 @@ CREATE TABLE [UdapRootCertificates] (
 GO
 
 CREATE TABLE [UdapAnchors] (
-    [Id] bigint NOT NULL IDENTITY,
+    [Id] int NOT NULL IDENTITY,
     [Enabled] bit NOT NULL,
     [Name] nvarchar(max) NOT NULL,
     [X509Certificate] nvarchar(max) NOT NULL,
     [Thumbprint] nvarchar(max) NOT NULL,
     [BeginDate] datetime2 NOT NULL,
     [EndDate] datetime2 NOT NULL,
-    [CommunityId] bigint NOT NULL,
+    [CommunityId] int NOT NULL,
     CONSTRAINT [PK_UdapAnchors] PRIMARY KEY ([Id]),
     CONSTRAINT [FK_Anchor_Communities] FOREIGN KEY ([CommunityId]) REFERENCES [UdapCommunities] ([Id]) ON DELETE CASCADE
 );
 GO
 
 CREATE TABLE [UdapCertifications] (
-    [Id] bigint NOT NULL IDENTITY,
+    [Id] int NOT NULL IDENTITY,
     [Name] nvarchar(200) NOT NULL,
-    [CommunityId] bigint NULL,
+    [CommunityId] int NULL,
     CONSTRAINT [PK_UdapCertifications] PRIMARY KEY ([Id]),
     CONSTRAINT [FK_UdapCertifications_UdapCommunities_CommunityId] FOREIGN KEY ([CommunityId]) REFERENCES [UdapCommunities] ([Id])
 );
 GO
 
 CREATE TABLE [UdapAnchorCertification] (
-    [AnchorId] bigint NOT NULL,
-    [CertificationId] bigint NOT NULL,
+    [AnchorId] int NOT NULL,
+    [CertificationId] int NOT NULL,
     CONSTRAINT [PK_UdapAnchorCertification] PRIMARY KEY ([AnchorId], [CertificationId]),
     CONSTRAINT [FK_AnchorCertification_Anchor] FOREIGN KEY ([AnchorId]) REFERENCES [UdapAnchors] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_AnchorCertification_Certification] FOREIGN KEY ([CertificationId]) REFERENCES [UdapCertifications] ([Id]) ON DELETE CASCADE
@@ -65,8 +65,8 @@ CREATE TABLE [UdapAnchorCertification] (
 GO
 
 CREATE TABLE [UdapCommunityCertification] (
-    [CommunityId] bigint NOT NULL,
-    [CertificationId] bigint NOT NULL,
+    [CommunityId] int NOT NULL,
+    [CertificationId] int NOT NULL,
     CONSTRAINT [PK_UdapCommunityCertification] PRIMARY KEY ([CommunityId], [CertificationId]),
     CONSTRAINT [FK_CommunityCertification_Certification] FOREIGN KEY ([CertificationId]) REFERENCES [UdapCertifications] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_CommunityCertification_Community] FOREIGN KEY ([CommunityId]) REFERENCES [UdapCommunities] ([Id])
@@ -86,7 +86,7 @@ CREATE INDEX [IX_UdapCommunityCertification_CertificationId] ON [UdapCommunityCe
 GO
 
 INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20221223081321_InitialUdap', N'7.0.1');
+VALUES (N'20221223203818_InitialUdap', N'7.0.1');
 GO
 
 COMMIT;

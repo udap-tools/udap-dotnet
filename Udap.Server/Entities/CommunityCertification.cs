@@ -15,7 +15,7 @@ namespace Udap.Server.Entities;
 public class CommunityCertification
 {
     public virtual Community Community { get; set; }
-    public long CommunityId { get; set; }
+    public int CommunityId { get; set; }
     public virtual Certification Certification { get; set; }
-    public long CertificationId { get; set; }
+    public int CertificationId { get; set; }
 }

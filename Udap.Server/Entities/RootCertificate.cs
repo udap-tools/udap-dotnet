@@ -2,7 +2,7 @@
 
 public class RootCertificate : ICertificateValidateMarker
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     public bool Enabled { get; set; }
     public string Name { get; set; }

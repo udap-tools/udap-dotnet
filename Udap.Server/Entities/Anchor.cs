@@ -11,7 +11,7 @@ namespace Udap.Server.Entities;
 
 public class Anchor : ICertificateValidateMarker
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     public bool Enabled { get; set; }
     public string Name { get; set; }
@@ -24,7 +24,7 @@ public class Anchor : ICertificateValidateMarker
     public DateTime EndDate { get; set; }
 
     public Community Community { get; set; }
-    public long CommunityId { get; set; }
+    public int CommunityId { get; set; }
 
     public virtual ICollection<AnchorCertification> AnchorCertifications { get; set; }
 }

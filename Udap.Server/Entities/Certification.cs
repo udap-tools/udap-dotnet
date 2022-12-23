@@ -11,7 +11,7 @@ namespace Udap.Server.Entities;
 
 public class Certification
 {
-    public long Id { get; set; }
+    public int Id { get; set; }
     
     public string Name { get; set; }
 

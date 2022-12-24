@@ -16,6 +16,7 @@ using Microsoft.Extensions.Logging;
 using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
+using Udap.Common.Models;
 
 namespace Udap.Server.Registration;
 

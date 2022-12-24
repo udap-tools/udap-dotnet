@@ -76,14 +76,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\examples\Udap.Idp\Udap.Idp.csproj" />
+    <ProjectReference Include="..\..\migrations\UdapDb\UdapDb.csproj" />
     <ProjectReference Include="..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
     <ProjectReference Include="..\..\Udap.Server\Udap.Server.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="IdServerRegistrationTests.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup>

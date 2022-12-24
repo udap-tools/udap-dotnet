@@ -92,28 +92,19 @@ builder.Services
     });
 
 builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
+
     .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>
     {
-
-
-
         //TODO move this to config file.  Do it today!
 
-        options.Authority = "https://localhost:5002";
+        options.Authority = "http://localhost:5002";
         options.RequireHttpsMetadata = false;
         
-
-
-
-
-
-
-
+        
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = false
         };
-        
     });
     
 

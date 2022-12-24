@@ -26,14 +26,16 @@ using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Common.Models;
 using Udap.Idp;
 using Udap.Server;
 using Udap.Server.DbContexts;
-using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Options;
 using Udap.Server.Registration;
 using Xunit.Abstractions;
+using Anchor = Udap.Server.Entities.Anchor;
+using Community = Udap.Server.Entities.Community;
 using JsonClaimValueTypes = System.IdentityModel.Tokens.Jwt.JsonClaimValueTypes;
 
 namespace UdapServer.Tests
@@ -65,7 +67,7 @@ namespace UdapServer.Tests
 
             var builder = new DbContextOptionsBuilder<TDbContext>();
             // Remember UdapDb.Migrations.UdapDb.Udap is in the assembly (and/or project) dedicated to producing migrations for the UDAP feature.
-            builder.UseSqlite($"Filename=./Test.Udap.{name}.db",
+            builder.UseSqlServer($"Filename=./Test.Udap.{name}.db",
                 sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
             builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
 
@@ -81,7 +83,7 @@ namespace UdapServer.Tests
             serviceCollection.AddSingleton(storeOptions);
 
             var builder = new DbContextOptionsBuilder<TDbContext>();
-            builder.UseSqlite($"Filename=./Test.Udap.{name}.db",
+            builder.UseSqlServer($"Filename=./Test.Udap.{name}.db",
                 sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
             builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
 
@@ -90,7 +92,7 @@ namespace UdapServer.Tests
 
         public static DbContextOptions<TDbContext> BuildLocalDb<TDbContext, TStoreOptions>(string name,
             TStoreOptions storeOptions)
-            where TDbContext : UdapDbContext
+            where TDbContext : DbContext
             where TStoreOptions : class
         {
             var serviceCollection = new ServiceCollection();
@@ -98,7 +100,8 @@ namespace UdapServer.Tests
 
             var builder = new DbContextOptionsBuilder<TDbContext>();
             builder.UseSqlServer(
-                $@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{name};trusted_connection=yes;");
+                $@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{name};trusted_connection=yes;",
+                optionsBuilder => optionsBuilder.MigrationsAssembly(typeof(UdapDb.Program).Assembly.FullName));
             builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
             return builder.Options;
         }
@@ -119,30 +122,29 @@ namespace UdapServer.Tests
         /// <summary>
         /// Called immediately after the class has been created, before it is used.
         /// </summary>
-        public Task InitializeAsync()
+        public async Task InitializeAsync()
         {
-            File.Delete($"./Test.Udap.{DatabaseName}.db");
+            // File.Delete($"./Test.Udap.{DatabaseName}.db");
             using var configContext =
                 new ConfigurationDbContext(
-                    BuildSqlite2<ConfigurationDbContext, ConfigurationStoreOptions>(DatabaseName, StoreOptions2));
+                    BuildLocalDb<ConfigurationDbContext, ConfigurationStoreOptions>(DatabaseName, StoreOptions2));
+            await configContext.Database.EnsureDeletedAsync();
             // configContext.Database.EnsureCreated();
-            configContext.Database.Migrate();
+           await configContext.Database.MigrateAsync();
 
-            DatabaseProvider = BuildSqlite<UdapDbContext, TStoreOption>(DatabaseName, StoreOptions);
+            DatabaseProvider = BuildLocalDb<UdapDbContext, TStoreOption>(DatabaseName, StoreOptions);
             using var context = new UdapDbContext(DatabaseProvider);
             // context.Database.EnsureCreated();
-            context.Database.Migrate();
-
+            await context.Database.MigrateAsync();
+            
             AnchorCert =
                 new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
                     "anchorLocalhostCert.cer"));
 
-            return SeedData(context);
-
-            // return Task.CompletedTask;
+            await SeedData(context);
         }
 
-        private Task SeedData(UdapDbContext context)
+        private async Task<int> SeedData(UdapDbContext context)
         {
             var community = new Community { Name = "http://localhost" };
             community.Enabled = true;
@@ -160,7 +162,7 @@ namespace UdapServer.Tests
                 Enabled = true
             });
 
-            return context.SaveChangesAsync();
+            return await context.SaveChangesAsync();
         }
 
         /// <summary>
@@ -169,11 +171,11 @@ namespace UdapServer.Tests
         /// </summary>
         public Task DisposeAsync()
         {
-            if (DatabaseProvider != null)
-            {
-                var context = (UdapDbContext)Activator.CreateInstance(typeof(UdapDbContext), DatabaseProvider)!;
-                return context.Database.EnsureDeletedAsync();
-            }
+            // if (DatabaseProvider != null)
+            // {
+            //     var context = (UdapDbContext)Activator.CreateInstance(typeof(UdapDbContext), DatabaseProvider)!;
+            //     return context.Database.EnsureDeletedAsync();
+            // }
 
             return Task.CompletedTask;
         }
@@ -231,13 +233,13 @@ namespace UdapServer.Tests
             services.AddConfigurationDbContext(options =>
             {
                 options.ConfigureDbContext = b =>
-                    b.UseSqlite($"Filename=./Test.Udap.{_databaseName}.db",
+                    b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;",
                         dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName));
             });
 
             services.AddUdapDbContext<UdapDbContext>(options =>
             {
-                options.UdapDbContext = b => b.UseSqlite($"Filename=./Test.Udap.{_databaseName}.db");
+                options.UdapDbContext = b => b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;");
             });
             
             services.AddTransient<IUdapClientConfigurationStore, UdapClientConfigurationStore>();
@@ -401,7 +403,7 @@ namespace UdapServer.Tests
             services.AddUdapDbContext<UdapDbContext>(options =>
             {
                 options.UdapDbContext = b =>
-                    b.UseSqlite($"Filename=./Test.Udap.{_databaseName}.db", o =>
+                    b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;", o =>
                         o.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
             });
 

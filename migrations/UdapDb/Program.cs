@@ -18,6 +18,10 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("db");
 builder.Services.AddSingleton(new UdapConfigurationStoreOptions());
 
+//
+// TODO: work on multiple provider later:
+// https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/providers?tabs=dotnet-core-cli
+//
 builder.Services.AddUdapDbContext(options =>
     {
         // options.UdapDbContext = b =>
@@ -37,3 +41,9 @@ SeedData.EnsureSeedData(
 
 
 app.Run();
+
+
+namespace UdapDb
+{
+    public partial class Program { }
+}

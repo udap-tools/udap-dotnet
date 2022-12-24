@@ -11,13 +11,11 @@ using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
-using Udap.Common;
 
-namespace Udap.Server.Registration;
+namespace Udap.Common.Models;
 
 public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
 {
@@ -129,7 +127,14 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.Audience)]
     public string? Audience
     {
-        get => _audience;
+        get
+        {
+            if (_audience == null)
+            {
+                _audience = GetStandardClaim(UdapConstants.RegistrationDocumentValues.Audience);
+            }
+            return _audience;
+        }
         set
         {
             _audience = value;
@@ -355,20 +360,31 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
 
     /// <summary>
     /// Similar to  <see cref="JwtPayload.AddClaims"/>.
-    /// Adds a number of <see cref="Claim"/> to the <see cref="UdapDynamicClientRegistrationDocument"/>.
+    /// Adds a number of <see cref="System.Security.Claims.Claim"/> to the <see cref="UdapDynamicClientRegistrationDocument"/>.
     /// Unlike <see cref="JwtPayload.AddClaims"/>, UDAP claims defined to be collections of values will be maintained as
     /// collections even if only one item exists.  
     /// </summary>
-    /// <param name="claims">For each <see cref="Claim"/> a JSON pair { 'Claim.Type', 'Claim.Value' } is added.
+    /// <param name="claims">For each <see cref="System.Security.Claims.Claim"/> a JSON pair { 'Claim.Type', 'Claim.Value' } is added.
     /// If duplicate claims are found then a { 'Claim.Type', List&lt;object&gt; } will be created to contain the duplicate values.
     /// This is only needed for claims not defined in the UDAP profile</param>
     /// <remarks>
-    /// <para>Any <see cref="Claim"/> in the <see cref="IEnumerable{Claim}"/> that is null, will be ignored.</para></remarks>
-    /// <exception cref="ArgumentNullException"><paramref name="claims"/> is null.</exception>
+    /// <para>Any <see cref="System.Security.Claims.Claim"/> in the <see cref="System.Collections.Generic.IEnumerable{T}"/> that is null, will be ignored.</para></remarks>
+    /// <exception cref="System.ArgumentNullException"><paramref name="claims"/> is null.</exception>
     public void AddClaims(IEnumerable<Claim> claims)
     {
         if (claims == null)
-            throw LogHelper.LogExceptionMessage(new ArgumentNullException(nameof(claims)));
+        {   //TODO: Add telemetry data via Activity.  
+            // The JwtPayload.AddClaims uses a EventSource implementation called IdentityModelEventSource to allow visibility into errors.
+            //
+            // The code was this:
+            //
+            // if (claims == null)
+            //     throw LogHelper.LogExceptionMessage(new ArgumentNullException(nameof(claims)));
+            //
+
+            throw new ArgumentNullException(nameof(claims));
+        }
+        
 
         foreach (Claim claim in claims)
         {
@@ -474,10 +490,10 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
             return dateTimeValue;
 
         if (claim.ValueType == JsonClaimValueTypes.Json)
-            return JObject.Parse(claim.Value);
+            return JsonObject.Parse(claim.Value);
 
         if (claim.ValueType == JsonClaimValueTypes.JsonArray)
-            return JArray.Parse(claim.Value);
+            return JsonArray.Parse(claim.Value);
 
         if (claim.ValueType == JsonClaimValueTypes.JsonNull)
             return string.Empty;

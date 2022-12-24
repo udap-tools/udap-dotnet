@@ -7,7 +7,7 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>../..</DockerfileContext>
     <DockerfileRunArguments>-p "5016:80"</DockerfileRunArguments>
-    <UserSecretsId>e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId>
+    <!-- <UserSecretsId>e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId> -->
   </PropertyGroup>
 
   <ItemGroup>

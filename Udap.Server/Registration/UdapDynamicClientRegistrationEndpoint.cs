@@ -12,6 +12,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Udap.Client.Client.Messages;
 using Udap.Common;
+using Udap.Common.Models;
 
 namespace Udap.Server.Registration;
 

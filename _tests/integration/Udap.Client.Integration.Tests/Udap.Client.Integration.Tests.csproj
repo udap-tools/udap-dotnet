@@ -61,4 +61,10 @@
     <ProjectReference Include="..\..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="IdServerRegistrationTests.cs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+
 </Project>

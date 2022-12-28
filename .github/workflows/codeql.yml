@@ -72,7 +72,7 @@ jobs:
 
     - run: |
         echo "Run, Build Application"
-        dotnet build -c Release Udap.sln
+        dotnet restore Udap.sln
         echo "Generate PKI"
         dotnet test _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj --no-restore
         dotnet build Udap.sln --no-restore 

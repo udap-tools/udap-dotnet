@@ -25,10 +25,10 @@ jobs:
         dotnet-version: |
           6.0.x
           7.0.x
-    - name: Build and Restore dependencies
-      run: dotnet build -c Release Udap.sln
     - name: Generate PKI
       run: dotnet test _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj --no-restore
+    - name: Build and Restore dependencies
+      run: dotnet build -c Release Udap.sln
     - name: Build
       run: dotnet build Udap.sln --no-restore 
     - name: Test Udap.Common.Tests

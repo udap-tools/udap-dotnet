@@ -56,6 +56,7 @@ public class ApiTestFixture : WebApplicationFactory<program>
         // Still works with Windows but what a pain.  This feels fragile
         // TODO: 
         //
+        builder.UseEnvironment("Development");
         builder.UseSetting("contentRoot", "../../../../../examples/FhirLabsApi");
     }
 

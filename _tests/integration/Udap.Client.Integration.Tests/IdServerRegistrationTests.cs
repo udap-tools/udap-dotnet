@@ -21,6 +21,7 @@ using IdentityModel.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Moq;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
@@ -38,6 +39,10 @@ public class TestFixture
 
     public TestFixture()
     {
+        // SeedData.EnsureSeedData(
+        //     "Data Source=host.docker.internal;Initial Catalog=Udap.Idp.db;User ID=udap_user;Password=udap_password1;TrustServerCertificate=True;", 
+        //     new Mock<Serilog.ILogger>().Object);
+
         TestConfig = new ConfigurationBuilder()
             .AddUserSecrets<IdServerRegistrationTests>()
             .Build();

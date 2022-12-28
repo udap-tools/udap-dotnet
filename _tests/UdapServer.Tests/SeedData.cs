@@ -31,12 +31,6 @@ public static class SeedData
         var services = new ServiceCollection();
 
         services.AddLogging();
-        // services.AddDbContext<ApplicationDbContext>(options =>
-        //     options.UseSqlite(connectionString, o => o.MigrationsAssembly(typeof(Program).Assembly.FullName)));
-        //
-        // services.AddIdentity<ApplicationUser, IdentityRole>()
-        //     .AddEntityFrameworkStores<ApplicationDbContext>()
-        //     .AddDefaultTokenProviders();
 
         services.AddOperationalDbContext(options =>
         {

@@ -4,8 +4,10 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId>
+    <DockerfileContext>.</DockerfileContext>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileRunArguments>-p "5002:8080" </DockerfileRunArguments>
+    <!-- <DockerfileRunArguments>-p "5002:443" -e ASPNETCORE_HTTPS_PORT=7016 -e ASPNETCORE_Kestrel__Certificates__Default__Password="udap-test" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp_exported.pfx -v $(UserProfile)\.aspnet\https:/https/</DockerfileRunArguments> -->
+    <DockerfileRunArguments>-p "5002:443" -e ASPNETCORE_HTTPS_PORT=7016 </DockerfileRunArguments>
   </PropertyGroup>
   
   <ItemGroup>
@@ -29,17 +31,21 @@
     <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
   </ItemGroup>
 
-  <!-- <ItemGroup Condition="true"> -->
-  <!--   <PackageReference Include="Udap.Server" Version="0.0.3-preview*" /> -->
-  <!-- </ItemGroup> -->
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <PackageReference Include="Udap.Server" Version="0.0.3-preview*" />
+    <!-- <PackageReference Include="Udap.Common" Version="0.0.3-preview*" /> -->
+  </ItemGroup>
 
-  <ItemGroup Condition="true">
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
     <ProjectReference Include="../../Udap.Server/Udap.Server.csproj" />
   </ItemGroup>
   
   <ItemGroup>
+    <None Update="host.docker.internal.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="securedcontrols.net.pfx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project>

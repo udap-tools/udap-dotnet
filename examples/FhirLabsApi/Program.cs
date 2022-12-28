@@ -97,8 +97,8 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
     {
         //TODO move this to config file.  Do it today!
 
-        options.Authority = "http://localhost:5002";
-        options.RequireHttpsMetadata = false;
+        options.Authority = builder.Configuration["Jwt:Authority"];
+        // options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"]);
         
         
         options.TokenValidationParameters = new TokenValidationParameters

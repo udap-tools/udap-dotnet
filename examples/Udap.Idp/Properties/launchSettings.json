@@ -7,7 +7,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "sslPort": 5002,
-      "applicationUrl": "https://localhost:5002"
+      "applicationUrl": "https://host.docker.internal:5002"
     },
     "Localhost_noSSL": {
       "commandName": "Project",
@@ -31,9 +31,9 @@
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
       "publishAllPorts": true,
-      "useSSL": false,
+      "useSSL": true,
       "environmentVariables": {
-        "ASPNETCORE_URLS": "http://*:8080"
+        "ASPNETCORE_URLS": "http://*:8080;https://*:443"
       }
     },
     "WSL": {

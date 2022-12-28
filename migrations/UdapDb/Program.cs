@@ -32,13 +32,14 @@ builder.Services.AddUdapDbContext(options =>
 
 var app = builder.Build();
 
-SeedData.EnsureSeedData(
+await SeedData.EnsureSeedData(
     connectionString,
     "../../../../../_tests/Udap.PKI.Generator/certstores",
     Log.Logger);
 
 // Configure the HTTP request pipeline.
 
+return 0;
 
 app.Run();
 

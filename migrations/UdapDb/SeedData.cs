@@ -9,6 +9,7 @@
 
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
@@ -33,7 +34,7 @@ public static class SeedData
     /// <param name="connectionString"></param>
     /// <param name="certStoreBasePath">Test certs base path</param>
     /// <param name="logger"></param>
-    public static void EnsureSeedData(string connectionString, string certStoreBasePath, ILogger logger)
+    public static async Task<int> EnsureSeedData(string connectionString, string certStoreBasePath, ILogger logger)
     {
         var services = new ServiceCollection();
 
@@ -96,11 +97,14 @@ public static class SeedData
 
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-        var x509Certificate2Collection = clientRegistrationStore.GetRootCertificates().Result;
-        if (x509Certificate2Collection != null && !x509Certificate2Collection.Any())
+        var x509Certificate2Collection = await clientRegistrationStore.GetRootCertificates();
+
+        var rootCert = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
+        
+        if (x509Certificate2Collection != null  &&  x509Certificate2Collection.ToList()
+                .All(r => r.Thumbprint != rootCert.Thumbprint )) 
         {
-            var rootCert = new X509Certificate2(
-                Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
 
             udapContext.RootCertificates.Add(new RootCertificate
             {
@@ -115,11 +119,12 @@ public static class SeedData
             udapContext.SaveChanges();
         }
 
-        if (!clientRegistrationStore.GetAnchors("http://localhost").Result.Any())
-        {
-            var anchorLocalhostCert = new X509Certificate2(
-                Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/anchorLocalhostCert.cer"));
+        var anchorLocalhostCert = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/anchorLocalhostCert.cer"));
 
+        if ((await clientRegistrationStore.GetAnchors("http://localhost"))
+            .All(a => a.Thumbprint != anchorLocalhostCert.Thumbprint))
+        {
             var community = udapContext.Communities.Single(c => c.Name == "http://localhost");
 
             udapContext.Anchors.Add(new Anchor
@@ -136,11 +141,13 @@ public static class SeedData
             udapContext.SaveChanges();
         }
 
+        var sureFhirLabsAnchor = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/anchors/SureFhirLabs_Anchor.cer"));
 
-        if (!clientRegistrationStore.GetAnchors("udap://surefhir.labs").Result.Any())
+        if (( await clientRegistrationStore.GetAnchors("udap://surefhir.labs"))
+            .All(a => a.Thumbprint != sureFhirLabsAnchor.Thumbprint))
         {
-            var sureFhirLabsAnchor = new X509Certificate2(
-                Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/anchors/SureFhirLabs_Anchor.cer"));
+            
 
             var commnity = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
 
@@ -181,5 +188,21 @@ public static class SeedData
         }
 
         configDbContext.SaveChanges();
+
+        var sb = new StringBuilder();
+        sb.AppendLine("Use[Udap.Idp.db];");
+        sb.AppendLine("if not exists(select * from sys.server_principals where name = 'udap_user')");
+        sb.AppendLine("BEGIN");
+        sb.AppendLine("CREATE LOGIN udap_user WITH PASSWORD = 'udap_password1', DEFAULT_DATABASE =[Udap.Idp.db], CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;");
+        sb.AppendLine("END");
+        sb.AppendLine("IF NOT EXISTS(SELECT principal_id FROM sys.database_principals WHERE name = 'udap_user')");
+        sb.AppendLine("BEGIN");
+        sb.AppendLine("CREATE USER udap_user from LOGIN udap_user;");
+        sb.AppendLine("EXEC sp_addrolemember N'db_owner', N'udap_user';");
+        sb.AppendLine("END");
+        
+        configDbContext.Database.ExecuteSqlRaw(sb.ToString());
+
+        return 0;
     }
 }

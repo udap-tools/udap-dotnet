@@ -12,7 +12,7 @@ using Udap.Server.DbContexts;
 namespace Udap.Server.Migrations.UdapDb
 {
     [DbContext(typeof(UdapDbContext))]
-    [Migration("20221223203818_InitialUdap")]
+    [Migration("20221226230041_InitialUdap")]
     partial class InitialUdap
     {
         /// <inheritdoc />

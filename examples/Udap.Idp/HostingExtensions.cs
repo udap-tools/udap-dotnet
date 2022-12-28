@@ -36,26 +36,9 @@ internal static class HostingExtensions
         //     sslPort = 5002;
         // }
 
-        //
-        // Running localhost:5002 when UseKestrel confiratio below is commented
-        // Uncomment and to run your own cert.  
-        //
-
-        // builder.WebHost.UseKestrel((webHostBuilderContext, kestrelServerOptions) =>
-        // {
-        //     kestrelServerOptions.ListenAnyIP(sslPort, listenOpt =>
-        //     {
-        //         listenOpt.UseHttps(
-        //             Path.Combine(
-        //                 Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? string.Empty,
-        //                 webHostBuilderContext.Configuration["SslFileLocation"]),
-        //             webHostBuilderContext.Configuration["CertPassword"]);
-        //     });
-        // });
-
-
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         
+        Log.Logger.Information(connectionString);
         // needed to load configuration from appsettings.json
         builder.Services.AddOptions();
 
@@ -149,6 +132,12 @@ internal static class HostingExtensions
         if (!args.Any(a => a.Contains("skipRateLimiting")))
         {
             app.UseIpRateLimiting();
+        }
+
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseForwardedHeaders();
+            app.UseHsts();
         }
 
         app.UseSerilogRequestLogging();

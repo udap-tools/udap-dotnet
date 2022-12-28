@@ -10,16 +10,16 @@ WORKDIR /src
 COPY ["NuGet.Config", "."]
 COPY ["Udap.Idp.csproj", "."]
 RUN dotnet restore "Udap.Idp.csproj"
-COPY . .
+COPY . . 
 
 RUN dotnet build "Udap.Idp.csproj" -c Release -o /app/build
 
-FROM build AS publish
+FROM build AS publish 
 RUN dotnet publish "Udap.Idp.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENV ASPNETCORE_URLS=http://*:8080
-ENV ASPNETCORE_ENVIRONMENT release
+ENV ASPNETCORE_ENVIRONMENT Release
 ENTRYPOINT ["dotnet", "Udap.Idp.dll"]

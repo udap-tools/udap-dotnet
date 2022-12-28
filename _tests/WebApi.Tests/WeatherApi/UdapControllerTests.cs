@@ -23,7 +23,6 @@ using Newtonsoft.Json;
 using Udap.Common;
 using Udap.Metadata.Server;
 using Xunit.Abstractions;
-using static System.Net.Mime.MediaTypeNames;
 using program = WeatherApi.Program;
 
 namespace WebApi.Tests.WeatherApi;
@@ -61,7 +60,7 @@ public class ApiTestFixture : WebApplicationFactory<program>
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        builder.UseEnvironment("development");
+        builder.UseEnvironment("Development");
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();

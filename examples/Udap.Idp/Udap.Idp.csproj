@@ -31,12 +31,12 @@
     <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+  <ItemGroup Condition="'$(GCPDeploy)' == 'True'">
     <PackageReference Include="Udap.Server" Version="0.0.3-preview*" />
     <!-- <PackageReference Include="Udap.Common" Version="0.0.3-preview*" /> -->
   </ItemGroup>
 
-  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+  <ItemGroup Condition="'$(GCPDeploy)' == ''">
     <ProjectReference Include="../../Udap.Server/Udap.Server.csproj" />
   </ItemGroup>
   

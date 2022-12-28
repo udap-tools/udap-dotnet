@@ -23,8 +23,8 @@ jobs:
       env:
         NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
-    - name: Restore dependencies
-      run: dotnet restore Udap.sln
+    - name: Build and Restore dependencies
+      run: dotnet build -c Release Udap.sln
     - name: Generate PKI
       run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj --no-restore
     - name: Build

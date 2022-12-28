@@ -74,7 +74,7 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<program>
             logging.ClearProviders();
             logging.AddXUnit(Output!);
         });
-
+        
         return base.CreateHost(builder);
     }
 }

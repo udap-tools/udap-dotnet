@@ -27,8 +27,6 @@ jobs:
       run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj 
     - name: Build and Restore dependencies
       run: dotnet build -c Release Udap.sln
-    - name: Build
-      run: dotnet build -c Release Udap.sln --no-restore 
     - name: Test Udap.Common.Tests
       run: dotnet test -c Release  _tests/Udap.Common.Tests/Udap.Common.Tests.csproj --no-build --verbosity normal
     - name: Test WebApi.Tests

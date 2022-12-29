@@ -1,9 +1,17 @@
+#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Udap.Server.Extensions;
 using Udap.Server.Options;
 using UdapDb;
-
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -15,7 +23,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-var connectionString = builder.Configuration.GetConnectionString("db");
+string dbChoice;
+
+dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "db";
+
+var connectionString = builder.Configuration.GetConnectionString(dbChoice);
+
 builder.Services.AddSingleton(new UdapConfigurationStoreOptions());
 
 //

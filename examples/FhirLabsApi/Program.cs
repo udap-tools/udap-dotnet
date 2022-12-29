@@ -25,25 +25,6 @@ using Udap.Metadata.Server;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-// builder.WebHost.UseKestrel((b, so) =>
-// {
-    
-
-    // so.ListenAnyIP(7016, listenOpt =>
-    // {
-    //     listenOpt.UseHttps(
-    //         Path.Combine(
-    //             Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? string.Empty, 
-    //             b.Configuration["SslFileLocation"]),
-    //         b.Configuration["CertPassword"]);
-    // });
-    //
-    // so.ListenAnyIP(5016);
-
-// });
-
-
 // Add services to the container.
 
 //

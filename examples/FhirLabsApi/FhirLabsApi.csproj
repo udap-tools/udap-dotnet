@@ -6,9 +6,15 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <DockerfileContext>.</DockerfileContext>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileRunArguments>-p "5016:8080" -p "7016:443" -e ASPNETCORE_HTTPS_PORT=7016 -e ASPNETCORE_Kestrel__Certificates__Default__Password="udap-test" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp_exported.pfx -v $(UserProfile)\.aspnet\https:/https/</DockerfileRunArguments>
-    <!-- <UserSecretsId>fb85f21c-ff56-47a2-aa2d-7cdced81f519</UserSecretsId> -->
-    
+    <!-- This requires UserSecretsId.  Even though I am supplying the password to a Localhost certificate I replaced the default one with long ago.  Not cool!
+         It will put something like this in your secrets.json file even though in my case I don't need it:
+         "Kestrel:Certificates:Development:Password": "7fe9c4d6-d087-4554-9026-7f776830584e"}
+         It is probably the original password.  Kind of cool but again I don't need it because I supplied a new one.         
+    -->
+    <!-- <DockerfileRunArguments>-p "5016:8080" -p "7016:443" -e ASPNETCORE_HTTPS_PORT=7016 -e ASPNETCORE_Kestrel__Certificates__Default__Password="udap-test" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp_exported.pfx -v $(UserProfile)\.aspnet\https:/https/</DockerfileRunArguments> -->
+    <!-- I am going to just go ahead and use the host.docker.internal certificate I created and am also using in Udap.Idp for testing. -->
+    <DockerfileRunArguments>-p "5016:8080" -p "7016:443" -e ASPNETCORE_HTTPS_PORT=7016</DockerfileRunArguments>
+    <UserSecretsId>fb85f21c-ff56-47a2-aa2d-7cdced81f519</UserSecretsId> <!--I do need this because I am using an EmrDirect issued UDAP client certificate and it stores the password so I can do system testing from my desktop.  You can do the same.-->
   </PropertyGroup>
 
   <ItemGroup>
@@ -50,23 +56,28 @@
     <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="host.docker.internal.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="SureFhirLabs_CA.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
 
-  <ItemGroup Condition="'$(GCPDeploy)' == 'True'">
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
     <PackageReference Include="Udap.Metadata.Server" Version="0.0.3-preview*" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(GCPDeploy)' == ''">
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="..\..\Udap.Common/Udap.Common.csproj" />
     <ProjectReference Include="..\..\Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+ <ItemGroup>
+    <Content Update="nuget.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

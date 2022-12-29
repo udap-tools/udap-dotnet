@@ -11,11 +11,12 @@ FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 
 WORKDIR /src
 
-COPY ["NuGet.Config", "."]
+COPY ["nuget.config", "."]
 COPY ["FhirLabsApi.csproj", "."]
 RUN dotnet restore "FhirLabsApi.csproj"
 COPY . . 
 
+ENV GCPDeploy=true
 RUN dotnet build "FhirLabsApi.csproj" -c Release -o /app/build 
 
 FROM build AS publish

@@ -7,11 +7,13 @@ EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["NuGet.Config", "."]
+
+COPY ["nuget.config", "."]
 COPY ["Udap.Idp.csproj", "."]
 RUN dotnet restore "Udap.Idp.csproj"
 COPY . . 
 
+ENV GCPDeploy=true
 RUN dotnet build "Udap.Idp.csproj" -c Release -o /app/build
 
 FROM build AS publish 

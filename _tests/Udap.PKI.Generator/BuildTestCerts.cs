@@ -685,6 +685,10 @@ namespace Udap.PKI.Generator
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
                 $"{BaseDir}/../../examples/Udap.Idp/host.docker.internal.pfx",
                 true);
+
+            File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
+                $"{BaseDir}/../../examples/FhirLabsApi/host.docker.internal.pfx",
+                true);
         }
 
         private static CrlNumber GetNextCrlNumber(string fileName)

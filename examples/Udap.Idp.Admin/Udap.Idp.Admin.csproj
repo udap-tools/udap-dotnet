@@ -7,6 +7,7 @@
     <UserSecretsId>67a69bee-f587-47ea-a3b4-7c6a8f1aca4f</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileRunArguments>-p "5253:8080" </DockerfileRunArguments>
+    <DockerfileContext>.</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,13 +24,19 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
 
-  <!-- -->
-  <!-- <ItemGroup Condition="false"> -->
-  <!--   <PackageReference Include="Udap.Server" Version="0.0.3-preview*" /> -->
-  <!-- </ItemGroup> -->
+  
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
+    <PackageReference Include="Udap.Server" Version="0.0.3-preview*" />
+  </ItemGroup>
 
-  <ItemGroup Condition="true">
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="../../Udap.Server/Udap.Server.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="nuget.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

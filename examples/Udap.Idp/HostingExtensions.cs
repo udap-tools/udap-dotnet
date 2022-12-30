@@ -7,11 +7,13 @@
 // */
 #endregion
 
+using System.Collections;
 using System.Diagnostics;
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Duende.IdentityServer.Validation;
+using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Resources;
@@ -36,9 +38,45 @@ internal static class HostingExtensions
         //     sslPort = 5002;
         // }
 
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        
-        Log.Logger.Information(connectionString);
+
+        string dbChoice;
+        string connectionString;
+
+        dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "db";
+
+
+        foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
+        {
+            Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
+        }
+
+        //Ugly but works locally so far.
+        if (Environment.GetEnvironmentVariable("gcp_joe") != null)
+        {
+            // Log.Logger.Information("Loading connection string from gcp_db");
+            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
+            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
+            
+            Log.Logger.Information("Creating client");
+            var client = SecretManagerServiceClient.Create();
+
+            var secretResource = "projects/288013792534/secrets/gcp_db/versions/latest";
+
+            Log.Logger.Information("Requesting {secretResource");
+            // Call the API.
+            AccessSecretVersionResponse result = client.AccessSecretVersion(secretResource);
+
+            // Convert the payload to a string. Payloads are bytes by default.
+            String payload = result.Payload.Data.ToStringUtf8();
+
+            connectionString = payload;
+        }
+        else
+        {
+            connectionString = builder.Configuration.GetConnectionString(dbChoice);
+        }
+
+        Log.Logger.Information($"ConnectionString:: {connectionString}");
         // needed to load configuration from appsettings.json
         builder.Services.AddOptions();
 

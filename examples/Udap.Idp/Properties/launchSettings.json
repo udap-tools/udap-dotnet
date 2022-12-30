@@ -33,7 +33,19 @@
       "publishAllPorts": true,
       "useSSL": true,
       "environmentVariables": {
-        "ASPNETCORE_URLS": "http://*:8080;https://*:443"
+        "ASPNETCORE_URLS": "http://*:8080;https://*:443",
+        "GCPDeploy": "false"
+      }
+    },
+    "Docker_GCP": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
+      "publishAllPorts": true,
+      "useSSL": true,
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "http://*:8080;https://*:443",
+        "GCPDeploy": "true"        
       }
     },
     "WSL": {

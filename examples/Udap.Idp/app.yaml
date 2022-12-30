@@ -2,3 +2,12 @@ runtime: custom
 env: flex
 env_variables:
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: true
+  GCPDeploy: true
+  gcp_joe: true
+beta_settings:
+  cloud_sql_instances: udap-idp:us-west1:udap-idp-sqlexpress=tcp:1483
+resources:
+  cpu: 1
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 2

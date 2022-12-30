@@ -2,3 +2,4 @@ runtime: custom
 env: flex
 env_variables:
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: true
+  GCPDeploy: true

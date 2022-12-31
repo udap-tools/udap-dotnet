@@ -42,7 +42,7 @@ internal static class HostingExtensions
         string dbChoice;
         string connectionString;
 
-        dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "db";
+        dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
 
 
         foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
@@ -50,8 +50,8 @@ internal static class HostingExtensions
             Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
         }
 
-        //Ugly but works locally so far.
-        if (Environment.GetEnvironmentVariable("gcp_joe") != null)
+        //Ugly but works so far.
+        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
         {
             // Log.Logger.Information("Loading connection string from gcp_db");
             // connectionString = Environment.GetEnvironmentVariable("gcp_db");

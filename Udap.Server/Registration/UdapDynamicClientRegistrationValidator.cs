@@ -46,7 +46,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
 
         _logger.LogDebug("Start client validation");
-
+        _logger.LogDebug(JsonSerializer.Serialize(request));
         var handler = new JwtSecurityTokenHandler();
         var jwtSecurityToken = handler.ReadToken(request.SoftwareStatement) as JwtSecurityToken;
 
@@ -68,6 +68,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (!ValidateChain(client, jwtSecurityToken, communityTrustAnchors, communityRoots))
         {
+            _logger.LogWarning("Untrusted; Certificate is not a member of community");
             return new UdapDynamicClientRegistrationValidationResult("Untrusted", "Certificate is not a member of community");
         }
 
@@ -189,7 +190,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             throw new ArgumentNullException("JsonSerializer.Deserialize<string[]>(jwtSecurityToken.Header.X5c)");
         }
 
-        // TODO: not test cases for x5c with intermediate certificates.  
+        // TODO: no test cases for x5c with intermediate certificates.  
         var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
 
         if (_trustChainValidator.IsTrustedCertificate(
@@ -220,6 +221,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
             return true;
         }
+
+        _logger.LogInformation($"jwt payload {jwtSecurityToken.Payload}");
+        _logger.LogInformation($"X5c {jwtSecurityToken.Header.X5c}");
 
         return false;
     }

@@ -11,19 +11,29 @@ using System.Net;
 using System.Text.Json;
 using FhirLabsApi;
 using FhirLabsApi.Extensions;
+using Google.Cloud.SecretManager.V1;
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
 using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Serilog;
 using Udap.Common;
 using Udap.Metadata.Server;
 
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+Log.Information("Starting up");
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Configuration.AddUserSecrets<Program>(optional:true);  // I want user secrets even in release mode.
 
 // Add services to the container.
 
@@ -90,7 +100,7 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
     
 
 // UDAP CertStore
-builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection("UdapFileCertStoreManifest"));
+builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
 builder.Services.AddSingleton<ICertificateStore>(sp =>
     new FileCertificateStore(
         sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
@@ -162,6 +172,43 @@ app.MapControllers()
 
 app.Run();
 
+IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webApplicationBuilder)
+{
+    //Ugly but works so far.
+    if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
+    {
+        // Log.Logger.Information("Loading connection string from gcp_db");
+        // connectionString = Environment.GetEnvironmentVariable("gcp_db");
+        // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
+
+        Log.Logger.Information("Creating client");
+        var client = SecretManagerServiceClient.Create();
+
+        var secretResource = "projects/341821616593/secrets/UdapFileCertStoreManifest/versions/latest";
+
+        Log.Logger.Information("Requesting {secretResource");
+        // Call the API.
+        var result = client.AccessSecretVersion(secretResource);
+
+        // Convert the payload to a string. Payloads are bytes by default.
+        MemoryStream stream = new MemoryStream(result.Payload.Data.ToByteArray());
+       
+        
+        webApplicationBuilder.Configuration.AddJsonStream(stream);
+    }
+
+    return webApplicationBuilder.Configuration.GetSection("UdapFileCertStoreManifest");
+}
+
+Stream GenerateStreamFromString(string s)
+{
+    var stream = new MemoryStream();
+    var writer = new StreamWriter(stream);
+    writer.Write(s);
+    writer.Flush();
+    stream.Position = 0;
+    return stream;
+}
 
 //
 // Accessible to unit tests

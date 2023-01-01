@@ -42,11 +42,11 @@
     "Docker_GCP": {
       "commandName": "Docker",
       "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
       "publishAllPorts": true,
-      "useSSL": true,
+      "useSSL": false,
       "environmentVariables": {
-        "ASPNETCORE_URLS": "http://*:8080;https://*:443",
+        "ASPNETCORE_URLS": "http://*:8080",
         "GCPDeploy": "true"
       }
     },

@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Udap.Client.Client.Messages;
 using Udap.Common;
-using Udap.Common.Models;
+using Udap.Common.Registration;
 
 namespace Udap.Server.Registration;
 

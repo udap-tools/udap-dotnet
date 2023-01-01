@@ -86,10 +86,8 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
 
     .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>
     {
-        //TODO move this to config file.  Do it today!
-
         options.Authority = builder.Configuration["Jwt:Authority"];
-        // options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"]);
+        options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
         
         
         options.TokenValidationParameters = new TokenValidationParameters
@@ -191,7 +189,7 @@ IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webAppl
         var result = client.AccessSecretVersion(secretResource);
 
         // Convert the payload to a string. Payloads are bytes by default.
-        MemoryStream stream = new MemoryStream(result.Payload.Data.ToByteArray());
+        var stream = new MemoryStream(result.Payload.Data.ToByteArray());
        
         
         webApplicationBuilder.Configuration.AddJsonStream(stream);
@@ -200,21 +198,10 @@ IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webAppl
     return webApplicationBuilder.Configuration.GetSection("UdapFileCertStoreManifest");
 }
 
-Stream GenerateStreamFromString(string s)
-{
-    var stream = new MemoryStream();
-    var writer = new StreamWriter(stream);
-    writer.Write(s);
-    writer.Flush();
-    stream.Position = 0;
-    return stream;
-}
 
 //
 // Accessible to unit tests
 //
-
-
 namespace FhirLabsApi
 {
     public partial class Program { }

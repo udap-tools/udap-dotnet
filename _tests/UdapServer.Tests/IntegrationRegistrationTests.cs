@@ -10,7 +10,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Options;
@@ -19,6 +21,7 @@ using Duende.IdentityServer.Models;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -27,6 +30,7 @@ using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Common.Models;
+using Udap.Common.Registration;
 using Udap.Idp;
 using Udap.Server;
 using Udap.Server.DbContexts;
@@ -57,54 +61,23 @@ namespace UdapServer.Tests
             return builder.Options;
         }
 
-        public static DbContextOptions<TDbContext> BuildSqlite<TDbContext, TStoreOptions>(string name,
-            TStoreOptions storeOptions)
-            where TDbContext : DbContext
-            where TStoreOptions : class
-        {
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(storeOptions);
-
-            var builder = new DbContextOptionsBuilder<TDbContext>();
-            // Remember UdapDb.Migrations.UdapDb.Udap is in the assembly (and/or project) dedicated to producing migrations for the UDAP feature.
-            builder.UseSqlServer($"Filename=./Test.Udap.{name}.db",
-                sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
-            builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
-
-            return builder.Options;
-        }
-
-        public static DbContextOptions<TDbContext> BuildSqlite2<TDbContext, TStoreOptions>(string name,
-            TStoreOptions storeOptions)
-            where TDbContext : DbContext
-            where TStoreOptions : class
-        {
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(storeOptions);
-
-            var builder = new DbContextOptionsBuilder<TDbContext>();
-            builder.UseSqlServer($"Filename=./Test.Udap.{name}.db",
-                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
-            builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
-
-            return builder.Options;
-        }
-
-        public static DbContextOptions<TDbContext> BuildLocalDb<TDbContext, TStoreOptions>(string name,
-            TStoreOptions storeOptions)
-            where TDbContext : DbContext
-            where TStoreOptions : class
-        {
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(storeOptions);
-
-            var builder = new DbContextOptionsBuilder<TDbContext>();
-            builder.UseSqlServer(
-                $@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{name};trusted_connection=yes;",
-                optionsBuilder => optionsBuilder.MigrationsAssembly(typeof(UdapDb.Program).Assembly.FullName));
-            builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
-            return builder.Options;
-        }
+        //
+        //
+        // public static DbContextOptions<TDbContext> BuildLocalDb<TDbContext, TStoreOptions>(string name,
+        //     TStoreOptions storeOptions)
+        //     where TDbContext : DbContext
+        //     where TStoreOptions : class
+        // {
+        //     var serviceCollection = new ServiceCollection();
+        //     serviceCollection.AddSingleton(storeOptions);
+        //
+        //     var builder = new DbContextOptionsBuilder<TDbContext>();
+        //     builder.UseSqlServer(
+        //         $@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{name};trusted_connection=yes;",
+        //         optionsBuilder => optionsBuilder.MigrationsAssembly(typeof(UdapDb.Program).Assembly.FullName));
+        //     builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
+        //     return builder.Options;
+        // }
     }
 
     public class DatabaseProviderFixture<TStoreOption> : IntegrationBaseTest, IAsyncLifetime
@@ -127,15 +100,18 @@ namespace UdapServer.Tests
             // File.Delete($"./Test.Udap.{DatabaseName}.db");
             using var configContext =
                 new ConfigurationDbContext(
-                    BuildLocalDb<ConfigurationDbContext, ConfigurationStoreOptions>(DatabaseName, StoreOptions2));
+                    BuildInMemory<ConfigurationDbContext, ConfigurationStoreOptions>(DatabaseName, StoreOptions2));
             await configContext.Database.EnsureDeletedAsync();
-            // configContext.Database.EnsureCreated();
-           await configContext.Database.MigrateAsync();
+            configContext.Database.EnsureCreated();
+           // await configContext.Database.MigrateAsync();
 
-            DatabaseProvider = BuildLocalDb<UdapDbContext, TStoreOption>(DatabaseName, StoreOptions);
+            DatabaseProvider = BuildInMemory<UdapDbContext, TStoreOption>(DatabaseName, StoreOptions);
             using var context = new UdapDbContext(DatabaseProvider);
             // context.Database.EnsureCreated();
-            await context.Database.MigrateAsync();
+            if (context.Database.IsRelational())
+            {
+                await context.Database.MigrateAsync();
+            }
             
             AnchorCert =
                 new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
@@ -233,13 +209,18 @@ namespace UdapServer.Tests
             services.AddConfigurationDbContext(options =>
             {
                 options.ConfigureDbContext = b =>
-                    b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;",
-                        dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName));
+                    b.UseInMemoryDatabase(_databaseName, new InMemoryDatabaseRoot());
+
+                // options.ConfigureDbContext = b =>
+                //     b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;",
+                //         dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName));
             });
 
             services.AddUdapDbContext<UdapDbContext>(options =>
             {
-                options.UdapDbContext = b => b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;");
+                options.ConfigureDbContext = b =>
+                    b.UseInMemoryDatabase(_databaseName, new InMemoryDatabaseRoot());
+                // options.UdapDbContext = b => b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;");
             });
             
             services.AddTransient<IUdapClientConfigurationStore, UdapClientConfigurationStore>();
@@ -311,8 +292,8 @@ namespace UdapServer.Tests
             //
             // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
             // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-            // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-            // and specific to this Udap Dynamic Registration.
+            // can prepare it the same way JwtPayLoad is essentially implemented, but more specific to
+            // this Udap Dynamic Registration.
             //
             var jwtPayload = new JwtPayload(
                 new List<Claim>
@@ -402,9 +383,11 @@ namespace UdapServer.Tests
 
             services.AddUdapDbContext<UdapDbContext>(options =>
             {
-                options.UdapDbContext = b =>
-                    b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;", o =>
-                        o.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
+                options.ConfigureDbContext = b =>
+                    b.UseInMemoryDatabase(_databaseName, new InMemoryDatabaseRoot());
+                // options.UdapDbContext = b =>
+                //     b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;", o =>
+                //         o.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
             });
 
             services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
@@ -522,10 +505,96 @@ namespace UdapServer.Tests
         /// SHALL be absent otherwise. Each URI SHALL use the https scheme.
         /// </summary>
         /// <returns></returns>
+        // TODO still need to work on this test. Only spent enough time here to determine
+        // I was not including redirect Uris in when deserializing claims
         [Fact]
         public async Task redirect_uris_Tests() //With and without authorization_code in grant_types
         {
-            Assert.Fail("Not Implemented");
+            var now = DateTime.UtcNow;
+            var jwtId = CryptoRandom.CreateUniqueId();
+
+            var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"), "weatherApiClientLocalhostCert.pfx");
+            var clientCert = new X509Certificate2(cert, "udap-test");
+            var securityKey = new X509SecurityKey(clientCert);
+            var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+            var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+            var jwtHeader = new JwtHeader
+            {
+                { "alg", signingCredentials.Algorithm },
+                { "x5c", new[] { pem } }
+            };
+
+            var testRedirectUri = $"https://fhirlabs.net/udapTestClient/redirect/{Guid.NewGuid()}";
+
+            //
+            // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
+            // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
+            // can prepare it the same way JwtPayLoad is essentially implemented, but more specific to
+            // this Udap Dynamic Registration.
+            //
+            var jwtPayload = new JwtPayload(
+                new List<Claim>
+                {
+                    new Claim(JwtClaimTypes.Issuer, "https://weatherapi.lab:5021/fhir"),
+                    new Claim(JwtClaimTypes.Subject, "https://weatherapi.lab:5021/fhir"),
+                    new Claim(JwtClaimTypes.Audience, "https://weatherapi.lab:5021/connect/register"),
+                    new Claim(JwtClaimTypes.Expiration,
+                        EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                    new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(),
+                        ClaimValueTypes.Integer),
+                    new Claim(JwtClaimTypes.JwtId, jwtId),
+                    new Claim("client_name", "udapTestClient"),
+                    new Claim("contacts", JsonSerializer.Serialize(new HashSet<string> { "FhirJoe@BridgeTown.lab" }),
+                        JsonClaimValueTypes.JsonArray),
+                    new Claim("redirect_uris", JsonSerializer.Serialize(new HashSet<string> { testRedirectUri } ),
+                        JsonClaimValueTypes.JsonArray),
+                    new Claim("grant_types",
+                        JsonSerializer.Serialize(new HashSet<string> { "authorization_code" }),
+                        JsonClaimValueTypes.JsonArray),
+                    new Claim("response_types", JsonSerializer.Serialize(new HashSet<string> { "code" }),
+                        JsonClaimValueTypes.JsonArray),
+                    new Claim("token_endpoint_auth_method", "private_key_jwt"),
+                    new Claim(JwtClaimTypes.Scope, "system/Patient.* system/Practitioner.read")
+                });
+
+            var document = new UdapDynamicClientRegistrationDocument
+            {
+                Issuer = "https://weatherapi.lab:5021/fhir",
+                Subject = "https://weatherapi.lab:5021/fhir",
+                Audience = "https://weatherapi.lab:5021/connect/register",
+                Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+                IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+                JwtId = jwtId,
+                ClientName = "udapTestClient",
+                Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab" },
+                RedirectUris = new List<Uri>{new Uri(testRedirectUri) },
+                GrantTypes = new HashSet<string> { "authorization_code" },
+                ResponseTypes = new HashSet<string> { "code" },
+                TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+                Scope = "system/Patient.* system/Practitioner.read"
+            };
+            // _testOutputHelper.WriteLine(JsonSerializer.Serialize(jwtPayload, new JsonSerializerOptions { WriteIndented = true }));
+
+            var encodedHeader = jwtHeader.Base64UrlEncode();
+            var encodedPayloadJwt = jwtPayload.Base64UrlEncode();
+            var encodedPayload = document.Base64UrlEncode();
+            var encodedSignature =
+                JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                    signingCredentials);
+            var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayloadJwt, ".", encodedSignature);
+
+            JsonExtensions.SerializeToJson(jwtPayload).Should()
+                .BeEquivalentTo(JsonExtensions.SerializeToJson(document));
+            
+            encodedPayloadJwt.Should().BeEquivalentTo(encodedPayload);
+            
+            var handler = new JwtSecurityTokenHandler();
+            var token = handler.ReadToken(signedSoftwareStatement) as JwtSecurityToken;
+            foreach (var tokenClaim in token.Claims)
+            {
+                _testOutputHelper.WriteLine(tokenClaim.Value);
+            }
         }
 
         /// <summary>

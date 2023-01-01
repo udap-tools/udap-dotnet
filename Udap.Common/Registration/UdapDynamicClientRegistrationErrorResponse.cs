@@ -9,7 +9,7 @@
 
 using System.Text.Json.Serialization;
 
-namespace Udap.Server.Registration;
+namespace Udap.Common.Registration;
 
 public class UdapDynamicClientRegistrationErrorResponse
 {

@@ -7,6 +7,14 @@
 // */
 #endregion
 
+// Copyright (c) Duende Software. All rights reserved.
+// See LICENSE in the project root for license information.
+
+//
+// Most of this file is copied from Duende's Identity Server dom/dcr-proc branch
+// 
+//
+
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
@@ -16,7 +24,7 @@ using Microsoft.Extensions.Logging;
 using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Common.Models;
+using Udap.Common.Registration;
 
 namespace Udap.Server.Registration;
 
@@ -37,7 +45,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
     }
     /// <inheritdoc />
-    public async Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
+    public Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request,
         X509Certificate2Collection communityTrustAnchors,
         X509Certificate2Collection? communityRoots = null
@@ -54,7 +62,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         {
             _logger.LogError("No security token found");
 
-            return new UdapDynamicClientRegistrationValidationResult(Constants.TokenErrors.MissingSecurityToken);
+            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(Constants.TokenErrors.MissingSecurityToken));
         }
 
         var document = new UdapDynamicClientRegistrationDocument();
@@ -69,7 +77,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         if (!ValidateChain(client, jwtSecurityToken, communityTrustAnchors, communityRoots))
         {
             _logger.LogWarning("Untrusted; Certificate is not a member of community");
-            return new UdapDynamicClientRegistrationValidationResult("Untrusted", "Certificate is not a member of community");
+            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult("Untrusted", "Certificate is not a member of community"));
         }
 
         //////////////////////////////
@@ -87,9 +95,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         // we only support the two above grant types
         if (client.AllowedGrantTypes.Count == 0)
         {
-            return new UdapDynamicClientRegistrationValidationResult(
+            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                "unsupported grant type");
+                "unsupported grant type"));
         }
 
         //TODO: Ensure test covers this and follows Security IG: http://hl7.org/fhir/us/udap-security/b2b.html#refresh-tokens
@@ -98,9 +106,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             if (client.AllowedGrantTypes.Count == 1 &&
                 client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
             {
-                return new UdapDynamicClientRegistrationValidationResult(
+                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                    "client credentials does not support refresh tokens");
+                    "client credentials does not support refresh tokens"));
             }
 
             client.AllowOfflineAccess = true;
@@ -121,17 +129,17 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     }
                     else
                     {
-                        return new UdapDynamicClientRegistrationValidationResult(
+                        return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                             UdapDynamicClientRegistrationErrors.InvalidRedirectUri,
-                            "malformed redirect URI");
+                            "malformed redirect URI"));
                     }
                 }
             }
             else
             {
-                return new UdapDynamicClientRegistrationValidationResult(
+                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidRedirectUri,
-                    "redirect URI required for authorization_code grant type");
+                    "redirect URI required for authorization_code grant type"));
             }
         }
 
@@ -143,28 +151,28 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             //TODO: find the RFC reference for this rule and add a Test
             if (document.RedirectUris.Any())
             {
-                return new UdapDynamicClientRegistrationValidationResult(
+                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidRedirectUri,
-                    "redirect URI not compatible with client_credentials grant type");
+                    "redirect URI not compatible with client_credentials grant type"));
             }
         }
 
         //////////////////////////////
         // validate scopes
         //////////////////////////////
-        if (string.IsNullOrEmpty(document.Scope))
+        if (document.Scope == null || !document.Scope.Any())
         {
-            // todo: what to do when scopes are missing? error - leave up to custom validator?
+            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                "scope is required"));
         }
-        else
-        {
-            var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            // todo: ideally scope names get checked against configuration store?
 
-            foreach (var scope in scopes)
-            {
-                client.AllowedScopes.Add(scope);
-            }
+        var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        // todo: ideally scope names get checked against configuration store?
+
+        foreach (var scope in scopes)
+        {
+            client.AllowedScopes.Add(scope);
         }
 
 
@@ -174,7 +182,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         // validation successful - return client
-        return new UdapDynamicClientRegistrationValidationResult(client, document);
+        return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
     }
 
     private bool ValidateChain(

@@ -7,6 +7,15 @@
 // */
 #endregion
 
+// Copyright (c) Duende Software. All rights reserved.
+// See LICENSE in the project root for license information.
+
+//
+// Most of this file is copied from Duende's Identity Server dom/dcr-proc branch
+// Note in my case it inherits from Dictionary<string, object> so I can use it like
+// a System.IdentityModel.Tokens.Jwt.JwtPayload object.
+//
+
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -15,7 +24,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Udap.Common.Models;
+namespace Udap.Common.Registration;
 
 public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
 {
@@ -28,7 +37,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     private long _issuedAt;
     private string? _jwtId;
     private string? _clientName;
-    private ICollection<Uri> _redirectUris = new HashSet<Uri>();
+    private ICollection<Uri> _redirectUris = new List<Uri>();
     private ICollection<string> _contacts = new HashSet<string>();
     private ICollection<string> _grantTypes = new HashSet<string>();
     private ICollection<string> _responseTypes = new HashSet<string>();
@@ -80,7 +89,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
 /// uniformResourceIdentifier entry in the Subject Alternative Name extension of the client's
 /// certificate included in the x5c JWT header
 /// </summary>
-[JsonPropertyName(UdapConstants.RegistrationDocumentValues.Issuer)]
+    [JsonPropertyName(UdapConstants.RegistrationDocumentValues.Issuer)]
     public string? Issuer
     {
         get
@@ -218,8 +227,21 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.RedirectUris)]
     public ICollection<Uri> RedirectUris
     {
-        get => _redirectUris;
-        set => _redirectUris = value;
+        get
+        {
+            if (!_redirectUris.Any())
+            {
+                _redirectUris = GetIListClaims(UdapConstants.RegistrationDocumentValues.RedirectUris)
+                    .Select(u => new Uri(u))
+                    .ToList();
+            }
+            return _redirectUris;
+        }
+        set
+        {
+            _redirectUris = value;
+            this[UdapConstants.RegistrationDocumentValues.RedirectUris] = value;
+        }
     }
 
     /// <summary>
@@ -298,10 +320,10 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     }
 
     /// <summary>
-/// Array of strings. If grant_types contains "authorization_code", then this element SHALL
-/// have a fixed value of ["code"], and SHALL be omitted otherwise
-/// </summary>
-[JsonPropertyName(UdapConstants.RegistrationDocumentValues.ResponseTypes)]
+    /// Array of strings. If grant_types contains "authorization_code", then this element SHALL
+    /// have a fixed value of ["code"], and SHALL be omitted otherwise
+    /// </summary>
+    [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ResponseTypes)]
     public ICollection<string> ResponseTypes
     {
         get => _responseTypes;
@@ -347,7 +369,10 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
         {
             if (string.IsNullOrEmpty(_scope))
             {
-                _scope = this[UdapConstants.RegistrationDocumentValues.Scope] as string;
+                if (this.TryGetValue(UdapConstants.RegistrationDocumentValues.Scope, out var value))
+                {
+                    _scope = value as string;
+                }
             }
             return _scope;
         }

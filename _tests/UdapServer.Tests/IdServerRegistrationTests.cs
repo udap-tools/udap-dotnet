@@ -28,6 +28,7 @@ using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
+using Udap.Common.Registration;
 using Udap.Idp;
 using Xunit.Abstractions;
 
@@ -42,29 +43,7 @@ public class ApiTestFixture : WebApplicationFactory<Program>
 
     public ApiTestFixture()
     {
-        //
-        // Migrate and seed database
-        // Database (Sqlite) will be in the bin\debug(release)\net60 folder.
-        //
-        // var processStartInfo = new ProcessStartInfo
-        // {
-        //     Arguments = "/seed",
-        //     FileName = $"Udap.Idp.exe",
-        //     UseShellExecute = false,
-        //     CreateNoWindow = false,
-        //     RedirectStandardOutput = true,
-        //     RedirectStandardError = true
-        // };
-        //
-        // var process = new Process();
-        // process.StartInfo = processStartInfo;
-        // process.Start();
-        //
-        // process.WaitForExit();
-        // process.ExitCode.ToString();
-
-        SeedData.EnsureSeedData("Data Source=../Udap.Idp.db;", new Mock<Serilog.ILogger>().Object);
-
+        
         TestConfig = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json")

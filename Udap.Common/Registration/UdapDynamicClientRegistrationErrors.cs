@@ -7,7 +7,7 @@
 // */
 #endregion
 
-namespace Udap.Server.Registration;
+namespace Udap.Common.Registration;
 
 public static class UdapDynamicClientRegistrationErrors
 {

@@ -167,7 +167,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //  B2B section.  Obtain an Access Token
         //
         //
-        _testOutputHelper.WriteLine($"Authorization Endpoint:: {result.Audience}");
+        //_testOutputHelper.WriteLine($"Authorization Endpoint:: {result.Audience}");
         // var idpDisco = await fhirClient.GetDiscoveryDocumentAsync(disco.AuthorizeEndpoint);
         //
         // idpDisco.IsError.Should().BeFalse(idpDisco.Error);
@@ -222,9 +222,12 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Udap = UdapConstants.UdapVersionsSupportedValue
         };
 
+        _testOutputHelper.WriteLine("Client Token Request");
+        _testOutputHelper.WriteLine("---------------------");
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(clientRequest));
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
 
-        
         var tokenResponse = await fhirClient.RequestClientCredentialsTokenAsync(clientRequest);
         
         _testOutputHelper.WriteLine("Authorization Token Response");
@@ -791,7 +794,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //  B2B section.  Obtain an Access Token
         //
         //
-        _testOutputHelper.WriteLine($"Authorization Endpoint:: {result.Audience}");
+        //_testOutputHelper.WriteLine($"Authorization Endpoint:: {result.Audience}");
         // var idpDisco = await idpClient.GetDiscoveryDocumentAsync(disco.AuthorizeEndpoint);
         //
         // idpDisco.IsError.Should().BeFalse(idpDisco.Error);
@@ -846,7 +849,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         };
 
 
+        _testOutputHelper.WriteLine("Client Token Request");
+        _testOutputHelper.WriteLine("---------------------");
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(clientRequest));
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
 
 
         var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);

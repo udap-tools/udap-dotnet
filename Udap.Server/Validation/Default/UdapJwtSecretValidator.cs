@@ -8,6 +8,7 @@
 #endregion
 
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Models;
@@ -66,7 +67,7 @@ public class UdapJwtSecretValidator : ISecretValidator
 
         await Task.Delay(50);
 
-        _logger.LogInformation($"parsedSecret {parsedSecret}");
+        _logger.LogDebug($"parsedSecret {JsonSerializer.Serialize(parsedSecret)}");
 
         // return success;
 
@@ -128,9 +129,12 @@ public class UdapJwtSecretValidator : ISecretValidator
 
         var handler = new JsonWebTokenHandler() { MaximumTokenSizeInBytes = _options.InputLengthRestrictions.Jwt };
         var result = handler.ValidateToken(jwtTokenString, tokenValidationParameters);
+        
         if (!result.IsValid)
         {
             _logger.LogError(result.Exception, "JWT token validation error");
+            //TODO: figure out how to enabled trace/verbose with Serilog
+            _logger.LogDebug(JsonSerializer.Serialize(result));
             return fail;
         }
 

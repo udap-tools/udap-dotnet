@@ -103,8 +103,8 @@ public class UdapMetadata
         UdapCertificationsRequired = new HashSet<string> { "http://MyUdapCertification" };
         GrantTypesSupported = new HashSet<string>
         {
-                OidcConstants.GrantTypes.AuthorizationCode,
-                OidcConstants.GrantTypes.RefreshToken,
+                // OidcConstants.GrantTypes.AuthorizationCode,
+                // OidcConstants.GrantTypes.RefreshToken,
                 OidcConstants.GrantTypes.ClientCredentials
             };
         ScopesSupported = new HashSet<string>

@@ -25,6 +25,7 @@ using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Registration;
+using Udap.Server.Configuration;
 
 namespace Udap.Server.Registration;
 
@@ -35,12 +36,15 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 {
     private TrustChainValidator _trustChainValidator;
     private readonly ILogger _logger;
+    private readonly ServerSettings _serverSettings;
 
     public UdapDynamicClientRegistrationValidator(
         TrustChainValidator trustChainValidator,
+        ServerSettings serverSettings,
         ILogger<UdapDynamicClientRegistrationValidator> logger)
     {
         _trustChainValidator = trustChainValidator;
+        _serverSettings = serverSettings;
         _logger = logger;
 
     }
@@ -53,7 +57,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     {
         using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
 
-        _logger.LogDebug("Start client validation");
+        _logger.LogDebug($"Start client validation with Server Support Type {_serverSettings.ServerSupport}");
         _logger.LogDebug(JsonSerializer.Serialize(request));
         var handler = new JwtSecurityTokenHandler();
         var jwtSecurityToken = handler.ReadToken(request.SoftwareStatement) as JwtSecurityToken;
@@ -160,19 +164,22 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //////////////////////////////
         // validate scopes
         //////////////////////////////
-        if (document.Scope == null || !document.Scope.Any())
+        if (_serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG && (document.Scope == null || !document.Scope.Any()))
         {
             return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 "scope is required"));
         }
 
-        var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        // todo: ideally scope names get checked against configuration store?
-
-        foreach (var scope in scopes)
+        if (document.Scope != null && document.Any())
         {
-            client.AllowedScopes.Add(scope);
+            var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            // todo: ideally scope names get checked against configuration store?
+
+            foreach (var scope in scopes)
+            {
+                client.AllowedScopes.Add(scope);
+            }
         }
 
 

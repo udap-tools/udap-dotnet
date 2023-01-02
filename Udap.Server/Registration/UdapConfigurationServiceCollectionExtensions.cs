@@ -10,6 +10,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Udap.Common.Certificates;
+using Udap.Server.Configuration;
 
 namespace Udap.Server.Registration;
 

@@ -8,7 +8,6 @@
 #endregion
 
 using System.Collections;
-using System.Diagnostics;
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
@@ -20,6 +19,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using Udap.Server;
+using Udap.Server.Configuration;
 using Udap.Server.Extensions;
 using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.Registration;
@@ -76,6 +76,8 @@ internal static class HostingExtensions
             connectionString = builder.Configuration.GetConnectionString(dbChoice);
         }
 
+        var settings = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
+
         Log.Logger.Information($"ConnectionString:: {connectionString}");
         // needed to load configuration from appsettings.json
         builder.Services.AddOptions();
@@ -127,9 +129,18 @@ internal static class HostingExtensions
                     sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
             });
 
-        builder.Services.AddSingleton<IScopeService, DefaultScopeService>();
-        builder.Services.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
+         builder.AddUdapServerSettings();
 
+        // TODO
+        // Override default ClientSecretValidator.  Not the ideal solution.  But I will need to spend some time creating PRs to Duende to allow Udap validation 
+        // to work with the standard api.  It is close but not quite there.  I had to add a IScopeService to the validator to give me a way to pick up scopes
+        // from the saved scopes in the ClientScopes table.  They are resolved and inserted into the HttpContext.Request.  
+        //
+        builder.Services.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
+        
+
+        builder.Services.AddSingleton<IScopeService, DefaultScopeService>();
+        
         // configuration (resolvers, counter key builders)
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 

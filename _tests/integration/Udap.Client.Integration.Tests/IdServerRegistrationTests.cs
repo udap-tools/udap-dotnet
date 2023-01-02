@@ -1009,7 +1009,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
         var response = await idpClient.PostAsJsonAsync(reg, requestBody);
 
-
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // var documentAsJson = JsonSerializer.Serialize(document);
@@ -1099,7 +1102,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         patientResponse.Result.EnsureSuccessStatusCode();
 
-
         _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
 
     }
@@ -1108,20 +1110,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     [Fact]
     public async Task RegisrationMissingScope_FhirLabs_desktop_Test()
     {
-        var handler = new HttpClientHandler();
-        //
-        // Interesting discussion if you are into this sort of stuff
-        // https://github.com/dotnet/runtime/issues/39835
-        //
-        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, _) =>
-        {
-            chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-            chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer"));
-            chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_Anchor.cer"));
-            return chain.Build(cert);
-        };
-
-        // using var fhirLabsClient = new HttpClient(handler);
         using var fhirLabsClient = new HttpClient();
 
         var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()

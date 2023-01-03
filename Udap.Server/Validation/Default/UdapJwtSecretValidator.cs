@@ -19,6 +19,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Server.Configuration;
 using Udap.Server.Extensions;
 
 namespace Udap.Server.Validation.Default;
@@ -33,6 +34,7 @@ public class UdapJwtSecretValidator : ISecretValidator
     private readonly IServerUrls _urls;
     private readonly IdentityServerOptions _options;
     private TrustChainValidator _trustChainValidator;
+    private readonly ServerSettings _serverSettings;
     private readonly ILogger _logger;
 
     private const string Purpose = nameof(UdapJwtSecretValidator);
@@ -43,6 +45,7 @@ public class UdapJwtSecretValidator : ISecretValidator
         IServerUrls urls,
         IdentityServerOptions options,
         TrustChainValidator trustChainValidator,
+        ServerSettings serverSettings,
         ILogger<UdapJwtSecretValidator> logger)
     {
         _issuerNameService = issuerNameService;
@@ -50,6 +53,8 @@ public class UdapJwtSecretValidator : ISecretValidator
         _urls = urls;
         _options = options;
         _trustChainValidator = trustChainValidator;
+        _serverSettings = serverSettings;
+
         _logger = logger;
     }
 
@@ -110,6 +115,18 @@ public class UdapJwtSecretValidator : ISecretValidator
                 string.Concat((await _issuerNameService.GetCurrentAsync()).EnsureTrailingSlash(), Constants.ProtocolRoutePaths.Token)
         }.Distinct();
 
+        string iss;
+
+        // if (_serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG)
+        // {
+        //     iss = parsedSecret.Id;
+        // }
+        // else
+        // {
+        //     iss = jwtTokenString
+        // }
+        
+
         var tokenValidationParameters = new TokenValidationParameters
         {
             IssuerSigningKeys = await parsedSecret.GetUdapKeysAsync(),
@@ -124,26 +141,53 @@ public class UdapJwtSecretValidator : ISecretValidator
             RequireSignedTokens = true,
             RequireExpirationTime = true,
 
-            ClockSkew = TimeSpan.FromMinutes(5)
+            ClockSkew = TimeSpan.FromMinutes(5),
+
+            // ValidateSignatureLast = true
         };
 
+
+        
+
         var handler = new JsonWebTokenHandler() { MaximumTokenSizeInBytes = _options.InputLengthRestrictions.Jwt };
+
+        if (_serverSettings.ServerSupport == ServerSupport.UDAP)
+        {
+            var jsonWebToken = handler.ReadJsonWebToken(jwtTokenString);
+            tokenValidationParameters.IssuerValidator = (issuer, token, parameters) =>
+            {
+                if (issuer != null && jsonWebToken.Claims.FirstOrDefault(c => c.Issuer == issuer) != null)
+                {
+                    return issuer;
+                }
+
+                return null;
+            };
+        }
+
+        
+
+        //TODO: experiment with ways to test invalid tokens.  TESTING...
         var result = handler.ValidateToken(jwtTokenString, tokenValidationParameters);
         
         if (!result.IsValid)
         {
             _logger.LogError(result.Exception, "JWT token validation error");
-            //TODO: figure out how to enabled trace/verbose with Serilog
-            _logger.LogDebug(JsonSerializer.Serialize(result));
+            
             return fail;
         }
 
         var jwtToken = (JsonWebToken)result.SecurityToken;
-        if (jwtToken.Subject != jwtToken.Issuer)
+
+        if (_serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG)
         {
-            _logger.LogError("Both 'sub' and 'iss' in the client assertion token must have a value of client_id.");
-            return fail;
+            if (jwtToken.Subject != jwtToken.Issuer)
+            {
+                _logger.LogError("Both 'sub' and 'iss' in the client assertion token must have a value of client_id.");
+                return fail;
+            }
         }
+            
 
         var exp = jwtToken.ValidTo;
         if (exp == DateTime.MinValue)

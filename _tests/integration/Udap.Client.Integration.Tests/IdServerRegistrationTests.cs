@@ -875,6 +875,238 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
     }
 
+
+    //
+    // IDP Server must be running in ServerSupport mode of ServerSupport.UDAP for this to fail and pass the test.
+    // See part of test where getting Access Token
+    // var jwtPayload = new JwtPayload(
+    //    result.Issuer,
+    //
+    // vs normal 
+    //
+    // var jwtPayload = new JwtPayload(
+    //   result.ClientId,
+    //
+    [Fact]
+    public async Task RequestAccessTokent_Fail_For_Issuer_FhirLabs_desktop_Test()
+    {
+        using var fhirLabsClient = new HttpClient();
+
+        var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        {
+            Address = "https://localhost:7016/fhir/r4",
+            Policy = new Udap.Client.Client.DiscoveryPolicy
+            {
+                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
+                ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
+            }
+        });
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+        var discoJsonFormatted =
+            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        // _testOutputHelper.WriteLine(discoJsonFormatted);
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        // Get signed payload and compare registration_endpoint
+
+
+        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
+        var jwt = new JwtSecurityToken(metadata.SignedMetadata);
+        var tokenHeader = jwt.Header;
+
+
+        // var tokenHandler = new JwtSecurityTokenHandler();
+
+        // Update JwtSecurityToken to JsonWebTokenHandler
+        // See: https://stackoverflow.com/questions/60455167/why-we-have-two-classes-for-jwt-tokens-jwtsecuritytokenhandler-vs-jsonwebtokenha
+        // See: https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/945
+        //
+        var tokenHandler = new JsonWebTokenHandler();
+
+        var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
+        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray.First().ToString()));
+
+        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
+        {
+            RequireSignedTokens = true,
+            ValidateIssuer = true,
+            ValidIssuers = new[]
+                {
+                    "https://localhost:7016/fhir/r4"
+                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+            ValidateAudience = false, // No aud for UDAP metadata
+            ValidateLifetime = true,
+            IssuerSigningKey = new X509SecurityKey(publicCert),
+            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+        } // , out SecurityToken validatedToken
+        );
+
+        jwt.Payload.Claims
+            .Single(c => c.Type == UdapConstants.Discovery.RegistrationEndpoint)
+            .Value.Should().Be(regEndpoint);
+
+        var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+
+        var clientCert = new X509Certificate2(
+            cert,
+            _fixture.Manifest.ResourceServers.First().Communities
+                .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
+
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+        //
+        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
+        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
+        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
+        // and specific to this Udap Dynamic Registration.
+        //
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "https://fhirlabs.net:7016/fhir/r4",
+            Subject = "https://fhirlabs.net:7016/fhir/r4",
+            Audience = regEndpoint,
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = signedSoftwareStatement,
+            // Certifications = new string[0],
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody, new JsonSerializerOptions(){DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull}));
+
+        // return;
+
+        using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
+        var response = await idpClient.PostAsJsonAsync(reg, requestBody);
+
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // var documentAsJson = JsonSerializer.Serialize(document);
+        var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        _testOutputHelper.WriteLine("Client Registration Response::");
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(result));
+        _testOutputHelper.WriteLine("");
+        // result.Should().BeEquivalentTo(documentAsJson);
+
+        // _testOutputHelper.WriteLine(result.ClientId);
+
+
+        //
+        //
+        //  B2B section.  Obtain an Access Token
+        //
+        //
+        //_testOutputHelper.WriteLine($"Authorization Endpoint:: {result.Audience}");
+        // var idpDisco = await idpClient.GetDiscoveryDocumentAsync(disco.AuthorizeEndpoint);
+        //
+        // idpDisco.IsError.Should().BeFalse(idpDisco.Error);
+
+
+
+
+        //
+        // Get Access Token
+        //
+
+        var jwtPayload = new JwtPayload(
+            result.Issuer,
+            disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+            },
+            now.ToUniversalTime(),
+            now.AddMinutes(5).ToUniversalTime()
+            );
+
+        //
+        // All of this is the same as above, during registration
+        //
+        jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+        encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
+        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
+
+        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = disco.TokenEndpoint,
+            //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+
+        _testOutputHelper.WriteLine("Client Token Request");
+        _testOutputHelper.WriteLine("---------------------");
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(clientRequest));
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
+
+
+        var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+
+        
+        _testOutputHelper.WriteLine("Authorization Token Response");
+        _testOutputHelper.WriteLine("---------------------");
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
+
+        tokenResponse.IsError.Should().BeTrue();
+        
+    }
+
     [Fact]
     public async Task RegisrationSuccess_FhirLabs_LIVE_Test()
     {

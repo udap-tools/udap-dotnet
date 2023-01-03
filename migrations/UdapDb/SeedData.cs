@@ -64,15 +64,15 @@ public static class SeedData
                 sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
         });
 
-        using var serviceProvider = services.BuildServiceProvider();
+        await using var serviceProvider = services.BuildServiceProvider();
         using var scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
 
-        scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.Migrate();
+        await scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.MigrateAsync();
         var configDbContext = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
-        configDbContext.Database.Migrate();
+        await configDbContext.Database.MigrateAsync();
 
         var udapContext = scope.ServiceProvider.GetRequiredService<UdapDbContext>();
-        udapContext.Database.Migrate();
+        await udapContext.Database.MigrateAsync();
 
         var clientRegistrationStore = scope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
 
@@ -83,7 +83,7 @@ public static class SeedData
             community.Enabled = true;
             community.Default = false;
             udapContext.Communities.Add(community);
-            udapContext.SaveChanges();
+            await udapContext.SaveChangesAsync();
         }
 
         if (!udapContext.Communities.Any(c => c.Name == "udap://surefhir.labs"))
@@ -92,7 +92,7 @@ public static class SeedData
             community.Enabled = true;
             community.Default = true;
             udapContext.Communities.Add(community);
-            udapContext.SaveChanges();
+            await udapContext.SaveChangesAsync();
         }
 
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -116,7 +116,7 @@ public static class SeedData
                 Enabled = true
             });
 
-            udapContext.SaveChanges();
+            await udapContext.SaveChangesAsync();
         }
 
         var anchorLocalhostCert = new X509Certificate2(
@@ -138,7 +138,7 @@ public static class SeedData
                 Enabled = true
             });
 
-            udapContext.SaveChanges();
+            await udapContext.SaveChangesAsync();
         }
 
         var sureFhirLabsAnchor = new X509Certificate2(
@@ -149,20 +149,20 @@ public static class SeedData
         {
             
 
-            var commnity = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
+            var community = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
 
             udapContext.Anchors.Add(new Anchor
             {
                 BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                 EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
                 Name = sureFhirLabsAnchor.Subject,
-                Community = commnity,
+                Community = community,
                 X509Certificate = sureFhirLabsAnchor.ToPemFormat(),
                 Thumbprint = sureFhirLabsAnchor.Thumbprint,
                 Enabled = true
             });
 
-            udapContext.SaveChanges();
+            await udapContext.SaveChangesAsync();
         }
 
         var seedScopes = new List<string>();
@@ -187,7 +187,17 @@ public static class SeedData
             }
         }
 
-        configDbContext.SaveChanges();
+        await configDbContext.SaveChangesAsync();
+
+        if (configDbContext.ApiScopes.All(s => s.Name != "udap"))
+        {
+            var apiScope = new ApiScope("udap");
+            configDbContext.ApiScopes.Add(apiScope.ToEntity());
+
+            await configDbContext.SaveChangesAsync();
+        }
+
+
 
         var sb = new StringBuilder();
         sb.AppendLine("Use[Udap.Idp.db];");
@@ -201,7 +211,7 @@ public static class SeedData
         sb.AppendLine("EXEC sp_addrolemember N'db_owner', N'udap_user';");
         sb.AppendLine("END");
         
-        configDbContext.Database.ExecuteSqlRaw(sb.ToString());
+        await configDbContext.Database.ExecuteSqlRawAsync(sb.ToString());
 
         return 0;
     }

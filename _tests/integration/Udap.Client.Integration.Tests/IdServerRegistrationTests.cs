@@ -887,6 +887,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     // var jwtPayload = new JwtPayload(
     //   result.ClientId,
     //
+    // If you want Udap.Idp to run in UDAP mode the use "ASPNETCORE_ENVIRONMENT": "Production" to launch. Or
+    // however you get the serer to pickup appsettings.Production.json
+    //
     [Fact]
     public async Task RequestAccessTokent_Fail_For_Issuer_FhirLabs_desktop_Test()
     {
@@ -988,7 +991,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             GrantTypes = new HashSet<string> { "client_credentials" },
             // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
+            // Scope = "system/Patient.* system/Practitioner.read"
         };
 
 

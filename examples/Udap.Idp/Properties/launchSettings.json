@@ -5,7 +5,7 @@
       "launchBrowser": true,
       "environmentVariables": {
         "GCPDeploy": "false",
-        "ASPNETCORE_ENVIRONMENT": "Production"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "sslPort": 5002,
       "applicationUrl": "https://host.docker.internal:5002"

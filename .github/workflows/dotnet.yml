@@ -26,7 +26,7 @@ jobs:
           6.0.x
           7.0.x
     - name: Generate PKI
-      run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj --no-restore
+      run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj
     - name: Build
       run: dotnet build -c Release Udap.sln
     - name: Test Udap.Common.Tests

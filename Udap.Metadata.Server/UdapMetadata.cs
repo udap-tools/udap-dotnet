@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Text;
 using System.Text.Json.Serialization;
 using IdentityModel;
 using Microsoft.Extensions.Options;
@@ -21,7 +22,7 @@ public class UdapMetadata
 {
     private readonly List<UdapMetadataConfig> _udapMetadataConfigs;
 
-    public UdapMetadataConfig? GetUdapMetadataConfig(string? community)
+    public UdapMetadataConfig? GetUdapMetadataConfig(string? community = null)
     {
         if (community == null)
         {
@@ -81,7 +82,8 @@ public class UdapMetadata
                 UdapConstants.UdapProfilesSupportedValues.UdapDcr,
                 UdapConstants.UdapProfilesSupportedValues.UdapAuthn,
                 UdapConstants.UdapProfilesSupportedValues.UdapAuthz,
-                UdapConstants.UdapProfilesSupportedValues.UdapTo
+                //TODO: Code doesn't support this yet.  Also all of this needs to be coded up as a configuration feature
+                // UdapConstants.UdapProfilesSupportedValues.UdapTo
             };
 
         UdapAuthorizationExtensionsSupported = new HashSet<string>
@@ -101,8 +103,8 @@ public class UdapMetadata
         UdapCertificationsRequired = new HashSet<string> { "http://MyUdapCertification" };
         GrantTypesSupported = new HashSet<string>
         {
-                OidcConstants.GrantTypes.AuthorizationCode,
-                OidcConstants.GrantTypes.RefreshToken,
+                // OidcConstants.GrantTypes.AuthorizationCode,
+                // OidcConstants.GrantTypes.RefreshToken,
                 OidcConstants.GrantTypes.ClientCredentials
             };
         ScopesSupported = new HashSet<string>
@@ -265,4 +267,28 @@ public class UdapMetadata
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.SignedMetadata)]
     public string? SignedMetadata { get; set; }
+
+
+    public ICollection<string> Communities()
+    {
+        return _udapMetadataConfigs.Select(c => c.Community).ToList();
+    }
+
+    public string CommunitiesAsHtml(string path)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine("<!DOCTYPE html>");
+        sb.AppendLine("<HTML><head><title>Supported UDAP Communities</title></head>");
+        sb.AppendLine("<Body>");
+
+        foreach (var community in Communities())
+        {
+            sb.AppendLine($"<a href=\"{path}/.well-known/udap?community={community}\" target=\"_blank\">{community}</a><br/>");
+        }
+
+        sb.AppendLine("</Body>");
+        sb.AppendLine("</HTML>");
+        return sb.ToString();
+    }
 }

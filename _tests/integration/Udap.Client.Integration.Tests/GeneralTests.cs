@@ -226,7 +226,7 @@ namespace Udap.Client.Integration.Tests
                                X509ChainStatusFlags.OfflineRevocation |
                                X509ChainStatusFlags.CtlNotSignatureValid;
 
-            ValidateCertificateChain(cert, problemFlags, "udap://surefhir.labs").Should().BeTrue();
+            (await ValidateCertificateChain(cert, problemFlags, "udap://surefhir.labs")).Should().BeTrue();
             _diagnosticsChainValidator.Called.Should().BeFalse();
         }
 
@@ -278,12 +278,12 @@ namespace Udap.Client.Integration.Tests
                                       X509ChainStatusFlags.OfflineRevocation |
                                       X509ChainStatusFlags.CtlNotSignatureValid;
             
-            ValidateCertificateChain(cert, problemFlags, "https://stage.healthtogo.me:8181").Should().BeTrue();
+            (await ValidateCertificateChain(cert, problemFlags, "https://stage.healthtogo.me:8181")).Should().BeTrue();
             _diagnosticsChainValidator.Called.Should().BeFalse();
         }
 
         
-        public bool ValidateCertificateChain(
+        public async Task<bool> ValidateCertificateChain(
             X509Certificate2 issuedCertificate2, 
             X509ChainStatusFlags problemFlags,
             string communityName)
@@ -292,9 +292,9 @@ namespace Udap.Client.Integration.Tests
                 .AddJsonFile("appsettings.json", false, true)
                 .AddUserSecrets<GeneralTests>()
             .Build();
-    
-            var services = new ServiceCollection();
 
+            var services = new ServiceCollection();
+            
             // UDAP CertStore
             services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
             services.AddSingleton<ICertificateStore>(sp =>
@@ -306,10 +306,10 @@ namespace Udap.Client.Integration.Tests
 
             var sp = services.BuildServiceProvider();
             var certStore = sp.GetRequiredService<ICertificateStore>();
+            var certificateStore = await certStore.Resolve();
+            var roots = certificateStore.RootCAs;
 
-            var roots = certStore.Resolve().RootCAs;
-
-            var anchors = certStore.Resolve().Anchors
+            var anchors = certificateStore.Anchors
                 .Where(c => c.Community == communityName)
                 .OrderBy(c => X509Certificate2.CreateFromPem(c.Certificate).NotBefore)
                 .Select(c => c.Certificate);
@@ -323,8 +323,10 @@ namespace Udap.Client.Integration.Tests
             validator.Untrusted += certificate2 => _testOutputHelper.WriteLine("Untrusted: " + certificate2.Subject);
             
             return validator.IsTrustedCertificate(
+                "client_name",
                 issuedCertificate2,
                 anchors.Select(a => X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
+                out X509ChainElementCollection? chainElements,
                 roots.ToArray().ToX509Collection());
         }
 

@@ -12,7 +12,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
@@ -28,10 +27,9 @@ using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Common.Extensions;
+using Udap.Common.Models;
+using Udap.Common.Registration;
 using Udap.Idp;
-using Udap.Metadata.Server;
-using Udap.Server.Registration;
 using Xunit.Abstractions;
 
 namespace UdapServer.Tests;
@@ -45,29 +43,7 @@ public class ApiTestFixture : WebApplicationFactory<Program>
 
     public ApiTestFixture()
     {
-        //
-        // Migrate and seed database
-        // Database (Sqlite) will be in the bin\debug(release)\net60 folder.
-        //
-        // var processStartInfo = new ProcessStartInfo
-        // {
-        //     Arguments = "/seed",
-        //     FileName = $"Udap.Idp.exe",
-        //     UseShellExecute = false,
-        //     CreateNoWindow = false,
-        //     RedirectStandardOutput = true,
-        //     RedirectStandardError = true
-        // };
-        //
-        // var process = new Process();
-        // process.StartInfo = processStartInfo;
-        // process.Start();
-        //
-        // process.WaitForExit();
-        // process.ExitCode.ToString();
-
-        SeedData.EnsureSeedData("Data Source=../Udap.Idp.db;", new Mock<Serilog.ILogger>().Object);
-
+        
         TestConfig = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
             .AddJsonFile("appsettings.json")
@@ -81,15 +57,13 @@ public class ApiTestFixture : WebApplicationFactory<Program>
         // Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORT", "5001");
         Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "http://localhost");
         builder.UseEnvironment("Development");
-
+        
         builder.ConfigureServices(services =>
         {
             //
             // Fix-up TrustChainValidator to ignore certificate revocation
             //
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType ==
-                     typeof(TrustChainValidator));
+            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(TrustChainValidator));
 
             if (descriptor != null)
             {
@@ -104,17 +78,22 @@ public class ApiTestFixture : WebApplicationFactory<Program>
                     RevocationMode = X509RevocationMode.NoCheck // This is the change unit testing with no revocation endpoint to host the revocation list.
                 },
                 Output.ToLogger<TrustChainValidator>()));
-
         });
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();
             logging.AddXUnit(Output);
         });
+        
 
         var app = base.CreateHost(builder);
 
         return app;
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.UseSetting("skipRateLimiting", null);
     }
 }
 
@@ -135,8 +114,11 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
     }
 
     [Fact]
-    public async Task RegisrationSuccessTest()
+    public async Task RegisrationSuccessWeatherApiTest()
     {
+        // var clientPolicyStore = _fixture.Services.GetService<IIpPolicyStore>();
+        //
+        //
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
 
@@ -159,10 +141,10 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
 
         var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
         var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
 
         var jwtId = CryptoRandom.CreateUniqueId();
         //
@@ -233,427 +215,5 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
 
         ((JsonElement)responseUdapDocument["Extra"]).GetString().Should().Be(document["Extra"].ToString());
     }
-
-    [Fact(Skip = "xxx")]
-    public async Task RegisrationSuccess_HealthToGo_Test()
-    {
-        using var client = new HttpClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
-        {
-            Address = "https://stage.healthtogo.me:8181/fhir/r4/stage",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
-            {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
-                ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
-            }
-        });
-
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
-        // _testOutputHelper.WriteLine(discoJsonFormatted);
-        var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
-
-
-        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "udap-sandbox-surescripts.p12");
-        var clientCert = new X509Certificate2(cert, "8nww8nni");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
-
-
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
-
-        var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
-
-        var response = await client.PostAsJsonAsync(reg, requestBody);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        var documentAsJson = JsonSerializer.Serialize(document);
-        var result = await response.Content.ReadAsStringAsync();
-        // _testOutputHelper.WriteLine(result);
-        // result.Should().BeEquivalentTo(documentAsJson);
-    }
-
-
-    [Fact(Skip = "xx")]
-    public async Task RegisrationSuccess_NationalDirectory_Test()
-    {
-
-        using var client = new HttpClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
-        {
-            Address = "https://national-directory.meteorapp.com",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
-            {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
-                ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
-            }
-        });
-
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
-        // _testOutputHelper.WriteLine(discoJsonFormatted);
-        var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
-
-
-        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "udap-sandbox-surescripts.p12");
-        var clientCert = new X509Certificate2(cert, "8nww8nni");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
-
-
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
-
-        var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
-
-        _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody));
-
-        return;
-        // var response = await client.PostAsJsonAsync(reg, requestBody);
-        //
-        //
-        // // response.StatusCode.Should().Be(HttpStatusCode.Created);
-        //
-        // var documentAsJson = JsonSerializer.Serialize(document);
-        // var result = await response.Content.ReadAsStringAsync();
-        // // _testOutputHelper.WriteLine(result);
-        // result.Should().BeEquivalentTo(documentAsJson);
-    }
-
-
-    [Fact(Skip = "xx")]
-    public async Task RegisrationSuccess_ForEvernorth_Test()
-    {
-        using var client = new HttpClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
-        {
-            Address = "https://udap.fast.poolnook.me",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
-            {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
-                ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
-            }
-        });
-
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
-        // _testOutputHelper.WriteLine(discoJsonFormatted);
-        var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
-
-
-        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "udap-sandbox-surescripts.p12");
-        var clientCert = new X509Certificate2(cert, "8nww8nni");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
-
-
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
-
-        var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
-
-        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody));
-
-
-        var response = await client.PostAsJsonAsync(reg, requestBody);
-
-
-        // response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        var documentAsJson = JsonSerializer.Serialize(document);
-        var result = await response.Content.ReadAsStringAsync();
-        // _testOutputHelper.WriteLine(result);
-        // result.Should().BeEquivalentTo(documentAsJson);
-    }
-
-
-    [Fact]
-    public async Task RegisrationSuccess_FhirLabs_Test()
-    {
-        using var _ = _fixture.CreateClient();
-
-        var handler = new HttpClientHandler();
-        //
-        // Interesting discussion if you are into this sort of stuff
-        // https://github.com/dotnet/runtime/issues/39835
-        //
-        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, _) =>
-        {
-            chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-            chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer"));
-            chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_Anchor.cer"));
-            return chain.Build(cert);
-        };
-
-        using var client = new HttpClient(handler);
-
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
-        {
-            Address = "https://fhirlabs.net:7016/fhir/r4",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
-            {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
-                ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
-            }
-        });
-
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
-        // _testOutputHelper.WriteLine(discoJsonFormatted);
-        var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
-
-        //Get signed payload and compare registration_endpoint
-
-
-        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata.SignedMetadata);
-        var tokenHeader = jwt.Header;
-        var tokenHandler = new JwtSecurityTokenHandler();
-
-        var x5CArray = JsonNode.Parse(tokenHeader.X5c).AsArray();
-        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray.First().ToString()));
-
-        tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
-        {
-            RequireSignedTokens = true,
-            ValidateIssuer = true,
-            ValidIssuers = new[] { "https://fhirlabs.net:7016/fhir/r4" }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-            ValidateAudience = false, // No aud for UDAP metadata
-            ValidateLifetime = true,
-            IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
-
-        }, out SecurityToken valdatedToken);
-
-        jwt.Payload.Claims
-            .Single(c => c.Type == UdapConstants.Discovery.RegistrationEndpoint)
-            .Value.Should().Be(regEndpoint);
-
-        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "TestCerts"),
-            "fhirlabs.net.client.pfx");
-
-        var manifest = _fixture.TestConfig.GetSection("UdapFileCertStoreManifest").Get<UdapFileCertStoreManifest>();
-
-        var password = manifest.ResourceServers.Single(s => s.Name == "FhirLabsApi").Communities
-            .Single(c => c.Name == "udap://surefhir.labs")
-            .IssuedCerts.First().Password;
-
-
-
-        var clientCert = new X509Certificate2(cert, password);
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
-
-
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
-
-        var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
-
-        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody, new JsonSerializerOptions(){DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull}));
-
-        // return;
-
-        using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
-        var response = await idpClient.PostAsJsonAsync(reg, requestBody);
-
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        var documentAsJson = JsonSerializer.Serialize(document);
-        var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        // _testOutputHelper.WriteLine(result);
-        // result.Should().BeEquivalentTo(documentAsJson);
-
-        _testOutputHelper.WriteLine(result.ClientId);
-    }
+    
 }

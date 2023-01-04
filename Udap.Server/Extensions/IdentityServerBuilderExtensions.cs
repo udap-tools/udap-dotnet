@@ -32,8 +32,14 @@ namespace Udap.Server.Extensions
 
             if (registrationEndpoint == null)
             {
-                var baseUrl = $"{Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(';').First()}";
-                
+                bool isInDockerContainer = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true");
+                var baseUrl = "http://localhost:8080";
+
+                if (!isInDockerContainer)
+                {
+                    baseUrl = $"{Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(';').First()}";
+                }
+
                 if (string.IsNullOrEmpty(baseUrl))
                 {
                     throw new Exception(

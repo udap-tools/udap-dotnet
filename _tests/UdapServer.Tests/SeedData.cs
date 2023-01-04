@@ -18,7 +18,7 @@ using Udap.Common.Extensions;
 using Udap.Idp;
 using Udap.Server;
 using Udap.Server.DbContexts;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Registration;
 
@@ -31,12 +31,6 @@ public static class SeedData
         var services = new ServiceCollection();
 
         services.AddLogging();
-        // services.AddDbContext<ApplicationDbContext>(options =>
-        //     options.UseSqlite(connectionString, o => o.MigrationsAssembly(typeof(Program).Assembly.FullName)));
-        //
-        // services.AddIdentity<ApplicationUser, IdentityRole>()
-        //     .AddEntityFrameworkStores<ApplicationDbContext>()
-        //     .AddDefaultTokenProviders();
 
         services.AddOperationalDbContext(options =>
         {
@@ -67,7 +61,7 @@ public static class SeedData
         scope.ServiceProvider.GetService<ConfigurationDbContext>()?.Database.Migrate();
 
 
-        var udapContext = scope.ServiceProvider.GetService<UdapDbContext>();
+        var udapContext = scope.ServiceProvider.GetRequiredService<UdapDbContext>();
         udapContext.Database.Migrate();
 
         var clientRegistrationStore = scope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
@@ -92,10 +86,29 @@ public static class SeedData
 
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
+        var x509Certificate2Collection = clientRegistrationStore.GetRootCertificates().Result;
+        if (x509Certificate2Collection != null && !x509Certificate2Collection.Any())
+        {
+            var rootCert = new X509Certificate2(
+                Path.Combine(assemblyPath!, "CertStore/roots/caLocalhostCert.cer"));
+
+            udapContext.RootCertificates.Add(new RootCertificate
+            {
+                BeginDate = rootCert.NotBefore,
+                EndDate = rootCert.NotAfter,
+                Name = rootCert.Subject,
+                X509Certificate = rootCert.ToPemFormat(),
+                Thumbprint = rootCert.Thumbprint,
+                Enabled = true
+            });
+
+            udapContext.SaveChanges();
+        }
+
         if (!clientRegistrationStore.GetAnchors("http://localhost").Result.Any())
         {
             var anchorLocalhostCert = new X509Certificate2(
-                Path.Combine(assemblyPath, "TestCerts/anchorLocalhostCert.cer"));
+                Path.Combine(assemblyPath!, "CertStore/anchors/anchorLocalhostCert.cer"));
 
             var commnity = udapContext.Communities.Single(c => c.Name == "http://localhost");
 
@@ -117,7 +130,7 @@ public static class SeedData
         if (!clientRegistrationStore.GetAnchors("udap://surefhir.labs").Result.Any())
         {
             var SureFhirLabs_Anchor = new X509Certificate2(
-                Path.Combine(assemblyPath, "./TestCerts/SureFhirLabs_Anchor.cer"));
+                Path.Combine(assemblyPath!, "./CertStore/anchors/SureFhirLabs_Anchor.cer"));
 
             var commnity = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
 

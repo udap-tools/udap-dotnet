@@ -1,17 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Authors>Joseph Shook</Authors>
+    <Copyright>Copyright © Joseph.Shook@Surescripts.com 2022</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
+    <PackageTags>UDAP;FHIR;HL7</PackageTags>
+    <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
   </PropertyGroup>
-
-
-  <ItemGroup Condition="'$(TargetFramework)' != 'net6.0'">
-    <PackageReference Include="System.Text.Json" Version="6.0.6" />
-  </ItemGroup>
 
 
   <ItemGroup>
@@ -26,6 +30,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />
+    <None Include="docs/README.md" Pack="true" PackagePath="\" />
+    <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

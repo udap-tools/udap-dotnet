@@ -1,13 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
-        <Nullable>enable</Nullable>
+    <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <DockerfileContext>.</DockerfileContext>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>../..</DockerfileContext>
-    <UserSecretsId>e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId>
+    <!-- This requires UserSecretsId.  Even though I am supplying the password to a Localhost certificate I replaced the default one with long ago.  Not cool!
+         It will put something like this in your secrets.json file even though in my case I don't need it:
+         "Kestrel:Certificates:Development:Password": "7fe9c4d6-d087-4554-9026-7f776830584e"}
+         It is probably the original password.  Kind of cool but again I don't need it because I supplied a new one.         
+    -->
+    <!-- <DockerfileRunArguments>-p "5016:8080" -p "7016:443" -e ASPNETCORE_HTTPS_PORT=7016 -e ASPNETCORE_Kestrel__Certificates__Default__Password="udap-test" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp_exported.pfx -v $(UserProfile)\.aspnet\https:/https/</DockerfileRunArguments> -->
+    <!-- I am going to just go ahead and use the host.docker.internal certificate I created and am also using in Udap.Idp for testing. -->
+    <DockerfileRunArguments>-p "5016:8080" -p "7016:443" -e ASPNETCORE_HTTPS_PORT=7016</DockerfileRunArguments>
+    <UserSecretsId>fb85f21c-ff56-47a2-aa2d-7cdced81f519</UserSecretsId> <!--I do need this because I am using an EmrDirect issued UDAP client certificate and it stores the password so I can do system testing from my desktop.  You can do the same.-->
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="app.yaml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Controllers\**" />
@@ -17,47 +29,57 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="brianpos.Fhir.R4B.DemoFileSystemFhirServer" Version="4.3.0-beta1" />
-    <PackageReference Include="brianpos.Fhir.R4B.WebApi.AspNetCore" Version="4.3.0-beta1" />
+    <PackageReference Include="brianpos.Fhir.R4B.DemoFileSystemFhirServer" Version="4.3.0-beta4" />
+    <PackageReference Include="brianpos.Fhir.R4B.WebApi.AspNetCore" Version="4.3.0-beta2" />
+    <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.0.0" />
     <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="4.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json" Version="2.2.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
   </ItemGroup>
-
-  <ItemGroup> <!-- SureFhir Community -->
-    <None Include="../../_tests/Udap.PKI.Generator/certstores/Kestrel/FhirLabs/fhirlabs.net.pfx" Link="fhirlabs.net.pfx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="../../_tests/Udap.PKI.Generator/certstores/surefhirlabs_community/anchors/SureFhirLabs_Anchor.cer" Link="CertStore/anchors/SureFhirLabs_Anchor.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="../../_tests/Udap.PKI.Generator/certstores/surefhirlabs_community/issued/fhirlabs.net.client.pfx" Link="CertStore/issued/fhirlabs.net.client.pfx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup> <!-- Localhost Community -->
-    <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/anchorLocalhostCert.cer" Link="CertStore/anchors/anchorLocalhostCert.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/fhirLabsApiClientLocalhostCert.pfx" Link="CertStore/issued/fhirLabsApiClientLocalhostCert.pfx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
+ 
 
   <ItemGroup>
+    <!-- stage.healthtogo.me Community:: If it exists. -->
+    <None Update="CertStore/issued/udap-sandbox-surescripts.p12">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\anchors\SureFhirLabs_Anchor.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\.gitignore">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>.cs</LastGenOutput>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="host.docker.internal.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="SureFhirLabs_CA.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
+    <PackageReference Include="Udap.Metadata.Server" Version="0.0.3-preview*" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="..\..\Udap.Common/Udap.Common.csproj" />
     <ProjectReference Include="..\..\Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
   </ItemGroup>
-  
-  <ItemGroup>
-    <None Update="CertStore/anchors/EMRDirectTestCA.crt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore/issued/udap-sandbox-surescripts.p12">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+
+ <ItemGroup>
+    <Content Update="nuget.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

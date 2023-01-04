@@ -7,7 +7,48 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7087;http://localhost:5253"
+      "applicationUrl": "http://localhost:5253"
+    },
+    "SecuredControls": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "sslPort": 5002,
+      "applicationUrl": "https://admin.securedcontrols.net:5002"
+    },
+    "/seed": {
+      "commandName": "Project",
+      "commandLineArgs": "/seed ../../../../../_tests/Udap.PKI.Generator/certstores",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5253"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "publishAllPorts": true,
+      "useSSL": false,
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "http://*:8080",
+        "GCPDeploy": "false"
+      }
+    },
+    "Docker_GCP": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "publishAllPorts": true,
+      "useSSL": false,
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "http://*:8080",
+        "GCPDeploy": "true"
+      }
     },
     "WSL": {
       "commandName": "WSL2",

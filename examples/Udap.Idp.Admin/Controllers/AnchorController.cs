@@ -103,8 +103,26 @@ public class AnchorController : ControllerBase
 
     // PUT api/<AnchorController>/5
     [HttpPut("{id}")]
-    public void Put(int id, [FromBody] Anchor value, CancellationToken token)
+    public async Task<ActionResult> Put(int id, [FromBody] Anchor value, CancellationToken token)
     {
+        try
+        {
+            await _anchorService.Update(value.ToEntity(), token).ConfigureAwait(false);
+
+            return NoContent(); // https://www.rfc-editor.org/rfc/rfc9110.html#name-204-no-content
+            // Although... https://blog.ploeh.dk/2013/04/30/rest-lesson-learned-avoid-204-responses/
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Error calling {0}", nameof(Put));
+
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error calling {0}", nameof(Put));
+            throw;
+        }
     }
 
     // DELETE api/<AnchorController>/5

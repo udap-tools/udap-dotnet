@@ -10,10 +10,11 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using IdentityModel;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common;
@@ -21,6 +22,7 @@ using Udap.Common;
 namespace Udap.Metadata.Server
 {
     [Route(".well-known/udap")]
+    [AllowAnonymous]
     public class UdapController : ControllerBase
     {
         private readonly UdapMetadata _udapMetadata;
@@ -38,17 +40,14 @@ namespace Udap.Metadata.Server
         }
 
         [HttpGet]
-        // TODO: when this is pulled from data.  async Task<IActionResult>
-        public IActionResult Get([FromQuery] string? community)
+        public async Task<IActionResult> Get([FromQuery] string? community, CancellationToken token)
         {
-            UdapMetadataConfig? udapMetadataConfig;
-            udapMetadataConfig = _udapMetadata.GetUdapMetadataConfig(community);
+            var udapMetadataConfig = _udapMetadata.GetUdapMetadataConfig(community);
 
-            _udapMetadata.AuthorizationEndpoint = udapMetadataConfig.SignedMetadataConfig.AuthorizationEndpoint;
-            _udapMetadata.TokenEndpoint = udapMetadataConfig.SignedMetadataConfig.TokenEndpoint;
-            _udapMetadata.RegistrationEndpoint = udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint;
+            _udapMetadata.AuthorizationEndpoint = udapMetadataConfig?.SignedMetadataConfig.AuthorizationEndpoint;
+            _udapMetadata.TokenEndpoint = udapMetadataConfig?.SignedMetadataConfig.TokenEndpoint;
+            _udapMetadata.RegistrationEndpoint = udapMetadataConfig?.SignedMetadataConfig.RegistrationEndpoint;
             
-
             if (udapMetadataConfig == null)
             {
                 _logger.LogWarning($"Cannot find UdapMetadataConfig from community: {community}");
@@ -56,9 +55,23 @@ namespace Udap.Metadata.Server
                 return NotFound();
             }
 
-            _udapMetadata.SignedMetadata = SignMetaData(udapMetadataConfig);
+            _udapMetadata.SignedMetadata = await SignMetaData(udapMetadataConfig);
 
             return Ok(_udapMetadata);
+        }
+
+        [HttpGet("communities")]
+        public Task<IActionResult> GetCommunities(bool html, CancellationToken token)
+        {
+
+            return Task.FromResult<IActionResult>(Ok(_udapMetadata.Communities()));
+        }
+
+        [HttpGet("communities/ashtml")]
+        [Produces("text/html")]
+        public ActionResult GetCommunitiesAsHtml()
+        {
+            return base.Content(_udapMetadata.CommunitiesAsHtml(Request.PathBase), "text/html", Encoding.UTF8);
         }
 
         /// <summary>
@@ -67,9 +80,9 @@ namespace Udap.Metadata.Server
         /// </summary>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        private string SignMetaData(UdapMetadataConfig udapMetadataConfig)
+        private async Task<string> SignMetaData(UdapMetadataConfig udapMetadataConfig)
         {
-            var cert = Load(udapMetadataConfig);
+            var cert = await Load(udapMetadataConfig);
 
             if (cert == null)
             {
@@ -112,9 +125,9 @@ namespace Udap.Metadata.Server
             return string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
         }
 
-        private X509Certificate2? Load(UdapMetadataConfig udapMetadataConfig)
+        private async Task<X509Certificate2?> Load(UdapMetadataConfig udapMetadataConfig)
         {
-            var store = _certificateStore.Resolve();
+            var store = await _certificateStore.Resolve();
 
             var entity = store.IssuedCertificates
                 .Where(c => c.Community == udapMetadataConfig.Community)

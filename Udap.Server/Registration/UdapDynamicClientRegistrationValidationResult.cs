@@ -7,6 +7,9 @@
 // */
 #endregion
 
+using Udap.Common.Models;
+using Udap.Common.Registration;
+
 namespace Udap.Server.Registration;
 
 public class UdapDynamicClientRegistrationValidationResult
@@ -21,11 +24,10 @@ public class UdapDynamicClientRegistrationValidationResult
         Document = document;
     }
 
-    public UdapDynamicClientRegistrationValidationResult(string error, string errorDescription)
+    public UdapDynamicClientRegistrationValidationResult(string error, string errorDescription = null)
     {
         ArgumentNullException.ThrowIfNull(error);
-        ArgumentNullException.ThrowIfNull(errorDescription);
-
+        
         Error = error;
         ErrorDescription = errorDescription;
     }

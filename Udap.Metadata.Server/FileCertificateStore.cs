@@ -41,7 +41,7 @@ public class FileCertificateStore : ICertificateStore
             _resolved = false;
         });
     }
-    public ICertificateStore Resolve()
+    public Task<ICertificateStore> Resolve()
     {
         if (_resolved == false)
         {
@@ -49,7 +49,7 @@ public class FileCertificateStore : ICertificateStore
         }
         _resolved = true;
 
-        return this;
+        return Task.FromResult(this as ICertificateStore);
     }
 
     public ICollection<X509Certificate2> RootCAs { get; set; } = new HashSet<X509Certificate2>();
@@ -117,24 +117,27 @@ public class FileCertificateStore : ICertificateStore
             {
                 if (communityIssuer.FilePath == null)
                 {
-                    throw new Exception($"Missing file path in on of the anchors {nameof(community.IssuedCerts)}");
+                    _logger.LogWarning($"Missing file path in on of the anchors {nameof(community.IssuedCerts)}");
                 }
 
                 var path = Path.Combine(AppContext.BaseDirectory, communityIssuer.FilePath);
 
                 if (!File.Exists(path))
                 {
-                    throw new FileNotFoundException($"Cannot find file: {path}");
+                    _logger.LogWarning($"Cannot find file: {path}");
+                    continue;
                 }
                 
                 var certificates = new X509Certificate2Collection();
                 certificates.Import(path, communityIssuer.Password);
                 
-                foreach (var cert in certificates)
+                foreach (var x509Cert in certificates)
                 {
-                    var extension = cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") as X509BasicConstraintsExtension;
-                    var subjectIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
+                    var extension = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") as X509BasicConstraintsExtension;
+                    var subjectIdentifier = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
                     
+                    var endCerts = new X509Certificate2Collection();
+
                     //
                     // dotnet 7.0
                     //
@@ -142,7 +145,7 @@ public class FileCertificateStore : ICertificateStore
                     
                     string? authorityIdentifierValue = null;
 
-                    Asn1Object? exValue = cert.GetExtensionValue("2.5.29.35");
+                    Asn1Object? exValue = x509Cert.GetExtensionValue("2.5.29.35");
                     if (exValue != null)
                     {
                         var aki = AuthorityKeyIdentifier.GetInstance(exValue);
@@ -158,16 +161,24 @@ public class FileCertificateStore : ICertificateStore
                             if (authorityIdentifierValue == null || 
                                 subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
                             {
-                                _logger.LogInformation($"Round root ca in {path} certificate.  Will add the root to roots if not already explicitly loaded.");
+                                _logger.LogInformation($"Found root ca in {path} certificate.  Will add the root to roots if not already explicitly loaded.");
 
-                                RootCAs.Add(cert);
+                                RootCAs.Add(x509Cert);
                             }
                             else
                             {
-                                _logger.LogInformation($"Round intermediate ca in {path} certificate.  Will add if not already explicitly loaded.");
+                                _logger.LogInformation($"Found intermediate ca in {path} certificate.  Will add if not already explicitly loaded.");
 
-                                Anchors.Add(new Anchor(cert) { Community = community.Name });
+                                Anchors.Add(new Anchor(x509Cert) { Community = community.Name });
                             }
+                        }
+                        else
+                        {
+                            IssuedCertificates.Add(new IssuedCertificate
+                            {
+                                Community = community.Name,
+                                Certificate = x509Cert
+                            });
                         }
                     }
                 }

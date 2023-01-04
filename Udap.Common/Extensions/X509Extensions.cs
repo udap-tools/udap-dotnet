@@ -16,10 +16,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 
 using System.Diagnostics;
+using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Org.BouncyCastle.Asn1;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.X509;
 
 namespace Udap.Common.Extensions
 {
@@ -119,7 +122,7 @@ namespace Udap.Common.Extensions
             {
                 throw new ArgumentException("value was null or empty", nameof(thumbprint));
             }
-            
+
             return certs.Find(x => x.Thumbprint == thumbprint);
         }
 
@@ -184,10 +187,10 @@ namespace Udap.Common.Extensions
         }
 
         public static string Summarize(this X509ChainStatus[] chainStatuses, X509ChainStatusFlags problemFlags)
-        {           
+        {
             var builder = new StringBuilder();
-            
-            
+
+
             foreach (var status in chainStatuses)
             {
                 if ((status.Status & problemFlags) != 0)
@@ -200,7 +203,27 @@ namespace Udap.Common.Extensions
             return builder.ToString();
         }
 
-        public static string ToPemFormat(this X509Certificate2 cert)
+        public static string Summarize(this X509ChainElementCollection chainElementCollection)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine();
+
+            foreach (var element in chainElementCollection)
+            {
+                foreach (var status in element.ChainElementStatus)
+                {
+
+                    if ((status.Status) != 0)
+                    {
+                        builder.AppendLine($"SubAltName:: {element.Certificate.GetNameInfo(X509NameType.UrlName, false)} ({status.Status}) {status.StatusInformation}");
+                    }
+                }
+            }
+
+            return builder.ToString();
+        }
+
+        public static string ToPemFormat(this X509Certificate2? cert)
         {
             var pem = new StringBuilder();
             pem.AppendLine("-----BEGIN CERTIFICATE-----");
@@ -232,6 +255,43 @@ namespace Udap.Common.Extensions
             return null;
         }
 
+        public static X509Certificate2[]  ToRootCertArray(this List<X509Certificate2> certificates)
+        {
+            X509Certificate2Collection caCerts = new X509Certificate2Collection();
+
+            foreach (var x509Cert in certificates)
+            {
+                var extension = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") as X509BasicConstraintsExtension;
+                var subjectIdentifier = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
+
+                //
+                // dotnet 7.0
+                //
+                // var authorityIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid.Value == "2.5.29.35") as X509AuthorityKeyIdentifierExtension;
+
+                string? authorityIdentifierValue = null;
+
+                Asn1Object? exValue = x509Cert.GetExtensionValue("2.5.29.35");
+                if (exValue != null)
+                {
+                    var aki = AuthorityKeyIdentifier.GetInstance(exValue);
+                    byte[] keyId = aki.GetKeyIdentifier();
+                    authorityIdentifierValue = keyId.CreateByteStringRep();
+                }
+
+                if (extension != null && extension.CertificateAuthority)
+                {
+                    if (authorityIdentifierValue == null ||
+                        subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
+                    {
+                        caCerts.Add(x509Cert);
+                    }
+                }
+            }
+            
+            return caCerts.ToArray();
+        }
+        
         /// <summary>
         /// Converts an encoded internal octet string object to a DERObject
         /// </summary>
@@ -251,5 +311,6 @@ namespace Udap.Common.Extensions
                 }
             }
         }
+
     }
 }

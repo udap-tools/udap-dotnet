@@ -21,6 +21,17 @@ namespace Udap.Server
             public const string ConnectPathPrefix = "connect";
             public const string DiscoveryConfiguration = ".well-known/udap";
             public const string Register = ConnectPathPrefix + "/register";
+            public const string Token = ConnectPathPrefix + "/token";
+        }
+
+        public static class EndpointAuthenticationMethods
+        {
+            public const string UdapPkiJwt = "udap_pki_jwt";
+        }
+
+        public static class TokenErrors
+        {
+            public const string MissingSecurityToken = "Missing security token";
         }
     }
 }

@@ -20,6 +20,13 @@ public class DuplicateAnchorException : Exception
     }
 }
 
+public class DuplicateRootCertificateException : Exception
+{
+    public DuplicateRootCertificateException(string message) : base(message)
+    {
+    }
+}
+
 public class UdapProblemDetailsException : Exception
 {
     public UdapProblemDetailsException(string message) : base(message)

@@ -10,7 +10,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Options;
@@ -19,20 +21,25 @@ using Duende.IdentityServer.Models;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Common.Models;
+using Udap.Common.Registration;
 using Udap.Idp;
 using Udap.Server;
 using Udap.Server.DbContexts;
-using Udap.Server.Entitiies;
 using Udap.Server.Extensions;
 using Udap.Server.Options;
 using Udap.Server.Registration;
 using Xunit.Abstractions;
+using Anchor = Udap.Server.Entities.Anchor;
+using Community = Udap.Server.Entities.Community;
 using JsonClaimValueTypes = System.IdentityModel.Tokens.Jwt.JsonClaimValueTypes;
 
 namespace UdapServer.Tests
@@ -54,53 +61,23 @@ namespace UdapServer.Tests
             return builder.Options;
         }
 
-        public static DbContextOptions<TDbContext> BuildSqlite<TDbContext, TStoreOptions>(string name,
-            TStoreOptions storeOptions)
-            where TDbContext : DbContext
-            where TStoreOptions : class
-        {
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(storeOptions);
-
-            var builder = new DbContextOptionsBuilder<TDbContext>();
-            // Remember UdapDb.Migrations.UdapDb.Udap is in the assembly (and/or project) dedicated to producing migrations for the UDAP feature.
-            builder.UseSqlite($"Filename=./Test.Udap.{name}.db",
-                sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
-            builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
-
-            return builder.Options;
-        }
-
-        public static DbContextOptions<TDbContext> BuildSqlite2<TDbContext, TStoreOptions>(string name,
-            TStoreOptions storeOptions)
-            where TDbContext : DbContext
-            where TStoreOptions : class
-        {
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(storeOptions);
-
-            var builder = new DbContextOptionsBuilder<TDbContext>();
-            builder.UseSqlite($"Filename=./Test.Udap.{name}.db",
-                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
-            builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
-
-            return builder.Options;
-        }
-
-        public static DbContextOptions<TDbContext> BuildLocalDb<TDbContext, TStoreOptions>(string name,
-            TStoreOptions storeOptions)
-            where TDbContext : UdapDbContext
-            where TStoreOptions : class
-        {
-            var serviceCollection = new ServiceCollection();
-            serviceCollection.AddSingleton(storeOptions);
-
-            var builder = new DbContextOptionsBuilder<TDbContext>();
-            builder.UseSqlServer(
-                $@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{name};trusted_connection=yes;");
-            builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
-            return builder.Options;
-        }
+        //
+        //
+        // public static DbContextOptions<TDbContext> BuildLocalDb<TDbContext, TStoreOptions>(string name,
+        //     TStoreOptions storeOptions)
+        //     where TDbContext : DbContext
+        //     where TStoreOptions : class
+        // {
+        //     var serviceCollection = new ServiceCollection();
+        //     serviceCollection.AddSingleton(storeOptions);
+        //
+        //     var builder = new DbContextOptionsBuilder<TDbContext>();
+        //     builder.UseSqlServer(
+        //         $@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{name};trusted_connection=yes;",
+        //         optionsBuilder => optionsBuilder.MigrationsAssembly(typeof(UdapDb.Program).Assembly.FullName));
+        //     builder.UseApplicationServiceProvider(serviceCollection.BuildServiceProvider());
+        //     return builder.Options;
+        // }
     }
 
     public class DatabaseProviderFixture<TStoreOption> : IntegrationBaseTest, IAsyncLifetime
@@ -118,30 +95,32 @@ namespace UdapServer.Tests
         /// <summary>
         /// Called immediately after the class has been created, before it is used.
         /// </summary>
-        public Task InitializeAsync()
+        public async Task InitializeAsync()
         {
-            File.Delete($"./Test.Udap.{DatabaseName}.db");
+            // File.Delete($"./Test.Udap.{DatabaseName}.db");
             using var configContext =
                 new ConfigurationDbContext(
-                    BuildSqlite2<ConfigurationDbContext, ConfigurationStoreOptions>(DatabaseName, StoreOptions2));
-            // configContext.Database.EnsureCreated();
-            configContext.Database.Migrate();
+                    BuildInMemory<ConfigurationDbContext, ConfigurationStoreOptions>(DatabaseName, StoreOptions2));
+            await configContext.Database.EnsureDeletedAsync();
+            configContext.Database.EnsureCreated();
+           // await configContext.Database.MigrateAsync();
 
-            DatabaseProvider = BuildSqlite<UdapDbContext, TStoreOption>(DatabaseName, StoreOptions);
+            DatabaseProvider = BuildInMemory<UdapDbContext, TStoreOption>(DatabaseName, StoreOptions);
             using var context = new UdapDbContext(DatabaseProvider);
             // context.Database.EnsureCreated();
-            context.Database.Migrate();
-
+            if (context.Database.IsRelational())
+            {
+                await context.Database.MigrateAsync();
+            }
+            
             AnchorCert =
                 new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
                     "anchorLocalhostCert.cer"));
 
-            return SeedData(context);
-
-            // return Task.CompletedTask;
+            await SeedData(context);
         }
 
-        private Task SeedData(UdapDbContext context)
+        private async Task<int> SeedData(UdapDbContext context)
         {
             var community = new Community { Name = "http://localhost" };
             community.Enabled = true;
@@ -159,7 +138,7 @@ namespace UdapServer.Tests
                 Enabled = true
             });
 
-            return context.SaveChangesAsync();
+            return await context.SaveChangesAsync();
         }
 
         /// <summary>
@@ -168,11 +147,11 @@ namespace UdapServer.Tests
         /// </summary>
         public Task DisposeAsync()
         {
-            if (DatabaseProvider != null)
-            {
-                var context = (UdapDbContext)Activator.CreateInstance(typeof(UdapDbContext), DatabaseProvider)!;
-                return context.Database.EnsureDeletedAsync();
-            }
+            // if (DatabaseProvider != null)
+            // {
+            //     var context = (UdapDbContext)Activator.CreateInstance(typeof(UdapDbContext), DatabaseProvider)!;
+            //     return context.Database.EnsureDeletedAsync();
+            // }
 
             return Task.CompletedTask;
         }
@@ -230,13 +209,18 @@ namespace UdapServer.Tests
             services.AddConfigurationDbContext(options =>
             {
                 options.ConfigureDbContext = b =>
-                    b.UseSqlite($"Filename=./Test.Udap.{_databaseName}.db",
-                        dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName));
+                    b.UseInMemoryDatabase(_databaseName, new InMemoryDatabaseRoot());
+
+                // options.ConfigureDbContext = b =>
+                //     b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;",
+                //         dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName));
             });
 
             services.AddUdapDbContext<UdapDbContext>(options =>
             {
-                options.UdapDbContext = b => b.UseSqlite($"Filename=./Test.Udap.{_databaseName}.db");
+                options.ConfigureDbContext = b =>
+                    b.UseInMemoryDatabase(_databaseName, new InMemoryDatabaseRoot());
+                // options.UdapDbContext = b => b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;");
             });
             
             services.AddTransient<IUdapClientConfigurationStore, UdapClientConfigurationStore>();
@@ -308,8 +292,8 @@ namespace UdapServer.Tests
             //
             // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
             // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-            // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-            // and specific to this Udap Dynamic Registration.
+            // can prepare it the same way JwtPayLoad is essentially implemented, but more specific to
+            // this Udap Dynamic Registration.
             //
             var jwtPayload = new JwtPayload(
                 new List<Claim>
@@ -399,9 +383,11 @@ namespace UdapServer.Tests
 
             services.AddUdapDbContext<UdapDbContext>(options =>
             {
-                options.UdapDbContext = b =>
-                    b.UseSqlite($"Filename=./Test.Udap.{_databaseName}.db", o =>
-                        o.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
+                options.ConfigureDbContext = b =>
+                    b.UseInMemoryDatabase(_databaseName, new InMemoryDatabaseRoot());
+                // options.UdapDbContext = b =>
+                //     b.UseSqlServer($@"Data Source=(LocalDb)\MSSQLLocalDB;database=Test.Udap.{_databaseName};trusted_connection=yes;", o =>
+                //         o.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
             });
 
             services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
@@ -412,7 +398,7 @@ namespace UdapServer.Tests
             var validator = sp.GetRequiredService<IUdapDynamicClientRegistrationValidator>();
 
             
-            var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "TestCerts"), "WeatherApiClient.pfx");
+            var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "WeatherApiClientLocalhostCert.pfx"); 
             var clientCert = new X509Certificate2(cert, "udap-test");
             var securityKey = new X509SecurityKey(clientCert);
             var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
@@ -469,8 +455,14 @@ namespace UdapServer.Tests
 
             var store = sp.GetRequiredService<IUdapClientRegistrationStore>();
             var communityAnchors = await store.GetAnchorsCertificates("http://localhost");
-            var trustedRoots = await store.GetRootCertificates("http://localhost");
-            var result = await validator.ValidateAsync(requestBody, communityAnchors, null);
+            // TODO Store still needs a trusted roots place to store data
+            // var trustedRoots = await store.GetRootCertificates("http://localhost");
+            var trustedRoots = new X509Certificate2Collection();
+            trustedRoots.Add(new X509Certificate2(
+                Path.Combine(AppContext.BaseDirectory, "CertStore/roots", "caLocalhostCert.cer")
+            ));
+            
+            var result = await validator.ValidateAsync(requestBody, communityAnchors, trustedRoots);
 
             result.IsError.Should().BeFalse($"{result.Error} : {result.ErrorDescription}");
             result.Document.Should().BeEquivalentTo(document);
@@ -513,10 +505,96 @@ namespace UdapServer.Tests
         /// SHALL be absent otherwise. Each URI SHALL use the https scheme.
         /// </summary>
         /// <returns></returns>
+        // TODO still need to work on this test. Only spent enough time here to determine
+        // I was not including redirect Uris in when deserializing claims
         [Fact]
         public async Task redirect_uris_Tests() //With and without authorization_code in grant_types
         {
-            Assert.Fail("Not Implemented");
+            var now = DateTime.UtcNow;
+            var jwtId = CryptoRandom.CreateUniqueId();
+
+            var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"), "weatherApiClientLocalhostCert.pfx");
+            var clientCert = new X509Certificate2(cert, "udap-test");
+            var securityKey = new X509SecurityKey(clientCert);
+            var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+            var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+            var jwtHeader = new JwtHeader
+            {
+                { "alg", signingCredentials.Algorithm },
+                { "x5c", new[] { pem } }
+            };
+
+            var testRedirectUri = $"https://fhirlabs.net/udapTestClient/redirect/{Guid.NewGuid()}";
+
+            //
+            // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
+            // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
+            // can prepare it the same way JwtPayLoad is essentially implemented, but more specific to
+            // this Udap Dynamic Registration.
+            //
+            var jwtPayload = new JwtPayload(
+                new List<Claim>
+                {
+                    new Claim(JwtClaimTypes.Issuer, "https://weatherapi.lab:5021/fhir"),
+                    new Claim(JwtClaimTypes.Subject, "https://weatherapi.lab:5021/fhir"),
+                    new Claim(JwtClaimTypes.Audience, "https://weatherapi.lab:5021/connect/register"),
+                    new Claim(JwtClaimTypes.Expiration,
+                        EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                    new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(),
+                        ClaimValueTypes.Integer),
+                    new Claim(JwtClaimTypes.JwtId, jwtId),
+                    new Claim("client_name", "udapTestClient"),
+                    new Claim("contacts", JsonSerializer.Serialize(new HashSet<string> { "FhirJoe@BridgeTown.lab" }),
+                        JsonClaimValueTypes.JsonArray),
+                    new Claim("redirect_uris", JsonSerializer.Serialize(new HashSet<string> { testRedirectUri } ),
+                        JsonClaimValueTypes.JsonArray),
+                    new Claim("grant_types",
+                        JsonSerializer.Serialize(new HashSet<string> { "authorization_code" }),
+                        JsonClaimValueTypes.JsonArray),
+                    new Claim("response_types", JsonSerializer.Serialize(new HashSet<string> { "code" }),
+                        JsonClaimValueTypes.JsonArray),
+                    new Claim("token_endpoint_auth_method", "private_key_jwt"),
+                    new Claim(JwtClaimTypes.Scope, "system/Patient.* system/Practitioner.read")
+                });
+
+            var document = new UdapDynamicClientRegistrationDocument
+            {
+                Issuer = "https://weatherapi.lab:5021/fhir",
+                Subject = "https://weatherapi.lab:5021/fhir",
+                Audience = "https://weatherapi.lab:5021/connect/register",
+                Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+                IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+                JwtId = jwtId,
+                ClientName = "udapTestClient",
+                Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab" },
+                RedirectUris = new List<Uri>{new Uri(testRedirectUri) },
+                GrantTypes = new HashSet<string> { "authorization_code" },
+                ResponseTypes = new HashSet<string> { "code" },
+                TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+                Scope = "system/Patient.* system/Practitioner.read"
+            };
+            // _testOutputHelper.WriteLine(JsonSerializer.Serialize(jwtPayload, new JsonSerializerOptions { WriteIndented = true }));
+
+            var encodedHeader = jwtHeader.Base64UrlEncode();
+            var encodedPayloadJwt = jwtPayload.Base64UrlEncode();
+            var encodedPayload = document.Base64UrlEncode();
+            var encodedSignature =
+                JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                    signingCredentials);
+            var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayloadJwt, ".", encodedSignature);
+
+            JsonExtensions.SerializeToJson(jwtPayload).Should()
+                .BeEquivalentTo(JsonExtensions.SerializeToJson(document));
+            
+            encodedPayloadJwt.Should().BeEquivalentTo(encodedPayload);
+            
+            var handler = new JwtSecurityTokenHandler();
+            var token = handler.ReadToken(signedSoftwareStatement) as JwtSecurityToken;
+            foreach (var tokenClaim in token.Claims)
+            {
+                _testOutputHelper.WriteLine(tokenClaim.Value);
+            }
         }
 
         /// <summary>

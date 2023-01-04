@@ -4,10 +4,19 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
+        "GCPDeploy": "false",
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "sslPort": 5002,
-      "applicationUrl": "https://localhost:5002"
+      "applicationUrl": "https://host.docker.internal:5002"
+    },
+    "Localhost_noSSL": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "http://localhost:5002"
     },
     "SecuredControls": {
       "commandName": "Project",
@@ -17,6 +26,38 @@
       },
       "sslPort": 5002,
       "applicationUrl": "https://securedcontrols.net:5002"
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
+      "publishAllPorts": true,
+      "useSSL": true,
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "http://*:8080;https://*:443",
+        "GCPDeploy": "false"
+      }
+    },
+    "Docker_GCP": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
+      "publishAllPorts": true,
+      "useSSL": true,
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "http://*:8080;https://*:443",
+        "GCPDeploy": "true"        
+      }
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "launchBrowser": true,
+      "launchUrl": "https://localhost:5002",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "https://localhost:5002"
+      },
+      "distributionName": "Ubuntu-20.04"
     }
   }
 }

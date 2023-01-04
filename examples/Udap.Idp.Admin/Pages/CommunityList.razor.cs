@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 using Udap.Idp.Admin.Services;
+using Udap.Idp.Admin.Services.DataBase;
 using Udap.Idp.Admin.Services.State;
 using Udap.Idp.Admin.ViewModel;
 
@@ -17,11 +18,20 @@ public partial class CommunityList
     private List<string> editEvents = new();
     private string searchString = "";
     private Community communityBeforeEdit;
-    private IEnumerable<Community> Communities = new List<Community>();
+    private ICollection<Community> Communities = new List<Community>();
+    private ICollection<RootCertificate> RootCertificates = new List<RootCertificate>();
 
     protected override async Task OnInitializedAsync()
     {
-        Communities = await ApiService.GetCommunities();        
+        var taskCommunities = ApiService.GetCommunities();
+        var taskRootCertificates = ApiService.GetRootCertificates();
+
+        await Task.WhenAll(taskCommunities, taskRootCertificates);
+
+        Communities = await taskCommunities;
+        RootCertificates = await taskRootCertificates;
+
+        CommunityState.SetState(RootCertificates);
     }
 
     private void ClearEventLog()

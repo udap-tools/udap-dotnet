@@ -1,0 +1,53 @@
+# tye application configuration file
+# read all about it at https://github.com/dotnet/tye
+#
+# when you've given us a try, we'd love to know what you think:
+#    https://aka.ms/AA7q20u
+#
+name: udap
+services:
+- name: weatherapi
+  project: examples/WeatherApi/WeatherApi.csproj
+  bindings:
+  - protocol: https
+    name: https
+    port: 5021
+    routes:
+     - /swagger
+  - protocol: http
+    name: http
+    port: 5020
+  buildProperties:
+  - name: TargetFramework
+    value: net7.0
+
+- name: fhirlabsapi
+  project: examples/FhirLabsApi/FhirLabsApi.csproj
+  buildProperties:
+  - name: TargetFramework
+    value: net7.0 
+  bindings:
+  - protocol: https
+    name: https
+    host: fhirlabs.net
+    port: 7016
+    routes: 
+     - /fhir/r4/.well-known/udap
+     - /fhir/r4/.well-known/udap/communities
+     - /fhir/r4/.well-known/udap/communities/ashtml
+
+- name: udap-idp
+  project: examples/Udap.Idp/Udap.Idp.csproj
+  bindings:
+  - protocol: https
+    name: https
+    port: 5002
+
+- name: udap-idp-admin
+  project: examples/Udap.Idp.Admin/Udap.Idp.Admin.csproj
+  bindings:
+  - protocol: https
+    name: https
+    port: 7087
+
+

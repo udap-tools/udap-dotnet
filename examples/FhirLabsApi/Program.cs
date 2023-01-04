@@ -10,36 +10,30 @@
 using System.Net;
 using System.Text.Json;
 using FhirLabsApi;
+using FhirLabsApi.Extensions;
+using Google.Cloud.SecretManager.V1;
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
 using Hl7.Fhir.WebApi;
+using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Serilog;
 using Udap.Common;
 using Udap.Metadata.Server;
 
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+Log.Information("Starting up");
+
 var builder = WebApplication.CreateBuilder(args);
-
-
-builder.WebHost.UseKestrel((b, so) =>
-{
-    
-
-    so.ListenAnyIP(7016, listenOpt =>
-    {
-        listenOpt.UseHttps(
-            Path.Combine(
-                Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? string.Empty, 
-                b.Configuration["SslFileLocation"]),
-            b.Configuration["CertPassword"]);
-    });
-
-    so.ListenAnyIP(5016);
-
-});
-
+builder.Configuration.AddUserSecrets<Program>(optional:true);  // I want user secrets even in release mode.
 
 // Add services to the container.
 
@@ -68,6 +62,7 @@ builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(s => {
 
 
 builder.Services
+    
     .UseFhirServerController( /*systemService,*/ options =>
     {
         // An example HTML formatter that puts the raw XML on the output
@@ -87,9 +82,23 @@ builder.Services
         options.SerializerSettings.Formatting = Formatting.Indented;
     });
 
+builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
+
+    .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>
+    {
+        options.Authority = builder.Configuration["Jwt:Authority"];
+        options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
+        
+        
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false
+        };
+    });
+    
 
 // UDAP CertStore
-builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection("UdapFileCertStoreManifest"));
+builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
 builder.Services.AddSingleton<ICertificateStore>(sp =>
     new FileCertificateStore(
         sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
@@ -97,11 +106,7 @@ builder.Services.AddSingleton<ICertificateStore>(sp =>
         "FhirLabsApi"));
 
 
-//
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-//
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.AddRateLimiting();
 
 var app = builder.Build();
 
@@ -109,6 +114,10 @@ var app = builder.Build();
 
 app.UsePathBase(new PathString("/fhir/r4"));
 
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.Use(async (context, next) =>
 {
@@ -135,16 +144,10 @@ app.Use(async (context, next) =>
     await next.Invoke();
 });
 
-app.UseSwagger();
-app.UseSwaggerUI(options => {
-    options.SwaggerEndpoint("v1/swagger.json", "FhirLabs V1");
-});
 
-app.UseRouting();
+app.UseRateLimiter();
 
-
-app.UseHttpsRedirection();
-
+// app.UseHttpsRedirection();
 
 //
 // Diagram to decide where cors middleware should be applied.
@@ -160,24 +163,45 @@ app.UseCors(config =>
 });
 
 
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers();
 
-// app.UseEndpoints(endpoints =>
-// {
-//     endpoints.MapSwagger();
-// });
-
+app.MapControllers()
+    .RequireAuthorization()
+    .RequireRateLimiting(RateLimitExtensions.GetPolicy);
 
 app.Run();
+
+IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webApplicationBuilder)
+{
+    //Ugly but works so far.
+    if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
+    {
+        // Log.Logger.Information("Loading connection string from gcp_db");
+        // connectionString = Environment.GetEnvironmentVariable("gcp_db");
+        // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
+
+        Log.Logger.Information("Creating client");
+        var client = SecretManagerServiceClient.Create();
+
+        var secretResource = "projects/341821616593/secrets/UdapFileCertStoreManifest/versions/latest";
+
+        Log.Logger.Information("Requesting {secretResource");
+        // Call the API.
+        var result = client.AccessSecretVersion(secretResource);
+
+        // Convert the payload to a string. Payloads are bytes by default.
+        var stream = new MemoryStream(result.Payload.Data.ToByteArray());
+       
+        
+        webApplicationBuilder.Configuration.AddJsonStream(stream);
+    }
+
+    return webApplicationBuilder.Configuration.GetSection("UdapFileCertStoreManifest");
+}
 
 
 //
 // Accessible to unit tests
 //
-
-
 namespace FhirLabsApi
 {
     public partial class Program { }

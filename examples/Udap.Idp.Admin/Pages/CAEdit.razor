@@ -1,0 +1,24 @@
+﻿@page "/CAEdit"
+
+<MudText Typo="Typo.h6" Class="pa-1 mud-info rounded-lg">Community: @_community.Name</MudText>
+<MudCard>
+  <MudCardHeader>
+    <CardHeaderContent>
+      <MudText Typo="Typo.h5">Anchor Edit</MudText>
+    </CardHeaderContent>
+  </MudCardHeader>
+    <MudCardContent >
+        <AnchorEditComponent></AnchorEditComponent>
+    </MudCardContent>
+</MudCard>
+<MudDivider DividerType="DividerType.FullWidth" Class="my-6"   />
+<MudCard>
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h5">Root Certificate Edit</MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent >
+        <RootCertEditComponent></RootCertEditComponent>
+    </MudCardContent>
+</MudCard>

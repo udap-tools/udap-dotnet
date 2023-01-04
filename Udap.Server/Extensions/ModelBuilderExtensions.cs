@@ -10,7 +10,7 @@
 using Duende.IdentityServer.EntityFramework.Options;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Udap.Server.Entitiies;
+using Udap.Server.Entities;
 using Udap.Server.Options;
 
 namespace Udap.Server.Extensions
@@ -47,6 +47,13 @@ namespace Udap.Server.Extensions
                     .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_AnchorCertification_Anchor");
             });
+
+            modelBuilder.Entity<RootCertificate>(anchor =>
+            {
+                anchor.ToTable(storeOptions.RootCertificate);
+                anchor.HasKey(x => x.Id);
+            });
+
 
             modelBuilder.Entity<Community>(community =>
             {

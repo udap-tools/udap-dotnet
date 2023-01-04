@@ -25,7 +25,11 @@ public static class HostingExtensions
 {
     public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
     {
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        string dbChoice;
+
+        dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
+
+        var connectionString = builder.Configuration.GetConnectionString(dbChoice);
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
@@ -42,7 +46,10 @@ public static class HostingExtensions
         
         builder.Services.AddUdapDbContext<UdapDbContext>(options =>
         {
-            options.UdapDbContext = b => b.UseSqlite(connectionString)
+            // options.UdapDbContext = b => b.UseSqlite(connectionString)
+            //     .LogTo(Console.WriteLine, LogLevel.Information);
+
+            options.UdapDbContext = b => b.UseSqlServer(connectionString)
                 .LogTo(Console.WriteLine, LogLevel.Information);
         });
 
@@ -55,8 +62,18 @@ public static class HostingExtensions
 
         var httpClientBuilder = builder.Services.AddHttpClient<ApiService>(client =>
         {
-            client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(';').FirstOrDefault() ?? string.Empty);
+            bool isInDockerContainer = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true");
+
+            if (isInDockerContainer)
+            {
+                client.BaseAddress = new Uri("http://localhost:8080");
+            }
+            else
+            {
+                client.BaseAddress = new Uri(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(';').FirstOrDefault() ?? string.Empty);
+            } 
         });
+
         if (! builder.Environment.IsDevelopment())
         {
             httpClientBuilder.AddTransientHttpErrorPolicy(builder => builder.WaitAndRetryAsync(new[]

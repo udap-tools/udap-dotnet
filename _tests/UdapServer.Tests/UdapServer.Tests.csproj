@@ -56,13 +56,13 @@
     <PackageReference Include="FluentAssertions" Version="6.8.0" />
     <PackageReference Include="IdentityModel" Version="6.0.0" />
     <PackageReference Include="MartinCostello.Logging.XUnit" Version="0.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="7.0.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.0" />
-    <PackageReference Include="Moq" Version="4.18.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="7.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
+    <PackageReference Include="Moq" Version="4.18.4" />
     <PackageReference Include="xunit" Version="2.4.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -76,14 +76,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\examples\Udap.Idp\Udap.Idp.csproj" />
+    <ProjectReference Include="..\..\migrations\UdapDb\UdapDb.csproj" />
     <ProjectReference Include="..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
     <ProjectReference Include="..\..\Udap.Server\Udap.Server.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Update="IdServerRegistrationTests.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
   </ItemGroup>
 
   <ItemGroup>
@@ -97,12 +92,8 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\udap-sandbox-surescripts.p12">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="CertStore\issued\" />
   </ItemGroup>
 
 </Project>

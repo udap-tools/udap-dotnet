@@ -7,10 +7,12 @@
 // */
 #endregion
 
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Resources;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -78,8 +80,17 @@ namespace Udap.PKI.Generator
         }
 
         private static string SurefhirlabsCrl { get; } = $"{SureFhirLabsCertStore}/crl";
-        private static string SureFhirLabsCdp { get; } = "http://crl.fhircerts.net/crl/surefhirlabs.crl";
-        private static string SureFhirLabsAnchorCdp { get; } = "http://crl.fhircerts.net/crl/surefhirlabsanchor.crl";
+
+        private static string SureFhirLabsIntermediatePkcsFileCrl { get; } = "surefhirlabsIntermediateCrl.crl";
+
+        private static string sureFhirClientCrlFilename = $"{SurefhirlabsCrl}/{SureFhirLabsIntermediatePkcsFileCrl}";
+
+        private static string SureFhirLabsRootPkcsFileCrl { get; } = "SureFhirLabsRootCrl.crl";
+
+        private static string sureFhirAnchorCrlFilename = $"{SurefhirlabsCrl}/{SureFhirLabsRootPkcsFileCrl}";
+
+        private static string SureFhirLabsIntermediateCrl { get; } = $"http://crl.fhircerts.net/crl/{SureFhirLabsIntermediatePkcsFileCrl}";
+        private static string SureFhirLabsRootCrl { get; } = $"http://crl.fhircerts.net/crl/{SureFhirLabsRootPkcsFileCrl}";
 
         private static string SureFhirLabsCaPublicCertHosted { get; } = $"http://crl.fhircerts.net/certs/SureFhirLabs_CA.cer";
         private static string SureFhirLabsAnchorPublicCertHosted { get; } = "http://crl.fhircerts.net/certs/anchors/SureFhirLabs_Anchor.cer";
@@ -87,14 +98,7 @@ namespace Udap.PKI.Generator
         private static string SurefhirlabsUdapAnchors { get; } = $"{SureFhirLabsCertStore}/anchors";
         private static string SurefhirlabsUdapIssued { get; } = $"{SureFhirLabsCertStore}/issued";
 
-        private static string SureFhirLabsPkcsFileCrl { get; } = "surefhirlabs.crl";
-
-        private static string sureFhirClientCrlFilename = $"{SurefhirlabsCrl}/{SureFhirLabsPkcsFileCrl}";
-
-        private static string SureFhirLabsAnchorPkcsFileCrl { get; } = "surefhirlabsanchor.crl";
-
-        private static string sureFhirAnchorCrlFilename = $"{SurefhirlabsCrl}/{SureFhirLabsAnchorPkcsFileCrl}";
-
+        
         private static string SureFhirLabsSslWeatherApi { get; } = $"{BaseDir}/certstores/Kestrel/WeatherApi";
         private static string SureFhirLabsSslFhirLabs { get; } = $"{BaseDir}/certstores/Kestrel/FhirLabs";
         private static string SureFhirLabsSslIdentityServer { get; } = $"{BaseDir}/certstores/Kestrel/IdentityServer";
@@ -195,7 +199,7 @@ namespace Udap.PKI.Generator
                         new X509SubjectKeyIdentifierExtension(anchorReq.PublicKey, false));
 
                     AddAuthorityKeyIdentifier(caCert, anchorReq, _testOutputHelper);
-                    anchorReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsAnchorCdp));
+                    anchorReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsRootCrl));
 
 
 
@@ -227,7 +231,7 @@ namespace Udap.PKI.Generator
                         File.WriteAllBytes($"{SurefhirlabsUdapAnchors}/SureFhirLabs_Anchor.pfx", anchorBytes);
                         char[] anchorPem = PemEncoding.Write("CERTIFICATE", anchorCertWithoutKey.RawData);
                         File.WriteAllBytes($"{SurefhirlabsUdapAnchors}/SureFhirLabs_Anchor.cer", anchorPem.Select(c => (byte)c).ToArray());
-                        UpdateWindowsMachineStore(anchorCertWithoutKey);
+                        // UpdateWindowsMachineStore(anchorCertWithoutKey);
 
                         #endregion
 
@@ -254,7 +258,7 @@ namespace Udap.PKI.Generator
                         
                         AddAuthorityKeyIdentifier(anchorCertWithoutKey, req, _testOutputHelper);
 
-                        req.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
+                        req.CertificateExtensions.Add(MakeCdp(SureFhirLabsIntermediateCrl));
 
                         subAltNameBuilder = new SubjectAlternativeNameBuilder();
                         subAltNameBuilder.AddUri(new Uri("https://weatherapi.lab:5021/fhir")); //Same as iss claim
@@ -315,7 +319,7 @@ namespace Udap.PKI.Generator
 
                         AddAuthorityKeyIdentifier(anchorCertWithoutKey, sureFhirLabsClientReq, _testOutputHelper);
 
-                        sureFhirLabsClientReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
+                        sureFhirLabsClientReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsIntermediateCrl));
 
                         subAltNameBuilder = new SubjectAlternativeNameBuilder();
                         subAltNameBuilder.AddUri(new Uri("https://fhirlabs.net:7016/fhir/r4")); //Same as iss claim
@@ -379,7 +383,7 @@ namespace Udap.PKI.Generator
                             new X509SubjectKeyIdentifierExtension(sslReq.PublicKey, false));
 
                         AddAuthorityKeyIdentifier(anchorCertWithoutKey, sslReq, _testOutputHelper);
-                        sslReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
+                        sslReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsIntermediateCrl));
 
                         subAltNameBuilder = new SubjectAlternativeNameBuilder();
                         subAltNameBuilder.AddDnsName("weatherapi.lab");
@@ -439,7 +443,7 @@ namespace Udap.PKI.Generator
                             new X509SubjectKeyIdentifierExtension(sureFhirSSLReq.PublicKey, false));
 
                         AddAuthorityKeyIdentifier(anchorCertWithoutKey, sureFhirSSLReq, _testOutputHelper);
-                        sureFhirSSLReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
+                        sureFhirSSLReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsIntermediateCrl));
 
                         subAltNameBuilder = new SubjectAlternativeNameBuilder();
                         subAltNameBuilder.AddDnsName("fhirlabs.net");
@@ -496,7 +500,7 @@ namespace Udap.PKI.Generator
                             new X509SubjectKeyIdentifierExtension(idProviderSureFhirSSLReq.PublicKey, false));
 
                         AddAuthorityKeyIdentifier(anchorCertWithoutKey, idProviderSureFhirSSLReq, _testOutputHelper);
-                        idProviderSureFhirSSLReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsCdp));
+                        idProviderSureFhirSSLReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsIntermediateCrl));
 
                         subAltNameBuilder = new SubjectAlternativeNameBuilder();
                         subAltNameBuilder.AddDnsName("securedcontrols.net");
@@ -529,7 +533,6 @@ namespace Udap.PKI.Generator
                         }
 
                         #endregion
-
 
                         #region SureFhir Anchor CRL
 
@@ -564,7 +567,6 @@ namespace Udap.PKI.Generator
                         File.WriteAllBytes(sureFhirAnchorCrlFilename, anchorCrl.GetEncoded());
 
                         #endregion
-
 
                         #region SureFhir client CRL
 
@@ -601,9 +603,92 @@ namespace Udap.PKI.Generator
                         File.WriteAllBytes(sureFhirClientCrlFilename, crl.GetEncoded());
 
                         #endregion
+
+                        #region host.docker.internal certificate
+
+                        using RSA rsaHostDockerInternal = RSA.Create(2048);
+
+                        var hostDockerInternal = new CertificateRequest(
+                            "CN=host.docker.internal, OU=SSL, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                            rsaHostDockerInternal,
+                            HashAlgorithmName.SHA256,
+                            RSASignaturePadding.Pkcs1);
+
+                        hostDockerInternal.CertificateExtensions.Add(
+                            new X509BasicConstraintsExtension(false, false, 0, true));
+
+                        hostDockerInternal.CertificateExtensions.Add(
+                            new X509KeyUsageExtension(
+                                X509KeyUsageFlags.DigitalSignature,
+                                true));
+
+                        hostDockerInternal.CertificateExtensions.Add(
+                            new X509SubjectKeyIdentifierExtension(hostDockerInternal.PublicKey, false));
+
+                        AddAuthorityKeyIdentifier(caCert, hostDockerInternal, _testOutputHelper);
+                        hostDockerInternal.CertificateExtensions.Add(MakeCdp(SureFhirLabsRootCrl)); 
+
+                        subAltNameBuilder = new SubjectAlternativeNameBuilder();
+                        subAltNameBuilder.AddDnsName("host.docker.internal");
+                        subAltNameBuilder.AddDnsName("localhost");
+                        x509Extension = subAltNameBuilder.Build();
+                        hostDockerInternal.CertificateExtensions.Add(x509Extension);
+
+                        hostDockerInternal.CertificateExtensions.Add(
+                            new X509EnhancedKeyUsageExtension(
+                                new OidCollection {
+                                    new Oid("1.3.6.1.5.5.7.3.2"), // TLS Client auth
+                                    new Oid("1.3.6.1.5.5.7.3.1"), // TLS Server auth
+                                },
+                                true));
+
+                        using (var clientCert = hostDockerInternal.Create(
+                                   caCert,
+                                   DateTimeOffset.UtcNow.AddDays(-1),
+                                   DateTimeOffset.UtcNow.AddYears(2),
+                                   new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
+                        {
+                            // Do something with these certs, like export them to PFX,
+                            // or add them to an X509Store, or whatever.
+                            var sslCert = clientCert.CopyWithPrivateKey(rsaHostDockerInternal);
+
+                            SureFhirLabsSslIdentityServer.EnsureDirectoryExists();
+                            var clientBytes = sslCert.Export(X509ContentType.Pkcs12, "udap-test");
+                            File.WriteAllBytes($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx", clientBytes);
+                            char[] certificatePem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
+                            File.WriteAllBytes($"{SureFhirLabsSslIdentityServer}/host.docker.internal.cer", certificatePem.Select(c => (byte)c).ToArray());
+                        }
+
+                        #endregion
                     }
                 }
             }
+
+            //Distribute
+            
+            File.Copy($"{SureFhirLabsSslFhirLabs}/fhirlabs.net.pfx",
+                $"{BaseDir}/../../examples/FhirLabsApi/fhirlabs.net.pfx", 
+                true);
+
+            File.Copy($"{SurefhirlabsUdapIssued}/fhirlabs.net.client.pfx",
+                $"{BaseDir}/../../examples/FhirLabsApi/CertStore/issued/fhirlabs.net.client.pfx",
+                true);
+
+            // Copy CA to FhirLabsApi so it can be added to the Docker Container trust store. 
+            File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
+                $"{BaseDir}/../../examples/FhirLabsApi/SureFhirLabs_CA.cer",
+                true);
+
+            // SubAltName is localhost and host.docker.internal. Udap.Idp server can then be reached from
+            // other docker images via host.docker.internal host name.
+            // Example: FhirLabsApi project calling Udap.Idp via the back channel OpenIdConnect access token validation.
+            File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
+                $"{BaseDir}/../../examples/Udap.Idp/host.docker.internal.pfx",
+                true);
+
+            File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
+                $"{BaseDir}/../../examples/FhirLabsApi/host.docker.internal.pfx",
+                true);
         }
 
         private static CrlNumber GetNextCrlNumber(string fileName)
@@ -623,8 +708,7 @@ namespace Udap.PKI.Generator
 
             return nextCrlNum;
         }
-
-
+        
         //
         // Community:localhost:: Certificate Store File Constants  Community used for unit tests
         //
@@ -849,22 +933,32 @@ namespace Udap.PKI.Generator
                     }
                 }
             }
+
+            //Distribute
+
+            File.Copy($"{LocalhostCertStore}/fhirLabsApiClientLocalhostCert.pfx",
+                $"{BaseDir}/../../examples/FhirLabsApi/CertStore/issued/fhirLabsApiClientLocalhostCert.pfx",
+                true);
         }
 
         private void UpdateWindowsMachineStore(X509Certificate2 certificate)
         {
-            // var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
-            // store.Open(OpenFlags.ReadWrite);
-            //
-            // var oldCert = store.Certificates.SingleOrDefault(c => c.Subject == certificate.Subject);
-            //
-            // if (oldCert != null)
-            // {
-            //     store.Remove(oldCert);
-            // }
-            //
-            // store.Add(certificate);
-            // store.Close();
+            //This could be modified to handle Linux also... Maybe later.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.ReadWrite);
+
+                var oldCert = store.Certificates.SingleOrDefault(c => c.Subject == certificate.Subject);
+
+                if (oldCert != null)
+                {
+                    store.Remove(oldCert);
+                }
+
+                store.Add(certificate);
+                store.Close();
+            }
         }
 
         private static X509Extension MakeCdp(string url)
@@ -929,7 +1023,7 @@ namespace Udap.PKI.Generator
         [Fact(Skip = "Depends on ordering")]
         public void TestCrl()
         {
-            var bytes = File.ReadAllBytes($"{SurefhirlabsCrl}/{SureFhirLabsPkcsFileCrl}");
+            var bytes = File.ReadAllBytes($"{SurefhirlabsCrl}/{SureFhirLabsIntermediatePkcsFileCrl}");
             var crl = new X509CrlParser().ReadCrl(bytes);
 
             foreach (X509CrlEntry crlEntry in crl.GetRevokedCertificates())

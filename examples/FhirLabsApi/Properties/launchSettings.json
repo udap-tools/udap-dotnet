@@ -1,5 +1,15 @@
 {
   "profiles": {
+    "FhirLabsApi_Local": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "fhir/r4/.well-known/udap/communities/ashtml",
+      "applicationUrl": "https://localhost:7016;http://localhost:5016",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true
+    },
     "FhirLabsApi": {
       "commandName": "Project",
       "launchBrowser": true,
@@ -7,27 +17,17 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "applicationUrl": "https://fhirlabs.net:7016;http://fhirlabs.net:5016",
-      "dotnetRunMessages": true
-    },
-    "FhirLabsApi2": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "launchUrl": "fhir/r4/swagger",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7016;http://localhost:5016"
+      "applicationUrl": "https://fhirlabs.net:7016;http://fhirlabs.net:5016"
     },
     "Docker": {
       "commandName": "Docker",
       "launchBrowser": true,
-      "launchUrl": "http://fhirlabs.net:5016/fhir/r4/.well-known/udap",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/fhir/r4/.well-known/udap/communities/ashtml",
       "publishAllPorts": true,
-      "useSSL": false,
+      "useSSL": true,
       "environmentVariables": {
-        "DOTNET_ENVIRONMENT": "Development"
+        "ASPNETCORE_URLS": "http://*:8080;https://*:443"
       }
     },
     "WSL": {

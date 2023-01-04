@@ -21,6 +21,8 @@ public static class UdapConfigurationEndpointExtensions
         using var scope = endpoints.ServiceProvider.CreateScope();
         var endpoint = scope.ServiceProvider.GetRequiredService<UdapDynamicClientRegistrationEndpoint>();
 
+
+        //TODO: What happens during an exception?
         return endpoints.MapPost(path, endpoint.Process);
     }
 }

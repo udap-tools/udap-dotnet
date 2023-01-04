@@ -7,6 +7,9 @@
 // */
 #endregion
 
+using Udap.Common.Models;
+using Udap.Common.Registration;
+
 namespace Udap.Server.Registration;
 
 public class UdapDynamicClientRegistrationValidationResult

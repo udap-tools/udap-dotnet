@@ -82,7 +82,8 @@ public class UdapMetadata
                 UdapConstants.UdapProfilesSupportedValues.UdapDcr,
                 UdapConstants.UdapProfilesSupportedValues.UdapAuthn,
                 UdapConstants.UdapProfilesSupportedValues.UdapAuthz,
-                UdapConstants.UdapProfilesSupportedValues.UdapTo
+                //TODO: Code doesn't support this yet.  Also all of this needs to be coded up as a configuration feature
+                // UdapConstants.UdapProfilesSupportedValues.UdapTo
             };
 
         UdapAuthorizationExtensionsSupported = new HashSet<string>
@@ -102,8 +103,8 @@ public class UdapMetadata
         UdapCertificationsRequired = new HashSet<string> { "http://MyUdapCertification" };
         GrantTypesSupported = new HashSet<string>
         {
-                OidcConstants.GrantTypes.AuthorizationCode,
-                OidcConstants.GrantTypes.RefreshToken,
+                // OidcConstants.GrantTypes.AuthorizationCode,
+                // OidcConstants.GrantTypes.RefreshToken,
                 OidcConstants.GrantTypes.ClientCredentials
             };
         ScopesSupported = new HashSet<string>

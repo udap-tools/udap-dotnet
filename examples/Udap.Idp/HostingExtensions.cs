@@ -7,17 +7,19 @@
 // */
 #endregion
 
-using System.Diagnostics;
+using System.Collections;
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Duende.IdentityServer.Validation;
+using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using Udap.Server;
+using Udap.Server.Configuration;
 using Udap.Server.Extensions;
 using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.Registration;
@@ -31,31 +33,52 @@ internal static class HostingExtensions
 {
     public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
     {
-        if (! int.TryParse(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"), out int sslPort))
+        // if (! int.TryParse(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"), out int sslPort))
+        // {
+        //     sslPort = 5002;
+        // }
+
+
+        string dbChoice;
+        string connectionString;
+
+        dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
+
+
+        foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
         {
-            sslPort = 5002;
+            Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
         }
 
-        //
-        // Running localhost:5002 when UseKestrel confiratio below is commented
-        // Uncomment and to run your own cert.  
-        //
+        //Ugly but works so far.
+        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
+        {
+            // Log.Logger.Information("Loading connection string from gcp_db");
+            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
+            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
+            
+            Log.Logger.Information("Creating client");
+            var client = SecretManagerServiceClient.Create();
 
-        // builder.WebHost.UseKestrel((webHostBuilderContext, kestrelServerOptions) =>
-        // {
-        //     kestrelServerOptions.ListenAnyIP(sslPort, listenOpt =>
-        //     {
-        //         listenOpt.UseHttps(
-        //             Path.Combine(
-        //                 Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? string.Empty,
-        //                 webHostBuilderContext.Configuration["SslFileLocation"]),
-        //             webHostBuilderContext.Configuration["CertPassword"]);
-        //     });
-        // });
+            var secretResource = "projects/288013792534/secrets/gcp_db/versions/latest";
 
+            Log.Logger.Information("Requesting {secretResource");
+            // Call the API.
+            AccessSecretVersionResponse result = client.AccessSecretVersion(secretResource);
 
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        
+            // Convert the payload to a string. Payloads are bytes by default.
+            String payload = result.Payload.Data.ToStringUtf8();
+
+            connectionString = payload;
+        }
+        else
+        {
+            connectionString = builder.Configuration.GetConnectionString(dbChoice);
+        }
+
+        var settings = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
+
+        Log.Logger.Information($"ConnectionString:: {connectionString}");
         // needed to load configuration from appsettings.json
         builder.Services.AddOptions();
 
@@ -80,12 +103,12 @@ internal static class HostingExtensions
             })
             .AddConfigurationStore(options =>
             {
-                options.ConfigureDbContext = b => b.UseSqlite(connectionString,
+                options.ConfigureDbContext = b => b.UseSqlServer(connectionString,
                     sql => sql.MigrationsAssembly(migrationsAssembly));
             })
             .AddOperationalStore(options =>
             {
-                options.ConfigureDbContext = b => b.UseSqlite(connectionString,
+                options.ConfigureDbContext = b => b.UseSqlServer(connectionString,
                     sql => sql.MigrationsAssembly(migrationsAssembly));
             })
             // .AddInMemoryIdentityResources(Config.IdentityResources)
@@ -102,13 +125,22 @@ internal static class HostingExtensions
             .AddUdapServerConfiguration()
             .AddUdapConfigurationStore(options =>
             {
-                options.UdapDbContext = b => b.UseSqlite(connectionString,
+                options.UdapDbContext = b => b.UseSqlServer(connectionString,
                     sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
             });
 
-        builder.Services.AddSingleton<IScopeService, DefaultScopeService>();
-        builder.Services.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
+         builder.AddUdapServerSettings();
 
+        // TODO
+        // Override default ClientSecretValidator.  Not the ideal solution.  But I will need to spend some time creating PRs to Duende to allow Udap validation 
+        // to work with the standard api.  It is close but not quite there.  I had to add a IScopeService to the validator to give me a way to pick up scopes
+        // from the saved scopes in the ClientScopes table.  They are resolved and inserted into the HttpContext.Request.  
+        //
+        builder.Services.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
+        
+
+        builder.Services.AddSingleton<IScopeService, DefaultScopeService>();
+        
         // configuration (resolvers, counter key builders)
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
@@ -149,6 +181,12 @@ internal static class HostingExtensions
         if (!args.Any(a => a.Contains("skipRateLimiting")))
         {
             app.UseIpRateLimiting();
+        }
+
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseForwardedHeaders();
+            app.UseHsts();
         }
 
         app.UseSerilogRequestLogging();

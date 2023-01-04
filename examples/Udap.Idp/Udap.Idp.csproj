@@ -4,38 +4,55 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId>
+    <DockerfileContext>.</DockerfileContext>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>..\..</DockerfileContext>
-    <DockerfileRunArguments>-p "5002:5002" </DockerfileRunArguments>
+    <!-- <DockerfileRunArguments>-p "5002:443" -e ASPNETCORE_HTTPS_PORT=7016 -e ASPNETCORE_Kestrel__Certificates__Default__Password="udap-test" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp_exported.pfx -v $(UserProfile)\.aspnet\https:/https/</DockerfileRunArguments> -->
+    <DockerfileRunArguments>-p "5002:443" -e ASPNETCORE_HTTPS_PORT=7016 </DockerfileRunArguments>
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="AspNetCoreRateLimit" Version="4.0.2" />
+    <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
     <PackageReference Include="Duende.IdentityServer" Version="6.2.0" />
     <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="6.2.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.0">
+    <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.1">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
-    <PackageReference Include="OpenTelemetry" Version="1.3.1" />
-    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.3.1" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.3.1" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.0.0-rc9" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc9" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.0.0-rc9" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.0.0-rc9.9" />
-    <PackageReference Include="Serilog.AspNetCore" Version="6.0.1" />
+    <PackageReference Include="OpenTelemetry" Version="1.4.0-rc.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.4.0-rc.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.4.0-rc.1" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.4.0-rc.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc9.10" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.0.0-rc9.10" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.0.0-rc9.10" />
+    <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
   </ItemGroup>
-  
-  <ItemGroup>
+
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
+    <PackageReference Include="Udap.Server" Version="0.0.3-preview*" />
+    <!-- <PackageReference Include="Udap.Common" Version="0.0.3-preview*" /> -->
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="../../Udap.Server/Udap.Server.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="nuget.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   
   <ItemGroup>
+    <None Update="host.docker.internal.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="securedcontrols.net.pfx">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project>

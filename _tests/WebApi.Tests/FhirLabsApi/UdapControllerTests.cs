@@ -162,9 +162,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var grantTypes = _fixture.WellKnownUdap.GrantTypesSupported;
         grantTypes.Should().NotBeNullOrEmpty();
 
-        grantTypes.Count.Should().Be(3);
-        grantTypes.Should().Contain("authorization_code");
-        grantTypes.Should().Contain("refresh_token");
+        grantTypes.Count.Should().Be(1);
+        // grantTypes.Should().Contain("authorization_code");
+        // grantTypes.Should().Contain("refresh_token");
         grantTypes.Should().Contain("client_credentials");
     }
 
@@ -183,21 +183,21 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     public void authorization_endpointTest()
     {
         var authorizationEndpoint = _fixture.WellKnownUdap.AuthorizationEndpoint;
-        authorizationEndpoint.Should().Be("https://localhost:5002/connect/authorize");
+        authorizationEndpoint.Should().Be("https://host.docker.internal:5002/connect/authorize");
     }
 
     [Fact]
     public void token_endpointTest()
     {
         var tokenEndpoint = _fixture.WellKnownUdap.TokenEndpoint;
-        tokenEndpoint.Should().Be("https://localhost:5002/connect/token");
+        tokenEndpoint.Should().Be("https://host.docker.internal:5002/connect/token");
     }
 
     [Fact]
     public void registration_endpointTest()
     {
         var registrationEndpoint = _fixture.WellKnownUdap.RegistrationEndpoint;
-        registrationEndpoint.Should().Be("https://localhost:5002/connect/register");
+        registrationEndpoint.Should().Be("https://host.docker.internal:5002/connect/register");
     }
 
     [Fact]

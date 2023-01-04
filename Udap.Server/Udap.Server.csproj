@@ -19,14 +19,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Registration\UdapDynamicClientRegistrationValidator.cs~RF38b682b5.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="12.0.0" />
     <PackageReference Include="Duende.IdentityServer" Version="6.2.0" />
     <PackageReference Include="Duende.IdentityServer.AspNetIdentity" Version="6.2.0" />
     <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="6.2.0" />
     <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection" Version="6.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.25.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.25.1" />
   </ItemGroup>
 
   <ItemGroup>

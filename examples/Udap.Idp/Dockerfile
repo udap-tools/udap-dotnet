@@ -2,25 +2,26 @@
 
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 WORKDIR /app
-EXPOSE 80
+EXPOSE 8080
 EXPOSE 443
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src
-COPY ["NuGet.Config", "."]
-COPY ["examples/Udap.Idp/Udap.Idp.csproj", "examples/Udap.Idp/"]
-COPY ["Udap.Server/Udap.Server.csproj", "Udap.Server/"]
-COPY ["Udap.Client/Udap.Client.csproj", "Udap.Client/"]
-COPY ["Udap.Common/Udap.Common.csproj", "Udap.Common/"]
-RUN dotnet restore "examples/Udap.Idp/Udap.Idp.csproj"
-COPY . .
-WORKDIR "/src/examples/Udap.Idp"
+
+COPY ["nuget.config", "."]
+COPY ["Udap.Idp.csproj", "."]
+RUN dotnet restore "Udap.Idp.csproj"
+COPY . . 
+
+ENV GCPDeploy=true
 RUN dotnet build "Udap.Idp.csproj" -c Release -o /app/build
 
-FROM build AS publish
+FROM build AS publish 
 RUN dotnet publish "Udap.Idp.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+ENV ASPNETCORE_URLS=http://*:8080
+ENV GCPDeploy=true
 ENTRYPOINT ["dotnet", "Udap.Idp.dll"]

@@ -14,5 +14,6 @@ public static class UdapServerConstants
     public static class SecretTypes
     {
         public const string Udapx5c = "UDAP_x5c";
+        public const string Udap_X509_Pem = "Udap_X509_Pem";
     }
 }

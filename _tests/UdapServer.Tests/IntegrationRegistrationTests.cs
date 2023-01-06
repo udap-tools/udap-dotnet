@@ -568,7 +568,7 @@ namespace UdapServer.Tests
                 JwtId = jwtId,
                 ClientName = "udapTestClient",
                 Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab" },
-                RedirectUris = new List<Uri>{new Uri(testRedirectUri) },
+                RedirectUris = new List<string>{new Uri(testRedirectUri).AbsoluteUri },
                 GrantTypes = new HashSet<string> { "authorization_code" },
                 ResponseTypes = new HashSet<string> { "code" },
                 TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,

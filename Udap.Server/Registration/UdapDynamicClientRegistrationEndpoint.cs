@@ -38,6 +38,7 @@ public class UdapDynamicClientRegistrationEndpoint
         _logger = logger;
     }
     
+    //TODO: ProcessAsync?
     /// <summary>
     /// Initiate UDAP Dynamic Client Registration for <see cref="UdapDynamicClientRegistrationEndpoint"/>
     /// </summary>
@@ -135,7 +136,7 @@ public class UdapDynamicClientRegistrationEndpoint
         };
         
         context.Response.StatusCode = StatusCodes.Status201Created;
-        await context.Response.WriteAsJsonAsync(registrationResponse, options);
+        await context.Response.WriteAsJsonAsync(registrationResponse, options, "application/json");
     }
 
 

@@ -192,7 +192,7 @@ internal static class HostingExtensions
         {
             context.Response.OnStarting(() =>
             {
-                if (context.Request.Path.Value != null && context.Request.Path.Value.Contains("register"))
+                if (context.Request.Path.Value != null && context.Request.Path.Value.Contains("connect/token"))
                 {
                     if (context.Response.Headers.ContentType.ToString().ToLower().Equals("application/json; charset=utf-8"))
                     {

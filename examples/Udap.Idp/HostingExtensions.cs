@@ -13,8 +13,10 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Duende.IdentityServer.Validation;
 using Google.Cloud.SecretManager.V1;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -172,12 +174,43 @@ internal static class HostingExtensions
 
         });
 
+        builder.Services.AddHttpLogging(options =>
+        {
+            options.LoggingFields = HttpLoggingFields.All;
+        });
 
         return builder.Build();
     }
     
     public static WebApplication ConfigurePipeline(this WebApplication app, string[] args)
     {
+        app.UseHttpLogging();
+
+        //TODO: promote to middleware class.  PR to Duende Identity Server to ensure this is a change to the code base.
+        // https://groups.google.com/g/udap-discuss/c/jxgtlHOsg2A for reference.
+        app.Use(async (context, next) =>
+        {
+            context.Response.OnStarting(() =>
+            {
+                if (context.Request.Path.Value != null && context.Request.Path.Value.Contains("register"))
+                {
+                    if (context.Response.Headers.ContentType.ToString().ToLower().Equals("application/json; charset=utf-8"))
+                    {
+                        context.Response.Headers.Remove("Content-Type");
+                        context.Response.Headers.Add("Content-Type", new StringValues("application/json"));
+
+                        Log.Logger.Debug("Changed Content-Type header to \"application/json\"");
+                    }
+                }
+
+                return Task.FromResult(0);
+            });
+
+            await next();
+
+        });
+        
+
         if (!args.Any(a => a.Contains("skipRateLimiting")))
         {
             app.UseIpRateLimiting();

@@ -37,13 +37,15 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     private long _issuedAt;
     private string? _jwtId;
     private string? _clientName;
+    private Uri? _clientUri;
     private ICollection<Uri> _redirectUris = new List<Uri>();
+    private Uri? _logoUri;
     private ICollection<string> _contacts = new HashSet<string>();
     private ICollection<string> _grantTypes = new HashSet<string>();
     private ICollection<string> _responseTypes = new HashSet<string>();
     private string? _tokenEndpointAuthMethod;
     private string? _scope;
-    private Uri? _clientUri;
+    
 
 
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ClientId)]
@@ -219,6 +221,31 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     }
 
     /// <summary>
+    /// Web page providing information about the client.
+    /// <seealso cref="https://datatracker.ietf.org/doc/html/rfc7591#section-2"/>
+    /// </summary>
+    [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ClientUri)]
+    public Uri? ClientUri {
+        get
+        {
+            if (_clientUri == null)
+            {
+                if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientName), UriKind.Absolute, out var value ))
+                {
+                    _clientUri = value as Uri;
+                }
+            }
+            return _clientUri;
+        }
+        set
+        {
+            _clientUri = value;
+            if (value != null) this[UdapConstants.RegistrationDocumentValues.ClientName] = value;
+        }
+    }
+
+
+    /// <summary>
     /// List of redirection URI strings for use in redirect-based flows such as the authorization code and implicit flows.
     /// </summary>
     /// <remarks>
@@ -243,6 +270,34 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
             this[UdapConstants.RegistrationDocumentValues.RedirectUris] = value;
         }
     }
+
+    // /// <summary>
+    // /// URL string that references a logo for the client.  If present, the
+    // /// server SHOULD display this image to the end-user during approval.
+    // /// The value of this field MUST point to a valid image file.  The
+    // /// value of this field MAY be internationalized, as described in
+    // /// <a href="https://datatracker.ietf.org/doc/html/rfc7591#section-2.2">Section 2.2</a>.
+    // /// </summary>
+    // [JsonPropertyName(UdapConstants.RegistrationDocumentValues.LogoUri)]
+    // public Uri? LogoUri
+    // {
+    //     get
+    //     {
+    //         if (_logoUri == null)
+    //         {
+    //             if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.LogoUri), UriKind.Absolute, out var value))
+    //             {
+    //                 _logoUri = value as Uri;
+    //             }
+    //         }
+    //         return _logoUri;
+    //     }
+    //     set
+    //     {
+    //         _logoUri = value;
+    //         if (value != null) this[UdapConstants.RegistrationDocumentValues.LogoUri] = value;
+    //     }
+    // }
 
     /// <summary>
     /// A string containing the human readable name of the client application

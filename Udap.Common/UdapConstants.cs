@@ -62,7 +62,9 @@ public static class UdapConstants
         public const string IssuedAt = IdentityModel.JwtClaimTypes.IssuedAt;
         public const string JwtId = IdentityModel.JwtClaimTypes.JwtId;
         public const string ClientName = "client_name";
+        public const string ClientUri = "client_uri";
         public const string RedirectUris = "redirect_uris";
+        public const string LogoUri = "logo_uri";
         public const string Contacts = "contacts";
         public const string GrantTypes = "grant_types";
         public const string ResponseTypes = "response_types";

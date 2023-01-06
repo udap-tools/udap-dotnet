@@ -58,7 +58,6 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
 
         _logger.LogDebug($"Start client validation with Server Support Type {_serverSettings.ServerSupport}");
-        _logger.LogDebug(JsonSerializer.Serialize(request));
         var handler = new JwtSecurityTokenHandler();
         var jwtSecurityToken = handler.ReadToken(request.SoftwareStatement) as JwtSecurityToken;
 

@@ -126,9 +126,12 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             {
                 foreach (var requestRedirectUri in document.RedirectUris)
                 {
-                    if (requestRedirectUri.IsAbsoluteUri)
+                    //TODO add tests and decide how to handle invalid Uri exception
+                    var uri = new Uri(requestRedirectUri);
+
+                    if (uri.IsAbsoluteUri)
                     {
-                        client.RedirectUris.Add(requestRedirectUri.AbsoluteUri);
+                        client.RedirectUris.Add(uri.AbsoluteUri);
                     }
                     else
                     {

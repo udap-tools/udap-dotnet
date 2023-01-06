@@ -38,7 +38,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     private string? _jwtId;
     private string? _clientName;
     private Uri? _clientUri;
-    private ICollection<Uri> _redirectUris = new List<Uri>();
+    private ICollection<string> _redirectUris = new List<string>();
     private Uri? _logoUri;
     private ICollection<string> _contacts = new HashSet<string>();
     private ICollection<string> _grantTypes = new HashSet<string>();
@@ -252,15 +252,13 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     /// Clients using flows with redirection must register their redirection URI values.
     /// </remarks>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.RedirectUris)]
-    public ICollection<Uri> RedirectUris
+    public ICollection<string> RedirectUris
     {
         get
         {
             if (!_redirectUris.Any())
             {
-                _redirectUris = GetIListClaims(UdapConstants.RegistrationDocumentValues.RedirectUris)
-                    .Select(u => new Uri(u))
-                    .ToList();
+                _redirectUris = GetIListClaims(UdapConstants.RegistrationDocumentValues.RedirectUris);
             }
             return _redirectUris;
         }
@@ -278,26 +276,26 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     // /// value of this field MAY be internationalized, as described in
     // /// <a href="https://datatracker.ietf.org/doc/html/rfc7591#section-2.2">Section 2.2</a>.
     // /// </summary>
-    // [JsonPropertyName(UdapConstants.RegistrationDocumentValues.LogoUri)]
-    // public Uri? LogoUri
-    // {
-    //     get
-    //     {
-    //         if (_logoUri == null)
-    //         {
-    //             if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.LogoUri), UriKind.Absolute, out var value))
-    //             {
-    //                 _logoUri = value as Uri;
-    //             }
-    //         }
-    //         return _logoUri;
-    //     }
-    //     set
-    //     {
-    //         _logoUri = value;
-    //         if (value != null) this[UdapConstants.RegistrationDocumentValues.LogoUri] = value;
-    //     }
-    // }
+    [JsonPropertyName(UdapConstants.RegistrationDocumentValues.LogoUri)]
+    public Uri? LogoUri
+    {
+        get
+        {
+            if (_logoUri == null)
+            {
+                if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.LogoUri), UriKind.Absolute, out var value))
+                {
+                    _logoUri = value as Uri;
+                }
+            }
+            return _logoUri;
+        }
+        set
+        {
+            _logoUri = value;
+            if (value != null) this[UdapConstants.RegistrationDocumentValues.LogoUri] = value;
+        }
+    }
 
     /// <summary>
     /// A string containing the human readable name of the client application
@@ -481,14 +479,14 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
             // What to do if the 'ClaimValueType' is not the same.
             if (TryGetValue(jsonClaimType, out existingValue))
             {
-                if (existingValue is HashSet<string> knownClaimValueType)
+                if (existingValue is ICollection<string> knownClaimValueType)
                 {
                     switch (claim.Type)
                     {
                         case UdapConstants.RegistrationDocumentValues.Contacts:
                         case UdapConstants.RegistrationDocumentValues.GrantTypes:
                         case UdapConstants.RegistrationDocumentValues.ResponseTypes:
-                            
+                        case UdapConstants.RegistrationDocumentValues.RedirectUris:    
 
                             knownClaimValueType.Add(jsonClaimValue as string);
                             continue;
@@ -518,6 +516,11 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
                         this[jsonClaimType] = grantTypes;
                         break;
 
+                    case UdapConstants.RegistrationDocumentValues.RedirectUris:
+                        var redirectUris = new List<string>() { jsonClaimValue as string };
+
+                        this[jsonClaimType] = redirectUris;
+                        break;
                     default:
                         this[jsonClaimType] = jsonClaimValue;
                         break;

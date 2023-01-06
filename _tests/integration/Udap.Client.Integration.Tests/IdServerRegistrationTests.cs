@@ -982,7 +982,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             ResponseTypes = new HashSet<string> { "code" },  
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "user/Patient.* user/Practitioner.read",  //Comment out for UDAP Server mode.
-            RedirectUris = new List<Uri>{ new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}") },
+            RedirectUris = new List<string>{ new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
             
         };
         document.AddClaims(new List<Claim>() {new Claim("client_uri", "http://test.com/hello/")});
@@ -1009,9 +1009,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
         var response = await idpClient.PostAsJsonAsync(reg, requestBody);
 
-        response.Content.Headers.ContentType!.ToString().Should().Be("application/json");
-
         response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.Content.Headers.ContentType!.ToString().Should().Be("application/json");
 
         // var documentAsJson = JsonSerializer.Serialize(document);
         var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
@@ -1491,6 +1490,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         {
             _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
         }
+
+        response.Content.Headers.ContentType!.ToString().Should().Be("application/json");
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
         // var documentAsJson = JsonSerializer.Serialize(document);

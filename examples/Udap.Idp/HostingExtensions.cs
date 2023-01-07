@@ -33,13 +33,14 @@ namespace Udap.Idp;
 
 internal static class HostingExtensions
 {
-    public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
+    public static WebApplication ConfigureServices(this WebApplicationBuilder builder, string[] args)
     {
         // if (! int.TryParse(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"), out int sslPort))
         // {
         //     sslPort = 5002;
         // }
 
+        var provider = builder.Configuration.GetValue("provider", "SqlServer");
 
         string dbChoice;
         string connectionString;
@@ -104,19 +105,31 @@ internal static class HostingExtensions
                 options.EmitStaticAudienceClaim = true;
             })
             .AddConfigurationStore(options =>
-            {
-                options.ConfigureDbContext = b => b.UseSqlServer(connectionString,
-                    sql => sql.MigrationsAssembly(migrationsAssembly));
-            })
+                _ = provider switch
+                {
+                    "Sqlite" => options.ConfigureDbContext = b =>
+                        b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    "SqlServer" => options.ConfigureDbContext = b =>
+                        b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    _ => throw new Exception($"Unsupported provider: {provider}")
+                })
             .AddOperationalStore(options =>
-            {
-                options.ConfigureDbContext = b => b.UseSqlServer(connectionString,
-                    sql => sql.MigrationsAssembly(migrationsAssembly));
-            })
+                _ = provider switch
+                {
+                    "Sqlite" => options.ConfigureDbContext = b =>
+                        b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    "SqlServer" => options.ConfigureDbContext = b =>
+                        b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    _ => throw new Exception($"Unsupported provider: {provider}")
+                })
             // .AddInMemoryIdentityResources(Config.IdentityResources)
             // .AddInMemoryApiScopes(Config.ApiScopes)
             // .AddInMemoryClients(Config.Clients)
-            
+
             .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
             .AddUdapJwtBearerClientAuthentication()
@@ -126,12 +139,18 @@ internal static class HostingExtensions
             .AddUdapDiscovery()
             .AddUdapServerConfiguration()
             .AddUdapConfigurationStore(options =>
+            _ = provider switch
             {
-                options.UdapDbContext = b => b.UseSqlServer(connectionString,
-                    sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
+                "Sqlite" => options.UdapDbContext = b =>
+                    b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                "SqlServer" => options.UdapDbContext = b =>
+                b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                _ => throw new Exception($"Unsupported provider: {provider}")
             });
 
-         builder.AddUdapServerSettings();
+        builder.AddUdapServerSettings();
 
         // TODO
         // Override default ClientSecretValidator.  Not the ideal solution.  But I will need to spend some time creating PRs to Duende to allow Udap validation 

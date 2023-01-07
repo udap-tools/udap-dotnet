@@ -86,7 +86,7 @@ CREATE INDEX [IX_UdapCommunityCertification_CertificationId] ON [UdapCommunityCe
 GO
 
 INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20221226230041_InitialUdap', N'7.0.1');
+VALUES (N'20230106204557_InitialSqlServerUdap', N'7.0.1');
 GO
 
 COMMIT;

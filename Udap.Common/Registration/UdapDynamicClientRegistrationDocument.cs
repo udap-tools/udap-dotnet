@@ -22,6 +22,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Duende.IdentityServer.Extensions;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Udap.Common.Registration;
@@ -161,7 +162,15 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.Expiration)]
     public long Expiration
     {
-        get => _expiration;
+        get
+        {
+            if (_expiration == 0)
+            {
+                _expiration = GetStandardInt64Claim(UdapConstants.RegistrationDocumentValues.Expiration);
+            }
+
+            return _expiration;
+        }
         set
         {
             _expiration = value;
@@ -175,7 +184,15 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.IssuedAt)]
     public long IssuedAt
     {
-        get => _issuedAt;
+        get
+        {
+            if (_issuedAt == 0)
+            {
+                _issuedAt = GetStandardInt64Claim(UdapConstants.RegistrationDocumentValues.IssuedAt);
+            }
+
+            return _issuedAt;
+        }
         set
         {
             _issuedAt = value;
@@ -191,7 +208,14 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.JwtId)]
     public string? JwtId
     {
-        get => _jwtId;
+        get
+        {
+            if (string.IsNullOrEmpty(_jwtId))
+            {
+                _jwtId = GetStandardClaim(UdapConstants.RegistrationDocumentValues.JwtId);
+            }
+            return _jwtId;
+        }
         set
         {
             _jwtId = value;
@@ -342,36 +366,6 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
         }
     }
 
-    internal IList<string> GetIListClaims(string claimType)
-    {
-        var claimValues = new List<string>();
-
-        if (!TryGetValue(claimType, out var value))
-        {
-            return claimValues;
-        }
-
-        if (value is string str)
-        {
-            claimValues.Add(str);
-            return claimValues;
-        }
-
-        if (value is IEnumerable<string> values)
-        {
-            foreach (var item in values)
-            {
-                claimValues.Add(item);
-            }
-        }
-        else
-        {
-            claimValues.Add(JsonExtensions.SerializeToJson(value));
-        }
-
-        return claimValues;
-    }
-
     /// <summary>
     /// Array of strings. If grant_types contains "authorization_code", then this element SHALL
     /// have a fixed value of ["code"], and SHALL be omitted otherwise
@@ -379,7 +373,14 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ResponseTypes)]
     public ICollection<string> ResponseTypes
     {
-        get => _responseTypes;
+        get
+        {
+            if (!_responseTypes.Any())
+            {
+                _responseTypes = GetIListClaims(UdapConstants.RegistrationDocumentValues.ResponseTypes);
+            }
+            return _responseTypes;
+        }
         set
         {
             _responseTypes = value;
@@ -395,7 +396,10 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
         {
             if (string.IsNullOrEmpty(_tokenEndpointAuthMethod))
             {
-                _tokenEndpointAuthMethod = this[UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethod] as string;
+                if (this.TryGetValue(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethod, out var value))
+                {
+                    _tokenEndpointAuthMethod = value as string;
+                }
             }
             return _tokenEndpointAuthMethod;
         }
@@ -529,6 +533,35 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
         }
     }
 
+    internal IList<string> GetIListClaims(string claimType)
+    {
+        var claimValues = new List<string>();
+
+        if (!TryGetValue(claimType, out var value))
+        {
+            return claimValues;
+        }
+
+        if (value is string str)
+        {
+            claimValues.Add(str);
+            return claimValues;
+        }
+
+        if (value is IEnumerable<string> values)
+        {
+            foreach (var item in values)
+            {
+                claimValues.Add(item);
+            }
+        }
+        else
+        {
+            claimValues.Add(JsonExtensions.SerializeToJson(value));
+        }
+
+        return claimValues;
+    }
 
 
     internal string? GetStandardClaim(string claimType)
@@ -552,6 +585,21 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
         return null;
     }
 
+    internal long GetStandardInt64Claim(string claimType)
+    {
+        if (TryGetValue(claimType, out object? value))
+        {
+            if (value is long numLong)
+                return numLong;
+
+            if (value is int numInt)
+                return numInt;
+            
+            return 0;
+        }
+
+        return 0;
+    }
     internal static object GetClaimValueUsingValueType(Claim claim)
     {
         if (claim.ValueType == ClaimValueTypes.String)

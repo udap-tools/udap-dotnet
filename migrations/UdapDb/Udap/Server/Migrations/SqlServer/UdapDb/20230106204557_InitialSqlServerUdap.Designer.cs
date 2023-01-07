@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Udap.Server.DbContexts;
 
 #nullable disable
 
-namespace Udap.Server.Migrations.UdapDb
+namespace Udap.Server.Migrations.SqlServer.UdapDb
 {
     [DbContext(typeof(UdapDbContext))]
-    partial class UdapDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230106204557_InitialSqlServerUdap")]
+    partial class InitialSqlServerUdap
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

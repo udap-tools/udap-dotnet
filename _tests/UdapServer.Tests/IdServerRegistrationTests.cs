@@ -27,7 +27,6 @@ using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Common.Models;
 using Udap.Common.Registration;
 using Udap.Idp;
 using Xunit.Abstractions;
@@ -43,10 +42,10 @@ public class ApiTestFixture : WebApplicationFactory<Program>
 
     public ApiTestFixture()
     {
-        
+        SeedData.EnsureSeedData("Data Source=Udap.Idp.db;", new Mock<Serilog.ILogger>().Object);
+
         TestConfig = new ConfigurationBuilder()
             .SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json")
             .Build();
     }
 
@@ -56,6 +55,7 @@ public class ApiTestFixture : WebApplicationFactory<Program>
         // Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "https://udap.idp.securedcontrols.net:5002");
         // Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORT", "5001");
         Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "http://localhost");
+        Environment.SetEnvironmentVariable("provider", "Sqlite");
         builder.UseEnvironment("Development");
         
         builder.ConfigureServices(services =>
@@ -78,14 +78,20 @@ public class ApiTestFixture : WebApplicationFactory<Program>
                     RevocationMode = X509RevocationMode.NoCheck // This is the change unit testing with no revocation endpoint to host the revocation list.
                 },
                 Output.ToLogger<TrustChainValidator>()));
+
         });
+
+        var overRideConnectionString = new Dictionary<string, string>();
+        overRideConnectionString.Add("ConnectionStrings:DefaultConnection", "Data Source=Udap.Idp.db;");
+
+        builder.ConfigureHostConfiguration(b => b.AddInMemoryCollection(overRideConnectionString));
+        
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();
             logging.AddXUnit(Output);
         });
         
-
         var app = base.CreateHost(builder);
 
         return app;
@@ -94,6 +100,14 @@ public class ApiTestFixture : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("skipRateLimiting", null);
+
+        //
+        // Linux needs to know how to find appsettings file in web api under test.
+        // Still works with Windows but what a pain.  This feels fragile
+        // TODO: 
+        //
+        //This is not working for linux tests like it did in other projects.
+        builder.UseSetting("contentRoot", Path.GetFullPath("../../../../../examples/Udap.Idp"));
     }
 }
 
@@ -114,7 +128,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
     }
 
     [Fact]
-    public async Task RegisrationSuccessWeatherApiTest()
+    public async Task RegisrationSuccessTest()
     {
         // var clientPolicyStore = _fixture.Services.GetService<IIpPolicyStore>();
         //
@@ -144,6 +158,114 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         {
             { "alg", signingCredentials.Algorithm },
             { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+        //
+        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
+        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
+        // can prepare it the same way JwtPayLoad is essentially implemented, but light weight
+        // and specific to this Udap Dynamic Registration.
+        //
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = signedSoftwareStatement,
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response =
+            await client.PostAsJsonAsync(reg,
+                requestBody); //TODO on server side fail for Certifications empty collection
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // var documentAsJson = JsonSerializer.Serialize(document);
+        // var result = await response.Content.ReadAsStringAsync();
+        // _testOutputHelper.WriteLine(result);
+        // result.Should().BeEquivalentTo(documentAsJson);
+
+        var responseUdapDocument =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+
+        responseUdapDocument.Should().NotBeNull();
+        responseUdapDocument.ClientId.Should().NotBeNullOrEmpty();
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(responseUdapDocument,
+            new JsonSerializerOptions { WriteIndented = true }));
+
+        //
+        // Assertions according to
+        // https://datatracker.ietf.org/doc/html/rfc7591#section-3.2.1
+        //
+        responseUdapDocument.SoftwareStatement.Should().Be(signedSoftwareStatement);
+        responseUdapDocument.ClientName.Should().Be(document.ClientName);
+        responseUdapDocument.Issuer.Should().Be(document.Issuer);
+
+        ((JsonElement)responseUdapDocument["Extra"]).GetString().Should().Be(document["Extra"].ToString());
+    }
+
+    [Fact]
+    public async Task RegisrationMissingX5cHeaderTest()
+    {
+        // var clientPolicyStore = _fixture.Services.GetService<IIpPolicyStore>();
+        //
+        //
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+        // var discoJsonFormatted =
+        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        // _testOutputHelper.WriteLine(discoJsonFormatted);
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            // { "x5c", new[] { pem } }
         };
 
         var jwtId = CryptoRandom.CreateUniqueId();
@@ -186,34 +308,977 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
             Udap = UdapConstants.UdapVersionsSupportedValue
         };
 
-        var response =
-            await client.PostAsJsonAsync(reg,
-                requestBody); //TODO on server side fail for Certifications Null collection
+        var response = await client.PostAsJsonAsync(reg, requestBody); 
 
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
 
-        // var documentAsJson = JsonSerializer.Serialize(document);
-        // var result = await response.Content.ReadAsStringAsync();
-        // _testOutputHelper.WriteLine(result);
-        // result.Should().BeEquivalentTo(documentAsJson);
-
-        var responseUdapDocument =
-            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-
-        responseUdapDocument.Should().NotBeNull();
-        responseUdapDocument.ClientId.Should().NotBeNullOrEmpty();
-        _testOutputHelper.WriteLine(JsonSerializer.Serialize(responseUdapDocument,
-            new JsonSerializerOptions { WriteIndented = true }));
-
-        //
-        // Assertions according to
-        // https://datatracker.ietf.org/doc/html/rfc7591#section-3.2.1
-        //
-        responseUdapDocument.SoftwareStatement.Should().Be(signedSoftwareStatement);
-        responseUdapDocument.ClientName.Should().Be(document.ClientName);
-        responseUdapDocument.Issuer.Should().Be(document.Issuer);
-
-        ((JsonElement)responseUdapDocument["Extra"]).GetString().Should().Be(document["Extra"].ToString());
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+        
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
     }
-    
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_Signature_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+       
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+       
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement + "Invalid"),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+    }
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_issMatchesUriName_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost:9999/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+    }
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_issMissing_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            // Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+    }
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_subMissing_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            // Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse.ErrorDescription.Should().Be(UdapDynamicClientRegistrationErrorDescriptions.SubIsMissing);
+    }
+
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_subNotEqualtoIss_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost:9999/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse.ErrorDescription.Should().Be(UdapDynamicClientRegistrationErrorDescriptions.SubNotEqualToIss);
+    }
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_audMissing_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            // Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.InvalidAud}: ");
+    }
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_expMissing_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            // Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.ExpMissing}");
+    }
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_expExpired_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(-5).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse.ErrorDescription.Should().Contain($"{UdapDynamicClientRegistrationErrorDescriptions.ExpExpired}");
+    }
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_iatMissing_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            //IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.IssuedAtMissing}");
+    }
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_clientNameMissing_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            // ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
+        errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.ClientNameMissing}");
+    }
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_responseTypesMissing_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            //ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
+        errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing}");
+    }
+
+    //invalid_software_statement
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_tokenEndpointAuthMethodMissing_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            //TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
+        errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing}");
+    }
 }

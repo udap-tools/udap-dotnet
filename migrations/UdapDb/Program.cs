@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using IdentityServerDb.Migrations.ConfigurationDb;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Udap.Server.Extensions;
@@ -20,7 +21,7 @@ Log.Logger = new LoggerConfiguration()
 Log.Information("Starting up");
 
 var builder = WebApplication.CreateBuilder(args);
-
+// Log.Logger.Information(string.Join(',', args));
 // Add services to the container.
 
 string dbChoice;
@@ -35,13 +36,21 @@ builder.Services.AddSingleton(new UdapConfigurationStoreOptions());
 // TODO: work on multiple provider later:
 // https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/providers?tabs=dotnet-core-cli
 //
+
+var provider = builder.Configuration.GetValue("provider", "SqlServer");
+// Log.Logger.Information(provider);
+
 builder.Services.AddUdapDbContext(options =>
-    {
-        // options.UdapDbContext = b =>
-        //     b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName));
-        options.UdapDbContext = b =>
-            b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName));
-    });
+    _ = provider switch
+        {
+            "Sqlite" => options.UdapDbContext = b =>
+                b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+            "SqlServer" => options.UdapDbContext = b =>
+            b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+            _ => throw new Exception($"Unsupported provider: {provider}")
+        });
 
 var app = builder.Build();
 

@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Udap.Server.Migrations.UdapDb
+namespace Udap.Server.Migrations.SqlServer.UdapDb
 {
     /// <inheritdoc />
-    public partial class InitialUdap : Migration
+    public partial class InitialSqlServerUdap : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

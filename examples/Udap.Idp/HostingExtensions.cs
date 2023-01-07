@@ -94,7 +94,8 @@ internal static class HostingExtensions
         // inject counter and rules stores
         builder.Services.AddInMemoryRateLimiting();
 
-        
+        builder.Services.AddHttpContextAccessor();
+
         // uncomment if you want to add a UI
         builder.Services.AddRazorPages();
 

@@ -107,7 +107,7 @@ public class ApiTestFixture : WebApplicationFactory<Program>
         // TODO: 
         //
         //This is not working for linux tests like it did in other projects.
-        builder.UseSetting("contentRoot", Path.GetFullPath("../../../../../examples/Udap.Idp"));
+        //builder.UseSetting("contentRoot", "../../../../../examples/Udap.Idp");
     }
 }
 
@@ -144,9 +144,10 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint);
 
-        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+        var cert = Path.Combine("CertStore/issued",
             "weatherApiClientLocalhostCert.pfx");
 
+        _testOutputHelper.WriteLine($"Path to Cert: {cert}");
         var clientCert = new X509Certificate2(cert, "udap-test");
         var securityKey = new X509SecurityKey(clientCert);
         var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
@@ -172,7 +173,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         {
             Issuer = "http://localhost/",
             Subject = "http://localhost/",
-            Audience = "https://localhost:5002/connect/register",
+            Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
@@ -804,6 +805,86 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
+    public async Task RegisrationInvalidSotwareStatement_audEqualsRegistrationEndpoint_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost:5002/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            ResponseTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = (signedSoftwareStatement),
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.InvalidMatchAud}");
+    }
+
+    //invalid_software_statement
+    [Fact]
     public async Task RegisrationInvalidSotwareStatement_expMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -997,7 +1078,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         {
             Issuer = "http://localhost/",
             Subject = "http://localhost/",
-            Audience = "https://localhost:5002/connect/register",
+            Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             //IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
@@ -1077,7 +1158,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         {
             Issuer = "http://localhost/",
             Subject = "http://localhost/",
-            Audience = "https://localhost:5002/connect/register",
+            Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
@@ -1157,16 +1238,17 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         {
             Issuer = "http://localhost/",
             Subject = "http://localhost/",
-            Audience = "https://localhost:5002/connect/register",
+            Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
             Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            //ResponseTypes = new HashSet<string> { "authorization_code" },
+            GrantTypes = new HashSet<string> { "authorization_code" },
+            //ResponseTypes = new HashSet<string> { "code" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
+            Scope = "user/Patient.* user/Practitioner.read",  
+            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
         };
 
         document.Add("Extra", "Stuff" as string);
@@ -1237,7 +1319,7 @@ public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
         {
             Issuer = "http://localhost/",
             Subject = "http://localhost/",
-            Audience = "https://localhost:5002/connect/register",
+            Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,

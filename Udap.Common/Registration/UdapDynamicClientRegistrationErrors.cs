@@ -25,6 +25,7 @@ public static class UdapDynamicClientRegistrationErrorDescriptions
     public const string SubNotEqualToIss = "software_statement sub is not equal to iss";
     public const string UntrustedCertificate = "Untrusted: Certificate is not a member of community";
     public const string InvalidAud = "software_statement aud is invalid";
+    public const string InvalidMatchAud = "software_statement aud does not match registration endpoint";
     public const string ExpMissing = "software_statement exp is missing";
     public const string ExpExpired = "software_statement exp is expired";
     public const string CannotFindorParseX5c = "software_statement x5c cannot find or parse";

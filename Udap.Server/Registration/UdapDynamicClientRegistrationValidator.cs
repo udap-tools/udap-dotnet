@@ -20,6 +20,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Duende.IdentityServer.Models;
 using IdentityModel;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -39,17 +41,20 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     private TrustChainValidator _trustChainValidator;
     private readonly ILogger _logger;
     private readonly ServerSettings _serverSettings;
+    private IHttpContextAccessor _httpContextAccessor;
 
     public UdapDynamicClientRegistrationValidator(
         TrustChainValidator trustChainValidator,
         ServerSettings serverSettings,
+        IHttpContextAccessor httpContextAccessor,
         ILogger<UdapDynamicClientRegistrationValidator> logger)
     {
         _trustChainValidator = trustChainValidator;
         _serverSettings = serverSettings;
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
-
     }
+
     /// <inheritdoc />
     public Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request,
@@ -149,7 +154,24 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 $"{UdapDynamicClientRegistrationErrorDescriptions.InvalidAud}: {aud}"));
         }
 
-       
+
+        var endpoint = new Uri(_httpContextAccessor.HttpContext!.Request.GetDisplayUrl());
+
+        if (Uri.Compare(endpoint, aud,
+                UriComponents.Host | UriComponents.PathAndQuery | UriComponents.Port,
+                UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase)
+            != 0)
+        {
+            _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
+                               $"{UdapDynamicClientRegistrationErrorDescriptions.InvalidMatchAud}");
+
+            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
+                $"{UdapDynamicClientRegistrationErrorDescriptions.InvalidMatchAud}"));
+        }
+
+        
+
         //TODO Server Config for iat window (clock skew?)
         if (document.IssuedAt == 0)
         {
@@ -164,7 +186,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         var iat = EpochTime.DateTime(document.IssuedAt).ToUniversalTime();
         var exp = EpochTime.DateTime(document.Expiration).ToUniversalTime();
         //TODO Server Config for iat window (clock skew?)
-        if (iat > DateTime.UtcNow.AddSeconds(5) || iat.AddMinutes(5) < exp)
+        if (iat > DateTime.UtcNow.AddSeconds(5))
         {
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.IssuedAtInFuture);

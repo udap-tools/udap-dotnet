@@ -333,7 +333,7 @@ namespace UdapServer.Tests
             var validator = sp.GetRequiredService<IUdapDynamicClientRegistrationValidator>();
 
             
-            var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "WeatherApiClientLocalhostCert.pfx"); 
+            var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "weatherApiClientLocalhostCert.pfx");
             var clientCert = new X509Certificate2(cert, "udap-test");
             var securityKey = new X509SecurityKey(clientCert);
             var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);

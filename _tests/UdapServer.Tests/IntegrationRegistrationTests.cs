@@ -10,20 +10,18 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Options;
 using Duende.IdentityServer.EntityFramework.Storage;
 using Duende.IdentityServer.Models;
 using FluentAssertions;
-using Hl7.Fhir.Model;
 using IdentityModel;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
@@ -31,20 +29,15 @@ using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
-using Udap.Common.Models;
 using Udap.Common.Registration;
 using Udap.Idp;
-using Udap.Server;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Udap.Server.Extensions;
 using Udap.Server.Options;
 using Udap.Server.Registration;
 using Xunit.Abstractions;
-using Anchor = Udap.Server.Entities.Anchor;
-using Community = Udap.Server.Entities.Community;
 using JsonClaimValueTypes = System.IdentityModel.Tokens.Jwt.JsonClaimValueTypes;
-using Task = System.Threading.Tasks.Task;
 
 namespace UdapServer.Tests
 {
@@ -69,114 +62,18 @@ namespace UdapServer.Tests
                 new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
                     "anchorLocalhostCert.cer"));
 
-            SeedData.EnsureSeedData($@"Data Source=Udap.Idp.db.{DatabaseName};", new Mock<Serilog.ILogger>().Object);
+            SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", new Mock<Serilog.ILogger>().Object);
 
             // await SeedData();
         }
 
-        // private async Task SeedData()
-        // {
-        //     var services = new ServiceCollection();
-        //
-        //     services.AddLogging();
-        //
-        //     services.AddOperationalDbContext(options =>
-        //     {
-        //         options.ConfigureDbContext = db => db.UseSqlite($@"Data Source=Udap.Idp.db.{DatabaseName};",
-        //             sql => sql.MigrationsAssembly(typeof(UdapDb.Program).Assembly.FullName));
-        //     });
-        //     services.AddConfigurationDbContext(options =>
-        //     {
-        //         options.ConfigureDbContext = db => db.UseSqlite($@"Data Source=Udap.Idp.db.{DatabaseName};",
-        //             sql => sql.MigrationsAssembly(typeof(UdapDb.Program).Assembly.FullName));
-        //     });
-        //
-        //     services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
-        //     services.AddUdapDbContext(options =>
-        //     {
-        //         options.UdapDbContext = db => db.UseSqlite($@"Data Source=Udap.Idp.db.{DatabaseName};",
-        //             sql => sql.MigrationsAssembly(typeof(UdapDb.Program).Assembly.FullName));
-        //     });
-        //
-        //     using var serviceProvider = services.BuildServiceProvider();
-        //     using var scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
-        //
-        //
-        //     // var context = scope.ServiceProvider.GetService<ApplicationDbContext>();
-        //     // context?.Database.Migrate();
-        //
-        //     var udapContext = scope.ServiceProvider.GetRequiredService<UdapDbContext>();
-        //     udapContext.Database.EnsureCreated();
-        //
-        //     var configDbContext = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
-        //
-        //     scope.ServiceProvider.GetService<ConfigurationDbContext>()?.Database.Migrate();
-        //     scope.ServiceProvider.GetService<PersistedGrantDbContext>()?.Database.Migrate();
-        //     
-        //
-        //     var community = new Community { Name = "http://localhost" };
-        //     community.Enabled = true;
-        //     community.Default = true;
-        //     udapContext.Communities.Add(community);
-        //
-        //     udapContext.Anchors.Add(new Anchor
-        //     {
-        //         BeginDate = AnchorCert.NotBefore,
-        //         EndDate = AnchorCert.NotAfter,
-        //         Name = AnchorCert.Subject,
-        //         Community = community,
-        //         X509Certificate = AnchorCert.ToPemFormat(),
-        //         Thumbprint = AnchorCert.Thumbprint,
-        //         Enabled = true
-        //     });
-        //
-        //     await udapContext.SaveChangesAsync();
-        //
-        //     var seedScopes = new List<string>();
-        //
-        //     foreach (var resName in ModelInfo.SupportedResources)
-        //     {
-        //         seedScopes.Add($"system/{resName}.*");
-        //         seedScopes.Add($"system/{resName}.read");
-        //     }
-        //
-        //     var apiScopes = configDbContext.ApiScopes
-        //         .Where(s => s.Enabled)
-        //         .Select(s => s.Name)
-        //         .ToList();
-        //
-        //     foreach (var scopeName in seedScopes)
-        //     {
-        //         if (!apiScopes.Contains(scopeName))
-        //         {
-        //             var apiScope = new ApiScope(scopeName);
-        //             configDbContext.ApiScopes.Add(apiScope.ToEntity());
-        //         }
-        //     }
-        //
-        //     configDbContext.SaveChanges();
-        //
-        //     if (configDbContext.ApiScopes.All(s => s.Name != "udap"))
-        //     {
-        //         var apiScope = new ApiScope("udap");
-        //         configDbContext.ApiScopes.Add(apiScope.ToEntity());
-        //
-        //         configDbContext.SaveChanges();
-        //     }
-        // }
-
+        
         /// <summary>
         /// Called when an object is no longer needed. Called just before <see cref="M:System.IDisposable.Dispose" />
         /// if the class also implements that.
         /// </summary>
         public Task DisposeAsync()
         {
-            // if (DatabaseProvider != null)
-            // {
-            //     var context = (UdapDbContext)Activator.CreateInstance(typeof(UdapDbContext), DatabaseProvider)!;
-            //     return context.Database.EnsureDeletedAsync();
-            // }
-
             return Task.CompletedTask;
         }
     }
@@ -237,7 +134,7 @@ namespace UdapServer.Tests
 
                 options.ConfigureDbContext = b =>
                     b.UseSqlite($@"Data Source=Udap.Idp.db.{_databaseName};",
-                        dbOpts => dbOpts.MigrationsAssembly(typeof(UdapDb.Program).Assembly.FullName));
+                        dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName));
             });
 
             services.AddUdapDbContext<UdapDbContext>(options =>
@@ -292,7 +189,7 @@ namespace UdapServer.Tests
 
                 var anchors = await store.GetAnchors();
                 anchors.Count().Should().Be(2);
-                anchors.First().Certificate.Should().Be(_anchorCert.ToPemFormat());
+                anchors.First().Certificate.ToLf().Should().BeEquivalentTo(_anchorCert.ToPemFormat().ToLf());
             }
         }
 
@@ -412,12 +309,25 @@ namespace UdapServer.Tests
                 //     b.UseInMemoryDatabase(_databaseName, new InMemoryDatabaseRoot());
                 options.UdapDbContext = b =>
                     b.UseSqlite($@"Data Source=Udap.Idp.db.{_databaseName};", 
-                        o => o.MigrationsAssembly(typeof(UdapDb.Program).Assembly.FullName));
+                        o => o.MigrationsAssembly(typeof(Program).Assembly.FullName));
             });
 
             services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
             services.AddScoped<UdapDynamicClientRegistrationEndpoint, UdapDynamicClientRegistrationEndpoint>();
             services.AddSingleton(new ServerSettings());
+            
+            var mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+            var context = new DefaultHttpContext();
+            context.Request.Scheme = "http";
+            context.Request.Host = new HostString("localhost:5001");
+            context.Request.Path = "/connect/register";
+            mockHttpContextAccessor.Setup(_ => _.HttpContext).Returns(context);
+            
+            services.AddSingleton<IHttpContextAccessor>(mockHttpContextAccessor.Object);
+
+
+            // services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor(){new DefaultHttpContext(){ Request = { Path = "/"}}});
+
             var sp = services.BuildServiceProvider();
 
             var validator = sp.GetRequiredService<IUdapDynamicClientRegistrationValidator>();

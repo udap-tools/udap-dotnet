@@ -32,25 +32,11 @@ var connectionString = builder.Configuration.GetConnectionString(dbChoice);
 
 builder.Services.AddSingleton(new UdapConfigurationStoreOptions());
 
-//
-// TODO: work on multiple provider later:
-// https://learn.microsoft.com/en-us/ef/core/managing-schemas/migrations/providers?tabs=dotnet-core-cli
-//
-
-var provider = builder.Configuration.GetValue("provider", "SqlServer");
-// Log.Logger.Information(provider);
-
 builder.Services.AddUdapDbContext(options =>
-    _ = provider switch
-        {
-            "Sqlite" => options.UdapDbContext = b =>
-                b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-            "SqlServer" => options.UdapDbContext = b =>
-            b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-            _ => throw new Exception($"Unsupported provider: {provider}")
-        });
+{
+    options.UdapDbContext = db => db.UseSqlServer(connectionString,
+        sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+});
 
 var app = builder.Build();
 

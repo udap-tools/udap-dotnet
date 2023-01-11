@@ -10,6 +10,7 @@
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
@@ -23,6 +24,7 @@ using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Registration;
 using ILogger = Serilog.ILogger;
+using Task = System.Threading.Tasks.Task;
 
 namespace UdapDb;
 
@@ -42,26 +44,20 @@ public static class SeedData
 
         services.AddOperationalDbContext(options =>
         {
-            // options.ConfigureDbContext = db => db.UseSqlite(connectionString,
-            //     sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
             options.ConfigureDbContext = db => db.UseSqlServer(connectionString,
-                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
         });
         services.AddConfigurationDbContext(options =>
         {
-            // options.ConfigureDbContext = db => db.UseSqlite(connectionString,
-            //     sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
             options.ConfigureDbContext = db => db.UseSqlServer(connectionString,
-                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
         });
 
         services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
         services.AddUdapDbContext(options =>
         {
-            // options.UdapDbContext = db => db.UseSqlite(connectionString,
-            //     sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
             options.UdapDbContext = db => db.UseSqlServer(connectionString,
-                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
         });
 
         await using var serviceProvider = services.BuildServiceProvider();
@@ -165,12 +161,46 @@ public static class SeedData
             await udapContext.SaveChangesAsync();
         }
 
+        await SeedFhirScopes(configDbContext, "system");
+        await SeedFhirScopes(configDbContext, "user");
+
+        //
+        // OpenId
+        //
+        // if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.OpenId))
+        // {
+        //     var identityResource = new IdentityResources.OpenId();
+        //     configDbContext.IdentityResources.Add(identityResource.ToEntity());
+        //
+        //     await configDbContext.SaveChangesAsync();
+        // }
+        
+
+        var sb = new StringBuilder();
+        sb.AppendLine("Use[Udap.Idp.db];");
+        sb.AppendLine("if not exists(select * from sys.server_principals where name = 'udap_user')");
+        sb.AppendLine("BEGIN");
+        sb.AppendLine("CREATE LOGIN udap_user WITH PASSWORD = 'udap_password1', DEFAULT_DATABASE =[Udap.Idp.db], CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;");
+        sb.AppendLine("END");
+        sb.AppendLine("IF NOT EXISTS(SELECT principal_id FROM sys.database_principals WHERE name = 'udap_user')");
+        sb.AppendLine("BEGIN");
+        sb.AppendLine("CREATE USER udap_user from LOGIN udap_user;");
+        sb.AppendLine("EXEC sp_addrolemember N'db_owner', N'udap_user';");
+        sb.AppendLine("END");
+        
+        await configDbContext.Database.ExecuteSqlRawAsync(sb.ToString());
+
+        return 0;
+    }
+
+    private static async Task SeedFhirScopes(ConfigurationDbContext configDbContext, string prefix)
+    {
         var seedScopes = new List<string>();
 
         foreach (var resName in ModelInfo.SupportedResources)
         {
-            seedScopes.Add($"system/{resName}.*");
-            seedScopes.Add($"system/{resName}.read");
+            seedScopes.Add($"{prefix}/{resName}.*");
+            seedScopes.Add($"{prefix}/{resName}.read");
         }
 
         var apiScopes = configDbContext.ApiScopes
@@ -196,23 +226,5 @@ public static class SeedData
 
             await configDbContext.SaveChangesAsync();
         }
-
-
-
-        var sb = new StringBuilder();
-        sb.AppendLine("Use[Udap.Idp.db];");
-        sb.AppendLine("if not exists(select * from sys.server_principals where name = 'udap_user')");
-        sb.AppendLine("BEGIN");
-        sb.AppendLine("CREATE LOGIN udap_user WITH PASSWORD = 'udap_password1', DEFAULT_DATABASE =[Udap.Idp.db], CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;");
-        sb.AppendLine("END");
-        sb.AppendLine("IF NOT EXISTS(SELECT principal_id FROM sys.database_principals WHERE name = 'udap_user')");
-        sb.AppendLine("BEGIN");
-        sb.AppendLine("CREATE USER udap_user from LOGIN udap_user;");
-        sb.AppendLine("EXEC sp_addrolemember N'db_owner', N'udap_user';");
-        sb.AppendLine("END");
-        
-        await configDbContext.Database.ExecuteSqlRawAsync(sb.ToString());
-
-        return 0;
     }
 }

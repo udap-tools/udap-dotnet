@@ -134,7 +134,7 @@ internal static class HostingExtensions
             .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
             .AddUdapJwtBearerClientAuthentication()
-            .AddJwtBearerClientAuthentication()
+            // .AddJwtBearerClientAuthentication()
             //TODO remove
             .AddTestUsers(TestUsers.Users)
             .AddUdapDiscovery()
@@ -159,10 +159,26 @@ internal static class HostingExtensions
         // from the saved scopes in the ClientScopes table.  They are resolved and inserted into the HttpContext.Request.  
         //
         builder.Services.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
-        
-
         builder.Services.AddSingleton<IScopeService, DefaultScopeService>();
         
+
+
+
+
+
+
+
+
+        // builder.Services.AddAuthenticationc()
+
+
+
+
+
+
+
+
+
         // configuration (resolvers, counter key builders)
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 

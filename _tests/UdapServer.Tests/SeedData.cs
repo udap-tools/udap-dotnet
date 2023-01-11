@@ -19,7 +19,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Udap.Common.Extensions;
 using Udap.Idp;
-using Udap.Server;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 using Udap.Server.Extensions;

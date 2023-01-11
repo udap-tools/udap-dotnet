@@ -72,10 +72,7 @@ jobs:
 
     - run: |
         echo "Run, Build Application"
-        dotnet restore Udap.sln
-        echo "Generate PKI"
-        dotnet test _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj --no-restore
-        dotnet build Udap.sln --no-restore 
+        dotnet build Udap.sln 
           
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2

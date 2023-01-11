@@ -242,7 +242,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
         if (document.GrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
         {
-            client.AllowedGrantTypes.Add(GrantType.AuthorizationCode);
+            client.AllowedGrantTypes.Add(GrantType.AuthorizationCode); 
         }
 
         // we only support the two above grant types
@@ -282,6 +282,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     if (uri.IsAbsoluteUri)
                     {
                         client.RedirectUris.Add(uri.AbsoluteUri);
+                        //TODO: I need to create a policy engine or dig into the Duende policy stuff and see it if makes sense
+                        //Threat analysis?
+                        client.RequirePkce = false;
                     }
                     else
                     {

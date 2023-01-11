@@ -7,14 +7,15 @@
 // */
 #endregion
 
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Udap.Client.Client.Messages;
 using Udap.Common;
+using Udap.Common.Extensions;
 using Udap.Common.Registration;
+using Udap.Server.Configuration;
 
 namespace Udap.Server.Registration;
 
@@ -26,15 +27,18 @@ public class UdapDynamicClientRegistrationEndpoint
 {
     private readonly IUdapDynamicClientRegistrationValidator _validator;
     private readonly IUdapClientRegistrationStore _store;
+    private readonly ServerSettings _serverSettings;
     private readonly ILogger<UdapDynamicClientRegistrationEndpoint> _logger;
 
     public UdapDynamicClientRegistrationEndpoint(
         IUdapDynamicClientRegistrationValidator validator,
         IUdapClientRegistrationStore store,
+        ServerSettings serverSettings,
         ILogger<UdapDynamicClientRegistrationEndpoint> logger)
     {
         _validator = validator;
         _store = store;
+        _serverSettings = serverSettings;
         _logger = logger;
     }
     
@@ -87,8 +91,35 @@ public class UdapDynamicClientRegistrationEndpoint
         {
             // Not in pattern with other validators in IdentityServer.  Typically all errors handled in ValidateAsync...  TODO
 
-
             result = await _validator.ValidateAsync(request, communityTrustAnchors, rootCertificates);
+
+
+            // TODO: Need a policy engine for various things.  UDAP ServerMode allows and empty scope during registration.
+            // So some kind of policy linked to maybe issued certificate certification and/or community or something
+            // There are a lot of choices left up to a community.  The HL7 ServerMode requires scopes to be sent during registration.
+            // This doesn't mean the problem is easier it just means  we could filter down during registration even if policy
+            // allowed for a broader list of scopes.
+            // Below I use ServerSettings from appsettings.  This basically says that server is either UDAP or HL7 mode.  Well
+            // sort of.  The code is only trying to pass udap.org tests and survive a HL7 connect-a-thon. By putting the logic in
+            // a policy engine we can have one server UDAP and Hl7 Mode or whatever the policy engine allows.  
+
+            //
+            // Also there should be a better way to do this.  It will repeat many scope entries per client.
+            //
+            if ( !result.IsError && _serverSettings.ServerSupport == ServerSupport.UDAP )
+            {
+                if (string.IsNullOrWhiteSpace(result.Document.Scope))
+                {
+                    var scopes = _serverSettings.DefaultScopes?.FromSpaceSeparatedString();
+                    if (scopes != null)
+                    {
+                        foreach (var scope in scopes)
+                        {
+                            result.Client?.AllowedScopes.Add(scope);
+                        }
+                    }
+                }
+            }
         }
         catch (Exception ex)
         {

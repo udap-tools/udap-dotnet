@@ -49,7 +49,10 @@ public class DefaultScopeService: IScopeService
         {
             var scopes = client.AllowedScopes;
 
-            if (_defaultScopes != null)
+            //
+            // Default scopes only added if we have none.
+            //
+            if (_defaultScopes != null && !client.AllowedScopes.Any())
             {
                 foreach (var defaults in _defaultScopes)
                 {

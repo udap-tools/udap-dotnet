@@ -8,9 +8,12 @@
 #endregion
 
 
+using System.Diagnostics;
+
 namespace Udap.Common.Extensions;
 public static class StringExtensions
 {
+    [DebuggerStepThrough]
     public static string ToCrLf(this string input)
     {
         return input
@@ -18,11 +21,19 @@ public static class StringExtensions
             .Replace("\r", "\n")
             .Replace("\n", "\r\n");
     }
-
+    
+    [DebuggerStepThrough]
     public static string ToLf(this string input)
     {
         return input
             .Replace("\r\n", "\n")
             .Replace("\r", "\n");
+    }
+
+    [DebuggerStepThrough]
+    public static IEnumerable<string> FromSpaceSeparatedString(this string input)
+    {
+        input = input.Trim();
+        return input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
     }
 }

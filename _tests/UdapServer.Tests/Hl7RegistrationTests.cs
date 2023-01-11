@@ -35,15 +35,15 @@ using Xunit.Abstractions;
 
 namespace UdapServer.Tests;
 
-public class ApiTestFixture : WebApplicationFactory<Program>
+public class HL7ApiTestFixture : WebApplicationFactory<Program>
 {
     public ITestOutputHelper? Output { get; set; }
 
     // this test harness's AppSettings
     
-    public ApiTestFixture()
+    public HL7ApiTestFixture()
     {
-        SeedData.EnsureSeedData("Data Source=./Udap.Idp.db;", new Mock<Serilog.ILogger>().Object);
+        SeedData.EnsureSeedData("Data Source=./Udap.Idp.db.HL7;", new Mock<Serilog.ILogger>().Object);
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
@@ -85,10 +85,11 @@ public class ApiTestFixture : WebApplicationFactory<Program>
 
         });
 
-        var overRideConnectionString = new Dictionary<string, string>();
-        overRideConnectionString.Add("ConnectionStrings:DefaultConnection", "Data Source=Udap.Idp.db;");
+        var overrideSettings = new Dictionary<string, string>();
+        overrideSettings.Add("ConnectionStrings:DefaultConnection", "Data Source=Udap.Idp.db.HL7;");
+        overrideSettings.Add("ServerSettings:ServerSupport", "Hl7SecurityIG");
 
-        builder.ConfigureHostConfiguration(b => b.AddInMemoryCollection(overRideConnectionString));
+        builder.ConfigureHostConfiguration(b => b.AddInMemoryCollection(overrideSettings));
         
         builder.ConfigureLogging(logging =>
         {
@@ -118,12 +119,13 @@ public class ApiTestFixture : WebApplicationFactory<Program>
 /// <summary>
 /// Full Web tests.  Using <see cref="Udap.Idp"/> web server.
 /// </summary>
-public class IdServerRegistrationTests : IClassFixture<ApiTestFixture>
+[Collection("Udap.Idp")]
+public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 {
-    private ApiTestFixture _fixture;
+    private HL7ApiTestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
 
-    public IdServerRegistrationTests(ApiTestFixture fixture, ITestOutputHelper testOutputHelper)
+    public Hl7RegistrationTests(HL7ApiTestFixture fixture, ITestOutputHelper testOutputHelper)
     {
         if (fixture == null) throw new ArgumentNullException(nameof(fixture));
         fixture.Output = testOutputHelper;

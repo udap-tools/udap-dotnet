@@ -979,7 +979,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             GrantTypes = new HashSet<string> { "authorization_code" },
             ResponseTypes = new HashSet<string> { "code" },  
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "user/Patient.* user/Practitioner.read",  //Comment out for UDAP Server mode.
+            // Scope = "user/Patient.* user/Practitioner.read",  //Comment out for UDAP Server mode.
             RedirectUris = new List<string>{ new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
             
         };

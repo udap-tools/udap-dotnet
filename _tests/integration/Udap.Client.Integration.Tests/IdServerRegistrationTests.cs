@@ -16,6 +16,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Duende.IdentityServer.ResponseHandling;
 using FluentAssertions;
 using IdentityModel;
 using IdentityModel.Client;
@@ -1950,12 +1951,96 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
         var response = await idpClient.PostAsJsonAsync(reg, requestBody);
 
+        var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        _testOutputHelper.WriteLine("Client Registration Response::");
+        _testOutputHelper.WriteLine("---------------------");
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(result));
+        _testOutputHelper.WriteLine("");
+        _testOutputHelper.WriteLine("");
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        var errorResponse = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
-        errorResponse.ErrorDescription.Should().Be("scope is required");
+
+        // IF YOU RUN IN HL7 MODE /////////////////////////////////
+        // response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        // var errorResponse = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+        // errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
+        // errorResponse.ErrorDescription.Should().Be("scope is required");
+        /////////////////////////////////
+
+
+
+
+        //
+        // Get Access Token
+        //
+
+        var jwtPayload = new JwtPayload(
+            result.ClientId,
+            disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+            },
+            now.ToUniversalTime(),
+            now.AddMinutes(5).ToUniversalTime()
+            );
+
+        //
+        // All of this is the same as above, during registration
+        //
+        jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+        encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
+        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
+
+        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = disco.TokenEndpoint,
+            //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+
+        _testOutputHelper.WriteLine("Client Token Request");
+        _testOutputHelper.WriteLine("---------------------");
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(clientRequest));
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
+
+        var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+
+
+        _testOutputHelper.WriteLine("Authorization Token Response");
+        _testOutputHelper.WriteLine("---------------------");
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
+
+        fhirLabsClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
+        var patientResponse = fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
+
+        patientResponse.Result.EnsureSuccessStatusCode();
+
+
+        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
     }
 
     private string BuildHl7B2BExtensions()

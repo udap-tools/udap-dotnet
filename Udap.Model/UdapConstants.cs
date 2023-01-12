@@ -7,9 +7,7 @@
 // */
 #endregion
 
-using IdentityModel;
-
-namespace Udap.Common;
+namespace Udap.Model;
 
 /// <summary>
 /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
@@ -116,11 +114,6 @@ public static class UdapConstants
         public const string TokenEndpoint = "token_endpoint";
         public const string RegistrationEndpoint = "registration_endpoint";
         public const string JwksUri = "jwks_uri";
-    }
-
-    public static class Tracing
-    {
-        public static readonly string Validation = Udap.Common.Tracing.TraceNames.Validation;
     }
 
     public static class JwtClaimTypes

@@ -7,7 +7,10 @@
 // */
 #endregion
 
-namespace Udap.Metadata.Server
+using System;
+using System.Collections.Generic;
+
+namespace Udap.Model
 {
     /// <summary>
     /// Configurable data typically loaded from AppSettings.

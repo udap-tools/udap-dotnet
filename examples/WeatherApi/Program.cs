@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Common;
 using Udap.Metadata.Server;
+using Udap.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 

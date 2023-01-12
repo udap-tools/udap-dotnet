@@ -22,6 +22,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Udap.Common;
 using Udap.Metadata.Server;
+using Udap.Model;
 using Xunit.Abstractions;
 using program = FhirLabsApi.Program;
 

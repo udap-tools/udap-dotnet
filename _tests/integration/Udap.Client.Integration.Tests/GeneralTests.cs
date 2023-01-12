@@ -25,6 +25,7 @@ using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Metadata.Server;
+using Udap.Model;
 using Xunit.Abstractions;
 using DiscoveryPolicy = Udap.Client.Client.DiscoveryPolicy;
 

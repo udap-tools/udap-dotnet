@@ -1,5 +1,6 @@
 using System.Linq;
 using Udap.Metadata.Server;
+using Udap.Model;
 
 public static class MyCustomUdapMetadata
 {

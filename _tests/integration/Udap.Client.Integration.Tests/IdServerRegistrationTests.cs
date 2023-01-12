@@ -16,7 +16,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Duende.IdentityServer.ResponseHandling;
 using FluentAssertions;
 using IdentityModel;
 using IdentityModel.Client;
@@ -28,6 +27,7 @@ using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Registration;
 using Udap.Metadata.Server;
+using Udap.Model;
 using Xunit.Abstractions;
 using static IdentityModel.OidcConstants;
 

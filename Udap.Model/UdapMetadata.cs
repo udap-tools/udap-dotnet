@@ -7,13 +7,14 @@
 // */
 #endregion
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using IdentityModel;
 using Microsoft.Extensions.Options;
-using Udap.Common;
 
-namespace Udap.Metadata.Server;
+namespace Udap.Model;
 
 /// <summary>
 /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
@@ -69,7 +70,7 @@ public class UdapMetadata
     /// <summary>
     /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
     /// </summary>
-    public UdapMetadata(IOptionsMonitor<UdapConfig> udapConfig) : this(udapConfig.CurrentValue)
+    public UdapMetadata(IOptionsMonitor<UdapConfig> udapConfig) : this((UdapConfig)udapConfig.CurrentValue)
     {
     }
 

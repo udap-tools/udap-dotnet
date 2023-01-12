@@ -26,10 +26,10 @@ using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
-using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Registration;
 using Udap.Idp;
+using Udap.Model;
 using Udap.Server.DbContexts;
 using Xunit.Abstractions;
 

@@ -15,6 +15,7 @@ using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Extensions;
 using Udap.Common.Registration;
+using Udap.Model;
 using Udap.Server.Configuration;
 
 namespace Udap.Server.Registration;

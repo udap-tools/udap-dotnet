@@ -22,8 +22,8 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using Duende.IdentityServer.Extensions;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Model;
 
 namespace Udap.Common.Registration;
 

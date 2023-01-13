@@ -1,15 +1,18 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json.Nodes;
+using System.Text.Json;
 using IdentityModel;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using MudBlazor;
 using Udap.Model;
 using Udap.Model.Registration;
-using Udap.Util.Extensions;
 using UdapClient.Client.Services;
-using UdapClient.Shared;
 
 namespace UdapClient.Client.Pages;
 
@@ -18,8 +21,10 @@ public partial class UdapRegistration
     [Inject] private HttpClient _http { get; set; }
     ErrorBoundary? ErrorBoundary { get; set; }
     [Inject] UdapClientState UdapClientState { get; set; } = new UdapClientState();
-    
-    private string Result { get; set; } = "";
+    [Inject] MetadataService MetadataService { get; set; }
+
+    private string SoftwareStatementBeforeEncoding { get; set; } = "";
+    private string RequestBody { get; set; }
 
     private async Task Build()
     {
@@ -27,6 +32,17 @@ public partial class UdapRegistration
         {
             var now = DateTime.UtcNow;
             var jwtId = CryptoRandom.CreateUniqueId();
+
+            var clientCert = new X509Certificate2(UdapClientState.ClientCert);
+            var securityKey = new X509SecurityKey(clientCert);
+            var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+            var certBase64 = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+            var jwtHeader = new JwtHeader
+            {
+                { "alg", signingCredentials.Algorithm },
+                { "x5c", new[] { certBase64 } }
+            };
 
             var document = new UdapDynamicClientRegistrationDocument
             {
@@ -43,13 +59,43 @@ public partial class UdapRegistration
                 Scope = "system/Patient.* system/Practitioner.read"
             };
 
-            Result = document.AsJson();
+            var encodedHeader = jwtHeader.Base64UrlEncode();
+            var encodedPayload = document.Base64UrlEncode();
+            var encodedSignature =
+                JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                    signingCredentials);
+            var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+            
+            var tokenHandler = new JsonWebTokenHandler();
+            var jsonToken = tokenHandler.ReadToken(signedSoftwareStatement);
+            var requestToken = jsonToken as JsonWebToken;
+
+            var sb = new StringBuilder();
+            sb.Append("[");
+            sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedHeader));
+            sb.Append(",");
+            sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedPayload));
+            sb.Append("]");
+
+            SoftwareStatementBeforeEncoding = JsonObject.Parse(sb?.ToString())
+                .ToJsonString(new JsonSerializerOptions()
+                {
+                    WriteIndented = true, 
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+                });
         }
         catch (Exception ex)
         {
-            Result = ex.Message;
+            SoftwareStatementBeforeEncoding = ex.Message;
         }
     }
+
+    private void BuildRequestBody()
+    {
+        RequestBody = string.Empty;
+    }
+
+    
 
     private async Task UploadFilesAsync(InputFileChangeEventArgs e)
     {
@@ -60,13 +106,13 @@ public partial class UdapRegistration
         await uploadStream.CopyToAsync(ms);
         var certBytes = ms.ToArray();
 
-        var cert = new X509Certificate2(certBytes);
-        
-        UdapClientState.ClientCert = cert.ToPemFormat();
+        await MetadataService.UploadClientCert(Convert.ToBase64String(certBytes));
     }
 
     protected override void OnParametersSet()
     {
         ErrorBoundary?.Recover();
     }
+
+    
 }

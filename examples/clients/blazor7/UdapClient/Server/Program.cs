@@ -20,7 +20,9 @@ builder.Host.UseSerilog((ctx, lc) => lc
         "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",
         theme: AnsiConsoleTheme.Code));
 
-
+builder.Services.AddSession(options => {
+    options.IdleTimeout = TimeSpan.FromMinutes(60);
+});
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
@@ -96,7 +98,7 @@ app.UseCors(config =>
     config.AllowAnyHeader();
 });
 
-
+app.UseSession();
 app.MapRazorPages();
 app.MapControllers();
 app.MapFallbackToFile("index.html");

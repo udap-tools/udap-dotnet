@@ -9,11 +9,21 @@
         <MudText Typo="Typo.h3">Udap Metadata</MudText>
       </MudItem>
         <MudItem>
+            <MudFab HtmlTag="label"
+                    Size="Size.Small"
+                    Color="Color.Success"
+                    Icon="@Icons.Filled.AttachFile"
+                    Label="Upload Client Certificate"
+                    for="fileInput" />
+            <MudSpacer />
             <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="Build">Build Authorization Code Request</MudButton>
-            <MudSpacer />
-            <MudText Typo="Typo.h4">Client Credentials</MudText>
-            <pre>@Result</pre>
-            <MudSpacer />
+            <MudSpacer/>
+            <MudText Typo="Typo.h5">Client Credentials</MudText>
+            <pre>@SoftwareStatementBeforeEncoding</pre>
+            <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="BuildRequestBody">Build Request Body</MudButton>
+            <MudText Typo="Typo.h5">Request Body</MudText>
+            <pre>@RequestBody</pre>
+            <MudSpacer/>
         </MudItem>
     </MudGrid>
     

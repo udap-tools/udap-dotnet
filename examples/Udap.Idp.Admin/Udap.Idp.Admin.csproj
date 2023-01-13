@@ -34,6 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Update="nuget.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

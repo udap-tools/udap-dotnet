@@ -8,9 +8,12 @@
 #endregion
 
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 
-namespace Udap.Common.Extensions;
+namespace Udap.Util.Extensions;
 public static class StringExtensions
 {
     [DebuggerStepThrough]

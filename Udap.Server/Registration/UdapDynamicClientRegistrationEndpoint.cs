@@ -12,11 +12,10 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Udap.Client.Client.Messages;
-using Udap.Common;
-using Udap.Common.Extensions;
-using Udap.Common.Registration;
 using Udap.Model;
+using Udap.Model.Registration;
 using Udap.Server.Configuration;
+using Udap.Util.Extensions;
 
 namespace Udap.Server.Registration;
 

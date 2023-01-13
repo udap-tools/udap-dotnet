@@ -13,22 +13,25 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using FluentAssertions;
 using IdentityModel;
 using IdentityModel.Client;
+using Jose;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
-using Udap.Common.Registration;
-using Udap.Metadata.Server;
 using Udap.Model;
+using Udap.Model.Registration;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 using static IdentityModel.OidcConstants;
 
 namespace Udap.Client.Integration.Tests;
@@ -707,7 +710,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
             } // , out SecurityToken validatedToken
         );
-
+        
         jwt.Payload.Claims
             .Single(c => c.Type == UdapConstants.Discovery.RegistrationEndpoint)
             .Value.Should().Be(regEndpoint);
@@ -762,7 +765,24 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
                 signingCredentials);
         var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        //
+        
+
+        var jsonToken = tokenHandler.ReadToken(signedSoftwareStatement);
+        var requestToken = jsonToken as JsonWebToken;
+        
+        
+        _testOutputHelper.WriteLine("---------");
+
+        var sb = new StringBuilder();
+        sb.Append("[");
+        sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedHeader));
+        sb.Append(",");
+        sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedPayload));
+        sb.Append("]");
+        _testOutputHelper.WriteLine(JsonObject.Parse(sb.ToString()).ToJsonString(new JsonSerializerOptions(){WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));
+        _testOutputHelper.WriteLine("---------"); 
+        _testOutputHelper.WriteLine(string.Empty);
 
         var requestBody = new UdapRegisterRequest
         {

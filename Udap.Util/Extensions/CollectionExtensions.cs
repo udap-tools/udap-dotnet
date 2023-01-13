@@ -11,9 +11,10 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
  
 */
 
+using System;
 using System.Collections;
 
-namespace Udap.Common.Extensions
+namespace Udap.Util.Extensions
 {
     public static class CollectionExtensions
     {

@@ -28,7 +28,7 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Common.Registration;
+using Udap.Model.Registration;
 using Udap.Server.Configuration;
 
 namespace Udap.Server.Registration;

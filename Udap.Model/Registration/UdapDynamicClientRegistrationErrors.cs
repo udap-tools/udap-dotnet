@@ -7,7 +7,7 @@
 // */
 #endregion
 
-namespace Udap.Common.Registration;
+namespace Udap.Model.Registration;
 
 /// <summary>
 /// See <a href="https://datatracker.ietf.org/doc/html/rfc7591#section-3.2.2">rfc7591 section 3.2.2</a>

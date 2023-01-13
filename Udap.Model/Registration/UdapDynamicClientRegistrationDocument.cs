@@ -16,16 +16,19 @@
 // a System.IdentityModel.Tokens.Jwt.JwtPayload object.
 //
 
+using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Model;
 
-namespace Udap.Common.Registration;
+
+namespace Udap.Model.Registration;
 
 public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
 {
@@ -441,9 +444,9 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     }
 
     /// <summary>
-    /// Similar to  <see cref="JwtPayload.AddClaims"/>.
+    /// Similar to  <see cref="System.IdentityModel.Tokens.Jwt.JwtPayload.AddClaims(System.Collections.Generic.IEnumerable{System.Security.Claims.Claim})"/>.
     /// Adds a number of <see cref="System.Security.Claims.Claim"/> to the <see cref="UdapDynamicClientRegistrationDocument"/>.
-    /// Unlike <see cref="JwtPayload.AddClaims"/>, UDAP claims defined to be collections of values will be maintained as
+    /// Unlike <see cref="System.IdentityModel.Tokens.Jwt.JwtPayload.AddClaims(System.Collections.Generic.IEnumerable{System.Security.Claims.Claim})"/>, UDAP claims defined to be collections of values will be maintained as
     /// collections even if only one item exists.  
     /// </summary>
     /// <param name="claims">For each <see cref="System.Security.Claims.Claim"/> a JSON pair { 'Claim.Type', 'Claim.Value' } is added.
@@ -637,7 +640,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     /// Serializes this instance to JSON.
     /// </summary>
     /// <returns>This instance as JSON.</returns>
-    /// <remarks>Use <see cref="JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
+    /// <remarks>Use <see cref="System.IdentityModel.Tokens.Jwt.JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
     public virtual string SerializeToJson()
     {
         return JsonExtensions.SerializeToJson(this as IDictionary<string, object>);
@@ -647,7 +650,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     /// Encodes this instance as Base64UrlEncoded JSON.
     /// </summary>
     /// <returns>Base64UrlEncoded JSON.</returns>
-    /// <remarks>Use <see cref="JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
+    /// <remarks>Use <see cref="System.IdentityModel.Tokens.Jwt.JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
     public virtual string Base64UrlEncode()
     {
         return Base64UrlEncoder.Encode(SerializeToJson());

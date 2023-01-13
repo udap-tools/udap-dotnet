@@ -10,7 +10,6 @@
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
@@ -18,11 +17,11 @@ using Duende.IdentityServer.Models;
 using Hl7.Fhir.Model;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Udap.Common.Extensions;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Registration;
+using Udap.Util.Extensions;
 using ILogger = Serilog.ILogger;
 using Task = System.Threading.Tasks.Task;
 

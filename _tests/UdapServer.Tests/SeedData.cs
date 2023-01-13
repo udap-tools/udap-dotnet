@@ -17,12 +17,12 @@ using Hl7.Fhir.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using Udap.Common.Extensions;
 using Udap.Idp;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Registration;
+using Udap.Util.Extensions;
 
 namespace UdapServer.Tests;
 

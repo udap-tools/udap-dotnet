@@ -46,11 +46,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Extensions\" />
     <Folder Include="Metadata\Server\" />
+    <Folder Include="Registration\" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
+    <ProjectReference Include="..\Udap.Util\Udap.Util.csproj" />
   </ItemGroup>
 
 </Project>

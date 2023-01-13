@@ -15,21 +15,22 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 */
 
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
-using System.Runtime.ConstrainedExecution;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
-using Org.BouncyCastle.X509;
 
-namespace Udap.Common.Extensions
+namespace Udap.Util.Extensions
 {
     public static class X509Extensions
     {
         /// <summary>
-        /// Performs a shallow clone or the specified <see cref="X509ChainPolicy"/>
+        /// Performs a shallow clone or the specified <see cref="System.Security.Cryptography.X509Certificates.X509ChainPolicy"/>
         /// </summary>
         /// <param name="policy">The instance to clone.</param>
         /// <returns>The shallow cloned instance.</returns>
@@ -48,7 +49,7 @@ namespace Udap.Common.Extensions
         }
 
         /// <summary>
-        /// Adds a collection of <see cref="Oid"/> instances to this collection.
+        /// Adds a collection of <see cref="System.Security.Cryptography.Oid"/> instances to this collection.
         /// </summary>
         /// <param name="oids">The collection to which to add values</param>
         /// <param name="newOids">The collection to add from</param>
@@ -255,6 +256,7 @@ namespace Udap.Common.Extensions
             return null;
         }
 
+#if NET6_0_OR_GREATER
         public static X509Certificate2[]  ToRootCertArray(this List<X509Certificate2> certificates)
         {
             X509Certificate2Collection caCerts = new X509Certificate2Collection();
@@ -291,7 +293,8 @@ namespace Udap.Common.Extensions
             
             return caCerts.ToArray();
         }
-        
+#endif
+
         /// <summary>
         /// Converts an encoded internal octet string object to a DERObject
         /// </summary>

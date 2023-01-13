@@ -1,4 +1,6 @@
-﻿@page "/udapRegistraion"
+﻿@page "/udapRegistration"
+
+<InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 
 <ErrorBoundary @ref="ErrorBoundary">
   <ChildContent>
@@ -6,16 +8,12 @@
       <MudItem xs="12" sm="12" md="12">
         <MudText Typo="Typo.h3">Udap Metadata</MudText>
       </MudItem>
-        <MudItem xs="12" sm="12" md="12">
-        <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="Build">Query</MudButton>
-            <MudTextField @bind-Value="@metadataUrl" ></MudTextField>
-            <MudSpacer></MudSpacer>
-            <pre>@Result</pre>
-            <MudSpacer></MudSpacer>
-        </MudItem>
         <MudItem>
             <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="Build">Build Authorization Code Request</MudButton>
-
+            <MudSpacer />
+            <MudText Typo="Typo.h4">Client Credentials</MudText>
+            <pre>@Result</pre>
+            <MudSpacer />
         </MudItem>
     </MudGrid>
     

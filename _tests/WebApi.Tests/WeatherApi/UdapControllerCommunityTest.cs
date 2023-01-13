@@ -22,9 +22,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Common.Extensions;
 using Udap.Metadata.Server;
 using Udap.Model;
+using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using program = WeatherApi.Program;
 

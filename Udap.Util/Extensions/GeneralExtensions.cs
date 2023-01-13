@@ -7,7 +7,9 @@
 // */
 #endregion
 
-namespace Udap.Common.Extensions;
+using System.IO;
+
+namespace Udap.Util.Extensions;
 
 public static class GeneralExtensions
 {

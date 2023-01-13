@@ -26,15 +26,15 @@ using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client.Messages;
 using Udap.Common.Certificates;
-using Udap.Common.Extensions;
-using Udap.Common.Registration;
 using Udap.Idp;
 using Udap.Model;
+using Udap.Model.Registration;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Udap.Server.Extensions;
 using Udap.Server.Options;
 using Udap.Server.Registration;
+using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using JsonClaimValueTypes = System.IdentityModel.Tokens.Jwt.JsonClaimValueTypes;
 

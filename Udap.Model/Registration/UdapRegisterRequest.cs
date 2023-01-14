@@ -8,9 +8,8 @@
 #endregion
 
 using System.Text.Json.Serialization;
-using Udap.Model;
 
-namespace Udap.Client.Client.Messages;
+namespace Udap.Model.Registration;
 public class UdapRegisterRequest
 {
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.SoftwareStatement)]

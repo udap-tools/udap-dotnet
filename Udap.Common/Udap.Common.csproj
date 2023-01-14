@@ -48,7 +48,6 @@
   <ItemGroup>
     <Folder Include="Extensions\" />
     <Folder Include="Metadata\Server\" />
-    <Folder Include="Registration\" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,6 +1,14 @@
-﻿using System.Security;
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using System.Security;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.Json.Serialization;
 using Udap.Model;
 
 namespace UdapClient.Client.Services;
@@ -13,7 +21,7 @@ public class UdapClientState
 
     public UdapMetadata? UdapMetadata { get; set; }
     public string ClientCert { get; set; }
-
+    public string SoftwareStatementBeforeEncoding { get; set; }
 
     private byte[] _clientCert;
     private bool _isLocalStorageInit;

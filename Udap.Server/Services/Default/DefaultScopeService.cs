@@ -28,7 +28,7 @@ public class DefaultScopeService: IScopeService
 
         if (serverSettings.ServerSupport == ServerSupport.UDAP)
         {
-            _defaultScopes = serverSettings.DefaultScopes?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            _defaultScopes = serverSettings.DefaultSystemScopes?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         }
     }
 

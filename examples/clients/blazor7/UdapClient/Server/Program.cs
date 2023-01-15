@@ -32,6 +32,7 @@ builder.Services.AddSession(options => {
 });
 
 builder.Services.AddControllersWithViews();
+
 builder.Services.AddRazorPages();
 builder.Services.AddBff();
 
@@ -70,6 +71,7 @@ builder.Services.AddAuthentication(options =>
         
     });
 
+builder.Services.AddScoped(sp => new HttpClient ());
 
 
 var app = builder.Build();

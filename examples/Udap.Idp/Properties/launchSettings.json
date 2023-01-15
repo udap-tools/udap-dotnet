@@ -17,7 +17,7 @@
         "GCPDeploy": "false",
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ServerSettings:ServerSupport": "UDAP",
-        "ServerSettings:DefaultScopes": "udap"
+        "ServerSettings:DefaultScopes": "user/Patient.* user/Practitioner.read"
       },
       "sslPort": 5002,
       "applicationUrl": "https://host.docker.internal:5002"

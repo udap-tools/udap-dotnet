@@ -7,10 +7,16 @@
 // */
 #endregion
 
+using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
+using MudBlazor;
+using Org.BouncyCastle.Asn1.Ocsp;
+using Udap.Model.Registration;
 using UdapClient.Client.Services;
+using UdapClient.Shared;
 using UdapClient.Shared.Model;
 
 namespace UdapClient.Client.Pages;
@@ -21,9 +27,40 @@ public partial class UdapRegistration
     ErrorBoundary? ErrorBoundary { get; set; }
     [Inject] UdapClientState UdapClientState { get; set; } = new UdapClientState();
     [Inject] MetadataService MetadataService { get; set; }
+    [Inject] private ProfileService ProfileService { get; set; }
 
     private string SoftwareStatementBeforeEncoding { get; set; } = "";
     private string RequestBody { get; set; }
+    private string RegistrationResult { get; set; }
+    public string Password { get; set; } = "udap-test";
+
+    bool isShow;
+    InputType PasswordInput = InputType.Password;
+    string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+
+    void ButtonTestclick()
+    {
+        if(isShow)
+        {
+            isShow = false;
+            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
+            PasswordInput = InputType.Password;
+        }
+        else
+        {
+            isShow = true;
+            PasswordInputIcon = Icons.Material.Filled.Visibility;
+            PasswordInput = InputType.Text;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!UdapClientState.IsLocalStorageInit())
+        {
+            UdapClientState = await ProfileService.GetUdapClientState();
+        }
+    }
 
     private async Task Build()
     {
@@ -31,9 +68,9 @@ public partial class UdapRegistration
         {
             var request = new BuildSoftwareStatementRequest();
             request.MetadataUrl = UdapClientState.MetadataUrl;
-            
+            request.Audience = UdapClientState.UdapMetadata.RegistrationEndpoint;
             //TODO Get from User:: Dialog or form
-            request.Password = "udap-test";
+            request.Password = Password;
 
             SoftwareStatementBeforeEncoding = await MetadataService.BuildSoftwareStatement(request);
             UdapClientState.SoftwareStatementBeforeEncoding = SoftwareStatementBeforeEncoding;
@@ -48,11 +85,31 @@ public partial class UdapRegistration
     {
         var request = new BuildSoftwareStatementRequest();
         request.MetadataUrl = UdapClientState.MetadataUrl;
-        request.Password = "udap-test";
+        request.Audience = UdapClientState.UdapMetadata.RegistrationEndpoint;
+        request.Password = Password;
 
-        RequestBody = await MetadataService.BuildRequestBody(request);
+        UdapClientState.RegistrationRequest = await MetadataService.BuildRequestBody(request);
+
+        RequestBody = JsonSerializer.Serialize(
+            UdapClientState.RegistrationRequest,
+            new JsonSerializerOptions { WriteIndented = true });
     }
-    
+
+    private async Task PerformRegistration()
+    {
+        var registrationRequest = new RegistrationRequest
+        {
+            RegistrationEndpoint = UdapClientState.UdapMetadata.RegistrationEndpoint,
+            UdapRegisterRequest = UdapClientState.RegistrationRequest
+        };
+
+        var result = await MetadataService.Register(registrationRequest);
+        UdapClientState.AccessCode = result;
+
+        RegistrationResult = JsonSerializer.Serialize(
+            result,
+            new JsonSerializerOptions { WriteIndented = true });
+    }
 
     private async Task UploadFilesAsync(InputFileChangeEventArgs e)
     {
@@ -70,6 +127,4 @@ public partial class UdapRegistration
     {
         ErrorBoundary?.Recover();
     }
-
-    
 }

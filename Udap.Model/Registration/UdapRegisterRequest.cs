@@ -16,7 +16,7 @@ public class UdapRegisterRequest
     public string SoftwareStatement { get; set; }
 
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.Certifications)]
-    public string[] Certifications { get; set; }
+    public string[]? Certifications { get; set; }
 
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.Udap)]
     public string Udap { get; set; }

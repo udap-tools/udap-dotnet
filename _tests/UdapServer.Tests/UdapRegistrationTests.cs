@@ -75,7 +75,7 @@ public class UdapApiTestFixture : WebApplicationFactory<Program>
             }
             else
             {
-                Console.WriteLine("Noting to remove???");
+                Console.WriteLine("Nothing to remove???");
             }
 
             services.AddSingleton(new TrustChainValidator(
@@ -101,8 +101,19 @@ public class UdapApiTestFixture : WebApplicationFactory<Program>
             sb.Append(' ').Append($"user/{resName}.read");
         }
         
-        overrideSettings.Add("ServerSettings:DefaultScopes", sb.ToString().TrimStart());
+        overrideSettings.Add("ServerSettings:DefaultUserScopes", sb.ToString().TrimStart());
 
+        sb = new StringBuilder();
+
+        foreach (var resName in ModelInfo.SupportedResources)
+        {
+            sb.Append(' ').Append($"system/{resName}.*");
+            sb.Append(' ').Append($"system/{resName}.read");
+        }
+
+        overrideSettings.Add("ServerSettings:DefaultSystemScopes", sb.ToString().TrimStart());
+
+        
 
         builder.ConfigureHostConfiguration(b => b.AddInMemoryCollection(overrideSettings!));
         

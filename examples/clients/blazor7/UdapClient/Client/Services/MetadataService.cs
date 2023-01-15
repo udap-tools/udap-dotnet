@@ -7,7 +7,11 @@
 // */
 #endregion
 
+using Org.BouncyCastle.Asn1.Ocsp;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Udap.Model.Registration;
 using UdapClient.Shared.Model;
 
 namespace UdapClient.Client.Services;
@@ -37,12 +41,27 @@ public class MetadataService
         return await result.Content.ReadAsStringAsync();
     }
 
-    public async Task<string> BuildRequestBody(BuildSoftwareStatementRequest request)
+    public async Task<UdapRegisterRequest?> BuildRequestBody(BuildSoftwareStatementRequest request)
     {
         var result = await _http.PostAsJsonAsync("Metadata/BuildRequestBody", request);
 
         result.EnsureSuccessStatusCode();
 
-        return await result.Content.ReadAsStringAsync();
+        return await result.Content.ReadFromJsonAsync<UdapRegisterRequest>();
+    }
+
+    public async Task<UdapDynamicClientRegistrationDocument?> Register(RegistrationRequest registrationRequest)
+    {
+        var result = await _http.PostAsJsonAsync(
+            "Metadata/Register", 
+            registrationRequest, 
+            new JsonSerializerOptions{DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull});
+
+        if (!result.IsSuccessStatusCode)
+        {
+            Console.WriteLine(await result.Content.ReadAsStringAsync());
+        }
+        
+        return await result.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
     }
 }

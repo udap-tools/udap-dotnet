@@ -20,7 +20,9 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
 using Udap.Model.Registration;
+using UdapClient.Client.Services;
 using UdapClient.Shared.Model;
+using static System.Net.WebRequestMethods;
 
 namespace UdapClient.Server.Controllers;
 
@@ -28,6 +30,13 @@ namespace UdapClient.Server.Controllers;
 [ApiController]
 public class MetadataController : ControllerBase
 {
+    private readonly HttpClient _httpClient;
+
+    public MetadataController(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
     [HttpPost("UploadClientCert")]
     public IActionResult UploadClientCert([FromBody] string base64String)
     {
@@ -57,7 +66,7 @@ public class MetadataController : ControllerBase
         {
             Issuer = "https://fhirlabs.net:7016/fhir/r4",
             Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = request.MetadataUrl,
+            Audience = request.Audience,
             Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
@@ -117,7 +126,7 @@ public class MetadataController : ControllerBase
         {
             Issuer = "https://fhirlabs.net:7016/fhir/r4",
             Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = request.MetadataUrl,
+            Audience = request.Audience,
             Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
@@ -142,10 +151,21 @@ public class MetadataController : ControllerBase
             Udap = UdapConstants.UdapVersionsSupportedValue
         };
 
-        var formattedJsonString = JsonSerializer.Serialize(
-            requestBody,
-            new JsonSerializerOptions() { WriteIndented = true });
+        return Ok(requestBody);
+    }
 
-        return Ok(formattedJsonString);
+    [HttpPost("Register")]
+    public async Task<IActionResult> Register([FromBody] RegistrationRequest request)
+    {
+        var response = await _httpClient.PostAsJsonAsync<UdapRegisterRequest>(
+            request.RegistrationEndpoint,
+            request.UdapRegisterRequest);
+
+        response.EnsureSuccessStatusCode();
+
+        var result = await response.Content
+            .ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+
+        return Ok(result);
     }
 }

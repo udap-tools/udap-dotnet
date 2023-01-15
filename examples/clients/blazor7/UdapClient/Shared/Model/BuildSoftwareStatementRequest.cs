@@ -8,6 +8,7 @@
 #endregion
 
 using System.Security;
+using Udap.Model.Registration;
 
 namespace UdapClient.Shared.Model;
 public class BuildSoftwareStatementRequest
@@ -15,4 +16,12 @@ public class BuildSoftwareStatementRequest
     public string MetadataUrl { get; set; }
 
     public string Password { get; set; }
+    public string? Audience { get; set; }
+}
+
+public class RegistrationRequest
+{
+    public string RegistrationEndpoint { get; set; }
+    public UdapRegisterRequest UdapRegisterRequest { get; set; }
+
 }

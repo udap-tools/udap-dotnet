@@ -31,4 +31,9 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.25.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="docs\README.md" Pack="true" PackagePath="\" />
+    <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
 </Project>

@@ -24,8 +24,8 @@ jobs:
 
     - name: Pack
       run: |
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Common/Udap.Model.csproj 
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Common/Udap.Util.csproj 
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Model/Udap.Model.csproj 
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Util/Udap.Util.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Common/Udap.Common.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Metadata.Server/Udap.Metadata.Server.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Server/Udap.Server.csproj 

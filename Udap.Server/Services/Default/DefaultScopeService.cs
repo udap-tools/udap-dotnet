@@ -47,6 +47,13 @@ public class DefaultScopeService: IScopeService
                 s.Type == UdapServerConstants.SecretTypes.Udapx5c ||
                 s.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem))
         {
+
+            var form = (await context.Request.ReadFormAsync()).AsNameValueCollection();
+            if (!string.IsNullOrEmpty(form.Get("scope")))
+            {
+                return;
+            }
+
             var scopes = client.AllowedScopes;
 
             //
@@ -60,7 +67,7 @@ public class DefaultScopeService: IScopeService
                 }
             }
 
-            var form = (await context.Request.ReadFormAsync()).AsNameValueCollection();
+            
             form.Set(OidcConstants.TokenRequest.Scope, scopes.ToSpaceSeparatedString());
             var values = new Dictionary<string, StringValues>();
             

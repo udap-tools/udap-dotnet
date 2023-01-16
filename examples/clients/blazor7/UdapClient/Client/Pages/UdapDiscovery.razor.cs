@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Udap.Model;
@@ -22,6 +23,7 @@ public partial class UdapDiscovery
 
     [Inject] private UdapClientState UdapClientState { get; set; } = new UdapClientState();
     [Inject] private ProfileService ProfileService { get; set; }
+    [Inject] MetadataService MetadataService { get; set; }
 
     private string Result { get; set; } = "";
 
@@ -32,10 +34,13 @@ public partial class UdapDiscovery
             Result = "...";
             await Task.Delay(250);
 
-            Result = await _http.GetStringAsync(UdapClientState?.MetadataUrl);
-
-            UdapClientState.UdapMetadata = System.Text.Json.JsonSerializer.Deserialize<UdapMetadata>(Result);
+            UdapClientState.UdapMetadata = 
+                await MetadataService.GetMetadata(UdapClientState.MetadataUrl);
             await ProfileService.SaveUdapClientState(UdapClientState);
+
+            Result = JsonSerializer.Serialize<UdapMetadata>(
+                UdapClientState.UdapMetadata,
+                new JsonSerializerOptions { WriteIndented = true });
         }
         catch (Exception ex)
         {

@@ -148,7 +148,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var requestBody = new UdapRegisterRequest
         {
             SoftwareStatement = signedSoftwareStatement,
-            Certifications = new string[0],
+            // Certifications = new string[0], JWS compact serialization
             Udap = UdapConstants.UdapVersionsSupportedValue
         };
 
@@ -191,7 +191,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             {
                 new Claim(JwtClaimTypes.Subject, result.ClientId),
                 //TODO: this is required according to spec.  I was missing it.  We also need to assert this in IdentityServer.
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(),  ClaimValueTypes.Integer64),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
@@ -221,10 +221,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = UdapConstants.TokenRequestTypes.Bearer,
                 Value = clientAssertion
             },
-            Udap = UdapConstants.UdapVersionsSupportedValue
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.* system/Practitioner.read"
         };
 
         _testOutputHelper.WriteLine("Client Token Request");
@@ -242,8 +243,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
         
         fhirClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirClient.GetAsync("https://stage.healthtogo.me:8181/fhir/r4/stage/Patient/$count-em");
+            new AuthenticationHeaderValue(UdapConstants.TokenRequestTypes.Bearer, tokenResponse.AccessToken);
+        var patientResponse = fhirClient.GetAsync("https://stage.healthtogo.me:8181/fhir/r4/stage/Patient/1001");
         
         patientResponse.Result.EnsureSuccessStatusCode();
 
@@ -327,13 +328,21 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
+        var certifications = new List<string>() { "RI Test Certification" };
+        var encodedCertificationPayload = Base64UrlEncoder.Encode(JsonExtensions.SerializeToJson(certifications));
+
+        var encodedCertificationSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedCertificationPayload),
+                signingCredentials);
+
+        var signedCertification = string.Concat(encodedHeader, ".", encodedCertificationSignature, ".", encodedHeader);
         var requestBody = new UdapRegisterRequest
         {
             SoftwareStatement = signedSoftwareStatement,
             // TODO assert at server.  Empty Certification is an error.  Return 400.
             // Certifications = new string[0], //do not pass an empty certification.
-            Certifications = new []{"RI Cert"},
-            Udap = UdapConstants.UdapVersionsSupportedValue
+            //Certifications = signedCertification,
+            Udap = UdapConstants.UdapVersionsSupportedValue,
         };
 
         var response = await fhirClient.PostAsJsonAsync(reg, requestBody);
@@ -351,7 +360,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         // var documentAsJson = JsonSerializer.Serialize(document);
 
-       
+
 
         // var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
         // _testOutputHelper.WriteLine(JsonSerializer.Serialize(result));
@@ -385,7 +394,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //     {
         //         new Claim(JwtClaimTypes.Subject, result.ClientId),
         //         //TODO: this is required according to spec.  I was missing it.  We also need to assert this in IdentityServer.
-        //         new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+        //         new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
         //         new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
         //         new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
         //     },
@@ -415,7 +424,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //     //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
         //     ClientAssertion = new ClientAssertion()
         //     {
-        //         Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+        //         Type = UdapConstants.TokenRequestTypes.Bearer,
         //         Value = clientAssertion
         //     },
         //     Udap = UdapConstants.UdapVersionsSupportedValue
@@ -523,7 +532,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var requestBody = new UdapRegisterRequest
         {
             SoftwareStatement = signedSoftwareStatement,
-            Certifications = new string[0],
+            // Certifications = new string[0], JWS compact serialization
             Udap = UdapConstants.UdapVersionsSupportedValue
         };
 
@@ -621,7 +630,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var requestBody = new UdapRegisterRequest
         {
             SoftwareStatement = signedSoftwareStatement,
-            Certifications = new string[0],
+            // Certifications = new string[0], JWS compact serialization
             Udap = UdapConstants.UdapVersionsSupportedValue
         };
 
@@ -836,7 +845,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             new List<Claim>()
             {
                 new Claim(JwtClaimTypes.Subject, result.ClientId),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
@@ -866,7 +875,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = UdapConstants.TokenRequestTypes.Bearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
@@ -1095,7 +1104,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             new List<Claim>()
             {
                 new Claim(JwtClaimTypes.Subject, result.ClientId),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
@@ -1125,11 +1134,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = UdapConstants.TokenRequestTypes.Bearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
-            Scope = "user/Patient.* user/Practitioner.read"
+            Scope = "system.cruds"
         };
 
 
@@ -1141,13 +1150,13 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
 
-        tokenResponse.Scope.Should().Be("user/Patient.* user/Practitioner.read");
-
         _testOutputHelper.WriteLine("Authorization Token Response");
         _testOutputHelper.WriteLine("---------------------");
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
         _testOutputHelper.WriteLine(string.Empty);
         _testOutputHelper.WriteLine(string.Empty);
+
+        tokenResponse.Scope.Should().Be("system.cruds");
 
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
@@ -1327,7 +1336,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             new List<Claim>()
             {
                 new Claim(JwtClaimTypes.Subject, result.ClientId),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
@@ -1357,7 +1366,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = UdapConstants.TokenRequestTypes.Bearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
@@ -1567,7 +1576,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             new List<Claim>()
             {
                 new Claim(JwtClaimTypes.Subject, result.ClientId),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
@@ -1597,7 +1606,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = UdapConstants.TokenRequestTypes.Bearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
@@ -1627,20 +1636,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     [Fact]
     public async Task RegistrationSuccess_client_credentials_FhirLabs_LIVE_Test()
     {
-        var handler = new HttpClientHandler();
-        //
-        // Interesting discussion if you are into this sort of stuff
-        // https://github.com/dotnet/runtime/issues/39835
-        //
-        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, _) =>
-        {
-            chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-            chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer"));
-            chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_Anchor.cer"));
-            return chain.Build(cert);
-        };
-
-        // using var fhirLabsClient = new HttpClient(handler);
         using var fhirLabsClient = new HttpClient();
 
         var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
@@ -1806,7 +1801,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             new List<Claim>()
             {
                 new Claim(JwtClaimTypes.Subject, result.ClientId),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
@@ -1836,14 +1831,18 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = UdapConstants.TokenRequestTypes.Bearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
         };
 
 
+        _testOutputHelper.WriteLine("Client Token Request");
+        _testOutputHelper.WriteLine("---------------------");
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(clientRequest));
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
 
 
         var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
@@ -2030,7 +2029,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //  B2B section.  Obtain an Access Token
         //
         //
-        _testOutputHelper.WriteLine($"Authorization Endpoint:: {result.Audience}");
+        //_testOutputHelper.WriteLine($"Authorization Endpoint:: {result.Audience}");
         // var idpDisco = await idpClient.GetDiscoveryDocumentAsync(disco.AuthorizeEndpoint);
         //
         // idpDisco.IsError.Should().BeFalse(idpDisco.Error);
@@ -2048,7 +2047,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             new List<Claim>()
             {
                 new Claim(JwtClaimTypes.Subject, result.ClientId),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
@@ -2078,15 +2077,19 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = UdapConstants.TokenRequestTypes.Bearer,
                 Value = clientAssertion
             },
-            Udap = UdapConstants.UdapVersionsSupportedValue
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "user/Patient.* user/Practitioner.read"
         };
 
-
+        
+        _testOutputHelper.WriteLine("Client Token Request");
+        _testOutputHelper.WriteLine("---------------------");
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(clientRequest));
-
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
 
         var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
 
@@ -2262,7 +2265,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             new List<Claim>()
             {
                 new Claim(JwtClaimTypes.Subject, result.ClientId),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString()),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
@@ -2292,7 +2295,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = UdapConstants.TokenRequestTypes.Bearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue

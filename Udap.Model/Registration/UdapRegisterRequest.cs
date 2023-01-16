@@ -12,11 +12,17 @@ using System.Text.Json.Serialization;
 namespace Udap.Model.Registration;
 public class UdapRegisterRequest
 {
+    /// <summary>
+    /// JWS compact serialization
+    /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.SoftwareStatement)]
     public string SoftwareStatement { get; set; }
 
+    /// <summary>
+    /// JWS compact serialization
+    /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.Certifications)]
-    public string[]? Certifications { get; set; }
+    public string? Certifications { get; set; }
 
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.Udap)]
     public string Udap { get; set; }

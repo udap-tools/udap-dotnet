@@ -37,6 +37,14 @@ public class MetadataController : ControllerBase
         _httpClient = httpClient;
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Get([FromQuery] string? metadataUrl)
+    {
+        var response = await _httpClient.GetStringAsync(metadataUrl);
+        var result = JsonSerializer.Deserialize<UdapMetadata>(response);
+        
+        return Ok(result);
+    }
     [HttpPost("UploadClientCert")]
     public IActionResult UploadClientCert([FromBody] string base64String)
     {

@@ -218,6 +218,23 @@ public static class SeedData
 
         await configDbContext.SaveChangesAsync();
 
+
+        if (configDbContext.ApiScopes.All(s => s.Name != "system.cruds"))
+        {
+            var apiScope = new ApiScope("system.cruds");
+            configDbContext.ApiScopes.Add(apiScope.ToEntity());
+
+            await configDbContext.SaveChangesAsync();
+        }
+
+        if (configDbContext.ApiScopes.All(s => s.Name != "user.cruds"))
+        {
+            var apiScope = new ApiScope("user.cruds");
+            configDbContext.ApiScopes.Add(apiScope.ToEntity());
+
+            await configDbContext.SaveChangesAsync();
+        }
+
         if (configDbContext.ApiScopes.All(s => s.Name != "udap"))
         {
             var apiScope = new ApiScope("udap");

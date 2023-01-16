@@ -7,16 +7,12 @@
 // */
 #endregion
 
-using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
-using Org.BouncyCastle.Asn1.Ocsp;
-using Udap.Model.Registration;
 using UdapClient.Client.Services;
-using UdapClient.Shared;
 using UdapClient.Shared.Model;
 
 namespace UdapClient.Client.Pages;

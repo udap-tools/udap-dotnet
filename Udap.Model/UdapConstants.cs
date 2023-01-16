@@ -53,12 +53,12 @@ public static class UdapConstants
         // Fields
         public const string ClientId = IdentityModel.JwtClaimTypes.ClientId;
         public const string SoftwareStatement = "software_statement";
-        public const string Issuer = IdentityModel.JwtClaimTypes.Issuer;
-        public const string Subject = IdentityModel.JwtClaimTypes.Subject;
-        public const string Audience = IdentityModel.JwtClaimTypes.Audience;
-        public const string Expiration = IdentityModel.JwtClaimTypes.Expiration;
-        public const string IssuedAt = IdentityModel.JwtClaimTypes.IssuedAt;
-        public const string JwtId = IdentityModel.JwtClaimTypes.JwtId;
+        public const string Issuer = "iss"; //IdentityModel.JwtClaimTypes.Issuer;
+        public const string Subject = "sub"; // IdentityModel.JwtClaimTypes.Subject;
+        public const string Audience = "aud"; // IdentityModel.JwtClaimTypes.Audience;
+        public const string Expiration = "exp"; // IdentityModel.JwtClaimTypes.Expiration;
+        public const string IssuedAt = "iat"; //IdentityModel.JwtClaimTypes.IssuedAt;
+        public const string JwtId = "jti"; // IdentityModel.JwtClaimTypes.JwtId;
         public const string ClientName = "client_name";
         public const string ClientUri = "client_uri";
         public const string RedirectUris = "redirect_uris";
@@ -124,6 +124,14 @@ public static class UdapConstants
     public static class TokenRequest
     {
         public const string Udap = "udap";
+    }
+
+    public static class TokenRequestTypes
+    {
+        /// <summary>
+        /// RFC 6750 1.1 and 2.1.  Bearer name in the header is case sensitive
+        /// </summary>
+        public const string Bearer = "Bearer";
     }
 }
 

@@ -15,7 +15,7 @@
       "launchBrowser": true,
       "environmentVariables": {
         "GCPDeploy": "false",
-        "ASPNETCORE_ENVIRONMENT": "Development",
+        //"ASPNETCORE_ENVIRONMENT": "Development",
         "ServerSettings:ServerSupport": "UDAP",
         "ServerSettings:DefaultScopes": "user/Patient.* user/Practitioner.read"
       },

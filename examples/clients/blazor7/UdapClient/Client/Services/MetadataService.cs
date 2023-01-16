@@ -11,6 +11,7 @@ using Org.BouncyCastle.Asn1.Ocsp;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Udap.Model;
 using Udap.Model.Registration;
 using UdapClient.Shared.Model;
 
@@ -24,7 +25,14 @@ public class MetadataService
     {
         _http = http;
     }
-    
+
+    public async Task<UdapMetadata?> GetMetadata(string metadataUrl)
+    {
+        var result = await _http.GetFromJsonAsync<UdapMetadata>($"Metadata?metadataUrl={metadataUrl}");
+        
+        return result;
+    }
+
     public async Task UploadClientCert(string certBytes)
     {
         var result = await _http.PostAsJsonAsync("Metadata/UploadClientCert", certBytes);

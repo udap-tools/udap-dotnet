@@ -1,9 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography.X509Certificates;
 using Udap.CA.DbContexts;
 using Udap.CA.Mappers;
-using Udap.Common.Extensions;
 
 namespace Udap.CA.Services;
 

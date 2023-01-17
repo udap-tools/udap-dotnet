@@ -27,7 +27,6 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Tokens;
 
-
 namespace Udap.Model.Registration;
 
 public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>

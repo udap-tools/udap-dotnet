@@ -51,7 +51,7 @@ public static class UdapConstants
         public const string TokenEndpointAuthMethodValue = "private_key_jwt";
 
         // Fields
-        public const string ClientId = IdentityModel.JwtClaimTypes.ClientId;
+        public const string ClientId = "client_id"; // IdentityModel.JwtClaimTypes.ClientId;
         public const string SoftwareStatement = "software_statement";
         public const string Issuer = "iss"; //IdentityModel.JwtClaimTypes.Issuer;
         public const string Subject = "sub"; // IdentityModel.JwtClaimTypes.Subject;
@@ -67,9 +67,50 @@ public static class UdapConstants
         public const string GrantTypes = "grant_types";
         public const string ResponseTypes = "response_types";
         public const string TokenEndpointAuthMethod = "token_endpoint_auth_method";
-        public const string Scope = IdentityModel.JwtClaimTypes.Scope;
+        public const string Scope = "scope"; // IdentityModel.JwtClaimTypes.Scope;
     }
 
+    /// <summary>
+    /// See the <a href="https://www.udap.org/udap-certifications-and-endorsements-stu1.html">
+    /// "UDAP CERTIFICATIONS AND ENDORSEMENTS FOR CLIENT APPLICATIONS"</a> profile.
+    /// The certification is signed and assembled using JWS compact serialization as per RFC 7515.
+    /// </summary>
+    public static class CertificationAndEndorsementDocumentValues
+    {
+        public const string Issuer = "iss"; //IdentityModel.JwtClaimTypes.Issuer;
+        public const string Subject = "sub"; // IdentityModel.JwtClaimTypes.Subject;
+        public const string Audience = "aud"; // IdentityModel.JwtClaimTypes.Audience;
+        public const string Expiration = "exp"; // IdentityModel.JwtClaimTypes.Expiration;
+        public const string IssuedAt = "iat"; //IdentityModel.JwtClaimTypes.IssuedAt;
+        public const string JwtId = "jti"; // IdentityModel.JwtClaimTypes.JwtId;
+        public const string CertificateIssuer = "certification_issuer";
+        public const string CertificationName = "certification_name";
+        public const string CertificationLogo = "certification_logo";
+        public const string CertificationDescription = "certification_description";
+        public const string CertificationUris = "certification_uris";
+        public const string CertificationStatusEndpoint = "certification_status_endpoint";
+        public const string IsEndorsement = "is_endorsement";
+        public const string DeveloperName = "developer_name";
+        public const string DeveloperAddress = "developer_address";
+        public const string ClientName = "client_name";
+        public const string SoftwareId = "software_id";
+        public const string SoftwareVersion = "software_version";
+        public const string ClientUri = "client_uri";
+        public const string LogoUri = "logo_uri";
+        public const string TosUri = "tos_uri";
+        public const string PolicyUri = "policy_uri";
+        public const string Contacts = "contacts";
+        public const string LaunchUri = "launch_uri";
+        public const string RedirectUris = "redirect_uris";
+        public const string IpAllowed = "ip_allowed";
+        public const string GrantTypes = "grant_types";
+        public const string ResponseTypes = "response_types";
+        public const string Scope = "scope";
+        public const string TokenEndpointAuthMethod = "token_endpoint_auth_method";
+        public const string Jwks = "jwks";
+    }
+
+;
     public static class SupportedAlgorithm
     {
         public const string RS256 = "RS256";

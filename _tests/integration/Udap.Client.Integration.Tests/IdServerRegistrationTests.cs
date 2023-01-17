@@ -328,20 +328,27 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
-        var certifications = new List<string>() { "RI Test Certification" };
-        var encodedCertificationPayload = Base64UrlEncoder.Encode(JsonExtensions.SerializeToJson(certifications));
+        var certifications = new List<string>();
+
+        var certifiations = new UdapCertificationAndEndorsementDocument("HoboJoes Basic Interop Certification");
+        
+
+
+        var certificationsPayloadEncoded = certifiations.Base64UrlEncode();
 
         var encodedCertificationSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedCertificationPayload),
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", certificationsPayloadEncoded),
                 signingCredentials);
 
-        var signedCertification = string.Concat(encodedHeader, ".", encodedCertificationSignature, ".", encodedHeader);
+        var signedCertification = string.Concat(encodedHeader, ".", certificationsPayloadEncoded, ".", encodedCertificationSignature);
+        certifications.Add(signedCertification);
+
         var requestBody = new UdapRegisterRequest
         {
             SoftwareStatement = signedSoftwareStatement,
             // TODO assert at server.  Empty Certification is an error.  Return 400.
             // Certifications = new string[0], //do not pass an empty certification.
-            //Certifications = signedCertification,
+            Certifications = certifications.ToArray(),
             Udap = UdapConstants.UdapVersionsSupportedValue,
         };
 
@@ -357,98 +364,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(result);
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-
-        // var documentAsJson = JsonSerializer.Serialize(document);
-
-
-
-        // var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(result));
-        // result.Should().BeEquivalentTo(documentAsJson);
-
-
-        // _testOutputHelper.WriteLine(result.ClientId);
-
-
-        //
-        //
-        //  B2B section.  Obtain an Access Token
-        //
-        //
-        // _testOutputHelper.WriteLine($"Authorization Endpoint:: {result.Audience}");
-        // var idpDisco = await fhirClient.GetDiscoveryDocumentAsync(disco.AuthorizeEndpoint);
-        //
-        // idpDisco.IsError.Should().BeFalse(idpDisco.Error);
-
-
-
-
-        //
-        // Get Access Token
-        //
-
-        // var jwtPayload = new JwtPayload(
-        //     result.ClientId,
-        //     disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
-        //     new List<Claim>()
-        //     {
-        //         new Claim(JwtClaimTypes.Subject, result.ClientId),
-        //         //TODO: this is required according to spec.  I was missing it.  We also need to assert this in IdentityServer.
-        //         new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-        //         new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
-        //         new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
-        //     },
-        //     now.ToUniversalTime(),
-        //     now.AddMinutes(5).ToUniversalTime()
-        //     );
-        //
-        // //
-        // // All of this is the same as above, during registration
-        // //
-        // jwtHeader = new JwtHeader
-        // {
-        //     { "alg", signingCredentials.Algorithm },
-        //     { "x5c", new[] { pem } }
-        // };
-        //
-        // signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-        // encodedHeader = jwtHeader.Base64UrlEncode();
-        // var encodedClientAssertion = jwtPayload.Base64UrlEncode();
-        // encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
-        //
-        // var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
-        //
-        // var clientRequest = new UdapClientCredentialsTokenRequest
-        // {
-        //     Address = disco.TokenEndpoint,
-        //     //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
-        //     ClientAssertion = new ClientAssertion()
-        //     {
-        //         Type = UdapConstants.TokenRequestTypes.Bearer,
-        //         Value = clientAssertion
-        //     },
-        //     Udap = UdapConstants.UdapVersionsSupportedValue
-        // };
-        //
-        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(clientRequest));
-        //
-        //
-        // var tokenResponse = await fhirClient.RequestClientCredentialsTokenAsync(clientRequest);
-        //
-        // _testOutputHelper.WriteLine("Authorization Token Response");
-        // _testOutputHelper.WriteLine("---------------------");
-        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
-        // _testOutputHelper.WriteLine(string.Empty);
-        // _testOutputHelper.WriteLine(string.Empty);
-        //
-        // fhirClient.DefaultRequestHeaders.Authorization =
-        //     new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        // var patientResponse = fhirClient.GetAsync("https://stage.healthtogo.me:8181/fhir/r4/stage/Patient/$count-em");
-        //
-        // patientResponse.Result.EnsureSuccessStatusCode();
-        //
-        //
-        // _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
 
     }
 

@@ -1,7 +1,11 @@
-﻿// UdapModel is modeled after IdentityModel. See https://github.com/IdentityModel/IdentityModel
+﻿#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
 // 
-// Copyright (c) Brock Allen & Dominick Baier. All rights reserved.
-// Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
+//  See LICENSE in the project root for license information.
+// */
+#endregion
 
 using System.Diagnostics;
 

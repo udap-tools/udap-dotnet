@@ -57,9 +57,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UdapClient.Client", "exampl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UdapClient.Shared", "examples\clients\blazor7\UdapClient\Shared\UdapClient.Shared.csproj", "{13AC0A29-950A-4934-B8C4-2C8A87A69851}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Udap.Model", "Udap.Model\Udap.Model.csproj", "{25BD1FD4-5AB2-403C-81C1-36640CED1CF8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Model", "Udap.Model\Udap.Model.csproj", "{25BD1FD4-5AB2-403C-81C1-36640CED1CF8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Udap.Util", "Udap.Util\Udap.Util.csproj", "{B00FC6ED-E967-4FD6-AAE9-ABCDDB328902}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Util", "Udap.Util\Udap.Util.csproj", "{B00FC6ED-E967-4FD6-AAE9-ABCDDB328902}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

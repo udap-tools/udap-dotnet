@@ -1,0 +1,157 @@
+﻿@page "/CommunityList"
+
+
+@inject ISnackbar Snackbar
+
+<ErrorBoundary @ref="ErrorBoundary">
+<ChildContent>
+<MudTable Items="@Communities" Dense="@false" Hover="@true" ReadOnly="@false" CanCancelEdit="@true" 
+          Filter="new Func<Community,bool>(FilterFunc)"
+          SortLabel="Sort By" CommitEditTooltip="Commit Edit"
+          OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))" 
+          RowEditPreview="BackupItem" 
+          RowEditCancel="ResetItemToOriginalValues"
+          RowEditCommit="ItemHasBeenCommitted" 
+          IsEditRowSwitchingBlocked="@true" 
+          ApplyButtonPosition="@TableApplyButtonPosition.Start" >
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Communities</MudText>
+        <MudSpacer />
+        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+    </ToolBarContent>
+    <ColGroup>
+        <col style="width:0px" />
+        <col />
+        <col />
+        <col />
+        <col style ="width:0px" />
+      </ColGroup>
+    <HeaderContent>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Community, object>(x=>x.Name)">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Community, object>(x=>x.Enabled)">Enabled</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Community, object>(x=>x.RootCertificates?.Count())">Root Certificates</MudTableSortLabel></MudTh>
+        <MudFab Icon="@Icons.Material.Filled.Add"
+                Color="Color.Inherit"
+                @onclick="AddCommunity"
+                Label="Add"
+                disabled="@_communityRowIsInEdit" />
+    </HeaderContent>
+    <RowTemplate>
+        @if (context.Id == 0)
+        {
+            <MudTd DataLabel="Name" id="@($"CommunityId:{context.Id}")">@context.Name</MudTd>
+        }
+        else
+        {
+            <MudTd DataLabel="Name">@context.Name</MudTd>
+        }
+        <MudTd DataLabel="Enabled"><MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" /></MudTd>
+        <MudTd DataLabel="Anchors">
+            <span class="ma-6">@context.RootCertificates?.Count()</span>
+            <span >
+                @if (context.RootCertificates.Any())
+                {
+                    <MudFab Label="View Root Certs"
+                            Size="Size.Small"
+                            Icon="@Icons.Material.Filled.Preview"
+                            Color="Color.Inherit"
+                            OnClick="() => ShowRootCertificates(context)"
+                            class="ma-2"/>
+                }
+                <MudFab Label="Edit Root Certs"
+                        Size="Size.Small"
+                        Icon="@Icons.Material.Filled.Edit"
+                        Color="Color.Inherit"
+                        Link="/RootCerts"
+                        OnClick="() => CommunityState.SetState(context)"
+                        class="ma-2"/>
+            </span>
+        </MudTd>
+        <MudTd @onclick:stopPropagation="true" Style="">
+            @if (context.Id != 0)
+            {
+                <MudFab HtmlTag="label"
+                        Size="Size.Small"
+                        Color="Color.Warning"
+                        Icon="@Icons.Filled.DeleteForever"
+                        Label="Delete"
+                        class="ma-2"
+                        OnClick="@(() => DeleteRootCommunity(context))"
+                        Disabled="@_communityRowIsInEdit" />
+            }
+        </MudTd>
+    </RowTemplate>
+
+    <ChildRowContent>
+        @if (context.ShowRootCertificates)
+        {
+            <MudTr>
+                <td colspan="4">
+                    <MudCard Elevation="0">
+                        <MudCardContent Class="pa-0">
+                <MudTable Items="@context.RootCertificates"
+                      Context="RootCertContext" Hover="true" Breakpoint="Breakpoint.Sm" Elevation="0">
+                                <ColGroup>
+                                    <col />
+                                    <col />
+                                    <col />
+                                    <col />
+                                </ColGroup>
+                                <HeaderContent>
+                                    <MudTh>Name</MudTh>
+                                    <MudTh>Enabled</MudTh>
+                                    <MudTh>Begin Date</MudTh>
+                                    <MudTh>End Date</MudTh>
+                                    <MudTh>Thumbprint</MudTh>
+                                </HeaderContent>
+                                <RowTemplate>
+                                    <MudTd  DataLabel="Name">@RootCertContext.Name
+                                        <MudInputControl ></MudInputControl>
+                                    </MudTd>
+                                    <MudTd DataLabel="Enabled">@RootCertContext.Enabled</MudTd>
+                                    <MudTd DataLabel="Begin Date">@RootCertContext.BeginDate</MudTd>
+                                    <MudTd DataLabel="End Date">@RootCertContext.EndDate</MudTd>
+                                    <MudTd DataLabel="End Date">@RootCertContext.Thumbprint</MudTd>
+                                </RowTemplate>
+                            </MudTable>
+                        </MudCardContent>
+                    </MudCard>
+                </td>
+            </MudTr>
+        }
+    </ChildRowContent>    
+    <RowEditingTemplate>
+        <MudTd DataLabel="Name">
+            <MudTextField @bind-Value="@context.Name" Required />
+        </MudTd>
+        <MudTd DataLabel="Enabled">
+          <MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" />
+        </MudTd>
+    </RowEditingTemplate>
+    <PagerContent>
+        <MudTablePager />
+    </PagerContent>
+</MudTable>
+</ChildContent>
+<ErrorContent Context="ex">
+    <pre class="blazor-error-boundary">
+            @ex.Message
+      </pre>
+</ErrorContent>
+</ErrorBoundary>
+
+<MudExpansionPanels Style="flex: 1;">
+    <MudExpansionPanel Text="Show inline-edit event log">
+        @foreach (var message in editEvents)
+        {
+            <MudText>@message</MudText>
+        }
+        @if (editEvents.Count > 0)
+        {
+            <div class="d-flex">
+                <MudSpacer />
+                <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="ClearEventLog">Clear event log</MudButton>
+            </div>
+        }
+    </MudExpansionPanel>
+</MudExpansionPanels>

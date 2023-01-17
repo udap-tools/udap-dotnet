@@ -22,6 +22,7 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Udap.Common;
 using Udap.Metadata.Server;
+using Udap.Model;
 using Xunit.Abstractions;
 using program = FhirLabsApi.Program;
 
@@ -162,9 +163,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var grantTypes = _fixture.WellKnownUdap.GrantTypesSupported;
         grantTypes.Should().NotBeNullOrEmpty();
 
-        grantTypes.Count.Should().Be(1);
-        // grantTypes.Should().Contain("authorization_code");
-        // grantTypes.Should().Contain("refresh_token");
+        grantTypes.Count.Should().Be(3);
+        grantTypes.Should().Contain("authorization_code");
+        grantTypes.Should().Contain("refresh_token");
         grantTypes.Should().Contain("client_credentials");
     }
 

@@ -11,7 +11,7 @@ using IdentityModel;
 using IdentityModel.Client;
 using Udap.Client.Client.Messages;
 using Udap.Client.Internal;
-using Udap.Common;
+using Udap.Model;
 
 namespace Udap.Client.Client.Extensions;
 

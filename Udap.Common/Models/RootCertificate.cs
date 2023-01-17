@@ -1,5 +1,5 @@
 ﻿using System.Security.Cryptography.X509Certificates;
-using Udap.Common.Extensions;
+using Udap.Util.Extensions;
 
 namespace Udap.Common.Models;
 

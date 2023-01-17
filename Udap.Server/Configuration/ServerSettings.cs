@@ -17,8 +17,11 @@ public class ServerSettings
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public ServerSupport ServerSupport { get; set; }
 
-    [JsonPropertyName("DefaultScopes")]
-    public string? DefaultScopes { get; set; }
+    [JsonPropertyName("DefaultSystemScopes")]
+    public string? DefaultSystemScopes { get; set; }
+
+    [JsonPropertyName("DefaultUserScopes")]
+    public string? DefaultUserScopes { get; set; }
 }
 
 public enum ServerSupport

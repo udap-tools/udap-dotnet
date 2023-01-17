@@ -31,9 +31,13 @@ jobs:
       run: dotnet test -c Release  _tests/Udap.Common.Tests/Udap.Common.Tests.csproj --no-build --verbosity normal
     - name: Test WebApi.Tests
       run: dotnet test -c Release  _tests/WebApi.Tests/WebApi.Tests.csproj --verbosity detailed
+    - name: Test UdapServer.Tests
+      run: dotnet test -c Release _tests/UdapServer.Tests/UdapServer.Tests.csproj --no-build --verbosity normal
     
     - name: Create nuget package for GPR
       run: |
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Model/Udap.Model.csproj 
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Util/Udap.Util.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Common/Udap.Common.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Metadata.Server/Udap.Metadata.Server.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Server/Udap.Server.csproj 
@@ -44,6 +48,8 @@ jobs:
     #     dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
     - name: Publish the package to GPR
       run: |
+        dotnet nuget push ./Udap.Model/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
+        dotnet nuget push ./Udap.Util/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
         dotnet nuget push ./Udap.Common/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
         dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
         dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}

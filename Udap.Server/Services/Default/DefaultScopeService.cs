@@ -28,7 +28,7 @@ public class DefaultScopeService: IScopeService
 
         if (serverSettings.ServerSupport == ServerSupport.UDAP)
         {
-            _defaultScopes = serverSettings.DefaultScopes?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            _defaultScopes = serverSettings.DefaultSystemScopes?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         }
     }
 
@@ -47,9 +47,19 @@ public class DefaultScopeService: IScopeService
                 s.Type == UdapServerConstants.SecretTypes.Udapx5c ||
                 s.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem))
         {
+
+            var form = (await context.Request.ReadFormAsync()).AsNameValueCollection();
+            if (!string.IsNullOrEmpty(form.Get("scope")))
+            {
+                return;
+            }
+
             var scopes = client.AllowedScopes;
 
-            if (_defaultScopes != null)
+            //
+            // Default scopes only added if we have none.
+            //
+            if (_defaultScopes != null && !client.AllowedScopes.Any())
             {
                 foreach (var defaults in _defaultScopes)
                 {
@@ -57,7 +67,7 @@ public class DefaultScopeService: IScopeService
                 }
             }
 
-            var form = (await context.Request.ReadFormAsync()).AsNameValueCollection();
+            
             form.Set(OidcConstants.TokenRequest.Scope, scopes.ToSpaceSeparatedString());
             var values = new Dictionary<string, StringValues>();
             

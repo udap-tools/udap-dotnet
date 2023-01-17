@@ -1,0 +1,55 @@
+﻿@page "/udapRegistration"
+
+<InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
+
+<ErrorBoundary @ref="ErrorBoundary">
+  <ChildContent>
+
+<MudGrid Class="mt-4">
+      <MudItem xs="12" sm="12" md="12">
+        <MudText Typo="Typo.h3">Udap Metadata</MudText>
+      </MudItem>
+      <MudItem xs="12" sm="12" md="12">
+          <MudFab HtmlTag="label"
+                  Size="Size.Small"
+                  Color="Color.Success"
+                  Icon="@Icons.Filled.AttachFile"
+                  Label="Upload Client Certificate"
+                  for="fileInput" />
+          <MudTextField @bind-Value="Password" 
+                        Label="Password" 
+                        Variant="Variant.Text" 
+                        InputType="@PasswordInput" 
+                        Adornment="Adornment.End" 
+                        AdornmentIcon="@PasswordInputIcon" 
+                        OnAdornmentClick="ButtonTestclick" 
+                        AdornmentAriaLabel="Show Password" />
+            <MudSpacer />
+            <MudButton Class="mt-3" ButtonType="ButtonType.Button" 
+                       Variant="Variant.Filled" 
+                       OnClick="Build">Build Authorization Code Request</MudButton>
+            <MudSpacer/>
+            <MudText Typo="Typo.h5">Client Credentials</MudText>
+            <pre>@SoftwareStatementBeforeEncoding</pre>
+            <MudButton Class="mt-3" ButtonType="ButtonType.Button" 
+                       Variant="Variant.Filled" 
+                       OnClick="BuildRequestBody">Build Request Body</MudButton>
+            <MudText Typo="Typo.h5">Request Body</MudText>
+            <pre>@RequestBody</pre>
+            <MudButton Class="mt-3" ButtonType="ButtonType.Button"
+                       Variant="Variant.Filled"
+                       OnClick="PerformRegistration">Register (DCR)</MudButton>
+            <MudText Typo="Typo.h5">Access Code</MudText>
+            <pre>@RegistrationResult</pre>
+            <MudSpacer/>
+        </MudItem>
+    </MudGrid>
+    
+
+  </ChildContent>
+  <ErrorContent Context="ex">
+    <pre class="blazor-error-boundary">
+            @ex.Message
+      </pre>
+  </ErrorContent>
+</ErrorBoundary>

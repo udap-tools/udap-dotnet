@@ -9,6 +9,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Udap.Model;
 
 namespace Udap.Metadata.Server
 {

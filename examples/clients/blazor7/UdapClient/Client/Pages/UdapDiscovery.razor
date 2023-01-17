@@ -1,0 +1,29 @@
+﻿@page "/udapDiscovery"
+
+
+<ErrorBoundary @ref="ErrorBoundary">
+  <ChildContent>
+    <MudGrid Class="mt-4">
+      <MudItem xs="12" sm="12" md="12">
+        <MudText Typo="Typo.h3">Udap Metadata</MudText>
+      </MudItem>
+      <MudItem xs="12" sm="12" md="12">
+        <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="GetMetadata">Query</MudButton>
+        <MudSpacer />
+        <MudTextField Label="Metadata Url" 
+                      @bind-Value="@UdapClientState.MetadataUrl" AutoFocus="true" InputType="InputType.Text"
+                      @onchange="args => { if (args.Value != null) UdapClientState.MetadataUrl = (string)args.Value; }"></MudTextField>
+        <MudSpacer />
+        <pre>@Result</pre>
+        <MudSpacer />
+      </MudItem>
+    </MudGrid>
+
+
+  </ChildContent>
+  <ErrorContent Context="ex">
+    <pre class="blazor-error-boundary">
+            @ex.Message
+      </pre>
+  </ErrorContent>
+</ErrorBoundary>

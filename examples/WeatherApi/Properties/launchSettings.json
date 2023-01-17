@@ -10,6 +10,16 @@
       "dotnetRunMessages": true,
       "applicationUrl": "https://weatherapi.lab:5021;http://weatherapi.lab:5020"
     },
+    "localhost": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://host.docker.internal:5021;http://host.docker.internal:5020"
+    },
     "WSL Ubuntu-20.04": {
       "commandName": "WSL",
       "launchBrowser": true,

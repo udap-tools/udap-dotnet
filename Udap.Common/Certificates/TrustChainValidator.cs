@@ -27,7 +27,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
-using Udap.Common.Extensions;
+using Udap.Util.Extensions;
 
 namespace Udap.Common.Certificates
 {

@@ -10,17 +10,19 @@
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using Duende.IdentityServer.EntityFramework.DbContexts;
+using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
+using Duende.IdentityServer.Models;
+using Hl7.Fhir.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using Udap.Common.Extensions;
 using Udap.Idp;
-using Udap.Server;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Registration;
+using Udap.Util.Extensions;
 
 namespace UdapServer.Tests;
 
@@ -47,7 +49,7 @@ public static class SeedData
         services.AddUdapDbContext(options =>
         {
             options.UdapDbContext = db => db.UseSqlite(connectionString,
-                sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
         });
 
         using var serviceProvider = services.BuildServiceProvider();
@@ -57,12 +59,14 @@ public static class SeedData
         // var context = scope.ServiceProvider.GetService<ApplicationDbContext>();
         // context?.Database.Migrate();
 
+        var udapContext = scope.ServiceProvider.GetRequiredService<UdapDbContext>();
+        udapContext.Database.EnsureCreated();
+
+        var configDbContext = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+
         scope.ServiceProvider.GetService<PersistedGrantDbContext>()?.Database.Migrate();
         scope.ServiceProvider.GetService<ConfigurationDbContext>()?.Database.Migrate();
 
-
-        var udapContext = scope.ServiceProvider.GetRequiredService<UdapDbContext>();
-        udapContext.Database.Migrate();
 
         var clientRegistrationStore = scope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
 
@@ -147,5 +151,38 @@ public static class SeedData
 
             udapContext.SaveChanges();
         }
+
+        var seedScopes = new List<string>();
+
+        foreach (var resName in ModelInfo.SupportedResources)
+        {
+            seedScopes.Add($"system/{resName}.*");
+            seedScopes.Add($"system/{resName}.read");
+        }
+
+        var apiScopes = configDbContext.ApiScopes
+            .Where(s => s.Enabled)
+            .Select(s => s.Name)
+            .ToList();
+
+        foreach (var scopeName in seedScopes)
+        {
+            if (!apiScopes.Contains(scopeName))
+            {
+                var apiScope = new ApiScope(scopeName);
+                configDbContext.ApiScopes.Add(apiScope.ToEntity());
+            }
+        }
+
+        configDbContext.SaveChanges();
+
+        if (configDbContext.ApiScopes.All(s => s.Name != "udap"))
+        {
+            var apiScope = new ApiScope("udap");
+            configDbContext.ApiScopes.Add(apiScope.ToEntity());
+
+            configDbContext.SaveChanges();
+        }
+
     }
 }

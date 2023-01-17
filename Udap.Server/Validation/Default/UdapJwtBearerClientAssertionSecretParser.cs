@@ -16,6 +16,8 @@ using IdentityModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.IdentityModel.Tokens.Jwt;
+using System.Text.Json;
+using Udap.Model;
 using Udap.Server.Extensions;
 
 namespace Udap.Server.Validation.Default;
@@ -56,13 +58,16 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
 
         var body = await context.Request.ReadFormAsync();
 
+        _logger.LogDebug(JsonSerializer.Serialize(body));
         if (body != null)
         {
             var clientAssertionType = body[OidcConstants.TokenRequest.ClientAssertionType].FirstOrDefault();
             var clientAssertion = body[OidcConstants.TokenRequest.ClientAssertion].FirstOrDefault();
 
             if (clientAssertion.IsPresent()
-                && clientAssertionType == OidcConstants.ClientAssertionTypes.JwtBearer)
+                && clientAssertionType.Equals(
+                    UdapConstants.TokenRequestTypes.Bearer, 
+                    StringComparison.OrdinalIgnoreCase))
             {
                 if (clientAssertion.Length > _options.InputLengthRestrictions.Jwt)
                 {

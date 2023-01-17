@@ -11,8 +11,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="6.8.0" />
+    <PackageReference Include="FluentAssertions" Version="6.9.0" />
     <PackageReference Include="IdentityModel" Version="6.0.0" />
+    <PackageReference Include="jose-jwt-signed" Version="2.3.0" />
     <PackageReference Include="MartinCostello.Logging.XUnit" Version="0.3.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="7.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
@@ -59,6 +60,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
+    <ProjectReference Include="..\..\..\Udap.Util\Udap.Util.csproj" />
   </ItemGroup>
 
   <ItemGroup>

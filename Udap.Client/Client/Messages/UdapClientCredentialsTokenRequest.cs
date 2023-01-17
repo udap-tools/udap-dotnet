@@ -9,7 +9,7 @@
 
 using System.Text.Json.Serialization;
 using IdentityModel.Client;
-using Udap.Common;
+using Udap.Model;
 
 namespace Udap.Client.Client.Messages;
 

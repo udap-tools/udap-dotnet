@@ -7,8 +7,7 @@
 // */
 #endregion
 
-using Udap.Common.Models;
-using Udap.Common.Registration;
+using Udap.Model.Registration;
 
 namespace Udap.Server.Registration;
 

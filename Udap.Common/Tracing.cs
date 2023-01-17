@@ -13,6 +13,8 @@ namespace Udap.Common;
 
 public static class Tracing
 {
+    public static readonly string Validation = Tracing.TraceNames.Validation;
+
     private static readonly Version AssemblyVersion = typeof(Tracing).Assembly.GetName().Version;
 
     /// <summary>

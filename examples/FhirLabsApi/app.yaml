@@ -2,3 +2,11 @@ runtime: custom
 env: flex
 env_variables:
   ASPNETCORE_FORWARDEDHEADERS_ENABLED: true
+resources:
+  cpu: 1
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 1
+network:
+  forwarded_ports:
+    - 7016:443

@@ -7,14 +7,15 @@
 // */
 #endregion
 
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Udap.Client.Client.Messages;
-using Udap.Common;
-using Udap.Common.Registration;
+using Udap.Model;
+using Udap.Model.Registration;
+using Udap.Server.Configuration;
+using Udap.Util.Extensions;
 
 namespace Udap.Server.Registration;
 
@@ -26,18 +27,22 @@ public class UdapDynamicClientRegistrationEndpoint
 {
     private readonly IUdapDynamicClientRegistrationValidator _validator;
     private readonly IUdapClientRegistrationStore _store;
+    private readonly ServerSettings _serverSettings;
     private readonly ILogger<UdapDynamicClientRegistrationEndpoint> _logger;
 
     public UdapDynamicClientRegistrationEndpoint(
         IUdapDynamicClientRegistrationValidator validator,
         IUdapClientRegistrationStore store,
+        ServerSettings serverSettings,
         ILogger<UdapDynamicClientRegistrationEndpoint> logger)
     {
         _validator = validator;
         _store = store;
+        _serverSettings = serverSettings;
         _logger = logger;
     }
     
+    //TODO: ProcessAsync?
     /// <summary>
     /// Initiate UDAP Dynamic Client Registration for <see cref="UdapDynamicClientRegistrationEndpoint"/>
     /// </summary>
@@ -45,18 +50,6 @@ public class UdapDynamicClientRegistrationEndpoint
     /// <returns></returns>
     public async Task Process(HttpContext context)
     {
-        if (_logger.IsEnabled(LogLevel.Debug))
-        {
-            context.Request.EnableBuffering();
-            using (var reader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true))
-            {
-                var bodyStr = await reader.ReadToEndAsync();
-                context.Request.Body.Seek(0, SeekOrigin.Begin);
-                _logger.LogDebug("Request: {Request}", bodyStr);
-            }
-        }
-
-
         //
         // Can't tell if this is truly required from specifications.
         // Maybe search the DCR RFC's
@@ -97,7 +90,6 @@ public class UdapDynamicClientRegistrationEndpoint
         try
         {
             // Not in pattern with other validators in IdentityServer.  Typically all errors handled in ValidateAsync...  TODO
-
 
             result = await _validator.ValidateAsync(request, communityTrustAnchors, rootCertificates);
         }
@@ -147,7 +139,7 @@ public class UdapDynamicClientRegistrationEndpoint
         };
         
         context.Response.StatusCode = StatusCodes.Status201Created;
-        await context.Response.WriteAsJsonAsync(registrationResponse, options);
+        await context.Response.WriteAsJsonAsync(registrationResponse, options, "application/json");
     }
 
 

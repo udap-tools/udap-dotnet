@@ -23,6 +23,11 @@ Log.Information("Starting up");
 
 try
 {
+    foreach (var s in args)
+    {
+        Log.Information(s);
+    }
+
     var builder = WebApplication.CreateBuilder(args);
 
 
@@ -33,6 +38,7 @@ try
             theme: AnsiConsoleTheme.Code)
         .MinimumLevel.Verbose()
         .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+        .MinimumLevel.Override("Microsoft.AspNetCore.HttpLogging.HttpLoggingMiddleware", LogEventLevel.Information)
         .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
         .MinimumLevel.Override("System", LogEventLevel.Warning)
         .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", LogEventLevel.Information)
@@ -44,7 +50,7 @@ try
     //     .ReadFrom.Configuration(ctx.Configuration));
 
     var app = builder
-        .ConfigureServices()
+        .ConfigureServices(args)
         .ConfigurePipeline(args);
     
     app.Run();

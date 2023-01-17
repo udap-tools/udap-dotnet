@@ -3,6 +3,7 @@
   <PropertyGroup>
     <!-- https://docs.microsoft.com/en-us/dotnet/standard/frameworks -->
     <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
@@ -29,15 +30,10 @@
   <PropertyGroup Condition="'$(IsLinux)'=='true'">
     <DefineConstants>Linux</DefineConstants>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
-    <LangVersion>latest</LangVersion>
-  </PropertyGroup>
+ 
+
   
   <ItemGroup>
-    <PackageReference Include="Duende.IdentityServer" Version="6.2.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
     <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
     <PackageReference Include="IdentityModel" Version="6.0.0" />
@@ -47,6 +43,16 @@
   <ItemGroup>
     <None Include="docs\README.md" Pack="true" PackagePath="\" />
     <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Extensions\" />
+    <Folder Include="Metadata\Server\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
+    <ProjectReference Include="..\Udap.Util\Udap.Util.csproj" />
   </ItemGroup>
 
 </Project>

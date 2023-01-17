@@ -13,8 +13,10 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Duende.IdentityServer.Validation;
 using Google.Cloud.SecretManager.V1;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -31,13 +33,14 @@ namespace Udap.Idp;
 
 internal static class HostingExtensions
 {
-    public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
+    public static WebApplication ConfigureServices(this WebApplicationBuilder builder, string[] args)
     {
         // if (! int.TryParse(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"), out int sslPort))
         // {
         //     sslPort = 5002;
         // }
 
+        var provider = builder.Configuration.GetValue("provider", "SqlServer");
 
         string dbChoice;
         string connectionString;
@@ -91,7 +94,8 @@ internal static class HostingExtensions
         // inject counter and rules stores
         builder.Services.AddInMemoryRateLimiting();
 
-        
+        builder.Services.AddHttpContextAccessor();
+
         // uncomment if you want to add a UI
         builder.Services.AddRazorPages();
 
@@ -100,36 +104,56 @@ internal static class HostingExtensions
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
                 options.EmitStaticAudienceClaim = true;
+
+                options.InputLengthRestrictions.Scope = 7000;  //TODO: Very large!  Again I need to solve the policy/community/certification concept
             })
             .AddConfigurationStore(options =>
-            {
-                options.ConfigureDbContext = b => b.UseSqlServer(connectionString,
-                    sql => sql.MigrationsAssembly(migrationsAssembly));
-            })
+                _ = provider switch
+                {
+                    "Sqlite" => options.ConfigureDbContext = b =>
+                        b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    "SqlServer" => options.ConfigureDbContext = b =>
+                        b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    _ => throw new Exception($"Unsupported provider: {provider}")
+                })
             .AddOperationalStore(options =>
-            {
-                options.ConfigureDbContext = b => b.UseSqlServer(connectionString,
-                    sql => sql.MigrationsAssembly(migrationsAssembly));
-            })
+                _ = provider switch
+                {
+                    "Sqlite" => options.ConfigureDbContext = b =>
+                        b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    "SqlServer" => options.ConfigureDbContext = b =>
+                        b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    _ => throw new Exception($"Unsupported provider: {provider}")
+                })
             // .AddInMemoryIdentityResources(Config.IdentityResources)
             // .AddInMemoryApiScopes(Config.ApiScopes)
             // .AddInMemoryClients(Config.Clients)
-            
+
             .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
             .AddUdapJwtBearerClientAuthentication()
-            .AddJwtBearerClientAuthentication()
+            // .AddJwtBearerClientAuthentication()
             //TODO remove
             .AddTestUsers(TestUsers.Users)
             .AddUdapDiscovery()
             .AddUdapServerConfiguration()
             .AddUdapConfigurationStore(options =>
+            _ = provider switch
             {
-                options.UdapDbContext = b => b.UseSqlServer(connectionString,
-                    sql => sql.MigrationsAssembly(typeof(UdapDiscoveryEndpoint).Assembly.FullName));
+                "Sqlite" => options.UdapDbContext = b =>
+                    b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                "SqlServer" => options.UdapDbContext = b =>
+                b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                _ => throw new Exception($"Unsupported provider: {provider}")
             });
 
-         builder.AddUdapServerSettings();
+        builder.AddUdapServerSettings();
 
         // TODO
         // Override default ClientSecretValidator.  Not the ideal solution.  But I will need to spend some time creating PRs to Duende to allow Udap validation 
@@ -137,10 +161,26 @@ internal static class HostingExtensions
         // from the saved scopes in the ClientScopes table.  They are resolved and inserted into the HttpContext.Request.  
         //
         builder.Services.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
-        
-
         builder.Services.AddSingleton<IScopeService, DefaultScopeService>();
         
+
+
+
+
+
+
+
+
+        // builder.Services.AddAuthenticationc()
+
+
+
+
+
+
+
+
+
         // configuration (resolvers, counter key builders)
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
@@ -172,12 +212,43 @@ internal static class HostingExtensions
 
         });
 
+        builder.Services.AddHttpLogging(options =>
+        {
+            options.LoggingFields = HttpLoggingFields.All;
+        });
 
         return builder.Build();
     }
     
     public static WebApplication ConfigurePipeline(this WebApplication app, string[] args)
     {
+        app.UseHttpLogging();
+
+        //TODO: promote to middleware class.  PR to Duende Identity Server to ensure this is a change to the code base.
+        // https://groups.google.com/g/udap-discuss/c/jxgtlHOsg2A for reference.
+        app.Use(async (context, next) =>
+        {
+            context.Response.OnStarting(() =>
+            {
+                if (context.Request.Path.Value != null && context.Request.Path.Value.Contains("connect/token"))
+                {
+                    if (context.Response.Headers.ContentType.ToString().ToLower().Equals("application/json; charset=utf-8"))
+                    {
+                        context.Response.Headers.Remove("Content-Type");
+                        context.Response.Headers.Add("Content-Type", new StringValues("application/json"));
+
+                        Log.Logger.Debug("Changed Content-Type header to \"application/json\"");
+                    }
+                }
+
+                return Task.FromResult(0);
+            });
+
+            await next();
+
+        });
+        
+
         if (!args.Any(a => a.Contains("skipRateLimiting")))
         {
             app.UseIpRateLimiting();

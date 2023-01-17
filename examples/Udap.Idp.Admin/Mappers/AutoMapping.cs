@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography.X509Certificates;
 using AutoMapper;
-using Udap.Common.Extensions;
 using Udap.Common.Models;
+using Udap.Util.Extensions;
 
 namespace Udap.Idp.Admin.Mappers;
 

@@ -71,6 +71,8 @@ jobs:
     #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
 
     - run: |
+        echo "Need PKI artifacts for the build"
+        dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj
         echo "Run, Build Application"
         dotnet build Udap.sln 
           

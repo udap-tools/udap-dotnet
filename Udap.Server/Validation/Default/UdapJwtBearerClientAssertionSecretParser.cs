@@ -64,10 +64,9 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
             var clientAssertionType = body[OidcConstants.TokenRequest.ClientAssertionType].FirstOrDefault();
             var clientAssertion = body[OidcConstants.TokenRequest.ClientAssertion].FirstOrDefault();
 
-            if (clientAssertion.IsPresent()
-                && clientAssertionType.Equals(
-                    UdapConstants.TokenRequestTypes.Bearer, 
-                    StringComparison.OrdinalIgnoreCase))
+            if (clientAssertion != null
+                && clientAssertion.IsPresent() 
+                && clientAssertionType == OidcConstants.ClientAssertionTypes.JwtBearer)
             {
                 if (clientAssertion.Length > _options.InputLengthRestrictions.Jwt)
                 {

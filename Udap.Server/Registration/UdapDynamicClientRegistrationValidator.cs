@@ -438,9 +438,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             return true;
         }
 
-        //TODO: do I want this logged?
-        _logger.LogInformation($"jwt payload {jwtSecurityToken.EncodedPayload}");
-        _logger.LogInformation($"X5c {jwtHeader}");
+        _logger.LogDebug($"jwt payload {jwtSecurityToken.EncodedPayload}");
+        _logger.LogDebug($"X5c { jwtHeader.X5c }");
 
         return false;
     }

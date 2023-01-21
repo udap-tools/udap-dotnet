@@ -1556,7 +1556,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
-            Address = "https://localhost:7016/fhir/r4",
+            Address = "https://fhirlabs.net/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
                 ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.

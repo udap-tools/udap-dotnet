@@ -22,9 +22,11 @@ using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Udap.Model.Registration;
@@ -248,7 +250,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
 
     /// <summary>
     /// Web page providing information about the client.
-    /// <seealso cref="https://datatracker.ietf.org/doc/html/rfc7591#section-2"/>
+    /// See <a aref="https://datatracker.ietf.org/doc/html/rfc7591#section-2"/>
     /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ClientUri)]
     public Uri? ClientUri {
@@ -654,4 +656,133 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     {
         return Base64UrlEncoder.Encode(SerializeToJson());
     }
+}
+
+public class UdapClientCredentialsDcrBuilder
+{
+    private UdapDynamicClientRegistrationDocument _document;
+    private DateTime _now;
+
+    private UdapClientCredentialsDcrBuilder(X509Certificate2 cert)
+    {
+        _now = DateTime.UtcNow;
+
+        _document = new UdapDynamicClientRegistrationDocument();
+        _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.ClientCredentials };
+        _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
+        _document.Issuer = cert.GetNameInfo(X509NameType.UrlName, false);
+        _document.Subject = cert.GetNameInfo(X509NameType.UrlName, false);
+    }
+
+    public static UdapClientCredentialsDcrBuilder Create(X509Certificate2 cert)
+    {
+        return new UdapClientCredentialsDcrBuilder(cert);
+    }
+
+    //TODO: Safe for multi SubjectAltName scenarios
+    public static UdapClientCredentialsDcrBuilder Create(X509Certificate2 cert, string subjectAltName)
+    {
+        return new UdapClientCredentialsDcrBuilder(cert);
+    }
+
+    /// <summary>
+    /// Set at construction time. 
+    /// </summary>
+    public DateTime Now {
+        get
+        {
+            return _now;
+        }
+    }
+
+    //
+    // Not sure I want to Expose these
+    //
+
+    // public UdapClientCredentialsDcrBuilder WithIssuer(string issuer)
+    // {
+    //     _document.Issuer = issuer;
+    //     return this;
+    // }
+    //
+    // public UdapClientCredentialsDcrBuilder WithSubject(string subject)
+    // {
+    //     _document.Subject = subject;
+    //     return this;
+    // }
+
+    public UdapClientCredentialsDcrBuilder WithAudience(string? audience)
+    {
+        _document.Audience = audience;
+        return this;
+    }
+
+    public UdapClientCredentialsDcrBuilder WithExpiration(TimeSpan expirationOffset)
+    {
+        _document.Expiration = EpochTime.GetIntDate(_now.Add(expirationOffset));
+        return this;
+    }
+
+    /// <summary>
+    /// Generally one should just let the constructor set IssuedAt
+    /// </summary>
+    /// <param name="issuedAt"></param>
+    /// <returns></returns>
+    public UdapClientCredentialsDcrBuilder OverrideIssuedAt(DateTime issuedAt)
+    {
+        _document.IssuedAt = EpochTime.GetIntDate(issuedAt.ToUniversalTime());
+        return this;
+    }
+    
+    public UdapClientCredentialsDcrBuilder WithJwtId()
+    {
+        _document.JwtId = CryptoRandom.CreateUniqueId();
+        return this;
+    }
+
+    public UdapClientCredentialsDcrBuilder WithClientName(string clientName)
+    {
+        _document.ClientName = clientName;
+        return this;
+    }
+
+    public UdapClientCredentialsDcrBuilder WithContacts(ICollection<string> contacts)
+    {
+        _document.Contacts = contacts;
+        return this;
+    }
+
+    public UdapClientCredentialsDcrBuilder WithTokenEndpointAuthMethod(string tokenEndpointAuthMethod)
+    {
+        _document.TokenEndpointAuthMethod = tokenEndpointAuthMethod;
+        return this;
+    }
+
+    public UdapClientCredentialsDcrBuilder WithScope(string Scope)
+    {
+        _document.Scope = Scope;
+        return this;
+    }
+
+    public UdapDynamicClientRegistrationDocument Build()
+    {
+        return _document;
+    }
+}
+
+public class UdapAuthorizationCodeDcrBuilder
+{
+    private UdapDynamicClientRegistrationDocument _document;
+
+    private UdapAuthorizationCodeDcrBuilder()
+    {
+        _document = new UdapDynamicClientRegistrationDocument();
+        _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.AuthorizationCode };
+    }
+
+    public static UdapAuthorizationCodeDcrBuilder Create()
+    {
+        return new UdapAuthorizationCodeDcrBuilder();
+    }
+
 }

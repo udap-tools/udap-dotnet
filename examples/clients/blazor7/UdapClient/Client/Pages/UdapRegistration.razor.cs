@@ -28,8 +28,9 @@ public partial class UdapRegistration
     private string SoftwareStatementBeforeEncoding { get; set; } = "";
     private string RequestBody { get; set; }
     private string RegistrationResult { get; set; }
-    public string Password { get; set; } = "udap-test";
-
+    private string Password { get; set; } = "udap-test";
+    private Oauth2FlowEnum Oauth2Flow { get; set; } = Oauth2FlowEnum.client_credentials;
+    
     bool isShow;
     InputType PasswordInput = InputType.Password;
     string PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
@@ -65,7 +66,6 @@ public partial class UdapRegistration
             var request = new BuildSoftwareStatementRequest();
             request.MetadataUrl = UdapClientState.MetadataUrl;
             request.Audience = UdapClientState.UdapMetadata.RegistrationEndpoint;
-            //TODO Get from User:: Dialog or form
             request.Password = Password;
 
             SoftwareStatementBeforeEncoding = await MetadataService.BuildSoftwareStatement(request);
@@ -123,4 +123,7 @@ public partial class UdapRegistration
     {
         ErrorBoundary?.Recover();
     }
+    
+    public enum Oauth2FlowEnum { authorization_code, client_credentials }
+
 }

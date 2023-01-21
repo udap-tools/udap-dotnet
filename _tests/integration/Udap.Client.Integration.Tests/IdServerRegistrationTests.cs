@@ -21,7 +21,6 @@ using System.Text.Json.Serialization;
 using FluentAssertions;
 using IdentityModel;
 using IdentityModel.Client;
-using Jose;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -30,8 +29,8 @@ using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Model;
 using Udap.Model.Registration;
+using Udap.Util.Extensions;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 using static IdentityModel.OidcConstants;
 
 namespace Udap.Client.Integration.Tests;
@@ -73,7 +72,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     public async Task RegistrationSuccess_HealthToGo_Test()
     {
         using var fhirClient = new HttpClient();
-        var disco = await fhirClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://stage.healthtogo.me:8181/fhir/r4/stage",
             Policy = new Udap.Client.Client.DiscoveryPolicy
@@ -221,7 +220,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = UdapConstants.TokenRequestTypes.Bearer,
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
@@ -256,7 +255,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     public async Task RegistrationSuccess_client_credentials_Udap_Org_Test()
     {
         using var fhirClient = new HttpClient();
-        var disco = await fhirClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://test.udap.org/fhir/r4/stage",
             Policy = new Udap.Client.Client.DiscoveryPolicy
@@ -316,8 +315,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             GrantTypes = new HashSet<string> { "client_credentials" },
             // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
+            Scope = "system/Patient.* system/Practitioner.read",
+            LogoUri = new Uri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
+    };
 
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
@@ -331,7 +331,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var certifications = new List<string>();
 
         var certifiations = new UdapCertificationAndEndorsementDocument("HoboJoes Basic Interop Certification");
-        
+        certifiations.LogoUri = "https://avatars.githubusercontent.com/u/77421324?s=48&v=4";
 
 
         var certificationsPayloadEncoded = certifiations.Base64UrlEncode();
@@ -372,7 +372,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     {
 
         using var client = new HttpClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://national-directory.meteorapp.com",
             Policy = new Udap.Client.Client.DiscoveryPolicy
@@ -470,7 +470,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     public async Task RegistrationSuccess_client_credentials_ForEvernorth_Test()
     {
         using var client = new HttpClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://udap.fast.poolnook.me",
             Policy = new Udap.Client.Client.DiscoveryPolicy
@@ -583,7 +583,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // using var fhirLabsClient = new HttpClient(handler);
         using var fhirLabsClient = new HttpClient();
 
-        var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://localhost:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
@@ -721,9 +721,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
         var response = await idpClient.PostAsJsonAsync(reg, requestBody);
-
-
+        
         response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.Content.Headers.ContentType!.ToString().Should().Be("application/json");
 
         // var documentAsJson = JsonSerializer.Serialize(document);
         var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
@@ -790,10 +790,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = UdapConstants.TokenRequestTypes.Bearer,
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
-            Udap = UdapConstants.UdapVersionsSupportedValue
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.* system/Practitioner.read"
         };
 
 
@@ -842,7 +843,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // using var fhirLabsClient = new HttpClient(handler);
         using var fhirLabsClient = new HttpClient();
 
-        var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://localhost:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
@@ -1049,7 +1050,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = UdapConstants.TokenRequestTypes.Bearer,
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
@@ -1089,7 +1090,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     {
         using var fhirLabsClient = new HttpClient();
 
-        var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://localhost:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
@@ -1281,7 +1282,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = UdapConstants.TokenRequestTypes.Bearer,
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
@@ -1333,9 +1334,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     {
         using var fhirLabsClient = new HttpClient();
 
-        var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
-            Address = "https://localhost:7016/fhir/r4",
+            Address = "https://fhirlabs.net/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
                 ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
@@ -1521,7 +1522,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = UdapConstants.TokenRequestTypes.Bearer,
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
@@ -1553,9 +1554,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     {
         using var fhirLabsClient = new HttpClient();
 
-        var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
-            Address = "https://fhirlabs.net/fhir/r4",
+            Address = "https://localhost:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
                 ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
@@ -1565,31 +1566,20 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
-        // _testOutputHelper.WriteLine(discoJsonFormatted);
-        var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        
 
         // Get signed payload and compare registration_endpoint
-
-
-        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata.SignedMetadata);
-        var tokenHeader = jwt.Header;
-
-
-        // var tokenHandler = new JwtSecurityTokenHandler();
+        var metadata = disco.Json.Deserialize<UdapMetadata>();
+        metadata.Should().NotBeNull();
 
         // Update JwtSecurityToken to JsonWebTokenHandler
         // See: https://stackoverflow.com/questions/60455167/why-we-have-two-classes-for-jwt-tokens-jwtsecuritytokenhandler-vs-jsonwebtokenha
         // See: https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/945
         //
         var tokenHandler = new JsonWebTokenHandler();
-
-        var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
-        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray.First().ToString()));
-
+        var jwt = tokenHandler.ReadJsonWebToken(metadata!.SignedMetadata);
+        var publicCert = jwt?.GetPublicCertificate();
+        
         var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
         {
             RequireSignedTokens = true,
@@ -1601,13 +1591,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             ValidateAudience = false, // No aud for UDAP metadata
             ValidateLifetime = true,
             IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
-        } // , out SecurityToken validatedToken
-        );
+            ValidAlgorithms = new[] { jwt.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+        });
 
-        jwt.Payload.Claims
-            .Single(c => c.Type == UdapConstants.Discovery.RegistrationEndpoint)
-            .Value.Should().Be(regEndpoint);
+        jwt.GetPayloadValue<string>(UdapConstants.Discovery.RegistrationEndpoint)
+            .Should().Be(disco.RegistrationEndpoint);
 
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
 
@@ -1636,22 +1624,35 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // and specific to this Udap Dynamic Registration.
         //
 
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
+        // var document = new UdapDynamicClientRegistrationDocument
+        // {
+        //     Issuer = "https://fhirlabs.net:7016/fhir/r4",
+        //     Subject = "https://fhirlabs.net:7016/fhir/r4",
+        //     Audience = regEndpoint,
+        //     Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
+        //     IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+        //     JwtId = jwtId,
+        //     ClientName = "udapTestClient",
+        //     Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
+        //     GrantTypes = new HashSet<string> { "client_credentials" },
+        //     // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
+        //     TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+        //     Scope = "system/Patient.* system/Practitioner.read"
+        // };
 
+        var document = UdapClientCredentialsDcrBuilder
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("FhirLabs Client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.* system/Practitioner.read")
+            .Build();
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -1673,7 +1674,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // return;
 
         using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
-        var response = await idpClient.PostAsJsonAsync(reg, requestBody);
+        var response = await idpClient.PostAsJsonAsync(disco.RegistrationEndpoint, requestBody);
 
         if (response.StatusCode != HttpStatusCode.Created)
         {
@@ -1746,7 +1747,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = UdapConstants.TokenRequestTypes.Bearer,
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
@@ -1798,7 +1799,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // using var fhirLabsClient = new HttpClient(handler);
         using var fhirLabsClient = new HttpClient();
 
-        var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://fhirlabs.net/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
@@ -1992,7 +1993,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = UdapConstants.TokenRequestTypes.Bearer,
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
@@ -2028,14 +2029,15 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     {
         using var fhirLabsClient = new HttpClient();
 
-        var disco = await fhirLabsClient.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+        var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
-            Address = "https://localhost:7016/fhir/r4",
+            Address = "https://fhirlabs.net/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
                 ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
-            }
+            },
+            Community = "udap://surefhir.labs"
         });
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -2071,7 +2073,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidateIssuer = true,
                 ValidIssuers = new[]
                 {
-                    "https://localhost:7016/fhir/r4"
+                    "https://fhirlabs.net:7016/fhir/r4"
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
@@ -2079,6 +2081,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
             } // , out SecurityToken validatedToken
         );
+
+        validatedToken.IsValid.Should().BeTrue();
 
         jwt.Payload.Claims
             .Single(c => c.Type == UdapConstants.Discovery.RegistrationEndpoint)
@@ -2210,7 +2214,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = UdapConstants.TokenRequestTypes.Bearer,
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue

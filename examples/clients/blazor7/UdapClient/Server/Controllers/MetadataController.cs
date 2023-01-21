@@ -20,6 +20,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
 using Udap.Model.Registration;
+using Udap.Util.Extensions;
 using UdapClient.Client.Services;
 using UdapClient.Shared.Model;
 using static System.Net.WebRequestMethods;
@@ -70,20 +71,36 @@ public class MetadataController : ControllerBase
                 { "x5c", new[] { certBase64 } }
             };
 
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = request.Audience,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
+        // var document = new UdapDynamicClientRegistrationDocument
+        // {
+        //     Issuer = "https://fhirlabs.net:7016/fhir/r4",
+        //     Subject = "https://fhirlabs.net:7016/fhir/r4",
+        //     Audience = request.Audience,
+        //     Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
+        //     IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+        //     JwtId = jwtId,
+        //     ClientName = "udapTestClient",
+        //     Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
+        //     GrantTypes = new HashSet<string> { "client_credentials" },
+        //     TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+        //     Scope = "system/Patient.* system/Practitioner.read"
+        // };
+
+        var document = UdapClientCredentialsDcrBuilder
+            .Create(clientCert)
+            //TODO: this only gets the first SubAltName
+            .WithAudience(request.Audience)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("FhirLabs Client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.* system/Practitioner.read")
+            .Build();
+
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -98,7 +115,7 @@ public class MetadataController : ControllerBase
 
         var sb = new StringBuilder();
         sb.Append("[");
-        sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedHeader));
+        sb.Append(requestToken.EncodedHeader.DecodeJwtHeader());
         sb.Append(",");
         sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedPayload));
         sb.Append("]");

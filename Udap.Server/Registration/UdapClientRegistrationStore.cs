@@ -51,7 +51,7 @@ namespace Udap.Server.Registration
             if (community == null)
             {
                 anchors = await _dbContext.Communities
-                    .Where(c => c.Default)
+                    .Where(c => c.Enabled)
                     .Include(a => a.Anchors)
                     .SelectMany(c => c.Anchors)
                     .ToListAsync(token);

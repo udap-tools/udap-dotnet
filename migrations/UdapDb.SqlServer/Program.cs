@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using IdentityServerDb.Migrations.ConfigurationDb;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Udap.Server.Extensions;

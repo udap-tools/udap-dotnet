@@ -4,8 +4,8 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "GCPDeploy": "false",
-        
+        "GCPDeploy": "false"
+
       },
       "sslPort": 5002,
       "applicationUrl": "https://host.docker.internal:5002"
@@ -15,9 +15,9 @@
       "launchBrowser": true,
       "environmentVariables": {
         "GCPDeploy": "false",
-        //"ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_ENVIRONMENT": "Development",
         "ServerSettings:ServerSupport": "UDAP",
-        "ServerSettings:DefaultScopes": "user/Patient.* user/Practitioner.read"
+        "ServerSettings:DefaultSystemScopes": "system.cruds"
       },
       "sslPort": 5002,
       "applicationUrl": "https://host.docker.internal:5002"

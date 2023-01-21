@@ -273,10 +273,14 @@ internal static class HostingExtensions
             
         app.UseIdentityServer();
 
-        app.MapPost("/connect/register", async (HttpContext httpContext, [FromServices] UdapDynamicClientRegistrationEndpoint endpoint) =>
+        app.MapPost("/connect/register", 
+                async (
+                    HttpContext httpContext, 
+                    [FromServices] UdapDynamicClientRegistrationEndpoint endpoint, 
+                    CancellationToken token) =>
         {
             //TODO:  Tests and response codes needed...    httpContext.Response
-            await endpoint.Process(httpContext);
+            await endpoint.Process(httpContext, token);
         })
         .AllowAnonymous()
         .Produces(StatusCodes.Status201Created)

@@ -129,7 +129,7 @@ namespace Udap.Client.Integration.Tests
         public async Task UdapClientDiscoveryForIdentityProvider()
         {
             var client = new HttpClient();
-            var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+            var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
             {
                 Address = "https://securedcontrols.net:5001",
                 Policy = new DiscoveryPolicy()
@@ -150,7 +150,7 @@ namespace Udap.Client.Integration.Tests
         public async Task RegistrationEndpointExpected()
         {
             var client = new HttpClient();
-            var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+            var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
             {
                 Address = "https://securedcontrols.net:5001",
                 Policy = new DiscoveryPolicy()
@@ -185,7 +185,7 @@ namespace Udap.Client.Integration.Tests
         public async Task UdapClientDiscoveryForFhirServer()
         {
             var client = new HttpClient();
-            var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+            var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
             {
                 Address = "https://fhirlabs.net:7016/fhir/r4/.well-known/udap", 
                 Policy = new DiscoveryPolicy { 
@@ -236,7 +236,7 @@ namespace Udap.Client.Integration.Tests
         public async Task UdapClientDiscoveryForHealthToGo()
         {
             var client = new HttpClient();
-            var disco = await client.GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest()
+            var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
             {
                 Address = "https://stage.healthtogo.me:8181/fhir/r4/stage",
                 Policy = new DiscoveryPolicy

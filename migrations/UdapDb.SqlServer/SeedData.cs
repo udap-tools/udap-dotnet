@@ -176,7 +176,7 @@ public static class SeedData
         
 
         var sb = new StringBuilder();
-        sb.AppendLine("Use[Udap.Idp.db];");
+        sb.AppendLine("Use [Udap.Idp.db];");
         sb.AppendLine("if not exists(select * from sys.server_principals where name = 'udap_user')");
         sb.AppendLine("BEGIN");
         sb.AppendLine("CREATE LOGIN udap_user WITH PASSWORD = 'udap_password1', DEFAULT_DATABASE =[Udap.Idp.db], CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;");

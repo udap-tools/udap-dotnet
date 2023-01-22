@@ -84,15 +84,36 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        // var discoJsonFormatted =
-        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
-        // _testOutputHelper.WriteLine(discoJsonFormatted);
-        var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        
+        
+        // Get signed payload and compare registration_endpoint
+        var metadata = disco.Json.Deserialize<UdapMetadata>();
+        metadata.Should().NotBeNull();
 
+        var tokenHandler = new JsonWebTokenHandler();
+        var jwt = tokenHandler.ReadJsonWebToken(metadata!.SignedMetadata);
+        var publicCert = jwt?.GetPublicCertificate();
 
-        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "udap-sandbox-surescripts.p12");
+        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
+        {
+            RequireSignedTokens = true,
+            ValidateIssuer = true,
+            ValidIssuers = new[]
+            {
+                "https://stage.healthtogo.me:8181/fhir/r4/stage"
+            }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+            ValidateAudience = false, // No aud for UDAP metadata
+            ValidateLifetime = true,
+            IssuerSigningKey = new X509SecurityKey(publicCert),
+            ValidAlgorithms = new[] { jwt.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+        });
+
+        validatedToken.IsValid.Should().BeTrue(validatedToken.Exception?.Message);
+
+        jwt.GetPayloadValue<string>(UdapConstants.Discovery.RegistrationEndpoint)
+            .Should().Be(disco.RegistrationEndpoint);
+        
+        var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "udap-sandbox-surescripts.p12");
 
         var clientCert = new X509Certificate2(
             cert,
@@ -110,31 +131,20 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             { "alg", signingCredentials.Algorithm },
             { "x5c", new[] { pem } }
         };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
-
+        
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.* system/Practitioner.read")
+            .Build();
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -151,7 +161,12 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Udap = UdapConstants.UdapVersionsSupportedValue
         };
 
-        var response = await fhirClient.PostAsJsonAsync(reg, requestBody);
+        var response = await fhirClient.PostAsJsonAsync(disco.RegistrationEndpoint, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
 
@@ -302,23 +317,20 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // and specific to this Udap Dynamic Registration.
         //
 
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read",
-            LogoUri = new Uri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
-    };
-
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.* system/Practitioner.read")
+            .Build();
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -410,30 +422,20 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             { "alg", signingCredentials.Algorithm },
             { "x5c", new[] { pem } }
         };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
+        
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.* system/Practitioner.read")
+            .Build();
 
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
@@ -508,30 +510,20 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             { "alg", signingCredentials.Algorithm },
             { "x5c", new[] { pem } }
         };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
+        
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.* system/Practitioner.read")
+            .Build();
 
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
@@ -567,20 +559,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     [Fact]
     public async Task RegistrationSuccess_client_credentials_FhirLabs_desktop_NoTokenRequestScope_Test()
     {
-        var handler = new HttpClientHandler();
-        //
-        // Interesting discussion if you are into this sort of stuff
-        // https://github.com/dotnet/runtime/issues/39835
-        //
-        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, _) =>
-        {
-            chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-            chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer"));
-            chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_Anchor.cer"));
-            return chain.Build(cert);
-        };
-
-        // using var fhirLabsClient = new HttpClient(handler);
         using var fhirLabsClient = new HttpClient();
 
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
@@ -595,8 +573,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        // var discoJsonFormatted =
+        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint);
@@ -660,30 +638,19 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             { "x5c", new[] { pem } }
         };
 
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
-        
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.* system/Practitioner.read")
+            .Build();
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -922,29 +889,18 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             { "x5c", new[] { pem } }
         };
 
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            // Scope = "system/Patient.* system/Practitioner.read"
-        };
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .Build();
 
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
@@ -1168,32 +1124,24 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             { "alg", signingCredentials.Algorithm },
             { "x5c", new[] { pem } }
         };
+        
+        var document = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            // .WithScope("user/Patient.* user/Practitioner.read") //Comment out for UDAP Server mode.
+            .WithResponseTypes(new HashSet<string> { "code" })
+            .WithRedirectUrls(new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
+            .Build();
 
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
 
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "authorization_code" },
-            ResponseTypes = new HashSet<string> { "code" },  
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            // Scope = "user/Patient.* user/Practitioner.read",  //Comment out for UDAP Server mode.
-            RedirectUris = new List<string>{ new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
-            
-        };
         document.AddClaims(new List<Claim>() {new Claim("client_uri", "http://test.com/hello/")});
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
@@ -1412,31 +1360,19 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             { "alg", signingCredentials.Algorithm },
             { "x5c", new[] { pem } }
         };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            // Scope = "system/Patient.* system/Practitioner.read"
-        };
-
+        
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .Build();
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -1491,7 +1427,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
 
         var jwtPayload = new JwtPayload(
-            result.Issuer,
+            "http://invalidissuer.net/",
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
             {
@@ -1622,37 +1558,13 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             { "alg", signingCredentials.Algorithm },
             { "x5c", new[] { pem } }
         };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        // var document = new UdapDynamicClientRegistrationDocument
-        // {
-        //     Issuer = "https://fhirlabs.net:7016/fhir/r4",
-        //     Subject = "https://fhirlabs.net:7016/fhir/r4",
-        //     Audience = regEndpoint,
-        //     Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-        //     IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-        //     JwtId = jwtId,
-        //     ClientName = "udapTestClient",
-        //     Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-        //     GrantTypes = new HashSet<string> { "client_credentials" },
-        //     // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-        //     TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-        //     Scope = "system/Patient.* system/Practitioner.read"
-        // };
-
-        var document = UdapClientCredentialsDcrBuilder
+        
+        var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
-            .WithClientName("FhirLabs Client")
+            .WithClientName("dotnet system test client")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
@@ -1881,31 +1793,21 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             { "x5c", new[] { pem } }
         };
 
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "authorization_code" },
-            ResponseTypes = new HashSet<string> { "code" },
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "user/Patient.* user/Practitioner.read",  //Comment out for UDAP Server mode.
-            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
-        };
-
+        var document = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("user/Patient.* user/Practitioner.read")
+            .WithResponseTypes(new HashSet<string> { "code" })
+            .WithRedirectUrls(new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
+            .Build();
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -2038,7 +1940,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
-            Address = "https://fhirlabs.net/fhir/r4",
+            Address = "https://localhost:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
                 ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
@@ -2049,6 +1951,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+        
         var discoJsonFormatted =
             JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
@@ -2113,31 +2016,19 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             { "alg", signingCredentials.Algorithm },
             { "x5c", new[] { pem } }
         };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = regEndpoint,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            // ResponseTypes = new HashSet<string> { "authorization_code" },  TODO: Add tests.  This should not be here when grantTypes contains client_credentials
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            // Scope = "system/Patient.* system/Practitioner.read"
-        };
-
+        
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .Build();
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();

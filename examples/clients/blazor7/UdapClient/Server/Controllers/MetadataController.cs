@@ -57,8 +57,6 @@ public class MetadataController : ControllerBase
     [HttpPost("BuildSoftwareStatement")]
     public IActionResult BuildSoftwareStatement([FromBody] BuildSoftwareStatementRequest request)
     {
-        var now = DateTime.UtcNow;
-        var jwtId = CryptoRandom.CreateUniqueId();
         var certBytes = Convert.FromBase64String(HttpContext.Session.GetString("clientCert"));
         var clientCert = new X509Certificate2(certBytes, request.Password);
         var securityKey = new X509SecurityKey(clientCert);
@@ -70,23 +68,9 @@ public class MetadataController : ControllerBase
                 { "alg", signingCredentials.Algorithm },
                 { "x5c", new[] { certBase64 } }
             };
+        
 
-        // var document = new UdapDynamicClientRegistrationDocument
-        // {
-        //     Issuer = "https://fhirlabs.net:7016/fhir/r4",
-        //     Subject = "https://fhirlabs.net:7016/fhir/r4",
-        //     Audience = request.Audience,
-        //     Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-        //     IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-        //     JwtId = jwtId,
-        //     ClientName = "udapTestClient",
-        //     Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-        //     GrantTypes = new HashSet<string> { "client_credentials" },
-        //     TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-        //     Scope = "system/Patient.* system/Practitioner.read"
-        // };
-
-        var document = UdapClientCredentialsDcrBuilder
+        var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             //TODO: this only gets the first SubAltName
             .WithAudience(request.Audience)
@@ -147,20 +131,19 @@ public class MetadataController : ControllerBase
                 { "x5c", new[] { certBase64 } }
             };
 
-        var document = new UdapDynamicClientRegistrationDocument
-        {
-            Issuer = "https://fhirlabs.net:7016/fhir/r4",
-            Subject = "https://fhirlabs.net:7016/fhir/r4",
-            Audience = request.Audience,
-            Expiration = EpochTime.GetIntDate(now.AddMinutes(5).ToUniversalTime()),
-            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
-            JwtId = jwtId,
-            ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
-            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-            Scope = "system/Patient.* system/Practitioner.read"
-        };
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(request.Audience)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("FhirLabs Client")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.* system/Practitioner.read")
+            .Build();
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();

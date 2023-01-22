@@ -626,7 +626,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidateIssuer = true,
                 ValidIssuers = new[]
                 {
-                    "https://localhost:7016/fhir/r4"
+                    "https://fhirlabs.net:7016/fhir/r4"
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
@@ -634,7 +634,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
             } // , out SecurityToken validatedToken
         );
-        
+
+        validatedToken.IsValid.Should().BeTrue(validatedToken.Exception?.Message);
+
         jwt.Payload.Claims
             .Single(c => c.Type == UdapConstants.Discovery.RegistrationEndpoint)
             .Value.Should().Be(regEndpoint);
@@ -886,7 +888,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             ValidateIssuer = true,
             ValidIssuers = new[]
                 {
-                    "https://localhost:7016/fhir/r4"
+                    "https://fhirlabs.net:7016/fhir/r4"
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
             ValidateAudience = false, // No aud for UDAP metadata
             ValidateLifetime = true,
@@ -894,6 +896,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
         } // , out SecurityToken validatedToken
         );
+
+        validatedToken.IsValid.Should().BeTrue(validatedToken.Exception?.Message);
 
         jwt.Payload.Claims
             .Single(c => c.Type == UdapConstants.Discovery.RegistrationEndpoint)
@@ -1561,7 +1565,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             {
                 ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
-            }
+            },
+            Community = "udap://surefhir.labs"
         });
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -1593,6 +1598,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             IssuerSigningKey = new X509SecurityKey(publicCert),
             ValidAlgorithms = new[] { jwt.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg) }, //must match signing algorithm
         });
+
+        validatedToken.IsValid.Should().BeTrue(validatedToken.Exception?.Message);
 
         jwt.GetPayloadValue<string>(UdapConstants.Discovery.RegistrationEndpoint)
             .Should().Be(disco.RegistrationEndpoint);

@@ -58,18 +58,44 @@ public class MetadataService
         return await result.Content.ReadFromJsonAsync<UdapRegisterRequest>();
     }
 
-    public async Task<UdapDynamicClientRegistrationDocument?> Register(RegistrationRequest registrationRequest)
+    public async Task<RegistrationResult?> Register(RegistrationRequest registrationRequest)
     {
         var result = await _http.PostAsJsonAsync(
-            "Metadata/Register", 
-            registrationRequest, 
-            new JsonSerializerOptions{DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull});
+            "Metadata/Register",
+            registrationRequest,
+            new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
 
         if (!result.IsSuccessStatusCode)
         {
             Console.WriteLine(await result.Content.ReadAsStringAsync());
+
+            return new RegistrationResult
+            {
+                Success = false,
+                ErrorMessage = await result.Content.ReadAsStringAsync()
+            };
         }
-        
-        return await result.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+
+        return new RegistrationResult
+        {
+            Success = true,
+            Document = await result.Content.ReadFromJsonAsync<RegistrationDocument>()
+        };
+    }
+
+    public async Task<CertLoadedEnum> IsCertLoaded(string password)
+    {
+        var result = await _http.PostAsJsonAsync(
+            "Metadata/ValidateCertificate",
+            password);
+
+        if (!result.IsSuccessStatusCode)
+        {
+            Console.WriteLine(await result.Content.ReadAsStringAsync());
+
+            return CertLoadedEnum.Negative;
+        }
+
+        return await result.Content.ReadFromJsonAsync<CertLoadedEnum>();
     }
 }

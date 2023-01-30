@@ -249,6 +249,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         clientEntity.RequirePkce.Should().BeFalse();
 
         clientEntity.RedirectUris.Single().RedirectUri.Should().Be("http://localhost/signin-oidc");
+        clientEntity.AllowOfflineAccess.Should().BeTrue();
     }
 
     [Fact]
@@ -362,6 +363,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         var clientEntity = udapContext.Clients
             .Single(c => c.ClientId == responseUdapDocument.ClientId);
         clientEntity.RequirePkce.Should().BeTrue();
+        clientEntity.AllowOfflineAccess.Should().BeFalse();
     }
 
     [Fact]

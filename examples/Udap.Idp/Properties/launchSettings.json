@@ -17,7 +17,8 @@
         "GCPDeploy": "false",
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ServerSettings:ServerSupport": "UDAP",
-        "ServerSettings:DefaultSystemScopes": "system.cruds"
+        "ServerSettings:DefaultSystemScopes": "udap system.cruds",
+        "ServerSettings:DefaultUserScopes": "udap user.cruds"
       },
       "sslPort": 5002,
       "applicationUrl": "https://host.docker.internal:5002"

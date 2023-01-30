@@ -10,6 +10,7 @@
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
@@ -164,16 +165,27 @@ public static class SeedData
         await SeedFhirScopes(configDbContext, "user");
 
         //
-        // OpenId
+        // openid
         //
-        // if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.OpenId))
-        // {
-        //     var identityResource = new IdentityResources.OpenId();
-        //     configDbContext.IdentityResources.Add(identityResource.ToEntity());
-        //
-        //     await configDbContext.SaveChangesAsync();
-        // }
+        if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.OpenId))
+        {
+            var identityResource = new IdentityResources.OpenId();
+            configDbContext.IdentityResources.Add(identityResource.ToEntity());
         
+            await configDbContext.SaveChangesAsync();
+        }
+
+        //
+        // profile
+        //
+        if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.Profile))
+        {
+            var identityResource = new IdentityResources.Profile();
+            configDbContext.IdentityResources.Add(identityResource.ToEntity());
+
+            await configDbContext.SaveChangesAsync();
+        }
+
 
         var sb = new StringBuilder();
         sb.AppendLine("Use [Udap.Idp.db];");

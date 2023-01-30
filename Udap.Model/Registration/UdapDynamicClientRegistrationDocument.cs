@@ -49,7 +49,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     private string? _tokenEndpointAuthMethod;
     private string? _scope;
     
-
+    public UdapDynamicClientRegistrationDocument(){}
 
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ClientId)]
     public string? ClientId
@@ -428,10 +428,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
         {
             if (string.IsNullOrEmpty(_scope))
             {
-                if (this.TryGetValue(UdapConstants.RegistrationDocumentValues.Scope, out var value))
-                {
-                    _scope = value as string;
-                }
+                _scope = GetStandardClaim(UdapConstants.RegistrationDocumentValues.Scope);
             }
             return _scope;
         }
@@ -535,6 +532,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
         }
     }
 
+    
     internal IList<string> GetIListClaims(string claimType)
     {
         var claimValues = new List<string>();

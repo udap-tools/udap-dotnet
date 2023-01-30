@@ -8,7 +8,6 @@
 #endregion
 
 using System.IdentityModel.Tokens.Jwt;
-using System.Security;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -21,9 +20,7 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Util.Extensions;
-using UdapClient.Client.Services;
 using UdapClient.Shared.Model;
-using static System.Net.WebRequestMethods;
 
 namespace UdapClient.Server.Controllers;
 
@@ -32,10 +29,12 @@ namespace UdapClient.Server.Controllers;
 public class MetadataController : ControllerBase
 {
     private readonly HttpClient _httpClient;
+    private readonly ILogger<MetadataController> _logger;
 
-    public MetadataController(HttpClient httpClient)
+    public MetadataController(HttpClient httpClient, ILogger<MetadataController> logger)
     {
         _httpClient = httpClient;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -55,7 +54,7 @@ public class MetadataController : ControllerBase
     }
 
     [HttpPost("BuildSoftwareStatement")]
-    public IActionResult BuildSoftwareStatement([FromBody] BuildSoftwareStatementRequest request)
+    public IActionResult BuildSoftwareStatementWithHeader([FromBody] BuildSoftwareStatementRequest request)
     {
         var certBytes = Convert.FromBase64String(HttpContext.Session.GetString("clientCert"));
         var clientCert = new X509Certificate2(certBytes, request.Password);
@@ -68,23 +67,44 @@ public class MetadataController : ControllerBase
                 { "alg", signingCredentials.Algorithm },
                 { "x5c", new[] { certBase64 } }
             };
-        
 
-        var document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            //TODO: this only gets the first SubAltName
-            .WithAudience(request.Audience)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("FhirLabs Client")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.* system/Practitioner.read")
-            .Build();
+        UdapDynamicClientRegistrationDocument document;
 
+        if (request.Oauth2Flow == Oauth2FlowEnum.client_credentials)
+        {
+            document = UdapDcrBuilderForClientCredentials
+                .Create(clientCert)
+                //TODO: this only gets the first SubAltName
+                .WithAudience(request.Audience)
+                .WithExpiration(TimeSpan.FromMinutes(5))
+                .WithJwtId()
+                .WithClientName("FhirLabs Client")
+                .WithContacts(new HashSet<string>
+                {
+                    "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+                })
+                .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+                .WithScope("system/Patient.* system/Practitioner.read")
+                .Build();
+        }
+        else
+        {
+            document = UdapDcrBuilderForAuthorizationCode
+                .Create(clientCert)
+                .WithAudience(request.Audience)
+                .WithExpiration(TimeSpan.FromMinutes(5))
+                .WithJwtId()
+                .WithClientName("FhirLabs Client")
+                .WithContacts(new HashSet<string>
+                {
+                    "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+                })
+                .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+                .WithScope("system/Patient.* system/Practitioner.read openid profile offline_access")
+                .WithResponseTypes(new HashSet<string> { "code" })
+                .WithRedirectUrls(new List<string> { "https://localhost:7041/udapBusinesstoBusiness" })
+                .Build();
+        }
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -112,13 +132,22 @@ public class MetadataController : ControllerBase
             });
 
         return Ok(softwareStatementBeforeEncoding);
+
+        //
+        // Maybe switch to this so we can easily get access to Softwarestatment so we can modify it at the client
+        //
+        // var result = new RawSoftwareStatementAndHeader
+        // {
+        //     Header = requestToken.EncodedHeader.DecodeJwtHeader(),
+        //     SoftwareStatement = Base64UrlEncoder.Decode(requestToken.EncodedPayload)
+        // };
+        //
+        // return Ok(result);
     }
 
     [HttpPost("BuildRequestBody")]
     public IActionResult BuildRequestBody([FromBody] BuildSoftwareStatementRequest request)
     {
-        var now = DateTime.UtcNow;
-        var jwtId = CryptoRandom.CreateUniqueId();
         var certBytes = Convert.FromBase64String(HttpContext.Session.GetString("clientCert"));
         var clientCert = new X509Certificate2(certBytes, request.Password);
         var securityKey = new X509SecurityKey(clientCert);
@@ -131,19 +160,43 @@ public class MetadataController : ControllerBase
                 { "x5c", new[] { certBase64 } }
             };
 
-        var document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            .WithAudience(request.Audience)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("FhirLabs Client")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.* system/Practitioner.read")
-            .Build();
+        UdapDynamicClientRegistrationDocument document;
+
+        if (request.Oauth2Flow == Oauth2FlowEnum.client_credentials)
+        {
+            document = UdapDcrBuilderForClientCredentials
+                .Create(clientCert)
+                //TODO: this only gets the first SubAltName
+                .WithAudience(request.Audience)
+                .WithExpiration(TimeSpan.FromMinutes(5))
+                .WithJwtId()
+                .WithClientName("FhirLabs Client")
+                .WithContacts(new HashSet<string>
+                {
+                    "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+                })
+                .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+                .WithScope("system/Patient.* system/Practitioner.read")
+                .Build();
+        }
+        else
+        {
+            document = UdapDcrBuilderForAuthorizationCode
+                .Create(clientCert)
+                .WithAudience(request.Audience)
+                .WithExpiration(TimeSpan.FromMinutes(5))
+                .WithJwtId()
+                .WithClientName("FhirLabs Client")
+                .WithContacts(new HashSet<string>
+                {
+                    "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+                })
+                .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+                .WithScope("system/Patient.* system/Practitioner.read openid profile offline_access")
+                .WithResponseTypes(new HashSet<string> { "code" })
+                .WithRedirectUrls(new List<string> { "https://localhost:7041/udapBusinesstoBusiness" })
+                .Build();
+        }
 
         var encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedPayload = document.Base64UrlEncode();
@@ -172,8 +225,33 @@ public class MetadataController : ControllerBase
         response.EnsureSuccessStatusCode();
 
         var result = await response.Content
-            .ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+            .ReadFromJsonAsync<RegistrationDocument>();
 
-        return Ok(result);
+        return Ok(JsonSerializer.Serialize(result));
+    }
+
+    [HttpPost("ValidateCertificate")]
+
+    public IActionResult ValidateCertificate([FromBody] string password)
+    {
+        var clientCertSession = HttpContext.Session.GetString("clientCert");
+
+        if (clientCertSession == null)
+        {
+            return Ok(CertLoadedEnum.Negative);
+        }
+
+        var certBytes = Convert.FromBase64String(clientCertSession);
+        try
+        {
+            var clientCert = new X509Certificate2(certBytes, password);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex.Message);
+            return Ok(CertLoadedEnum.InvalidPassword);
+        }
+
+        return Ok(CertLoadedEnum.Positive);
     }
 }

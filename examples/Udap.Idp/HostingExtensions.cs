@@ -48,10 +48,10 @@ internal static class HostingExtensions
         dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
 
 
-        foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
-        {
-            Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
-        }
+        // foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
+        // {
+        //     Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
+        // }
 
         //Ugly but works so far.
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)

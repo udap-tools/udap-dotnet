@@ -1,5 +1,6 @@
 ﻿@page "/udapRegistration"
 
+
 <InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 
 <ErrorBoundary @ref="ErrorBoundary">
@@ -9,54 +10,112 @@
       <MudItem xs="12" sm="12" md="12">
         <MudText Typo="Typo.h3">Udap Metadata</MudText>
       </MudItem>
-      <MudItem xs="12" sm="12" md="12">
-        <MudFab HtmlTag="label"
-                Size="Size.Small"
-                Color="Color.Success"
-                Icon="@Icons.Filled.AttachFile"
-                Label="Upload Client Certificate"
-                for="fileInput" />
-        <MudTextField @bind-Value="Password"
-                      Label="Password"
-                      Variant="Variant.Text"
-                      InputType="@PasswordInput"
-                      Adornment="Adornment.End"
-                      AdornmentIcon="@PasswordInputIcon"
-                      OnAdornmentClick="ButtonTestclick"
-                      AdornmentAriaLabel="Show Password" />
-        <MudSpacer />
-        <MudSelect @bind-Value="Oauth2Flow" Label="Select fast-food"
-                   HelperText="String"
-                   Placeholder="Please Select"
-                   AdornmentIcon="@Icons.Material.Filled.Build"
-                   AdornmentColor="Color.Primary">
-            @foreach (Oauth2FlowEnum item in Enum.GetValues(typeof(Oauth2FlowEnum)))
-            {
-                <MudSelectItem Value="@item">@item</MudSelectItem>
-            }
-
-        </MudSelect>
-        <MudButton Class="mt-3" ButtonType="ButtonType.Button"
-                   Variant="Variant.Filled"
-                   OnClick="Build">Build authorization code request. (header and raw software statement)</MudButton>
-        <MudSpacer />
+        <MudItem xs="12" sm="12" md="12">
+            <MudFab HtmlTag="label"
+                    Size="Size.Small"
+                    Color="@CertLoadedColor"
+                    Icon="@Icons.Filled.AttachFile"
+                    Label="Upload Client Certificate"
+                    for="fileInput" /> 
         
-        <MudItem>
-          <MudText Typo="Typo.h5">@Oauth2Flow.ToString()</MudText>
-          <pre contenteditable>@SoftwareStatementBeforeEncoding</pre>
-          <MudButton Class="mt-3" ButtonType="ButtonType.Button"
-                     Variant="Variant.Filled"
-                     OnClick="BuildRequestBody">Build Request Body</MudButton>
-          <MudText Typo="Typo.h5">Request Body</MudText>
-          <pre>@RequestBody</pre>
+        
+            <MudGrid Spacing="1" Class="mt-8">
+                <MudItem xs="7" sm="3" Class="pa-4 ma-2">
+                    <MudTextField @bind-Value="Password"
+                                  Label="Password"
+                                  Variant="Variant.Text"
+                                  InputType="@PasswordInput"
+                                  Adornment="Adornment.End"
+                                  AdornmentIcon="@PasswordInputIcon"
+                                  OnAdornmentClick="ShowPassword"
+                                  AdornmentAriaLabel="Show Password"/>
+                </MudItem>
+                <MudItem xs="5" sm="3" Class="pa-4 ma-2">
+                    <MudSelect @bind-Value="UdapClientState.Oauth2Flow" Label="Select Oath2 Flow"
+                               HelperText="String"
+                               Placeholder="Please Select"
+                               AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
+                               AdornmentColor="Color.Primary">
+                        @foreach (Oauth2FlowEnum item in Enum.GetValues(typeof(Oauth2FlowEnum)))
+                        {
+                            <MudSelectItem Value="@item">@item</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            <MudButton Class="mt-3" ButtonType="ButtonType.Button"
+                       Variant="Variant.Filled"
+                       OnClick="BuildRawSoftwareStatement">
+
+                @if (UdapClientState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
+                {
+                    <p>Build authorization_code request. (header and raw software statement)</p>
+                }
+                else
+                {
+                    <p>Build client_credentials request. (header and raw software statement)</p>
+                }
+
+            </MudButton>
+
+            <MudSpacer />
+        
+            <MudGrid Spacing="1" Class="mt-8">
+                <MudItem xs="7">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">Raw Software Statement</MudText>
+                        <pre contenteditable>@SoftwareStatementBeforeEncoding</pre>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="5">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">x509 certificates from x5c</MudText>
+                        <pre>x509</pre>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        
+        
+            <MudButton Class="mt-3" ButtonType="ButtonType.Button"
+                       Variant="Variant.Filled"
+                       OnClick="BuildRequestBody">Build Request Body</MudButton>
+
+            <MudGrid Spacing="1" Class="mt-8">
+                <MudItem xs="7">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">Request Body</MudText>
+                        <pre>@RequestBody</pre>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="5">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
+                        <pre>Explanation Todo</pre>
+                    </MudPaper>
+                </MudItem>
+
+            </MudGrid>
+
+            <MudButton Class="mt-3" ButtonType="ButtonType.Button"
+                       Variant="Variant.Filled"
+                       OnClick="PerformRegistration">Register (DCR)</MudButton>
+        
+            <MudGrid Spacing="1" Class="mt-8">
+                <MudItem xs="7">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">Registration Response</MudText>
+                        <pre>@RegistrationResult</pre>
+                    </MudPaper>
+                    </MudItem>
+                <MudItem xs="5">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
+                        <pre>Explanation Todo</pre>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
         </MudItem>
-        <MudButton Class="mt-3" ButtonType="ButtonType.Button"
-                   Variant="Variant.Filled"
-                   OnClick="PerformRegistration">Register (DCR)</MudButton>
-        <MudText Typo="Typo.h5">Access Code</MudText>
-        <pre>@RegistrationResult</pre>
-        <MudSpacer />
-      </MudItem>
     </MudGrid>
 
 

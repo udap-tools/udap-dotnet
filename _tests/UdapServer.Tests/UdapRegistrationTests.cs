@@ -276,6 +276,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         clientEntity.RequirePkce.Should().BeFalse();
 
         clientEntity.RedirectUris.Single().RedirectUri.Should().Be("http://localhost/signin-oidc");
+        clientEntity.AllowOfflineAccess.Should().BeTrue();
     }
     
     [Fact]
@@ -392,6 +393,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         clientEntity.RequirePkce.Should().BeTrue();
 
         clientEntity.AllowedScopes.Count.Should().Be(ModelInfo.SupportedResources.Count * 2);
+        clientEntity.AllowOfflineAccess.Should().BeFalse();
     }
 
     [Fact]

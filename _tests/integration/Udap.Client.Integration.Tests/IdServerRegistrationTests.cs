@@ -9,6 +9,7 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -28,6 +29,7 @@ using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Model;
+using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
@@ -1225,7 +1227,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         encodedHeader = jwtHeader.Base64UrlEncode();
         var encodedClientAssertion = jwtPayload.Base64UrlEncode();
         encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
-
+        
         var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
 
         var clientRequest = new UdapClientCredentialsTokenRequest
@@ -1247,26 +1249,56 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
         _testOutputHelper.WriteLine(string.Empty);
 
+        //
+        // Need to make a GET request to /authorize
+        // Need a redirect handler.
+        //
+
+        var url = new RequestUrl(disco.AuthorizeEndpoint).CreateAuthorizeUrl(
+            clientId: result.ClientId,
+            responseType: "code",
+            state: CryptoRandom.CreateUniqueId(),
+            scope: "udap user.cruds",
+            redirectUri: document.RedirectUris.First());
+
+        _testOutputHelper.WriteLine(url);
+
+        var handler = new HttpClientHandler() { AllowAutoRedirect = false };
+        var httpClient = new HttpClient(handler);
+
+        response = await httpClient.GetAsync(url);
         
-        var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+
+        var authUri = new Uri(disco.AuthorizeEndpoint);
+        var loginUrl = $"{authUri.Scheme}://{authUri.Authority}/Account/Login";
+        response.Headers?.Location?.ToString().Should()
+            .StartWith(loginUrl);
 
 
-        _testOutputHelper.WriteLine("Authorization Token Response");
-        _testOutputHelper.WriteLine("---------------------");
-        _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
-        _testOutputHelper.WriteLine(string.Empty);
-        _testOutputHelper.WriteLine(string.Empty);
-
-        fhirLabsClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
-
-        patientResponse.Result.EnsureSuccessStatusCode();
-
-
-        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+        //
+        // var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+        //
+        //
+        // _testOutputHelper.WriteLine("Authorization Token Response");
+        // _testOutputHelper.WriteLine("---------------------");
+        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
+        // _testOutputHelper.WriteLine(string.Empty);
+        // _testOutputHelper.WriteLine(string.Empty);
+        //
+        // fhirLabsClient.DefaultRequestHeaders.Authorization =
+        //     new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
+        // var patientResponse = fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
+        //
+        // patientResponse.Result.EnsureSuccessStatusCode();
+        //
+        //
+        // _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
 
     }
+
+
+
     //
     // IDP Server must be running in ServerSupport mode of ServerSupport.UDAP for this to fail and pass the test.
     // See part of test where getting Access Token
@@ -1916,21 +1948,37 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
         _testOutputHelper.WriteLine(string.Empty);
 
-        var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
 
-        _testOutputHelper.WriteLine("Authorization Token Response");
-        _testOutputHelper.WriteLine("---------------------");
-        _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
-        _testOutputHelper.WriteLine(string.Empty);
-        _testOutputHelper.WriteLine(string.Empty);
+        var url = new RequestUrl(disco.AuthorizeEndpoint).CreateAuthorizeUrl(
+            clientId: result.ClientId,
+            responseType: "code",
+            state: CryptoRandom.CreateUniqueId(),
+            scope: result.Scope,
+            redirectUri: document.RedirectUris.First());
 
-        fhirLabsClient.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirLabsClient.GetAsync("https://fhirlabs.net/fhir/r4/Patient/$count-em");
 
-        patientResponse.Result.EnsureSuccessStatusCode();
+        response = await idpClient.GetAsync(url);
 
-        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+
+
+        //
+        //
+        // var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+        //
+        // _testOutputHelper.WriteLine("Authorization Token Response");
+        // _testOutputHelper.WriteLine("---------------------");
+        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
+        // _testOutputHelper.WriteLine(string.Empty);
+        // _testOutputHelper.WriteLine(string.Empty);
+        //
+        // fhirLabsClient.DefaultRequestHeaders.Authorization =
+        //     new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
+        // var patientResponse = fhirLabsClient.GetAsync("https://fhirlabs.net/fhir/r4/Patient/$count-em");
+        //
+        // patientResponse.Result.EnsureSuccessStatusCode();
+        //
+        // _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
 
     }
     [Fact]

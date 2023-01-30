@@ -7,10 +7,11 @@
 // */
 #endregion
 
-using System.Security;
-using System.Security.Cryptography.X509Certificates;
+
 using Udap.Model;
+using Udap.Model.Access;
 using Udap.Model.Registration;
+using UdapClient.Shared.Model;
 
 namespace UdapClient.Client.Services;
 
@@ -22,14 +23,23 @@ public class UdapClientState
 
     public UdapMetadata? UdapMetadata { get; set; }
     
-    public string SoftwareStatementBeforeEncoding { get; set; }
+    public string SoftwareStatementBeforeEncoding { get; set; } = string.Empty;
 
     public UdapRegisterRequest? RegistrationRequest { get; set; }
 
-    /// <summary>
-    /// Result from dynamic client registration
-    /// </summary>
-    public UdapDynamicClientRegistrationDocument AccessCode { get; set; }
+    public Oauth2FlowEnum Oauth2Flow { get; set; } = Oauth2FlowEnum.client_credentials;
+
+    public RegistrationDocument? RegistrationDocument { get; set; }
+    
+
+    public string? RegistrationClaims { get; set; }
+
+    public UdapClientCredentialsTokenRequest? ClientCredentialsTokenRequest { get; set; }
+
+    public UdapAuthorizationCodeTokenRequest? AuthorizationCodeTokenRequest { get; set; }
+    public AccessCodeRequestResult? AccessCodeRequestResult { get; set; }
+   
+    public LoginCallBackResult LoginCallBackResult { get; set; }
 
     private bool _isLocalStorageInit;
 
@@ -43,4 +53,3 @@ public class UdapClientState
         _isLocalStorageInit = true;
     }
 }
-

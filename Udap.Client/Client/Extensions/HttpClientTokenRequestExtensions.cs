@@ -9,9 +9,9 @@
 
 using IdentityModel;
 using IdentityModel.Client;
-using Udap.Client.Client.Messages;
 using Udap.Client.Internal;
 using Udap.Model;
+using Udap.Model.Access;
 
 namespace Udap.Client.Client.Extensions;
 

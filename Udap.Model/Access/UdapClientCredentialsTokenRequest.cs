@@ -9,13 +9,18 @@
 
 using System.Text.Json.Serialization;
 using IdentityModel.Client;
-using Udap.Model;
 
-namespace Udap.Client.Client.Messages;
+namespace Udap.Model.Access;
 
 public class UdapClientCredentialsTokenRequest : ClientCredentialsTokenRequest
 {
 
+    [JsonPropertyName(UdapConstants.RegistrationRequestBody.Udap)]
+    public string Udap { get; set; }
+}
+
+public class UdapAuthorizationCodeTokenRequest : AuthorizationCodeTokenRequest
+{
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.Udap)]
     public string Udap { get; set; }
 }

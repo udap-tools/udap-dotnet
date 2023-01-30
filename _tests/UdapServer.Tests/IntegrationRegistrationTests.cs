@@ -531,60 +531,40 @@ namespace UdapServer.Tests
             }
         }
 
-        /// <summary>
-        /// An array of URI strings indicating how the data holder can contact the app operator regarding the application.
-        /// The array SHALL contain at least one valid email address using the mailto scheme, e.g.
-        /// ["mailto:operations@example.com"]
-        /// </summary>
-        /// <returns></returns>
-        [Fact(Skip = "xxx")]
-        public async Task contacts_Test()
-        {
-            Assert.Fail("Not Implemented");
-        }
 
-        /// <summary>
-        /// A URL string referencing an image associated with the client application, i.e. a logo.
-        /// If grant_types includes "authorization_code", client applications SHALL include this field,
-        /// and the Authorization Server MAY display this logo to the user during the authorization process.
-        /// The URL SHALL use the https scheme and reference a PNG, JPG, or GIF image file,
-        /// e.g. "https://myapp.example.com/MyApp.png"
-        /// </summary>
-        /// <returns></returns>
-        [Fact(Skip = "xxx")]
-        public async Task logo_uri_Tests()
+        [Fact]
+        public void TestSerialization()
         {
-            Assert.Fail("Not Implemented");
-        }
+            var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+            var clientCert = new X509Certificate2(cert, "udap-test");
 
-        /// <summary>
-        /// Array of strings, each representing a requested grant type, from the following list:
-        /// "authorization_code", "refresh_token", "client_credentials".
-        /// The array SHALL include either "authorization_code" or "client_credentials", but not both. '
-        /// The value "refresh_token" SHALL NOT be present in the array unless "authorization_code" is also present.
-        /// </summary>
-        /// <returns></returns>
-        [Fact(Skip = "xxx")]
-        public async Task grant_types_Tests()
-        {
-            Assert.Fail("Not Implemented");
-        }
+            var document = UdapDcrBuilderForAuthorizationCode
+                .Create(clientCert)
+                .WithAudience("https://securedcontrols.net/connect/register")
+                .WithExpiration(TimeSpan.FromMinutes(5))
+                .WithJwtId()
+                .WithClientName("dotnet system test client")
+                .WithContacts(new HashSet<string>
+                {
+                    "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+                })
+                .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+                .WithScope("user/Patient.* user/Practitioner.read") //Comment out for UDAP Server mode.
+                .WithResponseTypes(new HashSet<string> { "code" })
+                .WithRedirectUrls(new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
+                .Build();
 
-        /// <summary>
-        /// Array of strings. If grant_types contains "authorization_code", then this element SHALL
-        /// have a fixed value of ["code"], and SHALL be omitted otherwise
-        /// </summary>
-        /// <returns></returns>
-        [Fact(Skip = "xxx")]
-        public async Task response_types_Tests()
-        {
-            Assert.Fail("Not Implemented");
-        }
+            var documentSerialized = document.SerializeToJson();
+            
+            _testOutputHelper.WriteLine(documentSerialized);
 
-        [Fact(Skip = "xxx")]
-        public async Task SignedCertifications_Tests()
-        {
-            Assert.Fail("Not Implemented");
+            var docDeserialized =
+                JsonExtensions.DeserializeFromJson<UdapDynamicClientRegistrationDocument>(documentSerialized);
+
+            // var docDeserialized = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(documentSerialized);
+            _testOutputHelper.WriteLine(docDeserialized.RedirectUris.First());
+
+
         }
 
         internal class ErrorConfigStore : IUdapClientConfigurationStore

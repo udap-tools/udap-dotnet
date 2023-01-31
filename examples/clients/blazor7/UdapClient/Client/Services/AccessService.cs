@@ -60,6 +60,7 @@ public class AccessService
         return await result.Content.ReadFromJsonAsync<UdapAuthorizationCodeTokenRequest>();
     }
 
+    
     public async Task<UdapClientCredentialsTokenRequest?> BuildRequestAccessTokenForClientCredentials(
         string clientId,
         string tokenEndpointUrl,
@@ -102,7 +103,7 @@ public class AccessService
         return await result.Content.ReadAsStringAsync();
     }
 
-    public async Task<TokenResponse?> RequestAccessTokenForAuthorizationCode(UdapAuthorizationCodeTokenRequest request)
+    public async Task<TokenResponseModel?> RequestAccessTokenForAuthorizationCode(UdapAuthorizationCodeTokenRequest request)
     {
         var result = await _httpClient.PostAsJsonAsync("Access/RequestToken/authorization_code", request);
 
@@ -115,6 +116,8 @@ public class AccessService
             return null;
         }
 
-        return await result.Content.ReadFromJsonAsync<TokenResponse>();
+        var tokenResponse = await result.Content.ReadFromJsonAsync<TokenResponseModel>();
+
+        return tokenResponse;
     }
 }

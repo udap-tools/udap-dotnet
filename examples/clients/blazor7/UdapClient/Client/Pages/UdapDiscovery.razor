@@ -11,8 +11,8 @@
         <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="GetMetadata">Query</MudButton>
         <MudSpacer />
         <MudTextField Label="Metadata Url" 
-                      @bind-Value="@UdapClientState.MetadataUrl" AutoFocus="true" InputType="InputType.Text"
-                      @onchange="args => { if (args.Value != null) UdapClientState.MetadataUrl = (string)args.Value; }"></MudTextField>
+                      @bind-Value="@State.MetadataUrl" AutoFocus="true" InputType="InputType.Text"
+                      @onchange="args => { if (args.Value != null) State.MetadataUrl = (string)args.Value; }"></MudTextField>
         <MudSpacer />
         <pre>@Result</pre>
         <MudSpacer />

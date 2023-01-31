@@ -35,7 +35,7 @@ public class ProfileService
         var state = await _localStorageService.GetItemAsync<UdapClientState>(UdapStateKeyName)
                ?? new UdapClientState();
 
-        state.LocalStorageInit();
+        state.IsLocalStorageInit = true;
 
         return state;
     }

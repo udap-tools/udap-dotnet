@@ -250,7 +250,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
         _testOutputHelper.WriteLine(string.Empty);
 
-        var tokenResponse = await fhirClient.RequestClientCredentialsTokenAsync(clientRequest);
+        var tokenResponse = await fhirClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
         
         _testOutputHelper.WriteLine("Authorization Token Response");
         _testOutputHelper.WriteLine("---------------------");
@@ -775,7 +775,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
         _testOutputHelper.WriteLine(string.Empty);
 
-        var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+        var tokenResponse = await idpClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
 
         
         _testOutputHelper.WriteLine("Authorization Token Response");
@@ -1026,7 +1026,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
         _testOutputHelper.WriteLine(string.Empty);
 
-        var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+        var tokenResponse = await idpClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
 
         _testOutputHelper.WriteLine("Authorization Token Response");
         _testOutputHelper.WriteLine("---------------------");
@@ -1508,7 +1508,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
 
 
-        var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+        var tokenResponse = await idpClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
 
         
         _testOutputHelper.WriteLine("Authorization Token Response");
@@ -1712,7 +1712,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
 
 
-        var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+        var tokenResponse = await idpClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
 
         _testOutputHelper.WriteLine("Authorization Token Response");
         _testOutputHelper.WriteLine("---------------------");
@@ -2173,7 +2173,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
         _testOutputHelper.WriteLine(string.Empty);
 
-        var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+        var tokenResponse = await idpClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
 
 
         _testOutputHelper.WriteLine("Authorization Token Response");

@@ -31,7 +31,7 @@
                                   AdornmentAriaLabel="Show Password"/>
                 </MudItem>
                 <MudItem xs="5" sm="3" Class="pa-4 ma-2">
-                    <MudSelect @bind-Value="UdapClientState.Oauth2Flow" Label="Select Oath2 Flow"
+                    <MudSelect @bind-Value="State.Oauth2Flow" Label="Select Oath2 Flow"
                                HelperText="String"
                                Placeholder="Please Select"
                                AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
@@ -48,7 +48,7 @@
                        Variant="Variant.Filled"
                        OnClick="BuildRawSoftwareStatement">
 
-                @if (UdapClientState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
+                @if (State.Oauth2Flow == Oauth2FlowEnum.authorization_code)
                 {
                     <p>Build authorization_code request. (header and raw software statement)</p>
                 }

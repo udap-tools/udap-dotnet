@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using Org.BouncyCastle.Asn1.Ocsp;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -17,32 +16,25 @@ using UdapClient.Shared.Model;
 
 namespace UdapClient.Client.Services;
 
-public class MetadataService
+public class RegisterService
 {
     readonly HttpClient _http;
 
-    public MetadataService(HttpClient http)
+    public RegisterService(HttpClient http)
     {
         _http = http;
     }
 
-    public async Task<UdapMetadata?> GetMetadata(string metadataUrl)
-    {
-        var result = await _http.GetFromJsonAsync<UdapMetadata>($"Metadata?metadataUrl={metadataUrl}");
-        
-        return result;
-    }
-
     public async Task UploadClientCert(string certBytes)
     {
-        var result = await _http.PostAsJsonAsync("Metadata/UploadClientCert", certBytes);
+        var result = await _http.PostAsJsonAsync("Register/UploadClientCert", certBytes);
 
         result.EnsureSuccessStatusCode();
     }
 
     public async Task<string> BuildSoftwareStatement(BuildSoftwareStatementRequest request)
     {
-        var result = await _http.PostAsJsonAsync("Metadata/BuildSoftwareStatement", request);
+        var result = await _http.PostAsJsonAsync("Register/BuildSoftwareStatement", request);
 
         result.EnsureSuccessStatusCode();
 
@@ -51,7 +43,7 @@ public class MetadataService
 
     public async Task<UdapRegisterRequest?> BuildRequestBody(BuildSoftwareStatementRequest request)
     {
-        var result = await _http.PostAsJsonAsync("Metadata/BuildRequestBody", request);
+        var result = await _http.PostAsJsonAsync("Register/BuildRequestBody", request);
 
         result.EnsureSuccessStatusCode();
 
@@ -61,7 +53,7 @@ public class MetadataService
     public async Task<RegistrationResult?> Register(RegistrationRequest registrationRequest)
     {
         var result = await _http.PostAsJsonAsync(
-            "Metadata/Register",
+            "Register/Register",
             registrationRequest,
             new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
 
@@ -86,7 +78,7 @@ public class MetadataService
     public async Task<CertLoadedEnum> IsCertLoaded(string password)
     {
         var result = await _http.PostAsJsonAsync(
-            "Metadata/ValidateCertificate",
+            "Register/ValidateCertificate",
             password);
 
         if (!result.IsSuccessStatusCode)

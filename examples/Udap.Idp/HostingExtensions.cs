@@ -171,7 +171,7 @@ internal static class HostingExtensions
 
 
 
-        // builder.Services.AddAuthenticationc()
+        // builder.Services.AddAuthentication()
 
 
 

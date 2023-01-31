@@ -9,12 +9,9 @@
 
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using IdentityModel.Client;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using MudBlazor.Extensions;
-using Org.BouncyCastle.Asn1.Ocsp;
+using Udap.Client.Client.Extensions;
 using Udap.Model.Access;
 using UdapClient.Shared;
 using UdapClient.Shared.Model;
@@ -26,9 +23,9 @@ namespace UdapClient.Server.Controllers;
 public class AccessController : ControllerBase
 {
     private readonly HttpClient _httpClient;
-    private readonly ILogger<MetadataController> _logger;
+    private readonly ILogger<RegisterController> _logger;
 
-    public AccessController(HttpClient httpClient, ILogger<MetadataController> logger)
+    public AccessController(HttpClient httpClient, ILogger<RegisterController> logger)
     {
         _httpClient = httpClient;
         _logger = logger;
@@ -91,7 +88,7 @@ public class AccessController : ControllerBase
     public async Task<IActionResult> RequestAccessTokenForClientCredentials(UdapClientCredentialsTokenRequest request)
     {
         var tokenResponse = await _httpClient
-            .RequestClientCredentialsTokenAsync(request);
+            .UdapRequestClientCredentialsTokenAsync(request);
 
         return Ok(tokenResponse.Json.AsJson());
     }
@@ -100,8 +97,21 @@ public class AccessController : ControllerBase
     public async Task<IActionResult> RequestAccessTokenForAuthorizationCode(UdapAuthorizationCodeTokenRequest request)
     {
         var tokenResponse = await _httpClient
-            .RequestAuthorizationCodeTokenAsync(request);
+            .UdapRequestAuthorizationCodeTokenAsync(request);
 
-        return Ok(tokenResponse.Json.AsJson());
+        var tokenResponseModel = new TokenResponseModel
+        {
+            Raw = tokenResponse.Json.AsJson(),
+            IsError = tokenResponse.IsError,
+            Error = tokenResponse.Error,
+            AccessToken = tokenResponse.AccessToken,
+            IdentityToken = tokenResponse.IdentityToken,
+            RefreshToken = tokenResponse.RefreshToken,
+            ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
+            Scope = tokenResponse.Raw,
+            TokenType = tokenResponse.TokenType
+        };
+
+        return Ok(tokenResponseModel);
     }
 }

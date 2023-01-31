@@ -60,9 +60,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Model", "Udap.Model\Udap.Model.csproj", "{25BD1FD4-5AB2-403C-81C1-36640CED1CF8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Util", "Udap.Util\Udap.Util.csproj", "{B00FC6ED-E967-4FD6-AAE9-ABCDDB328902}"
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Udap.CA", "examples\Udap.CA\Udap.CA.csproj", "{A634BD23-B31B-4260-922E-24FEC8B4CF22}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Udap.CA.Tests", "_tests\Udap.CA.Tests\Udap.CA.Tests.csproj", "{9191CC9B-4DD0-4115-8FFD-A710659DBC27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.CA", "examples\Udap.CA\Udap.CA.csproj", "{A634BD23-B31B-4260-922E-24FEC8B4CF22}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.CA.Tests", "_tests\Udap.CA.Tests\Udap.CA.Tests.csproj", "{9191CC9B-4DD0-4115-8FFD-A710659DBC27}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

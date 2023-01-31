@@ -8,6 +8,8 @@
 #endregion
 
 
+using Microsoft.AspNetCore.Components;
+using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
@@ -41,15 +43,60 @@ public class UdapClientState
    
     public LoginCallBackResult LoginCallBackResult { get; set; }
 
-    private bool _isLocalStorageInit;
-
-    public bool IsLocalStorageInit()
+    public void UpdateAccessTokens(ComponentBase source, TokenResponseModel? tokenResponseModel)
     {
-        return _isLocalStorageInit;
+        AccessTokens = tokenResponseModel;
+
+        NotifyStateChanged();
     }
 
-    public void LocalStorageInit()
+    public TokenResponseModel? AccessTokens { get; set; }
+
+    public ClientStatus Status
     {
-        _isLocalStorageInit = true;
+        get
+        {
+            if (AccessTokens == null)
+            {
+                return new ClientStatus(false, "Missing");
+            }
+
+            if (AccessTokens.IsError)
+            {
+                return new ClientStatus(false, "Error");
+            }
+
+            if (AccessTokens.ExpiresAt >= DateTime.UtcNow)
+            {
+                return new ClientStatus (false, "Expired");
+            }
+
+            var tokensList = new List<string>();
+
+            if (!AccessTokens.AccessToken.IsNullOrEmpty())
+            {
+                tokensList.Add("Access");
+            }
+            if (!AccessTokens.IdentityToken.IsNullOrEmpty())
+            {
+                tokensList.Add("Identity");
+            }
+            if (!AccessTokens.RefreshToken.IsNullOrEmpty())
+            {
+                tokensList.Add("Refresh");
+            }
+
+            var statusMessage = string.Join('|', tokensList);
+
+            return new ClientStatus(false, statusMessage);
+        }
     }
+
+    public bool IsLocalStorageInit { get; set; }
+
+    public event Action? StateChanged;
+
+    private void NotifyStateChanged() => StateChanged?.Invoke();
+
+
 }

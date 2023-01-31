@@ -21,11 +21,11 @@ public partial class UdapDiscovery
     [Inject] private HttpClient _http { get; set; }
     ErrorBoundary? ErrorBoundary { get; set; }
 
-    [Inject] private UdapClientState UdapClientState { get; set; } = new UdapClientState();
+    [Inject] private UdapClientState State { get; set; } 
     [Inject] private ProfileService ProfileService { get; set; }
-    [Inject] MetadataService MetadataService { get; set; }
+    [Inject] DiscoveryService MetadataService { get; set; }
 
-    private string Result { get; set; } = "";
+    private string? Result { get; set; } = "";
 
     private async Task GetMetadata()
     {
@@ -34,12 +34,12 @@ public partial class UdapDiscovery
             Result = "...";
             await Task.Delay(250);
 
-            UdapClientState.UdapMetadata = 
-                await MetadataService.GetMetadata(UdapClientState.MetadataUrl);
-            await ProfileService.SaveUdapClientState(UdapClientState);
+            State.UdapMetadata = 
+                await MetadataService.GetMetadata(State.MetadataUrl);
+            await ProfileService.SaveUdapClientState(State);
 
             Result = JsonSerializer.Serialize<UdapMetadata>(
-                UdapClientState.UdapMetadata,
+                State.UdapMetadata,
                 new JsonSerializerOptions { WriteIndented = true });
         }
         catch (Exception ex)
@@ -50,12 +50,33 @@ public partial class UdapDiscovery
 
     protected override async Task OnInitializedAsync()
     {
-        if (!UdapClientState.IsLocalStorageInit())
-        {
-            UdapClientState = await ProfileService.GetUdapClientState();
-        }
+        // if (!State.IsLocalStorageInit)
+        // {
+        //     State = await ProfileService.GetUdapClientState();
+        // }
 
-        Result = UdapClientState.UdapMetadata.AsJson();
+        // Result = State.UdapMetadata.AsJson();
+    }
+
+    /// <summary>
+    /// Method invoked after each time the component has been rendered.
+    /// </summary>
+    /// <param name="firstRender">
+    /// Set to <c>true</c> if this is the first time <see cref="M:Microsoft.AspNetCore.Components.ComponentBase.OnAfterRender(System.Boolean)" /> has been invoked
+    /// on this component instance; otherwise <c>false</c>.
+    /// </param>
+    /// <remarks>
+    /// The <see cref="M:Microsoft.AspNetCore.Components.ComponentBase.OnAfterRender(System.Boolean)" /> and <see cref="M:Microsoft.AspNetCore.Components.ComponentBase.OnAfterRenderAsync(System.Boolean)" /> lifecycle methods
+    /// are useful for performing interop, or interacting with values received from <c>@ref</c>.
+    /// Use the <paramref name="firstRender" /> parameter to ensure that initialization work is only performed
+    /// once.
+    /// </remarks>
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Result = State.UdapMetadata.AsJson();
+        }
     }
 
     protected override void OnParametersSet()

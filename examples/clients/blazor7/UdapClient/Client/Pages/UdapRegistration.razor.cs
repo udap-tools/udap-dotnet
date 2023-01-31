@@ -13,7 +13,6 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using UdapClient.Client.Services;
-using UdapClient.Client.Shared;
 using UdapClient.Shared.Model;
 
 namespace UdapClient.Client.Pages;
@@ -21,8 +20,8 @@ namespace UdapClient.Client.Pages;
 public partial class UdapRegistration
 {
     ErrorBoundary? ErrorBoundary { get; set; }
-    [Inject] UdapClientState UdapClientState { get; set; } = new UdapClientState();
-    [Inject] MetadataService MetadataService { get; set; }
+    [Inject] UdapClientState State { get; set; }
+    [Inject] RegisterService MetadataService { get; set; }
     [Inject] private ProfileService ProfileService { get; set; }
 
     private string SoftwareStatementBeforeEncoding { get; set; } = "";
@@ -51,41 +50,24 @@ public partial class UdapRegistration
         }
     }
 
-    void ButtonTestclick()
-    {
-        if(isShow)
-        {
-            isShow = false;
-            PasswordInputIcon = Icons.Material.Filled.VisibilityOff;
-            PasswordInput = InputType.Password;
-        }
-        else
-        {
-            isShow = true;
-            PasswordInputIcon = Icons.Material.Filled.Visibility;
-            PasswordInput = InputType.Text;
-        }
-    }
-
     protected override async Task OnInitializedAsync()
     {
-        if (!UdapClientState.IsLocalStorageInit())
-        {
-            UdapClientState = await ProfileService.GetUdapClientState();
-            
-            SoftwareStatementBeforeEncoding = UdapClientState.SoftwareStatementBeforeEncoding;
-            
-            RequestBody = JsonSerializer.Serialize(
-                UdapClientState.RegistrationRequest,
-                new JsonSerializerOptions { WriteIndented = true });
+        // if (!State.IsLocalStorageInit)
+        // {
+        //     State = await ProfileService.GetUdapClientState();
+        // }
 
-            RegistrationResult = RegistrationResult = JsonSerializer.Serialize(
-                UdapClientState.RegistrationDocument,
-                new JsonSerializerOptions { WriteIndented = true });
+        SoftwareStatementBeforeEncoding = State.SoftwareStatementBeforeEncoding;
+        
+        RequestBody = JsonSerializer.Serialize(
+            State.RegistrationRequest,
+            new JsonSerializerOptions { WriteIndented = true });
 
-            SetCertLoadedColor(await MetadataService.IsCertLoaded(Password));
-            
-        }
+        RegistrationResult = RegistrationResult = JsonSerializer.Serialize(
+            State.RegistrationDocument,
+            new JsonSerializerOptions { WriteIndented = true });
+
+        SetCertLoadedColor(await MetadataService.IsCertLoaded(Password));
     }
 
     private void SetCertLoadedColor(CertLoadedEnum isCertLoaded)
@@ -112,14 +94,14 @@ public partial class UdapRegistration
         try
         {
             var request = new BuildSoftwareStatementRequest();
-            request.MetadataUrl = UdapClientState.MetadataUrl;
-            request.Audience = UdapClientState.UdapMetadata.RegistrationEndpoint;
+            request.MetadataUrl = State.MetadataUrl;
+            request.Audience = State.UdapMetadata.RegistrationEndpoint;
             request.Password = Password;
-            request.Oauth2Flow = UdapClientState.Oauth2Flow;
+            request.Oauth2Flow = State.Oauth2Flow;
 
 
             SoftwareStatementBeforeEncoding = await MetadataService.BuildSoftwareStatement(request);
-            UdapClientState.SoftwareStatementBeforeEncoding = SoftwareStatementBeforeEncoding;
+            State.SoftwareStatementBeforeEncoding = SoftwareStatementBeforeEncoding;
 
             if (CertLoadedColor != Color.Success)
             {
@@ -136,29 +118,29 @@ public partial class UdapRegistration
     private async Task ResetSoftwareStatment()
     {
         SoftwareStatementBeforeEncoding = string.Empty;
-        UdapClientState.SoftwareStatementBeforeEncoding = string.Empty;
+        State.SoftwareStatementBeforeEncoding = string.Empty;
         RequestBody = string.Empty;
-        UdapClientState.RegistrationRequest = null;
+        State.RegistrationRequest = null;
         RegistrationResult = string.Empty;
-        UdapClientState.RegistrationDocument = null;
-        await ProfileService.SaveUdapClientState(UdapClientState);
+        State.RegistrationDocument = null;
+        await ProfileService.SaveUdapClientState(State);
     }
 
     private async Task BuildRequestBody()
     {
         var request = new BuildSoftwareStatementRequest();
-        request.MetadataUrl = UdapClientState.MetadataUrl;
-        request.Audience = UdapClientState.UdapMetadata.RegistrationEndpoint;
+        request.MetadataUrl = State.MetadataUrl;
+        request.Audience = State.UdapMetadata.RegistrationEndpoint;
         request.Password = Password;
-        request.Oauth2Flow = UdapClientState.Oauth2Flow;
+        request.Oauth2Flow = State.Oauth2Flow;
 
-        UdapClientState.RegistrationRequest = await MetadataService.BuildRequestBody(request);
+        State.RegistrationRequest = await MetadataService.BuildRequestBody(request);
 
         RequestBody = JsonSerializer.Serialize(
-            UdapClientState.RegistrationRequest,
+            State.RegistrationRequest,
             new JsonSerializerOptions { WriteIndented = true });
 
-        await ProfileService.SaveUdapClientState(UdapClientState);
+        await ProfileService.SaveUdapClientState(State);
 
         if (CertLoadedColor != Color.Success)
         {
@@ -170,8 +152,8 @@ public partial class UdapRegistration
     {
         var registrationRequest = new RegistrationRequest
         {
-            RegistrationEndpoint = UdapClientState.UdapMetadata.RegistrationEndpoint,
-            UdapRegisterRequest = UdapClientState.RegistrationRequest
+            RegistrationEndpoint = State.UdapMetadata.RegistrationEndpoint,
+            UdapRegisterRequest = State.RegistrationRequest
         };
 
         var result = await MetadataService.Register(registrationRequest);
@@ -182,16 +164,16 @@ public partial class UdapRegistration
                 result,
                 new JsonSerializerOptions { WriteIndented = true });
 
-            UdapClientState.RegistrationDocument = result.Document;
+            State.RegistrationDocument = result.Document;
         }
         else
         {
             RegistrationResult = result?.ErrorMessage ?? string .Empty;
-            UdapClientState.RegistrationDocument = null;
+            State.RegistrationDocument = null;
         }
         
 
-        await ProfileService.SaveUdapClientState(UdapClientState);
+        await ProfileService.SaveUdapClientState(State);
     }
 
     private async Task UploadFilesAsync(InputFileChangeEventArgs e)

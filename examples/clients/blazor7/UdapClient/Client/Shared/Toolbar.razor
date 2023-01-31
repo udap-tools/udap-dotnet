@@ -1,0 +1,59 @@
+﻿@inject UdapClientState State
+@inject ProfileService ProfileService
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+
+<MudAppBar Elevation="1">
+    <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                   OnClick="@((e) => DrawerToggle())" />
+    <MudSpacer />
+    <MudText Color="@(State.Status is {IsValid: false } ? Color.Error : Color.Primary)">Token Status: @State.Status.StatusMessage</MudText>
+    <MudImage Class="cursor-pointer mud-ripple ma-2" Src="images/hl7/icon-fhir-24.png" Alt="Fhir Icon" Size="Size.Small"
+              @onclick="@GoToIG" />
+    <MudAvatar Class="cursor-pointer mud-ripple" Image="https://avatars.githubusercontent.com/u/77421324" Alt="UDAP Avatar" Size="Size.Small"
+               @onclick="@GoToUdapOrg" />
+    <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit"
+                   Link="https://github.com/udap-tools/udap-dotnet/" Target="_blank" />
+    <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+
+</MudAppBar>
+<MudDrawer @bind-Open="_drawerOpen" Elevation="2">
+    <MudDrawerHeader>
+        <MudText Typo="Typo.h5">FhirLabs Client</MudText>
+    </MudDrawerHeader>
+    <MudDivider />
+    <NavMenu />
+</MudDrawer>
+
+@code {
+
+    bool _drawerOpen = true;
+
+    void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    async Task GoToIG()
+    {
+        await JSRuntime.InvokeVoidAsync("open", "http://hl7.org/fhir/us/udap-security/", "_blank");
+    }
+
+    async Task GoToUdapOrg()
+    {
+        await JSRuntime.InvokeVoidAsync("open", "http://udap.org/", "_blank");
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+       State = await ProfileService.GetUdapClientState();
+       
+       State.StateChanged += StateHasChanged;
+    }
+    
+    public void Dispose()
+    {
+        State.StateChanged -= StateHasChanged;
+    }
+}

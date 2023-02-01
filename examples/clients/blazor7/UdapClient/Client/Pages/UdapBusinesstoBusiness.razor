@@ -5,8 +5,8 @@
   <ChildContent>
     <MudGrid Class="mt-4">
       <MudItem xs="12" sm="12" md="12">
-          <MudText Typo="Typo.h3">Business-to-Business</MudText>
-        <MudText Typo="Typo.h6" >Requesting Access Tokens for either client_credentials or authorization_code flows</MudText>
+          <MudText Typo="Typo.h4">Business-to-Business</MudText>
+        <MudText Typo="Typo.h6" Color="Color.Tertiary">Requesting Access Tokens for either client_credentials or authorization_code flows</MudText>
       </MudItem>
 
       <MudGrid Spacing="1" Class="mt-8">
@@ -30,12 +30,12 @@
     </MudGrid>
 
 
-        @if (State.Oauth2Flow == Oauth2FlowEnum.client_credentials)
+        @if (AppState.Oauth2Flow == Oauth2FlowEnum.client_credentials)
         {
         <MudButton Class="mt-3"
                ButtonType="ButtonType.Button"
                Variant="Variant.Filled"
-               Disabled="@(State.RegistrationDocument == null)"
+               Disabled="@(AppState.RegistrationDocument == null)"
                OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
 
         <MudGrid Spacing="1" Class="mt-8">
@@ -62,19 +62,19 @@
         </MudGrid>
         }
 
-        @if (State.Oauth2Flow == Oauth2FlowEnum.authorization_code)
+        @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
         {
         <MudButton Class="mt-3"
                ButtonType="ButtonType.Button"
                Variant="Variant.Filled"
-               Disabled="@(State.RegistrationDocument == null)"
+               Disabled="@(AppState.RegistrationDocument == null)"
                OnClick="BuildAuthCodeRequest">Build Access Code Request</MudButton>
 
         <MudGrid Spacing="1" Class="mt-8">
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
-              <pre>@AuthorizeRequest</pre>
+              <pre>@AuthorizationCodeRequest</pre>
             </MudPaper>
           </MudItem>
           <MudItem xs="5">
@@ -88,15 +88,15 @@
         <MudButton Class="mt-3"
                ButtonType="ButtonType.Button"
                Variant="Variant.Filled"
-               Disabled="@(State.RegistrationDocument == null)"
+               Disabled="@(AppState.RegistrationDocument == null)"
                OnClick="GetAccessCode">Get Access Code</MudButton>
         <MudGrid Spacing="1" Class="mt-8">
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
-                <MudLink Color="@(State.AccessCodeRequestResult is {IsError: true } ? Color.Error : Color.Primary)" 
-                         href="@State.AccessCodeRequestResult?.RedirctUrl">Login Redirect</MudLink>
-              <pre>@State.AccessCodeRequestResult?.RedirctUrl</pre>
+              <MudLink Color="@(AppState.AccessCodeRequestResult is {IsError: true } ? Color.Error : Color.Primary)"
+                   href="@AppState.AccessCodeRequestResult?.RedirctUrl">Login Redirect</MudLink>
+                <pre>@AppState.AccessCodeRequestResult?.RedirctUrl</pre>
             </MudPaper>
           </MudItem>
           <MudItem xs="5">
@@ -113,7 +113,7 @@
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
               <pre>HTTP/1.1 302 Found</pre>
-              <pre style="padding-left: 10px">@LoginCallback</pre>
+              <pre style="padding-left: 10px">@LoginCallback()</pre>
             </MudPaper>
           </MudItem>
           <MudItem xs="5">
@@ -128,7 +128,7 @@
         <MudButton Class="mt-3"
                ButtonType="ButtonType.Button"
                Variant="Variant.Filled"
-               Disabled="@(State.RegistrationDocument == null)"
+               Disabled="@(AppState.RegistrationDocument == null)"
                OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
 
         <MudGrid Spacing="1" Class="mt-8">
@@ -153,7 +153,7 @@
     <MudButton Class="mt-3"
                ButtonType="ButtonType.Button"
                Variant="Variant.Filled"
-               Disabled="@(State.RegistrationDocument == null)"
+               Disabled="@(AppState.RegistrationDocument == null)"
                OnClick="GetAccessToken">Get Access Token</MudButton>
 
     <MudGrid Spacing="1" Class="mt-8">

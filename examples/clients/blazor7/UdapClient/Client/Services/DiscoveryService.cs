@@ -23,7 +23,8 @@ public class DiscoveryService
 
     public async Task<UdapMetadata?> GetMetadata(string metadataUrl)
     {
-        var result = await _http.GetFromJsonAsync<UdapMetadata>($"Metadata?metadataUrl={metadataUrl}");
+        var udapMetadataUrl = $"Metadata?metadataUrl={metadataUrl}";
+        var result = await _http.GetFromJsonAsync<UdapMetadata>(udapMetadataUrl);
 
         return result;
     }

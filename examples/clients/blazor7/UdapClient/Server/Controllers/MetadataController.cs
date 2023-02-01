@@ -18,7 +18,7 @@ public class MetadataController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> Get([FromQuery] string? metadataUrl)
+    public async Task<IActionResult> Get([FromQuery] string metadataUrl)
     {
         var response = await _httpClient.GetStringAsync(metadataUrl);
         var result = JsonSerializer.Deserialize<UdapMetadata>(response);

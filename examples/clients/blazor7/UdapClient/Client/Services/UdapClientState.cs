@@ -17,7 +17,10 @@ using UdapClient.Shared.Model;
 
 namespace UdapClient.Client.Services;
 
-public class UdapClientState
+/// <summary>
+/// Persistence data
+/// </summary>
+public class UdapClientState : IAppState
 {
     public UdapClientState() {}
 
@@ -33,15 +36,12 @@ public class UdapClientState
 
     public RegistrationDocument? RegistrationDocument { get; set; }
     
-
-    public string? RegistrationClaims { get; set; }
-
     public UdapClientCredentialsTokenRequest? ClientCredentialsTokenRequest { get; set; }
 
     public UdapAuthorizationCodeTokenRequest? AuthorizationCodeTokenRequest { get; set; }
     public AccessCodeRequestResult? AccessCodeRequestResult { get; set; }
    
-    public LoginCallBackResult LoginCallBackResult { get; set; }
+    public LoginCallBackResult? LoginCallBackResult { get; set; }
 
     public void UpdateAccessTokens(ComponentBase source, TokenResponseModel? tokenResponseModel)
     {
@@ -66,7 +66,7 @@ public class UdapClientState
                 return new ClientStatus(false, "Error");
             }
 
-            if (AccessTokens.ExpiresAt >= DateTime.UtcNow)
+            if (DateTime.UtcNow >= AccessTokens.ExpiresAt)
             {
                 return new ClientStatus (false, "Expired");
             }
@@ -86,11 +86,21 @@ public class UdapClientState
                 tokensList.Add("Refresh");
             }
 
-            var statusMessage = string.Join('|', tokensList);
+            var statusMessage = string.Join(" | ", tokensList);
 
-            return new ClientStatus(false, statusMessage);
+            return new ClientStatus(true, statusMessage);
+        }
+
+        set
+        {
+
         }
     }
+
+    /// <summary>
+    /// String representation of UDAP 3.1 Authorization Code Flow
+    /// </summary>
+    public string AuthorizationCodeRequest { get; set; }
 
     public bool IsLocalStorageInit { get; set; }
 

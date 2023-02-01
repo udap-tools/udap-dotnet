@@ -13,7 +13,6 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using IdentityModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -30,6 +29,7 @@ public class RegisterController : ControllerBase
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<RegisterController> _logger;
+    
 
     public RegisterController(HttpClient httpClient, ILogger<RegisterController> logger)
     {
@@ -37,27 +37,83 @@ public class RegisterController : ControllerBase
         _logger = logger;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> Get([FromQuery] string? metadataUrl)
-    {
-        var response = await _httpClient.GetStringAsync(metadataUrl);
-        var result = JsonSerializer.Deserialize<UdapMetadata>(response);
-        
-        return Ok(result);
-    }
     [HttpPost("UploadClientCert")]
     public IActionResult UploadClientCert([FromBody] string base64String)
     {
-        HttpContext.Session.SetString("clientCert", base64String);
+        HttpContext.Session.SetString(Constants.CLIENT_CERT, base64String);
         
         return Ok();
     }
 
+    [HttpPost("ValidateCertificate")]
+    public IActionResult ValidateCertificate([FromBody] string password)
+    {
+        var clientCertSession = HttpContext.Session.GetString(Constants.CLIENT_CERT);
+
+        if (clientCertSession == null)
+        {
+            return Ok(CertLoadedEnum.Negative);
+        }
+
+        var certBytes = Convert.FromBase64String(clientCertSession);
+        try
+        {
+            var clientCert = new X509Certificate2(certBytes, password, X509KeyStorageFlags.Exportable);
+
+            var clientCertWithKeyBytes = clientCert.Export(X509ContentType.Pkcs12);
+            HttpContext.Session.SetString(Constants.CLIENT_CERT_WITH_KEY, Convert.ToBase64String(clientCertWithKeyBytes));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex.Message);
+            return Ok(CertLoadedEnum.InvalidPassword);
+        }
+
+        return Ok(CertLoadedEnum.Positive);
+    }
+
+    [HttpGet("IsClientCertificateLoaded")]
+    public async Task<IActionResult> Get()
+    {
+        CertLoadedEnum result = CertLoadedEnum.Negative;
+
+        try
+        {
+            var clientCertSession = HttpContext.Session.GetString(Constants.CLIENT_CERT);
+
+            if (clientCertSession != null)
+            {
+                result = CertLoadedEnum.InvalidPassword;
+            }
+            else
+            {
+                result = CertLoadedEnum.Negative;
+            }
+
+            var certBytesWithKey = HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY);
+
+            if (certBytesWithKey != null)
+            {
+                result = CertLoadedEnum.Positive;
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex.Message);
+
+            return Ok(result);
+        }
+    }
+
+    
+
     [HttpPost("BuildSoftwareStatement")]
     public IActionResult BuildSoftwareStatementWithHeader([FromBody] BuildSoftwareStatementRequest request)
     {
-        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString("clientCert"));
-        var clientCert = new X509Certificate2(certBytes, request.Password);
+        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY));
+        var clientCert = new X509Certificate2(certBytes);
         var securityKey = new X509SecurityKey(clientCert);
         var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
 
@@ -148,8 +204,8 @@ public class RegisterController : ControllerBase
     [HttpPost("BuildRequestBody")]
     public IActionResult BuildRequestBody([FromBody] BuildSoftwareStatementRequest request)
     {
-        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString("clientCert"));
-        var clientCert = new X509Certificate2(certBytes, request.Password);
+        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY));
+        var clientCert = new X509Certificate2(certBytes);
         var securityKey = new X509SecurityKey(clientCert);
         var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
 
@@ -228,30 +284,5 @@ public class RegisterController : ControllerBase
             .ReadFromJsonAsync<RegistrationDocument>();
 
         return Ok(JsonSerializer.Serialize(result));
-    }
-
-    [HttpPost("ValidateCertificate")]
-
-    public IActionResult ValidateCertificate([FromBody] string password)
-    {
-        var clientCertSession = HttpContext.Session.GetString("clientCert");
-
-        if (clientCertSession == null)
-        {
-            return Ok(CertLoadedEnum.Negative);
-        }
-
-        var certBytes = Convert.FromBase64String(clientCertSession);
-        try
-        {
-            var clientCert = new X509Certificate2(certBytes, password);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex.Message);
-            return Ok(CertLoadedEnum.InvalidPassword);
-        }
-
-        return Ok(CertLoadedEnum.Positive);
     }
 }

@@ -12,73 +12,72 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Udap.Model;
 using UdapClient.Client.Services;
-using UdapClient.Shared;
+using UdapClient.Client.Shared;
 
 namespace UdapClient.Client.Pages;
 
 public partial class UdapDiscovery
 {
-    [Inject] private HttpClient _http { get; set; }
+    [CascadingParameter]
+    public CascadingAppState AppState { get; set; } = null!;
+    
     ErrorBoundary? ErrorBoundary { get; set; }
-
-    [Inject] private UdapClientState State { get; set; } 
-    [Inject] private ProfileService ProfileService { get; set; }
+    
     [Inject] DiscoveryService MetadataService { get; set; }
 
-    private string? Result { get; set; } = "";
+    private string _result = string.Empty;
+
+    private string Result
+    {
+        get
+        {
+            if (AppState.UdapMetadata == null)
+            {
+                return _result;
+            }
+
+            return JsonSerializer
+                .Serialize<UdapMetadata>(AppState
+                .UdapMetadata, new JsonSerializerOptions { WriteIndented = true });
+        }
+        set => _result = value;
+    }
+
+    private string? MetadataUrl
+    {
+        get
+        {
+            return AppState.MetadataUrl;
+        }
+        set
+        {
+            
+        }
+    }
+
+    public void SetMetadataUrlProperty(string value)
+    {
+        AppState.SetProperty(this, nameof(AppState.MetadataUrl), value);
+    }
 
     private async Task GetMetadata()
     {
         try
         {
-            Result = "...";
-            await Task.Delay(250);
-
-            State.UdapMetadata = 
-                await MetadataService.GetMetadata(State.MetadataUrl);
-            await ProfileService.SaveUdapClientState(State);
-
-            Result = JsonSerializer.Serialize<UdapMetadata>(
-                State.UdapMetadata,
-                new JsonSerializerOptions { WriteIndented = true });
+            AppState.SetProperty(this, nameof(AppState.UdapMetadata), await MetadataService.GetMetadata(AppState.MetadataUrl));
+            
+            _result = AppState.UdapMetadata != null
+                ? JsonSerializer.Serialize<UdapMetadata>(AppState.UdapMetadata,
+                    new JsonSerializerOptions { WriteIndented = true })
+                : string.Empty;
         }
         catch (Exception ex)
         {
-            Result = ex.Message;
+            _result = ex.Message;
+            AppState.SetProperty(this, nameof(AppState.UdapMetadata), null);
         }
     }
-
-    protected override async Task OnInitializedAsync()
-    {
-        // if (!State.IsLocalStorageInit)
-        // {
-        //     State = await ProfileService.GetUdapClientState();
-        // }
-
-        // Result = State.UdapMetadata.AsJson();
-    }
-
-    /// <summary>
-    /// Method invoked after each time the component has been rendered.
-    /// </summary>
-    /// <param name="firstRender">
-    /// Set to <c>true</c> if this is the first time <see cref="M:Microsoft.AspNetCore.Components.ComponentBase.OnAfterRender(System.Boolean)" /> has been invoked
-    /// on this component instance; otherwise <c>false</c>.
-    /// </param>
-    /// <remarks>
-    /// The <see cref="M:Microsoft.AspNetCore.Components.ComponentBase.OnAfterRender(System.Boolean)" /> and <see cref="M:Microsoft.AspNetCore.Components.ComponentBase.OnAfterRenderAsync(System.Boolean)" /> lifecycle methods
-    /// are useful for performing interop, or interacting with values received from <c>@ref</c>.
-    /// Use the <paramref name="firstRender" /> parameter to ensure that initialization work is only performed
-    /// once.
-    /// </remarks>
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender)
-        {
-            Result = State.UdapMetadata.AsJson();
-        }
-    }
-
+    
     protected override void OnParametersSet()
     {
         ErrorBoundary?.Recover();

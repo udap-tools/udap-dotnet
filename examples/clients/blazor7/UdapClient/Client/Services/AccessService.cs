@@ -42,8 +42,7 @@ public class AccessService
         var model = new AccessTokenRequestModel
         {
             ClientId = clientId,
-            TokenEndpointUrl = tokenEndpointUrl,
-            Password = password
+            TokenEndpointUrl = tokenEndpointUrl
         };
 
         var result = await _httpClient.PostAsJsonAsync("Access/BuildRequestToken/authorization_code", model);
@@ -69,8 +68,7 @@ public class AccessService
         var model = new AccessTokenRequestModel
         {
             ClientId = clientId,
-            TokenEndpointUrl = tokenEndpointUrl,
-            Password = password
+            TokenEndpointUrl = tokenEndpointUrl
         };
 
         var result = await _httpClient.PostAsJsonAsync("Access/BuildRequestToken/client_credentials", model);

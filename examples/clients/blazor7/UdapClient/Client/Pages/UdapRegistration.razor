@@ -1,37 +1,21 @@
 ﻿@page "/udapRegistration"
 
-
-<InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
-
 <ErrorBoundary @ref="ErrorBoundary">
   <ChildContent>
 
     <MudGrid Class="mt-4">
-      <MudItem xs="12" sm="12" md="12">
-        <MudText Typo="Typo.h3">Udap Metadata</MudText>
+      <MudItem xs="12" sm="12" md="12" >
+          <MudText Typo="Typo.h4">Udap Registration</MudText>
+          <MudText> (@AppState.MetadataUrl)</MudText>
       </MudItem>
         <MudItem xs="12" sm="12" md="12">
-            <MudFab HtmlTag="label"
-                    Size="Size.Small"
-                    Color="@CertLoadedColor"
-                    Icon="@Icons.Filled.AttachFile"
-                    Label="Upload Client Certificate"
-                    for="fileInput" /> 
+            
         
         
             <MudGrid Spacing="1" Class="mt-8">
-                <MudItem xs="7" sm="3" Class="pa-4 ma-2">
-                    <MudTextField @bind-Value="Password"
-                                  Label="Password"
-                                  Variant="Variant.Text"
-                                  InputType="@PasswordInput"
-                                  Adornment="Adornment.End"
-                                  AdornmentIcon="@PasswordInputIcon"
-                                  OnAdornmentClick="ShowPassword"
-                                  AdornmentAriaLabel="Show Password"/>
-                </MudItem>
                 <MudItem xs="5" sm="3" Class="pa-4 ma-2">
-                    <MudSelect @bind-Value="State.Oauth2Flow" Label="Select Oath2 Flow"
+                    <MudSelect @bind-Value="Oauth2Flow" Label="Select Oath2 Flow"
+                               @onchange="args => SetOauth2FlowProperty(args)"
                                HelperText="String"
                                Placeholder="Please Select"
                                AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
@@ -48,7 +32,7 @@
                        Variant="Variant.Filled"
                        OnClick="BuildRawSoftwareStatement">
 
-                @if (State.Oauth2Flow == Oauth2FlowEnum.authorization_code)
+                @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
                 {
                     <p>Build authorization_code request. (header and raw software statement)</p>
                 }

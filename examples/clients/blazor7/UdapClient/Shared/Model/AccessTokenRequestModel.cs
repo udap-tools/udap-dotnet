@@ -12,6 +12,5 @@ namespace UdapClient.Shared.Model;
 public class AccessTokenRequestModel
 {
     public string ClientId { get; set; }
-    public string Password { get; set; }
     public string TokenEndpointUrl { get; set; }
 }

@@ -1,33 +1,79 @@
-﻿@inject UdapClientState State
-@inject ProfileService ProfileService
-@inject IJSRuntime JSRuntime
-@implements IDisposable
+﻿@inject IJSRuntime JSRuntime
+@inject RegisterService MetadataService
+@inject IDialogService DialogService
 
+<InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 
 <MudAppBar Elevation="1">
-    <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-                   OnClick="@((e) => DrawerToggle())" />
-    <MudSpacer />
-    <MudText Color="@(State.Status is {IsValid: false } ? Color.Error : Color.Primary)">Token Status: @State.Status.StatusMessage</MudText>
-    <MudImage Class="cursor-pointer mud-ripple ma-2" Src="images/hl7/icon-fhir-24.png" Alt="Fhir Icon" Size="Size.Small"
-              @onclick="@GoToIG" />
-    <MudAvatar Class="cursor-pointer mud-ripple" Image="https://avatars.githubusercontent.com/u/77421324" Alt="UDAP Avatar" Size="Size.Small"
-               @onclick="@GoToUdapOrg" />
-    <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit"
-                   Link="https://github.com/udap-tools/udap-dotnet/" Target="_blank" />
-    <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
-
+  <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                 OnClick="@((e) => DrawerToggle())" />
+  <MudSpacer />
+  
+  <MudIcon Class="ma-4" Icon="@certificate" Color="@CertLoadedColor" for="fileInput" />
+  
+  <MudFab HtmlTag="label"
+          Size="Size.Small"
+          Color="@CertLoadedColor"
+          Icon="@Icons.Material.Filled.AttachFile"
+          Label="Upload Client Certificate"
+          for="fileInput" /> 
+          
+  <MudSpacer />
+  Token Status:&nbsp;<MudText Color="@(AppState.Status is {IsValid: false } ? Color.Error : Color.Success)">@AppState.Status.StatusMessage</MudText>
+  <MudImage Class="cursor-pointer mud-ripple ma-2" Src="images/hl7/icon-fhir-24.png" Alt="Fhir Icon" Size="Size.Small"
+            @onclick="@GoToIG" />
+  <MudAvatar Class="cursor-pointer mud-ripple" Image="https://avatars.githubusercontent.com/u/77421324" Alt="UDAP Avatar" Size="Size.Small"
+             @onclick="@GoToUdapOrg" />
+  <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit"
+                 Link="https://github.com/udap-tools/udap-dotnet/" Target="_blank" />
+  <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
 </MudAppBar>
+
 <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
-    <MudDrawerHeader>
-        <MudText Typo="Typo.h5">FhirLabs Client</MudText>
-    </MudDrawerHeader>
-    <MudDivider />
-    <NavMenu />
+  <MudDrawerHeader>
+    <MudText Typo="Typo.h5">FhirLabs Client</MudText>
+  </MudDrawerHeader>
+  <MudDivider Style="flex-grow: 0;" />
+  <NavMenu />
 </MudDrawer>
+
 
 @code {
 
+    [CascadingParameter]
+    public CascadingAppState AppState { get; set; }
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        SetCertLoadedColor(await MetadataService.ClientCertificateLoadStatus());
+    }
+    
+    private void SetCertLoadedColor(CertLoadedEnum isCertLoaded)
+    {
+        switch (isCertLoaded)
+        {
+            case CertLoadedEnum.Negative:
+                CertLoadedColor = Color.Error;
+                break;
+            case CertLoadedEnum.Positive:
+                CertLoadedColor = Color.Success;
+                break;
+            case CertLoadedEnum.InvalidPassword:
+                CertLoadedColor = Color.Warning;
+                break;
+            default:
+                CertLoadedColor = Color.Error;
+                break;
+        }
+        StateHasChanged();
+    }
+    
+
+    public Color CertLoadedColor { get; set; } = Color.Error;
+    
     bool _drawerOpen = true;
 
     void DrawerToggle()
@@ -45,15 +91,29 @@
         await JSRuntime.InvokeVoidAsync("open", "http://udap.org/", "_blank");
     }
 
-    protected override async Task OnInitializedAsync()
+
+    //Certificate from Material Design Icons
+    string certificate = "<svg style=\"width:24px;height:24px\" viewBox=\"0 0 24 24\">" +
+        "<path fill=\"currentColor\" d=\"M13 21L15 20L17 21V14H13M17 9V7L15 8L13 7V9L11 10L13 11V13L15 12L17 13V11L19 10M20 3H4A2 2 0 0 0 2 5V15A2 2 0 0 0 4 17H11V15H4V5H20V15H19V17H20A2 2 0 0 0 22 15V5A2 2 0 0 0 20 3M11 8H5V6H11M9 11H5V9H9M11 14H5V12H11Z\" />" +
+        "</svg>";
+
+
+    private async Task UploadFilesAsync(InputFileChangeEventArgs e)
     {
-       State = await ProfileService.GetUdapClientState();
-       
-       State.StateChanged += StateHasChanged;
-    }
-    
-    public void Dispose()
-    {
-        State.StateChanged -= StateHasChanged;
+        long maxFileSize = 1024 * 10;
+
+        var uploadStream = await new StreamContent(e.File.OpenReadStream(maxFileSize)).ReadAsStreamAsync();
+        var ms = new MemoryStream();
+        await uploadStream.CopyToAsync(ms);
+        var certBytes = ms.ToArray();
+
+        await MetadataService.UploadClientCert(Convert.ToBase64String(certBytes));
+
+        //dialog
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<Password_Dialog>("Certificate Password", options);
+        var result = await dialog.Result;
+        var certLoaded = await MetadataService.ValidateCertificate(result.Data.ToString() ?? "udap-test");
+        SetCertLoadedColor(certLoaded);        
     }
 }

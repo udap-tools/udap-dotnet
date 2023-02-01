@@ -55,8 +55,8 @@ public class AccessController : ControllerBase
     [HttpPost("BuildRequestToken/authorization_code")]
     public IActionResult RequestAccessTokenAuthCode([FromBody] AccessTokenRequestModel model)
     {
-        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString("clientCert"));
-        var clientCert = new X509Certificate2(certBytes, model.Password);
+        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY));
+        var clientCert = new X509Certificate2(certBytes);
         
         var tokenRequestBuilder = AccessTokenRequestBuilder.Create(
             model.ClientId,
@@ -71,8 +71,8 @@ public class AccessController : ControllerBase
     [HttpPost("BuildRequestToken/client_credentials")]
     public IActionResult RequestAccessTokenClientCredentials([FromBody] AccessTokenRequestModel model)
     {
-        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString("clientCert"));
-        var clientCert = new X509Certificate2(certBytes, model.Password);
+        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY));
+        var clientCert = new X509Certificate2(certBytes);
 
         var tokenRequestBuilder = AccessTokenRequestBuilder.Create(
             model.ClientId,

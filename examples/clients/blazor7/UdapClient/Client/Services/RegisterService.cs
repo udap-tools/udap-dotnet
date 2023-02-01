@@ -75,7 +75,7 @@ public class RegisterService
         };
     }
 
-    public async Task<CertLoadedEnum> IsCertLoaded(string password)
+    public async Task<CertLoadedEnum> ValidateCertificate(string password)
     {
         var result = await _http.PostAsJsonAsync(
             "Register/ValidateCertificate",
@@ -89,5 +89,12 @@ public class RegisterService
         }
 
         return await result.Content.ReadFromJsonAsync<CertLoadedEnum>();
+    }
+
+    public async Task<CertLoadedEnum> ClientCertificateLoadStatus()
+    {
+        var response = await _http.GetFromJsonAsync<CertLoadedEnum>("Register/IsClientCertificateLoaded");
+
+        return response;
     }
 }

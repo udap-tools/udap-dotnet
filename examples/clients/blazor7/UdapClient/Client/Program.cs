@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using UdapClient.Client;
 using UdapClient.Client.Services;
+using UdapClient.Client.Shared;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -28,7 +29,6 @@ builder.Services.AddMudServices();
 builder.Services.AddBlazoredLocalStorage();
 
 builder.Services.AddSingleton<UdapClientState>(); //Singleton in Blazor wasm and Scoped in Blazor Server
-builder.Services.AddScoped<ProfileService>();
 builder.Services.AddScoped<RegisterService>();
 builder.Services.AddScoped<DiscoveryService>();
 builder.Services.AddScoped<AccessService>();

@@ -1,14 +1,10 @@
-﻿@using UdapClient.Client.Services
-@inherits LayoutComponentBase
-
-
+﻿@inherits LayoutComponentBase
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
-
 <MudLayout>
     <Toolbar />
-  <MudMainContent Class="px-8" MaxWidth="MaxWidth.False">
+    <MudMainContent Class="px-8" MaxWidth="MaxWidth.False">
         @Body
   </MudMainContent>
 </MudLayout>

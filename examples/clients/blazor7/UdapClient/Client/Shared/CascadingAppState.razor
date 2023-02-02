@@ -75,7 +75,7 @@
     private LoginCallBackResult? _loginCallBackResult;
     private TokenResponseModel? _accessTokens;
     private ClientStatus _status = new ClientStatus(false, "Missing");
-    private string? _authorizationCodeRequest;
+    private AuthorizationCodeRequest? _authorizationCodeRequest;
 
 
     public UdapMetadata? UdapMetadata
@@ -190,7 +190,7 @@
         }
     }
 
-    public string? AuthorizationCodeRequest
+    public AuthorizationCodeRequest? AuthorizationCodeRequest
     {
         get => _authorizationCodeRequest;
         private set => _authorizationCodeRequest = value;

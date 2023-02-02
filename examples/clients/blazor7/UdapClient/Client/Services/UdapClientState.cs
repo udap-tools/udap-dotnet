@@ -100,9 +100,7 @@ public class UdapClientState : IAppState
     /// <summary>
     /// String representation of UDAP 3.1 Authorization Code Flow
     /// </summary>
-    public string AuthorizationCodeRequest { get; set; }
-
-    public bool IsLocalStorageInit { get; set; }
+    public AuthorizationCodeRequest? AuthorizationCodeRequest { get; set; }
 
     public event Action? StateChanged;
 

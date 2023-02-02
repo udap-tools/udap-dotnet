@@ -30,8 +30,5 @@ public interface IAppState
 
     ClientStatus Status { get; }
 
-    /// <summary>
-    /// String representation of UDAP 3.1 Authorization Code Flow
-    /// </summary>
-    string AuthorizationCodeRequest { get; }
+    AuthorizationCodeRequest?AuthorizationCodeRequest { get; }
 }

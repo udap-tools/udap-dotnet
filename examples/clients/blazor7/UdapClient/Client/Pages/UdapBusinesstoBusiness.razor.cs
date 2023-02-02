@@ -7,10 +7,9 @@
 // */
 #endregion
 
-using System;
 using System.Text;
 using IdentityModel;
-using IdentityModel.Client;
+
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.WebUtilities;
@@ -18,6 +17,7 @@ using MudBlazor;
 using Udap.Model;
 using UdapClient.Client.Services;
 using UdapClient.Client.Shared;
+using UdapClient.Shared;
 using UdapClient.Shared.Model;
 
 namespace UdapClient.Client.Pages;
@@ -69,8 +69,8 @@ public partial class UdapBusinesstoBusiness
 
     private string Password { get; set; } = "udap-test";
 
-    private string? _authorizationCodeRequest;
-    private string? AuthorizationCodeRequest {
+    private AuthorizationCodeRequest? _authorizationCodeRequest;
+    private AuthorizationCodeRequest? AuthorizationCodeRequest {
         get
         {
             if (_authorizationCodeRequest == null)
@@ -165,31 +165,36 @@ public partial class UdapBusinesstoBusiness
     /// <exception cref="NotImplementedException"></exception>
     private void BuildAuthCodeRequest()
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("GET /authorize?");
-        sb.AppendLine("\t response_type=code&");
-        sb.AppendLine($"\t state={CryptoRandom.CreateUniqueId()}&");
-        sb.AppendLine($"\t client_id={AppState.RegistrationDocument?.ClientId}&");
-        sb.AppendLine($"\t scope= {AppState.RegistrationDocument?.Scope}&");
-        sb.AppendLine($"\t redirect_uri={AppState.RegistrationDocument?.RedirectUris.FirstOrDefault()} HTTP/1.1");
-        sb.AppendLine($"Host: {AppState.UdapMetadata?.AuthorizationEndpoint}");
+        AuthorizationCodeRequest = new AuthorizationCodeRequest
+        {
+            ResponseType = "response_type=code",
+            State = $"state={CryptoRandom.CreateUniqueId()}",
+            ClientId = $"client_id={AppState.RegistrationDocument?.ClientId}",
+            Scope = $"scope={AppState.RegistrationDocument?.Scope}",
+            RedirectUri = $"redirect_uri={AppState.RegistrationDocument?.RedirectUris.FirstOrDefault()}"
+        };
 
-        AuthorizationCodeRequest = sb.ToString();
+        AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
     }
 
     private async Task GetAccessCode()
     {
-        var url = new RequestUrl(AppState.UdapMetadata?.AuthorizationEndpoint).CreateAuthorizeUrl(
-            clientId: AppState.RegistrationDocument?.ClientId,
-            responseType: "code",
-            state: CryptoRandom.CreateUniqueId(),
-            scope: AppState.RegistrationDocument?.Scope,
-            redirectUri: AppState.RegistrationDocument?.RedirectUris.First()); //TODO: could let user pick
-        
+        //UI has been changing properties so save it but don't rebind
+        AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
+        var url = new RequestUrl(AppState.UdapMetadata?.AuthorizationEndpoint!);
+
+        var accessCodeRequestUrl = url.AppendParams(
+            AppState.AuthorizationCodeRequest?.ClientId,
+            AppState.AuthorizationCodeRequest?.ResponseType,
+            AppState.AuthorizationCodeRequest?.State,
+            AppState.AuthorizationCodeRequest?.Scope,
+            AppState.AuthorizationCodeRequest?.RedirectUri);
+
+        Console.WriteLine(accessCodeRequestUrl);
         //
         // Builds an anchor href link the user clicks to initiate a user login page at the authorization server
         //
-        AppState.SetProperty(this, nameof(AppState.AccessCodeRequestResult), await AccessService.Get(url));
+        AppState.SetProperty(this, nameof(AppState.AccessCodeRequestResult), await AccessService.Get(accessCodeRequestUrl));
     }
 
     private async Task BuildAccessTokenRequest ()

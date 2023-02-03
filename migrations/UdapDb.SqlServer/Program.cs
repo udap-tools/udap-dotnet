@@ -9,7 +9,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Udap.Server.Extensions;
+using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Options;
 using UdapDb;
 

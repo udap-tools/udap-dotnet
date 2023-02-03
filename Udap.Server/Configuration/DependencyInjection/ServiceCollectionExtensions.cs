@@ -9,11 +9,12 @@
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.DbContexts;
 using Udap.Server.Options;
-using Udap.Server.Registration;
+using Udap.Server.Stores;
 
-namespace Udap.Server.Extensions
+namespace Udap.Server.Configuration.DependencyInjection
 {
     public  static class ServiceCollectionExtensions
     {
@@ -96,8 +97,8 @@ namespace Udap.Server.Extensions
             where TContext : DbContext, IUdapDbAdminContext, IUdapDbContext
         {
             builder.Services.AddUdapDbContext<TContext>(storeOptionAction);
-            builder.Services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
-
+            builder.AddUdapClientRegistrationStore<UdapClientRegistrationStore>();
+            
             return builder;
         }
     }

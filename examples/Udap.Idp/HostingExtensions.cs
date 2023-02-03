@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System.Collections;
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
@@ -20,8 +19,8 @@ using Microsoft.Extensions.Primitives;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Udap.Server;
 using Udap.Server.Configuration;
+using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Extensions;
 using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.Registration;

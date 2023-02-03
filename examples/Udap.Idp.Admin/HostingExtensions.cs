@@ -13,9 +13,9 @@ using Serilog;
 using Udap.Idp.Admin.Services;
 using Udap.Idp.Admin.Services.DataBase;
 using Udap.Idp.Admin.Services.State;
+using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
-using Udap.Server.Extensions;
 
 using ILogger = Serilog.ILogger;
 

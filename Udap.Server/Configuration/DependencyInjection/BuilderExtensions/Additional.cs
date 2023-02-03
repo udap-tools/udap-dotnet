@@ -8,9 +8,10 @@
 #endregion
 
 using Duende.IdentityServer.Services;
-using Duende.IdentityServer.Validation;
+using Duende.IdentityServer.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Udap.Server.Storage.Stores;
 using Udap.Server.Validation.Default;
 
 namespace Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
@@ -27,6 +28,24 @@ public static class IdentityServerBuilderExtensionsAdditional
         builder.Services.TryAddTransient<IReplayCache, DefaultReplayCache>();
         builder.AddSecretParser<UdapJwtBearerClientAssertionSecretParser>();
         builder.AddSecretValidator<UdapJwtSecretValidator>();
+
+        return builder;
+    }
+
+    /// <summary>
+    /// Adds a UdapClientRegistrationStore.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="builder">The builder.</param>
+    /// <returns></returns>
+    public static IIdentityServerBuilder AddUdapClientRegistrationStore<T>(this IIdentityServerBuilder builder)
+        where T : class, IUdapClientRegistrationStore
+    {
+        builder.Services.AddTransient<IUdapClientRegistrationStore, T>();
+
+        // Todo: Oportunity to add validation in pattern with other Identity Store techniques
+        //builder.Services.TryAddTransient(typeof(T));
+        //builder.Services.AddTransient<IUdapClientRegistrationStore, ValidatingUdapClientRegistrationStore<T>>();
 
         return builder;
     }

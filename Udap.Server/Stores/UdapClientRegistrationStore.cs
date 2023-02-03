@@ -12,11 +12,13 @@ using System.Text;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Udap.Common;
 using Udap.Common.Models;
 using Udap.Server.DbContexts;
 using Udap.Server.Mappers;
+using Udap.Server.Storage.Stores;
 
-namespace Udap.Server.Registration
+namespace Udap.Server.Stores
 {
     /// <inheritdoc /> 
     public class UdapClientRegistrationStore : IUdapClientRegistrationStore
@@ -40,12 +42,18 @@ namespace Udap.Server.Registration
 
         public async Task<int> AddClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
         {
+            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.AddClient");
+            activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
+
             _dbContext.Clients.Add(client.ToEntity());
             return await _dbContext.SaveChangesAsync(token);
         }
 
         public async Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default)
         {
+            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetAnchors");
+            activity?.SetTag(Tracing.Properties.Community, community);
+
             List<Entities.Anchor> anchors;
 
             if (community == null)
@@ -70,6 +78,8 @@ namespace Udap.Server.Registration
 
         public async Task<X509Certificate2Collection?> GetRootCertificates(CancellationToken token = default)
         {
+            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetRootCertificates");
+
             var roots = await _dbContext.RootCertificates.ToListAsync(token).ConfigureAwait(false);
             
             _logger.LogInformation($"Found {roots?.Count() ?? 0} root certificates");
@@ -89,6 +99,9 @@ namespace Udap.Server.Registration
 
         public async Task<X509Certificate2Collection?> GetAnchorsCertificates(string? community, CancellationToken token = default)
         {
+            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetAnchorsCertificates");
+            activity?.SetTag(Tracing.Properties.Community, community);
+
             var anchors = (await GetAnchors(community, token).ConfigureAwait(false)).ToList();
 
             _logger.LogInformation($"Found {anchors.Count} anchors for community, {community}");

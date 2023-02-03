@@ -12,8 +12,10 @@ using Microsoft.EntityFrameworkCore;
 using Udap.Common.Models;
 using Udap.Server.DbContexts;
 using Udap.Server.Mappers;
+using Udap.Server.Registration;
+using Udap.Server.Storage.Stores;
 
-namespace Udap.Server.Registration;
+namespace Udap.Server.Stores;
 
 /// <inheritdoc />
 public class UdapClientConfigurationStore : IUdapClientConfigurationStore

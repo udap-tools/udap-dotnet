@@ -50,7 +50,7 @@ public class UdapResponseTypeResponseModeTests
 
     public UdapResponseTypeResponseModeTests()
     {
-        var rootCert = new X509Certificate2("Certstore/roots/SureFhirLabs_CA.cer");
+        var rootCert = new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer");
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_Anchor.cer");
 
         _mockPipeline.OnPostConfigureServices += s =>

@@ -9,7 +9,6 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
@@ -35,7 +34,7 @@ using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using static IdentityModel.OidcConstants;
 
-namespace Udap.Client.Integration.Tests;
+namespace Udap.Client.System.Tests;
 
 public class TestFixture
 {

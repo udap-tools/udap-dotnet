@@ -42,13 +42,13 @@
 
   <ItemGroup>
     <!-- SureFhir Community -->
-    <None Include="..\..\..\_tests\Udap.PKI.Generator\certstores\surefhirlabs_community\anchors\SureFhirLabs_Anchor.cer" Link="CertStore\anchors\SureFhirLabs_Anchor.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\anchors\SureFhirLabs_Anchor.cer" Link="CertStore\anchors\SureFhirLabs_Anchor.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\..\_tests\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.client.pfx" Link="CertStore\issued\fhirlabs.net.client.pfx">
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.client.pfx" Link="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\roots\SureFhirLabs_CA.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\roots\SureFhirLabs_CA.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -58,9 +58,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Udap.Client\Udap.Client.csproj" />
-    <ProjectReference Include="..\..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
-    <ProjectReference Include="..\..\..\Udap.Util\Udap.Util.csproj" />
+    <ProjectReference Include="..\..\Udap.Client\Udap.Client.csproj" />
+    <ProjectReference Include="..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
+    <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
+    
   </ItemGroup>
 
   <ItemGroup>

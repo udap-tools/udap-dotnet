@@ -29,7 +29,7 @@ using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using DiscoveryPolicy = Udap.Client.Client.DiscoveryPolicy;
 
-namespace Udap.Client.Integration.Tests
+namespace Udap.Client.System.Tests
 {
     public class GeneralTests
     {

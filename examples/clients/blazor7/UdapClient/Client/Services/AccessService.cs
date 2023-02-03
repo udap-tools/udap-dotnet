@@ -35,8 +35,7 @@ public class AccessService
 
     public async Task<UdapAuthorizationCodeTokenRequest?> BuildRequestAccessTokenForAuthCode(
         string clientId,
-        string tokenEndpointUrl,
-        string password)
+        string tokenEndpointUrl)
     {
 
         var model = new AccessTokenRequestModel
@@ -62,8 +61,7 @@ public class AccessService
     
     public async Task<UdapClientCredentialsTokenRequest?> BuildRequestAccessTokenForClientCredentials(
         string clientId,
-        string tokenEndpointUrl,
-        string password)
+        string tokenEndpointUrl)
     {
         var model = new AccessTokenRequestModel
         {
@@ -85,7 +83,7 @@ public class AccessService
         return await result.Content.ReadFromJsonAsync<UdapClientCredentialsTokenRequest>();
     }
 
-    public async Task<string?> RequestAccessTokenForClientCredentials(UdapClientCredentialsTokenRequest request)
+    public async Task<TokenResponseModel?> RequestAccessTokenForClientCredentials(UdapClientCredentialsTokenRequest request)
     {
         var result = await _httpClient.PostAsJsonAsync("Access/RequestToken/client_credentials", request);
 
@@ -98,7 +96,7 @@ public class AccessService
             return null;
         }
 
-        return await result.Content.ReadAsStringAsync();
+        return await result.Content.ReadFromJsonAsync<TokenResponseModel>();
     }
 
     public async Task<TokenResponseModel?> RequestAccessTokenForAuthorizationCode(UdapAuthorizationCodeTokenRequest request)

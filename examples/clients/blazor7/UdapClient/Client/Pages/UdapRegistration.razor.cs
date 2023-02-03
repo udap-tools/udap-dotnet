@@ -47,12 +47,22 @@ public partial class UdapRegistration
         set => _registrationResult = value;
     }
 
-   
-    private Oauth2FlowEnum Oauth2Flow { get; set; }
+
+    private Oauth2FlowEnum Oauth2Flow
+    {
+        get
+        {
+            return AppState.Oauth2Flow;
+        }
+        set
+        {
+            AppState.SetProperty(this, nameof(AppState.Oauth2Flow), value);
+        }
+    }
 
     private async Task SetOauth2FlowProperty(ChangeEventArgs args)
     {
-        AppState.SetProperty(this, nameof(AppState.UdapMetadata), args.Value);
+        AppState.SetProperty(this, nameof(AppState.Oauth2Flow), args.Value);
     }
 
     private string _requestBody = string.Empty;

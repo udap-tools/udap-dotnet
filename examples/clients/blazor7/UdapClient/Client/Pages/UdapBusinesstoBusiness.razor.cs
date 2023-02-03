@@ -67,8 +67,6 @@ public partial class UdapBusinesstoBusiness
     private string? TokenRequest3 { get; set; }
     private string? TokenRequest4 { get; set; }
 
-    private string Password { get; set; } = "udap-test";
-
     private AuthorizationCodeRequest? _authorizationCodeRequest;
     private AuthorizationCodeRequest? AuthorizationCodeRequest {
         get
@@ -125,27 +123,6 @@ public partial class UdapBusinesstoBusiness
 
         return uri.Query.Replace("&", "&\r\n");
     }
-
-    bool _isShow;
-    InputType _passwordInput = InputType.Password;
-    string _passwordInputIcon = Icons.Material.Filled.VisibilityOff;
-
-    void ShowPassword()
-    {
-        if (_isShow)
-        {
-            _isShow = false;
-            _passwordInputIcon = Icons.Material.Filled.VisibilityOff;
-            _passwordInput = InputType.Password;
-        }
-        else
-        {
-            _isShow = true;
-            _passwordInputIcon = Icons.Material.Filled.Visibility;
-            _passwordInput = InputType.Text;
-        }
-    }
-
     
     protected override void OnParametersSet()
     {
@@ -221,8 +198,7 @@ public partial class UdapBusinesstoBusiness
             var requestToken = await AccessService
                 .BuildRequestAccessTokenForAuthCode(
                     AppState.RegistrationDocument.ClientId,
-                    AppState.UdapMetadata.TokenEndpoint,
-                    Password);
+                    AppState.UdapMetadata.TokenEndpoint);
             
             AppState.SetProperty(this, nameof(AppState.AuthorizationCodeTokenRequest), requestToken);
 
@@ -253,8 +229,7 @@ public partial class UdapBusinesstoBusiness
             var requestToken = await AccessService
                 .BuildRequestAccessTokenForClientCredentials(
                     AppState.RegistrationDocument.ClientId,
-                    AppState.UdapMetadata.TokenEndpoint,
-                    Password);
+                    AppState.UdapMetadata.TokenEndpoint);
 
             AppState.SetProperty(this, nameof(AppState.ClientCredentialsTokenRequest), requestToken);
 
@@ -345,8 +320,17 @@ public partial class UdapBusinesstoBusiness
 
             var tokenResponse = await AccessService
                 .RequestAccessTokenForClientCredentials(AppState.ClientCredentialsTokenRequest);
-            
-            AccessToken = tokenResponse;
+
+            AppState.SetProperty(this, nameof(AppState.AccessTokens), tokenResponse);
+
+            if (tokenResponse != null && !tokenResponse.IsError)
+            {
+                AccessToken = tokenResponse.Raw;
+            }
+            else
+            {
+                AccessToken = tokenResponse?.Error;
+            }
         }
     }
 }

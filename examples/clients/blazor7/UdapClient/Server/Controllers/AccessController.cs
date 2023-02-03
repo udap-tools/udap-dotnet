@@ -90,7 +90,20 @@ public class AccessController : ControllerBase
         var tokenResponse = await _httpClient
             .UdapRequestClientCredentialsTokenAsync(request);
 
-        return Ok(tokenResponse.Json.AsJson());
+        var tokenResponseModel = new TokenResponseModel
+        {
+            Raw = tokenResponse.Json.AsJson(),
+            IsError = tokenResponse.IsError,
+            Error = tokenResponse.Error,
+            AccessToken = tokenResponse.AccessToken,
+            IdentityToken = tokenResponse.IdentityToken,
+            RefreshToken = tokenResponse.RefreshToken,
+            ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
+            Scope = tokenResponse.Raw,
+            TokenType = tokenResponse.TokenType
+        };
+
+        return Ok(tokenResponseModel);
     }
 
     [HttpPost("RequestToken/authorization_code")]

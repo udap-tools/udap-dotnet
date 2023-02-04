@@ -61,9 +61,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
             // Fix-up TrustChainValidator to ignore certificate revocation
             //
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(TrustChainValidator));
-            Console.WriteLine("Hello Joe:");
             
-
             if (descriptor != null)
             {
                 Console.WriteLine($"Removing {descriptor}");

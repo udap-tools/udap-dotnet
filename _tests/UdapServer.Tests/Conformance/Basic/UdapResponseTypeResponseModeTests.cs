@@ -16,8 +16,6 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
-using System.Collections.Generic;
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -27,9 +25,6 @@ using System.Text.Json;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -37,14 +32,13 @@ using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Server.Configuration;
-using Udap.Server.Registration;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 
 namespace UdapServer.Tests.Conformance.Basic;
 public class UdapResponseTypeResponseModeTests
 {
-    private const string Category = "Conformance.Basic.ResponseTypeResponseModeTests";
+    private const string Category = "Conformance.Basic.UdapResponseTypeResponseModeTests";
 
     private UdapIdentityServerPipeline _mockPipeline = new UdapIdentityServerPipeline();
 
@@ -63,7 +57,7 @@ public class UdapResponseTypeResponseModeTests
             });
         };
 
-        _mockPipeline.Initialize();
+        _mockPipeline.Initialize(enableLogging: true);
         _mockPipeline.BrowserClient.AllowAutoRedirect = false;
         _mockPipeline.Clients.Add(new Client
         {

@@ -5,6 +5,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Models;
@@ -20,6 +21,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Server;
 using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
@@ -108,7 +110,8 @@ public class UdapIdentityServerPipeline
         Handler = Server.CreateHandler();
             
         BrowserClient = new BrowserClient(new BrowserHandler(Handler));
-        BackChannelClient = new HttpClient(Handler);
+        // BackChannelClient = new HttpClient(Handler);
+
     }
 
     public void ConfigureServices(IServiceCollection services)
@@ -154,18 +157,32 @@ public class UdapIdentityServerPipeline
             .AddUdapDiscovery(BaseUrl)
             .AddUdapServerConfiguration()
             .AddInMemoryUdapCertificates(Communities, RootCertificates);
-
-
+        
         services.AddHttpClient(IdentityServerConstants.HttpClients.BackChannelLogoutHttpClient)
             .AddHttpMessageHandler(() => BackChannelMessageHandler);
 
         services.AddHttpClient(IdentityServerConstants.HttpClients.JwtRequestUriHttpClient)
             .AddHttpMessageHandler(() => JwtRequestMessageHandler);
 
+        //
+        // Do not check revocation.  If I decided to include revocation I would need 
+        // to host another dotnet service during test.  Or if I implemented a crl caching
+        // feature then I could pre-populate the cache.  
+        // On Linux the cache does have my CRLs.  $HOME/.dotnet/corefx/cryptography/crls
+        // So I can see that I could actually copy the crls there and ensure
+        // RevocationMode is offline.  I would have to do the same for windows.
+        // Good post here
+        // https://stackoverflow.com/questions/55653143/is-there-a-way-to-check-and-clean-certificate-revocation-list-cache-for-asp-net
+
+        services.AddSingleton(sp => new TrustChainValidator(
+            new X509ChainPolicy
+            {
+                VerificationFlags = X509VerificationFlags.IgnoreWrongUsage,
+                RevocationFlag = X509RevocationFlag.ExcludeRoot,
+                RevocationMode = X509RevocationMode.NoCheck // This is the change unit testing with no revocation endpoint to host the revocation list.
+            }, sp.GetRequiredService<ILogger<TrustChainValidator>>()));
+
         OnPostConfigureServices(services);
-
-
-
     }
 
     public void ConfigureApp(IApplicationBuilder app)

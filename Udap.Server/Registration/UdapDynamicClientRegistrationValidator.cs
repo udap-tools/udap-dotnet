@@ -17,6 +17,7 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 using Duende.IdentityServer.Models;
 using IdentityModel;
@@ -228,6 +229,12 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         {
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate);
+
+            var sb = new StringBuilder();
+            sb.AppendLine($"Client Thumbprint: {publicCert.Thumbprint}");
+            sb.AppendLine($"Anchor Thumbprints: {String.Join(" | ", communityTrustAnchors.Select(a => a.Thumbprint))}");
+            sb.AppendLine($"Root Certificate Thumbprints: {String.Join(" | ", communityRoots.Select(a => a.Thumbprint))}");
+            _logger.LogWarning(sb.ToString());
 
             return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement,

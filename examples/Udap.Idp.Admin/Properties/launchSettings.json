@@ -9,6 +9,16 @@
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5253"
     },
+    "Udap.Idp.Admin.GCP": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "GCPDeploy": "true"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5253"     
+    },
     "SecuredControls": {
       "commandName": "Project",
       "launchBrowser": true,

@@ -45,9 +45,6 @@
     <None Update="CertStore/issued/udap-sandbox-surescripts.p12">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\anchors\SureFhirLabs_Anchor.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="CertStore\issued\.gitignore">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>.cs</LastGenOutput>

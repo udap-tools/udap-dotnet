@@ -25,6 +25,8 @@ namespace Udap.Server
         public static class ProtocolRoutePaths
         {
             public const string ConnectPathPrefix = "connect";
+
+            public const string Authorize = ConnectPathPrefix + "/authorize";
             public const string DiscoveryConfiguration = ".well-known/udap";
             public const string Register = ConnectPathPrefix + "/register";
             public const string Token = ConnectPathPrefix + "/token";

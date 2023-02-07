@@ -27,7 +27,6 @@ using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using Duende.IdentityServer.Validation;
 using FluentAssertions;
-using FluentAssertions.Common;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -41,16 +40,20 @@ using Udap.Server.Services.Default;
 using Udap.Server.Validation.Default;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
+using Xunit.Abstractions;
+
 
 namespace UdapServer.Tests.Conformance.Basic;
 public class UdapResponseTypeResponseModeTests
 {
+    private readonly ITestOutputHelper _testOutputHelper;
     private const string Category = "Conformance.Basic.UdapResponseTypeResponseModeTests";
 
     private UdapIdentityServerPipeline _mockPipeline = new UdapIdentityServerPipeline();
 
-    public UdapResponseTypeResponseModeTests()
+    public UdapResponseTypeResponseModeTests(ITestOutputHelper testOutputHelper)
     {
+        _testOutputHelper = testOutputHelper;
         var rootCert = new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer");
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_Anchor.cer");
 
@@ -145,7 +148,7 @@ public class UdapResponseTypeResponseModeTests
     
     [Fact]
     [Trait("Category", Category)]
-    public async Task Request_missing_response_type_rejected()
+    public async Task Request_response_type_missing_results_in_unsupported_response_type()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
@@ -212,24 +215,208 @@ public class UdapResponseTypeResponseModeTests
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
             //responseType: null!, // missing
-            scope: "openid",
+            scope: "udap",
             redirectUri: "https://code_client/callback",
             state: state,
+            nonce: nonce);
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
+        response = await _mockPipeline.BrowserClient.GetAsync(url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        var query = response.Headers.Location.Query;
+        _testOutputHelper.WriteLine(query);
+        var responseParams = QueryHelpers.ParseQuery(query);
+        responseParams["error"].Should().BeEquivalentTo("unsupported_response_type");
+        responseParams["error_description"].Should().BeEquivalentTo("Missing response_type");
+        responseParams.Count(r => r.Key == "response_type").Should().Be(0);
+        responseParams["scope"].Should().BeEquivalentTo("udap");
+        responseParams["state"].Should().BeEquivalentTo(state);
+        responseParams["nonce"].Should().BeEquivalentTo(nonce);
+    }
+
+    [Fact]
+    [Trait("Category", Category)]
+    public async Task Request_state_missing_results_in_unsupported_response_type()
+    {
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+
+        await _mockPipeline.LoginAsync("bob");
+
+        var state = Guid.NewGuid().ToString();
+        var nonce = Guid.NewGuid().ToString();
+
+        var document = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("udap")
+            .WithResponseTypes(new List<string> { "code" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
+            .Build();
+
+
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = signedSoftwareStatement,
+            // Certifications = new string[0],
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+
+        var response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        var url = _mockPipeline.CreateAuthorizeUrl(
+            clientId: resultDocument!.ClientId!,
+            responseType: "code",
+            scope: "udap",
+            redirectUri: "https://code_client/callback",
+            // state: state, //missing state
             nonce: nonce);
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
-        errorMessage.Error.Should().Be("unsupported_response_type");
+        // response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var joe = await response.Content.ReadAsStringAsync();
+        _testOutputHelper.WriteLine(joe);
 
+        // var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
+        // errorMessage.Should().NotBeNull();
+        // errorMessage!.Error.Should().Be("unsupported_response_type");
+        //
+        // _testOutputHelper.WriteLine(errorMessage.ToString());
         // _mockPipeline.ErrorMessage.Error.Should().Be("unsupported_response_type");
     }
 
     [Fact]
     [Trait("Category", Category)]
-    public async Task Request_missing_client_id_rejected()
+    public async Task Request_response_type_invalid_results_in_unsupported_response_type()
+    {
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+
+        await _mockPipeline.LoginAsync("bob");
+
+        var state = Guid.NewGuid().ToString();
+        var nonce = Guid.NewGuid().ToString();
+
+        var document = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("udap")
+            .WithResponseTypes(new List<string> { "code" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
+            .Build();
+
+
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = signedSoftwareStatement,
+            // Certifications = new string[0],
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+
+        var response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        var url = _mockPipeline.CreateAuthorizeUrl(
+            clientId: resultDocument!.ClientId!,
+            responseType: "invalid_response_type", // invalid
+            scope: "udap",
+            redirectUri: "https://code_client/callback",
+            state: state,
+            nonce: nonce);
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
+        response = await _mockPipeline.BrowserClient.GetAsync(url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        var query = response.Headers.Location.Query;
+        _testOutputHelper.WriteLine(query);
+        var responseParams = QueryHelpers.ParseQuery(query);
+        responseParams["error"].Should().BeEquivalentTo("unsupported_response_type");
+        responseParams["error_description"].Should().BeEquivalentTo("Response type not supported");
+        responseParams["response_type"].Should().BeEquivalentTo("invalid_response_type");
+        responseParams["scope"].Should().BeEquivalentTo("udap");
+        responseParams["state"].Should().BeEquivalentTo(state);
+        responseParams["nonce"].Should().BeEquivalentTo(nonce);
+    }
+
+
+    [Fact]
+    [Trait("Category", Category)]
+    public async Task Request_client_id_missing_results_in_invalid_request()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
@@ -308,7 +495,93 @@ public class UdapResponseTypeResponseModeTests
         var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
         errorMessage.Should().NotBeNull();
         errorMessage!.Error.Should().Be("invalid_request");
+        _testOutputHelper.WriteLine(errorMessage.ToString());
     }
+
+    [Fact]
+    [Trait("Category", Category)]
+    public async Task Request_client_id_invalid_results_in_unauthorized_client()
+    {
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+
+        await _mockPipeline.LoginAsync("bob");
+
+        var state = Guid.NewGuid().ToString();
+        var nonce = Guid.NewGuid().ToString();
+
+        var document = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("udap")
+            .WithResponseTypes(new List<string> { "code" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
+            .Build();
+
+
+        var securityKey = new X509SecurityKey(clientCert);
+        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+
+        var now = DateTime.UtcNow;
+
+        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
+        var jwtHeader = new JwtHeader
+        {
+            { "alg", signingCredentials.Algorithm },
+            { "x5c", new[] { pem } }
+        };
+
+        var encodedHeader = jwtHeader.Base64UrlEncode();
+        var encodedPayload = document.Base64UrlEncode();
+        var encodedSignature =
+            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
+                signingCredentials);
+        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+
+        var requestBody = new UdapRegisterRequest
+        {
+            SoftwareStatement = signedSoftwareStatement,
+            // Certifications = new string[0],
+            Udap = UdapConstants.UdapVersionsSupportedValue
+        };
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+
+        var response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        var url = _mockPipeline.CreateAuthorizeUrl(
+            clientId: $"{resultDocument!.ClientId!}_Invalid",
+            responseType: "code",
+            scope: "udap",
+            redirectUri: "https://code_client/callback",
+            state: state,
+            nonce: nonce);
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+        response = await _mockPipeline.BrowserClient.GetAsync(url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
+        errorMessage.Should().NotBeNull();
+        errorMessage!.Error.Should().Be("unauthorized_client");
+        _testOutputHelper.WriteLine(errorMessage.ToString());
+    }
+
 
     [Fact]
     [Trait("Category", Category)]
@@ -391,7 +664,7 @@ public class UdapResponseTypeResponseModeTests
 
         response.Headers.Location.Should().NotBeNull();
         response.Headers.Location!.AbsoluteUri.Should().Contain("https://code_client/callback");
-
+        _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
         queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("udap");

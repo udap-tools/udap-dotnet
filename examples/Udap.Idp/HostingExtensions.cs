@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
+using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -186,7 +187,7 @@ internal static class HostingExtensions
         // builder.Services.AddTransient<IClientSecretValidator, AlwaysPassClientValidator>();
 
 
-        builder.Services.AddOpenTelemetryTracing(builder =>
+        builder.Services.AddOpenTelemetry().WithTracing(builder =>
         {
             builder
                 .AddSource(IdentityServerConstants.Tracing.Basic)
@@ -208,7 +209,6 @@ internal static class HostingExtensions
                 {
                     otlpOptions.Endpoint = new Uri("http://localhost:4317");
                 });
-
         });
 
         builder.Services.AddHttpLogging(options =>

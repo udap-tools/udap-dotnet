@@ -223,31 +223,6 @@ internal static class HostingExtensions
     {
         app.UseHttpLogging();
 
-        //TODO: promote to middleware class.  PR to Duende Identity Server to ensure this is a change to the code base.
-        // https://groups.google.com/g/udap-discuss/c/jxgtlHOsg2A for reference.
-        app.Use(async (context, next) =>
-        {
-            context.Response.OnStarting(() =>
-            {
-                if (context.Request.Path.Value != null && context.Request.Path.Value.Contains("connect/token"))
-                {
-                    if (context.Response.Headers.ContentType.ToString().ToLower().Equals("application/json; charset=utf-8"))
-                    {
-                        context.Response.Headers.Remove("Content-Type");
-                        context.Response.Headers.Add("Content-Type", new StringValues("application/json"));
-
-                        Log.Logger.Debug("Changed Content-Type header to \"application/json\"");
-                    }
-                }
-
-                return Task.FromResult(0);
-            });
-
-            await next();
-
-        });
-        
-
         if (!args.Any(a => a.Contains("skipRateLimiting")))
         {
             app.UseIpRateLimiting();
@@ -269,7 +244,8 @@ internal static class HostingExtensions
         // uncomment if you want to add a UI
         app.UseStaticFiles();
         app.UseRouting();
-            
+
+        app.UseUdapServer();
         app.UseIdentityServer();
 
         app.MapPost("/connect/register", 

@@ -2,10 +2,6 @@
 // See LICENSE in the project root for license information.
 
 
-using System.Diagnostics;
-using System.Net;
-using System.Security.Claims;
-using System.Security.Cryptography.X509Certificates;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Models;
@@ -17,16 +13,22 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Net;
+using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
+using Duende.IdentityServer.Validation;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Server;
+using Udap.Server.Configuration;
 using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
-using Udap.Server.Extensions;
 using Udap.Server.Registration;
+using Udap.Server.Services;
+using Udap.Server.Services.Default;
+using Udap.Server.Validation.Default;
 
 
 namespace UdapServer.Tests.Common;
@@ -157,7 +159,7 @@ public class UdapIdentityServerPipeline
             .AddUdapDiscovery(BaseUrl)
             .AddUdapServerConfiguration()
             .AddInMemoryUdapCertificates(Communities, RootCertificates);
-        
+
         services.AddHttpClient(IdentityServerConstants.HttpClients.BackChannelLogoutHttpClient)
             .AddHttpMessageHandler(() => BackChannelMessageHandler);
 
@@ -191,6 +193,7 @@ public class UdapIdentityServerPipeline
 
         OnPreConfigure(app);
 
+        app.UseUdapServer();
         app.UseIdentityServer();
 
         // UI endpoints

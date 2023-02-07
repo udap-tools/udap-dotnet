@@ -10,14 +10,16 @@
 using Duende.IdentityServer.Configuration;
 using IdentityModel;
 using Microsoft.Extensions.DependencyInjection;
+using Udap.Server.Extensions;
 using static Udap.Server.Constants;
 
-namespace Udap.Server.Extensions
+namespace Udap.Server.Configuration
 {
     public static class IdentityServerBuilderExtensions
     {
         /// <summary>
-        /// Include "registration_endpoint" in the Identity Server, discovery document (.well-known/openid-configuration)
+        /// Include "registration_endpoint" in the Identity Server, discovery document
+        /// (.well-known/openid-configuration)
         /// 
         /// </summary>
         /// <param name="builder"></param>

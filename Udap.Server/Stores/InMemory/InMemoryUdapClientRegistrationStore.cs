@@ -27,11 +27,11 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
     /// <param name="communities"></param>
     /// <param name="rootCertificates"></param>
     public InMemoryUdapClientRegistrationStore(
-        IEnumerable<Duende.IdentityServer.Models.Client> clients,
+        List<Duende.IdentityServer.Models.Client> clients,
         IEnumerable<Community> communities, 
         IEnumerable<RootCertificate> rootCertificates)
     {
-        _clients = clients.ToList();
+        _clients = clients;
         _communities = communities;
         _rootCertificates = rootCertificates;
     }

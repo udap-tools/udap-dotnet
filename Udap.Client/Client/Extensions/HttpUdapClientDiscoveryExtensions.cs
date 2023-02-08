@@ -3,6 +3,15 @@
 // Copyright (c) Brock Allen & Dominick Baier. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
+#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using IdentityModel.Client;
 using Udap.Client.Client.Messages;
 using Udap.Client.Internal;
@@ -21,13 +30,13 @@ namespace Udap.Client.Client.Extensions
         /// <param name="address">The address.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>
-        public static async Task<UdapDiscoveryDocumentResponse> GetUdapDiscoveryDocumentForTaskAsync(
+        public static async Task<UdapDiscoveryDocumentResponse> GetUdapDiscoveryDocument(
             this HttpClient client,
             string address = null, 
             CancellationToken cancellationToken = default)
         {
             return await client
-                .GetUdapDiscoveryDocumentForTaskAsync(new UdapDiscoveryDocumentRequest { Address = address },
+                .GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest { Address = address },
                     cancellationToken).ConfigureAwait();
         }
 
@@ -38,7 +47,7 @@ namespace Udap.Client.Client.Extensions
         /// <param name="request">The request.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>
-        public static async Task<UdapDiscoveryDocumentResponse> GetUdapDiscoveryDocumentForTaskAsync(
+        public static async Task<UdapDiscoveryDocumentResponse> GetUdapDiscoveryDocument(
             this HttpMessageInvoker client, 
             UdapDiscoveryDocumentRequest request,
             CancellationToken cancellationToken = default)
@@ -57,7 +66,7 @@ namespace Udap.Client.Client.Extensions
                 throw new ArgumentException("An address is required.");
             }
 
-            var parsed = DiscoveryEndpoint.ParseUrl(address, request.Policy.DiscoveryDocumentPath);
+            var parsed = DiscoveryEndpoint.ParseUrl(address, request.Policy.DiscoveryDocumentPath, request.Community);
             var authority = parsed.Authority;
             var url = parsed.Url;
 

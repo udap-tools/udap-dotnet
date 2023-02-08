@@ -61,9 +61,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
             // Fix-up TrustChainValidator to ignore certificate revocation
             //
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(TrustChainValidator));
-            Console.WriteLine("Hello Joe:");
             
-
             if (descriptor != null)
             {
                 Console.WriteLine($"Removing {descriptor}");
@@ -137,7 +135,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationSuccess_authorization_code_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -249,13 +247,14 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         clientEntity.RequirePkce.Should().BeFalse();
 
         clientEntity.RedirectUris.Single().RedirectUri.Should().Be("http://localhost/signin-oidc");
+        clientEntity.AllowOfflineAccess.Should().BeTrue();
     }
 
     [Fact]
     public async Task RegisrationSuccessTest()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -362,6 +361,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         var clientEntity = udapContext.Clients
             .Single(c => c.ClientId == responseUdapDocument.ClientId);
         clientEntity.RequirePkce.Should().BeTrue();
+        clientEntity.AllowOfflineAccess.Should().BeFalse();
     }
 
     [Fact]
@@ -371,7 +371,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         //
         //
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -457,7 +457,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_Signature_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -535,7 +535,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_issMatchesUriName_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -614,7 +614,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_issMissing_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -692,7 +692,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_subMissing_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -772,7 +772,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_subNotEqualtoIss_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -851,7 +851,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_audMissing_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -930,7 +930,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_audEqualsRegistrationEndpoint_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -1009,7 +1009,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_expMissing_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -1088,7 +1088,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_expExpired_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -1167,7 +1167,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_iatMissing_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -1246,7 +1246,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_clientNameMissing_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -1325,7 +1325,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_responseTypesMissing_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
@@ -1405,7 +1405,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     public async Task RegisrationInvalidSotwareStatement_tokenEndpointAuthMethodMissing_Test()
     {
         using var client = _fixture.CreateClient();
-        var disco = await client.GetUdapDiscoveryDocumentForTaskAsync();
+        var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");

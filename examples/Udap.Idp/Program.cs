@@ -23,11 +23,6 @@ Log.Information("Starting up");
 
 try
 {
-    foreach (var s in args)
-    {
-        Log.Information(s);
-    }
-
     var builder = WebApplication.CreateBuilder(args);
 
 

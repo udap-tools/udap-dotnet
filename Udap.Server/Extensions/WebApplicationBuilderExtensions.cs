@@ -9,7 +9,6 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Udap.Server.Configuration;
 
 namespace Udap.Server.Extensions;
@@ -17,11 +16,13 @@ namespace Udap.Server.Extensions;
 public static class WebApplicationBuilderExtensions
 {
     public static WebApplicationBuilder AddUdapServerSettings(
-        this WebApplicationBuilder builder)
+        this WebApplicationBuilder builder,
+        ServerSettings? serverSettings = null)
     {
-        var settings = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
-        builder.Services.AddSingleton<ServerSettings>(settings);
-        
+        serverSettings ??= builder.Configuration.GetOption<ServerSettings>("ServerSettings");
+
+        builder.Services.AddSingleton<ServerSettings>(serverSettings);
+
         return builder;
     }
 }

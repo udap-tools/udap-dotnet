@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System.Collections;
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
@@ -17,11 +16,12 @@ using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Primitives;
+using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Udap.Server;
 using Udap.Server.Configuration;
+using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Extensions;
 using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.Registration;
@@ -48,10 +48,10 @@ internal static class HostingExtensions
         dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
 
 
-        foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
-        {
-            Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
-        }
+        // foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
+        // {
+        //     Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
+        // }
 
         //Ugly but works so far.
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
@@ -171,7 +171,7 @@ internal static class HostingExtensions
 
 
 
-        // builder.Services.AddAuthenticationc()
+        // builder.Services.AddAuthentication()
 
 
 
@@ -187,7 +187,7 @@ internal static class HostingExtensions
         // builder.Services.AddTransient<IClientSecretValidator, AlwaysPassClientValidator>();
 
 
-        builder.Services.AddOpenTelemetryTracing(builder =>
+        builder.Services.AddOpenTelemetry().WithTracing(builder =>
         {
             builder
                 .AddSource(IdentityServerConstants.Tracing.Basic)
@@ -209,7 +209,6 @@ internal static class HostingExtensions
                 {
                     otlpOptions.Endpoint = new Uri("http://localhost:4317");
                 });
-
         });
 
         builder.Services.AddHttpLogging(options =>
@@ -223,31 +222,6 @@ internal static class HostingExtensions
     public static WebApplication ConfigurePipeline(this WebApplication app, string[] args)
     {
         app.UseHttpLogging();
-
-        //TODO: promote to middleware class.  PR to Duende Identity Server to ensure this is a change to the code base.
-        // https://groups.google.com/g/udap-discuss/c/jxgtlHOsg2A for reference.
-        app.Use(async (context, next) =>
-        {
-            context.Response.OnStarting(() =>
-            {
-                if (context.Request.Path.Value != null && context.Request.Path.Value.Contains("connect/token"))
-                {
-                    if (context.Response.Headers.ContentType.ToString().ToLower().Equals("application/json; charset=utf-8"))
-                    {
-                        context.Response.Headers.Remove("Content-Type");
-                        context.Response.Headers.Add("Content-Type", new StringValues("application/json"));
-
-                        Log.Logger.Debug("Changed Content-Type header to \"application/json\"");
-                    }
-                }
-
-                return Task.FromResult(0);
-            });
-
-            await next();
-
-        });
-        
 
         if (!args.Any(a => a.Contains("skipRateLimiting")))
         {
@@ -270,13 +244,18 @@ internal static class HostingExtensions
         // uncomment if you want to add a UI
         app.UseStaticFiles();
         app.UseRouting();
-            
+
+        app.UseUdapServer();
         app.UseIdentityServer();
 
-        app.MapPost("/connect/register", async (HttpContext httpContext, [FromServices] UdapDynamicClientRegistrationEndpoint endpoint) =>
+        app.MapPost("/connect/register", 
+                async (
+                    HttpContext httpContext, 
+                    [FromServices] UdapDynamicClientRegistrationEndpoint endpoint, 
+                    CancellationToken token) =>
         {
             //TODO:  Tests and response codes needed...    httpContext.Response
-            await endpoint.Process(httpContext);
+            await endpoint.Process(httpContext, token);
         })
         .AllowAnonymous()
         .Produces(StatusCodes.Status201Created)

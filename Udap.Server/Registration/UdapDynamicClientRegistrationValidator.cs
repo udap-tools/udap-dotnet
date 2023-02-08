@@ -17,6 +17,7 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 using Duende.IdentityServer.Models;
 using IdentityModel;
@@ -229,6 +230,12 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate);
 
+            var sb = new StringBuilder();
+            sb.AppendLine($"Client Thumbprint: {publicCert.Thumbprint}");
+            sb.AppendLine($"Anchor Thumbprints: {String.Join(" | ", communityTrustAnchors.Select(a => a.Thumbprint))}");
+            sb.AppendLine($"Root Certificate Thumbprints: {String.Join(" | ", communityRoots.Select(a => a.Thumbprint))}");
+            _logger.LogWarning(sb.ToString());
+
             return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement,
                 UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate));
@@ -286,6 +293,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                         //TODO: I need to create a policy engine or dig into the Duende policy stuff and see it if makes sense
                         //Threat analysis?
                         client.RequirePkce = false;
+                        client.AllowOfflineAccess = true;
                     }
                     else
                     {
@@ -438,9 +446,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             return true;
         }
 
-        //TODO: do I want this logged?
-        _logger.LogInformation($"jwt payload {jwtSecurityToken.EncodedPayload}");
-        _logger.LogInformation($"X5c {jwtHeader}");
+        _logger.LogDebug($"jwt payload {jwtSecurityToken.EncodedPayload}");
+        _logger.LogDebug($"X5c { jwtHeader.X5c }");
 
         return false;
     }

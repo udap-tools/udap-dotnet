@@ -10,6 +10,7 @@
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
@@ -17,10 +18,11 @@ using Duende.IdentityServer.Models;
 using Hl7.Fhir.Model;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
-using Udap.Server.Extensions;
-using Udap.Server.Registration;
+using Udap.Server.Storage.Stores;
+using Udap.Server.Stores;
 using Udap.Util.Extensions;
 using ILogger = Serilog.ILogger;
 using Task = System.Threading.Tasks.Task;
@@ -164,19 +166,30 @@ public static class SeedData
         await SeedFhirScopes(configDbContext, "user");
 
         //
-        // OpenId
+        // openid
         //
-        // if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.OpenId))
-        // {
-        //     var identityResource = new IdentityResources.OpenId();
-        //     configDbContext.IdentityResources.Add(identityResource.ToEntity());
-        //
-        //     await configDbContext.SaveChangesAsync();
-        // }
+        if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.OpenId))
+        {
+            var identityResource = new IdentityResources.OpenId();
+            configDbContext.IdentityResources.Add(identityResource.ToEntity());
         
+            await configDbContext.SaveChangesAsync();
+        }
+
+        //
+        // profile
+        //
+        if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.Profile))
+        {
+            var identityResource = new IdentityResources.Profile();
+            configDbContext.IdentityResources.Add(identityResource.ToEntity());
+
+            await configDbContext.SaveChangesAsync();
+        }
+
 
         var sb = new StringBuilder();
-        sb.AppendLine("Use[Udap.Idp.db];");
+        sb.AppendLine("Use [Udap.Idp.db];");
         sb.AppendLine("if not exists(select * from sys.server_principals where name = 'udap_user')");
         sb.AppendLine("BEGIN");
         sb.AppendLine("CREATE LOGIN udap_user WITH PASSWORD = 'udap_password1', DEFAULT_DATABASE =[Udap.Idp.db], CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF;");

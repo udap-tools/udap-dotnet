@@ -63,7 +63,8 @@ public class UdapResponseTypeResponseModeTests
             {
                 ServerSupport = ServerSupport.UDAP,
                 DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap"
+                DefaultSystemScopes = "udap",
+                ForceStateParamOnAuthorizationCode = true
             });
 
             s.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
@@ -227,7 +228,7 @@ public class UdapResponseTypeResponseModeTests
         var query = response.Headers.Location.Query;
         _testOutputHelper.WriteLine(query);
         var responseParams = QueryHelpers.ParseQuery(query);
-        responseParams["error"].Should().BeEquivalentTo("unsupported_response_type");
+        responseParams["error"].Should().BeEquivalentTo("invalid_request");
         responseParams["error_description"].Should().BeEquivalentTo("Missing response_type");
         responseParams.Count(r => r.Key == "response_type").Should().Be(0);
         responseParams["scope"].Should().BeEquivalentTo("udap");
@@ -235,14 +236,20 @@ public class UdapResponseTypeResponseModeTests
         responseParams["nonce"].Should().BeEquivalentTo(nonce);
     }
 
+    /// <summary>
+    /// If client does not include the state during connect/authorize and
+    /// <see cref="ServerSettings.ForceStateParamOnAuthorizationCode"/> is true
+    /// authorize will redirect with error.
+    /// </summary>
+    /// <returns></returns>
     [Fact]
     [Trait("Category", Category)]
     public async Task Request_state_missing_results_in_unsupported_response_type()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
-
+        
         await _mockPipeline.LoginAsync("bob");
-
+        
         var state = Guid.NewGuid().ToString();
         var nonce = Guid.NewGuid().ToString();
 
@@ -312,18 +319,15 @@ public class UdapResponseTypeResponseModeTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
-        // response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var joe = await response.Content.ReadAsStringAsync();
-        _testOutputHelper.WriteLine(joe);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
-        // var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
-        // errorMessage.Should().NotBeNull();
-        // errorMessage!.Error.Should().Be("unsupported_response_type");
-        //
-        // _testOutputHelper.WriteLine(errorMessage.ToString());
-        // _mockPipeline.ErrorMessage.Error.Should().Be("unsupported_response_type");
+        var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
+        errorMessage.Should().NotBeNull();
+        errorMessage!.Error.Should().Be("invalid_request");
+        errorMessage!.ErrorDescription.Should().Be("Missing state parameter");
     }
 
+    
     [Fact]
     [Trait("Category", Category)]
     public async Task Request_response_type_invalid_results_in_unsupported_response_type()
@@ -405,7 +409,7 @@ public class UdapResponseTypeResponseModeTests
         var query = response.Headers.Location.Query;
         _testOutputHelper.WriteLine(query);
         var responseParams = QueryHelpers.ParseQuery(query);
-        responseParams["error"].Should().BeEquivalentTo("unsupported_response_type");
+        responseParams["error"].Should().BeEquivalentTo("invalid_request");
         responseParams["error_description"].Should().BeEquivalentTo("Response type not supported");
         responseParams["response_type"].Should().BeEquivalentTo("invalid_response_type");
         responseParams["scope"].Should().BeEquivalentTo("udap");

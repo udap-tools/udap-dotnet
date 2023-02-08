@@ -22,6 +22,18 @@ public class ServerSettings
 
     [JsonPropertyName("DefaultUserScopes")]
     public string? DefaultUserScopes { get; set; }
+
+    /// <summary>
+    /// Require state param to exist on /connect/authorize? calls.
+    /// This is off by default.  When enabled it will only
+    /// respond to clients registered with secrets of type 
+    /// <see>
+    ///     <cref>IdentityServerConstants.SecretTypes.Udap_X509_Pem</cref>
+    /// </see>
+    /// . 
+    /// </summary>
+    [JsonPropertyName("ForceStateParamOnAuthorizationCode")]
+    public bool ForceStateParamOnAuthorizationCode { get; set; } = false;
 }
 
 public enum ServerSupport

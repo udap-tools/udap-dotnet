@@ -7,163 +7,46 @@
 // */
 #endregion
 
-using System.Net;
-using System.Text;
-using Duende.IdentityServer.Configuration;
-using Duende.IdentityServer.Extensions;
-using Duende.IdentityServer.Models;
-using Duende.IdentityServer.Services;
-using Duende.IdentityServer.Stores;
-using IdentityModel;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
-using Org.BouncyCastle.Asn1.Ocsp;
+
 
 namespace Udap.Server.Hosting;
-internal class UdapTokenResponseMiddleware
+
+
+/// <summary>
+/// https://groups.google.com/g/udap-discuss/c/jxgtlHOsg2A
+/// </summary>
+public class UdapTokenResponseMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly IdentityServerOptions _options;
-    private readonly ILogger<UdapAuthorizationResponseMiddleware> _logger;
+    private readonly ILogger<UdapTokenResponseMiddleware> _logger;
 
-    public UdapTokenResponseMiddleware(
-        RequestDelegate next,
-        IdentityServerOptions options,
-        ILogger<UdapAuthorizationResponseMiddleware> logger)
+    public UdapTokenResponseMiddleware(RequestDelegate next, ILogger<UdapTokenResponseMiddleware> logger)
     {
         _next = next;
-        _options = options;
         _logger = logger;
     }
 
-    public async Task Invoke(
-        HttpContext context,
-        IClientStore clients,
-        IIdentityServerInteractionService interactionService)
+    public async Task Invoke(HttpContext context)
     {
-        context.Response.OnStarting(async () =>
+        context.Response.OnStarting(() =>
         {
-            if (context.Request.Path.Value != null &&
-                context.Request.Path.Value.Contains(Constants.ProtocolRoutePaths.Authorize) &&
-                context.Response.StatusCode == (int)HttpStatusCode.Redirect &&
-                !context.Response.Headers.Location.IsNullOrEmpty()
-                )
+            if (context.Request.Path.Value != null && context.Request.Path.Value.Contains("connect/token"))
             {
-                var uri = new Uri(context.Response.Headers.Location!);
-                var query = uri.Query;
-                var responseParams = QueryHelpers.ParseQuery(query);
-
-
-                if (responseParams.TryGetValue(_options.UserInteraction.ErrorIdParameter, out var errorId))
+                if (context.Response.Headers.ContentType.ToString().ToLower().Equals("application/json; charset=utf-8"))
                 {
-                    var requestParams = context.Request.Query.AsNameValueCollection();
-                    var client = await clients.FindClientByIdAsync(requestParams.Get(OidcConstants.AuthorizeRequest.ClientId));
-                    var scope = requestParams.Get(OidcConstants.AuthorizeRequest.Scope);
+                    context.Response.Headers.Remove("Content-Type");
+                    context.Response.Headers.Add("Content-Type", new StringValues("application/json"));
 
-                    if (client == null && scope != null && scope.Contains("udap"))
-                    {
-                        await RenderErrorResponse(context, uri, query, interactionService, errorId);
-                    }
-
-                    if (client != null &&
-                        client.ClientSecrets.Any(cs =>
-                            cs.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem))
-                    {
-                        await RenderErrorResponse(context, uri, query, interactionService, errorId);
-                    }
+                    _logger.LogDebug("Changed Content-Type header to \"application/json\"");
                 }
             }
+
+            return Task.FromResult(0);
         });
 
         await _next(context);
-    }
-
-    private async Task RenderErrorResponse(
-        HttpContext context,
-        Uri uri,
-        string query,
-        IIdentityServerInteractionService interactionService,
-        StringValues errorId)
-    {
-        var errorMessage = await interactionService.GetErrorContextAsync(errorId);
-
-        if (errorMessage.Error == OidcConstants.AuthorizeErrors.UnsupportedResponseType)
-        {
-            //
-            // Include error in redirect
-            //
-
-            var sb = new StringBuilder();
-
-            if (context.Request.Query.TryGetValue(
-                    OidcConstants.AuthorizeRequest.RedirectUri,
-                    out StringValues redirectUri))
-            {
-                sb.Append(redirectUri).Append("?");
-
-                sb.Append(OidcConstants.AuthorizeResponse.Error)
-                    .Append("=")
-                    .Append(errorMessage.Error);
-
-                sb.Append("&")
-                    .Append(OidcConstants.AuthorizeResponse.ErrorDescription)
-                    .Append("=")
-                    .Append(errorMessage.ErrorDescription);
-
-                if (context.Request.Query.TryGetValue(
-                        OidcConstants.AuthorizeRequest.ResponseType,
-                        out StringValues responseType))
-                {
-                    sb.Append("&")
-                        .Append(OidcConstants.AuthorizeRequest.ResponseType)
-                        .Append("=")
-                        .Append(responseType);
-                }
-
-                if (context.Request.Query.TryGetValue(
-                        OidcConstants.AuthorizeRequest.Scope,
-                        out StringValues scope))
-                {
-                    sb.Append("&")
-                        .Append(OidcConstants.AuthorizeRequest.Scope)
-                        .Append("=")
-                        .Append(scope);
-                }
-
-                if (context.Request.Query.TryGetValue(
-                        OidcConstants.AuthorizeRequest.State,
-                        out StringValues state))
-                {
-                    sb.Append("&")
-                        .Append(OidcConstants.AuthorizeRequest.State)
-                        .Append("=")
-                        .Append(state);
-                }
-
-                if (context.Request.Query.TryGetValue(
-                        OidcConstants.AuthorizeRequest.Nonce,
-                        out StringValues nonce))
-                {
-                    sb.Append("&")
-                        .Append(OidcConstants.AuthorizeRequest.Nonce)
-                        .Append("=")
-                        .Append(nonce);
-                }
-
-                context.Response.Headers.Location = sb.ToString();
-            }
-
-            return;
-        }
-
-        //
-        // 400 response
-        //
-        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-        await context.Response.WriteAsJsonAsync(errorMessage);
-        await context.Response.Body.FlushAsync();
     }
 }

@@ -15,8 +15,8 @@ public static class UdapServerApplicationBuilderExtensions
 {
     public static IApplicationBuilder UseUdapServer(this IApplicationBuilder app)
     {
-        app.UseMiddleware<UdapAuthorizationResponseMiddleware>();
         app.UseMiddleware<UdapTokenResponseMiddleware>();
+        app.UseMiddleware<UdapAuthorizationResponseMiddleware>();
 
         return app;
     }

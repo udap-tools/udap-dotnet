@@ -7,40 +7,225 @@
 // */
 #endregion
 
+using System.Net;
+using System.Text;
+using Duende.IdentityServer.Configuration;
+using Duende.IdentityServer.Extensions;
+using Duende.IdentityServer.Models;
+using Duende.IdentityServer.Services;
+using Duende.IdentityServer.Stores;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using Udap.Server.Configuration;
+using static IdentityModel.OidcConstants;
 
 namespace Udap.Server.Hosting;
-public class UdapAuthorizationResponseMiddleware
+
+
+/// <summary>
+/// Identity Server by default responds with a redirect to /home/error/errorid=...
+/// for all errors in response to failed /connect/authorize? requests.
+///
+/// UDAP is expecting 400-599 errors and or redirects to redirect_uri
+/// with a error and error_description in the query params.
+///
+/// Require state parameter from clients by configuring the
+/// <see cref="ServerSettings.ForceStateParamOnAuthorizationCode"/> to true.
+/// </summary>
+internal class UdapAuthorizationResponseMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly ILogger<UdapAuthorizationResponseMiddleware> _logger;
+    private readonly IdentityServerOptions _options;
+    private readonly ILogger<UdapTokenResponseMiddleware> _logger;
 
-    public UdapAuthorizationResponseMiddleware(RequestDelegate next, ILogger<UdapAuthorizationResponseMiddleware> logger)
+    public UdapAuthorizationResponseMiddleware(
+        RequestDelegate next,
+        IdentityServerOptions options,
+        ILogger<UdapTokenResponseMiddleware> logger)
     {
         _next = next;
+        _options = options;
         _logger = logger;
     }
 
-    public async Task Invoke(HttpContext context)
+    public async Task Invoke(
+        HttpContext context,
+        IClientStore clients,
+        ServerSettings udapServerOptions,
+        IIdentityServerInteractionService interactionService)
     {
-        context.Response.OnStarting(() =>
+        if (context.Request.Path.Value != null &&
+            context.Request.Path.Value.Contains(Constants.ProtocolRoutePaths.Authorize))
         {
-            if (context.Request.Path.Value != null && context.Request.Path.Value.Contains("connect/token"))
+            var requestParams = context.Request.Query;
+
+            if (requestParams.Any())
             {
-                if (context.Response.Headers.ContentType.ToString().ToLower().Equals("application/json; charset=utf-8"))
+                if (udapServerOptions.ForceStateParamOnAuthorizationCode)
                 {
-                    context.Response.Headers.Remove("Content-Type");
-                    context.Response.Headers.Add("Content-Type", new StringValues("application/json"));
+                    if (!requestParams.TryGetValue(AuthorizeRequest.State, out var state))
+                    {
+                        var client =
+                            await clients.FindClientByIdAsync(
+                                requestParams.AsNameValueCollection().Get(AuthorizeRequest.ClientId));
 
-                    _logger.LogDebug("Changed Content-Type header to \"application/json\"");
+                        if (client != null &&
+                            client.ClientSecrets.Any(cs =>
+                                cs.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem))
+                        {
+                            await RenderMissingStateErrorResponse(context);
+
+                            return;
+                        }
+                    }
                 }
-            }
 
-            return Task.FromResult(0);
-        });
+                context.Response.OnStarting(async () =>
+                {
+                    if (context.Response.StatusCode == (int)HttpStatusCode.Redirect &&
+                        !context.Response.Headers.Location.IsNullOrEmpty()
+                       )
+                    {
+                        var uri = new Uri(context.Response.Headers.Location!);
+                        var query = uri.Query;
+                        var responseParams = QueryHelpers.ParseQuery(query);
+
+
+                        if (responseParams.TryGetValue(_options.UserInteraction.ErrorIdParameter, out var errorId))
+                        {
+                            var requestParams = context.Request.Query.AsNameValueCollection();
+                            var client =
+                                await clients.FindClientByIdAsync(
+                                    requestParams.Get(AuthorizeRequest.ClientId));
+                            var scope = requestParams.Get(AuthorizeRequest.Scope);
+
+                            if (client == null && scope != null && scope.Contains("udap"))
+                            {
+                                await RenderErrorResponse(context, interactionService, errorId);
+                            }
+
+                            if (client != null &&
+                                client.ClientSecrets.Any(cs =>
+                                    cs.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem))
+                            {
+                                await RenderErrorResponse(context, interactionService, errorId);
+                            }
+                        }
+                    }
+                });
+            }
+        }
 
         await _next(context);
+    }
+
+    /// <summary>
+    ///
+    /// Missing state.  Requiring in UDAP to encourage CSRF protection.  The client
+    /// is already required in section 10.12 of RFC 6749 to implement CSRF.  But
+    /// it only says, "Should utilize the "state" request parameter to deliver this value" 
+    ///
+    /// </summary>
+    /// <param name="context"></param>
+    private async Task RenderMissingStateErrorResponse(HttpContext context)
+    {
+        var errorMessage = new ErrorMessage()
+        {
+            Error = AuthorizeErrors.InvalidRequest,
+            ErrorDescription = "Missing state parameter"
+        };
+
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+        await context.Response.WriteAsJsonAsync(errorMessage);
+        await context.Response.Body.FlushAsync();
+    }
+
+    private async Task RenderErrorResponse(
+        HttpContext context,
+        IIdentityServerInteractionService interactionService,
+        StringValues errorId)
+    {
+        var errorMessage = await interactionService.GetErrorContextAsync(errorId);
+
+        if (errorMessage.Error == AuthorizeErrors.UnsupportedResponseType)
+        {
+            //
+            // Include error in redirect
+            //
+
+            var sb = new StringBuilder();
+
+            if (context.Request.Query.TryGetValue(
+                    AuthorizeRequest.RedirectUri,
+                    out StringValues redirectUri))
+            {
+                sb.Append(redirectUri).Append("?");
+
+                sb.Append(AuthorizeResponse.Error)
+                    .Append("=")
+                    // Transform error of unsupported_response_type to invalid_request
+                    // Seems reasonable if you read RFC 6749
+                    // TODO: PR to Duende?
+                    .Append(AuthorizeErrors.InvalidRequest);
+                
+                sb.Append("&")
+                    .Append(AuthorizeResponse.ErrorDescription)
+                    .Append("=")
+                    .Append(errorMessage.ErrorDescription);
+
+                if (context.Request.Query.TryGetValue(
+                        AuthorizeRequest.ResponseType,
+                        out StringValues responseType))
+                {
+                    sb.Append("&")
+                        .Append(AuthorizeRequest.ResponseType)
+                        .Append("=")
+                        .Append(responseType);
+                }
+
+                if (context.Request.Query.TryGetValue(
+                        AuthorizeRequest.Scope,
+                        out StringValues scope))
+                {
+                    sb.Append("&")
+                        .Append(AuthorizeRequest.Scope)
+                        .Append("=")
+                        .Append(scope);
+                }
+
+                if (context.Request.Query.TryGetValue(
+                        AuthorizeRequest.State,
+                        out StringValues state))
+                {
+                    sb.Append("&")
+                        .Append(AuthorizeRequest.State)
+                        .Append("=")
+                        .Append(state);
+                }
+
+                if (context.Request.Query.TryGetValue(
+                        AuthorizeRequest.Nonce,
+                        out StringValues nonce))
+                {
+                    sb.Append("&")
+                        .Append(AuthorizeRequest.Nonce)
+                        .Append("=")
+                        .Append(nonce);
+                }
+
+                context.Response.Headers.Location = sb.ToString();
+            }
+
+            return;
+        }
+
+        //
+        // 400 response
+        //
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+        await context.Response.WriteAsJsonAsync(errorMessage);
+        await context.Response.Body.FlushAsync();
     }
 }

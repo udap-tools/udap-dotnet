@@ -316,15 +316,19 @@ public class UdapResponseTypeResponseModeTests
             // state: state, //missing state
             nonce: nonce);
 
-        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-
-        var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
-        errorMessage.Should().NotBeNull();
-        errorMessage!.Error.Should().Be("invalid_request");
-        errorMessage!.ErrorDescription.Should().Be("Missing state parameter");
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        var query = response.Headers.Location.Query;
+        _testOutputHelper.WriteLine(query);
+        var responseParams = QueryHelpers.ParseQuery(query);
+        responseParams["error"].Should().BeEquivalentTo("invalid_request");
+        responseParams["error_description"].Should().BeEquivalentTo("Missing state");
+        responseParams["response_type"].Should().BeEquivalentTo("code");
+        responseParams["scope"].Should().BeEquivalentTo("udap");
+        responseParams.Count(r => r.Key == "state").Should().Be(0);
+        responseParams["nonce"].Should().BeEquivalentTo(nonce);
     }
 
     

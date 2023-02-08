@@ -131,15 +131,18 @@ internal class UdapAuthorizationResponseMiddleware
     /// <param name="context"></param>
     private async Task RenderMissingStateErrorResponse(HttpContext context)
     {
-        var errorMessage = new ErrorMessage()
+        if (context.Request.Query.TryGetValue(
+                AuthorizeRequest.RedirectUri,
+                out StringValues redirectUri))
         {
-            Error = AuthorizeErrors.InvalidRequest,
-            ErrorDescription = "Missing state parameter"
-        };
+            var url = BuildRedirectUrl(
+                context, 
+                redirectUri,
+                AuthorizeErrors.InvalidRequest, 
+                "Missing state");
 
-        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-        await context.Response.WriteAsJsonAsync(errorMessage);
-        await context.Response.Body.FlushAsync();
+            context.Response.Redirect(url);
+        }
     }
 
     private async Task RenderErrorResponse(
@@ -155,67 +158,17 @@ internal class UdapAuthorizationResponseMiddleware
             // Include error in redirect
             //
 
-            var sb = new StringBuilder();
-
             if (context.Request.Query.TryGetValue(
                     AuthorizeRequest.RedirectUri,
                     out StringValues redirectUri))
             {
-                sb.Append(redirectUri).Append("?");
+                var url = BuildRedirectUrl(
+                    context, 
+                    redirectUri, 
+                    AuthorizeErrors.InvalidRequest,
+                    errorMessage.ErrorDescription);
 
-                sb.Append(AuthorizeResponse.Error)
-                    .Append("=")
-                    // Transform error of unsupported_response_type to invalid_request
-                    // Seems reasonable if you read RFC 6749
-                    // TODO: PR to Duende?
-                    .Append(AuthorizeErrors.InvalidRequest);
-                
-                sb.Append("&")
-                    .Append(AuthorizeResponse.ErrorDescription)
-                    .Append("=")
-                    .Append(errorMessage.ErrorDescription);
-
-                if (context.Request.Query.TryGetValue(
-                        AuthorizeRequest.ResponseType,
-                        out StringValues responseType))
-                {
-                    sb.Append("&")
-                        .Append(AuthorizeRequest.ResponseType)
-                        .Append("=")
-                        .Append(responseType);
-                }
-
-                if (context.Request.Query.TryGetValue(
-                        AuthorizeRequest.Scope,
-                        out StringValues scope))
-                {
-                    sb.Append("&")
-                        .Append(AuthorizeRequest.Scope)
-                        .Append("=")
-                        .Append(scope);
-                }
-
-                if (context.Request.Query.TryGetValue(
-                        AuthorizeRequest.State,
-                        out StringValues state))
-                {
-                    sb.Append("&")
-                        .Append(AuthorizeRequest.State)
-                        .Append("=")
-                        .Append(state);
-                }
-
-                if (context.Request.Query.TryGetValue(
-                        AuthorizeRequest.Nonce,
-                        out StringValues nonce))
-                {
-                    sb.Append("&")
-                        .Append(AuthorizeRequest.Nonce)
-                        .Append("=")
-                        .Append(nonce);
-                }
-
-                context.Response.Headers.Location = sb.ToString();
+                context.Response.Redirect(url);
             }
 
             return;
@@ -227,5 +180,70 @@ internal class UdapAuthorizationResponseMiddleware
         context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
         await context.Response.WriteAsJsonAsync(errorMessage);
         await context.Response.Body.FlushAsync();
+    }
+
+    private static string BuildRedirectUrl(
+        HttpContext context, 
+        StringValues redirectUri,
+        string error,
+        string errorDescription)
+    {
+        var sb = new StringBuilder();
+
+        sb.Append(redirectUri).Append("?");
+
+        sb.Append(AuthorizeResponse.Error)
+            .Append("=")
+            // Transform error of unsupported_response_type to invalid_request
+            // Seems reasonable if you read RFC 6749
+            // TODO: PR to Duende?
+            .Append(error);
+
+        sb.Append("&")
+            .Append(AuthorizeResponse.ErrorDescription)
+            .Append("=")
+            .Append(errorDescription);
+
+        if (context.Request.Query.TryGetValue(
+                AuthorizeRequest.ResponseType,
+                out StringValues responseType))
+        {
+            sb.Append("&")
+                .Append(AuthorizeRequest.ResponseType)
+                .Append("=")
+                .Append(responseType);
+        }
+
+        if (context.Request.Query.TryGetValue(
+                AuthorizeRequest.Scope,
+                out StringValues scope))
+        {
+            sb.Append("&")
+                .Append(AuthorizeRequest.Scope)
+                .Append("=")
+                .Append(scope);
+        }
+
+        if (context.Request.Query.TryGetValue(
+                AuthorizeRequest.State,
+                out StringValues state))
+        {
+            sb.Append("&")
+                .Append(AuthorizeRequest.State)
+                .Append("=")
+                .Append(state);
+        }
+
+        if (context.Request.Query.TryGetValue(
+                AuthorizeRequest.Nonce,
+                out StringValues nonce))
+        {
+            sb.Append("&")
+                .Append(AuthorizeRequest.Nonce)
+                .Append("=")
+                .Append(nonce);
+        }
+
+        return sb.ToString();
     }
 }

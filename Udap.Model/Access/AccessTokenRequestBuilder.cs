@@ -16,6 +16,7 @@ using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Model.Statement;
 
 namespace Udap.Model.Access;
 
@@ -29,7 +30,7 @@ public  class AccessTokenRequestBuilder
     private string _tokenEndoint;
     private string _clientId;
     private DateTime _now;
-    private SigningCredentials _signingCredentials;
+    private X509Certificate2 _certificate;
     private string _clientCertAsBase64;
 
     private AccessTokenRequestBuilder(string clientId, string tokenEndpoint, X509Certificate2 certificate)
@@ -46,9 +47,6 @@ public  class AccessTokenRequestBuilder
             new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
             // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
         };
-        
-        var securityKey = new X509SecurityKey(certificate);
-        _signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
     }
 
     public static AccessTokenRequestBuilder Create(string clientId, string tokenEndpoint, X509Certificate2 certificate)
@@ -84,9 +82,9 @@ public  class AccessTokenRequestBuilder
         };
     }
 
-    private string BuildClientAssertion()
+    private string? BuildClientAssertion()
     {
-        var jwtPayload = new JwtPayload(
+        var jwtPayload = new JwtPayLoadExtension(
             _clientId,
                 _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
                 _claims,
@@ -94,18 +92,9 @@ public  class AccessTokenRequestBuilder
                 _now.AddMinutes(5)
             );
 
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", _signingCredentials.Algorithm },
-            { "x5c", new[] { _clientCertAsBase64 } }
-        };
-
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
-        var encodedSignature = JwtTokenUtilities.CreateEncodedSignature(
-            string.Concat(encodedHeader, ".", encodedClientAssertion), _signingCredentials);
-
-        return string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+        return SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(_certificate, jwtPayload)
+                .Build();
     }
 
     // private string BuildHl7B2BExtensions()

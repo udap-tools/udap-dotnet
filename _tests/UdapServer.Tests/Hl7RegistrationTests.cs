@@ -30,6 +30,7 @@ using Udap.Common.Certificates;
 using Udap.Idp;
 using Udap.Model;
 using Udap.Model.Registration;
+using Udap.Model.Statement;
 using Udap.Server.DbContexts;
 using Xunit.Abstractions;
 
@@ -150,26 +151,15 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         _testOutputHelper.WriteLine($"Path to Cert: {cert}");
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
+        
         //
         // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
         // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
         // can prepare it the same way JwtPayLoad is essentially implemented, but light weight
         // and specific to this Udap Dynamic Registration.
         //
-
         var document = new UdapDynamicClientRegistrationDocument
         {
             Issuer = "http://localhost/",
@@ -189,13 +179,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -269,25 +256,9 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         _testOutputHelper.WriteLine($"Path to Cert: {cert}");
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
+        
         var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but light weight
-        // and specific to this Udap Dynamic Registration.
-        //
 
         var document = new UdapDynamicClientRegistrationDocument
         {
@@ -306,12 +277,11 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -385,26 +355,9 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            // { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
-        //
-        // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-        // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-        // can prepare it the same way JwtPayLoad is essentially implemented, but light weight
-        // and specific to this Udap Dynamic Registration.
-        //
-
+        
         var document = new UdapDynamicClientRegistrationDocument
         {
             Issuer = "https://weatherapi.lab:5021/fhir",
@@ -422,12 +375,11 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -469,18 +421,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
        
         var document = new UdapDynamicClientRegistrationDocument
@@ -500,12 +441,11 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -547,18 +487,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -579,12 +508,11 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -626,18 +554,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -657,13 +574,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -704,18 +618,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -735,13 +638,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -784,18 +684,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -815,13 +704,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -863,18 +749,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -894,13 +769,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -942,18 +814,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -973,13 +834,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -1021,18 +879,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -1052,13 +899,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -1100,18 +944,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -1131,13 +964,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -1179,18 +1009,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -1210,13 +1029,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -1258,18 +1074,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -1289,13 +1094,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -1337,18 +1139,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -1369,13 +1160,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {
@@ -1417,18 +1205,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             "weatherApiClientLocalhostCert.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var jwtId = CryptoRandom.CreateUniqueId();
 
         var document = new UdapDynamicClientRegistrationDocument
@@ -1448,13 +1225,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         document.Add("Extra", "Stuff" as string);
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {

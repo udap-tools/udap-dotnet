@@ -9,9 +9,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Model.Statement;
 
 namespace Udap.Model.Registration;
 
@@ -22,18 +25,20 @@ namespace Udap.Model.Registration;
 /// </summary>
 public class UdapDcrBuilderForClientCredentials
 {
+    private readonly X509Certificate2 _certificate;
     private UdapDynamicClientRegistrationDocument _document;
     private DateTime _now;
 
-    private UdapDcrBuilderForClientCredentials(X509Certificate2 cert)
+    private UdapDcrBuilderForClientCredentials(X509Certificate2 certificate)
     {
+        _certificate = certificate;
         _now = DateTime.UtcNow;
 
         _document = new UdapDynamicClientRegistrationDocument();
         _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.ClientCredentials };
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
-        _document.Issuer = cert.GetNameInfo(X509NameType.UrlName, false);
-        _document.Subject = cert.GetNameInfo(X509NameType.UrlName, false);
+        _document.Issuer = certificate.GetNameInfo(X509NameType.UrlName, false);
+        _document.Subject = certificate.GetNameInfo(X509NameType.UrlName, false);
     }
 
     public static UdapDcrBuilderForClientCredentials Create(X509Certificate2 cert)
@@ -135,5 +140,12 @@ public class UdapDcrBuilderForClientCredentials
     public UdapDynamicClientRegistrationDocument Build()
     {
         return _document;
+    }
+
+    public string? BuildSoftwareStatement()
+    {
+        return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(_certificate, _document)
+                .Build();
     }
 }

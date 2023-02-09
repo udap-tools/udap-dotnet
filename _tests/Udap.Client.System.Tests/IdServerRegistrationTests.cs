@@ -30,6 +30,7 @@ using Udap.Common;
 using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
+using Udap.Model.Statement;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using static IdentityModel.OidcConstants;
@@ -121,17 +122,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
 
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
         var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
         
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -147,12 +138,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithScope("system/Patient.* system/Practitioner.read")
             .Build();
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -199,7 +189,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // Get Access Token
         //
 
-        var jwtPayload = new JwtPayload(
+        var jwtPayload = new JwtPayLoadExtension(
             result.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
@@ -214,21 +204,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             now.AddMinutes(5).ToUniversalTime()
             );
 
-        //
-        // All of this is the same as above, during registration
-        //
-        jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-        encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
-        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
-
-        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build();
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {
@@ -297,20 +276,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             cert,
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
-
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        var jwtId = CryptoRandom.CreateUniqueId();
+        
         //
         // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
         // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
@@ -333,28 +299,25 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithScope("system/Patient.* system/Practitioner.read")
             .Build();
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
 
         var certifications = new List<string>();
 
-        var certifiations = new UdapCertificationAndEndorsementDocument("HoboJoes Basic Interop Certification");
-        certifiations.LogoUri = "https://avatars.githubusercontent.com/u/77421324?s=48&v=4";
+        var certifiation = new UdapCertificationAndEndorsementDocument("HoboJoes Basic Interop Certification");
+        certifiation.LogoUri = "https://avatars.githubusercontent.com/u/77421324?s=48&v=4";
 
+        //TODO: Create a UdapCertificationAndEndorsementDocument builder to build a collection of statements
+        var certificationSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapCertificationAndEndorsementDocument>
+                .Create(clientCert, certifiation)
+                .Build();
 
-        var certificationsPayloadEncoded = certifiations.Base64UrlEncode();
-
-        var encodedCertificationSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", certificationsPayloadEncoded),
-                signingCredentials);
-
-        var signedCertification = string.Concat(encodedHeader, ".", certificationsPayloadEncoded, ".", encodedCertificationSignature);
-        certifications.Add(signedCertification);
+        certifications.Add(certificationSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
         {
@@ -412,18 +375,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
 
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-        
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
@@ -439,12 +390,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .Build();
 
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -500,18 +450,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
 
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-        
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
@@ -527,12 +465,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .Build();
 
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -627,19 +564,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
         
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        var document = UdapDcrBuilderForClientCredentials
+        var signedSoftwareStatement = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -651,16 +576,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("system/Patient.* system/Practitioner.read")
-            .Build();
-
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-        //
-        
+            .BuildSoftwareStatement();
 
         var jsonToken = tokenHandler.ReadToken(signedSoftwareStatement);
         var requestToken = jsonToken as JsonWebToken;
@@ -723,8 +639,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         // Get Access Token
         //
+        var now = DateTime.UtcNow;
 
-        var jwtPayload = new JwtPayload(
+        var jwtPayload = new JwtPayLoadExtension(
             result.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
@@ -738,22 +655,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             now.AddMinutes(5).ToUniversalTime()
             );
 
-        //
-        // All of this is the same as above, during registration
-        //
-        jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build();
 
-        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-        encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
-        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
-
-        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
-        
         var clientRequest = new UdapClientCredentialsTokenRequest
         {
             Address = disco.TokenEndpoint,
@@ -878,19 +784,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
 
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        var document = UdapDcrBuilderForClientCredentials
+        var signedSoftwareStatement = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -901,15 +795,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .Build();
-
-
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+            .BuildSoftwareStatement();
+        
         //
 
 
@@ -974,8 +861,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         // Get Access Token
         //
-
-        var jwtPayload = new JwtPayload(
+        var now = DateTime.UtcNow;
+        var jwtPayload = new JwtPayLoadExtension(
             result.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
@@ -989,21 +876,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             now.AddMinutes(5).ToUniversalTime()
             );
 
-        //
-        // All of this is the same as above, during registration
-        //
-        jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-        encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
-        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
-
-        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build();
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {
@@ -1114,18 +990,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
 
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-        
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
@@ -1145,12 +1009,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         document.AddClaims(new List<Claim>() {new Claim("client_uri", "http://test.com/hello/")});
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -1198,8 +1061,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         // Get Access Token
         //
+        var now = DateTime.UtcNow;
 
-        var jwtPayload = new JwtPayload(
+        var jwtPayload = new JwtPayLoadExtension(
             result.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
@@ -1213,21 +1077,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             now.AddMinutes(5).ToUniversalTime()
             );
 
-        //
-        // All of this is the same as above, during registration
-        //
-        jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-        encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
-        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
-        
-        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build();
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {
@@ -1380,18 +1233,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
 
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-        
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
@@ -1405,12 +1246,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .Build();
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -1456,8 +1296,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         // Get Access Token
         //
+        var now = DateTime.UtcNow;
 
-        var jwtPayload = new JwtPayload(
+        var jwtPayload = new JwtPayLoadExtension(
             "http://invalidissuer.net/",
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
@@ -1471,21 +1312,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             now.AddMinutes(5).ToUniversalTime()
             );
 
-        //
-        // All of this is the same as above, during registration
-        //
-        jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-        encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
-        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
-
-        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build();
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {
@@ -1578,18 +1408,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
 
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-        
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
@@ -1604,12 +1422,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithScope("system/Patient.* system/Practitioner.read")
             .Build();
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -1660,8 +1477,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         // Get Access Token
         //
+        var now = DateTime.UtcNow;
 
-        var jwtPayload = new JwtPayload(
+        var jwtPayload = new JwtPayLoadExtension(
             result.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
@@ -1675,21 +1493,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             now.AddMinutes(5).ToUniversalTime()
             );
 
-        //
-        // All of this is the same as above, during registration
-        //
-        jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-        encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
-        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
-
-        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build();
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {
@@ -1812,18 +1619,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
 
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
@@ -1840,12 +1635,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithRedirectUrls(new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
             .Build();
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -1896,8 +1690,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         // Get Access Token
         //
+        var now = DateTime.UtcNow;
 
-        var jwtPayload = new JwtPayload(
+        var jwtPayload = new JwtPayLoadExtension(
             result.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
@@ -1911,21 +1706,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             now.AddMinutes(5).ToUniversalTime()
             );
 
-        //
-        // All of this is the same as above, during registration
-        //
-        jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-        encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
-        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
-
-        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build();
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {
@@ -2052,18 +1836,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
 
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-        
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
@@ -2077,12 +1849,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .Build();
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -2122,8 +1893,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         // Get Access Token
         //
+        var now = DateTime.UtcNow;
 
-        var jwtPayload = new JwtPayload(
+        var jwtPayload = new JwtPayLoadExtension(
             result.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
@@ -2137,21 +1909,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             now.AddMinutes(5).ToUniversalTime()
             );
 
-        //
-        // All of this is the same as above, during registration
-        //
-        jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-        encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedClientAssertion = jwtPayload.Base64UrlEncode();
-        encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedClientAssertion), signingCredentials);
-
-        var clientAssertion = string.Concat(encodedHeader, ".", encodedClientAssertion, ".", encodedSignature);
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build();
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {

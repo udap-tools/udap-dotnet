@@ -18,6 +18,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
 using Udap.Model.Registration;
+using Udap.Model.Statement;
 using Udap.Util.Extensions;
 using UdapClient.Shared.Model;
 
@@ -114,16 +115,6 @@ public class RegisterController : ControllerBase
     {
         var certBytes = Convert.FromBase64String(HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY));
         var clientCert = new X509Certificate2(certBytes);
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var certBase64 = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { certBase64 } }
-            };
-
         UdapDynamicClientRegistrationDocument document;
 
         if (request.Oauth2Flow == Oauth2FlowEnum.client_credentials)
@@ -162,12 +153,10 @@ public class RegisterController : ControllerBase
                 .Build();
         }
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var tokenHandler = new JsonWebTokenHandler();
         var jsonToken = tokenHandler.ReadToken(signedSoftwareStatement);
@@ -206,16 +195,7 @@ public class RegisterController : ControllerBase
     {
         var certBytes = Convert.FromBase64String(HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY));
         var clientCert = new X509Certificate2(certBytes);
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var certBase64 = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { certBase64 } }
-            };
-
+        
         UdapDynamicClientRegistrationDocument document;
 
         if (request.Oauth2Flow == Oauth2FlowEnum.client_credentials)
@@ -254,12 +234,10 @@ public class RegisterController : ControllerBase
                 .Build();
         }
 
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
         {

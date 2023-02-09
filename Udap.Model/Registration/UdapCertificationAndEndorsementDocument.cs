@@ -20,7 +20,7 @@ namespace Udap.Model.Registration;
 /// "UDAP CERTIFICATIONS AND ENDORSEMENTS FOR CLIENT APPLICATIONS"</a> profile.
 /// The certification is signed and assembled using JWS compact serialization as per RFC 7515.
 /// </summary>
-public class UdapCertificationAndEndorsementDocument
+public class UdapCertificationAndEndorsementDocument : ISoftwareStatementSerializer
 {
     /// <summary>
     /// See the <a href="https://www.udap.org/udap-certifications-and-endorsements-stu1.html">

@@ -29,7 +29,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Udap.Model.Registration;
 
-public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
+public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>, ISoftwareStatementSerializer
 {
     private string? _clientId;
     private string? _softwareStatement;
@@ -652,4 +652,10 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     {
         return Base64UrlEncoder.Encode(SerializeToJson());
     }
+}
+
+public interface ISoftwareStatementSerializer
+{
+    public string SerializeToJson();
+    public string Base64UrlEncode();
 }

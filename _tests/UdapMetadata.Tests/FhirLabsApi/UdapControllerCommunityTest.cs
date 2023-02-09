@@ -22,22 +22,20 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Metadata.Server;
-using Udap.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using program = FhirLabsApi.Program;
 
 
-namespace WebApi.Tests.FhirLabsApi;
+namespace UdapMetadata.Tests.FhirLabsApi;
 
 public class ApiForCommunityTestFixture : WebApplicationFactory<program>
 {
     public ITestOutputHelper? Output { get; set; }
-    private UdapMetadata? _wellKnownUdap;
+    private Udap.Model.UdapMetadata? _wellKnownUdap;
     public string Community = "http://localhost";
 
-    public UdapMetadata? WellKnownUdap
+    public Udap.Model.UdapMetadata? WellKnownUdap
     {
         get
         {
@@ -50,7 +48,7 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<program>
 
                 response.StatusCode.Should().Be(HttpStatusCode.OK);
                 var content = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                _wellKnownUdap = JsonSerializer.Deserialize<UdapMetadata>(content);
+                _wellKnownUdap = JsonSerializer.Deserialize<Udap.Model.UdapMetadata>(content);
             }
 
             return _wellKnownUdap;

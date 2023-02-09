@@ -38,6 +38,7 @@ public  class AccessTokenRequestBuilder
         _now = DateTime.UtcNow.ToUniversalTime();
         _tokenEndoint = tokenEndpoint;
         _clientId = clientId;
+        _certificate = certificate;
         _clientCertAsBase64 = Convert.ToBase64String(certificate.Export(X509ContentType.Cert));
 
         _claims = new List<Claim>

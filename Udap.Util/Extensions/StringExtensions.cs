@@ -7,11 +7,11 @@
 // */
 #endregion
 
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Udap.Util.Extensions;
 public static class StringExtensions
@@ -38,5 +38,10 @@ public static class StringExtensions
     {
         input = input.Trim();
         return input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+    }
+
+    public static string DecodeJwtHeader(this string input)
+    {
+        return Base64UrlEncoder.Decode(input);
     }
 }

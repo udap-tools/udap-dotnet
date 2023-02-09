@@ -18,10 +18,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Udap.Idp;
+using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Registration;
+using Udap.Server.Storage.Stores;
+using Udap.Server.Stores;
 using Udap.Util.Extensions;
 
 namespace UdapServer.Tests;

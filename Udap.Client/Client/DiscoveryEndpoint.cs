@@ -18,15 +18,21 @@ public class DiscoveryEndpoint
     /// </summary>
     /// <param name="input">The input.</param>
     /// <param name="path">The path to the discovery document. If not specified this defaults to .well-known/open-id-configuration</param>
+    /// <param name="community">Optional community qualifier</param>
     /// <returns></returns>
     /// <exception cref="System.InvalidOperationException">
     /// Malformed URL
     /// </exception>
-    public static DiscoveryEndpoint ParseUrl(string input, string path = null)
+    public static DiscoveryEndpoint ParseUrl(string input, string? path = null, string? community = null)
     {
-        if (String.IsNullOrEmpty(path))
+        if (string.IsNullOrEmpty(path))
         {
             path = UdapConstants.Discovery.DiscoveryEndpoint;
+        }
+
+        if (!string.IsNullOrEmpty(community))
+        {
+            path = path.RemoveTrailingSlash() + "?community=" + community;
         }
 
         var success = Uri.TryCreate(input, UriKind.Absolute, out var uri);

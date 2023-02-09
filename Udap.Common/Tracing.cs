@@ -18,6 +18,14 @@ public static class Tracing
     private static readonly Version AssemblyVersion = typeof(Tracing).Assembly.GetName().Version;
 
     /// <summary>
+    /// Store ActivitySource
+    /// </summary>
+    public static ActivitySource StoreActivitySource { get; } = new(
+        TraceNames.Store,
+        ServiceVersion);
+
+
+    /// <summary>
     /// Detailed validation ActivitySource
     /// </summary>
     public static ActivitySource ValidationActivitySource { get; } = new(
@@ -39,8 +47,35 @@ public static class Tracing
         public static string Basic => "Udap.Server";
 
         /// <summary>
+        /// Service name for store traces
+        /// </summary>
+        public static string Store => Basic + ".Stores";
+
+
+        /// <summary>
         /// Service name for detailed validation traces
         /// </summary>
         public static string Validation => Basic + ".Validation";
+    }
+
+    public static class Properties
+    {
+        public const string EndpointType = "endpoint_type";
+
+        public const string ClientId = "client_id";
+        public const string GrantType = "grant_type";
+        public const string Scope = "scope";
+        public const string Resource = "resource";
+
+        public const string Origin = "origin";
+        public const string Scheme = "scheme";
+        public const string Type = "type";
+        public const string Id = "id";
+        public const string ScopeNames = "scope_names";
+        public const string ApiResourceNames = "api_resource_names";
+
+        public const string Community = "community";
+        public const string AnchorCertificate = "anchor_certificate";
+        public const string RootCertificate = "root_certificate";
     }
 }

@@ -11,7 +11,7 @@ using System.Diagnostics;
 
 namespace Udap.Server.Extensions;
 
-public static class StringExtensions
+internal static class StringExtensions
 {
     [DebuggerStepThrough]
     public static string EnsureLeadingSlash(this string? url)

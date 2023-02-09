@@ -11,11 +11,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Udap.Client.Client.Messages;
-using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Server.Configuration;
-using Udap.Util.Extensions;
+using Udap.Server.Storage.Stores;
 
 namespace Udap.Server.Registration;
 
@@ -48,7 +46,7 @@ public class UdapDynamicClientRegistrationEndpoint
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
-    public async Task Process(HttpContext context)
+    public async Task Process(HttpContext context, CancellationToken token)
     {
         //
         // Can't tell if this is truly required from specifications.
@@ -74,15 +72,13 @@ public class UdapDynamicClientRegistrationEndpoint
             {
                 Error = UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 ErrorDescription = "malformed metadata document"
-            });
+            }, cancellationToken: token);
             
             return;
         }
 
-        var community = context.Request.Query[UdapConstants.Community];
-        
-        var rootCertificates = await _store.GetRootCertificates();
-        var communityTrustAnchors = await _store.GetAnchorsCertificates(community);
+        var rootCertificates = await _store.GetRootCertificates(token);
+        var communityTrustAnchors = await _store.GetAnchorsCertificates(null, token);
 
         //TODO: null work
         UdapDynamicClientRegistrationValidationResult result = null;

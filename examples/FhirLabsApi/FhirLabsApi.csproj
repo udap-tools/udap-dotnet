@@ -45,9 +45,6 @@
     <None Update="CertStore/issued/udap-sandbox-surescripts.p12">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\anchors\SureFhirLabs_Anchor.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="CertStore\issued\.gitignore">
       <Generator>TextTemplatingFileGenerator</Generator>
       <LastGenOutput>.cs</LastGenOutput>
@@ -68,7 +65,7 @@
 
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Metadata.Server" Version="0.0.3-preview*" />
+    <PackageReference Include="Udap.Metadata.Server" Version="0.0.4-preview*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">

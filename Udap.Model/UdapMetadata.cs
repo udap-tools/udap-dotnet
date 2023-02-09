@@ -8,6 +8,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -291,5 +292,15 @@ public class UdapMetadata
         sb.AppendLine("</Body>");
         sb.AppendLine("</HTML>");
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Serializes this instance to JSON.
+    /// </summary>
+    /// <returns>This instance as JSON.</returns>
+    /// <remarks>Use <see cref="System.IdentityModel.Tokens.Jwt.JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
+    public virtual string SerializeToJson()
+    {
+        return JsonExtensions.SerializeToJson(this);
     }
 }

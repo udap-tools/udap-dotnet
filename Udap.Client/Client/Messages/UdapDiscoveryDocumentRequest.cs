@@ -19,4 +19,9 @@ public class UdapDiscoveryDocumentRequest : ProtocolRequest
     /// The policy.
     /// </value>
     public DiscoveryPolicy Policy { get; set; } = new();
+
+    /// <summary>
+    /// Optional community qualifier
+    /// </summary>
+    public string Community { get; set; }
 }

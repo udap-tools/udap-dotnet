@@ -11,6 +11,8 @@ using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 
+var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -27,6 +29,15 @@ builder.Host.UseSerilog((ctx, lc) => lc
         "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",
         theme: AnsiConsoleTheme.Code));
 
+// builder.Services.AddCors(options =>
+// {
+//     options.AddPolicy(name: MyAllowSpecificOrigins,
+//         policy =>
+//         {
+//             policy.WithOrigins("https://host.docker.internal:5002", "https://localhost:7041", "https://locahost:5002");
+//         });
+// });
+
 builder.Services.AddSession(options => {
     options.IdleTimeout = TimeSpan.FromMinutes(60);
 });
@@ -34,7 +45,7 @@ builder.Services.AddSession(options => {
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddRazorPages();
-builder.Services.AddBff();
+// builder.Services.AddBff();
 
 
 builder.Services.AddAuthentication(options =>
@@ -72,7 +83,7 @@ builder.Services.AddAuthentication(options =>
     });
 
 builder.Services.AddScoped(sp => new HttpClient ());
-
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -95,17 +106,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-//
-// Diagram to decide where cors middleware should be applied.
-// https://docs.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-6.0#middleware-order
-//
-// TODO: Implement ICorsPolicyAccessor and let the user pick URLS such as metadata server they are querying for metadata in the list.
-app.UseCors(config =>
-{
-    config.AllowAnyOrigin();
-    config.AllowAnyMethod();
-    config.AllowAnyHeader();
-});
+// app.UseCors(MyAllowSpecificOrigins);
 
 app.UseSession();
 app.MapRazorPages();

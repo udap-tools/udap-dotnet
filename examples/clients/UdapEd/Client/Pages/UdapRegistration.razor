@@ -1,0 +1,112 @@
+﻿@page "/udapRegistration"
+
+
+<ErrorBoundary @ref="ErrorBoundary">
+  <ChildContent>
+
+    <MudGrid Class="mt-4">
+      <MudItem xs="12" sm="12" md="12" >
+          <MudText Typo="Typo.h4">Udap Registration</MudText>
+          <MudText> (@AppState.MetadataUrl)</MudText>
+      </MudItem>
+        <MudItem xs="12" sm="12" md="12">
+            
+        
+        
+            <MudGrid Spacing="1" Class="mt-8">
+                <MudItem xs="5" sm="3" Class="pa-4 ma-2">
+                    <MudSelect @bind-Value="Oauth2Flow" Label="Select Oath2 Flow"
+                               HelperText="String"
+                               Placeholder="Please Select"
+                               AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
+                               AdornmentColor="Color.Primary">
+                        @foreach (Oauth2FlowEnum item in Enum.GetValues(typeof(Oauth2FlowEnum)))
+                        {
+                            <MudSelectItem Value="@item">@item</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+            </MudGrid>
+
+            <MudButton Class="mt-3" ButtonType="ButtonType.Button"
+                       Variant="Variant.Filled"
+                       OnClick="BuildRawSoftwareStatement">
+
+                @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
+                {
+                    <p>Build authorization_code request. (header and raw software statement)</p>
+                }
+                else
+                {
+                    <p>Build client_credentials request. (header and raw software statement)</p>
+                }
+
+            </MudButton>
+
+            <MudSpacer />
+        
+            <MudGrid Spacing="1" Class="mt-8">
+                <MudItem xs="7">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">Raw Software Statement</MudText>
+                        <pre contenteditable>@SoftwareStatementBeforeEncoding</pre>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="5">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">x509 certificates from x5c</MudText>
+                        <pre>x509</pre>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        
+        
+            <MudButton Class="mt-3" ButtonType="ButtonType.Button"
+                       Variant="Variant.Filled"
+                       OnClick="BuildRequestBody">Build Request Body</MudButton>
+
+            <MudGrid Spacing="1" Class="mt-8">
+                <MudItem xs="7">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">Request Body</MudText>
+                        <pre>@RequestBody</pre>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="5">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
+                        <pre>Explanation Todo</pre>
+                    </MudPaper>
+                </MudItem>
+
+            </MudGrid>
+
+            <MudButton Class="mt-3" ButtonType="ButtonType.Button"
+                       Variant="Variant.Filled"
+                       OnClick="PerformRegistration">Register (DCR)</MudButton>
+        
+            <MudGrid Spacing="1" Class="mt-8">
+                <MudItem xs="7">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">Registration Response</MudText>
+                        <pre>@RegistrationResult</pre>
+                    </MudPaper>
+                    </MudItem>
+                <MudItem xs="5">
+                    <MudPaper Class="pa-4 ma-2" Elevation="3">
+                        <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
+                        <pre>Explanation Todo</pre>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+    </MudGrid>
+
+
+  </ChildContent>
+  <ErrorContent Context="ex">
+    <pre class="blazor-error-boundary">
+            @ex.Message
+      </pre>
+  </ErrorContent>
+</ErrorBoundary>

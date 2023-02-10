@@ -1,0 +1,174 @@
+﻿@page "/udapBusinesstoBusiness"
+@using UdapEd.Shared.Model
+
+
+<ErrorBoundary @ref="ErrorBoundary">
+  <ChildContent>
+    <MudGrid Class="mt-4">
+      <MudItem xs="12" sm="12" md="12">
+          <MudText Typo="Typo.h4">Business-to-Business</MudText>
+        <MudText Typo="Typo.h6" Color="Color.Tertiary">Requesting Access Tokens for either client_credentials or authorization_code flows</MudText>
+      </MudItem>
+
+      <MudGrid Spacing="1" Class="mt-8">
+        <MudItem xs="5" sm="6" Class="pa-4 ma-2">
+          <MudTextField Label="Client Id:" ReadOnly="true" @bind-Value="ClientId" />
+        </MudItem>
+        <MudItem xs="4" sm="3" Class="pa-4 ma-2">
+          <MudTextField Label="OAth2 Flow" ReadOnly="true" @bind-Value="Oauth2Flow" />
+        </MudItem>
+      </MudGrid>
+    </MudGrid>
+
+
+        @if (AppState.Oauth2Flow == Oauth2FlowEnum.client_credentials)
+        {
+        <MudButton Class="mt-3"
+               ButtonType="ButtonType.Button"
+               Variant="Variant.Filled"
+               Disabled="@(AppState.RegistrationDocument == null)"
+               OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
+
+        <MudGrid Spacing="1" Class="mt-8">
+          <MudItem xs="7">
+            <MudPaper Class="pa-4 ma-2" Elevation="3">
+              <MudText Align="Align.Right" Color="Color.Tertiary">
+                5.2 Client Credentials Flow Request
+              </MudText>
+              <MudText Align="Align.Right" Color="Color.Tertiary">
+                Client Token Request
+              </MudText>
+              <pre>@TokenRequest1</pre>
+              <pre style="padding-left: 10px">@TokenRequest2</pre>
+              <pre style="padding-left:10px; background-color:lightyellow">@TokenRequest3</pre>
+              <pre style="padding-left:10px">@TokenRequest4</pre>
+            </MudPaper>
+          </MudItem>
+          <MudItem xs="5">
+            <MudPaper Class="pa-4 ma-2" Elevation="3">
+              <MudText Align="Align.Right" Color="Color.Tertiary">Future Info</MudText>
+              <pre>Todo</pre>
+            </MudPaper>
+          </MudItem>
+        </MudGrid>
+        }
+
+        @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
+        {
+        <MudButton Class="mt-3"
+               ButtonType="ButtonType.Button"
+               Variant="Variant.Filled"
+               Disabled="@(AppState.RegistrationDocument == null)"
+               OnClick="BuildAuthCodeRequest">Build Access Code Request</MudButton>
+
+        <MudGrid Spacing="1" Class="mt-8">
+          <MudItem xs="7">
+            <MudPaper Class="pa-4 ma-2" Elevation="3">
+              <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
+                @if (AppState.AuthorizationCodeRequest != null)
+                {
+                    <pre>GET /authorize?</pre>
+                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ResponseType" />
+                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.State" />
+                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ClientId" />
+                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Scope" />
+                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.RedirectUri"/>
+                    <pre>Host: AppState.UdapMetadata?.AuthorizationEndpoint</pre>
+                }
+            </MudPaper>
+          </MudItem>
+          <MudItem xs="5">
+            <MudPaper Class="pa-4 ma-2" Elevation="3">
+              <MudText Align="Align.Right" Color="Color.Tertiary">Future Info</MudText>
+              <pre>Todo</pre>
+            </MudPaper>
+          </MudItem>
+        </MudGrid>
+
+        <MudButton Class="mt-3"
+               ButtonType="ButtonType.Button"
+               Variant="Variant.Filled"
+               Disabled="@(AppState.RegistrationDocument == null)"
+               OnClick="GetAccessCode">Get Access Code</MudButton>
+        <MudGrid Spacing="1" Class="mt-8">
+          <MudItem xs="7">
+            <MudPaper Class="pa-4 ma-2" Elevation="3">
+              <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
+              <MudLink Color="@(AppState.AccessCodeRequestResult is {IsError: true } ? Color.Error : Color.Primary)"
+                   href="@AppState.AccessCodeRequestResult?.RedirctUrl">Login Redirect</MudLink>
+                <pre>@AppState.AccessCodeRequestResult?.RedirctUrl</pre>
+            </MudPaper>
+          </MudItem>
+          <MudItem xs="5">
+            <MudPaper Class="pa-4 ma-2" Elevation="3">
+              <MudText Align="Align.Right" Color="Color.Tertiary">Future Info</MudText>
+              <pre>Todo</pre>
+            </MudPaper>
+          </MudItem>
+        </MudGrid>
+
+
+        <MudGrid Spacing="1" Class="mt-8">
+          <MudItem xs="7">
+            <MudPaper Class="pa-4 ma-2" Elevation="3">
+              <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
+              <pre>HTTP/1.1 302 Found</pre>
+              <pre style="padding-left: 10px">@LoginCallback()</pre>
+            </MudPaper>
+          </MudItem>
+          <MudItem xs="5">
+            <MudPaper Class="pa-4 ma-2" Elevation="3">
+              <MudText Align="Align.Right" Color="Color.Tertiary">Future Info</MudText>
+              <pre>Todo</pre>
+            </MudPaper>
+          </MudItem>
+        </MudGrid>
+
+
+        <MudButton Class="mt-3"
+               ButtonType="ButtonType.Button"
+               Variant="Variant.Filled"
+               Disabled="@(AppState.RegistrationDocument == null)"
+               OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
+
+        <MudGrid Spacing="1" Class="mt-8">
+          <MudItem xs="7">
+            <MudPaper Class="pa-4 ma-2" Elevation="3">
+              <MudText Align="Align.Right" Color="Color.Tertiary">5.1 Authorization Code Flow</MudText>
+              <pre>@TokenRequest1</pre>
+              <pre style="padding-left: 10px">@TokenRequest2</pre>
+              <pre style="padding-left:10px; background-color:lightyellow">@TokenRequest3</pre>
+              <pre style="padding-left:10px">@TokenRequest4</pre>
+            </MudPaper>
+          </MudItem>
+          <MudItem xs="5">
+            <MudPaper Class="pa-4 ma-2" Elevation="3">
+              <MudText Align="Align.Right" Color="Color.Tertiary">Future Info</MudText>
+              <pre>Todo</pre>
+            </MudPaper>
+          </MudItem>
+        </MudGrid>
+        }
+
+    <MudButton Class="mt-3"
+               ButtonType="ButtonType.Button"
+               Variant="Variant.Filled"
+               Disabled="@(AppState.RegistrationDocument == null)"
+               OnClick="GetAccessToken">Get Access Token</MudButton>
+
+    <MudGrid Spacing="1" Class="mt-8">
+      <MudItem xs="7">
+        <MudPaper Class="pa-4 ma-2" Elevation="3">
+          <MudText Align="Align.Right" Color="Color.Tertiary">7.1 Success</MudText>
+          <pre>@AccessToken</pre>
+        </MudPaper>
+      </MudItem>
+    </MudGrid>
+
+  </ChildContent>
+  <ErrorContent Context="ex">
+    <pre class="blazor-error-boundary">
+            @ex.Message
+      </pre>
+  </ErrorContent>
+</ErrorBoundary>

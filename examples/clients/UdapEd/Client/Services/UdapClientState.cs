@@ -36,9 +36,9 @@ public class UdapClientState : IAppState
 
     public RegistrationDocument? RegistrationDocument { get; set; }
     
-    public UdapClientCredentialsTokenRequest? ClientCredentialsTokenRequest { get; set; }
+    public UdapClientCredentialsTokenRequestModel? ClientCredentialsTokenRequest { get; set; }
 
-    public UdapAuthorizationCodeTokenRequest? AuthorizationCodeTokenRequest { get; set; }
+    public UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest { get; set; }
     public AccessCodeRequestResult? AccessCodeRequestResult { get; set; }
    
     public LoginCallBackResult? LoginCallBackResult { get; set; }

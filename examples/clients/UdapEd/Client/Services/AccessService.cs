@@ -8,6 +8,8 @@
 #endregion
 
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Access;
 using UdapEd.Shared.Model;
@@ -17,10 +19,12 @@ namespace UdapEd.Client.Services;
 public class AccessService
 {
     readonly HttpClient _httpClient;
+    private readonly ILogger<AccessService> _logger;
 
-    public AccessService(HttpClient httpClient)
+    public AccessService(HttpClient httpClient, ILogger<AccessService> logger)
     {
         _httpClient = httpClient;
+        _logger = logger;
     }
 
     public async Task<AccessCodeRequestResult?> Get(string authorizeQuery)
@@ -30,20 +34,10 @@ public class AccessService
         return response;
     }
 
-    public async Task<UdapAuthorizationCodeTokenRequest?> BuildRequestAccessTokenForAuthCode(
-        string clientId,
-        string tokenEndpointUrl)
+    public async Task<UdapAuthorizationCodeTokenRequestModel?> BuildRequestAccessTokenForAuthCode(
+        AuthorizationCodeTokenRequestModel model)
     {
-
-        var model = new AccessTokenRequestModel
-        {
-            ClientId = clientId,
-            TokenEndpointUrl = tokenEndpointUrl
-        };
-
         var result = await _httpClient.PostAsJsonAsync("Access/BuildRequestToken/authorization_code", model);
-
-        result.EnsureSuccessStatusCode();
 
         if (!result.IsSuccessStatusCode)
         {
@@ -52,24 +46,29 @@ public class AccessService
             return null;
         }
 
-        return await result.Content.ReadFromJsonAsync<UdapAuthorizationCodeTokenRequest>();
+        var response = JsonSerializer.Deserialize<UdapAuthorizationCodeTokenRequestModel>(
+            await result.Content.ReadAsStringAsync(),
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+        return response;
     }
 
     
-    public async Task<UdapClientCredentialsTokenRequest?> BuildRequestAccessTokenForClientCredentials(
+    public async Task<UdapClientCredentialsTokenRequestModel?> BuildRequestAccessTokenForClientCredentials(
         string clientId,
         string tokenEndpointUrl)
     {
-        var model = new AccessTokenRequestModel
+        var model = new ClientCredentialsTokenRequestModel
         {
             ClientId = clientId,
             TokenEndpointUrl = tokenEndpointUrl
         };
 
         var result = await _httpClient.PostAsJsonAsync("Access/BuildRequestToken/client_credentials", model);
-
-        result.EnsureSuccessStatusCode();
-
+        
         if (!result.IsSuccessStatusCode)
         {
             Console.WriteLine(await result.Content.ReadAsStringAsync());
@@ -77,14 +76,16 @@ public class AccessService
             return null;
         }
 
-        return await result.Content.ReadFromJsonAsync<UdapClientCredentialsTokenRequest>();
+        return await result.Content.ReadFromJsonAsync<UdapClientCredentialsTokenRequestModel>(
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
     }
 
     public async Task<TokenResponseModel?> RequestAccessTokenForClientCredentials(UdapClientCredentialsTokenRequest request)
     {
         var result = await _httpClient.PostAsJsonAsync("Access/RequestToken/client_credentials", request);
-
-        result.EnsureSuccessStatusCode();
 
         if (!result.IsSuccessStatusCode)
         {
@@ -99,8 +100,6 @@ public class AccessService
     public async Task<TokenResponseModel?> RequestAccessTokenForAuthorizationCode(UdapAuthorizationCodeTokenRequest request)
     {
         var result = await _httpClient.PostAsJsonAsync("Access/RequestToken/authorization_code", request);
-
-        result.EnsureSuccessStatusCode();
 
         if (!result.IsSuccessStatusCode)
         {

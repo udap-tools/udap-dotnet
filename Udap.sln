@@ -44,6 +44,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{2D52ACC2-6D22-4C31-A90C-505D04980EEF}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UdapEd", "UdapEd", "{B84896B0-6796-4059-8799-7A7F342E0B88}"
+	ProjectSection(SolutionItems) = preProject
+		examples\Udap.Idp\nuget.config = examples\Udap.Idp\nuget.config
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Model", "Udap.Model\Udap.Model.csproj", "{25BD1FD4-5AB2-403C-81C1-36640CED1CF8}"
 EndProject

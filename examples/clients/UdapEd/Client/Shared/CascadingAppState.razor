@@ -71,8 +71,8 @@
     private UdapRegisterRequest? _udapRegistrationRequest;
     private Oauth2FlowEnum _oauth2Flow;
     private RegistrationDocument? _registrationDocument;
-    private UdapClientCredentialsTokenRequest? _clientCredentialsTokenRequest;
-    private UdapAuthorizationCodeTokenRequest? _authorizationCodeTokenRequest;
+    private UdapClientCredentialsTokenRequestModel? _clientCredentialsTokenRequest;
+    private UdapAuthorizationCodeTokenRequestModel? _authorizationCodeTokenRequest;
     private AccessCodeRequestResult? _accessCodeRequestResult;
     private LoginCallBackResult? _loginCallBackResult;
     private TokenResponseModel? _accessTokens;
@@ -113,13 +113,13 @@
         private set => _registrationDocument = value;
     }
 
-    public UdapClientCredentialsTokenRequest? ClientCredentialsTokenRequest
+    public UdapClientCredentialsTokenRequestModel? ClientCredentialsTokenRequest
     {
         get => _clientCredentialsTokenRequest;
         private set => _clientCredentialsTokenRequest = value;
     }
 
-    public UdapAuthorizationCodeTokenRequest? AuthorizationCodeTokenRequest
+    public UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest
     {
         get => _authorizationCodeTokenRequest;
         private set => _authorizationCodeTokenRequest = value;
@@ -185,7 +185,7 @@
         private set
         {
             _status = value;
-            if (_caller == "udapBusinesstoBusiness")
+            if (_caller == "udapBusinessToBusiness")
             {
               //example of potential logic
             }

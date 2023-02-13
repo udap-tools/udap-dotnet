@@ -20,16 +20,15 @@ using UdapEd.Shared.Model;
 
 namespace UdapEd.Client.Pages;
 
-public partial class UdapBusinesstoBusiness
+public partial class UdapBusinessToBusiness
 {
     [CascadingParameter]
     public CascadingAppState AppState { get; set; } = null!;
 
-    [Inject] private HttpClient _httpClient { get; set; }
     private ErrorBoundary? ErrorBoundary { get; set; }
 
-    [Inject] AccessService AccessService { get; set; }
-    [Inject] NavigationManager NavManager { get; set; }
+    [Inject] AccessService AccessService { get; set; } = null!;
+    [Inject] NavigationManager NavManager { get; set; } = null!;
 
     private string _clientId = "";
 
@@ -125,7 +124,16 @@ public partial class UdapBusinesstoBusiness
     protected override void OnParametersSet()
     {
         ErrorBoundary?.Recover();
-        BuildAccessTokenRequestVisual();
+        
+        // if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
+        // {
+        //     BuildAccessTokenRequestVisualForAuthorizationCode();
+        // }
+        //
+        // if (AppState.Oauth2Flow == Oauth2FlowEnum.client_credentials)
+        // {
+        //     BuildAccessTokenRequestVisualForClientCredentials();
+        // }
     }
 
     /// <summary>
@@ -193,10 +201,24 @@ public partial class UdapBusinesstoBusiness
 
         if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
         {
+            var model = new AuthorizationCodeTokenRequestModel
+            {
+                ClientId = AppState.RegistrationDocument.ClientId,
+                TokenEndpointUrl = AppState.UdapMetadata.TokenEndpoint,
+            };
+
+            if (AppState.RegistrationDocument?.RedirectUris.Count > 0)
+            {
+                model.RedirectUrl = AppState.RegistrationDocument?.RedirectUris.First() ?? string.Empty;
+            }
+
+            if (AppState.LoginCallBackResult?.Code != null)
+            {
+                model.Code = AppState.LoginCallBackResult?.Code!;
+            }
+
             var requestToken = await AccessService
-                .BuildRequestAccessTokenForAuthCode(
-                    AppState.RegistrationDocument.ClientId,
-                    AppState.UdapMetadata.TokenEndpoint);
+                .BuildRequestAccessTokenForAuthCode(model);
             
             AppState.SetProperty(this, nameof(AppState.AuthorizationCodeTokenRequest), requestToken);
 
@@ -210,17 +232,7 @@ public partial class UdapBusinesstoBusiness
                 return;
             }
 
-            if (!string.IsNullOrEmpty(AppState.RegistrationDocument?.RedirectUris.First()))
-            {
-                AppState.AuthorizationCodeTokenRequest.RedirectUri =
-                    AppState.RegistrationDocument?.RedirectUris.First();
-            }
-            
-            if (AppState.AuthorizationCodeTokenRequest != null)
-            {
-                AppState.AuthorizationCodeTokenRequest.Code = AppState.LoginCallBackResult?.Code;
-                BuildAccessTokenRequestVisual();
-            }
+            BuildAccessTokenRequestVisualForAuthorizationCode();
         }
         else  //client_credentials
         {
@@ -231,27 +243,32 @@ public partial class UdapBusinesstoBusiness
 
             AppState.SetProperty(this, nameof(AppState.ClientCredentialsTokenRequest), requestToken);
 
-            var sb = new StringBuilder();
-            sb.AppendLine("POST /token HTTP/1.1");
-            sb.AppendLine($"Host: {AppState.UdapMetadata?.AuthorizationEndpoint}");
-            sb.AppendLine("Content-type: application/x-www-form-urlencoded");
-            sb.AppendLine();
-            sb.AppendLine("grant_type=client_credentials&");
-            TokenRequest1 = sb.ToString();
-            
-            sb = new StringBuilder();
-            sb.AppendLine($"client_assertion_type={OidcConstants.ClientAssertionTypes.JwtBearer}&");
-            TokenRequest2 = sb.ToString();
-            
-            TokenRequest3 = $"client_assertion={AppState.ClientCredentialsTokenRequest?.ClientAssertion.Value}&";
-            
-            sb = new StringBuilder();
-            sb.Append($"udap={UdapConstants.UdapVersionsSupportedValue}&\r\n");
-            TokenRequest4 = sb.ToString();
+            BuildAccessTokenRequestVisualForClientCredentials();
         }
     }
 
-    private void BuildAccessTokenRequestVisual()
+    private void BuildAccessTokenRequestVisualForClientCredentials()
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("POST /token HTTP/1.1");
+        sb.AppendLine($"Host: {AppState.UdapMetadata?.AuthorizationEndpoint}");
+        sb.AppendLine("Content-type: application/x-www-form-urlencoded");
+        sb.AppendLine();
+        sb.AppendLine("grant_type=client_credentials&");
+        TokenRequest1 = sb.ToString();
+
+        sb = new StringBuilder();
+        sb.AppendLine($"client_assertion_type={OidcConstants.ClientAssertionTypes.JwtBearer}&");
+        TokenRequest2 = sb.ToString();
+
+        TokenRequest3 = $"client_assertion={AppState.ClientCredentialsTokenRequest?.ClientAssertion.Value}&";
+
+        sb = new StringBuilder();
+        sb.Append($"udap={UdapConstants.UdapVersionsSupportedValue}&\r\n");
+        TokenRequest4 = sb.ToString();
+    }
+
+    private void BuildAccessTokenRequestVisualForAuthorizationCode()
     {
         if (AppState.LoginCallBackResult == null)
         {
@@ -295,7 +312,8 @@ public partial class UdapBusinesstoBusiness
             }
                        
             var tokenResponse = await AccessService
-                .RequestAccessTokenForAuthorizationCode(AppState.AuthorizationCodeTokenRequest);
+                .RequestAccessTokenForAuthorizationCode(
+                    AppState.AuthorizationCodeTokenRequest.ToUdapAuthorizationCodeTokenRequest());
             
             AppState.SetProperty(this, nameof(AppState.AccessTokens), tokenResponse);
             
@@ -317,7 +335,8 @@ public partial class UdapBusinesstoBusiness
             }
 
             var tokenResponse = await AccessService
-                .RequestAccessTokenForClientCredentials(AppState.ClientCredentialsTokenRequest);
+                .RequestAccessTokenForClientCredentials(
+                    AppState.ClientCredentialsTokenRequest.ToUdapClientCredentialsTokenRequest());
 
             AppState.SetProperty(this, nameof(AppState.AccessTokens), tokenResponse);
 

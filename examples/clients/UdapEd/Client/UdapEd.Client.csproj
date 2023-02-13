@@ -7,10 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Pages\UdapBusinesstoBusiness.razor.cs~RF7e2eb71.TMP" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Blazored.LocalStorage" Version="4.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.2" PrivateAssets="all" />
@@ -19,9 +15,17 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Shared\UdapEd.Shared.csproj" />
+  </ItemGroup>
+
+  <!-- <ItemGroup >  Condition="'$(GCPDeploy)' == 'true'"> -->
+  <!--   <PackageReference Include="Udap.Client" Version="0.0.4-preview*" /> -->
+  <!--   <PackageReference Include="Udap.Common" Version="0.0.4-preview*" /> -->
+  <!-- </ItemGroup> -->
+
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\..\..\..\Udap.Common\Udap.Common.csproj" />
-    <ProjectReference Include="..\Shared\UdapEd.Shared.csproj" />
   </ItemGroup>
 
 </Project>

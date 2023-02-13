@@ -95,6 +95,7 @@ namespace UdapServer.Tests
             _anchorCert = fixture.AnchorCert;
 
         }
+        
 
         [Fact]
         public async Task BadIUdapClientConfigurationStore()

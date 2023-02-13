@@ -7,11 +7,10 @@
 // */
 #endregion
 
+using System.Text.Json;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
-
-var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,17 +28,11 @@ builder.Host.UseSerilog((ctx, lc) => lc
         "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",
         theme: AnsiConsoleTheme.Code));
 
-// builder.Services.AddCors(options =>
-// {
-//     options.AddPolicy(name: MyAllowSpecificOrigins,
-//         policy =>
-//         {
-//             policy.WithOrigins("https://host.docker.internal:5002", "https://localhost:7041", "https://locahost:5002");
-//         });
-// });
-
-builder.Services.AddSession(options => {
+builder.Services.AddSession(options =>
+{
     options.IdleTimeout = TimeSpan.FromMinutes(60);
+    options.Cookie.Name = ".FhirLabs.UdapEd";
+    options.Cookie.IsEssential = true;
 });
 
 builder.Services.AddControllersWithViews();
@@ -79,10 +72,10 @@ builder.Services.AddAuthentication(options =>
         options.Scope.Add("profile");
         options.Scope.Add("api");
         options.Scope.Add("offline_access");
-        
+
     });
 
-builder.Services.AddScoped(sp => new HttpClient ());
+builder.Services.AddScoped(sp => new HttpClient());
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();

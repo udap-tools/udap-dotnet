@@ -41,9 +41,11 @@ public class AccessController : ControllerBase
             .GetAsync(Base64UrlEncoder
                 .Decode(authorizeQuery), cancellationToken: token);
 
-        var result = new AccessCodeRequestResult();
-        result.RedirctUrl = response.Headers.Location.AbsoluteUri;
-        
+        var result = new AccessCodeRequestResult
+        {
+            RedirctUrl = response.Headers.Location?.AbsoluteUri
+        };
+
         if (response.StatusCode != HttpStatusCode.Redirect)
         {
             result.IsError = true;
@@ -53,35 +55,51 @@ public class AccessController : ControllerBase
     }
 
     [HttpPost("BuildRequestToken/authorization_code")]
-    public IActionResult RequestAccessTokenAuthCode([FromBody] AccessTokenRequestModel model)
+    public Task<IActionResult> RequestAccessTokenAuthCode([FromBody] AuthorizationCodeTokenRequestModel model)
     {
-        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY));
+        var clientCertWithKey = HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY);
+
+        if (clientCertWithKey == null)
+        {
+            return Task.FromResult<IActionResult>(BadRequest("Cannot find a certificate.  Reload the certificate."));
+        }
+
+        var certBytes = Convert.FromBase64String(clientCertWithKey);
         var clientCert = new X509Certificate2(certBytes);
         
-        var tokenRequestBuilder = AccessTokenRequestBuilder.Create(
+        var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
             model.ClientId,
             model.TokenEndpointUrl,
-            clientCert);
+            clientCert,
+            model.RedirectUrl,
+            model.Code);
 
         var tokenRequest = tokenRequestBuilder.Build();
         
-        return Ok(tokenRequest);
+        return Task.FromResult<IActionResult>(Ok(tokenRequest));
     }
 
     [HttpPost("BuildRequestToken/client_credentials")]
-    public IActionResult RequestAccessTokenClientCredentials([FromBody] AccessTokenRequestModel model)
+    public Task<IActionResult> RequestAccessTokenClientCredentials([FromBody] ClientCredentialsTokenRequestModel model)
     {
-        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY));
+        var clientCertWithKey = HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY);
+
+        if (clientCertWithKey == null)
+        {
+            return Task.FromResult<IActionResult>(BadRequest("Cannot find a certificate.  Reload the certificate."));
+        }
+
+        var certBytes = Convert.FromBase64String(clientCertWithKey);
         var clientCert = new X509Certificate2(certBytes);
 
-        var tokenRequestBuilder = AccessTokenRequestBuilder.Create(
+        var tokenRequestBuilder = AccessTokenRequestForClientCredentialsBuilder.Create(
             model.ClientId,
             model.TokenEndpointUrl,
             clientCert);
 
-        var tokenRequest = tokenRequestBuilder.Build();
+        var tokenRequest = tokenRequestBuilder.build();
         
-        return Ok(tokenRequest);
+        return Task.FromResult<IActionResult>(Ok(tokenRequest));
     }
 
     [HttpPost("RequestToken/client_credentials")]

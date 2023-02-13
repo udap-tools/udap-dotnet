@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -6,7 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <ItemGroup>
+  <!-- <ItemGroup> Condition="'$(GCPDeploy)' == 'true'"> -->
+  <!--   <PackageReference Include="Udap.Model" Version="0.0.4-preview*" /> -->
+  <!-- </ItemGroup> -->
+
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="..\..\..\..\Udap.Model\Udap.Model.csproj" />
   </ItemGroup>
 

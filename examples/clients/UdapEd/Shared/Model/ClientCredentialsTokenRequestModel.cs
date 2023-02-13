@@ -9,8 +9,18 @@
 
 
 namespace UdapEd.Shared.Model;
-public class AccessTokenRequestModel
+public class ClientCredentialsTokenRequestModel
 {
     public string ClientId { get; set; }
     public string TokenEndpointUrl { get; set; }
+}
+
+public class AuthorizationCodeTokenRequestModel
+{
+    public string ClientId { get; set; }
+    public string TokenEndpointUrl { get; set; }
+
+    public string Code { get; set; }
+
+    public string RedirectUrl { get; set; }
 }

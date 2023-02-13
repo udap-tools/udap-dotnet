@@ -73,7 +73,7 @@ public class RegisterController : ControllerBase
     }
 
     [HttpGet("IsClientCertificateLoaded")]
-    public async Task<IActionResult> Get()
+    public IActionResult Get()
     {
         CertLoadedEnum result = CertLoadedEnum.Negative;
 
@@ -112,7 +112,14 @@ public class RegisterController : ControllerBase
     [HttpPost("BuildSoftwareStatement")]
     public IActionResult BuildSoftwareStatementWithHeader([FromBody] BuildSoftwareStatementRequest request)
     {
-        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY));
+        var clientCertWithKey = HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY);
+
+        if (clientCertWithKey == null)
+        {
+            return BadRequest("Cannot find a certificate.  Reload the certificate.");
+        }
+
+        var certBytes = Convert.FromBase64String(clientCertWithKey);
         var clientCert = new X509Certificate2(certBytes);
         UdapDynamicClientRegistrationDocument document;
 
@@ -148,7 +155,7 @@ public class RegisterController : ControllerBase
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithScope("system/Patient.* system/Practitioner.read openid profile offline_access")
                 .WithResponseTypes(new HashSet<string> { "code" })
-                .WithRedirectUrls(new List<string> { "https://localhost:7041/udapBusinesstoBusiness" })
+                .WithRedirectUrls(new List<string> { "https://localhost:7041/udapBusinessToBusiness" })
                 .Build();
         }
 
@@ -161,6 +168,11 @@ public class RegisterController : ControllerBase
         var jsonToken = tokenHandler.ReadToken(signedSoftwareStatement);
         var requestToken = jsonToken as JsonWebToken;
 
+        if (requestToken == null)
+        {
+            return BadRequest("Failed to read signed software statement using JsonWebTokenHandler");
+        }
+
         var sb = new StringBuilder();
         sb.Append("[");
         sb.Append(requestToken.EncodedHeader.DecodeJwtHeader());
@@ -168,8 +180,8 @@ public class RegisterController : ControllerBase
         sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedPayload));
         sb.Append("]");
 
-        var softwareStatementBeforeEncoding = JsonObject.Parse(sb?.ToString())
-            .ToJsonString(new JsonSerializerOptions()
+        var softwareStatementBeforeEncoding = JsonNode.Parse(sb.ToString())
+            ?.ToJsonString(new JsonSerializerOptions()
             {
                 WriteIndented = true,
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
@@ -192,7 +204,14 @@ public class RegisterController : ControllerBase
     [HttpPost("BuildRequestBody")]
     public IActionResult BuildRequestBody([FromBody] BuildSoftwareStatementRequest request)
     {
-        var certBytes = Convert.FromBase64String(HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY));
+        var clientCertWithKey = HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY);
+        
+        if (clientCertWithKey == null)
+        {
+            return BadRequest("Cannot find a certificate.  Reload the certificate.");
+        }
+
+        var certBytes = Convert.FromBase64String(clientCertWithKey);
         var clientCert = new X509Certificate2(certBytes);
         
         UdapDynamicClientRegistrationDocument document;
@@ -229,7 +248,7 @@ public class RegisterController : ControllerBase
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithScope("system/Patient.* system/Practitioner.read openid profile offline_access")
                 .WithResponseTypes(new HashSet<string> { "code" })
-                .WithRedirectUrls(new List<string> { "https://localhost:7041/udapBusinesstoBusiness" })
+                .WithRedirectUrls(new List<string> { "https://localhost:7041/udapBusinessToBusiness" })
                 .Build();
         }
 
@@ -240,7 +259,7 @@ public class RegisterController : ControllerBase
 
         var requestBody = new UdapRegisterRequest
         {
-            SoftwareStatement = signedSoftwareStatement,
+            SoftwareStatement = signedSoftwareStatement ?? "Failed Software statement build",
             // Certifications = new string[0],
             Udap = UdapConstants.UdapVersionsSupportedValue
         };
@@ -251,6 +270,11 @@ public class RegisterController : ControllerBase
     [HttpPost("Register")]
     public async Task<IActionResult> Register([FromBody] RegistrationRequest request)
     {
+        if (request.UdapRegisterRequest == null)
+        {
+            return BadRequest($"{nameof(request.UdapRegisterRequest)} is Null.");
+        }
+ 
         var response = await _httpClient.PostAsJsonAsync<UdapRegisterRequest>(
             request.RegistrationEndpoint,
             request.UdapRegisterRequest);

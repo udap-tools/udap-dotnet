@@ -19,9 +19,9 @@ public interface IAppState
 
     RegistrationDocument? RegistrationDocument { get; }
 
-    UdapClientCredentialsTokenRequest? ClientCredentialsTokenRequest { get; }
+    UdapClientCredentialsTokenRequestModel? ClientCredentialsTokenRequest { get; }
 
-    UdapAuthorizationCodeTokenRequest? AuthorizationCodeTokenRequest { get; }
+    UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest { get; }
     AccessCodeRequestResult? AccessCodeRequestResult { get;  }
 
     LoginCallBackResult? LoginCallBackResult { get;  }

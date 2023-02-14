@@ -18,10 +18,10 @@
     <ProjectReference Include="..\Shared\UdapEd.Shared.csproj" />
   </ItemGroup>
 
-  <!-- <ItemGroup >  Condition="'$(GCPDeploy)' == 'true'"> -->
-  <!--   <PackageReference Include="Udap.Client" Version="0.0.4-preview*" /> -->
-  <!--   <PackageReference Include="Udap.Common" Version="0.0.4-preview*" /> -->
-  <!-- </ItemGroup> -->
+  <ItemGroup  Condition="'$(GCPDeploy)' == 'true'">
+    <PackageReference Include="Udap.Client" Version="0.0.4-preview*" />
+    <PackageReference Include="Udap.Common" Version="0.0.4-preview*" />
+  </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" />

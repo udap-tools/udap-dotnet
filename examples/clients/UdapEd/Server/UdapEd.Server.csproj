@@ -5,8 +5,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>..</DockerfileContext>
     <DockerImageLabels>FhriLabs.UdapEd</DockerImageLabels>
+    <DockerfileRunArguments>-p "5171:8080" -p "7041:443" -e ASPNETCORE_HTTPS_PORT=7041 </DockerfileRunArguments>
+    <UserSecretsId>e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,9 +24,9 @@
     <ProjectReference Include="..\Shared\UdapEd.Shared.csproj" />
   </ItemGroup>
 
-  <!-- <ItemGroup Condition="'$(GCPDeploy)' == 'true'"> -->
-  <!--   <PackageReference Include="Udap.Model" Version="0.0.4-preview*" /> -->
-  <!-- </ItemGroup> -->
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
+    <PackageReference Include="Udap.Model" Version="0.0.4-preview*" />
+  </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="..\..\..\..\Udap.Model\Udap.Model.csproj" />

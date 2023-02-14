@@ -10,6 +10,8 @@ WORKDIR /src
 
 COPY ["nuget.config", "."]
 COPY ["Server/UdapEd.Server.csproj", "Server/"]
+COPY ["Client/UdapEd.Client.csproj", "Client/"]
+COPY ["Shared/UdapEd.Shared.csproj", "Shared/"]
 RUN dotnet restore "Server/UdapEd.Server.csproj"
 COPY . .
 

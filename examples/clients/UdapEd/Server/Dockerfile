@@ -8,6 +8,7 @@ EXPOSE 443
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
 
+ENV GCPDeploy=true
 COPY ["nuget.config", "."]
 COPY ["Server/UdapEd.Server.csproj", "Server/"]
 COPY ["Client/UdapEd.Client.csproj", "Client/"]

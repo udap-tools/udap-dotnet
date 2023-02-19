@@ -24,25 +24,23 @@ namespace Udap.Model.Access;
 public class AccessTokenRequestForAuthorizationCodeBuilder
 {
 
-    private List<Claim> _claims;
-    private string _tokenEndoint;
-    private string _clientId;
-    private string _code;
-    private string _redirectUri;
+    private readonly List<Claim> _claims;
+    private readonly string? _tokenEndpoint;
+    private readonly string? _clientId;
+    private readonly string? _code;
+    private readonly string? _redirectUri;
     private DateTime _now;
-    private X509Certificate2 _certificate;
-    private string _clientCertAsBase64;
+    private readonly X509Certificate2 _certificate;
 
-    private AccessTokenRequestForAuthorizationCodeBuilder(string clientId, string tokenEndpoint, X509Certificate2 certificate, string redirectUri, string code)
+    private AccessTokenRequestForAuthorizationCodeBuilder(string? clientId, string? tokenEndpoint, X509Certificate2 certificate, string? redirectUri, string? code)
     {
         _now = DateTime.UtcNow.ToUniversalTime();
-        _tokenEndoint = tokenEndpoint;
+        _tokenEndpoint = tokenEndpoint;
         _clientId = clientId;
         _certificate = certificate;
         _code = code;
         _redirectUri = redirectUri;
-        _clientCertAsBase64 = Convert.ToBase64String(certificate.Export(X509ContentType.Cert));
-
+        
         _claims = new List<Claim>
         {
             new Claim(JwtClaimTypes.Subject, _clientId),
@@ -52,7 +50,7 @@ public class AccessTokenRequestForAuthorizationCodeBuilder
         };
     }
 
-    public static AccessTokenRequestForAuthorizationCodeBuilder Create(string clientId, string tokenEndpoint, X509Certificate2 certificate, string redirectUri, string code)
+    public static AccessTokenRequestForAuthorizationCodeBuilder Create(string? clientId, string? tokenEndpoint, X509Certificate2 certificate, string? redirectUri, string? code)
     {
         return new AccessTokenRequestForAuthorizationCodeBuilder(clientId, tokenEndpoint, certificate, redirectUri, code);
     }
@@ -74,7 +72,7 @@ public class AccessTokenRequestForAuthorizationCodeBuilder
 
         return new UdapAuthorizationCodeTokenRequest()
         {
-            Address = _tokenEndoint,
+            Address = _tokenEndpoint,
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             Code = _code,
             RedirectUri = _redirectUri,
@@ -91,7 +89,7 @@ public class AccessTokenRequestForAuthorizationCodeBuilder
     {
         var jwtPayload = new JwtPayLoadExtension(
             _clientId,
-            _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
+            _tokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             _claims,
             _now,
             _now.AddMinutes(5)

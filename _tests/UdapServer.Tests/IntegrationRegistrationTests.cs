@@ -363,10 +363,10 @@ namespace UdapServer.Tests
                     .Build();
 
             var requestBody = new UdapRegisterRequest
-            {
-                SoftwareStatement = signedSoftwareStatement,
-                Udap = UdapConstants.UdapVersionsSupportedValue
-            };
+            (
+                signedSoftwareStatement,
+                 UdapConstants.UdapVersionsSupportedValue
+            );
 
             document.ClientId.Should().BeNull();
 
@@ -527,14 +527,14 @@ namespace UdapServer.Tests
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName("dotnet system test client")
-                .WithContacts(new HashSet<string>
+                .WithContacts(new HashSet<string?>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithScope("user/Patient.* user/Practitioner.read") //Comment out for UDAP Server mode.
-                .WithResponseTypes(new HashSet<string> { "code" })
-                .WithRedirectUrls(new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
+                .WithResponseTypes(new HashSet<string?> { "code" })
+                .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
                 .Build();
 
             var documentSerialized = document.SerializeToJson();

@@ -1,12 +1,14 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Udap.Model;
+using UdapEd.Server.Extensions;
 
 namespace UdapEd.Server.Controllers;
 
 [Route("[controller]")]
-[ApiController]
-public class MetadataController : ControllerBase
+[EnableRateLimiting(RateLimitExtensions.Policy)]
+public class MetadataController : Controller
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<MetadataController> _logger;

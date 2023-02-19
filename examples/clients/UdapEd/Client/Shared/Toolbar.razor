@@ -1,25 +1,34 @@
 ﻿@using UdapEd.Client.Services
 @using UdapEd.Shared.Model
 @inject IJSRuntime JSRuntime
-@inject RegisterService MetadataService
+@inject RegisterService RegisterService
 @inject IDialogService DialogService
 
 <InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 
 <MudAppBar Elevation="1">
   <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-                 OnClick="@((e) => DrawerToggle())" />
+                 OnClick="@DrawerToggle" />
   <MudSpacer />
   
-  <MudIcon Class="ma-4" Icon="@certificate" Color="@CertLoadedColor" for="fileInput" />
+  <MudIcon Class="ma-4" Icon="@_certificate" Color="@CertLoadedColor" for="fileInput" />
   
-  <MudFab HtmlTag="label"
+  <MudFab  Class="ma-2"
+           HtmlTag="label"
           Size="Size.Small"
           Color="@CertLoadedColor"
           Icon="@Icons.Material.Filled.AttachFile"
           Label="Upload Client Certificate"
-          for="fileInput" /> 
-          
+          for="fileInput" />
+  
+  <MudFab HtmlTag="label"
+          Class="ma-2"
+          Size="Size.Small"
+          Color="@CertLoadedColor"
+          Icon="@Icons.Material.Filled.AttachFile"
+          Label="Use Test Client certificate" 
+          OnClick="@LoadTestCertificate" /> 
+
   <MudSpacer />
   Token Status:&nbsp;<MudText Color="@(AppState.Status is {IsValid: false } ? Color.Error : Color.Success)">@AppState.Status.StatusMessage</MudText>
   <MudImage Class="cursor-pointer mud-ripple ma-2" Src="images/hl7/icon-fhir-24.png" Alt="Fhir Icon" Size="Size.Small"
@@ -44,7 +53,7 @@
         </TooltipContent>
         </MudTooltip>
     </MudDrawerHeader>
-  <MudDivider Style="flex-grow: 0;" />
+  <MudDivider Style="-o-flex-grow: 0; -webkit-flex-grow: 0; flex-grow: 0;" />
   <NavMenu />
 </MudDrawer>
 
@@ -52,14 +61,14 @@
 @code {
 
     [CascadingParameter]
-    public CascadingAppState AppState { get; set; }
+    public CascadingAppState AppState { get; set; } = null!;
 
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
 
 
     protected override async Task OnInitializedAsync()
     {
-        SetCertLoadedColor(await MetadataService.ClientCertificateLoadStatus());
+        SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
     }
     
     private void SetCertLoadedColor(CertLoadedEnum isCertLoaded)
@@ -104,7 +113,7 @@
 
 
     //Certificate from Material Design Icons
-    string certificate = "<svg style=\"width:24px;height:24px\" viewBox=\"0 0 24 24\">" +
+    string _certificate = "<svg style=\"width:24px;height:24px\" viewBox=\"0 0 24 24\">" +
         "<path fill=\"currentColor\" d=\"M13 21L15 20L17 21V14H13M17 9V7L15 8L13 7V9L11 10L13 11V13L15 12L17 13V11L19 10M20 3H4A2 2 0 0 0 2 5V15A2 2 0 0 0 4 17H11V15H4V5H20V15H19V17H20A2 2 0 0 0 22 15V5A2 2 0 0 0 20 3M11 8H5V6H11M9 11H5V9H9M11 14H5V12H11Z\" />" +
         "</svg>";
 
@@ -118,13 +127,20 @@
         await uploadStream.CopyToAsync(ms);
         var certBytes = ms.ToArray();
 
-        await MetadataService.UploadClientCert(Convert.ToBase64String(certBytes));
+        await RegisterService.UploadClientCert(Convert.ToBase64String(certBytes));
 
         //dialog
         var options = new DialogOptions { CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Password_Dialog>("Certificate Password", options);
         var result = await dialog.Result;
-        var certLoaded = await MetadataService.ValidateCertificate(result.Data.ToString() ?? "udap-test");
+        var certLoaded = await RegisterService.ValidateCertificate(result.Data.ToString() ?? "");
         SetCertLoadedColor(certLoaded);        
     }
+
+    private async Task LoadTestCertificate()
+    {
+        var result = await RegisterService.LoadTestCertificate();
+        SetCertLoadedColor(result);
+    }
+
 }

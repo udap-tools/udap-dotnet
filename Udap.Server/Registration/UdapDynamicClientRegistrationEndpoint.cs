@@ -63,16 +63,16 @@ public class UdapDynamicClientRegistrationEndpoint
         UdapRegisterRequest request;
         try
         {
-            request = await context.Request.ReadFromJsonAsync<UdapRegisterRequest>() ?? throw new ArgumentNullException();
+            request = await context.Request.ReadFromJsonAsync<UdapRegisterRequest>(cancellationToken: token) ?? throw new ArgumentNullException();
         }
         catch (Exception)
         {
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsJsonAsync(new UdapDynamicClientRegistrationErrorResponse
-            {
-                Error = UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                ErrorDescription = "malformed metadata document"
-            }, cancellationToken: token);
+            (
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                "malformed metadata document"
+            ), cancellationToken: token);
             
             return;
         }
@@ -99,10 +99,10 @@ public class UdapDynamicClientRegistrationEndpoint
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             
             var error = new UdapDynamicClientRegistrationErrorResponse
-            {
-                Error = result.Error,
-                ErrorDescription = result.ErrorDescription
-            };
+            (
+                result.Error,
+                result.ErrorDescription
+            );
             
             _logger.LogWarning(JsonSerializer.Serialize(error));
 
@@ -118,10 +118,10 @@ public class UdapDynamicClientRegistrationEndpoint
         if (saved == 0)
         {
             await context.Response.WriteAsJsonAsync(new UdapDynamicClientRegistrationErrorResponse
-            {
-                Error = UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                ErrorDescription = "Udap registration failed to save a client."
-            });
+            (
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                "Udap registration failed to save a client."
+            ));
 
             return;
         }

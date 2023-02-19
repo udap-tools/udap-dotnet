@@ -166,14 +166,14 @@ public class UdapForceStateParamFalseTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
-            .WithResponseTypes(new List<string> { "code" })
-            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
+            .WithResponseTypes(new List<string?> { "code" })
+            .WithRedirectUrls(new List<string?> { "https://code_client/callback" })
             .Build();
 
         var signedSoftwareStatement =
@@ -182,11 +182,10 @@ public class UdapForceStateParamFalseTests
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
 

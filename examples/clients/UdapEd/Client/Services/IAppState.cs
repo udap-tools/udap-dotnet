@@ -7,7 +7,7 @@ namespace UdapEd.Client.Services;
 
 public interface IAppState
 {
-    string MetadataUrl { get; }
+    string? MetadataUrl { get; }
     
     UdapMetadata? UdapMetadata { get; }
 

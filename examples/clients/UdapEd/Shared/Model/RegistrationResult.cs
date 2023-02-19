@@ -13,7 +13,7 @@ public class RegistrationResult
 {
     public bool Success { get; set; }
 
-    public string ErrorMessage { get; set; }
+    public string? ErrorMessage { get; set; }
 
     public RegistrationDocument? Document { get; set; }
 }
@@ -22,5 +22,5 @@ public class AccessCodeRequestResult
 {
     public bool IsError { get; set; }
     
-    public string? RedirctUrl { get; set; }
+    public string? RedirectUrl { get; set; }
 }

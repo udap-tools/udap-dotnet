@@ -59,7 +59,7 @@ internal static class HostingExtensions
             // Log.Logger.Information("Loading connection string from gcp_db");
             // connectionString = Environment.GetEnvironmentVariable("gcp_db");
             // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
-            
+
             Log.Logger.Information("Creating client");
             var client = SecretManagerServiceClient.Create();
 
@@ -90,7 +90,7 @@ internal static class HostingExtensions
 
         //load general configuration from appsettings.json
         builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
-        
+
         // inject counter and rules stores
         builder.Services.AddInMemoryRateLimiting();
 
@@ -162,7 +162,7 @@ internal static class HostingExtensions
         //
         builder.Services.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
         builder.Services.AddSingleton<IScopeService, DefaultScopeService>();
-        
+
 
 
 
@@ -187,29 +187,30 @@ internal static class HostingExtensions
         // builder.Services.AddTransient<IClientSecretValidator, AlwaysPassClientValidator>();
 
 
-        builder.Services.AddOpenTelemetry().WithTracing(builder =>
-        {
-            builder
-                .AddSource(IdentityServerConstants.Tracing.Basic)
-                .AddSource(IdentityServerConstants.Tracing.Cache)
-                .AddSource(IdentityServerConstants.Tracing.Services)
-                .AddSource(IdentityServerConstants.Tracing.Stores)
-                .AddSource(IdentityServerConstants.Tracing.Validation)
+        builder.Services.AddOpenTelemetry()
+            .WithTracing(builder =>
+            {
+                builder
+                    .AddSource(IdentityServerConstants.Tracing.Basic)
+                    .AddSource(IdentityServerConstants.Tracing.Cache)
+                    .AddSource(IdentityServerConstants.Tracing.Services)
+                    .AddSource(IdentityServerConstants.Tracing.Stores)
+                    .AddSource(IdentityServerConstants.Tracing.Validation)
 
-                .SetResourceBuilder(
-                    ResourceBuilder.CreateDefault()
-                        .AddService("Udap.Idp.Main"))
+                    .SetResourceBuilder(
+                        ResourceBuilder.CreateDefault()
+                            .AddService("Udap.Idp.Main"))
 
-                //.SetSampler(new AlwaysOnSampler())
-                .AddHttpClientInstrumentation()
-                .AddAspNetCoreInstrumentation()
-                .AddSqlClientInstrumentation()
-                // .AddConsoleExporter();
-                .AddOtlpExporter(otlpOptions =>
-                {
-                    otlpOptions.Endpoint = new Uri("http://localhost:4317");
-                });
-        });
+                    //.SetSampler(new AlwaysOnSampler())
+                    .AddHttpClientInstrumentation()
+                    .AddAspNetCoreInstrumentation()
+                    .AddSqlClientInstrumentation()
+                    // .AddConsoleExporter();
+                    .AddOtlpExporter(otlpOptions =>
+                    {
+                        otlpOptions.Endpoint = new Uri("http://localhost:4317");
+                    });
+            });
 
         builder.Services.AddHttpLogging(options =>
         {
@@ -218,7 +219,7 @@ internal static class HostingExtensions
 
         return builder.Build();
     }
-    
+
     public static WebApplication ConfigurePipeline(this WebApplication app, string[] args)
     {
         app.UseHttpLogging();
@@ -235,12 +236,12 @@ internal static class HostingExtensions
         }
 
         app.UseSerilogRequestLogging();
-    
+
         if (app.Environment.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
         }
-        
+
         // uncomment if you want to add a UI
         app.UseStaticFiles();
         app.UseRouting();
@@ -248,10 +249,10 @@ internal static class HostingExtensions
         app.UseUdapServer();
         app.UseIdentityServer();
 
-        app.MapPost("/connect/register", 
+        app.MapPost("/connect/register",
                 async (
-                    HttpContext httpContext, 
-                    [FromServices] UdapDynamicClientRegistrationEndpoint endpoint, 
+                    HttpContext httpContext,
+                    [FromServices] UdapDynamicClientRegistrationEndpoint endpoint,
                     CancellationToken token) =>
         {
             //TODO:  Tests and response codes needed...    httpContext.Response

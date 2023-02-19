@@ -100,7 +100,7 @@ public class AccessService
     public async Task<TokenResponseModel?> RequestAccessTokenForAuthorizationCode(UdapAuthorizationCodeTokenRequest request)
     {
         var result = await _httpClient.PostAsJsonAsync("Access/RequestToken/authorization_code", request);
-
+        
         if (!result.IsSuccessStatusCode)
         {
             Console.WriteLine(await result.Content.ReadAsStringAsync());

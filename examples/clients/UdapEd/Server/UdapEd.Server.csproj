@@ -15,8 +15,17 @@
     <PackageReference Include="Duende.IdentityServer.Storage" Version="6.2.3" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.2" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.1.0-rc.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
     <PackageReference Include="System.IO" Version="4.3.0" />
+
+    
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.4.0-rc.4" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.4.0-rc.4" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.4.0-rc.4" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc9.13" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.0.0-rc9.13" />
+
   </ItemGroup>
 
   <ItemGroup>
@@ -30,6 +39,12 @@
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="..\..\..\..\Udap.Model\Udap.Model.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="host.docker.internal.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

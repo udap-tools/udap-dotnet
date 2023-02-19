@@ -37,7 +37,7 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
     // we could add more builder methods
     //
 
-    public string? Build()
+    public string Build()
     {
         var securityKey = new X509SecurityKey(_certificate);
         var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);

@@ -13,6 +13,20 @@ using System.Text.Json.Serialization;
 namespace Udap.Model.Registration;
 public class UdapRegisterRequest
 {
+    /// <summary>Initializes a new instance of the <see cref="T:System.Object"></see> class.</summary>
+    public UdapRegisterRequest(string softwareStatement, string udap)
+    {
+        SoftwareStatement = softwareStatement;
+        Udap = udap;
+    }
+
+    public UdapRegisterRequest(string softwareStatement, string udap, string[] certifications)
+    {
+        SoftwareStatement = softwareStatement;
+        Udap = udap;
+        Certifications = certifications;
+    }
+
     /// <summary>
     /// JWS compact serialization
     /// </summary>

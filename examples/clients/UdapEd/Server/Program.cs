@@ -11,6 +11,7 @@ using System.Text.Json;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
+using UdapEd.Server.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -78,7 +79,15 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped(sp => new HttpClient());
 builder.Services.AddHttpContextAccessor();
 
+builder.AddRateLimiting();
+
+// Configure OpenTelemetry
+builder.AddOpenTelemetry();
+
 var app = builder.Build();
+
+app.UseSerilogRequestLogging();
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -92,18 +101,19 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
-
+app.UseRateLimiter(); //after routing
 // app.UseCors(MyAllowSpecificOrigins);
 
 app.UseSession();
 app.MapRazorPages();
-app.MapControllers();
+app.MapControllers().RequireRateLimiting(RateLimitExtensions.Policy);
+
 app.MapFallbackToFile("index.html");
 
 app.Run();

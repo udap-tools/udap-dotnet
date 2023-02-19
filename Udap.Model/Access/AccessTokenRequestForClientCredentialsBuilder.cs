@@ -24,13 +24,13 @@ public  class AccessTokenRequestForClientCredentialsBuilder
 {
     
     private List<Claim> _claims;
-    private string _tokenEndoint;
-    private string _clientId;
+    private string? _tokenEndoint;
+    private string? _clientId;
     private DateTime _now;
     private X509Certificate2 _certificate;
     private string _clientCertAsBase64;
 
-    private AccessTokenRequestForClientCredentialsBuilder(string clientId, string tokenEndpoint, X509Certificate2 certificate)
+    private AccessTokenRequestForClientCredentialsBuilder(string? clientId, string? tokenEndpoint, X509Certificate2 certificate)
     {
         _now = DateTime.UtcNow.ToUniversalTime();
         _tokenEndoint = tokenEndpoint;
@@ -47,7 +47,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
         };
     }
 
-    public static AccessTokenRequestForClientCredentialsBuilder Create(string clientId, string tokenEndpoint, X509Certificate2 certificate)
+    public static AccessTokenRequestForClientCredentialsBuilder Create(string? clientId, string? tokenEndpoint, X509Certificate2 certificate)
     {
         return new AccessTokenRequestForClientCredentialsBuilder(clientId, tokenEndpoint, certificate);
     }

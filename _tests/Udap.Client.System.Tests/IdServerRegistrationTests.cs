@@ -130,7 +130,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -146,11 +146,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0], JWS compact serialization
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await fhirClient.PostAsJsonAsync(disco.RegistrationEndpoint, requestBody);
 
@@ -291,7 +290,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithJwtId()
             .WithClientName("dotnet system test client")
             .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -320,13 +319,13 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         certifications.Add(certificationSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
+        (
+            signedSoftwareStatement,
             // TODO assert at server.  Empty Certification is an error.  Return 400.
             // Certifications = new string[0], //do not pass an empty certification.
-            Certifications = certifications.ToArray(),
-            Udap = UdapConstants.UdapVersionsSupportedValue,
-        };
+            UdapConstants.UdapVersionsSupportedValue,
+            certifications.ToArray()
+        );
 
         var response = await fhirClient.PostAsJsonAsync(reg, requestBody);
 
@@ -381,7 +380,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -398,11 +397,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0], JWS compact serialization
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue
+        );
 
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody));
 
@@ -456,7 +454,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -473,11 +471,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0], JWS compact serialization
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue
+        );
 
         // _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody));
 
@@ -521,7 +518,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata.SignedMetadata);
+        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -570,7 +567,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -595,11 +592,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue
+        );
 
         // _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody, new JsonSerializerOptions(){DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull}));
 
@@ -741,7 +737,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata.SignedMetadata);
+        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -790,7 +786,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -817,11 +813,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue
+        );
 
         // _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody, new JsonSerializerOptions(){DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull}));
 
@@ -949,7 +944,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata.SignedMetadata);
+        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -996,14 +991,14 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             // .WithScope("user/Patient.* user/Practitioner.read") //Comment out for UDAP Server mode.
-            .WithResponseTypes(new HashSet<string> { "code" })
-            .WithRedirectUrls(new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
+            .WithResponseTypes(new HashSet<string?> { "code" })
+            .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
             .Build();
 
 
@@ -1017,11 +1012,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue
+        );
 
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody, new JsonSerializerOptions(){DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull}));
 
@@ -1192,7 +1186,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata.SignedMetadata);
+        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -1239,7 +1233,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -1254,11 +1248,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue
+        );
 
         // _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody, new JsonSerializerOptions(){DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull}));
 
@@ -1414,7 +1407,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -1430,11 +1423,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue
+        );
 
         // _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody, new JsonSerializerOptions(){DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull}));
 
@@ -1578,7 +1570,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata.SignedMetadata);
+        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -1625,14 +1617,14 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("user/Patient.* user/Practitioner.read")
-            .WithResponseTypes(new HashSet<string> { "code" })
-            .WithRedirectUrls(new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
+            .WithResponseTypes(new HashSet<string?> { "code" })
+            .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
             .Build();
 
         var signedSoftwareStatement =
@@ -1643,11 +1635,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue
+        );
 
         // _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody, new JsonSerializerOptions(){DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull}));
 
@@ -1793,7 +1784,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata.SignedMetadata);
+        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -1842,7 +1833,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -1857,11 +1848,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue
+        );
 
         // _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody, new JsonSerializerOptions(){DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull}));
 

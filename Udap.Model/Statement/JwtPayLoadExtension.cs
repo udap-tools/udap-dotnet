@@ -23,6 +23,6 @@ public class JwtPayLoadExtension : JwtPayload, ISoftwareStatementSerializer
 {
     public JwtPayLoadExtension(IEnumerable<Claim> claims) : base(claims) { }
 
-    public JwtPayLoadExtension(string issuer, string audience, IEnumerable<Claim> claims, DateTime? notBefore, DateTime? expires)
+    public JwtPayLoadExtension(string? issuer, string? audience, IEnumerable<Claim> claims, DateTime? notBefore, DateTime? expires)
         : base(issuer, audience, claims, notBefore, expires, null) { }
 }

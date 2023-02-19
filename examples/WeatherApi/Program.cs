@@ -7,10 +7,8 @@
 // */
 #endregion
 
-using System.IO;
 using IdentityModel.AspNetCore.OAuth2Introspection;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -22,18 +20,38 @@ using Udap.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseKestrel((b, so) =>
-{
-    so.ListenAnyIP(5021, listenOpt =>
-    {
-        listenOpt.UseHttps(
-            Path.Combine(
-                Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? string.Empty,
-                b.Configuration["SslFileLocation"]),
-            b.Configuration["CertPassword"]);
-    });
-    so.ListenAnyIP(5020);
-});
+//
+// A technique to load ssl cert for Kestrel
+//
+// builder.WebHost.UseKestrel((b, so) =>
+// {
+//     so.ListenAnyIP(5021, listenOpt =>
+//     {
+//         listenOpt.UseHttps(
+//             Path.Combine(
+//                 Path.GetDirectoryName(typeof(Program).Assembly.Location) ?? string.Empty,
+//                 b.Configuration["SslFileLocation"]),
+//             b.Configuration["CertPassword"]);
+//     });
+//     so.ListenAnyIP(5020);
+// });
+
+// But I am choosing to just use my host.docker.internal.pfx ssl cert generated from the Udap.PKI.Generator test project
+// It allows docker services to discover local running desktop services.  Obviously this comment is most appropriate for 
+// something like finding Udap.Idp project running on the desktop from something like hte FhirLabsApi running in docker.
+// This is a Windows thing for sure.  Not sure if what happens on a Mac.  
+/*
+  "Kestrel": {
+    "Certificates": {
+      "Default": {
+        "Path": "host.docker.internal.pfx",
+        "Password": "udap-test"
+      }
+    }
+  },
+ 
+*/
+
 
 // Add services to the container.
 

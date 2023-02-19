@@ -13,6 +13,13 @@ namespace Udap.Model.Registration;
 
 public class UdapDynamicClientRegistrationErrorResponse
 {
+    /// <summary>Initializes a new instance of the <see cref="T:System.Object"></see> class.</summary>
+    public UdapDynamicClientRegistrationErrorResponse(string error, string errorDescription)
+    {
+        Error = error;
+        ErrorDescription = errorDescription;
+    }
+
     [JsonPropertyName("error")]
     public string Error { get; set; }
     

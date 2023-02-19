@@ -212,10 +212,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
         
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response =
             await client.PostAsJsonAsync(reg,
@@ -309,10 +309,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response =
             await client.PostAsJsonAsync(reg,
@@ -409,10 +409,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody); 
 
@@ -473,10 +473,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement + "Invalid"),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement + "Invalid",
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -538,10 +538,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -602,10 +602,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -666,10 +666,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -732,10 +732,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -797,10 +797,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -862,10 +862,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -927,10 +927,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -992,10 +992,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -1057,10 +1057,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -1122,10 +1122,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -1188,10 +1188,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 
@@ -1253,10 +1253,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = (signedSoftwareStatement),
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         var response = await client.PostAsJsonAsync(reg, requestBody);
 

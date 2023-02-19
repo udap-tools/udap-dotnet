@@ -31,6 +31,8 @@ public class UdapAuthorizationCodeTokenRequestModel : UdapBaseTokenRequestModel
 
     public UdapAuthorizationCodeTokenRequest ToUdapAuthorizationCodeTokenRequest()
     {
+        ArgumentNullException.ThrowIfNull(Version);
+
         var request = new UdapAuthorizationCodeTokenRequest()
         {
             RequestUri = RequestUri,

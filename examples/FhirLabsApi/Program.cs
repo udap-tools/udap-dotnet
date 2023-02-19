@@ -17,7 +17,6 @@ using Hl7.Fhir.NetCoreApi;
 using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -26,14 +25,16 @@ using Serilog;
 using Udap.Common;
 using Udap.Metadata.Server;
 
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateBootstrapLogger();
 
-Log.Information("Starting up");
+
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddUserSecrets<Program>(optional:true);  // I want user secrets even in release mode.
+
+builder.Host.UseSerilog((ctx, lc) => lc
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}")
+    .Enrich.FromLogContext()
+    .ReadFrom.Configuration(ctx.Configuration));
 
 // Add services to the container.
 
@@ -112,6 +113,9 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
+app.UseSerilogRequestLogging();
+app.UseRateLimiter();
+
 app.UsePathBase(new PathString("/fhir/r4"));
 
 app.UseRouting();
@@ -143,9 +147,6 @@ app.Use(async (context, next) =>
     }
     await next.Invoke();
 });
-
-
-app.UseRateLimiter();
 
 // app.UseHttpsRedirection();
 

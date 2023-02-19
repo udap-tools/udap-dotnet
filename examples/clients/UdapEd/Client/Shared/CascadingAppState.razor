@@ -12,12 +12,7 @@
 
 @code {
 
-    [Parameter]
-    public RenderFragment ChildContent
-    {
-        get => _childContent;
-        set => _childContent = value;
-    }
+    [Parameter] public RenderFragment ChildContent { get; set; } = null!;
 
     private string _caller = "";
 
@@ -51,8 +46,8 @@
         }
     }
 
-    private string _metadataUrl = "https://fhirlabs.net/fhir/r4/.well-known/udap";
-    public string MetadataUrl
+    private string? _metadataUrl = "https://fhirlabs.net/fhir/r4/.well-known/udap";
+    public string? MetadataUrl
     {
         get => _metadataUrl;
         private set
@@ -65,83 +60,28 @@
         }
     }
 
-    private UdapMetadata? _udapMetadata;
-    private RenderFragment _childContent;
-    private string _softwareStatementBeforeEncoding = string.Empty;
-    private UdapRegisterRequest? _udapRegistrationRequest;
-    private Oauth2FlowEnum _oauth2Flow;
-    private RegistrationDocument? _registrationDocument;
-    private UdapClientCredentialsTokenRequestModel? _clientCredentialsTokenRequest;
-    private UdapAuthorizationCodeTokenRequestModel? _authorizationCodeTokenRequest;
-    private AccessCodeRequestResult? _accessCodeRequestResult;
-    private LoginCallBackResult? _loginCallBackResult;
-    private TokenResponseModel? _accessTokens;
     private ClientStatus _status = new ClientStatus(false, "Missing");
-    private AuthorizationCodeRequest? _authorizationCodeRequest;
 
 
-    public UdapMetadata? UdapMetadata
-    {
-        get => _udapMetadata;
-        private set
-        {
-            _udapMetadata = value;
-        }
-    }
+    public UdapMetadata? UdapMetadata { get; private set; }
 
-    public string SoftwareStatementBeforeEncoding
-    {
-        get => _softwareStatementBeforeEncoding;
-        private set => _softwareStatementBeforeEncoding = value;
-    }
+    public string SoftwareStatementBeforeEncoding { get; private set; } = string.Empty;
 
-    public UdapRegisterRequest? UdapRegistrationRequest
-    {
-        get => _udapRegistrationRequest;
-        private set => _udapRegistrationRequest = value;
-    }
+    public UdapRegisterRequest? UdapRegistrationRequest { get; private set; }
 
-    public Oauth2FlowEnum Oauth2Flow
-    {
-        get => _oauth2Flow;
-        private set => _oauth2Flow = value;
-    }
+    public Oauth2FlowEnum Oauth2Flow { get; private set; }
 
-    public RegistrationDocument? RegistrationDocument
-    {
-        get => _registrationDocument;
-        private set => _registrationDocument = value;
-    }
+    public RegistrationDocument? RegistrationDocument { get; private set; }
 
-    public UdapClientCredentialsTokenRequestModel? ClientCredentialsTokenRequest
-    {
-        get => _clientCredentialsTokenRequest;
-        private set => _clientCredentialsTokenRequest = value;
-    }
+    public UdapClientCredentialsTokenRequestModel? ClientCredentialsTokenRequest { get; private set; }
 
-    public UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest
-    {
-        get => _authorizationCodeTokenRequest;
-        private set => _authorizationCodeTokenRequest = value;
-    }
+    public UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest { get; private set; }
 
-    public AccessCodeRequestResult? AccessCodeRequestResult
-    {
-        get => _accessCodeRequestResult;
-        private set => _accessCodeRequestResult = value;
-    }
+    public AccessCodeRequestResult? AccessCodeRequestResult { get; private set; }
 
-    public LoginCallBackResult? LoginCallBackResult
-    {
-        get => _loginCallBackResult;
-        private set => _loginCallBackResult = value;
-    }
+    public LoginCallBackResult? LoginCallBackResult { get; private set; }
 
-    public TokenResponseModel? AccessTokens
-    {
-        get => _accessTokens;
-        private set => _accessTokens = value;
-    }
+    public TokenResponseModel? AccessTokens { get; private set; }
 
     public ClientStatus Status
     {
@@ -192,11 +132,7 @@
         }
     }
 
-    public AuthorizationCodeRequest? AuthorizationCodeRequest
-    {
-        get => _authorizationCodeRequest;
-        private set => _authorizationCodeRequest = value;
-    }
+    public AuthorizationCodeRequest? AuthorizationCodeRequest { get; private set; }
 
         private const string UdapStateKeyName = "udapClientState";
 
@@ -206,20 +142,23 @@
         {
             // Get the JSON data
             var json = await LocalStorageService.GetItemAsStringAsync(UdapStateKeyName);
-            if (json != null && json != "")
+            if (!string.IsNullOrEmpty(json))
             {
                 // Deserialize to AppStateData
                 var appStateData = JsonSerializer.Deserialize<UdapClientState>(json);
 
-                var properties = appStateData.GetType().GetProperties();
-                foreach (var property in properties)
+                var properties = appStateData?.GetType().GetProperties();
+                if (properties != null)
                 {
-                    var type = property.PropertyType;
-                    var value = property.GetValue(appStateData);
-                    SetProperty(this, property.Name, value, false);
+                    foreach (var property in properties)
+                    {
+                        var type = property.PropertyType;
+                        var value = property.GetValue(appStateData);
+                        SetProperty(this, property.Name, value, false);
+                    }
+                    // Re-render
+                    await InvokeAsync(StateHasChanged);
                 }
-                // Re-render
-                await InvokeAsync(StateHasChanged);
             }
         }
     }

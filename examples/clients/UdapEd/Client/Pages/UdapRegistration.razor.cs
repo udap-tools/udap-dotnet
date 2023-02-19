@@ -23,18 +23,25 @@ public partial class UdapRegistration
 
     ErrorBoundary? ErrorBoundary { get; set; }
     [Inject] RegisterService MetadataService { get; set; } = null!;
-    
+
+    [Inject] NavigationManager NavigationManager { get; set; } = null!;
+
     private string SoftwareStatementBeforeEncoding
     {
         get => AppState.SoftwareStatementBeforeEncoding;
         set => AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), value, false);
     }
 
-    private string _registrationResult;
-    private string RegistrationResult
+    private string? _registrationResult;
+    private string? RegistrationResult
     {
         get
         {
+            if (!string.IsNullOrEmpty(_registrationResult))
+            {
+                return _registrationResult;
+            }
+
             if (AppState.UdapRegistrationRequest == null)
             {
                 return _registrationResult;
@@ -49,19 +56,8 @@ public partial class UdapRegistration
 
     private Oauth2FlowEnum Oauth2Flow
     {
-        get
-        {
-            return AppState.Oauth2Flow;
-        }
-        set
-        {
-            AppState.SetProperty(this, nameof(AppState.Oauth2Flow), value);
-        }
-    }
-
-    private async Task SetOauth2FlowProperty(ChangeEventArgs args)
-    {
-        AppState.SetProperty(this, nameof(AppState.Oauth2Flow), args.Value);
+        get => AppState.Oauth2Flow;
+        set => AppState.SetProperty(this, nameof(AppState.Oauth2Flow), value);
     }
 
     private string _requestBody = string.Empty;
@@ -70,6 +66,11 @@ public partial class UdapRegistration
     {
         get
         {
+            if (!string.IsNullOrEmpty(_requestBody))
+            {
+                return _requestBody;
+            }
+
             if (AppState.UdapRegistrationRequest == null)
             {
                 return _requestBody;
@@ -86,24 +87,28 @@ public partial class UdapRegistration
     {
         try
         {
-            var request = new BuildSoftwareStatementRequest();
-            request.MetadataUrl = AppState.MetadataUrl;
-            request.Audience = AppState.UdapMetadata?.RegistrationEndpoint;
-            request.Oauth2Flow = AppState.Oauth2Flow;
+            SoftwareStatementBeforeEncoding = "Loading ...";
+            await Task.Delay(50);
 
+            var request = new BuildSoftwareStatementRequest
+            {
+                MetadataUrl = AppState.MetadataUrl,
+                Audience = AppState.UdapMetadata?.RegistrationEndpoint,
+                Oauth2Flow = AppState.Oauth2Flow,
+                RedirectUri = $"{NavigationManager.BaseUri}udapBusinessToBusiness"
+            };
 
             SoftwareStatementBeforeEncoding = await MetadataService.BuildSoftwareStatement(request);
             AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), SoftwareStatementBeforeEncoding);
-           
         }
         catch (Exception ex)
         {
             SoftwareStatementBeforeEncoding = ex.Message;
-            await ResetSoftwareStatment();
+            ResetSoftwareStatement();
         }
     }
 
-    private async Task ResetSoftwareStatment()
+    private void ResetSoftwareStatement()
     {
         SoftwareStatementBeforeEncoding = string.Empty;
         AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), string.Empty);
@@ -115,10 +120,16 @@ public partial class UdapRegistration
 
     private async Task BuildRequestBody()
     {
-        var request = new BuildSoftwareStatementRequest();
-        request.MetadataUrl = AppState.MetadataUrl;
-        request.Audience = AppState.UdapMetadata?.RegistrationEndpoint;
-        request.Oauth2Flow = AppState.Oauth2Flow;
+        RequestBody = "Loading ...";
+        await Task.Delay(50);
+
+        var request = new BuildSoftwareStatementRequest
+        {
+            MetadataUrl = AppState.MetadataUrl,
+            Audience = AppState.UdapMetadata?.RegistrationEndpoint,
+            Oauth2Flow = AppState.Oauth2Flow,
+            RedirectUri = $"{NavigationManager.BaseUri}udapBusinessToBusiness"
+        };
 
         var registerRequest = await MetadataService.BuildRequestBody(request);
         AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), registerRequest);
@@ -126,11 +137,13 @@ public partial class UdapRegistration
         RequestBody = JsonSerializer.Serialize(
             registerRequest,
             new JsonSerializerOptions { WriteIndented = true });
-        
     }
 
     private async Task PerformRegistration()
     {
+        RegistrationResult = "Loading ...";
+        await Task.Delay(50);
+
         var registrationRequest = new RegistrationRequest
         {
             RegistrationEndpoint = AppState.UdapMetadata?.RegistrationEndpoint,
@@ -139,7 +152,7 @@ public partial class UdapRegistration
 
         var result = await MetadataService.Register(registrationRequest);
         
-        if (result != null && result.Success)
+        if (result is { Success: true })
         {
             RegistrationResult = JsonSerializer.Serialize(
                 result,

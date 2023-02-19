@@ -30,21 +30,21 @@ public partial class UdapBusinessToBusiness
     [Inject] AccessService AccessService { get; set; } = null!;
     [Inject] NavigationManager NavManager { get; set; } = null!;
 
-    private string _clientId = "";
+    private string LoginRedirectLinkText { get; set; } = "Login Redirect";
 
-    private string ClientId
+    private string? _clientId = "";
+
+    private string? ClientId
     {
         get
         {
             _clientId = AppState.RegistrationDocument?.ClientId;
             return _clientId;
-        } set
-        {
-            _clientId = value; // not used.  Makes binding happy because it needs a settable property
-        }
+        } 
+        set => _clientId = value; // not used.  Makes binding happy because it needs a settable property
     }
 
-    private string _oauth2Flow;
+    private string? _oauth2Flow;
 
     private string? Oauth2Flow
     {
@@ -53,10 +53,7 @@ public partial class UdapBusinessToBusiness
             _oauth2Flow = AppState.Oauth2Flow.ToString();
             return _oauth2Flow;
         }
-        set
-        {
-            _oauth2Flow = value;
-        }
+        set => _oauth2Flow = value;
     }
 
     private string? TokenRequest1 { get; set; }
@@ -85,21 +82,17 @@ public partial class UdapBusinessToBusiness
 
     private string? AccessToken
     {
-        get
-        {
-            if (_accessToken == null)
-            {
-                _accessToken = AppState.AccessTokens?.Raw;
-            }
-            return _accessToken;
-        }
-        set
-        {
-            _accessToken = value;
-        }
+        get { return _accessToken ??= AppState.AccessTokens?.Raw; }
+        set => _accessToken = value;
     }
 
-    public string? LoginCallback() {
+    public string LoginCallback(bool reset = false) {
+
+        if (reset)
+        {
+            return string.Empty;
+        }
+
         var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
 
         if (!string.IsNullOrEmpty(uri.Query))
@@ -120,7 +113,21 @@ public partial class UdapBusinessToBusiness
 
         return uri.Query.Replace("&", "&\r\n");
     }
-    
+
+    /// <summary>
+    /// Method invoked when the component is ready to start, having received its
+    /// initial parameters from its parent in the render tree.
+    /// Override this method if you will perform an asynchronous operation and
+    /// want the component to refresh when that operation is completed.
+    /// </summary>
+    /// <returns>A <see cref="T:System.Threading.Tasks.Task" /> representing any asynchronous operation.</returns>
+    protected override Task OnInitializedAsync()
+    {
+        ResetSoftwareStatement();
+        
+        return base.OnInitializedAsync();
+    }
+
     protected override void OnParametersSet()
     {
         ErrorBoundary?.Recover();
@@ -136,8 +143,18 @@ public partial class UdapBusinessToBusiness
     /// Host: resourceholder.example.com
     /// </summary>
     /// <exception cref="NotImplementedException"></exception>
-    private void BuildAuthCodeRequest()
+    private async Task BuildAuthCodeRequest()
     {
+        AccessToken = string.Empty;
+        AppState.SetProperty(this, nameof(AppState.AccessTokens), string.Empty, true, false);
+        AuthorizationCodeRequest = new AuthorizationCodeRequest
+        {
+            RedirectUri = "Loading..."
+        };
+
+        AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
+        await Task.Delay(250);
+
         AuthorizationCodeRequest = new AuthorizationCodeRequest
         {
             ResponseType = "response_type=code",
@@ -152,6 +169,9 @@ public partial class UdapBusinessToBusiness
 
     private async Task GetAccessCode()
     {
+        LoginRedirectLinkText = "Loading...";
+        AppState.SetProperty(this, nameof(AppState.AccessCodeRequestResult), null);
+
         //UI has been changing properties so save it but don't rebind
         AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
         var url = new RequestUrl(AppState.UdapMetadata?.AuthorizationEndpoint!);
@@ -168,10 +188,27 @@ public partial class UdapBusinessToBusiness
         // Builds an anchor href link the user clicks to initiate a user login page at the authorization server
         //
         AppState.SetProperty(this, nameof(AppState.AccessCodeRequestResult), await AccessService.Get(accessCodeRequestUrl));
+        LoginRedirectLinkText = "Login Redirect";
+    }
+
+    private void ResetSoftwareStatement()
+    {
+        TokenRequest1 = string.Empty;
+        TokenRequest2 = string.Empty;
+        AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), null);
+        TokenRequest3 = string.Empty;
+        TokenRequest4 = string.Empty;
+        AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), null);
+        LoginCallback(true);
+        StateHasChanged();
     }
 
     private async Task BuildAccessTokenRequest ()
     {
+        ResetSoftwareStatement();
+        TokenRequest1 = "Loading ...";
+        await Task.Delay(50);
+
         if (AppState.RegistrationDocument == null)
         {
             return;
@@ -251,7 +288,7 @@ public partial class UdapBusinessToBusiness
         sb.AppendLine($"client_assertion_type={OidcConstants.ClientAssertionTypes.JwtBearer}&");
         TokenRequest2 = sb.ToString();
 
-        TokenRequest3 = $"client_assertion={AppState.ClientCredentialsTokenRequest?.ClientAssertion.Value}&";
+        TokenRequest3 = $"client_assertion={AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value}&";
 
         sb = new StringBuilder();
         sb.Append($"udap={UdapConstants.UdapVersionsSupportedValue}&\r\n");
@@ -274,12 +311,12 @@ public partial class UdapBusinessToBusiness
         TokenRequest1 = sb.ToString();
 
         sb = new StringBuilder();
-        sb.AppendLine($"code={AppState.LoginCallBackResult?.Code}&");
+        sb.AppendLine($"code={AppState.AuthorizationCodeTokenRequest?.Code}&");
         sb.AppendLine($"client_assertion_type={OidcConstants.ClientAssertionTypes.JwtBearer}&");
         TokenRequest2 = sb.ToString();
 
         TokenRequest3 =
-            $"client_assertion={AppState.AuthorizationCodeTokenRequest?.ClientAssertion.Value}&\r\n";
+            $"client_assertion={AppState.AuthorizationCodeTokenRequest?.ClientAssertion?.Value}&\r\n";
 
         sb = new StringBuilder();
         if (!string.IsNullOrEmpty(AppState.AuthorizationCodeTokenRequest?.RedirectUri))
@@ -293,6 +330,9 @@ public partial class UdapBusinessToBusiness
 
     private async Task GetAccessToken()
     {
+        AccessToken = "Loading ...";
+        await Task.Delay(150);
+
         if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
         {
             if (AppState.AuthorizationCodeTokenRequest == null)
@@ -307,14 +347,7 @@ public partial class UdapBusinessToBusiness
             
             AppState.SetProperty(this, nameof(AppState.AccessTokens), tokenResponse);
             
-            if (tokenResponse != null && !tokenResponse.IsError)
-            {
-                AccessToken = tokenResponse.Raw;
-            }
-            else
-            {
-                AccessToken = tokenResponse?.Error;
-            }
+            AccessToken = tokenResponse is { IsError: false } ? tokenResponse.Raw : tokenResponse?.Error;
         }
         else //client_credentials
         {
@@ -330,14 +363,7 @@ public partial class UdapBusinessToBusiness
 
             AppState.SetProperty(this, nameof(AppState.AccessTokens), tokenResponse);
 
-            if (tokenResponse != null && !tokenResponse.IsError)
-            {
-                AccessToken = tokenResponse.Raw;
-            }
-            else
-            {
-                AccessToken = tokenResponse?.Error;
-            }
+            AccessToken = tokenResponse is { IsError: false } ? tokenResponse.Raw : tokenResponse?.Error;
         }
     }
 }

@@ -30,6 +30,8 @@ public class UdapClientCredentialsTokenRequestModel : UdapBaseTokenRequestModel
 
     public UdapClientCredentialsTokenRequest ToUdapClientCredentialsTokenRequest()
     {
+        ArgumentNullException.ThrowIfNull(Version);
+
         var request = new UdapClientCredentialsTokenRequest
         {
             RequestUri = RequestUri,

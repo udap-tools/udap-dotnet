@@ -24,7 +24,7 @@ public class UdapClientState : IAppState
 {
     public UdapClientState() {}
 
-    public string MetadataUrl { get; set; } = "https://fhirlabs.net/fhir/r4/.well-known/udap";
+    public string? MetadataUrl { get; set; } = "https://fhirlabs.net/fhir/r4/.well-known/udap";
 
     public UdapMetadata? UdapMetadata { get; set; }
     

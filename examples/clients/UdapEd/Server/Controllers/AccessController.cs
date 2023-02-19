@@ -10,17 +10,19 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
 using Udap.Model.Access;
+using UdapEd.Server.Extensions;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
 
 namespace UdapEd.Server.Controllers;
 
 [Route("[controller]")]
-[ApiController]
-public class AccessController : ControllerBase
+[EnableRateLimiting(RateLimitExtensions.Policy)]
+public class AccessController : Controller
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<RegisterController> _logger;
@@ -43,7 +45,7 @@ public class AccessController : ControllerBase
 
         var result = new AccessCodeRequestResult
         {
-            RedirctUrl = response.Headers.Location?.AbsoluteUri
+            RedirectUrl = response.Headers.Location?.AbsoluteUri
         };
 
         if (response.StatusCode != HttpStatusCode.Redirect)
@@ -103,7 +105,7 @@ public class AccessController : ControllerBase
     }
 
     [HttpPost("RequestToken/client_credentials")]
-    public async Task<IActionResult> RequestAccessTokenForClientCredentials(UdapClientCredentialsTokenRequest request)
+    public async Task<IActionResult> RequestAccessTokenForClientCredentials([FromBody] UdapClientCredentialsTokenRequest request)
     {
         var tokenResponse = await _httpClient
             .UdapRequestClientCredentialsTokenAsync(request);
@@ -125,7 +127,7 @@ public class AccessController : ControllerBase
     }
 
     [HttpPost("RequestToken/authorization_code")]
-    public async Task<IActionResult> RequestAccessTokenForAuthorizationCode(UdapAuthorizationCodeTokenRequest request)
+    public async Task<IActionResult> RequestAccessTokenForAuthorizationCode([FromBody] UdapAuthorizationCodeTokenRequest request)
     {
         var tokenResponse = await _httpClient
             .UdapRequestAuthorizationCodeTokenAsync(request);

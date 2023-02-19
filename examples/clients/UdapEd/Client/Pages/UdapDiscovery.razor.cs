@@ -10,7 +10,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Udap.Model;
 using UdapEd.Client.Services;
 using UdapEd.Client.Shared;
 
@@ -23,7 +22,7 @@ public partial class UdapDiscovery
     
     ErrorBoundary? ErrorBoundary { get; set; }
     
-    [Inject] DiscoveryService MetadataService { get; set; }
+    [Inject] DiscoveryService MetadataService { get; set; } = null!;
 
     private string _result = string.Empty;
 
@@ -31,27 +30,27 @@ public partial class UdapDiscovery
     {
         get
         {
+            if (!string.IsNullOrEmpty(_result))
+            {
+                return _result;
+            }   
+
             if (AppState.UdapMetadata == null)
             {
                 return _result;
             }
 
-            return JsonSerializer
-                .Serialize<UdapMetadata>(AppState
-                .UdapMetadata, new JsonSerializerOptions { WriteIndented = true });
+            return JsonSerializer.Serialize(AppState.UdapMetadata, new JsonSerializerOptions { WriteIndented = true });
         }
         set => _result = value;
     }
 
     private string? MetadataUrl
     {
-        get
-        {
-            return AppState.MetadataUrl;
-        }
+        get => AppState.MetadataUrl;
         set
         {
-            
+            //Todo: retain multiple URls to pick from
         }
     }
 
@@ -62,13 +61,15 @@ public partial class UdapDiscovery
 
     private async Task GetMetadata()
     {
+        Result = "Loading ...";
+        await Task.Delay(50);
+
         try
         {
             AppState.SetProperty(this, nameof(AppState.UdapMetadata), await MetadataService.GetMetadata(AppState.MetadataUrl));
             
             _result = AppState.UdapMetadata != null
-                ? JsonSerializer.Serialize<UdapMetadata>(AppState.UdapMetadata,
-                    new JsonSerializerOptions { WriteIndented = true })
+                ? JsonSerializer.Serialize(AppState.UdapMetadata, new JsonSerializerOptions { WriteIndented = true })
                 : string.Empty;
         }
         catch (Exception ex)

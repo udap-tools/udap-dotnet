@@ -11,25 +11,20 @@ services:
   bindings:
   - protocol: https
     name: https
+    host: host.docker.internal
     port: 5021
     routes:
      - /swagger
   - protocol: http
     name: http
     port: 5020
-  buildProperties:
-  - name: TargetFramework
-    value: net7.0
-
+  
 - name: fhirlabsapi
   project: examples/FhirLabsApi/FhirLabsApi.csproj
-  buildProperties:
-  - name: TargetFramework
-    value: net7.0 
   bindings:
   - protocol: https
     name: https
-    host: fhirlabs.net
+    host: host.docker.internal
     port: 7016
     routes: 
      - /fhir/r4/.well-known/udap
@@ -41,6 +36,7 @@ services:
   bindings:
   - protocol: https
     name: https
+    host: host.docker.internal
     port: 5002
 
 - name: udap-idp-admin
@@ -48,6 +44,23 @@ services:
   bindings:
   - protocol: https
     name: https
+    host: host.docker.internal
     port: 7087
+
+- name: udap-ca
+  project: examples/Udap.CA/Udap.CA.csproj
+  bindings:
+  - protocol: https
+    name: https
+    host: host.docker.internal
+    port: 6061
+
+- name: fhirlabs-udaped
+  project: examples/clients/UdapEd/Server/UdapEd.Server.csproj
+  bindings:
+  - protocol: https
+    name: https
+    host: host.docker.internal
+    port: 7041
 
 

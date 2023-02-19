@@ -96,4 +96,16 @@ public class RegisterService
 
         return response;
     }
+
+    public async Task<CertLoadedEnum> LoadTestCertificate()
+    {
+        var response = await _http.PutAsJsonAsync("Register/UploadTestClientCert", "fhirlabs.net.client.pfx");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        return await response.Content.ReadFromJsonAsync<CertLoadedEnum>();
+    }
 }

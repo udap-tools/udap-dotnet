@@ -13,8 +13,6 @@ using Udap.Model;
 namespace UdapEd.Shared.Model;
 public class RegistrationDocument
 {
-    public RegistrationDocument() { }
-
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ClientId)]
     public string? ClientId { get; set; }
 
@@ -86,7 +84,7 @@ public class RegistrationDocument
     /// Clients using flows with redirection must register their redirection URI values.
     /// </remarks>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.RedirectUris)]
-    public ICollection<string> RedirectUris { get; set; }
+    public ICollection<string> RedirectUris { get; set; } = new List<string>();
 
     // /// <summary>
     // /// URL string that references a logo for the client.  If present, the
@@ -102,7 +100,7 @@ public class RegistrationDocument
     /// A string containing the human readable name of the client application
     /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.Contacts)]
-    public ICollection<string> Contacts { get; set; }
+    public ICollection<string> Contacts { get; set; } = new List<string>();
 
     /// <summary>
     /// List of OAuth 2.0 grant type strings that the client can use at the token endpoint.
@@ -111,14 +109,14 @@ public class RegistrationDocument
     /// Example: "authorization_code", "client_credentials", "refresh_token".
     /// </remarks>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.GrantTypes)]
-    public ICollection<string> GrantTypes { get; set; }
+    public ICollection<string> GrantTypes { get; set; } = new HashSet<string>();
 
     /// <summary>
     /// Array of strings. If grant_types contains "authorization_code", then this element SHALL
     /// have a fixed value of ["code"], and SHALL be omitted otherwise
     /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ResponseTypes)]
-    public ICollection<string> ResponseTypes { get; set; }
+    public ICollection<string> ResponseTypes { get; set; } = new HashSet<string>();
 
 
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethod)]

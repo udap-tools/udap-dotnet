@@ -35,7 +35,7 @@ public class UdapBaseTokenRequestModel
 
     // public HttpMethod Method { get; set; }
 
-    public IDictionary<string, object>? Properties { get; }
+    // public IDictionary<string, object>? Properties { get; }
 
     public Uri? RequestUri { get; set; }
 

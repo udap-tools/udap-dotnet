@@ -13,19 +13,21 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Util.Extensions;
+using UdapEd.Server.Extensions;
 using UdapEd.Shared.Model;
 
 namespace UdapEd.Server.Controllers;
 
 [Route("[controller]")]
-[ApiController]
-public class RegisterController : ControllerBase
+[EnableRateLimiting(RateLimitExtensions.Policy)]
+public class RegisterController : Controller
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<RegisterController> _logger;
@@ -35,6 +37,24 @@ public class RegisterController : ControllerBase
     {
         _httpClient = httpClient;
         _logger = logger;
+    }
+
+    [HttpPut("UploadTestClientCert")]
+    public IActionResult UploadTestClientCert([FromBody] string testClientCert)
+    {
+        try
+        {
+            //todo secretManager
+            var clientCertWithKeyBytes = new X509Certificate2(testClientCert, "udap-test", X509KeyStorageFlags.Exportable).Export(X509ContentType.Pkcs12);
+            HttpContext.Session.SetString(Constants.CLIENT_CERT_WITH_KEY, Convert.ToBase64String(clientCertWithKeyBytes));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex.Message);
+            return Ok(CertLoadedEnum.InvalidPassword);
+        }
+
+        return Ok(CertLoadedEnum.Positive);
     }
 
     [HttpPost("UploadClientCert")]
@@ -107,8 +127,6 @@ public class RegisterController : ControllerBase
         }
     }
 
-    
-
     [HttpPost("BuildSoftwareStatement")]
     public IActionResult BuildSoftwareStatementWithHeader([FromBody] BuildSoftwareStatementRequest request)
     {
@@ -132,7 +150,7 @@ public class RegisterController : ControllerBase
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName("FhirLabs UdapEd")
-                .WithContacts(new HashSet<string>
+                .WithContacts(new HashSet<string?>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
@@ -148,14 +166,14 @@ public class RegisterController : ControllerBase
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName("FhirLabs UdapEd")
-                .WithContacts(new HashSet<string>
+                .WithContacts(new HashSet<string?>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithScope("system/Patient.* system/Practitioner.read openid profile offline_access")
-                .WithResponseTypes(new HashSet<string> { "code" })
-                .WithRedirectUrls(new List<string> { "https://localhost:7041/udapBusinessToBusiness" })
+                .WithResponseTypes(new HashSet<string?> { "code" })
+                .WithRedirectUrls(new List<string?> { request.RedirectUri })
                 .Build();
         }
 
@@ -225,7 +243,7 @@ public class RegisterController : ControllerBase
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName("FhirLabs UdapEd")
-                .WithContacts(new HashSet<string>
+                .WithContacts(new HashSet<string?>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
@@ -241,14 +259,14 @@ public class RegisterController : ControllerBase
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName("FhirLabs UdapEd")
-                .WithContacts(new HashSet<string>
+                .WithContacts(new HashSet<string?>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithScope("system/Patient.* system/Practitioner.read openid profile offline_access")
-                .WithResponseTypes(new HashSet<string> { "code" })
-                .WithRedirectUrls(new List<string> { "https://localhost:7041/udapBusinessToBusiness" })
+                .WithResponseTypes(new HashSet<string?> { "code" })
+                .WithRedirectUrls(new List<string?> { request.RedirectUri })
                 .Build();
         }
 
@@ -258,11 +276,10 @@ public class RegisterController : ControllerBase
                 .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement ?? "Failed Software statement build",
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement ?? "Failed Software statement build",
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         return Ok(requestBody);
     }

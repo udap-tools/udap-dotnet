@@ -12,11 +12,13 @@ using Udap.Model.Registration;
 namespace UdapEd.Shared.Model;
 public class BuildSoftwareStatementRequest
 {
-    public string MetadataUrl { get; set; }
+    public string? MetadataUrl { get; set; }
 
     public string? Audience { get; set; }
 
     public Oauth2FlowEnum Oauth2Flow { get; set; }
+
+    public string? RedirectUri { get; set; }
 }
 
 public class RawSoftwareStatementAndHeader

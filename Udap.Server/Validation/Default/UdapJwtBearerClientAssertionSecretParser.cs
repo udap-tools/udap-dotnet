@@ -9,7 +9,6 @@
 
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
-using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Validation;
 using IdentityModel;
@@ -17,7 +16,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
-using Udap.Model;
 using Udap.Server.Extensions;
 
 namespace Udap.Server.Validation.Default;
@@ -46,7 +44,7 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
     /// <returns>
     /// A parsed secret
     /// </returns>
-    public async Task<ParsedSecret> ParseAsync(HttpContext context)
+    public async Task<ParsedSecret?> ParseAsync(HttpContext context)
     {
         _logger.LogDebug("Start parsing for JWT client assertion in post body");
 
@@ -59,7 +57,8 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
         var body = await context.Request.ReadFormAsync();
 
         _logger.LogDebug(JsonSerializer.Serialize(body));
-        if (body != null)
+
+        if (body.Any())
         {
             var clientAssertionType = body[OidcConstants.TokenRequest.ClientAssertionType].FirstOrDefault();
             var clientAssertion = body[OidcConstants.TokenRequest.ClientAssertion].FirstOrDefault();
@@ -75,7 +74,8 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
                 }
 
                 var clientId = GetClientIdFromToken(clientAssertion);
-                if (!clientId.IsPresent())
+
+                if (clientId == null || !clientId.IsPresent())
                 {
                     return null;
                 }
@@ -101,7 +101,7 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
         return null;
     }
 
-    private string GetClientIdFromToken(string token)
+    private string? GetClientIdFromToken(string token)
     {
         try
         {
@@ -110,7 +110,7 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
         }
         catch (Exception e)
         {
-            _logger.LogWarning("Could not parse client assertion", e);
+            _logger.LogWarning(e, "Could not parse client assertion");
             return null;
         }
     }

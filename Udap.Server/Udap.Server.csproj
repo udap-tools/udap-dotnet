@@ -40,4 +40,8 @@
     <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\Default\" />
+  </ItemGroup>
+
 </Project>

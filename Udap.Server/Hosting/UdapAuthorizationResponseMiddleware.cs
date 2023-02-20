@@ -11,7 +11,6 @@ using System.Net;
 using System.Text;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Extensions;
-using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
 using Microsoft.AspNetCore.Http;
@@ -95,11 +94,11 @@ internal class UdapAuthorizationResponseMiddleware
 
                         if (responseParams.TryGetValue(_options.UserInteraction.ErrorIdParameter, out var errorId))
                         {
-                            var requestParams = context.Request.Query.AsNameValueCollection();
+                            var requestParamCollection = context.Request.Query.AsNameValueCollection();
                             var client =
                                 await clients.FindClientByIdAsync(
-                                    requestParams.Get(AuthorizeRequest.ClientId));
-                            var scope = requestParams.Get(AuthorizeRequest.Scope);
+                                    requestParamCollection.Get(AuthorizeRequest.ClientId));
+                            var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
 
                             if (client == null && scope != null && scope.Contains("udap"))
                             {
@@ -129,7 +128,7 @@ internal class UdapAuthorizationResponseMiddleware
     ///
     /// </summary>
     /// <param name="context"></param>
-    private async Task RenderMissingStateErrorResponse(HttpContext context)
+    private Task RenderMissingStateErrorResponse(HttpContext context)
     {
         if (context.Request.Query.TryGetValue(
                 AuthorizeRequest.RedirectUri,
@@ -143,6 +142,8 @@ internal class UdapAuthorizationResponseMiddleware
 
             context.Response.Redirect(url);
         }
+
+        return Task.CompletedTask;
     }
 
     private async Task RenderErrorResponse(

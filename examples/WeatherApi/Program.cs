@@ -123,12 +123,7 @@ app.UseHttpsRedirection();
 // Diagram to decide where cors middleware should be applied.
 // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-6.0#middleware-order
 //
-app.UseCors(config =>
-{
-    config.AllowAnyOrigin();
-    config.AllowAnyMethod();
-    config.AllowAnyHeader();
-});
+app.UseCors();
 
 
 app.UseAuthentication();

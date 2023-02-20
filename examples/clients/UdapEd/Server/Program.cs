@@ -108,7 +108,6 @@ app.UseStaticFiles();
 
 app.UseRouting();
 app.UseRateLimiter(); //after routing
-// app.UseCors(MyAllowSpecificOrigins);
 
 app.UseSession();
 app.MapRazorPages();

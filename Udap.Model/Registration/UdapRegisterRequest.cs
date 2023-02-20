@@ -13,6 +13,8 @@ using System.Text.Json.Serialization;
 namespace Udap.Model.Registration;
 public class UdapRegisterRequest
 {
+    public UdapRegisterRequest(){}
+
     /// <summary>Initializes a new instance of the <see cref="T:System.Object"></see> class.</summary>
     public UdapRegisterRequest(string softwareStatement, string udap)
     {

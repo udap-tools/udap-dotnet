@@ -10,13 +10,10 @@
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
-using Duende.IdentityServer.Validation;
 using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Primitives;
-using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -25,9 +22,6 @@ using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Extensions;
 using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.Registration;
-using Udap.Server.Services;
-using Udap.Server.Services.Default;
-using Udap.Server.Validation.Default;
 
 namespace Udap.Idp;
 
@@ -154,17 +148,7 @@ internal static class HostingExtensions
             });
 
         builder.AddUdapServerSettings();
-
-        // TODO
-        // Override default ClientSecretValidator.  Not the ideal solution.  But I will need to spend some time creating PRs to Duende to allow Udap validation 
-        // to work with the standard api.  It is close but not quite there.  I had to add a IScopeService to the validator to give me a way to pick up scopes
-        // from the saved scopes in the ClientScopes table.  They are resolved and inserted into the HttpContext.Request.  
-        //
-        builder.Services.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
-        builder.Services.AddSingleton<IScopeService, DefaultScopeService>();
-
-
-
+        
 
 
 
@@ -184,9 +168,7 @@ internal static class HostingExtensions
         // configuration (resolvers, counter key builders)
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
-        // builder.Services.AddTransient<IClientSecretValidator, AlwaysPassClientValidator>();
-
-
+       
         builder.Services.AddOpenTelemetry()
             .WithTracing(builder =>
             {

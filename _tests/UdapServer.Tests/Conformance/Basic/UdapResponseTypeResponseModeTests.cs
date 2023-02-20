@@ -16,7 +16,6 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -25,24 +24,17 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
-using Duende.IdentityServer.Validation;
 using FluentAssertions;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.JsonWebTokens;
-using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Server.Configuration;
-using Udap.Server.Services;
-using Udap.Server.Services.Default;
-using Udap.Server.Validation.Default;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
-
 
 namespace UdapServer.Tests.Conformance.Basic;
 public class UdapResponseTypeResponseModeTests
@@ -67,9 +59,6 @@ public class UdapResponseTypeResponseModeTests
                 DefaultSystemScopes = "udap",
                 ForceStateParamOnAuthorizationCode = true
             });
-
-            s.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
-            s.AddSingleton<IScopeService, DefaultScopeService>();
         };
 
         _mockPipeline.OnPreConfigureServices += s =>

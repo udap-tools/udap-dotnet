@@ -154,15 +154,7 @@ app.Use(async (context, next) =>
 // Diagram to decide where cors middleware should be applied.
 // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/middleware/?view=aspnetcore-6.0#middleware-order
 //
-app.UseCors(config =>
-{
-    // config.WithOrigins(settings.AllowedOrigins);
-    config.AllowAnyOrigin();
-    config.AllowAnyMethod();
-    config.AllowAnyHeader();
-    config.WithExposedHeaders("Content-Location", "Location", "Etag" );
-});
-
+app.UseCors();
 
 
 app.MapControllers()

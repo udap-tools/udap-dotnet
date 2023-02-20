@@ -1,16 +1,22 @@
 ﻿@page "/"
 
 <MudGrid Class="mt-4">
-    <MudItem xs="12" sm="12" md="12">
-        <MudSpacer />
-        <MudText Typo="Typo.subtitle2">Experiment with:</MudText>
+  <MudItem xs="12" sm="12" md="12">
+    <MudSpacer />
+    <MudText Typo="Typo.subtitle1">Experiment with:</MudText>
     <MudSpacer />
     <ul style="list-style:disc">
-            <li>Metadata discovery</li>
-            <li>Software statement</li>
-            <li>Registration request for client_credential and authorization_code flow</li>
-            <li>Certificate trust validation</li>
-        </ul>
+      <li>Metadata discovery</li>
+      <li>Software statement</li>
+      <li>Registration request for client_credential and authorization_code flow</li>
+      <li>Certificate trust validation (metadata todo)</li>
+    </ul>
+  </MudItem>
+    <MudItem xs="12" sm="12" md="12">
+        <MudText Typo="Typo.subtitle2">This is a tool to experiment with the Security IG constrained on the UDAP profiles.  See FHIR link in top right corner. Notice if you upload a client certificate (P12 format) it will be stored in the server’s session service.  The session lifetime is set for one hour.  The tool will ask for a password to access the private key, allowing it to generate a software statement used for registration and authorization requests.  <b>Do not use your production client certificates.</b>  But if you are using a cert from EMR Direct for testing only you might consider Using this tool.  If you are not comfortable with loading your certificate, then you can use the test client certificate button above which will load a test client already hosted in the back end.  I will add more test certs for other scenarios including failure conditions as this tool evolves.  Another idea may be to load one of my EMR Direct issued client certificates that one can use to test registration.  </MudText>
     </MudItem>
     
+    <MudItem>
+    <MudText Typo="Typo.subtitle2">The plan is to allow the user to control some of the inputs as they go through registration and token requests. One place where this feature has begun to show up is in the B2B page during authorization_code flow.  Notice the first card labeled 3.1 Authorization Code Flow can be edited.  One can work through all the expected failure condition behaviors by invalidating parameters or deleting them. </MudText>
+    </MudItem>
 </MudGrid>

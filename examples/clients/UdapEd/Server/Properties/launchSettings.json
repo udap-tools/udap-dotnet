@@ -5,11 +5,11 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "https://host.docker.internal:7041"
+        "ASPNETCORE_URLS": "https://localhost:7041"
       },
       "dotnetRunMessages": true,
       "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
-      "applicationUrl": "https://host.docker.internal:7041"
+      "applicationUrl": "https://localhost:7041"
     },
     "GCPDeploy": {
       "commandName": "Project",

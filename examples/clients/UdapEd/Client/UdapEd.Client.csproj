@@ -8,17 +8,17 @@
 
   <ItemGroup>
     <PackageReference Include="Blazored.LocalStorage" Version="4.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.2" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.3" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
-    <PackageReference Include="MudBlazor" Version="6.1.8" />
+    <PackageReference Include="MudBlazor" Version="6.1.9" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Shared\UdapEd.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup  Condition="'$(GCPDeploy)' == 'true'">
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
     <PackageReference Include="Udap.Client" Version="0.0.4-preview*" />
     <PackageReference Include="Udap.Common" Version="0.0.4-preview*" />
   </ItemGroup>

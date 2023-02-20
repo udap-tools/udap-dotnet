@@ -7,7 +7,6 @@
 // */
 #endregion
 
-
 using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
@@ -18,7 +17,6 @@ using Microsoft.Extensions.Primitives;
 using System.IdentityModel.Tokens.Jwt;
 using Udap.Server.Configuration;
 using Udap.Server.Extensions;
-
 
 namespace Udap.Server.Hosting;
 

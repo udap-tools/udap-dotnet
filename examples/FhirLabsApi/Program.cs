@@ -71,7 +71,7 @@ builder.Services
         // need this to serialize udap metadata becaue UseFhirServerController clears OutputFormatters
         options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));
     })
-    .UseUdapMetaDataServer(builder.Configuration)
+    .AddUdapMetaDataServer(builder.Configuration)
     .AddNewtonsoftJson(options =>
     {
         options.SerializerSettings.ContractResolver = new DefaultContractResolver

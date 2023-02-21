@@ -35,6 +35,7 @@ internal static class HostingExtensions
         // }
 
         var provider = builder.Configuration.GetValue("provider", "SqlServer");
+        var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
 
         string dbChoice;
         string connectionString;
@@ -73,42 +74,36 @@ internal static class HostingExtensions
             connectionString = builder.Configuration.GetConnectionString(dbChoice);
         }
 
-        var settings = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
+        
 
-        Log.Logger.Information($"ConnectionString:: {connectionString}");
-        // needed to load configuration from appsettings.json
+        Log.Logger.Debug($"ConnectionString:: {connectionString}");
+        
         builder.Services.AddOptions();
-
-        // needed to store rate limit counters and ip rules
         builder.Services.AddMemoryCache();
-
-        //load general configuration from appsettings.json
         builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
-
-        // inject counter and rules stores
         builder.Services.AddInMemoryRateLimiting();
 
         builder.Services.AddHttpContextAccessor();
-
-        // uncomment if you want to add a UI
+        
         builder.Services.AddRazorPages();
 
-        var migrationsAssembly = typeof(Program).Assembly.GetName().Name;
         builder.Services.AddIdentityServer(options =>
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
                 options.EmitStaticAudienceClaim = true;
-
-                options.InputLengthRestrictions.Scope = 7000;  //TODO: Very large!  Again I need to solve the policy/community/certification concept
+                options.InputLengthRestrictions.Scope =
+                    7000; //TODO: Very large!  Again I need to solve the policy/community/certification concept
             })
             .AddConfigurationStore(options =>
                 _ = provider switch
                 {
                     "Sqlite" => options.ConfigureDbContext = b =>
-                        b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                        b.UseSqlite(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                     "SqlServer" => options.ConfigureDbContext = b =>
-                        b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                        b.UseSqlServer(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                     _ => throw new Exception($"Unsupported provider: {provider}")
                 })
@@ -116,59 +111,49 @@ internal static class HostingExtensions
                 _ = provider switch
                 {
                     "Sqlite" => options.ConfigureDbContext = b =>
-                        b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                        b.UseSqlite(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                     "SqlServer" => options.ConfigureDbContext = b =>
-                        b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                        b.UseSqlServer(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                     _ => throw new Exception($"Unsupported provider: {provider}")
                 })
-            // .AddInMemoryIdentityResources(Config.IdentityResources)
-            // .AddInMemoryApiScopes(Config.ApiScopes)
-            // .AddInMemoryClients(Config.Clients)
 
             .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
-            .AddUdapJwtBearerClientAuthentication()
-            // .AddJwtBearerClientAuthentication()
             //TODO remove
             .AddTestUsers(TestUsers.Users)
-            .AddUdapDiscovery()
-            .AddUdapServerConfiguration()
-            .AddUdapConfigurationStore(options =>
-            _ = provider switch
-            {
-                "Sqlite" => options.UdapDbContext = b =>
-                    b.UseSqlite(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+            .AddUdapServer(
+                options =>
+                    {
+                        options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
+                        options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
+                        options.ServerSupport = udapServerOptions.ServerSupport;
+                        options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
+                    },
+                options =>
+                    _ = provider switch
+                    {
+                        "Sqlite" => options.UdapDbContext = b =>
+                            b.UseSqlite(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
-                "SqlServer" => options.UdapDbContext = b =>
-                b.UseSqlServer(connectionString, dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                        "SqlServer" => options.UdapDbContext = b =>
+                            b.UseSqlServer(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
-                _ => throw new Exception($"Unsupported provider: {provider}")
-            });
+                        _ => throw new Exception($"Unsupported provider: {provider}")
+                    });
 
-        builder.AddUdapServerSettings();
         
-
-
-
-
-
-
-        // builder.Services.AddAuthentication()
-
-
-
-
-
-
-
-
-
         // configuration (resolvers, counter key builders)
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
-       
+        //
+        // You don't need this unless you are down with OTEL
+        //
         builder.Services.AddOpenTelemetry()
             .WithTracing(builder =>
             {
@@ -231,18 +216,7 @@ internal static class HostingExtensions
         app.UseUdapServer();
         app.UseIdentityServer();
 
-        app.MapPost("/connect/register",
-                async (
-                    HttpContext httpContext,
-                    [FromServices] UdapDynamicClientRegistrationEndpoint endpoint,
-                    CancellationToken token) =>
-        {
-            //TODO:  Tests and response codes needed...    httpContext.Response
-            await endpoint.Process(httpContext, token);
-        })
-        .AllowAnonymous()
-        .Produces(StatusCodes.Status201Created)
-        .Produces(StatusCodes.Status401Unauthorized);
+        
 
         // uncomment if you want to add a UI
         app.UseAuthorization();

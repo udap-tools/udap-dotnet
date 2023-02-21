@@ -155,9 +155,7 @@ public class UdapIdentityServerPipeline
             .AddInMemoryApiScopes(ApiScopes)
             .AddTestUsers(Users)
             .AddDeveloperSigningCredential(persistKey: false)
-
-            .AddUdapDiscovery(BaseUrl)
-            .AddUdapServerConfiguration()
+            .AddUdapServer(BaseUrl)
             .AddInMemoryUdapCertificates(Communities, RootCertificates);
 
         services.AddHttpClient(IdentityServerConstants.HttpClients.BackChannelLogoutHttpClient)

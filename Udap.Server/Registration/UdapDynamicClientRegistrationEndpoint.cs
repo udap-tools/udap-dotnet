@@ -12,7 +12,6 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Udap.Model.Registration;
-using Udap.Server.Configuration;
 using Udap.Server.Storage.Stores;
 
 namespace Udap.Server.Registration;
@@ -25,18 +24,15 @@ public class UdapDynamicClientRegistrationEndpoint
 {
     private readonly IUdapDynamicClientRegistrationValidator _validator;
     private readonly IUdapClientRegistrationStore _store;
-    private readonly ServerSettings _serverSettings;
     private readonly ILogger<UdapDynamicClientRegistrationEndpoint> _logger;
 
     public UdapDynamicClientRegistrationEndpoint(
         IUdapDynamicClientRegistrationValidator validator,
         IUdapClientRegistrationStore store,
-        ServerSettings serverSettings,
         ILogger<UdapDynamicClientRegistrationEndpoint> logger)
     {
         _validator = validator;
         _store = store;
-        _serverSettings = serverSettings;
         _logger = logger;
     }
     

@@ -60,7 +60,7 @@ var udapMetaData = MyCustomUdapMetadata.Build(builder.
 
 builder.Services
     .AddControllers()
-    .UseUdapMetaDataServer(builder.Configuration, udapMetaData);
+    .AddUdapMetaDataServer(builder.Configuration, udapMetaData);
 
     
 // UDAP CertStore

@@ -11,22 +11,19 @@
       </MudItem>
         <MudItem xs="12" sm="12" md="12">
             
-        
-        
-            <MudGrid Spacing="1" Class="mt-8">
-                <MudItem xs="5" sm="3" Class="pa-4 ma-2">
-                    <MudSelect @bind-Value="Oauth2Flow" Label="Select Oath2 Flow"
-                               HelperText="String"
-                               Placeholder="Please Select"
-                               AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
-                               AdornmentColor="Color.Primary">
-                        @foreach (Oauth2FlowEnum item in Enum.GetValues(typeof(Oauth2FlowEnum)))
-                        {
-                            <MudSelectItem Value="@item">@item</MudSelectItem>
-                        }
-                    </MudSelect>
-                </MudItem>
-            </MudGrid>
+            <MudItem>
+                <MudSelect @bind-Value="Oauth2Flow"
+                           Label="Select OAuth2Flow Flow"
+                           Placeholder="Please Select"
+                           AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
+                           AdornmentColor="Color.Primary"
+                     Variant="Variant.Outlined">
+                    @foreach (Oauth2FlowEnum item in Enum.GetValues(typeof(Oauth2FlowEnum)))
+                    {
+                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
 
             <MudButton Class="mt-3" ButtonType="ButtonType.Button"
                        Variant="Variant.Filled"

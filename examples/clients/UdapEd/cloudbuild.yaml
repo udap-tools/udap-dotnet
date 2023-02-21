@@ -1,0 +1,17 @@
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/fhirlabs.udaped:$TAG_NAME', '--file', './Server/Dockerfile', '.' ]
+
+# See:: https://cloud.google.com/build/docs/deploying-builds/deploy-cloud-run
+# Push the container image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/fhirlabs.udaped:$TAG_NAME']
+
+# Deploy container image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: ['run', 'deploy', 'fhirlabs-udaped', '--region', 'us-west1', '--image', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/fhirlabs.udaped:$TAG_NAME', '--max-instances', '1', '--concurrency', '5' ]
+
+images:
+- 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/fhirlabs.udaped:$TAG_NAME'

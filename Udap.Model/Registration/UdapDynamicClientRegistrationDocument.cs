@@ -29,7 +29,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Udap.Model.Registration;
 
-public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
+public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>, ISoftwareStatementSerializer
 {
     private string? _clientId;
     private string? _softwareStatement;
@@ -41,16 +41,14 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     private string? _jwtId;
     private string? _clientName;
     private Uri? _clientUri;
-    private ICollection<string> _redirectUris = new List<string>();
+    private ICollection<string?> _redirectUris = new List<string?>();
     private Uri? _logoUri;
-    private ICollection<string> _contacts = new HashSet<string>();
-    private ICollection<string> _grantTypes = new HashSet<string>();
-    private ICollection<string> _responseTypes = new HashSet<string>();
+    private ICollection<string?> _contacts = new HashSet<string?>();
+    private ICollection<string?> _grantTypes = new HashSet<string?>();
+    private ICollection<string?> _responseTypes = new HashSet<string?>();
     private string? _tokenEndpointAuthMethod;
     private string? _scope;
     
-    public UdapDynamicClientRegistrationDocument(){}
-
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ClientId)]
     public string? ClientId
     {
@@ -258,7 +256,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
             {
                 if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientName), UriKind.Absolute, out var value ))
                 {
-                    _clientUri = value as Uri;
+                    _clientUri = value;
                 }
             }
             return _clientUri;
@@ -278,7 +276,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     /// Clients using flows with redirection must register their redirection URI values.
     /// </remarks>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.RedirectUris)]
-    public ICollection<string> RedirectUris
+    public ICollection<string?> RedirectUris
     {
         get
         {
@@ -311,7 +309,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
             {
                 if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.LogoUri), UriKind.Absolute, out var value))
                 {
-                    _logoUri = value as Uri;
+                    _logoUri = value;
                 }
             }
             return _logoUri;
@@ -327,7 +325,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     /// A string containing the human readable name of the client application
     /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.Contacts)]
-    public ICollection<string> Contacts
+    public ICollection<string?> Contacts
     {
         get
         {
@@ -351,7 +349,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     /// Example: "authorization_code", "client_credentials", "refresh_token".
     /// </remarks>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.GrantTypes)]
-    public ICollection<string> GrantTypes
+    public ICollection<string?> GrantTypes
     {
         get
         {
@@ -373,7 +371,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     /// have a fixed value of ["code"], and SHALL be omitted otherwise
     /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ResponseTypes)]
-    public ICollection<string> ResponseTypes
+    public ICollection<string?> ResponseTypes
     {
         get
         {
@@ -476,11 +474,10 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
 
             string jsonClaimType = claim.Type;
             object jsonClaimValue = claim.ValueType.Equals(ClaimValueTypes.String) ? claim.Value : GetClaimValueUsingValueType(claim);
-            object existingValue;
 
             // If there is an existing value, append to it.
             // What to do if the 'ClaimValueType' is not the same.
-            if (TryGetValue(jsonClaimType, out existingValue))
+            if (TryGetValue(jsonClaimType, out var existingValue))
             {
                 if (existingValue is ICollection<string> knownClaimValueType)
                 {
@@ -491,7 +488,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
                         case UdapConstants.RegistrationDocumentValues.ResponseTypes:
                         case UdapConstants.RegistrationDocumentValues.RedirectUris:    
 
-                            knownClaimValueType.Add(jsonClaimValue as string);
+                            knownClaimValueType.Add((string)jsonClaimValue);
                             continue;
                     }
                 }
@@ -514,13 +511,13 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
                     case UdapConstants.RegistrationDocumentValues.GrantTypes:
                     case UdapConstants.RegistrationDocumentValues.ResponseTypes:
 
-                        var grantTypes = new HashSet<string>() { jsonClaimValue as string };
+                        var grantTypes = new HashSet<string>() { (string)jsonClaimValue };
 
                         this[jsonClaimType] = grantTypes;
                         break;
 
                     case UdapConstants.RegistrationDocumentValues.RedirectUris:
-                        var redirectUris = new List<string>() { jsonClaimValue as string };
+                        var redirectUris = new List<string>() { (string)jsonClaimValue};
 
                         this[jsonClaimType] = redirectUris;
                         break;
@@ -533,9 +530,9 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     }
 
     
-    internal IList<string> GetIListClaims(string claimType)
+    internal IList<string?> GetIListClaims(string claimType)
     {
-        var claimValues = new List<string>();
+        var claimValues = new List<string?>();
 
         if (!TryGetValue(claimType, out var value))
         {
@@ -620,14 +617,20 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
         if (claim.ValueType == ClaimValueTypes.DateTime && DateTime.TryParse(claim.Value, out DateTime dateTimeValue))
             return dateTimeValue;
 
-        if (claim.ValueType == JsonClaimValueTypes.Json)
-            return JsonObject.Parse(claim.Value);
-
-        if (claim.ValueType == JsonClaimValueTypes.JsonArray)
-            return JsonArray.Parse(claim.Value);
-
         if (claim.ValueType == JsonClaimValueTypes.JsonNull)
             return string.Empty;
+
+        if (claim.Value == null)
+        {
+            return string.Empty;
+        }
+
+        if (claim.ValueType == JsonClaimValueTypes.Json)
+            return JsonNode.Parse(claim.Value)!;
+
+        if (claim.ValueType == JsonClaimValueTypes.JsonArray)
+            return JsonNode.Parse(claim.Value)!;
+        
 
         return claim.Value;
     }
@@ -640,7 +643,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     /// <remarks>Use <see cref="System.IdentityModel.Tokens.Jwt.JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
     public virtual string SerializeToJson()
     {
-        return JsonExtensions.SerializeToJson(this as IDictionary<string, object>);
+        return JsonExtensions.SerializeToJson(this);
     }
 
     /// <summary>
@@ -652,4 +655,10 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>
     {
         return Base64UrlEncoder.Encode(SerializeToJson());
     }
+}
+
+public interface ISoftwareStatementSerializer
+{
+    public string SerializeToJson();
+    public string Base64UrlEncode();
 }

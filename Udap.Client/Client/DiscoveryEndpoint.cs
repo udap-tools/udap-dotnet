@@ -41,7 +41,7 @@ public class DiscoveryEndpoint
             throw new InvalidOperationException("Malformed URL");
         }
 
-        if (!DiscoveryEndpoint.IsValidScheme(uri))
+        if (!IsValidScheme(uri))
         {
             throw new InvalidOperationException("Malformed URL");
         }
@@ -69,8 +69,13 @@ public class DiscoveryEndpoint
     /// <returns>
     ///   <c>true</c> if [is valid scheme] [the specified URL]; otherwise, <c>false</c>.
     /// </returns>
-    public static bool IsValidScheme(Uri url)
+    public static bool IsValidScheme(Uri? url)
     {
+        if (url == null)
+        {
+            return false;
+        }
+
         if (string.Equals(url.Scheme, "http", StringComparison.OrdinalIgnoreCase) ||
             string.Equals(url.Scheme, "https", StringComparison.OrdinalIgnoreCase))
         {
@@ -90,9 +95,9 @@ public class DiscoveryEndpoint
     /// </returns>
     public static bool IsSecureScheme(Uri url, DiscoveryPolicy policy)
     {
-        if (policy.RequireHttps == true)
+        if (policy.RequireHttps)
         {
-            if (policy.AllowHttpOnLoopback == true)
+            if (policy.AllowHttpOnLoopback)
             {
                 var hostName = url.DnsSafeHost;
 

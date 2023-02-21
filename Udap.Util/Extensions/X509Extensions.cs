@@ -226,10 +226,16 @@ namespace Udap.Util.Extensions
 
         public static string ToPemFormat(this X509Certificate2? cert)
         {
+            if (cert == null)
+            {
+                return string.Empty;
+            }
+
             var pem = new StringBuilder();
             pem.AppendLine("-----BEGIN CERTIFICATE-----");
             pem.AppendLine(Convert.ToBase64String(cert.RawData, Base64FormattingOptions.InsertLineBreaks));
             pem.AppendLine("-----END CERTIFICATE-----");
+
             return pem.ToString();
         }
 
@@ -246,10 +252,6 @@ namespace Udap.Util.Extensions
             if (x509Extension != null)
             {
                 var bytes = x509Extension.RawData;
-                if (bytes == null)
-                {
-                    return null;
-                }
 
                 return GetObject(bytes);
             }

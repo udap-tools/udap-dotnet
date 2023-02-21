@@ -26,7 +26,7 @@ namespace Udap.Model
         /// <summary>
         /// See <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#multiple-trust-communities">Multiple Trust Communities</a>
         /// </summary>
-        public string Community { get; set; } 
+        public string Community { get; set; } = string.Empty;
 
 
         /// <summary>
@@ -41,8 +41,8 @@ namespace Udap.Model
     {
         private TimeSpan _expirationTimeSpan = new TimeSpan(0, 5, 0);
 
-        public string Issuer { get; set; }
-        public string Subject { get; set; }
+        public string Issuer { get; set; } = string.Empty;
+        public string Subject { get; set; } = string.Empty;
 
         /// <summary>
         /// The expiration timespan SHALL be no more than 5 minutes after the value of
@@ -65,11 +65,11 @@ namespace Udap.Model
             }
         }
 
-        public string AuthorizationEndpoint { get; set; }
+        public string AuthorizationEndpoint { get; set; } = string.Empty;
 
-        public string TokenEndpoint { get; set; }
+        public string TokenEndpoint { get; set; } = string.Empty;
 
-        public string RegistrationEndpoint { get; set; }
+        public string RegistrationEndpoint { get; set; } = string.Empty;
 
 
     }

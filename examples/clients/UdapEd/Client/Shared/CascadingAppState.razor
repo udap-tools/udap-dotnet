@@ -1,0 +1,176 @@
+﻿@using Microsoft.IdentityModel.Tokens;
+@using Udap.Model.Registration
+@using Udap.Model.Access
+@using UdapEd.Client.Services
+@using UdapEd.Shared.Model
+@implements UdapEd.Client.Services.IAppState
+@inject ILocalStorageService LocalStorageService
+
+<CascadingValue Value="this">
+    @ChildContent
+</CascadingValue>
+
+@code {
+
+    [Parameter] public RenderFragment ChildContent { get; set; } = null!;
+
+    private string _caller = "";
+
+    public void SetProperty(
+        ComponentBase caller,
+        string propertyName,
+        object? propertyValue, 
+        bool saveChanges = true,
+        bool fhirStateHasChanged = true)
+    {
+        try
+        {
+            var prop = this.GetType().GetProperty(propertyName);
+            if (prop != null)
+            {
+                this._caller = caller.GetType().Name;
+                prop.SetValue(this, propertyValue);
+                if (saveChanges)
+                {
+                    this.SaveChanges();
+                }
+                if (fhirStateHasChanged)
+                {
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (Exception)
+        {
+            Console.WriteLine($"$Failed to set property: {propertyName}");
+        }
+    }
+
+    private string? _metadataUrl = "https://fhirlabs.net/fhir/r4/.well-known/udap";
+    public string? MetadataUrl
+    {
+        get => _metadataUrl;
+        private set
+        {
+            _metadataUrl = value;
+            if (_caller == "Toolbar")
+            {
+                // The Toolbar component changed the AppState Message property
+            }
+        }
+    }
+
+    private ClientStatus _status = new ClientStatus(false, "Missing");
+
+
+    public UdapMetadata? UdapMetadata { get; private set; }
+
+    public string SoftwareStatementBeforeEncoding { get; private set; } = string.Empty;
+
+    public UdapRegisterRequest? UdapRegistrationRequest { get; private set; }
+
+    public Oauth2FlowEnum Oauth2Flow { get; private set; }
+
+    public RegistrationDocument? RegistrationDocument { get; private set; }
+
+    public UdapClientCredentialsTokenRequestModel? ClientCredentialsTokenRequest { get; private set; }
+
+    public UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest { get; private set; }
+
+    public AccessCodeRequestResult? AccessCodeRequestResult { get; private set; }
+
+    public LoginCallBackResult? LoginCallBackResult { get; private set; }
+
+    public TokenResponseModel? AccessTokens { get; private set; }
+
+    public ClientStatus Status
+    {
+        get
+        {
+            if (AccessTokens == null)
+            {
+                return new ClientStatus(false, "Missing");
+            }
+
+            if (AccessTokens.IsError)
+            {
+                return new ClientStatus(false, "Error");
+            }
+
+            if (DateTime.UtcNow >= AccessTokens.ExpiresAt)
+            {
+                return new ClientStatus (false, "Expired");
+            }
+
+            var tokensList = new List<string>();
+
+            if (!AccessTokens.AccessToken.IsNullOrEmpty())
+            {
+                tokensList.Add("Access");
+            }
+            if (!AccessTokens.IdentityToken.IsNullOrEmpty())
+            {
+                tokensList.Add("Identity");
+            }
+            if (!AccessTokens.RefreshToken.IsNullOrEmpty())
+            {
+                tokensList.Add("Refresh");
+            }
+
+            var statusMessage = string.Join(" | ", tokensList);
+
+            return new ClientStatus(true, statusMessage);
+        }
+
+        private set
+        {
+            _status = value;
+            if (_caller == "udapBusinessToBusiness")
+            {
+              //example of potential logic
+            }
+        }
+    }
+
+    public AuthorizationCodeRequest? AuthorizationCodeRequest { get; private set; }
+
+        private const string UdapStateKeyName = "udapClientState";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) // do this only once
+        {
+            // Get the JSON data
+            var json = await LocalStorageService.GetItemAsStringAsync(UdapStateKeyName);
+            if (!string.IsNullOrEmpty(json))
+            {
+                // Deserialize to AppStateData
+                var appStateData = JsonSerializer.Deserialize<UdapClientState>(json);
+
+                var properties = appStateData?.GetType().GetProperties();
+                if (properties != null)
+                {
+                    foreach (var property in properties)
+                    {
+                        var type = property.PropertyType;
+                        var value = property.GetValue(appStateData);
+                        SetProperty(this, property.Name, value, false);
+                    }
+                    // Re-render
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+    }
+
+    public void SaveChanges()
+    {
+        // LocalStorage allows up to 5MB by default.
+        // Test: https://arty.name/localstorage.html
+        // TIP: Never store sensitive data in LocalStorage
+
+        var appState = (IAppState)this;
+        var json = JsonSerializer.Serialize(appState);
+        LocalStorageService.SetItemAsStringAsync(UdapStateKeyName, json);
+    }
+}

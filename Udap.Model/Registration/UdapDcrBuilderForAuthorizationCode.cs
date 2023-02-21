@@ -30,7 +30,7 @@ public class UdapDcrBuilderForAuthorizationCode
         _now = DateTime.UtcNow;
 
         _document = new UdapDynamicClientRegistrationDocument();
-        _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.AuthorizationCode };
+        _document.GrantTypes = new List<string?> { OidcConstants.GrantTypes.AuthorizationCode };
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
         _document.Issuer = cert.GetNameInfo(X509NameType.UrlName, false);
         _document.Subject = cert.GetNameInfo(X509NameType.UrlName, false);
@@ -93,7 +93,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithContacts(ICollection<string> contacts)
+    public UdapDcrBuilderForAuthorizationCode WithContacts(ICollection<string?> contacts)
     {
         _document.Contacts = contacts;
         return this;
@@ -111,13 +111,13 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithResponseTypes(ICollection<string> responseTypes)
+    public UdapDcrBuilderForAuthorizationCode WithResponseTypes(ICollection<string?> responseTypes)
     {
         _document.ResponseTypes = responseTypes;
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithRedirectUrls(ICollection<string> redirectUrls)
+    public UdapDcrBuilderForAuthorizationCode WithRedirectUrls(ICollection<string?> redirectUrls)
     {
         _document.RedirectUris = redirectUrls;
         return this;

@@ -13,9 +13,9 @@ namespace Udap.Common;
 
 public static class Tracing
 {
-    public static readonly string Validation = Tracing.TraceNames.Validation;
+    public static readonly string Validation = TraceNames.Validation;
 
-    private static readonly Version AssemblyVersion = typeof(Tracing).Assembly.GetName().Version;
+    private static readonly Version AssemblyVersion = typeof(Tracing).Assembly.GetName().Version!;
 
     /// <summary>
     /// Store ActivitySource

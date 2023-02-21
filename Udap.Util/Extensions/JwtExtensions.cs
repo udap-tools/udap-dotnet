@@ -25,7 +25,7 @@ public static class JwtExtensions
         {
             return new JsonArray();
         }
-
+        
         return JsonNode.Parse(x5cArray)?.AsArray();
     }
 
@@ -40,8 +40,20 @@ public static class JwtExtensions
 
         var certificates = new List<X509Certificate2>();
 
-        foreach (var jsonNode in JsonNode.Parse(x5cArray)?.AsArray())
+        var x5cJsonArray = JsonNode.Parse(x5cArray)?.AsArray();
+        
+        if (x5cJsonArray == null)
         {
+            return null;
+        }
+
+        foreach (var jsonNode in x5cJsonArray) 
+        {
+            if (jsonNode == null)
+            {
+                return null; 
+            }
+
             certificates.Add(new X509Certificate2(Convert.FromBase64String(jsonNode.ToString())));
         }
         

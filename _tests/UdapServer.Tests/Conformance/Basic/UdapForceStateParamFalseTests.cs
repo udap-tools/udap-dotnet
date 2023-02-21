@@ -16,7 +16,6 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -25,23 +24,17 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
-using Duende.IdentityServer.Validation;
 using FluentAssertions;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.IdentityModel.JsonWebTokens;
-using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Registration;
+using Udap.Model.Statement;
 using Udap.Server.Configuration;
-using Udap.Server.Services;
-using Udap.Server.Services.Default;
-using Udap.Server.Validation.Default;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
-
 
 namespace UdapServer.Tests.Conformance.Basic;
 public class UdapForceStateParamFalseTests
@@ -66,9 +59,6 @@ public class UdapForceStateParamFalseTests
                 DefaultSystemScopes = "udap"
                 // ForceStateParamOnAuthorizationCode = false (default)
             });
-
-            s.AddTransient<IClientSecretValidator, UdapClientSecretValidator>();
-            s.AddSingleton<IScopeService, DefaultScopeService>();
         };
 
         _mockPipeline.OnPreConfigureServices += s =>
@@ -158,52 +148,33 @@ public class UdapForceStateParamFalseTests
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
         await _mockPipeline.LoginAsync("bob");
-
-        var state = Guid.NewGuid().ToString();
-        var nonce = Guid.NewGuid().ToString();
-
+        
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithContacts(new HashSet<string>
+            .WithContacts(new HashSet<string?>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
-            .WithResponseTypes(new List<string> { "code" })
-            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
+            .WithResponseTypes(new List<string?> { "code" })
+            .WithRedirectUrls(new List<string?> { "https://code_client/callback" })
             .Build();
 
-
-        var securityKey = new X509SecurityKey(clientCert);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
-        var now = DateTime.UtcNow;
-
-        var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-        var jwtHeader = new JwtHeader
-        {
-            { "alg", signingCredentials.Algorithm },
-            { "x5c", new[] { pem } }
-        };
-
-        var encodedHeader = jwtHeader.Base64UrlEncode();
-        var encodedPayload = document.Base64UrlEncode();
-        var encodedSignature =
-            JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                signingCredentials);
-        var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
 
         var requestBody = new UdapRegisterRequest
-        {
-            SoftwareStatement = signedSoftwareStatement,
-            // Certifications = new string[0],
-            Udap = UdapConstants.UdapVersionsSupportedValue
-        };
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
 
@@ -216,6 +187,9 @@ public class UdapForceStateParamFalseTests
         var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
         resultDocument.Should().NotBeNull();
         resultDocument!.ClientId.Should().NotBeNull();
+
+        var state = Guid.NewGuid().ToString();
+        var nonce = Guid.NewGuid().ToString();
 
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,

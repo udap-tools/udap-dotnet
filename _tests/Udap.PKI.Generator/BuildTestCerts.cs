@@ -670,6 +670,10 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/FhirLabsApi/CertStore/issued/fhirlabs.net.client.pfx",
                 true);
 
+            File.Copy($"{SurefhirlabsUdapIssued}/fhirlabs.net.client.pfx",
+                $"{BaseDir}/../../examples/clients/UdapEd/Server/fhirlabs.net.client.pfx",
+                true);
+        
             // Copy CA to FhirLabsApi so it can be added to the Docker Container trust store. 
             File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
                 $"{BaseDir}/../../examples/FhirLabsApi/SureFhirLabs_CA.cer",
@@ -684,6 +688,14 @@ namespace Udap.PKI.Generator
 
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
                 $"{BaseDir}/../../examples/FhirLabsApi/host.docker.internal.pfx",
+                true);
+
+            File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
+                $"{BaseDir}/../../examples/Udap.CA/host.docker.internal.pfx",
+                true);
+
+            File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
+                $"{BaseDir}/../../examples/Udap.Idp.Admin/host.docker.internal.pfx",
                 true);
         }
 

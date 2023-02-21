@@ -15,7 +15,9 @@ namespace Udap.Metadata.Server
 {
     public static class ServiceCollectionExtensions
     {
-        public static IMvcBuilder UseUdapMetaDataServer(
+        // TODO this is not flexible to work with implementations that do not use UdapConfig in appsettings.
+        
+        public static IMvcBuilder AddUdapMetaDataServer(
             this IMvcBuilder mvcBuilder,
             ConfigurationManager configuration,
             UdapMetadata? udapMetadata = null )
@@ -30,7 +32,6 @@ namespace Udap.Metadata.Server
             else
             {
                 mvcBuilder.Services.AddSingleton<UdapMetadata>();
-
             }
 
             var assembly = typeof(UdapController).Assembly;

@@ -16,7 +16,6 @@
 
 using IdentityModel;
 using IdentityModel.Client;
-using Udap.Client.Internal;
 using Udap.Model;
 using Udap.Model.Access;
 
@@ -45,7 +44,7 @@ public static class HttpClientTokenRequestExtensions
         clone.Parameters.AddOptional(OidcConstants.TokenRequest.Scope, request.Scope);
         clone.Parameters.AddRequired(UdapConstants.TokenRequest.Udap, UdapConstants.UdapVersionsSupportedValue);
 
-        return await client.RequestTokenAsync(clone, cancellationToken).ConfigureAwait();
+        return await client.RequestTokenAsync(clone, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -73,7 +72,7 @@ public static class HttpClientTokenRequestExtensions
             clone.Parameters.AddRequired(OidcConstants.TokenRequest.Resource, resource, allowDuplicates: true);
         }
 
-        return await client.RequestTokenAsync(clone, cancellationToken).ConfigureAwait();
+        return await client.RequestTokenAsync(clone, cancellationToken).ConfigureAwait(false);
     }
 
     internal static async Task<TokenResponse> RequestTokenAsync(this HttpMessageInvoker client, ProtocolRequest request, CancellationToken cancellationToken = default)
@@ -84,13 +83,13 @@ public static class HttpClientTokenRequestExtensions
         HttpResponseMessage response;
         try
         {
-            response = await client.SendAsync(request, cancellationToken).ConfigureAwait();
+            response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             return ProtocolResponse.FromException<TokenResponse>(ex);
         }
 
-        return await ProtocolResponse.FromHttpResponseAsync<TokenResponse>(response).ConfigureAwait();
+        return await ProtocolResponse.FromHttpResponseAsync<TokenResponse>(response).ConfigureAwait(false);
     }
 }

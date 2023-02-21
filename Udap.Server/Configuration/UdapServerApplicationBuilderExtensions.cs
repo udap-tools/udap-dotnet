@@ -37,4 +37,13 @@ public static class UdapServerApplicationBuilderExtensions
 
         return app;
     }
+
+    public static IApplicationBuilder UseUdapServer(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<UdapTokenResponseMiddleware>();
+        app.UseMiddleware<UdapScopeEnrichmentMiddleware>();
+        app.UseMiddleware<UdapAuthorizationResponseMiddleware>();
+        
+        return app;
+    }
 }

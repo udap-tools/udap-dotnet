@@ -23,5 +23,5 @@ public class UdapDiscoveryDocumentRequest : ProtocolRequest
     /// <summary>
     /// Optional community qualifier
     /// </summary>
-    public string Community { get; set; }
+    public string? Community { get; set; }
 }

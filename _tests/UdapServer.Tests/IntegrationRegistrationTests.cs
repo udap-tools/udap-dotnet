@@ -28,6 +28,7 @@ using Udap.Common.Certificates;
 using Udap.Idp;
 using Udap.Model;
 using Udap.Model.Registration;
+using Udap.Model.Statement;
 using Udap.Server.Configuration;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
@@ -94,6 +95,7 @@ namespace UdapServer.Tests
             _anchorCert = fixture.AnchorCert;
 
         }
+        
 
         [Fact]
         public async Task BadIUdapClientConfigurationStore()
@@ -335,26 +337,9 @@ namespace UdapServer.Tests
             
             var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "weatherApiClientLocalhostCert.pfx");
             var clientCert = new X509Certificate2(cert, "udap-test");
-            var securityKey = new X509SecurityKey(clientCert);
-            var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
             var now = DateTime.UtcNow;
-
-            var pem = Convert.ToBase64String(clientCert.Export(X509ContentType.Cert));
-            var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { pem } }
-            };
-
             var jwtId = CryptoRandom.CreateUniqueId();
-            //
-            // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
-            // I have it implementing IDictionary<string,object> so the JsonExtensions.SerializeToJson method
-            // can prepare it the same way JwtPayLoad is essentially implemented, but more light weight
-            // and specific to this Udap Dynamic Registration.
-            //
-
+            
             var document = new UdapDynamicClientRegistrationDocument
             {
                 Issuer = "http://localhost/",
@@ -372,19 +357,16 @@ namespace UdapServer.Tests
             };
 
 
-            var encodedHeader = jwtHeader.Base64UrlEncode();
-            var encodedPayload = document.Base64UrlEncode();
-            var encodedSignature =
-                JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-                    signingCredentials);
-            var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
-            // _testOutputHelper.WriteLine(signedSoftwareStatement);
+            var signedSoftwareStatement =
+                SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                    .Create(clientCert, document)
+                    .Build();
 
             var requestBody = new UdapRegisterRequest
-            {
-                SoftwareStatement = signedSoftwareStatement,
-                Udap = UdapConstants.UdapVersionsSupportedValue
-            };
+            (
+                signedSoftwareStatement,
+                 UdapConstants.UdapVersionsSupportedValue
+            );
 
             document.ClientId.Should().BeNull();
 
@@ -545,14 +527,14 @@ namespace UdapServer.Tests
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName("dotnet system test client")
-                .WithContacts(new HashSet<string>
+                .WithContacts(new HashSet<string?>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithScope("user/Patient.* user/Practitioner.read") //Comment out for UDAP Server mode.
-                .WithResponseTypes(new HashSet<string> { "code" })
-                .WithRedirectUrls(new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
+                .WithResponseTypes(new HashSet<string?> { "code" })
+                .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
                 .Build();
 
             var documentSerialized = document.SerializeToJson();

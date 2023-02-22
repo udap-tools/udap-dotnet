@@ -39,7 +39,7 @@ internal static class InternalStringExtensions
     [DebuggerStepThrough]
     public static string RemoveTrailingSlash(this string url)
     {
-        if (url != null && url.EndsWith("/"))
+        if (url.EndsWith("/"))
         {
             url = url.Substring(0, url.Length - 1);
         }

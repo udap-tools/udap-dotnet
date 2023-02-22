@@ -10,13 +10,46 @@
 using Duende.IdentityServer.Configuration;
 using IdentityModel;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Udap.Server.Configuration.DependencyInjection;
+using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
+using Udap.Server.DbContexts;
 using Udap.Server.Extensions;
+using Udap.Server.Options;
+using Udap.Server.Registration;
 using static Udap.Server.Constants;
 
 namespace Udap.Server.Configuration
 {
     public static class IdentityServerBuilderExtensions
     {
+        public static IIdentityServerBuilder AddUdapServer(
+            this IIdentityServerBuilder builder,
+            Action<ServerSettings> setupAction = null,
+            Action<UdapConfigurationStoreOptions>? storeOptionAction = null,
+            string? baseUrl = null)
+        {
+            builder.Services.Configure(setupAction);
+            builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
+            builder.AddUdapServer(baseUrl);
+            builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
+
+            return builder;
+        }
+
+        public static IIdentityServerBuilder AddUdapServer(
+            this IIdentityServerBuilder builder,
+            string? baseUrl = null)
+        {
+            
+            builder.AddUdapJwtBearerClientAuthentication();
+            builder.AddUdapDiscovery(baseUrl);
+            builder.AddUdapServerConfiguration();
+
+            return builder;
+        }
+
+
         /// <summary>
         /// Include "registration_endpoint" in the Identity Server, discovery document
         /// (.well-known/openid-configuration)
@@ -27,15 +60,16 @@ namespace Udap.Server.Configuration
         /// <param name="registrationEndpoint"></param>
         /// <returns></returns>
         /// <exception cref="Exception"></exception>
-        public static IIdentityServerBuilder AddUdapDiscovery(
+        private static IIdentityServerBuilder AddUdapDiscovery(
             this IIdentityServerBuilder builder, 
-           string? registrationEndpoint = null )
+           string? baseUrl = null )
         {
 
-            if (registrationEndpoint == null)
+            if (baseUrl == null)
             {
+                //TODO: shouldn't have this business logic in here.  Should be able 
                 bool isInDockerContainer = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true");
-                var baseUrl = "http://localhost:8080";
+                baseUrl = "http://localhost:8080";
 
                 if (!isInDockerContainer)
                 {
@@ -48,15 +82,15 @@ namespace Udap.Server.Configuration
                         "Missing ASPNETCORE_URLS environment variable.  Or missing registrationEndpoint parameter");
                 }
                 
-                registrationEndpoint = $"{baseUrl}" +
-                                       $"{ProtocolRoutePaths.Register.EnsureLeadingSlash()}" ;
+                baseUrl = $"{baseUrl}" +
+                              $"{ProtocolRoutePaths.Register.EnsureLeadingSlash()}" ;
             }
 
             
             builder.Services.Configure<IdentityServerOptions>(options =>
                 options.Discovery.CustomEntries.Add(
                     OidcConstants.Discovery.RegistrationEndpoint,
-                    registrationEndpoint));
+                    baseUrl));
 
             return builder.AddEndpoint<UdapDiscoveryEndpoint>(
                 EndpointNames.Discovery,

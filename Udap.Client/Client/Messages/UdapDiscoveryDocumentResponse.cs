@@ -44,7 +44,7 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
         return Task.CompletedTask;
     }
 
-    public string SignedMetadata => TryGetString(UdapConstants.Discovery.SignedMetadata);
+    public string? SignedMetadata => TryGetString(UdapConstants.Discovery.SignedMetadata);
 
     /// <summary>
     /// Gets or sets the JSON web key set.
@@ -55,7 +55,7 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     public JsonWebKeySet? KeySet { get; set; }
 
     // strongly typed
-    public string Issuer => TryGetString(UdapConstants.Discovery.Issuer);
+    public string? Issuer => TryGetString(UdapConstants.Discovery.Issuer);
     public IEnumerable<string> UdapVersionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapVersionsSupported);
     public IEnumerable<string> UdapProfilesSupported => TryGetStringArray(UdapConstants.Discovery.UdapProfilesSupported);
     public IEnumerable<string> UdapAuthorizationExtensionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapAuthorizationExtensionsSupported);
@@ -64,22 +64,22 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     public IEnumerable<string> UdapCertificationsRequired => TryGetStringArray(UdapConstants.Discovery.UdapCertificationsRequired);
     public IEnumerable<string> GrantTypesSupported => TryGetStringArray(UdapConstants.Discovery.GrantTypesSupported);
     public IEnumerable<string> ScopesSupported => TryGetStringArray(UdapConstants.Discovery.ScopesSupported);
-    public string TokenEndpointAuthMethodsSupported => TryGetString(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported);
+    public string? TokenEndpointAuthMethodsSupported => TryGetString(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported);
     public IEnumerable<string> TokenEndpointAuthSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported);
     public IEnumerable<string> RegistrationEndpointJwtSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.RegistrationEndpointJwtSigningAlgValuesSupported);
 
-    public string JwksUri => TryGetString(UdapConstants.Discovery.JwksUri);
-    public string AuthorizeEndpoint => TryGetString(UdapConstants.Discovery.AuthorizationEndpoint);
+    public string? JwksUri => TryGetString(UdapConstants.Discovery.JwksUri);
+    public string? AuthorizeEndpoint => TryGetString(UdapConstants.Discovery.AuthorizationEndpoint);
 
     /// <summary>
     /// The FHIR Authorization Server's token endpoint URL
     /// </summary>
-    public string TokenEndpoint => TryGetString(UdapConstants.Discovery.TokenEndpoint);
-    public string RegistrationEndpoint => TryGetString(UdapConstants.Discovery.RegistrationEndpoint);
+    public string? TokenEndpoint => TryGetString(UdapConstants.Discovery.TokenEndpoint);
+    public string? RegistrationEndpoint => TryGetString(UdapConstants.Discovery.RegistrationEndpoint);
 
     // generic
     public JsonElement TryGetValue(string name) => Json.TryGetValue(name);
-    public string TryGetString(string name) => Json.TryGetString(name);
+    public string? TryGetString(string name) => Json.TryGetString(name);
     public bool? TryGetBoolean(string name) => Json.TryGetBoolean(name);
     public IEnumerable<string> TryGetStringArray(string name) => Json.TryGetStringArray(name);
 

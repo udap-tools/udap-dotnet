@@ -6,10 +6,7 @@ In short UDAP is a PKI extension profile to OAuth2.  One or more PKIs can be hos
 
 Note: This is a new project.  It will take me some time to document.  It should be very active in code changes and document additions.  But feel free to try it out and add issues and/or pull requests.
 
-I am using .NET 7 for a couple projects in here.  In a few weeks .NET 7 will be released.
-
-- `Udap.PKI.Generator`, because there are new X509 features.
-- `Udap.Idp.Admin`, because of an annoying bug in Blazor Server related to uploading files.
+I example apps are in the examples folder.
 
 ## What does it support
 
@@ -17,10 +14,11 @@ The repository contains components and example uses to support the following ite
 
 | Feature                 | Supported           | Comments                                               |
 |-------------------------|---------------------|--------------------------------------------------------|
-| [Discovery](http://hl7.org/fhir/us/udap-security/discovery.html) | ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) | Highly functional.  Could use some advanced tests such as certificate revocation. |
-| [Registration](http://hl7.org/fhir/us/udap-security/registration.html)| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)  |  Functional but needs a lot more tests |
+| Client                  | Not Started         | Seems I ignored this in favor of server features.  I will get back to it soon. After all we need a client that can easily validated trust |
+| [Discovery](http://hl7.org/fhir/us/udap-security/discovery.html) | ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) |  Client certificate storage is a file strategy.  User can implement their own ICertificateStore.  May add a Entity Framework example in future. |
+| [Registration](http://hl7.org/fhir/us/udap-security/registration.html)| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)  |  Highly Functional.  The Deployed example FHIR Server, "FhirLabsApi" is passing all udap.org Server Tests.  I am going to revisit the Client Secrets persistence layer.  Packages are dependent on Duende's Identity Server Nuget Packages. |
 | [Consumer-Facing](http://hl7.org/fhir/us/udap-security/consumer.html)| Not Started | |
-| [Business-to-Business](http://hl7.org/fhir/us/udap-security/b2b.html)| In progress | |
+| [Business-to-Business](http://hl7.org/fhir/us/udap-security/b2b.html)| ✔️ | Works with client_credentials and authorization_code flows. |
 | [Tiered OAuth for User Authentication](http://hl7.org/fhir/us/udap-security/user.html) | Not Started | |
 
 ### PKI support
@@ -29,9 +27,11 @@ Part of this repository is a xUnit test project that will generate a couple PKI 
 
 I am not sure if this will stay in unit test form or not, but for now this is the technique.  
 
-## Components (Nuget packages)
+# Components (Nuget packages)
 
-### Udap.Metadata.Server
+See the following Udap.Metadata.Server and Udap.Server sections.  The Udap.Metadata.Server is for the resource server such a FHIR Server.  Udap.Server.Server is for the Identity Server.
+
+## Udap.Metadata.Server
 
 Add this package to your FHIR server or any web api server to.  
 
@@ -62,10 +62,10 @@ Add UseUdapMetaData to program.cs
 ```csharp
  builder.Services
     .AddControllers()
-    .UseUdapMetaDataServer(builder.Configuration);
+    .AddUdapMetaDataServer(builder.Configuration);
 ```
 
-```UseUdapMetaData``` extension will find the UdapConfig in AppSettings.  These settings will match the issued certificate.  
+```AddUdapMetaDataServer``` extension will find the UdapConfig in AppSettings.  These settings will match the issued certificate.  
 
 Reference [Required UDAP Metadata](https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#signed-metadata-elements).
 
@@ -148,69 +148,161 @@ UdapConfig:UdapMetadataConfigs:Community value is the link to UdapFileCertStoreM
 ```csharp
 dotnet run
 ```
+
 Navigate to http://localhost:5079/.well-known/udap or http://localhost:5079/swagger.
 
 A this point a success would result in a result similar to the following json.  Ensure the signed_metadata property contains a signed JWT token.
 
+<details open><summary><a>View Metadata</></summary>
+
 ```json
 {
-"udap_versions_supported": [
-"1"
-],
-"udap_profiles_supported": [
-"udap_dcr",
-"udap_authn",
-"udap_authz",
-"udap_to"
-],
-"udap_authorization_extensions_supported": [
-"hl7-b2b",
-"acme-ext"
-],
-"udap_authorization_extensions_required": [
-"hl7-b2b"
-],
-"udap_certifications_supported": [
-"http://MyUdapCertification",
-"http://MyUdapCertification2"
-],
-"udap_certifications_required": [
-"http://MyUdapCertification"
-],
-"grant_types_supported": [
-"authorization_code",
-"refresh_token",
-"client_credentials"
-],
-"scopes_supported": [
-"openid",
-"system/Patient.read",
-"system/AllergyIntolerance.read",
-"system/Procedures.read",
-"system/Observation.read"
-],
-"authorization_endpoint": "https://securedcontrols.net:5001/connect/authorize",
-"token_endpoint": "https://securedcontrols.net:5001/connect/token",
-"token_endpoint_auth_methods_supported": [
-"private_key_jwt"
-],
-"token_endpoint_auth_signing_alg_values_supported": [
-"RS256"
-],
-"registration_endpoint": "https://securedcontrols.net:5001/connect/register",
-"registration_endpoint_jwt_signing_alg_values_supported": [
-"RS256"
-],
-"signed_metadata": "eyJhbGciOiJSUzI1NiIsIng1YyI6WyJNSUlGR3pDQ0F3T2dBd0lCQWdJRUFRSURCREFOQmdrcWhraUc5dzBCQVFzRkFEQjRNUXN3Q1FZRFZRUUdFd0pWVXpFUE1BMEdBMVVFQ0JNR1QzSmxaMjl1TVJFd0R3WURWUVFIRXdoUWIzSjBiR0Z1WkRFVU1CSUdBMVVFQ2hNTFJtaHBjaUJEYjJScGJtY3hEekFOQmdOVkJBc1RCa0Z1WTJodmNqRWVNQndHQTFVRUF4TVZWVVJCVUMxTWIyTmhiR2h2YzNRdFFXNWphRzl5TUI0WERUSXlNVEF6TVRFMk1qRXlOMW9YRFRJME1URXdNVEUyTWpFeU4xb3djREVMTUFrR0ExVUVCaE1DVlZNeER6QU5CZ05WQkFnVEJrOXlaV2R2YmpFUk1BOEdBMVVFQnhNSVVHOXlkR3hoYm1ReEZEQVNCZ05WQkFvVEMwWm9hWElnUTI5a2FXNW5NUk13RVFZRFZRUUxFd3BYWldGMGFHVnlRWEJwTVJJd0VBWURWUVFERXdsc2IyTmhiR2h2YzNRd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUREeW1lSCs5SmFCdWdRbVdoNVk5SUVxR1N1UkRvS1VFWEhVbjM2ZzcwMW5Sek9rODVVQVI5KzNzeFAyQzdRbTZoQWlud05IQnNyUlZrMmRrandaS0JtSFFwTzlJOTBydnpZYmx1Y2tRUW9Sa3htSVZmYlNYZ2RLeWV0THZ4OXF0blEzY0VvaFVWNHAyOTYveHBZcG14VTJUZUY0RnJDeU03b2hETVZoUDdzTTB0eDY3czhaMG94azRPNWl0OFQwWmhhV04zVzRFc1dIdzF4TFdrM2JTV1VqQ0daY0Rhdk01eGFFbCtqbDVZM0NIM1NlMDg2b0l3VlZYM0diMHdHOUdrSlZPUnZIQ2lZU2VrRXNzcFVTbjVwSWRqWXYyRnFwR0lyZ1Z5aW9mU3BpbHRSbW04bUV3SVJVaVNTUnZ0M01zZVp3MC8xVFMyMGJLSkYzWk91TjNhVkFnTUJBQUdqZ2JRd2diRXdEQVlEVlIwVEFRSC9CQUl3QURBT0JnTlZIUThCQWY4RUJBTUNCNEF3SFFZRFZSME9CQllFRkV5N0hZTFdLaUx1aVVBZXM5SDk2aFIwVUt1QU1COEdBMVVkSXdRWU1CYUFGRVJBQjdVWDNtZHRBbi9kTTdaek9CV3FyTGhDTURNR0ExVWRId1FzTUNvd0tLQW1vQ1NHSW1oMGRIQTZMeTlzYjJOaGJHaHZjM1F2WTNKc0wyeHZZMkZzYUc5emRDNWpjbXd3SEFZRFZSMFJCQlV3RTRZUmFIUjBjRG92TDJ4dlkyRnNhRzl6ZEM4d0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dJQkFFUEEzdjRkM3VyRWliTnRBSm5vR1luVjdvWUFiVUJPTjZqY3hZdDlDWXoydzR1eEk1VmI4Zi9RUG9jekY2NTFCNHp3Y3RmQy9taDBFZTgySU1FQXFsMzlBRFpuckllcGdLQ2VWQmNhWGF1bld6ZlY5YlpWNEtaSFBnL0c1UE1YNlptWWozaGRLSktZMmR3amh6ck9MZzcxRG1tdlkwaWk0STNhWHkxdXpIandWWGc0b1c5cVpkWnM2dWhXakpMa09idVQ2MGZsTktIUU9PbzMydHZxQ1gwVmtNMnEzdC9zWFp1aTlFK1liSGM4SCt4M0x6TGszWlVWdVE1WHp1NnI1Q0FzSHl2aVRGL2hwcnpkNmtDZnp6bTFLdzZzL1dDR1VKU3pYUHpxWHZQWDQ2S0RoYjhBVGZYSEI0V0ZLMTd2MTZUMCsrNTFjdzZmaWVRNUNXbkFPSDd3MXlub1E4S0lML2RQRjhVc1lsWng4QkZGY0hKcGFQaEg5ejJMakdJc0I0aTNkanZtQjZUNTNFSjllT203U0NFTGFoWk94aUx6dStVZHVpUlNoQm9xekNCeTl3NzFWcjg3R2IxL3NFRkR2am9GbUFUN2xGaE5pMVZLcTBwQlV5dDJYdnBhVDVaQVBaTHozdDZGODFYWlZvTjExVVhrdytFaGJBMTBNWGVOZFc2SEVDMHJyMjNaRUNmcnlHV083Qlh2QU5aV3E4TGo3bkJvQjdKa3lpdDdRQXNETzk1SjdXbDlDWm1MVGxpZjRSZlRoMXpxK2FFVXBCNFJrd1FBYkFLUmNlQWh5OE1qTFhFaW1HUXc5bUI4OGd4YWpxTElwYzEvalhlT1h4R0srUWNRKzBqaDRZR0RoN0pkSTZIdzlKaWR0VTFNMW80L0pzUUtjY01yalJYaiJdfQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0LyIsInN1YiI6Imh0dHA6Ly9sb2NhbGhvc3QvIiwiaWF0IjoxNjY3NDk1MjU0LCJleHAiOjE2Njc0OTUzMTQsImp0aSI6IjliNjRqVGZMTmRVTzctRkJweVVfYWRycEtyM0lyekNmWHZFal90c2kwUTQiLCJhdXRob3JpemF0aW9uX2VuZHBvaW50IjoiaHR0cHM6Ly9zZWN1cmVkY29udHJvbHMubmV0OjUwMDEvY29ubmVjdC9hdXRob3JpemUiLCJ0b2tlbl9lbmRwb2ludCI6Imh0dHBzOi8vc2VjdXJlZGNvbnRyb2xzLm5ldDo1MDAxL2Nvbm5lY3QvdG9rZW4iLCJyZWdpc3RyYXRpb25fZW5kcG9pbnQiOiJodHRwczovL3NlY3VyZWRjb250cm9scy5uZXQ6NTAwMS9jb25uZWN0L3JlZ2lzdGVyIn0.p35Zsijh62u8mqIMDjaCHSHZgE3VaI9O25YQekBwgicxvnxGUubJE1Vz31RfDwrNHTXy43DgxrSVODAtjTRVZtg2RmlalRe3ZOkFNqDim-SireKHT5Q7ua4cIJWsip8XhgmWD61r_Wc70627D22iR-ZEpzE8XWCar0GWRFd9qIjk2fgQEFVTjF9dmMUwPdtv9qwDDMkHg1D_1cT6ddMaMBBtYkuwBbe46kvgdmAATp8crV23fVTfxWIGkpIMdnHcwJkt7wMSA_6820iU1Y7Fii_asFng0UG2gMXvE0AT2gdTWTRR8y_j4DX_-DWQZ1CPv1aCNl9xCKXXMjhAFOVuZA"
+  "udap_versions_supported": [
+    "1"
+  ],
+  "udap_profiles_supported": [
+    "udap_dcr",
+    "udap_authn",
+    "udap_authz"
+  ],
+  "udap_authorization_extensions_supported": [
+    "hl7-b2b"
+  ],
+  "udap_authorization_extensions_required": [
+    "hl7-b2b"
+  ],
+  "udap_certifications_supported": [
+    "http://MyUdapCertification",
+    "http://MyUdapCertification2"
+  ],
+  "udap_certifications_required": [
+    "http://MyUdapCertification"
+  ],
+  "grant_types_supported": [
+    "client_credentials"
+  ],
+  "scopes_supported": [
+    "openid",
+    "system/Patient.read",
+    "system/AllergyIntolerance.read",
+    "system/Procedures.read",
+    "system/Observation.read"
+  ],
+  "authorization_endpoint": "https://securedcontrols.net/connect/authorize",
+  "token_endpoint": "https://securedcontrols.net/connect/token",
+  "token_endpoint_auth_methods_supported": [
+    "private_key_jwt"
+  ],
+  "token_endpoint_auth_signing_alg_values_supported": [
+    "RS256"
+  ],
+  "registration_endpoint": "https://securedcontrols.net/connect/register",
+  "registration_endpoint_jwt_signing_alg_values_supported": [
+    "RS256"
+  ],
+  "signed_metadata": "eyJhbGciOiJSUzI1NiIsIng1YyI6WyJNSUlGR3pDQ0JBT2dBd0lCQWdJSUZSVVJqcWdlTkdNd0RRWUpLb1pJaHZjTkFRRUxCUUF3Z2JNeEN6QUpCZ05WQkFZVEFsVlRNUk13RVFZRFZRUUlEQXBEWVd4cFptOXlibWxoTVJJd0VBWURWUVFIREFsVFlXNGdSR2xsWjI4eEV6QVJCZ05WQkFvTUNrVk5VaUJFYVhKbFkzUXhQekE5QmdOVkJBc01ObFJsYzNRZ1VFdEpJRU5sY25ScFptbGpZWFJwYjI0Z1FYVjBhRzl5YVhSNUlDaGpaWEowY3k1bGJYSmthWEpsWTNRdVkyOXRLVEVsTUNNR0ExVUVBd3djUlUxU0lFUnBjbVZqZENCVVpYTjBJRU5zYVdWdWRDQlRkV0pEUVRBZUZ3MHlNakE1TVRVeU1ETXpOVEphRncweU16QTVNVFV5TURNek5USmFNSUdwTVFzd0NRWURWUVFHRXdKVlV6RVBNQTBHQTFVRUNBd0dUM0psWjI5dU1TZ3dKZ1lEVlFRS0RCOVRkWEpsYzJOeWFYQjBjeUJNVEVNZ0tITmxiR1lnWVhOelpYSjBaV1FwTVRNd01RWURWUVFMRENwVlJFRlFJRlJsYzNRZ1EyVnlkR2xtYVdOaGRHVWdUazlVSUVaUFVpQlZVMFVnVjBsVVNDQlFTRWt4S2pBb0JnTlZCQU1NSVdoMGRIQnpPaTh2Wm1ocGNteGhZbk11Ym1WME9qY3dNVFl2Wm1ocGNpOXlORENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFJQkgrSUtIRUJ4SDIyN09BYkRsTGYxS0k4b1UxZE8vZmp2ZzFQbkJNSlQ0RjQrL1BFWmlOdkRhS0dFT09lOXVvTmVMdGlEWEt0aFVQSEdEMm54RXVSL2lQeXluVmFETmtHYkZvc2d3c01JMXU4bGFJbHNwQWVrR2d5VWlPZzB3a1NRbEF4TjJuaFVqR3dMbjllUzBPWld0eGhUcHBNNEFGbElwY1hackFLeTlOZm53S2NGeUtvUmg3Zlo4bDlSR1hHeFl6ZXh2ejJ0LzhCbG5xb3ZQODZlWktHaFBxTTlFTGZPNTc4R1UrNWJCcFNqWUdsenhwemVnanZaUkR5bnBVbEJBdEtvWDBOdXh6ZjJ6SURvOVZwaldoVG9TKzZ0eDZJRFVNZVdEZHZjQytPQnNTNjNUdisxN2VFSVdpRjlGb0xNYUNUZXJRMFluaWlwVGQ3NDdGT2NDQXdFQUFhT0NBVGt3Z2dFMU1Ga0dDQ3NHQVFVRkJ3RUJCRTB3U3pCSkJnZ3JCZ0VGQlFjd0FvWTlhSFIwY0RvdkwyTmxjblJ6TG1WdGNtUnBjbVZqZEM1amIyMHZZMlZ5ZEhNdlJVMVNSR2x5WldOMFZHVnpkRU5zYVdWdWRGTjFZa05CTG1OeWREQWRCZ05WSFE0RUZnUVVuMDUzdk9jYVdINzRsR1c4VVlYazk4WU5nOUV3REFZRFZSMFRBUUgvQkFJd0FEQWZCZ05WSFNNRUdEQVdnQlNqbFcxcnZTdFJ6ZUhQNVpCdjF5WlB2OTArM2pCTUJnTlZIUjhFUlRCRE1FR2dQNkE5aGp0b2RIUndPaTh2WTJWeWRITXVaVzF5WkdseVpXTjBMbU52YlM5amNtd3ZSVTFTUkdseVpXTjBWR1Z6ZEVOc2FXVnVkRk4xWWtOQkxtTnliREFPQmdOVkhROEJBZjhFQkFNQ0I0QXdMQVlEVlIwUkJDVXdJNFloYUhSMGNITTZMeTltYUdseWJHRmljeTV1WlhRNk56QXhOaTltYUdseUwzSTBNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUI1VkswWkhWZXpMdUYvY2FieW1ZOWFLa0pENXhxY0JWVFNjeGVYQ3NMaWloLzhFS0NwdmVVSWl6NDJ5U3JtbHBJS2ljby95c1ByWHZKbU8vVnJHMjFWbnpZNkZKQjE3empXbkQ2bncvRnRFNXU0V2laTTE2aGcxUzJpa01FYXMzRjU3L3FrYjNLMzdXUm1IVDdickphUUtGZFYzWWRrVFloZ1cvbjFTellqWnEwZ0w0bDZWcVBSeCsxSWpaUkQxNWowZVFOV1hrR1lvWmlsR3duSFFJOUhKSGxadmMxZ1VLeFl2dDhwR2hlL0ZwZmF0cW9QVlhVY09CRVlBTHNrNmdlUDBhR0Z1M0xQa3NxdjZpZTM2M01tZWp5WEtxeE1uUThHcUR1bVNBU1ZhbDhyVmw4ZjE1NzlwUDc4aGxDYWNzam4zdTBnNVJLRDVPUk4rQTlJTTRDMyJdfQ.eyJpc3MiOiJodHRwczovL3N0YWdlLmhlYWx0aHRvZ28ubWU6ODE4MSIsInN1YiI6Imh0dHBzOi8vc3RhZ2UuaGVhbHRodG9nby5tZTo4MTgxIiwiaWF0IjoxNjc2OTM3NjI3LCJleHAiOjE2NzY5Mzc2ODcsImp0aSI6Ik95N0RaenVhXzBYbDhEaFNRXzVONzFxeHFBcllLdEI3OUdmRkVGQVFaUkUiLCJhdXRob3JpemF0aW9uX2VuZHBvaW50IjoiaHR0cHM6Ly9zZWN1cmVkY29udHJvbHMubmV0L2Nvbm5lY3QvYXV0aG9yaXplIiwidG9rZW5fZW5kcG9pbnQiOiJodHRwczovL3NlY3VyZWRjb250cm9scy5uZXQvY29ubmVjdC90b2tlbiIsInJlZ2lzdHJhdGlvbl9lbmRwb2ludCI6Imh0dHBzOi8vc2VjdXJlZGNvbnRyb2xzLm5ldC9jb25uZWN0L3JlZ2lzdGVyIn0.Y9qWVQFs9HXWipN8YDrH7gf89FoA0V7f3p9vqc6bPuqrcI0B6wgqZ2ZC3FYi46nGvpe6G_H20edXYR7zIHqcXqhtjfYNmCYoH-ceVwvq6kCAm0c4v8BXN23SM1Eh72_481Bbf7PidHUzcAIOn7fJ9DAk-LiVsT9aa7TD2Aj11cLC5ZiuoHyLCOaf6sjK-yX707ov313TEQREgLbSnl-YTwbIgmm_h3fW4eSZH2eszdr3a3Q8BWKKVBphWos5TvQ77WsYfTt60JfFHEXO8Psq7n4bGm2ZcNApzoa9PIuimmzeN8vjyaLBu7lDi93cc9jKphYz3KpLh_-8ruHF2HqmNw"
 }
 ```
 
+</details>
+<br/>
+
+### UDAP Metadata Examples
+
+- [FhirLabsApi example project](/examples//FhirLabsApi/)
+- [WeatherApi example project](/examples//WeatherApi/)
+- [FhirLabs Published](https://fhirlabs.net/fhir/r4/.well-known/udap)
+- [FhirLabs UdapEd Tool | Discovery](https://fhirlabs-udaped-v46zp6zteq-uw.a.run.app/udapDiscovery)
+
 ### Udap.Client
 
-### Udap.Idp.Server
+- No library formalized yet
+  
+- ### Udap.Idp.Server
+
+- [Udap.Idp](/examples/Udap.Idp/)
+- [Udap.Idp Deployed](https://securedcontrols.net/.well-known/udap)
+
+## Udap.Server
+
+Add this package to your Identity Server.  
+
+Assumptions:  An Identity Sever exists is backed by a relational database.  Use [Udap.Idp](/examples/Udap.Idp/) as an example.  I may revisit this in the future and build an in memory version but this reference implementation assumes a database is deployed.  For your convenience there is a EF Migrations Project called [UdapDb.SqlServer](/migrations/UdapDb.SqlServer/).  Run from Visual Studio using the UdapDb profile.  This project will create all the Udap tables and Duende Identity tables.  It will seed data needed for running local system tests.  See the SeedData.cs for details.
+
+The following explains a basic dependency injection setup 
+
+```csharp
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddIdentityServer()
+    .AddConfigurationStore(
+      storeOptions => storeOptions.ConfigureDbContext = b => 
+              b.UseSqlServer(connectionString, dbOpts => 
+                  dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName))
+    )
+    .AddOperationalStore(
+      storeOptions => storeOptions.ConfigureDbContext = b => 
+              b.UseSqlServer(connectionString, dbOpts => 
+                  dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName))
+    )
+    .AddResourceStore<ResourceStore>()
+    .AddClientStore<ClientStore>()
+    .AddUdapServer(
+          udapServerOptions => udapServerOptions.ServerSupport = udapServerOptions.ServerSupport,
+          storeOptions => storeOptions.UdapDbContext = b => 
+              b.UseSqlServer(connectionString, dbOpts => 
+                  dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName))
+    )
+
+  var app = builder.Build();
+
+  // uncomment if you want to add a UI
+  app.UseStaticFiles();
+  app.UseRouting();
+
+  app.UseUdapServer();
+  app.UseIdentityServer();
+
+  // uncomment if you want to add a UI
+  app.UseAuthorization();
+  app.MapRazorPages().RequireAuthorization();
+
+  app.Run;
+
+```
+
+
 
 ## Build and test
 
+From root.
+
+```csharp
+dotnet restore
+```
+
+If this is first build or you want to reset you certificates change to /_tests/Udap.PKI.Generator
+
+```csharp
+dotnet test
+```
+
+Return to root
+
+```csharp
+dotnet build
+```
+
 ### Running tests
 
-Run the WebApi.Tests.  This should result in all tests passing.  WebApi.Tests will test the Udap.Metadata.Server package, configured agains the FhirLabsApi and WeatherApi web service projects.  FhirLabsApi is a simple
+It is probably best to avoid running Udap.PKI.Generator unless you need the certificates regenerated.  May migrate this away from unit test in future.  Or create a src folder to isolate.  
+It is also best to avoid Udap.Client.System.Tests as they are for experimenting with live servers.  Eventually the [FhirLabs UdapEd client tool](/examples/clients/UdapEd/Server/) will replace the need for this.
+
+The following tests are normal to run and the build server runs these same tests.  
+
+- [Udap.CA.Tests](/_tests/Udap.CA.Tests/)
+- [Udap.Common.Tests](/_tests/Udap.Common.Tests/)
+- [Udap.Support.Tests](/_tests/Udap.Support.Tests/)
+- [UdapMetadata.Tests](/_tests/UdapMetadata.Tests/), tests two against the two example web services, FhirLabsApi and WeatherApi.
+- [UdapServer.Tests](_tests/UdapServer.Tests/)

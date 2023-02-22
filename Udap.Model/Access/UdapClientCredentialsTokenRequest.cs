@@ -12,15 +12,15 @@ using IdentityModel.Client;
 
 namespace Udap.Model.Access;
 
+
 public class UdapClientCredentialsTokenRequest : ClientCredentialsTokenRequest
 {
-
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.Udap)]
-    public string Udap { get; set; }
+    public string Udap { get; set; } = UdapConstants.UdapVersionsSupportedValue;
 }
 
 public class UdapAuthorizationCodeTokenRequest : AuthorizationCodeTokenRequest
 {
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.Udap)]
-    public string Udap { get; set; }
+    public string Udap { get; set; } = UdapConstants.UdapVersionsSupportedValue;
 }

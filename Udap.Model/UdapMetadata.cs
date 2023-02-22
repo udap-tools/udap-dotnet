@@ -22,17 +22,16 @@ namespace Udap.Model;
 /// </summary>
 public class UdapMetadata
 {
-    private readonly List<UdapMetadataConfig> _udapMetadataConfigs;
+    private readonly List<UdapMetadataConfig>? _udapMetadataConfigs;
 
     public UdapMetadataConfig? GetUdapMetadataConfig(string? community = null)
     {
         if (community == null)
         {
-            return _udapMetadataConfigs.FirstOrDefault();
+            return _udapMetadataConfigs?.FirstOrDefault();
         }
 
-        return _udapMetadataConfigs
-            .SingleOrDefault(c => c.Community == community);
+        return _udapMetadataConfigs?.SingleOrDefault(c => c.Community == community);
     }
 
 
@@ -54,7 +53,7 @@ public class UdapMetadata
         ICollection<string> tokenEndpointAuthSigningAlgValuesSupported,
         ICollection<string> registrationEndpointJwtSigningAlgValuesSupported)
     {
-        // _udapMetadataConfigs = udapMetadataConfigs;
+        _udapMetadataConfigs = null;
         UdapVersionsSupported = udapVersionsSupported;
         UdapProfilesSupported = udapProfilesSupported;
         UdapAuthorizationExtensionsSupported = udapAuthorizationExtensionsSupported;
@@ -71,7 +70,7 @@ public class UdapMetadata
     /// <summary>
     /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
     /// </summary>
-    public UdapMetadata(IOptionsMonitor<UdapConfig> udapConfig) : this((UdapConfig)udapConfig.CurrentValue)
+    public UdapMetadata(IOptionsMonitor<UdapConfig> udapConfig) : this(udapConfig.CurrentValue)
     {
     }
 
@@ -79,6 +78,7 @@ public class UdapMetadata
     {
         _udapMetadataConfigs = udapConfig.UdapMetadataConfigs;
         UdapVersionsSupported = new HashSet<string> { UdapConstants.UdapVersionsSupportedValue };
+
         UdapProfilesSupported = new HashSet<string>
         {
                 UdapConstants.UdapProfilesSupportedValues.UdapDcr,
@@ -86,7 +86,7 @@ public class UdapMetadata
                 UdapConstants.UdapProfilesSupportedValues.UdapAuthz,
                 //TODO: Code doesn't support this yet.  Also all of this needs to be coded up as a configuration feature
                 // UdapConstants.UdapProfilesSupportedValues.UdapTo
-            };
+        };
 
         UdapAuthorizationExtensionsSupported = new HashSet<string>
         {
@@ -97,18 +97,22 @@ public class UdapMetadata
         UdapAuthorizationExtensionsRequired = new HashSet<string>
         {
                 UdapConstants.UdapAuthorizationExtensions.Hl7B2B
-            };
+        };
+
         UdapCertificationsSupported = new HashSet<string>
         {
                 "http://MyUdapCertification", "http://MyUdapCertification2"
-            };
+        };
+
         UdapCertificationsRequired = new HashSet<string> { "http://MyUdapCertification" };
+
         GrantTypesSupported = new HashSet<string>
         {
                 OidcConstants.GrantTypes.AuthorizationCode,
                 OidcConstants.GrantTypes.RefreshToken,
                 OidcConstants.GrantTypes.ClientCredentials
-            };
+        };
+
         ScopesSupported = new HashSet<string>
         {
                 OidcConstants.StandardScopes.OpenId,
@@ -116,7 +120,7 @@ public class UdapMetadata
                 UdapConstants.FhirScopes.SystemAllergyIntoleranceRead,
                 UdapConstants.FhirScopes.SystemProcedureRead,
                 "system/Observation.read"
-            };
+        };
 
         TokenEndpointAuthMethodsSupported = new HashSet<string> { UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue };
         TokenEndpointAuthSigningAlgValuesSupported = new HashSet<string> { UdapConstants.SupportedAlgorithm.RS256 };
@@ -273,6 +277,10 @@ public class UdapMetadata
 
     public ICollection<string> Communities()
     {
+        if (_udapMetadataConfigs == null)
+        {
+            return new List<string>();
+        }
         return _udapMetadataConfigs.Select(c => c.Community).ToList();
     }
 

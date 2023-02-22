@@ -1,7 +1,15 @@
-// Copyright (c) Duende Software. All rights reserved.
-// See LICENSE in the project root for license information.
+#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
 
-
+using System.Net;
+using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Models;
@@ -16,20 +24,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Net;
-using System.Security.Claims;
-using System.Security.Cryptography.X509Certificates;
-using Duende.IdentityServer.Validation;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Server;
 using Udap.Server.Configuration;
 using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.Registration;
-using Udap.Server.Services;
-using Udap.Server.Services.Default;
-using Udap.Server.Validation.Default;
-
 
 namespace UdapServer.Tests.Common;
 
@@ -155,9 +155,7 @@ public class UdapIdentityServerPipeline
             .AddInMemoryApiScopes(ApiScopes)
             .AddTestUsers(Users)
             .AddDeveloperSigningCredential(persistKey: false)
-
-            .AddUdapDiscovery(BaseUrl)
-            .AddUdapServerConfiguration()
+            .AddUdapServer(BaseUrl)
             .AddInMemoryUdapCertificates(Communities, RootCertificates);
 
         services.AddHttpClient(IdentityServerConstants.HttpClients.BackChannelLogoutHttpClient)

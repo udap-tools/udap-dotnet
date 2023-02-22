@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -15,10 +14,11 @@ using IdentityModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common;
 using Udap.Model;
+using Udap.Model.Registration;
+using Udap.Model.Statement;
 
 namespace Udap.Metadata.Server
 {
@@ -81,7 +81,7 @@ namespace Udap.Metadata.Server
         /// </summary>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
-        private async Task<string> SignMetaData(UdapMetadataConfig udapMetadataConfig)
+        private async Task<string?> SignMetaData(UdapMetadataConfig udapMetadataConfig)
         {
             var cert = await Load(udapMetadataConfig);
 
@@ -89,20 +89,10 @@ namespace Udap.Metadata.Server
             {
                 return string.Empty;
             }
-
-            var securityKey = new X509SecurityKey(cert);
-            var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
-
+            
             var now = DateTime.UtcNow;
 
-            var base64Der = Convert.ToBase64String(cert.Export(X509ContentType.Cert));
-            var jwtHeader = new JwtHeader
-            {
-                { "alg", signingCredentials.Algorithm },
-                { "x5c", new[] { base64Der } }
-            };
-
-            var jwtPayload = new JwtPayload(
+            var jwtPayload = new JwtPayLoadExtension(
                 new List<Claim>
                 {
                     new Claim(JwtClaimTypes.Issuer, udapMetadataConfig.SignedMetadataConfig.Issuer),
@@ -115,15 +105,9 @@ namespace Udap.Metadata.Server
                     new Claim(UdapConstants.Discovery.RegistrationEndpoint, udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint)
                 });
 
-            // var token = new JwtSecurityToken(
-            //     jwtHeader,
-            //     jwtPayload);
+            var builder = SignedSoftwareStatementBuilder<ISoftwareStatementSerializer>.Create(cert, jwtPayload);
 
-            var encodedHeader = jwtHeader.Base64UrlEncode();
-            var encodedPayload = jwtPayload.Base64UrlEncode();
-            var encodedSignature = JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload), signingCredentials);
-
-            return string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
+            return builder.Build();
         }
 
         private async Task<X509Certificate2?> Load(UdapMetadataConfig udapMetadataConfig)

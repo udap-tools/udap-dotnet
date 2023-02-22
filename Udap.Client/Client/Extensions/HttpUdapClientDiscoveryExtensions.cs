@@ -32,12 +32,12 @@ namespace Udap.Client.Client.Extensions
         /// <returns></returns>
         public static async Task<UdapDiscoveryDocumentResponse> GetUdapDiscoveryDocument(
             this HttpClient client,
-            string address = null, 
+            string? address = null, 
             CancellationToken cancellationToken = default)
         {
             return await client
                 .GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest { Address = address },
-                    cancellationToken).ConfigureAwait();
+                    cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace Udap.Client.Client.Extensions
             {
                 address = request.Address;
             }
-            else if (client is HttpClient httpClient)
+            else if (client is HttpClient httpClient && httpClient.BaseAddress != null)
             {
                 address = httpClient.BaseAddress.AbsoluteUri;
             }
@@ -92,24 +92,17 @@ namespace Udap.Client.Client.Extensions
 
                 clone.RequestUri = new Uri(url);
 
-                var response = await client.SendAsync(clone, cancellationToken).ConfigureAwait();
-
-                string responseContent = null;
-
-                if (response.Content != null)
-                {
-                    responseContent = await response.Content.ReadAsStringAsync().ConfigureAwait();
-                }
+                var response = await client.SendAsync(clone, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     return await ProtocolResponse
                         .FromHttpResponseAsync<UdapDiscoveryDocumentResponse>(response,
-                            $"Error connecting to {url}: {response.ReasonPhrase}").ConfigureAwait();
+                            $"Error connecting to {url}: {response.ReasonPhrase}").ConfigureAwait(false);
                 }
 
                 var disco = await ProtocolResponse
-                    .FromHttpResponseAsync<UdapDiscoveryDocumentResponse>(response, request.Policy).ConfigureAwait();
+                    .FromHttpResponseAsync<UdapDiscoveryDocumentResponse>(response, request.Policy).ConfigureAwait(false);
 
                 if (disco.IsError)
                 {
@@ -127,13 +120,13 @@ namespace Udap.Client.Client.Extensions
                         jwkClone.Prepare();
 
                         var jwkResponse = await client.GetJsonWebKeySetAsync(jwkClone, cancellationToken)
-                            .ConfigureAwait();
+                            .ConfigureAwait(false);
 
                         if (jwkResponse.IsError)
                         {
                             return await ProtocolResponse
                                 .FromHttpResponseAsync<UdapDiscoveryDocumentResponse>(jwkResponse.HttpResponse,
-                                    $"Error connecting to {jwkUrl}: {jwkResponse.HttpErrorReason}").ConfigureAwait();
+                                    $"Error connecting to {jwkUrl}: {jwkResponse.HttpErrorReason}").ConfigureAwait(false);
                         }
 
                         disco.KeySet = jwkResponse.KeySet;

@@ -67,7 +67,7 @@ namespace Udap.Server.Configuration
 
             if (baseUrl == null)
             {
-                baseUrl = Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(';').First();
+                baseUrl = Environment.GetEnvironmentVariable("UdapIdpBaseUrl");
 
                 if (string.IsNullOrEmpty(baseUrl))
                 {

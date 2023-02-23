@@ -49,10 +49,10 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        // ClientOptions.BaseAddress = new Uri("https://udap.idp.securedcontrols.net:5002");
-        // Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "https://udap.idp.securedcontrols.net:5002");
-        // Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORT", "5001");
         Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "http://localhost");
+        //Similar to pushing to the cloud where the docker image runs as localhost:8080 but we want to inform Udap.Idp
+        //that it is some other https url for settings like aud, register and other metadata published settings.
+        Environment.SetEnvironmentVariable("UdapIdpBaseUrl", "http://localhost"); 
         Environment.SetEnvironmentVariable("provider", "Sqlite");
         builder.UseEnvironment("Development");
         

@@ -18,10 +18,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="app.yaml" CopyToOutputDirectory="PreserveNewest" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Remove="Controllers\**" />
     <Content Remove="Controllers\**" />
     <EmbeddedResource Remove="Controllers\**" />

@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
@@ -21,11 +20,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client.Extensions;
-using Udap.Client.Client.Messages;
 using Udap.Common.Certificates;
 using Udap.Idp;
 using Udap.Model;

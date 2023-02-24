@@ -10,18 +10,17 @@
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
+using Duende.IdentityServer.Extensions;
+using Duende.IdentityServer.Services;
 using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Primitives;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using Udap.Server.Configuration;
-using Udap.Server.Configuration.DependencyInjection;
-using Udap.Server.Extensions;
-using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
-using Udap.Server.Registration;
 
 namespace Udap.Idp;
 
@@ -82,11 +81,9 @@ internal static class HostingExtensions
         builder.Services.AddMemoryCache();
         builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
         builder.Services.AddInMemoryRateLimiting();
-
         builder.Services.AddHttpContextAccessor();
-        
         builder.Services.AddRazorPages();
-
+        
         builder.Services.AddIdentityServer(options =>
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
@@ -146,9 +143,7 @@ internal static class HostingExtensions
 
                         _ => throw new Exception($"Unsupported provider: {provider}")
                     });
-
         
-        // configuration (resolvers, counter key builders)
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
         //
@@ -179,16 +174,26 @@ internal static class HostingExtensions
                     });
             });
 
-        builder.Services.AddHttpLogging(options =>
-        {
-            options.LoggingFields = HttpLoggingFields.All;
-        });
+        // builder.Services.AddHttpLogging(options =>
+        // {
+        //     options.LoggingFields = HttpLoggingFields.All;
+        // });
 
         return builder.Build();
     }
 
     public static WebApplication ConfigurePipeline(this WebApplication app, string[] args)
     {
+        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
+        {
+            app.Use(async (ctx, next) =>
+            {
+                ctx.Request.Scheme = ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedProtoHeaderName];
+
+                await next();
+            });
+        }
+        
         app.UseHttpLogging();
 
         if (!args.Any(a => a.Contains("skipRateLimiting")))
@@ -198,7 +203,6 @@ internal static class HostingExtensions
 
         if (!app.Environment.IsDevelopment())
         {
-            app.UseForwardedHeaders();
             app.UseHsts();
         }
 
@@ -213,15 +217,16 @@ internal static class HostingExtensions
         app.UseStaticFiles();
         app.UseRouting();
 
-        app.UseUdapServer();
+        
         app.UseIdentityServer();
+        app.UseUdapServer();
 
         
 
         // uncomment if you want to add a UI
         app.UseAuthorization();
         app.MapRazorPages().RequireAuthorization();
-
+        
         return app;
     }
 }

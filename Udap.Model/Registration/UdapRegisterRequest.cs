@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System;
 using System.Text.Json.Serialization;
 
 namespace Udap.Model.Registration;
@@ -39,7 +38,7 @@ public class UdapRegisterRequest
     /// List of JWS compact serialization
     /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.Certifications)]
-    public string[]? Certifications { get; set; } = Array.Empty<string>();
+    public string[]? Certifications { get; set; }
 
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.Udap)]
     public string Udap { get; set; }

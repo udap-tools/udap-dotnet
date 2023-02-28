@@ -10,13 +10,9 @@
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
-using Duende.IdentityServer.Extensions;
-using Duende.IdentityServer.Services;
 using Google.Cloud.SecretManager.V1;
-using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Primitives;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -36,17 +32,15 @@ internal static class HostingExtensions
         var provider = builder.Configuration.GetValue("provider", "SqlServer");
         var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
 
-        string dbChoice;
         string connectionString;
 
-        dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
+        var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
 
 
         // foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
         // {
         //     Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
         // }
-
         //Ugly but works so far.
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
         {
@@ -57,7 +51,7 @@ internal static class HostingExtensions
             Log.Logger.Information("Creating client");
             var client = SecretManagerServiceClient.Create();
 
-            var secretResource = "projects/288013792534/secrets/gcp_db/versions/latest";
+            const string secretResource = "projects/288013792534/secrets/gcp_db/versions/latest";
 
             Log.Logger.Information("Requesting {secretResource");
             // Call the API.
@@ -217,11 +211,9 @@ internal static class HostingExtensions
         app.UseStaticFiles();
         app.UseRouting();
 
-        
-        app.UseIdentityServer();
         app.UseUdapServer();
+        app.UseIdentityServer();
 
-        
 
         // uncomment if you want to add a UI
         app.UseAuthorization();

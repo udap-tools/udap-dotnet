@@ -25,6 +25,20 @@
       "sslPort": 5002,
       "applicationUrl": "https://host.docker.internal:5002"
     },
+    "UDAPServerMode.GCP": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "GCPDeploy": "true",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ServerSettings:ServerSupport": "UDAP",
+        "ServerSettings:DefaultSystemScopes": "udap system.cruds",
+        "ServerSettings:DefaultUserScopes": "udap user.cruds",
+        "UdapIdpBaseUrl": "https://host.docker.internal:5002"
+      },
+      "sslPort": 5002,
+      "applicationUrl": "https://host.docker.internal:5002"
+    },
     "Localhost_noSSL": {
       "commandName": "Project",
       "launchBrowser": true,

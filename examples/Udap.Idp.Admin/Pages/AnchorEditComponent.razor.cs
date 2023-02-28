@@ -15,7 +15,7 @@ public partial class AnchorEditComponent
 
     [Inject] CommunityState CommunityState { get; set; }
 
-    [Inject] private IJSRuntime Js { get; set; }
+    [Inject] private IJSRuntime Js { get; set; } = null!;
 
     ErrorBoundary? ErrorBoundary { get; set; }
 

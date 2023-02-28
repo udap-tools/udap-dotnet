@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,9 +7,9 @@
 // */
 #endregion
 
-using AutoMapper;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using AutoMapper;
 using Udap.CA.Entities;
 using Udap.Common;
 
@@ -71,7 +71,7 @@ public class RootCertificateMapperProfile : Profile
 
             .ReverseMap()
 
-            .ForMember(entity => entity.RSAPriateKey, opts =>
+            .ForMember(entity => entity.RSAPrivateKey, opts =>
                 opts.MapFrom(model =>
                     PemEncoding.WriteString(
                         PemLabels.RsaPrivateKey,

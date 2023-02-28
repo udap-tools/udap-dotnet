@@ -1,4 +1,13 @@
-﻿using System.Security.Cryptography;
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
@@ -6,8 +15,8 @@ namespace Udap.CA.Services;
 
 public class CertificateUtilities : IDisposable
 {
-    private X509Certificate2 _certificate;
-    private RSA _rsaKey;
+    private X509Certificate2? _certificate;
+    private readonly RSA _rsaKey;
 
     public CertificateUtilities(RSA? rsa = null)
     {
@@ -202,23 +211,26 @@ public class CertificateUtilities : IDisposable
         //
 
 
-        var issuerSubjectKey = caCert.Extensions?["2.5.29.14"].RawData;
-        var segment = new ArraySegment<byte>(issuerSubjectKey, 2, issuerSubjectKey.Length - 2);
-        var authorityKeyIdentifier = new byte[segment.Count + 4];
-        // these bytes define the "KeyID" part of the AuthorityKeyIdentifier
-        authorityKeyIdentifier[0] = 0x30;
-        authorityKeyIdentifier[1] = 0x16;
-        authorityKeyIdentifier[2] = 0x80;
-        authorityKeyIdentifier[3] = 0x14;
-        segment.CopyTo(authorityKeyIdentifier, 4);
-        anchorReq.CertificateExtensions.Add(new X509Extension("2.5.29.35", authorityKeyIdentifier, false));
+        var issuerSubjectKey = caCert.Extensions["2.5.29.14"]?.RawData;
+        if (issuerSubjectKey != null)
+        {
+            var segment = new ArraySegment<byte>(issuerSubjectKey, 2, issuerSubjectKey.Length - 2);
+            var authorityKeyIdentifier = new byte[segment.Count + 4];
+            // these bytes define the "KeyID" part of the AuthorityKeyIdentifier
+            authorityKeyIdentifier[0] = 0x30;
+            authorityKeyIdentifier[1] = 0x16;
+            authorityKeyIdentifier[2] = 0x80;
+            authorityKeyIdentifier[3] = 0x14;
+            segment.CopyTo(authorityKeyIdentifier, 4);
+            anchorReq.CertificateExtensions.Add(new X509Extension("2.5.29.35", authorityKeyIdentifier, false));
+        }
     }
 
     private void Dispose(bool disposing)
     {
         if (disposing)
         {
-            _certificate.Dispose();
+            _certificate?.Dispose();
             _rsaKey.Dispose();
         }
     }

@@ -265,7 +265,7 @@ public partial class UdapBusinessToBusiness
         {
             var requestToken = await AccessService
                 .BuildRequestAccessTokenForClientCredentials(
-                    AppState.RegistrationDocument.ClientId,
+                   AppState.RegistrationDocument.ClientId,
                     AppState.UdapMetadata.TokenEndpoint);
 
             AppState.SetProperty(this, nameof(AppState.ClientCredentialsTokenRequest), requestToken);

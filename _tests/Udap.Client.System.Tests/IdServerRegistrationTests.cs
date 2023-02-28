@@ -327,14 +327,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             certifications.ToArray()
         );
 
-        var response = await fhirClient.PostAsJsonAsync(reg, requestBody);
+        var response = await fhirClient.PostAsJsonAsync(reg, requestBody, 
+            new JsonSerializerOptions{ DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull});
 
-        //TODO: Server should return specific formatted error message.  Example
-        //
-        // I think this is normal for the test tool my Report indicates I passed all tests.
-        // {"error_description":"invalid registration metadata; see test report","error":"invalid_client_metadata"}
-        //
-        /// https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-5.2
         var result = await response.Content.ReadAsStringAsync();
         _testOutputHelper.WriteLine(result);
 

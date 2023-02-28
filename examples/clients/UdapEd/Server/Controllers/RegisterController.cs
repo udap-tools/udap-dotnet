@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -294,7 +295,8 @@ public class RegisterController : Controller
  
         var response = await _httpClient.PostAsJsonAsync<UdapRegisterRequest>(
             request.RegistrationEndpoint,
-            request.UdapRegisterRequest);
+            request.UdapRegisterRequest,
+            new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
 
         response.EnsureSuccessStatusCode();
 

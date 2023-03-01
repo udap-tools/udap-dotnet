@@ -11,6 +11,7 @@ using System.Net;
 using System.Text.Json;
 using FhirLabsApi;
 using FhirLabsApi.Extensions;
+using Firely.Fhir.Packages;
 using Google.Cloud.SecretManager.V1;
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
@@ -174,8 +175,8 @@ IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webAppl
 
         Log.Logger.Information("Creating client");
         var client = SecretManagerServiceClient.Create();
-
-        var secretResource = "projects/341821616593/secrets/UdapFileCertStoreManifest/versions/latest";
+        
+        var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest/versions/latest";
 
         Log.Logger.Information("Requesting {secretResource");
         // Call the API.

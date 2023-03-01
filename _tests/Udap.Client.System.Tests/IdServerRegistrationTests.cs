@@ -327,14 +327,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             certifications.ToArray()
         );
 
-        var response = await fhirClient.PostAsJsonAsync(reg, requestBody);
+        var response = await fhirClient.PostAsJsonAsync(reg, requestBody, 
+            new JsonSerializerOptions{ DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull});
 
-        //TODO: Server should return specific formatted error message.  Example
-        //
-        // I think this is normal for the test tool my Report indicates I passed all tests.
-        // {"error_description":"invalid registration metadata; see test report","error":"invalid_client_metadata"}
-        //
-        /// https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-5.2
         var result = await response.Content.ReadAsStringAsync();
         _testOutputHelper.WriteLine(result);
 
@@ -1611,7 +1606,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _fixture.Manifest.ResourceServers.First().Communities
                 .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var redirectUrls = new List<string?>
+            { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri };
+
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -1624,14 +1622,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("user/Patient.* user/Practitioner.read")
             .WithResponseTypes(new HashSet<string?> { "code" })
-            .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
-            .Build();
+            .WithRedirectUrls(redirectUrls)
+            .BuildSoftwareStatement();
 
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
+        
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
         var requestBody = new UdapRegisterRequest
@@ -1728,10 +1722,12 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             responseType: "code",
             state: CryptoRandom.CreateUniqueId(),
             scope: result.Scope,
-            redirectUri: document.RedirectUris.First());
+            redirectUri: redirectUrls.First());
 
+        handler = new HttpClientHandler() { AllowAutoRedirect = false };
+        var httpClient = new HttpClient(handler);
 
-        response = await idpClient.GetAsync(url);
+        response = await httpClient.GetAsync(url);
 
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
 

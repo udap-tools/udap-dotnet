@@ -12,20 +12,29 @@ I example apps are in the examples folder.
 
 The repository contains components and example uses to support the following items from [Security for Scalable Registration, Authentication, and Authorization](http://hl7.org/fhir/us/udap-security/).  The intent is to also support generic UDAP, but the driving force currently is supporting auto registration to FHIR servers.
 
-| Feature                 | Supported           | Comments                                               |
-|-------------------------|---------------------|--------------------------------------------------------|
-| Client                  | Not Started         | Seems I ignored this in favor of server features.  I will get back to it soon. After all we need a client that can easily validated trust |
-| [Discovery](http://hl7.org/fhir/us/udap-security/discovery.html) | ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) |  Client certificate storage is a file strategy.  User can implement their own ICertificateStore.  May add a Entity Framework example in future. |
-| [Registration](http://hl7.org/fhir/us/udap-security/registration.html)| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)  |  Highly Functional.  The Deployed example FHIR Server, "FhirLabsApi" is passing all udap.org Server Tests.  I am going to revisit the Client Secrets persistence layer.  Packages are dependent on Duende's Identity Server Nuget Packages. |
-| [Consumer-Facing](http://hl7.org/fhir/us/udap-security/consumer.html)| Not Started | |
-| [Business-to-Business](http://hl7.org/fhir/us/udap-security/b2b.html)| ✔️ | Works with client_credentials and authorization_code flows. |
-| [Tiered OAuth for User Authentication](http://hl7.org/fhir/us/udap-security/user.html) | Not Started | |
+| Feature   | Sub Feature             | Supported           | Comments                                               |
+|-------------------------|---|---------------------|--------------------------------------------------------|
+| Client                  | |Not Started         | Seems I ignored this in favor of server features.  I will get back to it soon. After all we need a client that can easily validated trust |
+| [Discovery](http://hl7.org/fhir/us/udap-security/discovery.html) || ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) |  Client certificate storage is a file strategy.  User can implement their own ICertificateStore.  May add a Entity Framework example in future. |
+| [Registration](http://hl7.org/fhir/us/udap-security/registration.html)|| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)  |  Highly Functional.  The Deployed example FHIR Server, "FhirLabsApi" is passing all udap.org Server Tests.  I am going to revisit the Client Secrets persistence layer.  Packages are dependent on Duende's Identity Server Nuget Packages. |
+||Inclusion of Certifications and Endorsements|Started|Some example certification integration tests included from the client side |
+Authorization and Authentication 
+| [Consumer-Facing](http://hl7.org/fhir/us/udap-security/consumer.html)|| Not Started | |
+| [Business-to-Business](http://hl7.org/fhir/us/udap-security/b2b.html)|| ✔️ | Works with client_credentials and authorization_code flows. |
+||JWT Claim Extensions|Started|Some work completed for the B2B Authorization Extension (hl7-b2b) extension within integration tests. }  
+| [Tiered OAuth for User Authentication](http://hl7.org/fhir/us/udap-security/user.html) || Not Started | |
 
-### PKI support
+## PKI support
+
+### Generate PKI for integration tests
 
 Part of this repository is a xUnit test project that will generate a couple PKI hierarchies for testing UDAP.  The test is called `Udap.PKI.Generator`.  I think showing the mechanics of what it takes to build out a PKI for UDAP will aid education and provide the flexibility to test interesting use cases.  Run all the tests in the `Udap.PKI.Generator` project.  The results include a folder with root a root certificate authority that issues intermediate certificates, certificate revocation lists, used certificates for community members and certs for web TLS certs.  Each of the example web services located in the [examples](/examples) use MSBuild `Link`s to link to certificates appropriate to its PKI needs.  So, if you would like to change something in the PKI just edit and run the tests.  All examples will automatically pick up the changes.  To enable crl lookup and AIA, Certification Authority Issuer resolution I just mapped crl, cert and anchor as static content via something like IIS on my Windows box.  I may create a dotnet core app to make this easier and it into ci/cd better but this is where I am at so far.
 
 I am not sure if this will stay in unit test form or not, but for now this is the technique.  
+
+### Certificate Authority tool
+
+A .NET UI and CLI tool to generate certificates for UDAP communities.  A UI version of this tool is partially done in the [Udap.CA](/examples/Udap.CA/) project.  The plan is to deploy this or install it yourself and allow quick generations of certificates and PKI hierarchies that can generate valid and various invalid certificates for testing to aid in experimenting with behaviors such as certificate revocation, expirations and other interesting potential certification use cases. 
 
 # Components (Nuget packages)
 
@@ -49,7 +58,7 @@ cd WebApi1
 dotnet add package Udap.Metadata.Server 
 ```
 
-Or for until an first release
+Or until a first release use the --prerelease tag.
 
 ```csharp
 dotnet add package Udap.Metadata.Server --prerelease
@@ -212,11 +221,11 @@ A this point a success would result in a result similar to the following json.  
 - [FhirLabsApi example project](/examples//FhirLabsApi/)
 - [WeatherApi example project](/examples//WeatherApi/)
 - [FhirLabs Published](https://fhirlabs.net/fhir/r4/.well-known/udap)
-- [FhirLabs UdapEd Tool | Discovery](https://fhirlabs-udaped-v46zp6zteq-uw.a.run.app/udapDiscovery)
+- [FhirLabs UdapEd Tool | Discovery | Registration | B2B ](https://fhirlabs-udaped-v46zp6zteq-uw.a.run.app/udapDiscovery)
 
 ### Udap.Client
 
-- No library formalized yet
+- No library formalized yet.  
   
 - ### Udap.Idp.Server
 
@@ -227,9 +236,10 @@ A this point a success would result in a result similar to the following json.  
 
 Add this package to your Identity Server.  
 
-Assumptions:  An Identity Sever exists is backed by a relational database.  Use [Udap.Idp](/examples/Udap.Idp/) as an example.  I may revisit this in the future and build an in memory version but this reference implementation assumes a database is deployed.  For your convenience there is a EF Migrations Project called [UdapDb.SqlServer](/migrations/UdapDb.SqlServer/).  Run from Visual Studio using the UdapDb profile.  This project will create all the Udap tables and Duende Identity tables.  It will seed data needed for running local system tests.  See the SeedData.cs for details.
+See database setup at end of this document.  
+Assumptions:  An Identity Sever exists is backed by a relational database.  Use [Udap.Idp](/examples/Udap.Idp/) as an example.  I may revisit this in the future and build an in memory version but this reference implementation. For now it assumes a relational database is deployed.
 
-The following explains a basic dependency injection setup 
+The following explains a basic dependency injection setup.
 
 ```csharp
 
@@ -272,7 +282,11 @@ builder.Services.AddIdentityServer()
 
 ```
 
+### Udap Admin UI Tool
 
+The is a MVP version of an Admin UI Tool.  It is only capable of administering the Udap prefixed tables.
+
+See [Udap.Idp.Admin](/examples/Udap.Idp.Admin/)
 
 ## Build and test
 
@@ -306,3 +320,12 @@ The following tests are normal to run and the build server runs these same tests
 - [Udap.Support.Tests](/_tests/Udap.Support.Tests/)
 - [UdapMetadata.Tests](/_tests/UdapMetadata.Tests/), tests two against the two example web services, FhirLabsApi and WeatherApi.
 - [UdapServer.Tests](_tests/UdapServer.Tests/)
+
+
+## Udap.Idp Database Configuration
+
+For your convenience a EF Migrations Project called [UdapDb.SqlServer](/migrations/UdapDb.SqlServer/) can deploy the database schema.  Run from Visual Studio using the UdapDb profile (/properties/launchSettings.json).  This project will create all the Udap tables and Duende Identity tables.  It will seed data needed for running local system tests.  See the SeedData.cs for details.
+
+If you need another database such as PostgreSQL I could be motivated to create one.
+
+Not the [UdapDb.SqlServer](/migrations/UdapDb.SqlServer/) project includes two migrations for Duende's Identity Server tables.  I have not put anytime into migrating a schema.  At this point I my pattern is to just delete the database and re-create it.  At some point I will version this and start migrating officially.

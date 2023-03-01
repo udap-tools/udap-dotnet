@@ -46,15 +46,4 @@ internal static class StringExtensions
     {
         return string.IsNullOrWhiteSpace(value);
     }
-
-    [DebuggerStepThrough]
-    public static string ToSpaceSeparatedString(this IEnumerable<string> list)
-    {
-        if (!list.Any())
-        {
-            return string.Empty;
-        }
-
-        return String.Join(' ', list);
-    }
 }

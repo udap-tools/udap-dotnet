@@ -161,7 +161,8 @@ public partial class UdapBusinessToBusiness
             State = $"state={CryptoRandom.CreateUniqueId()}",
             ClientId = $"client_id={AppState.RegistrationDocument?.ClientId}",
             Scope = $"scope={AppState.RegistrationDocument?.Scope}",
-            RedirectUri = $"redirect_uri={AppState.RegistrationDocument?.RedirectUris.FirstOrDefault()}"
+            RedirectUri = $"redirect_uri={AppState.RegistrationDocument?.RedirectUris.FirstOrDefault()}",
+            Aud = $"aud={AppState.MetadataUrl}"
         };
 
         AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
@@ -181,14 +182,44 @@ public partial class UdapBusinessToBusiness
             AppState.AuthorizationCodeRequest?.ResponseType,
             AppState.AuthorizationCodeRequest?.State,
             AppState.AuthorizationCodeRequest?.Scope,
-            AppState.AuthorizationCodeRequest?.RedirectUri);
+            AppState.AuthorizationCodeRequest?.RedirectUri,
+            AppState.AuthorizationCodeRequest?.Aud);
 
         Console.WriteLine(accessCodeRequestUrl);
         //
         // Builds an anchor href link the user clicks to initiate a user login page at the authorization server
         //
-        AppState.SetProperty(this, nameof(AppState.AccessCodeRequestResult), await AccessService.Get(accessCodeRequestUrl));
+        var loginLink = await AccessService.Get(accessCodeRequestUrl);
+        EnrichLoginLink(loginLink);
+        AppState.SetProperty(this, nameof(AppState.AccessCodeRequestResult), loginLink);
         LoginRedirectLinkText = "Login Redirect";
+    }
+
+    /// <summary>
+    /// Some requests to the Authorization endpoint do not build the full login url
+    /// with the parameters.  Case in point is https://www.udap.org/UDAPTestTool/.
+    /// While Securedcontrols.net does.
+    /// </summary>
+    /// <param name="loginLink"></param>
+    /// <exception cref="NotImplementedException"></exception>
+    private void EnrichLoginLink(AccessCodeRequestResult loginLink)
+    {
+        if (loginLink.RedirectUrl != null)
+        {
+            var loginRedirect = new Uri(loginLink.RedirectUrl);
+
+            if (string.IsNullOrWhiteSpace(loginRedirect.Query))
+            {
+                var url = new RequestUrl(loginLink.RedirectUrl);
+                loginLink.RedirectUrl = url.AppendParams(
+                    AppState.AuthorizationCodeRequest?.ClientId,
+                    AppState.AuthorizationCodeRequest?.ResponseType,
+                    AppState.AuthorizationCodeRequest?.State,
+                    AppState.AuthorizationCodeRequest?.Scope,
+                    AppState.AuthorizationCodeRequest?.RedirectUri,
+                    AppState.AuthorizationCodeRequest?.Aud);
+            }
+        }
     }
 
     private void ResetSoftwareStatement()
@@ -265,7 +296,7 @@ public partial class UdapBusinessToBusiness
         {
             var requestToken = await AccessService
                 .BuildRequestAccessTokenForClientCredentials(
-                    AppState.RegistrationDocument.ClientId,
+                   AppState.RegistrationDocument.ClientId,
                     AppState.UdapMetadata.TokenEndpoint);
 
             AppState.SetProperty(this, nameof(AppState.ClientCredentialsTokenRequest), requestToken);

@@ -5,7 +5,7 @@
 
 <ErrorBoundary @ref="ErrorBoundary">
 <ChildContent>
-<MudTable Items="@Communities" Dense="@false" Hover="@true" ReadOnly="@false" CanCancelEdit="@true" 
+<MudTable Items="@_communities" Dense="@false" Hover="@true" ReadOnly="@false" CanCancelEdit="@true" 
           Filter="new Func<Community,bool>(FilterFunc)"
           SortLabel="Sort By" CommitEditTooltip="Commit Edit"
           OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))" 
@@ -17,19 +17,19 @@
     <ToolBarContent>
         <MudText Typo="Typo.h6">Communities</MudText>
         <MudSpacer />
-        <MudTextField @bind-Value="searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </ToolBarContent>
     <ColGroup>
-        <col style="width:0px" />
+        <col style="width:0" />
         <col />
         <col />
         <col />
-        <col style ="width:0px" />
+        <col style ="width:0" />
       </ColGroup>
     <HeaderContent>
         <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<Community, object>(x=>x.Name)">Name</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<Community, object>(x=>x.Enabled)">Enabled</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<Community, object>(x=>x.RootCertificates?.Count())">Root Certificates</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Community, object>(x=> x.Enabled)">Enabled</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<Community, object>(x=> x.RootCertificates?.Count ?? 0)">Root Certificates</MudTableSortLabel></MudTh>
         <MudFab Icon="@Icons.Material.Filled.Add"
                 Color="Color.Inherit"
                 @onclick="AddCommunity"
@@ -47,7 +47,7 @@
         }
         <MudTd DataLabel="Enabled"><MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" /></MudTd>
         <MudTd DataLabel="Anchors">
-            <span class="ma-6">@context.RootCertificates?.Count()</span>
+            <span class="ma-6">@context.RootCertificates.Count()</span>
             <span >
                 @if (context.RootCertificates.Any())
                 {
@@ -73,7 +73,7 @@
                 <MudFab HtmlTag="label"
                         Size="Size.Small"
                         Color="Color.Warning"
-                        Icon="@Icons.Filled.DeleteForever"
+                        Icon="@Icons.Material.Filled.DeleteForever"
                         Label="Delete"
                         class="ma-2"
                         OnClick="@(() => DeleteRootCommunity(context))"
@@ -140,13 +140,13 @@
 </ErrorContent>
 </ErrorBoundary>
 
-<MudExpansionPanels Style="flex: 1;">
+<MudExpansionPanels Style="-webkit-flex: 1; -ms-flex: 1; -o-flex: 1; flex: 1;">
     <MudExpansionPanel Text="Show inline-edit event log">
-        @foreach (var message in editEvents)
+        @foreach (var message in _editEvents)
         {
             <MudText>@message</MudText>
         }
-        @if (editEvents.Count > 0)
+        @if (_editEvents.Count > 0)
         {
             <div class="d-flex">
                 <MudSpacer />

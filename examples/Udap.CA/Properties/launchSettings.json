@@ -1,10 +1,30 @@
 {
   "profiles": {
-        "Udap.CA": {
+    "Udap.CA sqlite": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:6061;http://localhost:6060"
+    },
+    "Udap Local SqlDb": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "LocalSqlDb": "true"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:6061;http://localhost:6060"
+    },
+    "GCP SqlDb": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "GCPDeploy": "true"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:6061;http://localhost:6060"

@@ -67,26 +67,19 @@ namespace Udap.Server.Configuration
 
             if (baseUrl == null)
             {
-                //TODO: shouldn't have this business logic in here.  Should be able 
-                bool isInDockerContainer = (Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true");
-                baseUrl = "http://localhost:8080";
-
-                if (!isInDockerContainer)
-                {
-                    baseUrl = $"{Environment.GetEnvironmentVariable("ASPNETCORE_URLS")?.Split(';').First()}";
-                }
+                baseUrl = Environment.GetEnvironmentVariable("UdapIdpBaseUrl");
 
                 if (string.IsNullOrEmpty(baseUrl))
                 {
                     throw new Exception(
                         "Missing ASPNETCORE_URLS environment variable.  Or missing registrationEndpoint parameter");
                 }
-                
+
                 baseUrl = $"{baseUrl}" +
-                              $"{ProtocolRoutePaths.Register.EnsureLeadingSlash()}" ;
+                              $"{ProtocolRoutePaths.Register.EnsureLeadingSlash()}";
             }
 
-            
+
             builder.Services.Configure<IdentityServerOptions>(options =>
                 options.Discovery.CustomEntries.Add(
                     OidcConstants.Discovery.RegistrationEndpoint,

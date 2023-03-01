@@ -32,9 +32,9 @@
           </ColGroup>
           <HeaderContent>
               <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<RootCertificate, object>(x=>x.Name)">Subject</MudTableSortLabel></MudTh>
-              <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=>x.Enabled)">Enabled</MudTableSortLabel></MudTh>
-              <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=>x.Certificate.Thumbprint)">Thumbprint</MudTableSortLabel></MudTh>
-              <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=>x.Certificate.GetNameInfo(X509NameType.SimpleName, false))">Certificate Name</MudTableSortLabel></MudTh>
+              <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=> x.Enabled)">Enabled</MudTableSortLabel></MudTh>
+              <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=> x.Certificate?.Thumbprint ?? string.Empty)">Thumbprint</MudTableSortLabel></MudTh>
+              <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=> x.Certificate?.GetNameInfo(X509NameType.SimpleName, false) ?? string.Empty)">Certificate Name</MudTableSortLabel></MudTh>
               <MudTh />
           </HeaderContent>
           <RowTemplate>
@@ -55,7 +55,7 @@
                       <MudFab HtmlTag="label"
                               Size="Size.Small"
                               Color="Color.Warning"
-                              Icon="@Icons.Filled.DeleteForever"
+                              Icon="@Icons.Material.Filled.DeleteForever"
                               Label="Delete"
                               class="ma-2"
                               OnClick="@(() => DeleteRootCertificate(context))"
@@ -83,21 +83,21 @@
           </PagerContent>
       </MudTable>
       
-  @if (_rootFormActive)
+  @if (_rootFormActive && RootCertificateRowInEdit != null)
   {
       <MudCard>
-        <MudForm Model="@_rootCertificateRowInEdit" @ref="@rootCertForm" ValidationDelay="0" >
+        <MudForm Model="@RootCertificateRowInEdit" @ref="@_rootCertForm" ValidationDelay="0" >
             <MudCardContent>
-                <MudTextField Label="Subject (X.500)" @bind-Value="_rootCertificateRowInEdit.Name" For="@(() => _rootCertificateRowInEdit.Name)"/>
-              <MudSwitch @bind-Checked="_rootCertificateRowInEdit.Enabled" For="@(() => _rootCertificateRowInEdit.Enabled)" />
+                <MudTextField Label="Subject (X.500)" @bind-Value="RootCertificateRowInEdit.Name" For="@(() => RootCertificateRowInEdit.Name)"/>
+              <MudSwitch @bind-Checked="RootCertificateRowInEdit.Enabled" For="@(() => RootCertificateRowInEdit.Enabled)" />
                 <MudDatePicker Label="Begin Date" Editable="true"
                              Mask="@(new DateMask("MM/dd/yyyy"))" DateFormat="MM/dd/yyyy" Placeholder="en-US Date"
-                             @bind-Date="_rootCertificateRowInEdit.BeginDate"/>
+                             @bind-Date="RootCertificateRowInEdit.BeginDate"/>
                 <MudDatePicker Label="End Date" Editable="true"
                                Mask="@(new DateMask("MM/dd/yyyy"))" DateFormat="MM/dd/yyyy" Placeholder="en-US Date"
-                               @bind-Date="_rootCertificateRowInEdit.EndDate"/>
-                <MudTextField Label="Published Certificate Url" @bind-Value="_rootCertificateRowInEdit.Url"></MudTextField>
-                <MudTextField Label="Password" @bind-Value="_rootCertificateRowInEdit.Secret"></MudTextField>
+                               @bind-Date="RootCertificateRowInEdit.EndDate"/>
+                <MudTextField Label="Published Certificate Url" @bind-Value="RootCertificateRowInEdit.Url"></MudTextField>
+                <MudTextField Label="Password" @bind-Value="RootCertificateRowInEdit.Secret"></MudTextField>
             </MudCardContent>
   
         </MudForm>
@@ -116,7 +116,7 @@
   </ErrorContent>
 </ErrorBoundary>
 
-<MudExpansionPanels Style="flex: 1;">
+<MudExpansionPanels Style="-webkit-flex: 1; -ms-flex: 1; -o-flex: 1; flex: 1;">
   <MudExpansionPanel Text="Show inline-edit event log">
         @foreach (var message in _editEvents)
         {

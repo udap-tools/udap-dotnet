@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
@@ -21,11 +20,9 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client.Extensions;
-using Udap.Client.Client.Messages;
 using Udap.Common.Certificates;
 using Udap.Idp;
 using Udap.Model;
@@ -49,10 +46,10 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
-        // ClientOptions.BaseAddress = new Uri("https://udap.idp.securedcontrols.net:5002");
-        // Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "https://udap.idp.securedcontrols.net:5002");
-        // Environment.SetEnvironmentVariable("ASPNETCORE_HTTPS_PORT", "5001");
         Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "http://localhost");
+        //Similar to pushing to the cloud where the docker image runs as localhost:8080 but we want to inform Udap.Idp
+        //that it is some other https url for settings like aud, register and other metadata published settings.
+        Environment.SetEnvironmentVariable("UdapIdpBaseUrl", "http://localhost"); 
         Environment.SetEnvironmentVariable("provider", "Sqlite");
         builder.UseEnvironment("Development");
         

@@ -109,11 +109,12 @@ pre {
 }
 
 .pre {
+  overflow-wrap: break-word;
   word-wrap: break-word; /* Internet Explorer 5.5+ */
   display: block;
   unicode-bidi: embed;
   font-family: monospace;
-  white-space: pre;
+  white-space: pre-wrap;
   width: 100%;
 }
 

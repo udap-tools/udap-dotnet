@@ -9,6 +9,5 @@ public class AuthorizationCodeRequest
     public string? Scope { get; set; }
 
     public string? RedirectUri { get; set; }
-
-
+    public string? Aud { get; set; }
 }

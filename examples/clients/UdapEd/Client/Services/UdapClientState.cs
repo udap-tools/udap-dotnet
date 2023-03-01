@@ -11,7 +11,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
-using Udap.Model.Access;
 using Udap.Model.Registration;
 using UdapEd.Shared.Model;
 
@@ -28,7 +27,7 @@ public class UdapClientState : IAppState
 
     public UdapMetadata? UdapMetadata { get; set; }
     
-    public string SoftwareStatementBeforeEncoding { get; set; } = string.Empty;
+    public RawSoftwareStatementAndHeader? SoftwareStatementBeforeEncoding { get; set; }
 
     public UdapRegisterRequest? UdapRegistrationRequest { get; set; }
 

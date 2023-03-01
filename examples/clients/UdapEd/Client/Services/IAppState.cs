@@ -11,13 +11,13 @@ public interface IAppState
     
     UdapMetadata? UdapMetadata { get; }
 
-    string SoftwareStatementBeforeEncoding { get; }
+    RawSoftwareStatementAndHeader SoftwareStatementBeforeEncoding { get; }
 
     UdapRegisterRequest? UdapRegistrationRequest { get; }
-
     Oauth2FlowEnum Oauth2Flow { get; }
 
     RegistrationDocument? RegistrationDocument { get; }
+
 
     UdapClientCredentialsTokenRequestModel? ClientCredentialsTokenRequest { get; }
 

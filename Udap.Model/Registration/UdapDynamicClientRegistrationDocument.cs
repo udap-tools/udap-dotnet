@@ -25,6 +25,7 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using IdentityModel.Client;
 using Microsoft.IdentityModel.Tokens;
 
 namespace Udap.Model.Registration;
@@ -545,6 +546,15 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
             return claimValues;
         }
 
+        if (value is JsonElement { ValueKind: JsonValueKind.Array } element)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                claimValues.Add(item.ToString());
+            }
+            return claimValues;
+        }
+
         if (value is IEnumerable<string> values)
         {
             foreach (var item in values)
@@ -591,7 +601,11 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
 
             if (value is int numInt)
                 return numInt;
-            
+
+            if (value is JsonElement { ValueKind: JsonValueKind.Number } element)
+            {
+                return element.GetInt64();
+            }
             return 0;
         }
 

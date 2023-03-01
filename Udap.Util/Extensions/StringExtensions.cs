@@ -44,4 +44,15 @@ public static class StringExtensions
     {
         return Base64UrlEncoder.Decode(input);
     }
+
+    [DebuggerStepThrough]
+    public static string ToSpaceSeparatedString(this ICollection<string>? list)
+    {
+        if (list == null)
+        {
+            return string.Empty;
+        }
+
+        return list.Any() ? string.Join(" ", list): string.Empty;
+    }
 }

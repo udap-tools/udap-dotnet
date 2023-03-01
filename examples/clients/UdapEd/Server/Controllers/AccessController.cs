@@ -59,7 +59,7 @@ public class AccessController : Controller
     [HttpPost("BuildRequestToken/authorization_code")]
     public Task<IActionResult> RequestAccessTokenAuthCode([FromBody] AuthorizationCodeTokenRequestModel model)
     {
-        var clientCertWithKey = HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY);
+        var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
         if (clientCertWithKey == null)
         {
@@ -84,7 +84,7 @@ public class AccessController : Controller
     [HttpPost("BuildRequestToken/client_credentials")]
     public Task<IActionResult> RequestAccessTokenClientCredentials([FromBody] ClientCredentialsTokenRequestModel model)
     {
-        var clientCertWithKey = HttpContext.Session.GetString(Constants.CLIENT_CERT_WITH_KEY);
+        var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
         if (clientCertWithKey == null)
         {

@@ -1,4 +1,5 @@
 ﻿@page "/udapDiscovery"
+@using Udap.Client.Internal
 
 <ErrorBoundary @ref="ErrorBoundary">
     <ChildContent>
@@ -9,11 +10,12 @@
             <MudItem xs="12" sm="12" md="12">
                 <MudButton Class="mt-3" ButtonType="ButtonType.Button" Variant="Variant.Filled" OnClick="GetMetadata">Query</MudButton>
                 <MudSpacer />
-                <MudTextField Label="Metadata Url" AutoFocus="true" InputType="InputType.Text"
-                              @bind-Value="@MetadataUrl"
+        <MudTextField Label=@($"Metadata Url   ( {GetWellKnownUdap(BaseUrl)} )")
+                      AutoFocus="true" 
+                              InputType="InputType.Text"
+                              @bind-Value="@BaseUrl"
                               TextChanged="SetMetadataUrlProperty" >
-                      
-                </MudTextField>
+        </MudTextField>
                 @* *@
                 @* @bind-Value="@State.MetadataUrl" AutoFocus="true" InputType="InputType.Text" *@
                 @* @onchange="args => { if (args.Value != null) State.MetadataUrl = (string)args.Value; }" *@

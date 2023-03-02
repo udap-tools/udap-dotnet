@@ -27,4 +27,10 @@ public class MetadataController : Controller
 
         return Ok(result);
     }
+
+    [HttpGet("MyIp")]
+    public IActionResult Get()
+    {
+        return Ok(Environment.GetEnvironmentVariable("MyIp"));
+    }
 }

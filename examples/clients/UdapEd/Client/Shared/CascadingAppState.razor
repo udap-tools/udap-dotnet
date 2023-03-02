@@ -46,13 +46,13 @@
         }
     }
 
-    private string? _metadataUrl = "https://fhirlabs.net/fhir/r4/.well-known/udap";
-    public string? MetadataUrl
+    private string? _baseUrl = "https://fhirlabs.net/fhir/r4";
+    public string? BaseUrl
     {
-        get => _metadataUrl;
+        get => _baseUrl;
         private set
         {
-            _metadataUrl = value;
+            _baseUrl = value;
             if (_caller == "Toolbar")
             {
                 // The Toolbar component changed the AppState Message property

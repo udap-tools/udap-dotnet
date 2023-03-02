@@ -9,7 +9,6 @@
 
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Access;
 using UdapEd.Shared.Model;

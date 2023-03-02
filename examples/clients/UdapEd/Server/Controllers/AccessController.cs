@@ -25,16 +25,21 @@ namespace UdapEd.Server.Controllers;
 public class AccessController : Controller
 {
     private readonly HttpClient _httpClient;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<RegisterController> _logger;
 
-    public AccessController(HttpClient httpClient, ILogger<RegisterController> logger)
+    public AccessController(
+        HttpClient httpClient,
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<RegisterController> logger)
     {
         _httpClient = httpClient;
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
     [HttpGet("{authorizeQuery}")]
-    public async Task<IActionResult> GetTokens(string authorizeQuery, CancellationToken token)
+    public async Task<IActionResult> GetAuthorizationCode(string authorizeQuery, CancellationToken token)
     {
         var handler = new HttpClientHandler() { AllowAutoRedirect = false };
         var httpClient = new HttpClient(handler);
@@ -43,16 +48,31 @@ public class AccessController : Controller
             .GetAsync(Base64UrlEncoder
                 .Decode(authorizeQuery), cancellationToken: token);
 
+        var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+
+        if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.Found)
+        {
+            var message = await response.Content.ReadAsStringAsync(token);
+            _logger.LogWarning(message);
+
+            return Ok(new AccessCodeRequestResult
+            {
+                Message = $"{response.StatusCode}:: {message}" ,
+                IsError = true
+            });
+        }
+
         var result = new AccessCodeRequestResult
         {
-            RedirectUrl = response.Headers.Location?.AbsoluteUri
+            RedirectUrl = response.Headers.Location?.AbsoluteUri,
+            Cookies = cookies
         };
 
         if (response.StatusCode != HttpStatusCode.Redirect)
         {
             result.IsError = true;
         }
-
+        
         return Ok(result);
     }
 

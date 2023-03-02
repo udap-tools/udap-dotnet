@@ -124,7 +124,8 @@ public partial class UdapRegistration
     }
 
     private string? _registrationResult;
-    private string? RegistrationResult
+
+    private string RegistrationResult
     {
         get
         {
@@ -135,7 +136,7 @@ public partial class UdapRegistration
 
             if (AppState.UdapRegistrationRequest == null)
             {
-                return _registrationResult;
+                return _registrationResult ?? string.Empty;
             }
 
             return JsonSerializer.Serialize(AppState
@@ -151,7 +152,7 @@ public partial class UdapRegistration
         set => AppState.SetProperty(this, nameof(AppState.Oauth2Flow), value);
     }
 
-    private string _requestBody = string.Empty;
+    private string? _requestBody;
 
     private string RequestBody
     {
@@ -164,7 +165,7 @@ public partial class UdapRegistration
 
             if (AppState.UdapRegistrationRequest == null)
             {
-                return _beforeEncodingHeader;
+                return _requestBody ?? string.Empty;
             }
 
             return JsonSerializer.Serialize(
@@ -179,7 +180,7 @@ public partial class UdapRegistration
     {
         SetRawMessage("Loading ...");
 
-        await Task.Delay(50);
+        await Task.Delay(150);
 
         if (AppState.Oauth2Flow == Oauth2FlowEnum.client_credentials)
         {
@@ -289,9 +290,9 @@ public partial class UdapRegistration
     {
         SetRawMessage(string.Empty);
         AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), string.Empty);
-        RequestBody = string.Empty;
+        _requestBody = null;
         AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), null);
-        RegistrationResult = string.Empty;
+        _registrationResult = null;
         AppState.SetProperty(this, nameof(AppState.RegistrationDocument), null);
     }
 

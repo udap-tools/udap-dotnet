@@ -7,7 +7,9 @@
 // */
 #endregion
 
+using System.Net;
 using System.Text;
+using Blazored.LocalStorage;
 using IdentityModel;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -29,6 +31,8 @@ public partial class UdapBusinessToBusiness
 
     [Inject] AccessService AccessService { get; set; } = null!;
     [Inject] NavigationManager NavManager { get; set; } = null!;
+
+    [Inject] ILocalStorageService LocalStorageService { get; set; } = null!;
 
     private string LoginRedirectLinkText { get; set; } = "Login Redirect";
 
@@ -86,33 +90,7 @@ public partial class UdapBusinessToBusiness
         set => _accessToken = value;
     }
 
-    public string LoginCallback(bool reset = false) {
-
-        if (reset)
-        {
-            return string.Empty;
-        }
-
-        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
-
-        if (!string.IsNullOrEmpty(uri.Query))
-        {
-            var queryParams = QueryHelpers.ParseQuery(uri.Query);
-
-            var loginCallbackResult = new LoginCallBackResult
-            {
-                Code = queryParams.GetValueOrDefault("code"),
-                Scope = queryParams.GetValueOrDefault("scope"),
-                State = queryParams.GetValueOrDefault("state"),
-                SessionState = queryParams.GetValueOrDefault("session_state"),
-                Issuer = queryParams.GetValueOrDefault("iss")
-            };
-
-            AppState.SetProperty(this, nameof(AppState.LoginCallBackResult), loginCallbackResult, true, false);
-        }
-
-        return uri.Query.Replace("&", "&\r\n");
-    }
+   
 
     /// <summary>
     /// Method invoked when the component is ready to start, having received its
@@ -162,7 +140,7 @@ public partial class UdapBusinessToBusiness
             ClientId = $"client_id={AppState.RegistrationDocument?.ClientId}",
             Scope = $"scope={AppState.RegistrationDocument?.Scope}",
             RedirectUri = $"redirect_uri={AppState.RegistrationDocument?.RedirectUris.FirstOrDefault()}",
-            Aud = $"aud={AppState.MetadataUrl}"
+            Aud = $"aud={AppState.BaseUrl}"
         };
 
         AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
@@ -190,10 +168,40 @@ public partial class UdapBusinessToBusiness
         // Builds an anchor href link the user clicks to initiate a user login page at the authorization server
         //
         var loginLink = await AccessService.Get(accessCodeRequestUrl);
+        
         EnrichLoginLink(loginLink);
         AppState.SetProperty(this, nameof(AppState.AccessCodeRequestResult), loginLink);
         LoginRedirectLinkText = "Login Redirect";
     }
+
+    public string LoginCallback(bool reset = false)
+    {
+        if (reset)
+        {
+            return string.Empty;
+        }
+
+        var uri = NavManager.ToAbsoluteUri(NavManager.Uri);
+
+        if (!string.IsNullOrEmpty(uri.Query))
+        {
+            var queryParams = QueryHelpers.ParseQuery(uri.Query);
+
+            var loginCallbackResult = new LoginCallBackResult
+            {
+                Code = queryParams.GetValueOrDefault("code"),
+                Scope = queryParams.GetValueOrDefault("scope"),
+                State = queryParams.GetValueOrDefault("state"),
+                SessionState = queryParams.GetValueOrDefault("session_state"),
+                Issuer = queryParams.GetValueOrDefault("iss")
+            };
+
+            AppState.SetProperty(this, nameof(AppState.LoginCallBackResult), loginCallbackResult, true, false);
+        }
+
+        return uri.Query.Replace("&", "&\r\n");
+    }
+
 
     /// <summary>
     /// Some requests to the Authorization endpoint do not build the full login url
@@ -206,19 +214,23 @@ public partial class UdapBusinessToBusiness
     {
         if (loginLink.RedirectUrl != null)
         {
-            var loginRedirect = new Uri(loginLink.RedirectUrl);
-
-            if (string.IsNullOrWhiteSpace(loginRedirect.Query))
+            if (loginLink.Cookies != null)
             {
-                var url = new RequestUrl(loginLink.RedirectUrl);
-                loginLink.RedirectUrl = url.AppendParams(
-                    AppState.AuthorizationCodeRequest?.ClientId,
-                    AppState.AuthorizationCodeRequest?.ResponseType,
-                    AppState.AuthorizationCodeRequest?.State,
-                    AppState.AuthorizationCodeRequest?.Scope,
-                    AppState.AuthorizationCodeRequest?.RedirectUri,
-                    AppState.AuthorizationCodeRequest?.Aud);
+                
             }
+            // var loginRedirect = new Uri(loginLink.RedirectUrl);
+            //
+            // if (string.IsNullOrWhiteSpace(loginRedirect.Query))
+            // {
+            //     var url = new RequestUrl(loginLink.RedirectUrl);
+            //     loginLink.RedirectUrl = url.AppendParams(
+            //         AppState.AuthorizationCodeRequest?.ClientId,
+            //         AppState.AuthorizationCodeRequest?.ResponseType,
+            //         AppState.AuthorizationCodeRequest?.State,
+            //         AppState.AuthorizationCodeRequest?.Scope,
+            //         AppState.AuthorizationCodeRequest?.RedirectUri,
+            //         AppState.AuthorizationCodeRequest?.Aud);
+            // }
         }
     }
 

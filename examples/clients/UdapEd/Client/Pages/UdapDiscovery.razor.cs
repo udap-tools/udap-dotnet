@@ -10,6 +10,8 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Udap.Client.Internal;
+using Udap.Model;
 using UdapEd.Client.Services;
 using UdapEd.Client.Shared;
 
@@ -45,9 +47,9 @@ public partial class UdapDiscovery
         set => _result = value;
     }
 
-    private string? MetadataUrl
+    private string? BaseUrl
     {
-        get => AppState.MetadataUrl;
+        get => AppState.BaseUrl;
         set
         {
             //Todo: retain multiple URls to pick from
@@ -56,7 +58,8 @@ public partial class UdapDiscovery
 
     public void SetMetadataUrlProperty(string value)
     {
-        AppState.SetProperty(this, nameof(AppState.MetadataUrl), value);
+        BaseUrl = value;
+        AppState.SetProperty(this, nameof(AppState.BaseUrl), value);
     }
 
     private async Task GetMetadata()
@@ -66,7 +69,7 @@ public partial class UdapDiscovery
 
         try
         {
-            AppState.SetProperty(this, nameof(AppState.UdapMetadata), await MetadataService.GetMetadata(AppState.MetadataUrl));
+            AppState.SetProperty(this, nameof(AppState.UdapMetadata), await MetadataService.GetMetadata(GetWellKnownUdap(AppState.BaseUrl)));
             
             _result = AppState.UdapMetadata != null
                 ? JsonSerializer.Serialize(AppState.UdapMetadata, new JsonSerializerOptions { WriteIndented = true })
@@ -78,7 +81,12 @@ public partial class UdapDiscovery
             AppState.SetProperty(this, nameof(AppState.UdapMetadata), null);
         }
     }
-    
+
+    private string? GetWellKnownUdap(string? baseUrl)
+    {
+        return $"{baseUrl.RemoveTrailingSlash()}{UdapConstants.Discovery.DiscoveryEndpoint}";
+    }
+
     protected override void OnParametersSet()
     {
         ErrorBoundary?.Recover();

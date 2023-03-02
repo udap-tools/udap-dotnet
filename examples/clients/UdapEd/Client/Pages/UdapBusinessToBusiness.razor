@@ -5,7 +5,7 @@
   <ChildContent>
     <MudGrid Class="mt-4">
       <MudItem xs="12" sm="12" md="12">
-          <MudText Typo="Typo.h4">Business-to-Business</MudText>
+        <MudText Typo="Typo.h4">Business-to-Business</MudText>
         <MudText Typo="Typo.h6" Color="Color.Tertiary">Requesting Access Tokens for either client_credentials or authorization_code flows</MudText>
       </MudItem>
 
@@ -64,17 +64,17 @@
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
-                @if (AppState.AuthorizationCodeRequest != null)
-                {
-                    <pre>GET /authorize?</pre>
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ResponseType" />
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.State" />
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ClientId" />
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Scope" />
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.RedirectUri"/>
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Aud" />
-                    <pre>Host: AppState.UdapMetadata?.AuthorizationEndpoint</pre>
-                }
+                        @if (AppState.AuthorizationCodeRequest != null)
+                        {
+                  <pre>GET /authorize?</pre>
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ResponseType" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.State" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ClientId" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Scope" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.RedirectUri" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Aud" />
+                  <pre>Host: @AppState.UdapMetadata?.AuthorizationEndpoint</pre>
+                        }
             </MudPaper>
           </MudItem>
           <MudItem xs="5">
@@ -94,9 +94,21 @@
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
-              <MudLink Color="@(AppState.AccessCodeRequestResult is {IsError: true } ? Color.Error : Color.Primary)"
+                
+                <MudLink Color="@(AppState.AccessCodeRequestResult is {IsError: true } ? Color.Error : Color.Primary)"
                    href="@AppState.AccessCodeRequestResult?.RedirectUrl">@LoginRedirectLinkText</MudLink>
-                <pre>@AppState.AccessCodeRequestResult?.RedirectUrl</pre>
+              <pre>@AppState.AccessCodeRequestResult?.RedirectUrl</pre>
+
+                        @if (AppState.AccessCodeRequestResult?.IsError == true &&
+                            AppState.AccessCodeRequestResult.Message != null)
+                        {
+                            <pre>@AppState.AccessCodeRequestResult?.Message</pre>
+                        }
+
+                        @if (AppState.AccessCodeRequestResult?.Cookies != null)
+                        {
+                            <pre>@AppState.AccessCodeRequestResult?.Cookies.FirstOrDefault()</pre>
+                        }
             </MudPaper>
           </MudItem>
           <MudItem xs="5">
@@ -166,12 +178,12 @@
     </MudGrid>
 
   </ChildContent>
-    <ErrorContent Context="ex">
+  <ErrorContent Context="ex">
         @{
             Console.Write(ex.Message);
         }
-        <pre class="blazor-error-boundary">
+    <pre class="blazor-error-boundary">
             @ex.Message
       </pre>
-    </ErrorContent>
+  </ErrorContent>
 </ErrorBoundary>

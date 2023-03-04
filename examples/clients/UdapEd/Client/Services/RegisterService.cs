@@ -141,4 +141,32 @@ public class RegisterService
     {
         return scopes.ToSpaceSeparatedString();
     }
+
+    public string? GetScopesForClientCredentials(ICollection<string>? scopes)
+    {
+        if (scopes != null)
+        {
+            return scopes
+                .Where(s => !s.StartsWith("user") &&
+                            !s.StartsWith("patient") &&
+                            !s.StartsWith("openid"))
+                .Take(10).ToList()
+                .ToSpaceSeparatedString();
+        }
+
+        return null;
+    }
+
+    public string? GetScopesForAuthorizationCode(ICollection<string>? scopes)
+    {
+        if (scopes != null)
+        {
+            return scopes
+                .Where(s => !s.StartsWith("system"))
+                .Take(10).ToList()
+                .ToSpaceSeparatedString();
+        }
+
+        return "openid";
+    }
 }

@@ -142,7 +142,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithScope(string scope)
+    public UdapDcrBuilderForClientCredentials WithScope(string? scope)
     {
         _document.Scope = scope;
         return this;

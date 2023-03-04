@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Udap.Model;
 using Udap.Model.Registration;
 using UdapEd.Client.Services;
@@ -101,23 +102,19 @@ public partial class UdapRegistration
 
         set => _beforeEncodingStatement = value;
     }
-
-    private void SetHeader(ChangeEventArgs obj)
-    {
-        _beforeEncodingHeader = obj.Value as string ?? string.Empty;
-    }
-
-    private void SetSoftwareStatement(ChangeEventArgs obj)
-    {
-        _beforeEncodingStatement = obj.Value as string ?? string.Empty;
-    }
+    
 
     private void PersistSoftwareStatement()
     {
+        var statement = JsonSerializer
+            .Deserialize<UdapDynamicClientRegistrationDocument>(SoftwareStatementBeforeEncodingSoftwareStatement);
+        var beforeEncodingScope = statement?.Scope;
+        
         var rawStatement = new RawSoftwareStatementAndHeader
         {
             Header = SoftwareStatementBeforeEncodingHeader,
-            SoftwareStatement = SoftwareStatementBeforeEncodingSoftwareStatement
+            SoftwareStatement = SoftwareStatementBeforeEncodingSoftwareStatement,
+            Scope = beforeEncodingScope
         };
 
         AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), rawStatement);
@@ -206,7 +203,7 @@ public partial class UdapRegistration
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-                .WithScope(RegisterService.GetScopes(AppState.UdapMetadata?.ScopesSupported))
+                .WithScope(RegisterService.GetScopesForClientCredentials(AppState.UdapMetadata?.ScopesSupported))
                 .Build();
 
 
@@ -229,6 +226,8 @@ public partial class UdapRegistration
     {
         try
         {
+            var scope = RegisterService.GetScopesForAuthorizationCode(AppState.UdapMetadata?.ScopesSupported);
+
             var request = UdapDcrBuilderForAuthorizationCode.Create()
                 .WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
@@ -239,9 +238,9 @@ public partial class UdapRegistration
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-                .WithScope(RegisterService.GetScopes(AppState.UdapMetadata?.ScopesSupported))
                 .WithResponseTypes(new HashSet<string?> { "code" })
                 .WithRedirectUrls(new List<string?>{ $"{NavigationManager.BaseUri}udapBusinessToBusiness" })
+                .WithScope(scope)
                 .Build();
 
 
@@ -249,6 +248,7 @@ public partial class UdapRegistration
             if (statement?.Header != null)
             {
                 SetRawStatement(statement.Header, statement.SoftwareStatement);
+                statement.Scope = scope;
             }
 
             AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), statement);

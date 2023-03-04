@@ -88,7 +88,7 @@ public class AccessTokenRequestForAuthorizationCodeBuilder
     private string? BuildClientAssertion()
     {
         var jwtPayload = new JwtPayLoadExtension(
-            _clientId,
+            _certificate.GetNameInfo(X509NameType.UrlName, false),  //TODO:: Let user pick the subject alt name.  Create will need extra param.
             _tokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             _claims,
             _now,

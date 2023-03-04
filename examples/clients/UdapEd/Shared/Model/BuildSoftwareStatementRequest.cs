@@ -28,6 +28,8 @@ public class RawSoftwareStatementAndHeader
     public string Header { get; set; } = string.Empty;
 
     public string SoftwareStatement { get; set; } = string.Empty;
+
+    public string? Scope { get; set; } = string.Empty;
 }
 
 public class RegistrationRequest

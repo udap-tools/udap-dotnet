@@ -51,12 +51,10 @@
                     id="StatementHeader" 
                     Class="pre udap-indent-1"
                              rows="@(SoftwareStatementBeforeEncodingHeader.Count(s => s == '\n' ) + 5)"
-                    @bind-Value="SoftwareStatementBeforeEncodingHeader"
-                    @oninput="SetHeader" />,
+                    @bind-Value="SoftwareStatementBeforeEncodingHeader"/>,
                 <InputTextArea Class="pre udap-indent-1"
                              rows="@(SoftwareStatementBeforeEncodingSoftwareStatement.Count(s => s == '\n' ) + 1)"
                              @bind-Value="SoftwareStatementBeforeEncodingSoftwareStatement"
-                             @oninput="SetSoftwareStatement"
                              @onblur="PersistSoftwareStatement"/>
               <pre>]</pre>
             </MudPaper>

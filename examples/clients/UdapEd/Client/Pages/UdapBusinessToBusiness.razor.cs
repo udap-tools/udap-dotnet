@@ -141,7 +141,7 @@ public partial class UdapBusinessToBusiness
             ResponseType = "response_type=code",
             State = $"state={CryptoRandom.CreateUniqueId()}",
             ClientId = $"client_id={AppState.RegistrationDocument?.ClientId}",
-            Scope = $"scope={AppState.RegistrationDocument?.Scope}",
+            Scope = $"scope={AppState.SoftwareStatementBeforeEncoding?.Scope}",
             RedirectUri = $"redirect_uri={AppState.RegistrationDocument?.RedirectUris.FirstOrDefault()}",
             Aud = $"aud={AppState.BaseUrl}"
         };
@@ -160,7 +160,7 @@ public partial class UdapBusinessToBusiness
         sb.Append("?").Append(@AppState.AuthorizationCodeRequest.ResponseType);
         sb.Append("&").Append(@AppState.AuthorizationCodeRequest.State);
         sb.Append("&").Append(@AppState.AuthorizationCodeRequest.ClientId);
-        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Scope).Append("udap");
+        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Scope);
         sb.Append("&").Append(@AppState.AuthorizationCodeRequest.RedirectUri);
         sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Aud);
         
@@ -436,6 +436,6 @@ public partial class UdapBusinessToBusiness
     {
         BuildAuthorizeLink();
 
-        await JSRuntime.InvokeVoidAsync("open", @AuthCodeRequestLink);
+        await JSRuntime.InvokeVoidAsync("open", @AuthCodeRequestLink, "_self");
     }
 }

@@ -126,7 +126,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithScope(string scope)
+    public UdapDcrBuilderForAuthorizationCode WithScope(string? scope)
     {
         _document.Scope = scope;
         return this;

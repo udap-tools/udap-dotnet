@@ -84,7 +84,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
     private string? BuildClientAssertion()
     {
         var jwtPayload = new JwtPayLoadExtension(
-            _certificate.GetNameInfo(X509NameType.UrlName, false),  //TODO:: Let user pick the subject alt name.  Create will need extra param.
+                _certificate.GetNameInfo(X509NameType.UrlName, false),  //TODO:: Let user pick the subject alt name.  Create will need extra param.
                 _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
                 _claims,
                 _now,

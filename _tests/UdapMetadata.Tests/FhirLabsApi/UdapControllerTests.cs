@@ -173,9 +173,10 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var scopesSupported = _fixture.WellKnownUdap.ScopesSupported;
 
         scopesSupported.Should().Contain("openid");
-        scopesSupported.Should().Contain("system/Patient.read");
-        scopesSupported.Should().Contain("system/AllergyIntolerance.read");
-        scopesSupported.Should().Contain("system/Procedures.read");
+        scopesSupported.Should().Contain("openid");
+        scopesSupported.Should().Contain("system/Patient.cruds");
+        scopesSupported.Should().Contain("user/AllergyIntolerance.cruds");
+        scopesSupported.Should().Contain("patient/*.cruds");
     }
 
     [Fact]

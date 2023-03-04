@@ -64,10 +64,10 @@ builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(s => {
 
 var udapConfig = builder.Configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>();
 
-var udapMetaData = new UdapMetadata(udapConfig!, Hl7ModelInfoExtensions
+var udapMetadata = new UdapMetadata(udapConfig!, Hl7ModelInfoExtensions
     .BuildHl7FhirScopes(new List<string>{"patient", "user", "system"} ));
 
-builder.Services.AddSingleton(udapMetaData);
+builder.Services.AddSingleton(udapMetadata);
 
 builder.Services
     

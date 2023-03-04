@@ -7,6 +7,7 @@
 // */
 #endregion
 
+
 using IdentityModel.AspNetCore.OAuth2Introspection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -57,9 +58,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 var udapMetaData = MyCustomUdapMetadata.Build(builder.
-    Configuration.GetSection("UdapConfig").Get<UdapConfig>());
+    Configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>());
 
 builder.Services.AddSingleton(udapMetaData);
+
 builder.Services
     .AddControllers()
     .AddUdapMetaDataServer(builder.Configuration);

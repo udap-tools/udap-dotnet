@@ -9,6 +9,10 @@ public static class MyCustomUdapMetadata
     {
         var udapMetadata = new UdapMetadata(udapConfig, scopes);
         
+        udapMetadata.ScopesSupported.Add("system/Patient.cruds");
+        udapMetadata.ScopesSupported.Add("user/AllergyIntolerance.cruds");
+        udapMetadata.ScopesSupported.Add("patient/*.cruds");
+
         udapMetadata.UdapAuthorizationExtensionsSupported.Add("acme-ext");
 
         return udapMetadata;

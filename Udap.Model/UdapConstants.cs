@@ -160,6 +160,7 @@ public static class UdapConstants
     public static class JwtClaimTypes
     {
         public static string Extensions = "extensions";
+        public static string FhirUser = "fhiruser";
     }
 
     public static class TokenRequest
@@ -173,6 +174,12 @@ public static class UdapConstants
         /// RFC 6750 1.1 and 2.1.  Bearer name in the header is case sensitive
         /// </summary>
         public const string Bearer = "Bearer";
+    }
+
+    public static class StandardScopes
+    {
+        /// <summary>Permission to retrieve information about the current logged-in user.</summary>
+        public const string FhirUser = "fhiruser";
     }
 }
 

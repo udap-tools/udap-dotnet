@@ -14,6 +14,7 @@ using IdentityModel;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.JSInterop;
 using Udap.Model;
 using UdapEd.Client.Services;
 using UdapEd.Client.Shared;
@@ -33,6 +34,8 @@ public partial class UdapBusinessToBusiness
     [Inject] NavigationManager NavManager { get; set; } = null!;
 
     [Inject] ILocalStorageService LocalStorageService { get; set; } = null!;
+
+    [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
 
     private string LoginRedirectLinkText { get; set; } = "Login Redirect";
 
@@ -144,6 +147,25 @@ public partial class UdapBusinessToBusiness
         };
 
         AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
+
+        BuildAuthorizeLink();
+    }
+
+    private string AuthCodeRequestLink { get; set; } = string.Empty;
+
+    private void BuildAuthorizeLink()
+    {
+        var sb = new StringBuilder();
+        sb.Append(@AppState.UdapMetadata?.AuthorizationEndpoint);
+        sb.Append("?").Append(@AppState.AuthorizationCodeRequest.ResponseType);
+        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.State);
+        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.ClientId);
+        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Scope).Append("udap");
+        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.RedirectUri);
+        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Aud);
+        
+        AuthCodeRequestLink = sb.ToString();
+        StateHasChanged();
     }
 
     private async Task GetAccessCode()
@@ -408,5 +430,12 @@ public partial class UdapBusinessToBusiness
 
             AccessToken = tokenResponse is { IsError: false } ? tokenResponse.Raw : tokenResponse?.Error;
         }
+    }
+
+    private async Task LaunchAuthorize()
+    {
+        BuildAuthorizeLink();
+
+        await JSRuntime.InvokeVoidAsync("open", @AuthCodeRequestLink);
     }
 }

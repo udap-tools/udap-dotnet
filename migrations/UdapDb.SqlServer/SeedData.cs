@@ -18,9 +18,11 @@ using Duende.IdentityServer.Models;
 using Hl7.Fhir.Model;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Udap.Common.Extensions;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
+using Udap.Server.Models;
 using Udap.Server.Storage.Stores;
 using Udap.Server.Stores;
 using Udap.Util.Extensions;
@@ -162,8 +164,9 @@ public static class SeedData
             await udapContext.SaveChangesAsync();
         }
 
-        await SeedFhirScopes(configDbContext, "system");
+        await SeedFhirScopes(configDbContext, "patient");
         await SeedFhirScopes(configDbContext, "user");
+        await SeedFhirScopes(configDbContext, "system");
 
         //
         // openid
@@ -172,7 +175,11 @@ public static class SeedData
         {
             var identityResource = new IdentityResources.OpenId();
             configDbContext.IdentityResources.Add(identityResource.ToEntity());
-        
+
+            var fhirUserIdentity = new UdapIdentityResources.FhirUser();
+            configDbContext.IdentityResources.Add(fhirUserIdentity.ToEntity());
+
+
             await configDbContext.SaveChangesAsync();
         }
 
@@ -207,14 +214,8 @@ public static class SeedData
 
     private static async Task SeedFhirScopes(ConfigurationDbContext configDbContext, string prefix)
     {
-        var seedScopes = new List<string>();
-
-        foreach (var resName in ModelInfo.SupportedResources)
-        {
-            seedScopes.Add($"{prefix}/{resName}.*");
-            seedScopes.Add($"{prefix}/{resName}.read");
-        }
-
+        var seedScopes = Hl7ModelInfoExtensions.BuildHl7FhirScopes(prefix);
+        
         var apiScopes = configDbContext.ApiScopes
             .Where(s => s.Enabled)
             .Select(s => s.Name)

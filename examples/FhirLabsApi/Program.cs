@@ -24,9 +24,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Udap.Common;
+using Udap.Common.Extensions;
 using Udap.Metadata.Server;
-
-
+using Udap.Model;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -62,6 +62,12 @@ builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(s => {
     return systemService;
 });
 
+var udapConfig = builder.Configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>();
+
+var udapMetaData = new UdapMetadata(udapConfig!, Hl7ModelInfoExtensions
+    .BuildHl7FhirScopes(new List<string>{"patient", "user", "system"} ));
+
+builder.Services.AddSingleton(udapMetaData);
 
 builder.Services
     

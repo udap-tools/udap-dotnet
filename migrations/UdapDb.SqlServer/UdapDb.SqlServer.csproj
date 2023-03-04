@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Udap.Model\Udap.Model.csproj" />
     <ProjectReference Include="..\..\Udap.Server\Udap.Server.csproj" />
     <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
   </ItemGroup>

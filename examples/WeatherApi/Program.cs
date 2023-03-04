@@ -17,6 +17,7 @@ using Microsoft.Extensions.Options;
 using Udap.Common;
 using Udap.Metadata.Server;
 using Udap.Model;
+using WeatherApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -58,9 +59,10 @@ var builder = WebApplication.CreateBuilder(args);
 var udapMetaData = MyCustomUdapMetadata.Build(builder.
     Configuration.GetSection("UdapConfig").Get<UdapConfig>());
 
+builder.Services.AddSingleton(udapMetaData);
 builder.Services
     .AddControllers()
-    .AddUdapMetaDataServer(builder.Configuration, udapMetaData);
+    .AddUdapMetaDataServer(builder.Configuration);
 
     
 // UDAP CertStore

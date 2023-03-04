@@ -9,6 +9,7 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Udap.Model;
 
 namespace Udap.Metadata.Server
@@ -19,21 +20,12 @@ namespace Udap.Metadata.Server
         
         public static IMvcBuilder AddUdapMetaDataServer(
             this IMvcBuilder mvcBuilder,
-            ConfigurationManager configuration,
-            UdapMetadata? udapMetadata = null )
+            ConfigurationManager configuration)
         {
             var services = mvcBuilder.Services;
             services.Configure<UdapConfig>(configuration.GetSection("UdapConfig"));
-
-            if (udapMetadata != null)
-            {
-                services.AddSingleton(udapMetadata);
-            }
-            else
-            {
-                mvcBuilder.Services.AddSingleton<UdapMetadata>();
-            }
-
+            mvcBuilder.Services.TryAddSingleton<UdapMetadata>();
+            
             var assembly = typeof(UdapController).Assembly;
             return mvcBuilder.AddApplicationPart(assembly);
         }

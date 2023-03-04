@@ -67,12 +67,12 @@
                         @if (AppState.AuthorizationCodeRequest != null)
                         {
                   <pre>GET /authorize?</pre>
-                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ResponseType" />
-                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.State" />
-                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ClientId" />
-                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Scope" />
-                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.RedirectUri" />
-                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Aud" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ResponseType" @oninput="BuildAuthorizeLink" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.State" @oninput="BuildAuthorizeLink" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ClientId" @oninput="BuildAuthorizeLink" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Scope" @oninput="BuildAuthorizeLink" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.RedirectUri" @oninput="BuildAuthorizeLink" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Aud" @oninput="BuildAuthorizeLink" />
                   <pre>Host: @AppState.UdapMetadata?.AuthorizationEndpoint</pre>
                         }
             </MudPaper>
@@ -85,29 +85,45 @@
           </MudItem>
         </MudGrid>
 
-        <MudButton Class="mt-3"
-               ButtonType="ButtonType.Button"
-               Variant="Variant.Filled"
-               Disabled="@(AppState.RegistrationDocument == null)"
-               OnClick="GetAccessCode">Get Access Code</MudButton>
+        <MudGrid>
+          <MudItem>
+            <MudButton Class="mt-3"
+                   ButtonType="ButtonType.Button"
+                   Variant="Variant.Filled"
+                   Disabled="@(AppState.RegistrationDocument == null)"
+                   OnClick="GetAccessCode">View Intermediate Redirect</MudButton>
+          </MudItem>
+          <MudItem>
+            <MudButton Class="mt-3"
+                   Disabled="@(string.IsNullOrWhiteSpace(AuthCodeRequestLink))"
+                   OnClick="@LaunchAuthorize">
+              Run Authorize Code Request
+            </MudButton>
+          </MudItem>
+        </MudGrid>
+
+        <MudTextField ReadOnly="true" @bind-Value="AuthCodeRequestLink"></MudTextField>
+
+
         <MudGrid Spacing="1" Class="mt-8">
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
-                
-                <MudLink Color="@(AppState.AccessCodeRequestResult is {IsError: true } ? Color.Error : Color.Primary)"
-                   href="@AppState.AccessCodeRequestResult?.RedirectUrl">@LoginRedirectLinkText</MudLink>
+
+              <MudText Color="@(AppState.AccessCodeRequestResult is {IsError: true } ? Color.Error : Color.Primary)">
+                            @LoginRedirectLinkText
+              </MudText>
               <pre>@AppState.AccessCodeRequestResult?.RedirectUrl</pre>
 
                         @if (AppState.AccessCodeRequestResult?.IsError == true &&
-                            AppState.AccessCodeRequestResult.Message != null)
+                       AppState.AccessCodeRequestResult.Message != null)
                         {
-                            <pre>@AppState.AccessCodeRequestResult?.Message</pre>
+                  <pre>@AppState.AccessCodeRequestResult?.Message</pre>
                         }
 
                         @if (AppState.AccessCodeRequestResult?.Cookies != null)
                         {
-                            <pre>@AppState.AccessCodeRequestResult?.Cookies.FirstOrDefault()</pre>
+                  <pre>@AppState.AccessCodeRequestResult?.Cookies.FirstOrDefault()</pre>
                         }
             </MudPaper>
           </MudItem>

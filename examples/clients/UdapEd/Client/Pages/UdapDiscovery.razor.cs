@@ -84,7 +84,12 @@ public partial class UdapDiscovery
 
     private string? GetWellKnownUdap(string? baseUrl)
     {
-        return $"{baseUrl.RemoveTrailingSlash()}{UdapConstants.Discovery.DiscoveryEndpoint}";
+        if (baseUrl != null && !baseUrl.EndsWith(UdapConstants.Discovery.DiscoveryEndpoint, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{baseUrl.RemoveTrailingSlash()}{UdapConstants.Discovery.DiscoveryEndpoint}" ;
+        }
+
+        return baseUrl ;
     }
 
     protected override void OnParametersSet()

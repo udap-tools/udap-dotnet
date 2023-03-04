@@ -70,11 +70,11 @@ public class UdapMetadata
     /// <summary>
     /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
     /// </summary>
-    public UdapMetadata(IOptionsMonitor<UdapConfig> udapConfig) : this(udapConfig.CurrentValue)
+    public UdapMetadata(IOptionsMonitor<UdapConfig> udapConfig, HashSet<string>? scopes) : this(udapConfig.CurrentValue, scopes)
     {
     }
 
-    public UdapMetadata(UdapConfig udapConfig)
+    public UdapMetadata(UdapConfig udapConfig, HashSet<string>? scopes)
     {
         _udapMetadataConfigs = udapConfig.UdapMetadataConfigs;
         UdapVersionsSupported = new HashSet<string> { UdapConstants.UdapVersionsSupportedValue };
@@ -116,11 +116,15 @@ public class UdapMetadata
         ScopesSupported = new HashSet<string>
         {
                 OidcConstants.StandardScopes.OpenId,
-                UdapConstants.FhirScopes.SystemPatientRead,
-                UdapConstants.FhirScopes.SystemAllergyIntoleranceRead,
-                UdapConstants.FhirScopes.SystemProcedureRead,
-                "system/Observation.read"
         };
+
+        if (scopes != null)
+        {
+            foreach (var scope in scopes)
+            {
+                ScopesSupported.Add(scope);
+            }
+        }
 
         TokenEndpointAuthMethodsSupported = new HashSet<string> { UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue };
         TokenEndpointAuthSigningAlgValuesSupported = new HashSet<string> { UdapConstants.SupportedAlgorithm.RS256 };

@@ -77,7 +77,7 @@ namespace Udap.Metadata.Server
 
         /// <summary>
         /// Essentials: OAuth 2.0 Authorization Server Metadata:: https://datatracker.ietf.org/doc/html/rfc8414#section-2.1
-        /// Further restrained by UDAP IG:: https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#signed-metadata-elements 
+        /// Further restrained by UDAP IG:: http://hl7.org/fhir/us/udap-security/discovery.html#signed-metadata-elements 
         /// </summary>
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>

@@ -10,7 +10,7 @@
 namespace Udap.Model;
 
 /// <summary>
-/// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
+/// <a href="http://hl7.org/fhir/us/udap-security/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
 /// </summary>
 public static class UdapConstants
 {

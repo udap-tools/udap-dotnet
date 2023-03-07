@@ -26,7 +26,6 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Model.Registration;
@@ -40,10 +39,10 @@ namespace Udap.Server.Registration;
 /// </summary>
 public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistrationValidator
 {
-    private TrustChainValidator _trustChainValidator;
+    private readonly TrustChainValidator _trustChainValidator;
     private readonly ILogger _logger;
     private readonly ServerSettings _serverSettings;
-    private IHttpContextAccessor _httpContextAccessor;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public UdapDynamicClientRegistrationValidator(
         TrustChainValidator trustChainValidator,
@@ -60,7 +59,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     /// <inheritdoc />
     public Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request,
-        X509Certificate2Collection communityTrustAnchors,
+        X509Certificate2Collection? communityTrustAnchors,
         X509Certificate2Collection? communityRoots = null
         )
     {
@@ -220,7 +219,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         var client = new Duende.IdentityServer.Models.Client
         {
-            //TODO: Maybe inject a componnet to generate the clientID so a user can use their own technique.
+            //TODO: Maybe inject a component to generate the clientID so a user can use their own technique.
             ClientId = CryptoRandom.CreateUniqueId()
         };
 
@@ -233,7 +232,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             var sb = new StringBuilder();
             sb.AppendLine($"Client Thumbprint: {publicCert.Thumbprint}");
             sb.AppendLine($"Anchor Thumbprints: {String.Join(" | ", communityTrustAnchors.Select(a => a.Thumbprint))}");
-            sb.AppendLine($"Root Certificate Thumbprints: {String.Join(" | ", communityRoots.Select(a => a.Thumbprint))}");
+            if (communityRoots != null){
+                sb.AppendLine($"Root Certificate Thumbprints: {String.Join(" | ", communityRoots.Select(a => a.Thumbprint))}");
+            }
             _logger.LogWarning(sb.ToString());
 
             return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
@@ -244,11 +245,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //////////////////////////////
         // validate grant types
         //////////////////////////////
-        if (document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
+        if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
         {
             client.AllowedGrantTypes.Add(GrantType.ClientCredentials);
         }
-        if (document.GrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
+        if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
         {
             client.AllowedGrantTypes.Add(GrantType.AuthorizationCode); 
         }
@@ -262,7 +263,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         //TODO: Ensure test covers this and follows Security IG: http://hl7.org/fhir/us/udap-security/b2b.html#refresh-tokens
-        if (document.GrantTypes.Contains(OidcConstants.GrantTypes.RefreshToken))
+        if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.RefreshToken))
         {
             if (client.AllowedGrantTypes.Count == 1 &&
                 client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
@@ -280,7 +281,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //
         if (client.AllowedGrantTypes.Contains(GrantType.AuthorizationCode))
         {
-            if (document.RedirectUris.Any())
+            if (document.RedirectUris != null && document.RedirectUris.Any())
             {
                 foreach (var requestRedirectUri in document.RedirectUris)
                 {
@@ -310,7 +311,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     "redirect URI required for authorization_code grant type"));
             }
 
-            if (document.ResponseTypes.Count == 0)
+            if (document.ResponseTypes != null && document.ResponseTypes.Count == 0)
             {
                 _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidClientMetadata}::" +
                                    UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing);
@@ -327,7 +328,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
         {
             //TODO: find the RFC reference for this rule and add a Test
-            if (document.RedirectUris.Any())
+            if (document.RedirectUris != null && document.RedirectUris.Any())
             {
                 return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -366,11 +367,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             {
                 IEnumerable<string>? scopes = null;
 
-                if (document.GrantTypes.Contains(GrantType.ClientCredentials))
+                if (document.GrantTypes != null && document.GrantTypes.Contains(GrantType.ClientCredentials))
                 {
                     scopes = _serverSettings.DefaultSystemScopes?.FromSpaceSeparatedString();
                 }
-                else if (document.GrantTypes.Contains(GrantType.AuthorizationCode))
+                else if (document.GrantTypes != null && document.GrantTypes.Contains(GrantType.AuthorizationCode))
                 {
                     scopes = _serverSettings.DefaultUserScopes?.FromSpaceSeparatedString();
                 }
@@ -386,19 +387,22 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
         if (document.Scope != null && document.Any())
         {
-            var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            string[] scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             // todo: ideally scope names get checked against configuration store?
-
+            
             foreach (var scope in scopes)
             {
-                client.AllowedScopes.Add(scope);
+                client?.AllowedScopes.Add(scope);
             }
         }
 
 
         if (!string.IsNullOrWhiteSpace(document.ClientName))
         {
-            client.ClientName = document.ClientName;
+            if (client != null)
+            {
+                client.ClientName = document.ClientName;
+            }
         }
 
         // validation successful - return client
@@ -414,36 +418,41 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     {
         var x5cArray = Getx5c(jwtHeader);
 
+        
+        
         // TODO: no test cases for x5c with intermediate certificates.  
-        var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
-
-        if (_trustChainValidator.IsTrustedCertificate(
-                client.ClientName,
-                cert,
-                communityTrustAnchors,
-                out X509ChainElementCollection? chainElements,
-                rootCertificates))
+        if (x5cArray != null)
         {
-            if (chainElements == null)
+            var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
+
+            if (_trustChainValidator.IsTrustedCertificate(
+                    client.ClientName,
+                    cert,
+                    communityTrustAnchors,
+                    out X509ChainElementCollection? chainElements,
+                    rootCertificates))
             {
-                _logger.LogError("Missing chain elements");
-
-                return false;
-            }
-
-            var clientSecrets = client.ClientSecrets = new List<Secret>();
-
-            foreach (var chainElement in chainElements.Skip(1))
-            {
-                clientSecrets.Add(new()
+                if (chainElements == null)
                 {
-                    Expiration = chainElements.First().Certificate.NotAfter,
-                    Type = UdapServerConstants.SecretTypes.Udap_X509_Pem,
-                    Value = Convert.ToBase64String(chainElement.Certificate.Export(X509ContentType.Cert))
-                });
-            }
+                    _logger.LogError("Missing chain elements");
 
-            return true;
+                    return false;
+                }
+
+                var clientSecrets = client.ClientSecrets = new List<Secret>();
+
+                foreach (var chainElement in chainElements.Skip(1))
+                {
+                    clientSecrets.Add(new()
+                    {
+                        Expiration = chainElements.First().Certificate.NotAfter,
+                        Type = UdapServerConstants.SecretTypes.Udap_X509_Pem,
+                        Value = Convert.ToBase64String(chainElement.Certificate.Export(X509ContentType.Cert))
+                    });
+                }
+
+                return true;
+            }
         }
 
         _logger.LogDebug($"jwt payload {jwtSecurityToken.EncodedPayload}");
@@ -452,7 +461,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         return false;
     }
 
-    private string[]? _x5cArray = null;
+    private readonly string[]? _x5cArray = null;
 
     private string[]? Getx5c(JwtHeader jwtHeader)
     {

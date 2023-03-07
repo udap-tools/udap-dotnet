@@ -115,9 +115,8 @@ namespace Udap.Metadata.Server
             var store = await _certificateStore.Resolve();
 
             var entity = store.IssuedCertificates
-                .Where(c => c.Community == udapMetadataConfig.Community)
-                .OrderBy(c => c.Certificate.NotBefore)
-                .LastOrDefault();
+                .Where(c => c.Community == udapMetadataConfig.Community && c.Certificate != null)
+                .MaxBy(c => c.Certificate!.NotBefore);
 
             if (entity == null)
             {

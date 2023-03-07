@@ -7,16 +7,13 @@
 // */
 #endregion
 
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
@@ -310,10 +307,13 @@ public class RegisterController : Controller
             return BadRequest($"{nameof(request.UdapRegisterRequest)} is Null.");
         }
  
-        var response = await _httpClient.PostAsJsonAsync<UdapRegisterRequest>(
+        var response = await _httpClient.PostAsJsonAsync(
             request.RegistrationEndpoint,
             request.UdapRegisterRequest,
-            new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
+            new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            });
 
         if (!response.IsSuccessStatusCode)
         {

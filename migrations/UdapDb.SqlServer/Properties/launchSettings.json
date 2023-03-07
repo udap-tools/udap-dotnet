@@ -2,29 +2,18 @@
   "profiles": {
     "UdapDb": {
       "commandName": "Project",
-      "launchBrowser": true,
-      "launchUrl": "weatherforecast",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
-      "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5283"
+      "dotnetRunMessages": true
     },
     "GCPMigrate": {
       "commandName": "Project",
-      "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "GCPDeploy": "true"
       },
-      "dotnetRunMessages": true,
-      "applicationUrl": "http://localhost:5283"
-    },
-    "Docker": {
-      "commandName": "Docker",
-      "launchBrowser": true,
-      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/weatherforecast",
-      "publishAllPorts": true
+      "dotnetRunMessages": true
     }
   }
 }

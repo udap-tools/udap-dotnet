@@ -30,7 +30,6 @@ using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Server.Configuration;
-using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
 using Udap.Server.Options;
 using Udap.Server.Registration;

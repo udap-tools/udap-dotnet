@@ -22,11 +22,11 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Udap.Model;
 using Xunit.Abstractions;
-using program = WeatherApi.Program;
+using weatherApiProgram = WeatherApi.Program;
 
 namespace UdapMetadata.Tests.WeatherApi;
 
-public class ApiTestFixture : WebApplicationFactory<program> 
+public class ApiTestFixture : WebApplicationFactory<weatherApiProgram> 
 {
     private Udap.Model.UdapMetadata? _wellKnownUdap;
     public ITestOutputHelper Output { get; set; } = null!;

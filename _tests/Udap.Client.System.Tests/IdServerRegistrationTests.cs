@@ -994,7 +994,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             // .WithScope("user/Patient.* user/Practitioner.read") //Comment out for UDAP Server mode.
             .WithResponseTypes(new HashSet<string?> { "code" })
-            .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
+            .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri }!)
             .Build();
 
 
@@ -1623,7 +1623,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("user/Patient.* user/Practitioner.read")
             .WithResponseTypes(new HashSet<string?> { "code" })
-            .WithRedirectUrls(redirectUrls)
+            .WithRedirectUrls(redirectUrls!)
             .BuildSoftwareStatement();
 
         

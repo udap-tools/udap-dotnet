@@ -25,6 +25,6 @@ public interface IUdapDynamicClientRegistrationValidator
     /// <returns></returns>
     Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request, 
-        X509Certificate2Collection communityTrustAnchors,
-        X509Certificate2Collection communityRoots);
+        X509Certificate2Collection? communityTrustAnchors,
+        X509Certificate2Collection? communityRoots);
 }

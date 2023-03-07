@@ -13,9 +13,9 @@ public class Certification
 {
     public int Id { get; set; }
     
-    public string Name { get; set; }
+    public string Name { get; set; } = default!;
 
-    public virtual ICollection<CommunityCertification> CommunityCertifications { get; set; }
+    public virtual ICollection<CommunityCertification> CommunityCertifications { get; set; } = default!;
 
-    public virtual ICollection<AnchorCertification> AnchorCertifications { get; set; }
+    public virtual ICollection<AnchorCertification> AnchorCertifications { get; set; } = default!;
 }

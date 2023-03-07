@@ -22,12 +22,12 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Udap.Model;
 using Xunit.Abstractions;
-using program = FhirLabsApi.Program;
+using fhirLabsProgram = FhirLabsApi.Program;
 
 
 namespace UdapMetadata.Tests.FhirLabsApi;
 
-public class ApiTestFixture : WebApplicationFactory<program>
+public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
 {
     private Udap.Model.UdapMetadata? _wellKnownUdap;
     public ITestOutputHelper? Output { get; set; }

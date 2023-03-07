@@ -27,8 +27,6 @@ using Microsoft.Extensions.Logging;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Server;
-using Udap.Server.Configuration;
-using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.Registration;
 
 namespace UdapServer.Tests.Common;

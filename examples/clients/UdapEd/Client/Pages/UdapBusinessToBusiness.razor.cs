@@ -10,7 +10,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using System.Text.Json;
-using Blazored.LocalStorage;
 using IdentityModel;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -35,9 +34,7 @@ public partial class UdapBusinessToBusiness
 
     [Inject] AccessService AccessService { get; set; } = null!;
     [Inject] NavigationManager NavManager { get; set; } = null!;
-
-    [Inject] ILocalStorageService LocalStorageService { get; set; } = null!;
-
+    
     [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
 
     private string LoginRedirectLinkText { get; set; } = "Login Redirect";
@@ -166,13 +163,16 @@ public partial class UdapBusinessToBusiness
     {
         var sb = new StringBuilder();
         sb.Append(@AppState.UdapMetadata?.AuthorizationEndpoint);
-        sb.Append("?").Append(@AppState.AuthorizationCodeRequest.ResponseType);
-        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.State);
-        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.ClientId);
-        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Scope);
-        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.RedirectUri);
-        sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Aud);
-        
+        if (@AppState.AuthorizationCodeRequest != null)
+        {
+            sb.Append("?").Append(@AppState.AuthorizationCodeRequest.ResponseType);
+            sb.Append("&").Append(@AppState.AuthorizationCodeRequest.State);
+            sb.Append("&").Append(@AppState.AuthorizationCodeRequest.ClientId);
+            sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Scope);
+            sb.Append("&").Append(@AppState.AuthorizationCodeRequest.RedirectUri);
+            sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Aud);
+        }
+
         AuthCodeRequestLink = sb.ToString();
         StateHasChanged();
     }
@@ -200,7 +200,6 @@ public partial class UdapBusinessToBusiness
         //
         var loginLink = await AccessService.Get(accessCodeRequestUrl);
         
-        EnrichLoginLink(loginLink);
         AppState.SetProperty(this, nameof(AppState.AccessCodeRequestResult), loginLink);
         LoginRedirectLinkText = "Login Redirect";
     }
@@ -232,39 +231,7 @@ public partial class UdapBusinessToBusiness
 
         return uri.Query.Replace("&", "&\r\n");
     }
-
-
-    /// <summary>
-    /// Some requests to the Authorization endpoint do not build the full login url
-    /// with the parameters.  Case in point is https://www.udap.org/UDAPTestTool/.
-    /// While Securedcontrols.net does.
-    /// </summary>
-    /// <param name="loginLink"></param>
-    /// <exception cref="NotImplementedException"></exception>
-    private void EnrichLoginLink(AccessCodeRequestResult loginLink)
-    {
-        if (loginLink.RedirectUrl != null)
-        {
-            if (loginLink.Cookies != null)
-            {
-                
-            }
-            // var loginRedirect = new Uri(loginLink.RedirectUrl);
-            //
-            // if (string.IsNullOrWhiteSpace(loginRedirect.Query))
-            // {
-            //     var url = new RequestUrl(loginLink.RedirectUrl);
-            //     loginLink.RedirectUrl = url.AppendParams(
-            //         AppState.AuthorizationCodeRequest?.ClientId,
-            //         AppState.AuthorizationCodeRequest?.ResponseType,
-            //         AppState.AuthorizationCodeRequest?.State,
-            //         AppState.AuthorizationCodeRequest?.Scope,
-            //         AppState.AuthorizationCodeRequest?.RedirectUri,
-            //         AppState.AuthorizationCodeRequest?.Aud);
-            // }
-        }
-    }
-
+    
     private void ResetSoftwareStatement()
     {
         TokenRequest1 = string.Empty;

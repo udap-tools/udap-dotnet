@@ -28,15 +28,17 @@ public class AccessService
 
     public async Task<AccessCodeRequestResult?> Get(string authorizeQuery)
     {
-        var response = await _httpClient.GetFromJsonAsync<AccessCodeRequestResult>($"/Access/{Base64UrlEncoder.Encode(authorizeQuery)}");
+        var response = await _httpClient
+            .GetFromJsonAsync<AccessCodeRequestResult>(
+                $"/Access/{Base64UrlEncoder.Encode(authorizeQuery)}");
         
         return response;
     }
 
     public async Task<UdapAuthorizationCodeTokenRequestModel?> BuildRequestAccessTokenForAuthCode(
-        AuthorizationCodeTokenRequestModel model)
+        AuthorizationCodeTokenRequestModel tokenRequestModel)
     {
-        var result = await _httpClient.PostAsJsonAsync("Access/BuildRequestToken/authorization_code", model);
+        var result = await _httpClient.PostAsJsonAsync("Access/BuildRequestToken/authorization_code", tokenRequestModel);
 
         if (!result.IsSuccessStatusCode)
         {
@@ -57,16 +59,9 @@ public class AccessService
 
     
     public async Task<UdapClientCredentialsTokenRequestModel?> BuildRequestAccessTokenForClientCredentials(
-        string clientId,
-        string tokenEndpointUrl)
+        ClientCredentialsTokenRequestModel tokenRequestModel)
     {
-        var model = new ClientCredentialsTokenRequestModel
-        {
-            ClientId = clientId,
-            TokenEndpointUrl = tokenEndpointUrl
-        };
-
-        var result = await _httpClient.PostAsJsonAsync("Access/BuildRequestToken/client_credentials", model);
+        var result = await _httpClient.PostAsJsonAsync("Access/BuildRequestToken/client_credentials", tokenRequestModel);
         
         if (!result.IsSuccessStatusCode)
         {
@@ -82,7 +77,7 @@ public class AccessService
             });
     }
 
-    public async Task<TokenResponseModel?> RequestAccessTokenForClientCredentials(UdapClientCredentialsTokenRequest request)
+    public async Task<TokenResponseModel?> RequestAccessTokenForClientCredentials(UdapClientCredentialsTokenRequestModel request)
     {
         var result = await _httpClient.PostAsJsonAsync("Access/RequestToken/client_credentials", request);
 
@@ -96,7 +91,7 @@ public class AccessService
         return await result.Content.ReadFromJsonAsync<TokenResponseModel>();
     }
 
-    public async Task<TokenResponseModel?> RequestAccessTokenForAuthorizationCode(UdapAuthorizationCodeTokenRequest request)
+    public async Task<TokenResponseModel?> RequestAccessTokenForAuthorizationCode(UdapAuthorizationCodeTokenRequestModel request)
     {
         var result = await _httpClient.PostAsJsonAsync("Access/RequestToken/authorization_code", request);
         

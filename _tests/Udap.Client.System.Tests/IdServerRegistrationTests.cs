@@ -148,7 +148,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var requestBody = new UdapRegisterRequest
         (
            signedSoftwareStatement,
-           UdapConstants.UdapVersionsSupportedValue
+           UdapConstants.UdapVersionsSupportedValue,
+           certifications: Array.Empty<string>()
         );
 
         var response = await fhirClient.PostAsJsonAsync(disco.RegistrationEndpoint, requestBody);

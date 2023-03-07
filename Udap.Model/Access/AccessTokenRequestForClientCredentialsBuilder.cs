@@ -28,7 +28,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
     private string? _clientId;
     private DateTime _now;
     private X509Certificate2 _certificate;
-    private string _clientCertAsBase64;
+    private string? _scope;
 
     private AccessTokenRequestForClientCredentialsBuilder(string? clientId, string? tokenEndpoint, X509Certificate2 certificate)
     {
@@ -36,7 +36,6 @@ public  class AccessTokenRequestForClientCredentialsBuilder
         _tokenEndoint = tokenEndpoint;
         _clientId = clientId;
         _certificate = certificate;
-        _clientCertAsBase64 = Convert.ToBase64String(certificate.Export(X509ContentType.Cert));
 
         _claims = new List<Claim>
         {
@@ -63,9 +62,25 @@ public  class AccessTokenRequestForClientCredentialsBuilder
         return this;
     }
 
-    public UdapClientCredentialsTokenRequest build()
+    public AccessTokenRequestForClientCredentialsBuilder WithScope(string scope)
     {
-        var clientAssertion = BuildClientAssertion();
+        _scope = scope;
+        return this;
+    }
+
+    /// <summary>
+    /// Legacy refers to the current udap.org/UDAPTestTool behavior as documented in
+    /// udap.org profiles.  The HL7 Security IG has the following constraint to make it
+    /// more friendly with OIDC and SMART launch frameworks.
+    /// sub == iss == client_id
+    /// Where as the Legacy is the following behavior
+    /// sub == iis == SubAlt Name
+    /// </summary>
+    /// <param name="legacy"></param>
+    /// <returns></returns>
+    public UdapClientCredentialsTokenRequest Build(bool legacy = false)
+    {
+        var clientAssertion = BuildClientAssertion(legacy);
 
         return new UdapClientCredentialsTokenRequest
         {
@@ -76,20 +91,40 @@ public  class AccessTokenRequestForClientCredentialsBuilder
                 Type = OidcConstants.ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
-            Udap = UdapConstants.UdapVersionsSupportedValue
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = _scope
         };
     }
     
 
-    private string? BuildClientAssertion()
+    private string BuildClientAssertion(bool legacy = false)
     {
-        var jwtPayload = new JwtPayLoadExtension(
-                _certificate.GetNameInfo(X509NameType.UrlName, false),  //TODO:: Let user pick the subject alt name.  Create will need extra param.
+        JwtPayLoadExtension jwtPayload;
+
+        if (legacy)
+        {
+            //udap.org profile
+            jwtPayload = new JwtPayLoadExtension(
+                _certificate.GetNameInfo(X509NameType.UrlName,
+                    false), //TODO:: Let user pick the subject alt name.  Create will need extra param.
                 _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
                 _claims,
                 _now,
                 _now.AddMinutes(5)
             );
+        }
+
+        else
+        {
+            //HL7 FHIR IG profile
+            jwtPayload = new JwtPayLoadExtension(
+                _clientId, //TODO:: Let user pick the subject alt name.  Create will need extra param.
+                _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
+                _claims,
+                _now,
+                _now.AddMinutes(5)
+            );
+        }
 
         return SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(_certificate, jwtPayload)

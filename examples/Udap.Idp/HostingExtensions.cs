@@ -85,6 +85,7 @@ internal static class HostingExtensions
                 options.InputLengthRestrictions.Scope =
                     7000; //TODO: Very large!  Again I need to solve the policy/community/certification concept
             })
+            .AddServerSideSessions()
             .AddConfigurationStore(options =>
                 _ = provider switch
                 {

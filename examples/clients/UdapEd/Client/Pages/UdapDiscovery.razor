@@ -8,19 +8,32 @@
         <MudText Typo="Typo.h4">Udap Metadata</MudText>
       </MudItem>
       <MudItem xs="12" sm="12" md="12">
-        <MudButton Class="mt-3"
-                   ButtonType="ButtonType.Button"
-                   Variant="Variant.Filled"
-                   OnClick="GetMetadata">Query</MudButton>
-        <MudSpacer />
-        <MudTextField Label=@($"Enter BaseUrl")
-                      AutoFocus="true"
-                      HelperText=@($"UDAP Metadata URL: {GetWellKnownUdap(BaseUrl)}")
-                      InputType="InputType.Text"
-                      @bind-Value:get="BaseUrl"
-                      @bind-Value:set="SetMetadataUrlProperty" />
-        
-        <MudSpacer />
+        <MudGrid Spacing="2" Justify="Justify.FlexStart">
+          <MudItem>
+            <MudButton Class="mt-3"
+                       ButtonType="ButtonType.Button"
+                       Variant="Variant.Filled"
+                       OnClick="GetMetadata">Query</MudButton>
+          </MudItem>
+          <MudItem>
+            <MudButton Class="mt-3"
+                       ButtonType="ButtonType.Button"
+                       Variant="Variant.Filled"
+                       OnClick="RemoveBaseUrl">Remove Base Url</MudButton>
+          </MudItem>
+        </MudGrid>
+        <MudAutocomplete T="string"
+                         Label="Enter BaseUrl"
+                         AutoFocus="true"
+                         HelperText=@($"UDAP Metadata URL: {GetWellKnownUdap(BaseUrl)}")
+                         @bind-Value="BaseUrl"
+                         @bind-Text="BaseUrl"
+                         SearchFunc="@GetMetadata"
+                         CoerceText="false"
+                         CoerceValue="false"
+                         ResetValueOnEmptyText="true"
+                         />
+
         <pre>@Result</pre>
         <MudSpacer />
       </MudItem>

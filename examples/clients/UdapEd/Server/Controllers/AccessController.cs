@@ -8,7 +8,9 @@
 #endregion
 
 using System.Net;
+using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using IdentityModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -68,16 +70,11 @@ public class AccessController : Controller
             Cookies = cookies
         };
 
-        if (response.StatusCode != HttpStatusCode.Redirect)
-        {
-            result.IsError = true;
-        }
-        
         return Ok(result);
     }
 
     [HttpPost("BuildRequestToken/authorization_code")]
-    public Task<IActionResult> RequestAccessTokenAuthCode([FromBody] AuthorizationCodeTokenRequestModel model)
+    public Task<IActionResult> RequestAccessTokenAuthCode([FromBody] AuthorizationCodeTokenRequestModel tokenRequestModel)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
@@ -90,19 +87,19 @@ public class AccessController : Controller
         var clientCert = new X509Certificate2(certBytes);
         
         var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
-            model.ClientId,
-            model.TokenEndpointUrl,
+            tokenRequestModel.ClientId,
+            tokenRequestModel.TokenEndpointUrl,
             clientCert,
-            model.RedirectUrl,
-            model.Code);
+            tokenRequestModel.RedirectUrl,
+            tokenRequestModel.Code);
 
-        var tokenRequest = tokenRequestBuilder.Build();
+        var tokenRequest = tokenRequestBuilder.Build(tokenRequestModel.LegacyMode);
         
         return Task.FromResult<IActionResult>(Ok(tokenRequest));
     }
 
     [HttpPost("BuildRequestToken/client_credentials")]
-    public Task<IActionResult> RequestAccessTokenClientCredentials([FromBody] ClientCredentialsTokenRequestModel model)
+    public Task<IActionResult> RequestAccessTokenClientCredentials([FromBody] ClientCredentialsTokenRequestModel tokenRequestModel)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
@@ -115,20 +112,25 @@ public class AccessController : Controller
         var clientCert = new X509Certificate2(certBytes);
 
         var tokenRequestBuilder = AccessTokenRequestForClientCredentialsBuilder.Create(
-            model.ClientId,
-            model.TokenEndpointUrl,
+            tokenRequestModel.ClientId,
+            tokenRequestModel.TokenEndpointUrl,
             clientCert);
 
-        var tokenRequest = tokenRequestBuilder.build();
+        if (tokenRequestModel.Scope != null)
+        {
+            tokenRequestBuilder.WithScope(tokenRequestModel.Scope);
+        }
+
+        var tokenRequest = tokenRequestBuilder.Build(tokenRequestModel.LegacyMode);
         
         return Task.FromResult<IActionResult>(Ok(tokenRequest));
     }
 
     [HttpPost("RequestToken/client_credentials")]
-    public async Task<IActionResult> RequestAccessTokenForClientCredentials([FromBody] UdapClientCredentialsTokenRequest request)
+    public async Task<IActionResult> RequestAccessTokenForClientCredentials([FromBody] UdapClientCredentialsTokenRequestModel request)
     {
-        var tokenResponse = await _httpClient
-            .UdapRequestClientCredentialsTokenAsync(request);
+        var tokenRequest = request.ToUdapClientCredentialsTokenRequest();
+        var tokenResponse = await _httpClient.UdapRequestClientCredentialsTokenAsync(tokenRequest);
 
         var tokenResponseModel = new TokenResponseModel
         {
@@ -147,10 +149,10 @@ public class AccessController : Controller
     }
 
     [HttpPost("RequestToken/authorization_code")]
-    public async Task<IActionResult> RequestAccessTokenForAuthorizationCode([FromBody] UdapAuthorizationCodeTokenRequest request)
+    public async Task<IActionResult> RequestAccessTokenForAuthorizationCode([FromBody] UdapAuthorizationCodeTokenRequestModel request)
     {
-        var tokenResponse = await _httpClient
-            .UdapRequestAuthorizationCodeTokenAsync(request);
+        var tokenRequest = request.ToUdapAuthorizationCodeTokenRequest();
+        var tokenResponse = await _httpClient.UdapRequestAuthorizationCodeTokenAsync(tokenRequest);
 
         var tokenResponseModel = new TokenResponseModel
         {
@@ -165,6 +167,7 @@ public class AccessController : Controller
             TokenType = tokenResponse.TokenType
         };
 
+        _logger.LogInformation("Goodbye joe serer side");
         return Ok(tokenResponseModel);
     }
 }

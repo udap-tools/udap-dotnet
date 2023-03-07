@@ -9,11 +9,11 @@
         <MudText Typo="Typo.h6" Color="Color.Tertiary">Requesting Access Tokens for either client_credentials or authorization_code flows</MudText>
       </MudItem>
 
-      <MudGrid Spacing="1" Class="mt-8">
-        <MudItem xs="5" sm="6" Class="pa-4 ma-2">
+      <MudGrid Spacing="1" Justify="Justify.FlexStart" Class="mb-2">
+        <MudItem xs="4" Class="pa-4">
           <MudTextField Label="Client Id:" ReadOnly="true" @bind-Value="ClientId" />
         </MudItem>
-        <MudItem xs="4" sm="3" Class="pa-4 ma-2">
+        <MudItem xs="4" Class="pa-4">
           <MudTextField Label="OAth2 Flow" ReadOnly="true" @bind-Value="Oauth2Flow" />
         </MudItem>
       </MudGrid>
@@ -22,13 +22,23 @@
 
         @if (AppState.Oauth2Flow == Oauth2FlowEnum.client_credentials)
         {
-        <MudButton Class="mt-3"
-               ButtonType="ButtonType.Button"
-               Variant="Variant.Filled"
-               Disabled="@(AppState.RegistrationDocument == null)"
-               OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
-
+        <MudGrid>
+          <MudItem xs="4">
+            <MudButton Class="d-inline m-3"
+                   ButtonType="ButtonType.Button"
+                   Variant="Variant.Filled"
+                   Disabled="@(AppState.RegistrationDocument == null)"
+                   OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
+          </MudItem>
+          <MudItem xs="3">
+            <MudSwitch Class="d-inline m-3" Label="@(LegacyMode ? "udap.org Mode (sub==iss==SubjectAltName)"
+                              : "HL7 FHIR Mode (sub==iss==client_id)")"
+                   T="bool"
+                   @bind-Checked="@LegacyMode" />
+          </MudItem>
+        </MudGrid>
         <MudGrid Spacing="1" Class="mt-8">
+
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">
@@ -39,22 +49,29 @@
               </MudText>
               <pre>@TokenRequest1</pre>
               <pre style="padding-left: 10px">@TokenRequest2</pre>
+
               <pre style="padding-left:10px; background-color:lightyellow">@TokenRequest3</pre>
+              <pre style="padding-left: 10px">@TokenRequestScope</pre>
               <pre style="padding-left:10px">@TokenRequest4</pre>
             </MudPaper>
           </MudItem>
+
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Future Info</MudText>
-              <pre>Todo</pre>
+              <pre>@if (ClientAssertionDecoded != null)
+                            {
+                                @((MarkupString)ClientAssertionDecoded)
+                            }</pre>
             </MudPaper>
           </MudItem>
+
         </MudGrid>
         }
 
         @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
         {
-        <MudButton Class="mt-3"
+        <MudButton Class="d-inline m-3"
                ButtonType="ButtonType.Button"
                Variant="Variant.Filled"
                Disabled="@(AppState.RegistrationDocument == null)"
@@ -123,7 +140,13 @@
 
                         @if (AppState.AccessCodeRequestResult?.Cookies != null)
                         {
-                  <pre>@AppState.AccessCodeRequestResult?.Cookies.FirstOrDefault()</pre>
+                            @if (AppState.AccessCodeRequestResult?.Cookies != null)
+                            {
+                      <pre style="font-weight: bold;">cookies:</pre>
+                        <pre>
+                                    @((MarkupString)String.Join("\r\n", AppState.AccessCodeRequestResult.Cookies))
+                        </pre>
+                            }
                         }
             </MudPaper>
           </MudItem>
@@ -152,13 +175,19 @@
           </MudItem>
         </MudGrid>
 
-
-        <MudButton Class="mt-3"
-               ButtonType="ButtonType.Button"
-               Variant="Variant.Filled"
-               Disabled="@(AppState.RegistrationDocument == null)"
-               OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
-
+        <MudGrid Justify="Justify.FlexStart">
+          <MudItem xs="4">
+            <MudButton ButtonType="ButtonType.Button"
+                   Variant="Variant.Filled"
+                   Disabled="@(AppState.RegistrationDocument == null)"
+                   OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
+          </MudItem>
+          <MudItem xs="3">
+            <MudSwitch Label="@(LegacyMode ? "udap.org Mode (sub==iss==SubjectAltName)" : "HL7 FHIR Mode (sub==iss==client_id)")"
+                   T="bool"
+                   @bind-Checked="@LegacyMode" />
+          </MudItem>
+        </MudGrid>
         <MudGrid Spacing="1" Class="mt-8">
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
@@ -172,7 +201,10 @@
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Future Info</MudText>
-              <pre>Todo</pre>
+              <pre>@if (ClientAssertionDecoded != null)
+                            {
+                                @((MarkupString)ClientAssertionDecoded)
+                            }</pre>
             </MudPaper>
           </MudItem>
         </MudGrid>

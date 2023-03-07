@@ -8,6 +8,7 @@
 #endregion
 
 
+using System.Collections.Specialized;
 using Microsoft.AspNetCore.Components;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
@@ -23,7 +24,9 @@ public class UdapClientState : IAppState
 {
     public UdapClientState() {}
 
-    public string? BaseUrl { get; set; } = "https://fhirlabs.net/fhir/r4/.well-known/udap";
+    public string BaseUrl { get; set; } = "https://fhirlabs.net/fhir/r4/.well-known/udap";
+
+    public OrderedDictionary BaseUrls { get; set; }
 
     public UdapMetadata? UdapMetadata { get; set; }
     

@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
@@ -46,6 +47,18 @@ public class UdapDynamicClientRegistrationEndpoint
     /// <returns></returns>
     public async Task Process(HttpContext context, CancellationToken token)
     {
+
+        if (_logger.IsEnabled(LogLevel.Debug))
+        {
+            context.Request.EnableBuffering();
+            using (var reader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true))
+            {
+                var bodyStr = await reader.ReadToEndAsync();
+                context.Request.Body.Seek(0, SeekOrigin.Begin);
+                _logger.LogDebug("Request: {Request}", bodyStr);
+            }
+        }
+
         //
         // Can't tell if this is truly required from specifications.
         // Maybe search the DCR RFC's

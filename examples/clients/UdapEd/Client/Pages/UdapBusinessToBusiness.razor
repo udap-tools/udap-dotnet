@@ -11,10 +11,10 @@
 
       <MudGrid Spacing="1" Justify="Justify.FlexStart" Class="mb-2">
         <MudItem xs="4" Class="pa-4">
-          <MudTextField Label="Client Id:" ReadOnly="true" @bind-Value="ClientId" />
+          <MudTextField Label="Client Id:" @bind-Value="ClientId" />
         </MudItem>
         <MudItem xs="4" Class="pa-4">
-          <MudTextField Label="OAth2 Flow" ReadOnly="true" @bind-Value="Oauth2Flow" />
+          <MudTextField Label="OAth2 Flow"  @bind-Value="Oauth2Flow" />
         </MudItem>
       </MudGrid>
     </MudGrid>
@@ -27,7 +27,7 @@
             <MudButton Class="d-inline m-3"
                    ButtonType="ButtonType.Button"
                    Variant="Variant.Filled"
-                   Disabled="@(AppState.RegistrationDocument == null)"
+                   Disabled="@(AppState.RegistrationDocument == null && string.IsNullOrEmpty(ClientId))"
                    OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
           </MudItem>
           <MudItem xs="3">

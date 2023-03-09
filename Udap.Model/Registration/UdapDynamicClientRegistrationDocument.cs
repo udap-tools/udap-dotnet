@@ -257,7 +257,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         {
             if (_clientUri == null)
             {
-                if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientName), UriKind.Absolute, out var value ))
+                if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientUri), UriKind.Absolute, out var value ))
                 {
                     _clientUri = value;
                 }
@@ -267,7 +267,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         set
         {
             _clientUri = value;
-            if (value != null) this[UdapConstants.RegistrationDocumentValues.ClientName] = value;
+            if (value != null) this[UdapConstants.RegistrationDocumentValues.ClientUri] = value;
         }
     }
 

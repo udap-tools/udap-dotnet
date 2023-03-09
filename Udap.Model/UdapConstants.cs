@@ -7,6 +7,8 @@
 // */
 #endregion
 
+using Udap.Model.UdapAuthenticationExtensions;
+
 namespace Udap.Model;
 
 /// <summary>
@@ -155,6 +157,19 @@ public static class UdapConstants
         public const string TokenEndpoint = "token_endpoint";
         public const string RegistrationEndpoint = "registration_endpoint";
         public const string JwksUri = "jwks_uri";
+    }
+
+    public static class B2BAuthorizationExtension
+    {
+        public const string Version = "version";
+        public const string SubjectName = "subject_name";
+        public const string SubjectId = "subject_id";
+        public const string SubjectRole = "subject_role";
+        public const string OraganizationName = "organization_name";
+        public const string OrganizationId = "organization_id";
+        public const string PurposeOfUse = "purpose_of_use";
+        public const string ConsentPolicy = "consent_policy";
+        public const string ConsentReference = "consent_reference";
     }
 
     public static class JwtClaimTypes

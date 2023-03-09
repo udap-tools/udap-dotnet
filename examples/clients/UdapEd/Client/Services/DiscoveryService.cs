@@ -21,11 +21,18 @@ public class DiscoveryService
         _http = http;
     }
 
-    public async Task<UdapMetadata?> GetMetadata(string? metadataUrl)
+    public async Task<UdapMetadata?> GetMetadata(string? metadataUrl, CancellationToken token)
     {
-        var udapMetadataUrl = $"Metadata?metadataUrl={metadataUrl}";
-        var result = await _http.GetFromJsonAsync<UdapMetadata>(udapMetadataUrl);
+        try
+        {
+            var udapMetadataUrl = $"Metadata?metadataUrl={metadataUrl}";
+            var result = await _http.GetFromJsonAsync<UdapMetadata>(udapMetadataUrl, token);
 
-        return result;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
     }
 }

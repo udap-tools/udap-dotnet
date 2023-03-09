@@ -169,11 +169,14 @@ public class RegisterController : Controller
         var result = new RawSoftwareStatementAndHeader
         {
             Header = requestToken.EncodedHeader.DecodeJwtHeader(),
-            SoftwareStatement = Base64UrlEncoder.Decode(requestToken.EncodedPayload)
+            SoftwareStatement = Base64UrlEncoder.Decode(requestToken.EncodedPayload),
+            Scope = request.Scope
         };
         
         return Ok(result);
     }
+
+    
 
     [HttpPost("BuildSoftwareStatement/AuthorizationCode")]
     public IActionResult BuildSoftwareStatementWithHeaderForAuthorizationCode([FromBody] UdapDynamicClientRegistrationDocument request)
@@ -218,7 +221,8 @@ public class RegisterController : Controller
         var result = new RawSoftwareStatementAndHeader
         {
             Header = requestToken.EncodedHeader.DecodeJwtHeader(),
-            SoftwareStatement = Base64UrlEncoder.Decode(requestToken.EncodedPayload)
+            SoftwareStatement = Base64UrlEncoder.Decode(requestToken.EncodedPayload),
+            Scope = request.Scope
         };
         
         return Ok(result);

@@ -79,12 +79,15 @@ public partial class UdapDiscovery
 
         try
         {
-            AppState.SetProperty(this, nameof(AppState.UdapMetadata), await MetadataService.GetMetadata(GetWellKnownUdap(BaseUrl)));
+            await AppState.SetPropertyAsync(
+                this, 
+                nameof(AppState.UdapMetadata), 
+                await MetadataService.GetMetadata(GetWellKnownUdap(BaseUrl), default));
 
             Result = AppState.UdapMetadata != null
                 ? JsonSerializer.Serialize(AppState.UdapMetadata, new JsonSerializerOptions { WriteIndented = true })
                 : string.Empty;
-            AppState.SetProperty(this, nameof(AppState.BaseUrl), BaseUrl);
+            await AppState.SetPropertyAsync(this, nameof(AppState.BaseUrl), BaseUrl);
 
             if (_result.Contains("udap_versions_supported"))
             {
@@ -98,11 +101,11 @@ public partial class UdapDiscovery
         catch (Exception ex)
         {
             Result = ex.Message;
-            AppState.SetProperty(this, nameof(AppState.UdapMetadata), null);
+            await AppState.SetPropertyAsync(this, nameof(AppState.UdapMetadata), null);
         }
     }
 
-    private async Task<IEnumerable<string>?> GetMetadata(string value)
+    private async Task<IEnumerable<string>?> GetMetadata(string value, CancellationToken token)
     {
         await Task.Delay(5);
 
@@ -116,7 +119,14 @@ public partial class UdapDiscovery
             return AppState.BaseUrls.Cast<DictionaryEntry>().Select(e => (string)e.Key);
         }
 
-        AppState.BaseUrls!.Add(value, null);
+        if (Uri.TryCreate(value, UriKind.Absolute, out var baseUri))
+        {
+            var result = await MetadataService.GetMetadata(GetWellKnownUdap(BaseUrl), token);
+            if (result != null)
+            {
+                AppendOrMoveBaseUrl(baseUri.AbsoluteUri);
+            }
+        }
 
         return AppState.BaseUrls.Cast<DictionaryEntry>().Select(e => (string)e.Key);
     }
@@ -126,7 +136,7 @@ public partial class UdapDiscovery
         var baseUrls = AppState.BaseUrls;
         if (baseUrls != null && appStateBaseUrl != null)
         {
-            if (!baseUrls.Contains(appStateBaseUrl))
+            if (!baseUrls.Contains(appStateBaseUrl) && !baseUrls.Contains(appStateBaseUrl.TrimEnd('/')))
             {
                 baseUrls.Insert(0, appStateBaseUrl, null);
             }

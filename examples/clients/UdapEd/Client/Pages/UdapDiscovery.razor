@@ -28,9 +28,8 @@
                          HelperText=@($"UDAP Metadata URL: {GetWellKnownUdap(BaseUrl)}")
                          @bind-Value="BaseUrl"
                          @bind-Text="BaseUrl"
-                         SearchFunc="@GetMetadata"
-                         CoerceText="false"
-                         CoerceValue="false"
+                         SearchFuncWithCancel="@GetMetadata"
+                         
                          ResetValueOnEmptyText="true"
                          />
 

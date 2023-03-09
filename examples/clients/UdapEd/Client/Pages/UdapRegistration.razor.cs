@@ -11,7 +11,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Udap.Model;
 using Udap.Model.Registration;
 using UdapEd.Client.Services;
@@ -100,9 +99,12 @@ public partial class UdapRegistration
             return jsonHeader ?? string.Empty;
         }
 
-        set => _beforeEncodingStatement = value;
+        set
+        {
+            _beforeEncodingStatement = value;
+        }
     }
-    
+
 
     private void PersistSoftwareStatement()
     {

@@ -141,7 +141,7 @@ public class UdapDcrBuilderForClientCredentials
         _document.TokenEndpointAuthMethod = tokenEndpointAuthMethod;
         return this;
     }
-
+    
     public UdapDcrBuilderForClientCredentials WithScope(string? scope)
     {
         _document.Scope = scope;

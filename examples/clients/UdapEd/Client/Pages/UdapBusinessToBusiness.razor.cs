@@ -47,10 +47,22 @@ public partial class UdapBusinessToBusiness
     {
         get
         {
-            _clientId = AppState.RegistrationDocument?.ClientId;
+            if (string.IsNullOrEmpty(_clientId) )
+            {
+                _clientId = AppState.RegistrationDocument?.ClientId;
+            }
+            
             return _clientId;
-        } 
-        set => _clientId = value; // not used.  Makes binding happy because it needs a settable property
+        }
+        set
+        {
+            _clientId = value;
+            if (AppState.RegistrationDocument != null)
+            {
+                AppState.RegistrationDocument.ClientId = value;
+            }
+        }
+        
     }
 
     private string? _oauth2Flow;
@@ -348,6 +360,7 @@ public partial class UdapBusinessToBusiness
         var jwt = new JwtSecurityToken(AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value);
         sb.AppendLine($"{JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader))}");
         sb.AppendLine("<p class=\"text-line\">PAYLOAD: <span>DATA</span></p>");
+        // .NET 7 Blazor Json does not deserialize complex JWT payloads like the extensions object.
         sb.AppendLine(JsonSerializer.Serialize(jwt.Payload, new JsonSerializerOptions { WriteIndented = true }));
         ClientAssertionDecoded = sb.ToString();
     }
@@ -431,7 +444,9 @@ public partial class UdapBusinessToBusiness
 
                 AppState.SetProperty(this, nameof(AppState.AccessTokens), tokenResponse);
 
-                AccessToken = tokenResponse is { IsError: false } ? tokenResponse.Raw : tokenResponse?.Error;
+                AccessToken = tokenResponse is { IsError: false }
+                    ? tokenResponse.Raw 
+                    : $"Failed:\r\n\r\n{tokenResponse?.Error}\r\n{tokenResponse?.Headers}";
             }
         }
         catch (Exception ex)

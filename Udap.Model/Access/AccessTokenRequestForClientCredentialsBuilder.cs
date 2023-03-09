@@ -9,11 +9,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
+using Udap.Model.UdapAuthenticationExtensions;
 
 namespace Udap.Model.Access;
 
@@ -68,6 +71,26 @@ public  class AccessTokenRequestForClientCredentialsBuilder
         return this;
     }
 
+    // private string BuildHl7B2BExtensions()
+    // {
+    //     return "{\"version\": \"1\", \"subject_name\": \"todo.  more work to do here\"}";
+    // }
+
+    private Dictionary<string, B2BAuthorizationExtension>? _extensions;
+    
+    public AccessTokenRequestForClientCredentialsBuilder WithExtension(string key, B2BAuthorizationExtension value)
+    {
+        //TODO: Hack for connect-a-thon.
+        if (_extensions == null)
+        {
+            _extensions = new Dictionary<string, B2BAuthorizationExtension>();
+        }
+
+        _extensions[key] = value;
+        
+        return this;
+    }
+
     /// <summary>
     /// Legacy refers to the current udap.org/UDAPTestTool behavior as documented in
     /// udap.org profiles.  The HL7 Security IG has the following constraint to make it
@@ -92,7 +115,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
-            Scope = _scope
+            Scope = _scope,
         };
     }
     
@@ -126,13 +149,16 @@ public  class AccessTokenRequestForClientCredentialsBuilder
             );
         }
 
+        if (_extensions != null)
+        {
+            var payload = jwtPayload as Dictionary<string, object>;
+            payload.Add(UdapConstants.JwtClaimTypes.Extensions, _extensions);
+        }
+        
+        Console.WriteLine(JsonSerializer.Serialize(jwtPayload, new JsonSerializerOptions{WriteIndented = true}));
+
         return SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(_certificate, jwtPayload)
                 .Build();
     }
-
-    // private string BuildHl7B2BExtensions()
-    // {
-    //     return "{\"version\": \"1\", \"subject_name\": \"todo.  more work to do here\"}";
-    // }
 }

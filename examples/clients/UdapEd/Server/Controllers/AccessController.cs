@@ -10,12 +10,14 @@
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
 using Udap.Model.Access;
+using Udap.Model.UdapAuthenticationExtensions;
 using UdapEd.Server.Extensions;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
@@ -116,6 +118,21 @@ public class AccessController : Controller
             tokenRequestModel.TokenEndpointUrl,
             clientCert);
 
+        var b2bHl7 = new B2BAuthorizationExtension()
+        {
+            SubjectId = "urn:oid:2.16.840.1.113883.4.6#1234567890",
+            OrganizationId = new Uri("https://fhirlabs.net/fhir/r4"),
+            PurposeOfUse = new HashSet<string>
+            {
+                "urn:oid:2.16.840.1.113883.5.8#TREAT"
+            },
+            ConsentReference = new HashSet<string>{
+                "https://fhirlabs.net/fhir/r4"
+            }
+        };
+        tokenRequestBuilder.WithExtension("hl7-b2b", b2bHl7);
+
+
         if (tokenRequestModel.Scope != null)
         {
             tokenRequestBuilder.WithScope(tokenRequestModel.Scope);
@@ -142,7 +159,10 @@ public class AccessController : Controller
             RefreshToken = tokenResponse.RefreshToken,
             ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
             Scope = tokenResponse.Raw,
-            TokenType = tokenResponse.TokenType
+            TokenType = tokenResponse.TokenType,
+            Headers = JsonSerializer.Serialize(
+                tokenResponse.HttpResponse.Headers,
+                new JsonSerializerOptions{WriteIndented = true})
         };
 
         return Ok(tokenResponseModel);

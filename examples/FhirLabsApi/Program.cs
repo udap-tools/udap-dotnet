@@ -11,7 +11,6 @@ using System.Net;
 using System.Text.Json;
 using FhirLabsApi;
 using FhirLabsApi.Extensions;
-using Firely.Fhir.Packages;
 using Google.Cloud.SecretManager.V1;
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;

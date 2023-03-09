@@ -7,6 +7,8 @@
 // */
 #endregion
 
+using System.IdentityModel.Tokens.Jwt;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Components;
@@ -50,10 +52,12 @@ public partial class UdapRegistration
             try
             {
                 jsonHeader = JsonNode.Parse(AppState.SoftwareStatementBeforeEncoding.Header)
-                    ?.ToJsonString(new JsonSerializerOptions()
-                    {
-                        WriteIndented = true
-                    });
+                    ?.ToJsonString(
+                        // new JsonSerializerOptions()
+                        // {
+                        //     WriteIndented = true
+                        // }
+                    ).Replace("\\u002B", "+");
             }
             catch
             {
@@ -79,13 +83,13 @@ public partial class UdapRegistration
 
             if (AppState.SoftwareStatementBeforeEncoding?.SoftwareStatement == null)
             {
-                return _beforeEncodingHeader;
+                return _beforeEncodingStatement;
             }
 
-            string? jsonHeader = null;
+            string? jsonStatement = null;
 
             try{
-                jsonHeader = JsonNode.Parse(AppState.SoftwareStatementBeforeEncoding.SoftwareStatement)
+                jsonStatement = JsonNode.Parse(AppState.SoftwareStatementBeforeEncoding.SoftwareStatement)
                 ?.ToJsonString(new JsonSerializerOptions()
                 {
                     WriteIndented = true
@@ -96,7 +100,7 @@ public partial class UdapRegistration
                 // ignored
             }
 
-            return jsonHeader ?? string.Empty;
+            return jsonStatement ?? string.Empty;
         }
 
         set
@@ -275,7 +279,7 @@ public partial class UdapRegistration
             ?.ToJsonString(new JsonSerializerOptions()
             {
                 WriteIndented = true
-            });
+            }).Replace("\\u002B", "+");
         
         var jsonStatement = JsonNode.Parse(softwareStatement)
             ?.ToJsonString(new JsonSerializerOptions()

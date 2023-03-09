@@ -18,8 +18,8 @@ steps:
   '--max-instances', '1', 
   '--concurrency', '5', 
   '--set-env-vars', 'GCLOUD_PROJECT=true',
-  '--execution-environment', 'gen2',
-  '--memory', '2048Mi'
+  '--execution-environment', 'gen1',
+  '--memory', '512Mi'
   ]
 
 images:

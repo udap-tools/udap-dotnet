@@ -122,13 +122,15 @@ public class AccessController : Controller
         {
             SubjectId = "urn:oid:2.16.840.1.113883.4.6#1234567890",
             OrganizationId = new Uri("https://fhirlabs.net/fhir/r4"),
+            OraganizationName = "FhirLabs",
             PurposeOfUse = new HashSet<string>
             {
                 "urn:oid:2.16.840.1.113883.5.8#TREAT"
-            },
-            ConsentReference = new HashSet<string>{
-                "https://fhirlabs.net/fhir/r4"
             }
+            // },
+            // ConsentReference = new HashSet<string>{
+            //     "https://fhirlabs.net/fhir/r4"
+            // }
         };
         tokenRequestBuilder.WithExtension("hl7-b2b", b2bHl7);
 

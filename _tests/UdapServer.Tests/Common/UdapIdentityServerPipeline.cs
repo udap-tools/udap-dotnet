@@ -103,9 +103,13 @@ public class UdapIdentityServerPipeline
 
         if (enableLogging)
         {
-            builder.ConfigureLogging((ctx, b) => b.AddConsole());
+            builder.ConfigureLogging((ctx, b) =>
+            {
+                b.AddConsole(c => c.LogToStandardErrorThreshold = LogLevel.Debug);
+                b.SetMinimumLevel(LogLevel.Trace);
+            });
         }
-
+        
         Server = new TestServer(builder);
         Handler = Server.CreateHandler();
             

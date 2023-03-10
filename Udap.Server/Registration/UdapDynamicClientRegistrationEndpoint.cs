@@ -50,13 +50,8 @@ public class UdapDynamicClientRegistrationEndpoint
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
-            context.Request.EnableBuffering();
-            using (var reader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true))
-            {
-                var bodyStr = await reader.ReadToEndAsync();
-                context.Request.Body.Seek(0, SeekOrigin.Begin);
-                _logger.LogDebug("Request: {Request}", bodyStr);
-            }
+            var bodyStr = await GetBody(context);
+            _logger.LogDebug("Request: {Request}", bodyStr);
         }
 
         //
@@ -76,13 +71,16 @@ public class UdapDynamicClientRegistrationEndpoint
         {
             request = await context.Request.ReadFromJsonAsync<UdapRegisterRequest>(cancellationToken: token) ?? throw new ArgumentNullException();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, UdapDynamicClientRegistrationErrorDescriptions.MalformedMetaDataDocument);
+            _logger.LogWarning("Request: {Request}", await GetBody(context));
+
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsJsonAsync(new UdapDynamicClientRegistrationErrorResponse
             (
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                "malformed metadata document"
+                UdapDynamicClientRegistrationErrorDescriptions.MalformedMetaDataDocument
             ), cancellationToken: token);
             
             return;
@@ -163,6 +161,17 @@ public class UdapDynamicClientRegistrationEndpoint
         
         context.Response.StatusCode = StatusCodes.Status201Created;
         await context.Response.WriteAsJsonAsync(registrationResponse, options, "application/json");
+    }
+
+    private async Task<string> GetBody(HttpContext context)
+    {
+        context.Request.EnableBuffering();
+        using (var reader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true))
+        {
+            var bodyStr = await reader.ReadToEndAsync();
+            context.Request.Body.Seek(0, SeekOrigin.Begin);
+            return bodyStr;
+        }
     }
 
 

@@ -524,6 +524,7 @@ public class UdapResponseTypeResponseModeTests
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
+        
         var signedSoftwareStatement = 
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
             .Create(clientCert, document)
@@ -532,9 +533,10 @@ public class UdapResponseTypeResponseModeTests
         var requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
         );
-        
+       
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
 
         var response = await _mockPipeline.BrowserClient.PostAsync(

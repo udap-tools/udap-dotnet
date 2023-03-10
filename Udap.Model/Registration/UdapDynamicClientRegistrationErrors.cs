@@ -36,4 +36,5 @@ public static class UdapDynamicClientRegistrationErrorDescriptions
     public const string ResponseTypesMissing = "invalid_client_metadata response_types is missing";
     public const string TokenEndpointAuthMethodMissing = "invalid_client_metadata token_endpoint_auth_method is missing";
     public const string MissingValidationResult = "Missing validation result.";
+    public const string MalformedMetaDataDocument = "Malformed metadata document";
 }

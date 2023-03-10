@@ -63,8 +63,13 @@ builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(s => {
 
 var udapConfig = builder.Configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>();
 
-var udapMetadata = new UdapMetadata(udapConfig!, Hl7ModelInfoExtensions
-    .BuildHl7FhirScopes(new List<string>{"patient", "user", "system"} ));
+var udapMetadata = new UdapMetadata(
+    udapConfig!, 
+    Hl7ModelInfoExtensions
+        .BuildHl7FhirV1AndV2Scopes(new List<string>{"patient", "user", "system"} )
+        .Where(s => s.Contains("/*")) //Just show the wild card
+        .Append("udap").Append("offline_access").Append("fhirUser").Append("openid")
+);
 
 builder.Services.AddSingleton(udapMetadata);
 

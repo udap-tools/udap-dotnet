@@ -74,7 +74,7 @@ public class UdapMetadata
     {
     }
 
-    public UdapMetadata(UdapConfig udapConfig, HashSet<string>? scopes)
+    public UdapMetadata(UdapConfig udapConfig, IEnumerable<string>? scopes)
     {
         _udapMetadataConfigs = udapConfig.UdapMetadataConfigs;
         UdapVersionsSupported = new HashSet<string> { UdapConstants.UdapVersionsSupportedValue };

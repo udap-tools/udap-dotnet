@@ -95,9 +95,6 @@
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\issued\udap-sandbox-surescripts.p12">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

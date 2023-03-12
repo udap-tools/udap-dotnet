@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -310,15 +311,16 @@ public class RegisterController : Controller
         {
             return BadRequest($"{nameof(request.UdapRegisterRequest)} is Null.");
         }
- 
-        var response = await _httpClient.PostAsJsonAsync(
-            request.RegistrationEndpoint,
-            request.UdapRegisterRequest,
-            new JsonSerializerOptions
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(request.UdapRegisterRequest, new JsonSerializerOptions
             {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            });
+            }), 
+            new MediaTypeHeaderValue("application/json"));
 
+        var response = await _httpClient.PostAsync(request.RegistrationEndpoint, content);
+        
         if (!response.IsSuccessStatusCode)
         {
             return Ok(await response.Content.ReadAsStringAsync());

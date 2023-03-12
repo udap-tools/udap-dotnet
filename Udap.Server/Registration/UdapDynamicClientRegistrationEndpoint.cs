@@ -52,6 +52,7 @@ public class UdapDynamicClientRegistrationEndpoint
         {
             var bodyStr = await GetBody(context);
             _logger.LogDebug("Request: {Request}", bodyStr);
+            _logger.LogDebug("Request Content-Type: {contentType}", context.Request.ContentType);
         }
 
         //

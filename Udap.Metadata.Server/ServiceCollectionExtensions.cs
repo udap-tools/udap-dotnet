@@ -7,6 +7,10 @@
 // */
 #endregion
 
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Udap.Metadata.Server;
@@ -30,9 +34,51 @@ public static class ServiceCollectionExtensions
         var services = mvcBuilder.Services;
         services.Configure<UdapConfig>(configuration.GetSection("UdapConfig"));
         mvcBuilder.Services.TryAddSingleton<UdapMetadata>();
-
+        
         var assembly = typeof(UdapController).Assembly;
         return mvcBuilder.AddApplicationPart(assembly);
+    }
+
+    public static IApplicationBuilder UseUdapMetadataServer(this WebApplication app)
+    {
+        EnsureMvcControllerUnloads(app);
+
+        app.MapGet("/.well-known/udap",
+                async (
+                    [FromServices] UdapMetaDataEndpoint endpoint,
+                    [FromQuery]string? community,
+                    CancellationToken token) => await endpoint.Process(community, token))
+            .AllowAnonymous()
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound); // community doesn't exist
+
+        app.MapGet("/.well-known/udap/communities",
+                ([FromServices] UdapMetaDataEndpoint endpoint) => endpoint.GetCommunities())
+            .AllowAnonymous()
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound); // community doesn't exist
+        
+        app.MapGet("/.well-known/udap/communities/ashtml",
+                (
+                    [FromServices] UdapMetaDataEndpoint endpoint,
+                    HttpContext httpContext) => endpoint.GetCommunitiesAsHtml(httpContext))
+            .AllowAnonymous()
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound); // community doesn't exist
+
+        return app;
+    }
+
+    private static void EnsureMvcControllerUnloads(WebApplication app)
+    {
+        if (app.Services.GetService(typeof(ApplicationPartManager)) is ApplicationPartManager appPartManager)
+        {
+            var part = appPartManager?.ApplicationParts.FirstOrDefault(a => a.Name == "Udap.Metadata.Server");
+            if (part != null)
+            {
+                appPartManager.ApplicationParts.Remove(part);
+            }
+        }
     }
 }
 

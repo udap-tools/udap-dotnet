@@ -31,6 +31,7 @@ public static class UdapDynamicClientRegistrationErrorDescriptions
     public const string CannotFindorParseX5c = "software_statement x5c cannot find or parse";
     public const string IssuedAtMissing = "software_statement iat is missing";
     public const string IssuedAtInFuture = "software_statement iat is in the future";
+    public const string FailedTokenValidation = "Failed JsonWebTokenHandler.ValidateToken";
 
     public const string ClientNameMissing = "invalid_client_metadata client_name is missing";
     public const string ResponseTypesMissing = "invalid_client_metadata response_types is missing";

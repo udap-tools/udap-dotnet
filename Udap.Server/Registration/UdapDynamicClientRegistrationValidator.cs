@@ -116,10 +116,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     $"{UdapDynamicClientRegistrationErrorDescriptions.ExpExpired}: {validatedToken.Exception.Message}"));
             }
             
+            _logger.LogWarning(validatedToken.Exception, UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
 
             return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
-                "Failed JsonWebTokenHandler.ValidateToken"));
+                UdapDynamicClientRegistrationErrorDescriptions.FailedTokenValidation));
         }
 
         var document = new UdapDynamicClientRegistrationDocument();

@@ -1,8 +1,10 @@
 ﻿@using UdapEd.Client.Services
 @using UdapEd.Shared.Model
+@using BQuery
 @inject IJSRuntime JSRuntime
 @inject RegisterService RegisterService
 @inject IDialogService DialogService
+@implements IDisposable
 
 <InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 
@@ -67,14 +69,39 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
 
+    PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
+    private bool _checkServerSession = false;
 
     protected override async Task OnInitializedAsync()
     {
         SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+        RunTimer();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Bq.Events.OnBlur += Events_OnBlur;
+            Bq.Events.OnFocusAsync += Events_OnFocus;
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task Events_OnFocus(FocusEventArgs obj)
+    {
+        SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+        _checkServerSession = true;
+    }
+
+    private void Events_OnBlur(FocusEventArgs obj)
+    {
+        _checkServerSession = false;
+    }
+    
     private void SetCertLoadedColor(CertLoadedEnum isCertLoaded)
     {
+        Console.WriteLine(isCertLoaded.ToString());
         switch (isCertLoaded)
         {
             case CertLoadedEnum.Negative:
@@ -145,4 +172,20 @@
         SetCertLoadedColor(result);
     }
 
+    async void RunTimer()
+    {
+        while (await _periodicTimer.WaitForNextTickAsync())
+        {
+            if (_checkServerSession)
+            {
+                SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+            }
+        }
+    }
+
+
+    public void Dispose()
+    {
+        _periodicTimer?.Dispose();
+    }
 }

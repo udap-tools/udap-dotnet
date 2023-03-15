@@ -8,7 +8,6 @@
 #endregion
 
 using System.Security.Cryptography.X509Certificates;
-using Udap.Client.Client.Messages;
 using Udap.Model.Registration;
 
 namespace Udap.Server.Registration;
@@ -16,7 +15,7 @@ namespace Udap.Server.Registration;
 public interface IUdapDynamicClientRegistrationValidator
 {
     /// <summary>
-    /// Validate registration request against all rules documented here: https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/registration.html
+    /// Validate registration request against all rules documented here: http://hl7.org/fhir/us/udap-security/registration.html
     /// </summary>
     /// <remarks>
     /// The validator is an implementation of <a href="https://www.udap.org/udap-dynamic-client-registration-stu1.html">
@@ -26,6 +25,6 @@ public interface IUdapDynamicClientRegistrationValidator
     /// <returns></returns>
     Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request, 
-        X509Certificate2Collection communityTrustAnchors,
-        X509Certificate2Collection communityRoots);
+        X509Certificate2Collection? communityTrustAnchors,
+        X509Certificate2Collection? communityRoots);
 }

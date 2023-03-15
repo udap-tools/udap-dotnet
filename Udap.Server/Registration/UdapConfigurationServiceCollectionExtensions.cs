@@ -7,12 +7,15 @@
 // */
 #endregion
 
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Udap.Common.Certificates;
-using Udap.Server.Configuration;
+using Udap.Server.Registration;
 
-namespace Udap.Server.Registration;
+//
+// See reason for Microsoft.Extensions.DependencyInjection namespace
+// here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
+//
+namespace Microsoft.Extensions.DependencyInjection;
 
 public static class UdapConfigurationServiceCollectionExtensions
 {
@@ -41,7 +44,6 @@ public static class UdapConfigurationServiceCollectionExtensions
     /// Remember to supply a IUdapClientRegistrationStore to access the certificate anchors
     /// and storage process for new client registrations.
     /// </summary>
-    /// <param name="services"></param>
     /// <returns></returns>
     public static IIdentityServerBuilder AddUdapServerConfiguration(this IIdentityServerBuilder builder)
     {

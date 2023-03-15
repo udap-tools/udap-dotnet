@@ -21,6 +21,10 @@ public class RegistrationResult
 public class AccessCodeRequestResult
 {
     public bool IsError { get; set; }
-    
+
+    public string? Message { get; set; }
+
     public string? RedirectUrl { get; set; }
+    public IEnumerable<string>? Cookies { get; set; }
 }
+    

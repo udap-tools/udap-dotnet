@@ -32,7 +32,7 @@ public class UdapRegisterRequest
     /// JWS compact serialization
     /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.SoftwareStatement)]
-    public string SoftwareStatement { get; set; }
+    public string SoftwareStatement { get; set; } = default!;
 
     /// <summary>
     /// List of JWS compact serialization
@@ -41,5 +41,5 @@ public class UdapRegisterRequest
     public string[]? Certifications { get; set; }
 
     [JsonPropertyName(UdapConstants.RegistrationRequestBody.Udap)]
-    public string Udap { get; set; }
+    public string Udap { get; set; } = default!;
 }

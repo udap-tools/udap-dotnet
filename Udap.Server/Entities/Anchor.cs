@@ -14,17 +14,17 @@ public class Anchor : ICertificateValidateMarker
     public int Id { get; set; }
 
     public bool Enabled { get; set; }
-    public string Name { get; set; }
+    public string Name { get; set; } = default!;
     /// <summary>
     /// Base64 Der encoded
     /// </summary>
-    public string X509Certificate { get; set; }
-    public string Thumbprint { get; set; }
+    public string X509Certificate { get; set; } = default!;
+    public string Thumbprint { get; set; } = default!;
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
 
-    public Community Community { get; set; }
+    public Community Community { get; set; } = default!;
     public int CommunityId { get; set; }
 
-    public virtual ICollection<AnchorCertification> AnchorCertifications { get; set; }
+    public virtual ICollection<AnchorCertification> AnchorCertifications { get; set; } = default!;
 }

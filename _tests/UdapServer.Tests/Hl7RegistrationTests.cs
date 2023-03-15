@@ -35,7 +35,7 @@ namespace UdapServer.Tests;
 
 public class HL7ApiTestFixture : WebApplicationFactory<Program>
 {
-    public ITestOutputHelper? Output { get; set; }
+    public ITestOutputHelper Output { get; set; }
 
     // this test harness's AppSettings
     
@@ -141,7 +141,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine("CertStore/issued",
             "weatherApiClientLocalhostCert.pfx");
@@ -166,10 +166,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "authorization_code" },
-            ResponseTypes = new HashSet<string> { "code" },
-            RedirectUris = new List<string>(){ "http://localhost/signin-oidc" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "authorization_code" }!,
+            ResponseTypes = new HashSet<string> { "code" }!,
+            RedirectUris = new List<string>(){ "http://localhost/signin-oidc" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "user/Patient.*"
         };
@@ -207,7 +207,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
 
         responseUdapDocument.Should().NotBeNull();
-        responseUdapDocument.ClientId.Should().NotBeNullOrEmpty();
+        responseUdapDocument!.ClientId.Should().NotBeNullOrEmpty();
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(responseUdapDocument,
             new JsonSerializerOptions { WriteIndented = true }));
 
@@ -246,7 +246,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine("CertStore/issued",
             "weatherApiClientLocalhostCert.pfx");
@@ -266,8 +266,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -307,7 +307,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
 
         responseUdapDocument.Should().NotBeNull();
-        responseUdapDocument.ClientId.Should().NotBeNullOrEmpty();
+        responseUdapDocument!.ClientId.Should().NotBeNullOrEmpty();
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(responseUdapDocument,
             new JsonSerializerOptions { WriteIndented = true }));
 
@@ -332,7 +332,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     [Fact]
-    public async Task RegisrationMissingX5cHeaderTest()
+    public async Task RegistrationMissingX5cHeaderTest()
     {
         // var clientPolicyStore = _fixture.Services.GetService<IIpPolicyStore>();
         //
@@ -346,7 +346,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -364,8 +364,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -398,7 +398,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
         
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
     }
 
     //invalid_software_statement
@@ -412,7 +412,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
        
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -430,8 +430,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -464,7 +464,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
     }
 
     //invalid_software_statement
@@ -478,7 +478,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -496,8 +496,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
@@ -531,7 +531,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
     }
 
     //invalid_software_statement
@@ -545,7 +545,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -563,8 +563,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -595,7 +595,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
     }
 
     //invalid_software_statement
@@ -609,7 +609,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -627,8 +627,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -659,7 +659,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
         errorResponse.ErrorDescription.Should().Be(UdapDynamicClientRegistrationErrorDescriptions.SubIsMissing);
     }
 
@@ -675,7 +675,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -693,8 +693,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -725,7 +725,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
         errorResponse.ErrorDescription.Should().Be(UdapDynamicClientRegistrationErrorDescriptions.SubNotEqualToIss);
     }
 
@@ -740,7 +740,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -758,8 +758,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -790,7 +790,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.InvalidAud}: ");
     }
 
@@ -805,7 +805,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -823,8 +823,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -855,7 +855,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.InvalidMatchAud}");
     }
 
@@ -870,7 +870,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -888,8 +888,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -920,7 +920,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.ExpMissing}");
     }
 
@@ -935,7 +935,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -953,8 +953,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -985,7 +985,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
         errorResponse.ErrorDescription.Should().Contain($"{UdapDynamicClientRegistrationErrorDescriptions.ExpExpired}");
     }
 
@@ -1000,7 +1000,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -1018,8 +1018,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             //IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -1050,7 +1050,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.IssuedAtMissing}");
     }
 
@@ -1065,7 +1065,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -1083,8 +1083,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             // ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -1115,7 +1115,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.ClientNameMissing}");
     }
 
@@ -1130,7 +1130,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -1148,11 +1148,11 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "authorization_code" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "authorization_code" }!,
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "user/Patient.* user/Practitioner.read",  
-            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
+            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri }!,
         };
 
         document.Add("Extra", "Stuff" as string);
@@ -1181,7 +1181,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing}");
     }
 
@@ -1196,7 +1196,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert.pfx");
@@ -1214,8 +1214,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "client_credentials" },
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
+            GrantTypes = new HashSet<string> { "client_credentials" }!,
             //TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -1246,7 +1246,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
 
         errorResponse.Should().NotBeNull();
-        errorResponse.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing}");
     }
 }

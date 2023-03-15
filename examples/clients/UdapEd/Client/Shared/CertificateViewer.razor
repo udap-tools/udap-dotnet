@@ -1,0 +1,74 @@
+﻿@implements IDisposable
+@using System.Text.Json.Nodes
+@using IdentityModel.Client
+@using UdapEd.Client.Services
+
+
+<MudTable Items="@_certificateView?.TableDisplay.First()"
+          Hover="true" 
+          Dense="true"
+          Breakpoint="Breakpoint.Sm">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Certificates found: </MudText>
+    </ToolBarContent>
+    <ColGroup>
+        <col />
+        <col />
+    </ColGroup>
+    
+    <RowTemplate>
+        <MudTd DataLabel="Name"><strong>@context.Key</strong></MudTd>
+        <MudTd DataLabel="Value"><pre>@context.Value</pre></MudTd>
+    </RowTemplate>
+</MudTable>
+
+@code {
+
+    private CancellationTokenSource _cts = new();
+
+    /// <summary>
+    /// A X509Certificate as a Base64 encoding of the DER representation
+    /// </summary>
+    [Parameter]
+    public string? Certificate { get; set; }
+
+    [Parameter]
+    public string? JwtHeaderWithx5c { get; set; }
+
+    [Inject] DiscoveryService MetadataService { get; set; } = null!;
+
+    private Dictionary<string, string> _certificateMetadata = new Dictionary<string, string>();
+
+    private CertificateViewModel? _certificateView;
+
+    /// <summary>
+    /// Method invoked when the component has received parameters from its parent in
+    /// the render tree, and the incoming values have been assigned to properties.
+    /// </summary>
+    /// <returns>A <see cref="T:System.Threading.Tasks.Task" /> representing any asynchronous operation.</returns>
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Certificate == null)
+        {
+            if (!string.IsNullOrEmpty(JwtHeaderWithx5c) && !JwtHeaderWithx5c.Equals("Loading ..."))
+            {
+                var document = JsonDocument.Parse(JwtHeaderWithx5c);
+                var root = document.RootElement;
+                var certificates = root.TryGetStringArray("x5c");
+                _certificateView = await MetadataService.GetCertificateData(certificates, _cts.Token);
+            }
+        }
+        else
+        {
+            _certificateView = await MetadataService.GetCertificateData(Certificate, _cts.Token);
+        }
+    }
+
+    
+    /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
+    public void Dispose()
+    {
+        
+    }
+
+}

@@ -1,4 +1,6 @@
 ﻿
+using System.Net.Http.Headers;
+
 namespace UdapEd.Shared.Model;
 public class TokenResponseModel
 {
@@ -19,4 +21,6 @@ public class TokenResponseModel
     public string? TokenType { get; set; }
 
     public string? Raw { get; set; }
+
+    public string? Headers { get; set; }
 }

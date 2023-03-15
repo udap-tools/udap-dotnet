@@ -7,16 +7,14 @@
 // */
 #endregion
 
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Text.Encodings.Web;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.Text.Json.Serialization;
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
@@ -172,11 +170,14 @@ public class RegisterController : Controller
         var result = new RawSoftwareStatementAndHeader
         {
             Header = requestToken.EncodedHeader.DecodeJwtHeader(),
-            SoftwareStatement = Base64UrlEncoder.Decode(requestToken.EncodedPayload)
+            SoftwareStatement = Base64UrlEncoder.Decode(requestToken.EncodedPayload),
+            Scope = request.Scope
         };
         
         return Ok(result);
     }
+
+    
 
     [HttpPost("BuildSoftwareStatement/AuthorizationCode")]
     public IActionResult BuildSoftwareStatementWithHeaderForAuthorizationCode([FromBody] UdapDynamicClientRegistrationDocument request)
@@ -221,7 +222,8 @@ public class RegisterController : Controller
         var result = new RawSoftwareStatementAndHeader
         {
             Header = requestToken.EncodedHeader.DecodeJwtHeader(),
-            SoftwareStatement = Base64UrlEncoder.Decode(requestToken.EncodedPayload)
+            SoftwareStatement = Base64UrlEncoder.Decode(requestToken.EncodedPayload),
+            Scope = request.Scope
         };
         
         return Ok(result);
@@ -309,15 +311,19 @@ public class RegisterController : Controller
         {
             return BadRequest($"{nameof(request.UdapRegisterRequest)} is Null.");
         }
- 
-        var response = await _httpClient.PostAsJsonAsync<UdapRegisterRequest>(
-            request.RegistrationEndpoint,
-            request.UdapRegisterRequest,
-            new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
 
+        var content = new StringContent(
+            JsonSerializer.Serialize(request.UdapRegisterRequest, new JsonSerializerOptions
+            {
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            }), 
+            new MediaTypeHeaderValue("application/json"));
+
+        var response = await _httpClient.PostAsync(request.RegistrationEndpoint, content);
+        
         if (!response.IsSuccessStatusCode)
         {
-            return Ok(await response.Content.ReadAsStringAsync());
+            return BadRequest(await response.Content.ReadAsStringAsync());
         }
 
         var result = await response.Content

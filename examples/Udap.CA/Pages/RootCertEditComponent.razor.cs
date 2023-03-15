@@ -74,7 +74,7 @@ public partial class RootCertEditComponent
 
             AddEditionEvent($"RowEditPreview event: made a backup of Community {((RootCertificate)rootCertificate).Name}");
         }
-        catch (Exception e)
+        catch 
         {
             throw;
         }

@@ -37,7 +37,7 @@ public class UdapDcrBuilderForClientCredentials
         _now = DateTime.UtcNow;
 
         _document = new UdapDynamicClientRegistrationDocument();
-        _document.GrantTypes = new List<string?> { OidcConstants.GrantTypes.ClientCredentials };
+        _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.ClientCredentials };
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
     }
 
@@ -130,7 +130,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithContacts(ICollection<string?> contacts)
+    public UdapDcrBuilderForClientCredentials WithContacts(ICollection<string> contacts)
     {
         _document.Contacts = contacts;
         return this;
@@ -141,8 +141,8 @@ public class UdapDcrBuilderForClientCredentials
         _document.TokenEndpointAuthMethod = tokenEndpointAuthMethod;
         return this;
     }
-
-    public UdapDcrBuilderForClientCredentials WithScope(string scope)
+    
+    public UdapDcrBuilderForClientCredentials WithScope(string? scope)
     {
         _document.Scope = scope;
         return this;

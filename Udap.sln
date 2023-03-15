@@ -45,6 +45,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{2D52
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UdapEd", "UdapEd", "{B84896B0-6796-4059-8799-7A7F342E0B88}"
 	ProjectSection(SolutionItems) = preProject
+		examples\clients\UdapEd\.gcloudignore = examples\clients\UdapEd\.gcloudignore
+		examples\clients\UdapEd\cloudbuild.yaml = examples\clients\UdapEd\cloudbuild.yaml
 		examples\clients\UdapEd\nuget.config = examples\clients\UdapEd\nuget.config
 	EndProjectSection
 EndProject

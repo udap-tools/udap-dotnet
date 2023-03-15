@@ -22,12 +22,12 @@ using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Udap.Model;
 using Xunit.Abstractions;
-using program = FhirLabsApi.Program;
+using fhirLabsProgram = FhirLabsApi.Program;
 
 
 namespace UdapMetadata.Tests.FhirLabsApi;
 
-public class ApiTestFixture : WebApplicationFactory<program>
+public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
 {
     private Udap.Model.UdapMetadata? _wellKnownUdap;
     public ITestOutputHelper? Output { get; set; }
@@ -173,9 +173,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var scopesSupported = _fixture.WellKnownUdap.ScopesSupported;
 
         scopesSupported.Should().Contain("openid");
-        scopesSupported.Should().Contain("system/Patient.read");
-        scopesSupported.Should().Contain("system/AllergyIntolerance.read");
-        scopesSupported.Should().Contain("system/Procedures.read");
+        scopesSupported.Should().Contain("system/*.read");
+        scopesSupported.Should().Contain("user/*.read");
+        scopesSupported.Should().Contain("patient/*.read");
     }
 
     [Fact]

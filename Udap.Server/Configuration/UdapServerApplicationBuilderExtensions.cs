@@ -7,13 +7,13 @@
 // */
 #endregion
 
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Udap.Server.Hosting;
 using Udap.Server.Registration;
 
-namespace Udap.Server.Configuration;
+namespace Microsoft.AspNetCore.Builder;
+
 public static class UdapServerApplicationBuilderExtensions
 {
     public static IApplicationBuilder UseUdapServer(this WebApplication app)

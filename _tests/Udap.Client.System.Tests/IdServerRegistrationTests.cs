@@ -148,7 +148,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var requestBody = new UdapRegisterRequest
         (
            signedSoftwareStatement,
-           UdapConstants.UdapVersionsSupportedValue
+           UdapConstants.UdapVersionsSupportedValue,
+           certifications: Array.Empty<string>()
         );
 
         var response = await fhirClient.PostAsJsonAsync(disco.RegistrationEndpoint, requestBody);
@@ -239,6 +240,182 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             new AuthenticationHeaderValue(UdapConstants.TokenRequestTypes.Bearer, tokenResponse.AccessToken);
         var patientResponse = fhirClient.GetAsync("https://stage.healthtogo.me:8181/fhir/r4/stage/Patient/1001");
         
+        patientResponse.Result.EnsureSuccessStatusCode();
+
+        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+
+    }
+
+    [Fact]
+    public async Task RegistrationSuccess_HealthGorilla_Test()
+    {
+        using var fhirClient = new HttpClient();
+        var disco = await fhirClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
+        {
+            Address = "https://api-conn.qa.healthgorilla.com/unit/qhin",
+            Policy = new Udap.Client.Client.DiscoveryPolicy
+            {
+                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
+                ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
+            }
+        });
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+
+        // Get signed payload and compare registration_endpoint
+        var metadata = disco.Json.Deserialize<UdapMetadata>();
+        metadata.Should().NotBeNull();
+
+        var tokenHandler = new JsonWebTokenHandler();
+        var jwt = tokenHandler.ReadJsonWebToken(metadata!.SignedMetadata);
+        var publicCert = jwt?.GetPublicCertificate();
+
+        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
+        {
+            RequireSignedTokens = true,
+            ValidateIssuer = true,
+            ValidIssuers = new[]
+            {
+                "https://api-conn.qa.healthgorilla.com/unit/qhin"
+            }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+            ValidateAudience = false, // No aud for UDAP metadata
+            ValidateLifetime = true,
+            IssuerSigningKey = new X509SecurityKey(publicCert),
+            ValidAlgorithms = new[] { jwt.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+        });
+
+        validatedToken.IsValid.Should().BeTrue(validatedToken.Exception?.Message);
+
+        jwt.GetPayloadValue<string>(UdapConstants.Discovery.RegistrationEndpoint)
+            .Should().Be(disco.RegistrationEndpoint);
+
+        var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "udap-sandbox-surescripts.p12");
+
+        var clientCert = new X509Certificate2(
+            cert,
+            _fixture.Manifest.ResourceServers.First().Communities
+                .Where(c => c.Name == "https://api-conn.qa.healthgorilla.com/unit/qhin").Single().IssuedCerts.First().Password);
+
+        var now = DateTime.UtcNow;
+
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(disco.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("dotnet system test client")
+            .WithContacts(new HashSet<string?>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.* system/Practitioner.read")
+            .Build();
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        // _testOutputHelper.WriteLine(signedSoftwareStatement);
+
+        var requestBody = new UdapRegisterRequest
+        (
+           signedSoftwareStatement,
+           UdapConstants.UdapVersionsSupportedValue,
+           certifications: Array.Empty<string>()
+        );
+
+        var response = await fhirClient.PostAsJsonAsync(disco.RegistrationEndpoint, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        // var documentAsJson = JsonSerializer.Serialize(document);
+        var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        _testOutputHelper.WriteLine("Client Registration Response::");
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(result));
+        _testOutputHelper.WriteLine("");
+        // result.Should().BeEquivalentTo(documentAsJson);
+
+
+        // _testOutputHelper.WriteLine(result.ClientId);
+
+
+        //
+        //
+        //  B2B section.  Obtain an Access Token
+        //
+        //
+        //_testOutputHelper.WriteLine($"Authorization Endpoint:: {result.Audience}");
+        // var idpDisco = await fhirClient.GetDiscoveryDocumentAsync(disco.AuthorizeEndpoint);
+        //
+        // idpDisco.IsError.Should().BeFalse(idpDisco.Error);
+
+
+
+
+        //
+        // Get Access Token
+        //
+
+        var jwtPayload = new JwtPayLoadExtension(
+            result.ClientId,
+            disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                //TODO: this is required according to spec.  I was missing it.  We also need to assert this in IdentityServer.
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(),  ClaimValueTypes.Integer64),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+            },
+            now.ToUniversalTime(),
+            now.AddMinutes(5).ToUniversalTime()
+            );
+
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build();
+
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = disco.TokenEndpoint,
+            //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        _testOutputHelper.WriteLine("Client Token Request");
+        _testOutputHelper.WriteLine("---------------------");
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(clientRequest));
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
+
+        var tokenResponse = await fhirClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        _testOutputHelper.WriteLine("Authorization Token Response");
+        _testOutputHelper.WriteLine("---------------------");
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(tokenResponse));
+        _testOutputHelper.WriteLine(string.Empty);
+        _testOutputHelper.WriteLine(string.Empty);
+
+        fhirClient.DefaultRequestHeaders.Authorization =
+            new AuthenticationHeaderValue(UdapConstants.TokenRequestTypes.Bearer, tokenResponse.AccessToken);
+        var patientResponse = fhirClient.GetAsync("https://api-conn.qa.healthgorilla.com/unit/qhin/Patient/1001");
+
         patientResponse.Result.EnsureSuccessStatusCode();
 
         _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
@@ -597,6 +774,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // return;
 
         using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
+
         var response = await idpClient.PostAsJsonAsync(reg, requestBody);
         
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -818,7 +996,26 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // return;
 
         using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
-        var response = await idpClient.PostAsJsonAsync(reg, requestBody);
+
+        //TODO: When creating the new UDAP Client
+        // New StringContent constructor taking a MediaTypeHeaderValue to ensure CharSet can be controlled
+        // by the caller.  
+        // Good historical conversations.  
+        // https://github.com/dotnet/runtime/pull/63231
+        // https://github.com/dotnet/runtime/issues/17036
+        // https://github.com/dotnet/runtime/issues/17036
+        //
+#if NET7_0_OR_GREATER
+        var content = new StringContent(
+            JsonSerializer.Serialize(requestBody),
+            new MediaTypeHeaderValue("application/json") );
+#else
+        var content = new StringContent(JsonSerializer.Serialize(requestBody), null, "application/json");
+        content.Headers.ContentType!.CharSet = string.Empty;
+#endif
+        var response = await idpClient.PostAsync(reg, content);
+
+        // var response = await idpClient.PostAsJsonAsync(reg, requestBody);
 
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -993,7 +1190,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             // .WithScope("user/Patient.* user/Practitioner.read") //Comment out for UDAP Server mode.
             .WithResponseTypes(new HashSet<string?> { "code" })
-            .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
+            .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri }!)
             .Build();
 
 
@@ -1622,7 +1819,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("user/Patient.* user/Practitioner.read")
             .WithResponseTypes(new HashSet<string?> { "code" })
-            .WithRedirectUrls(redirectUrls)
+            .WithRedirectUrls(redirectUrls!)
             .BuildSoftwareStatement();
 
         

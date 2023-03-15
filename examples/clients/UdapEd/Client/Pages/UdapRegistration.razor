@@ -7,7 +7,7 @@
     <MudGrid Class="mt-4">
       <MudItem xs="12" sm="12" md="12">
         <MudText Typo="Typo.h4">Udap Registration</MudText>
-        <MudText> (@AppState.MetadataUrl)</MudText>
+        <MudText> (@AppState.BaseUrl)</MudText>
       </MudItem>
       <MudItem xs="12" sm="12" md="12">
 
@@ -51,12 +51,10 @@
                     id="StatementHeader" 
                     Class="pre udap-indent-1"
                              rows="@(SoftwareStatementBeforeEncodingHeader.Count(s => s == '\n' ) + 5)"
-                    @bind-Value="SoftwareStatementBeforeEncodingHeader"
-                    @oninput="SetHeader" />,
+                    @bind-Value="SoftwareStatementBeforeEncodingHeader"/>,
                 <InputTextArea Class="pre udap-indent-1"
                              rows="@(SoftwareStatementBeforeEncodingSoftwareStatement.Count(s => s == '\n' ) + 1)"
                              @bind-Value="SoftwareStatementBeforeEncodingSoftwareStatement"
-                             @oninput="SetSoftwareStatement"
                              @onblur="PersistSoftwareStatement"/>
               <pre>]</pre>
             </MudPaper>
@@ -64,7 +62,7 @@
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">x509 certificates from x5c</MudText>
-              <pre>x509</pre>
+              <CertificateViewer JwtHeaderWithx5c="@SoftwareStatementBeforeEncodingHeader" />
             </MudPaper>
           </MudItem>
         </MudGrid>
@@ -84,7 +82,8 @@
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
-              <pre>Explanation Todo</pre>
+                <SignedJwtViewer 
+                    SignedSoftwareStatement="@AppState.UdapRegistrationRequest?.SoftwareStatement" />
             </MudPaper>
           </MudItem>
 

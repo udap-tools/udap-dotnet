@@ -1,5 +1,5 @@
-﻿using Udap.Model;
-using Udap.Model.Access;
+﻿using System.Collections.Specialized;
+using Udap.Model;
 using Udap.Model.Registration;
 using UdapEd.Shared.Model;
 
@@ -7,8 +7,10 @@ namespace UdapEd.Client.Services;
 
 public interface IAppState
 {
-    string? MetadataUrl { get; }
+    string BaseUrl { get; }
     
+    OrderedDictionary BaseUrls { get; set; }
+
     UdapMetadata? UdapMetadata { get; }
 
     RawSoftwareStatementAndHeader SoftwareStatementBeforeEncoding { get; }

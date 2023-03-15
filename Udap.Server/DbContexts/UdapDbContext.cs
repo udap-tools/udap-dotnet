@@ -54,19 +54,19 @@ public class UdapDbContext<TContext> : DbContext, IUdapDbAdminContext, IUdapDbCo
     /// The udap store options.
     /// Overrides ConfigurationStoreOptions.
     /// </summary>
-    public UdapConfigurationStoreOptions UdapStoreOptions { get; set; }
-    
+    public UdapConfigurationStoreOptions? UdapStoreOptions { get; set; }
 
-    public DbSet<Anchor> Anchors { get; set; }
-    public DbSet<RootCertificate> RootCertificates { get; set; }
 
-    public DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; }
-    public DbSet<Community> Communities { get; set; }
-    public DbSet<Certification> Certifications { get; set; }
+    public DbSet<Anchor> Anchors { get; set; } = null!;
+    public DbSet<RootCertificate> RootCertificates { get; set; } = null!;
+
+    public DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; } = null!;
+    public DbSet<Community> Communities { get; set; } = null!;
+    public DbSet<Certification> Certifications { get; set; } = null!;
 
     public UdapDbContext(DbContextOptions<TContext> options) : base(options)
     {
-
+        UdapStoreOptions = this.GetService<UdapConfigurationStoreOptions>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -80,7 +80,6 @@ public class UdapDbContext<TContext> : DbContext, IUdapDbAdminContext, IUdapDbCo
                 throw new ArgumentNullException(nameof(UdapStoreOptions), "UdapConfigurationStoreOptions must be configured in the DI system.");
             }
         }
-        
         modelBuilder.ConfigureUdapContext(UdapStoreOptions);
 
         //

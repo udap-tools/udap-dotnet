@@ -8,98 +8,100 @@
 #endregion
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.DbContexts;
 using Udap.Server.Options;
 using Udap.Server.Stores;
 
-namespace Udap.Server.Configuration.DependencyInjection
+//
+// See reason for Microsoft.Extensions.DependencyInjection namespace
+// here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
+//
+namespace Microsoft.Extensions.DependencyInjection;
+
+public static class ServiceCollectionExtensions
 {
-    public  static class ServiceCollectionExtensions
+    public static IServiceCollection AddUdapDbContext(
+        this IServiceCollection services,
+        Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
     {
-        public static IServiceCollection AddUdapDbContext(
-            this IServiceCollection services,
-            Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
-        {
-            return services.AddUdapDbContext<UdapDbContext>(storeOptionAction);
-        }
+        return services.AddUdapDbContext<UdapDbContext>(storeOptionAction);
+    }
 
-        public static IServiceCollection AddUdapDbContext<TContext>(
-            this IServiceCollection services,
-            Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
-            where TContext : DbContext, IUdapDbAdminContext, IUdapDbContext
-        {
-            var storeOptions = new UdapConfigurationStoreOptions();
-            services.AddSingleton(storeOptions);
-            storeOptionAction?.Invoke(storeOptions);
+    public static IServiceCollection AddUdapDbContext<TContext>(
+        this IServiceCollection services,
+        Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
+        where TContext : DbContext, IUdapDbAdminContext, IUdapDbContext
+    {
+        var storeOptions = new UdapConfigurationStoreOptions();
+        services.AddSingleton(storeOptions);
+        storeOptionAction?.Invoke(storeOptions);
 
-            if (storeOptions.ResolveDbContextOptions != null)
+        if (storeOptions.ResolveDbContextOptions != null)
+        {
+            if (storeOptions.EnablePooling)
             {
-                if (storeOptions.EnablePooling)
+                if (storeOptions.PoolSize.HasValue)
                 {
-                    if (storeOptions.PoolSize.HasValue)
-                    {
-                        services.AddDbContextPool<TContext>(storeOptions.ResolveDbContextOptions,
-                            storeOptions.PoolSize.Value);
-                    }
-                    else
-                    {
-                        services.AddDbContextPool<TContext>(storeOptions.ResolveDbContextOptions);
-                    }
+                    services.AddDbContextPool<TContext>(storeOptions.ResolveDbContextOptions,
+                        storeOptions.PoolSize.Value);
                 }
                 else
                 {
-                    services.AddDbContext<TContext>(storeOptions.ResolveDbContextOptions);
+                    services.AddDbContextPool<TContext>(storeOptions.ResolveDbContextOptions);
                 }
             }
             else
             {
-                if (storeOptions.EnablePooling)
+                services.AddDbContext<TContext>(storeOptions.ResolveDbContextOptions);
+            }
+        }
+        else
+        {
+            if (storeOptions.EnablePooling)
+            {
+                if (storeOptions.PoolSize.HasValue)
                 {
-                    if (storeOptions.PoolSize.HasValue)
-                    {
-                        services.AddDbContextPool<TContext>(
-                            dbCtxBuilder => { storeOptions.UdapDbContext?.Invoke(dbCtxBuilder); },
-                            storeOptions.PoolSize.Value);
-                    }
-                    else
-                    {
-                        services.AddDbContextPool<TContext>(
-                            dbCtxBuilder => { storeOptions.UdapDbContext?.Invoke(dbCtxBuilder); });
-                    }
+                    services.AddDbContextPool<TContext>(
+                        dbCtxBuilder => { storeOptions.UdapDbContext?.Invoke(dbCtxBuilder); },
+                        storeOptions.PoolSize.Value);
                 }
                 else
                 {
-                    services.AddDbContext<TContext>(dbCtxBuilder =>
-                    {
-                        storeOptions.UdapDbContext?.Invoke(dbCtxBuilder);
-                    });
+                    services.AddDbContextPool<TContext>(
+                        dbCtxBuilder => { storeOptions.UdapDbContext?.Invoke(dbCtxBuilder); });
                 }
             }
-
-            services.AddScoped<IUdapDbAdminContext>(sp => sp.GetRequiredService<TContext>());
-            services.AddScoped<IUdapDbContext>(sp => sp.GetRequiredService<TContext>());
-
-            return services;
+            else
+            {
+                services.AddDbContext<TContext>(dbCtxBuilder =>
+                {
+                    storeOptions.UdapDbContext?.Invoke(dbCtxBuilder);
+                });
+            }
         }
 
-        public static IIdentityServerBuilder AddUdapConfigurationStore(
-            this IIdentityServerBuilder builder,
-            Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
-        {
-            return builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
-        }
+        services.AddScoped<IUdapDbAdminContext>(sp => sp.GetRequiredService<TContext>());
+        services.AddScoped<IUdapDbContext>(sp => sp.GetRequiredService<TContext>());
 
-        public static IIdentityServerBuilder AddUdapConfigurationStore<TContext>(
-            this IIdentityServerBuilder builder,
-            Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
-            where TContext : DbContext, IUdapDbAdminContext, IUdapDbContext
-        {
-            builder.Services.AddUdapDbContext<TContext>(storeOptionAction);
-            builder.AddUdapClientRegistrationStore<UdapClientRegistrationStore>();
-            
-            return builder;
-        }
+        return services;
+    }
+
+    public static IIdentityServerBuilder AddUdapConfigurationStore(
+        this IIdentityServerBuilder builder,
+        Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
+    {
+        return builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
+    }
+
+    public static IIdentityServerBuilder AddUdapConfigurationStore<TContext>(
+        this IIdentityServerBuilder builder,
+        Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
+        where TContext : DbContext, IUdapDbAdminContext, IUdapDbContext
+    {
+        builder.Services.AddUdapDbContext<TContext>(storeOptionAction);
+        builder.AddUdapClientRegistrationStore<UdapClientRegistrationStore>();
+
+        return builder;
     }
 }
+

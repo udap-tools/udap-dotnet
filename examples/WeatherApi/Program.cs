@@ -7,6 +7,7 @@
 // */
 #endregion
 
+
 using IdentityModel.AspNetCore.OAuth2Introspection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
@@ -17,6 +18,7 @@ using Microsoft.Extensions.Options;
 using Udap.Common;
 using Udap.Metadata.Server;
 using Udap.Model;
+using WeatherApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -56,11 +58,13 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 var udapMetaData = MyCustomUdapMetadata.Build(builder.
-    Configuration.GetSection("UdapConfig").Get<UdapConfig>());
+    Configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>());
+
+builder.Services.AddSingleton(udapMetaData);
 
 builder.Services
     .AddControllers()
-    .AddUdapMetaDataServer(builder.Configuration, udapMetaData);
+    .AddUdapMetaDataServer(builder.Configuration);
 
     
 // UDAP CertStore

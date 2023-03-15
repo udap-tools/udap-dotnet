@@ -5,16 +5,16 @@
   <ChildContent>
     <MudGrid Class="mt-4">
       <MudItem xs="12" sm="12" md="12">
-          <MudText Typo="Typo.h4">Business-to-Business</MudText>
+        <MudText Typo="Typo.h4">Business-to-Business</MudText>
         <MudText Typo="Typo.h6" Color="Color.Tertiary">Requesting Access Tokens for either client_credentials or authorization_code flows</MudText>
       </MudItem>
 
-      <MudGrid Spacing="1" Class="mt-8">
-        <MudItem xs="5" sm="6" Class="pa-4 ma-2">
-          <MudTextField Label="Client Id:" ReadOnly="true" @bind-Value="ClientId" />
+      <MudGrid Spacing="1" Justify="Justify.FlexStart" Class="mb-2">
+        <MudItem xs="4" Class="pa-4">
+          <MudTextField Label="Client Id:" @bind-Value="ClientId" />
         </MudItem>
-        <MudItem xs="4" sm="3" Class="pa-4 ma-2">
-          <MudTextField Label="OAth2 Flow" ReadOnly="true" @bind-Value="Oauth2Flow" />
+        <MudItem xs="4" Class="pa-4">
+          <MudTextField Label="OAth2 Flow"  @bind-Value="Oauth2Flow" />
         </MudItem>
       </MudGrid>
     </MudGrid>
@@ -22,13 +22,23 @@
 
         @if (AppState.Oauth2Flow == Oauth2FlowEnum.client_credentials)
         {
-        <MudButton Class="mt-3"
-               ButtonType="ButtonType.Button"
-               Variant="Variant.Filled"
-               Disabled="@(AppState.RegistrationDocument == null)"
-               OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
-
+        <MudGrid>
+          <MudItem xs="4">
+            <MudButton Class="d-inline m-3"
+                   ButtonType="ButtonType.Button"
+                   Variant="Variant.Filled"
+                   Disabled="@(AppState.RegistrationDocument == null && string.IsNullOrEmpty(ClientId))"
+                   OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
+          </MudItem>
+          <MudItem xs="3">
+            <MudSwitch Class="d-inline m-3" Label="@(LegacyMode ? "udap.org Mode (sub==iss==SubjectAltName)"
+                              : "HL7 FHIR Mode (sub==iss==client_id)")"
+                   T="bool"
+                   @bind-Checked="@LegacyMode" />
+          </MudItem>
+        </MudGrid>
         <MudGrid Spacing="1" Class="mt-8">
+
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">
@@ -39,22 +49,31 @@
               </MudText>
               <pre>@TokenRequest1</pre>
               <pre style="padding-left: 10px">@TokenRequest2</pre>
+
               <pre style="padding-left:10px; background-color:lightyellow">@TokenRequest3</pre>
+              <pre style="padding-left: 10px">@TokenRequestScope</pre>
               <pre style="padding-left:10px">@TokenRequest4</pre>
             </MudPaper>
           </MudItem>
+
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Future Info</MudText>
-              <pre>Todo</pre>
+              @* <pre>@if (ClientAssertionDecoded != null) *@
+              @*               { *@
+              @*                   @((MarkupString)ClientAssertionDecoded) *@
+              @*               }</pre> *@
+              <SignedJwtViewer 
+                  SignedSoftwareStatement="@AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value" />
             </MudPaper>
           </MudItem>
+
         </MudGrid>
         }
 
         @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
         {
-        <MudButton Class="mt-3"
+        <MudButton Class="d-inline m-3"
                ButtonType="ButtonType.Button"
                Variant="Variant.Filled"
                Disabled="@(AppState.RegistrationDocument == null)"
@@ -64,17 +83,17 @@
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
-                @if (AppState.AuthorizationCodeRequest != null)
-                {
-                    <pre>GET /authorize?</pre>
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ResponseType" />
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.State" />
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ClientId" />
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Scope" />
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.RedirectUri"/>
-                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Aud" />
-                    <pre>Host: AppState.UdapMetadata?.AuthorizationEndpoint</pre>
-                }
+                        @if (AppState.AuthorizationCodeRequest != null)
+                        {
+                  <pre>GET /authorize?</pre>
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ResponseType" @oninput="BuildAuthorizeLink" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.State" @oninput="BuildAuthorizeLink" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ClientId" @oninput="BuildAuthorizeLink" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Scope" @oninput="BuildAuthorizeLink" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.RedirectUri" @oninput="BuildAuthorizeLink" />
+                  <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Aud" @oninput="BuildAuthorizeLink" />
+                  <pre>Host: @AppState.UdapMetadata?.AuthorizationEndpoint</pre>
+                        }
             </MudPaper>
           </MudItem>
           <MudItem xs="5">
@@ -85,18 +104,52 @@
           </MudItem>
         </MudGrid>
 
-        <MudButton Class="mt-3"
-               ButtonType="ButtonType.Button"
-               Variant="Variant.Filled"
-               Disabled="@(AppState.RegistrationDocument == null)"
-               OnClick="GetAccessCode">Get Access Code</MudButton>
+        <MudGrid>
+          <MudItem>
+            <MudButton Class="mt-3"
+                   ButtonType="ButtonType.Button"
+                   Variant="Variant.Filled"
+                   Disabled="@(AppState.RegistrationDocument == null)"
+                   OnClick="GetAccessCode">View Intermediate Redirect</MudButton>
+          </MudItem>
+          <MudItem>
+            <MudButton Class="mt-3"
+                   Disabled="@(string.IsNullOrWhiteSpace(AuthCodeRequestLink))"
+                   OnClick="@LaunchAuthorize">
+              Run Authorize Code Request
+            </MudButton>
+          </MudItem>
+        </MudGrid>
+
+        <MudTextField ReadOnly="true" @bind-Value="AuthCodeRequestLink"></MudTextField>
+
+
         <MudGrid Spacing="1" Class="mt-8">
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow</MudText>
-              <MudLink Color="@(AppState.AccessCodeRequestResult is {IsError: true } ? Color.Error : Color.Primary)"
-                   href="@AppState.AccessCodeRequestResult?.RedirectUrl">@LoginRedirectLinkText</MudLink>
-                <pre>@AppState.AccessCodeRequestResult?.RedirectUrl</pre>
+
+              <MudText Color="@(AppState.AccessCodeRequestResult is {IsError: true } ? Color.Error : Color.Primary)">
+                            @LoginRedirectLinkText
+              </MudText>
+              <pre>@AppState.AccessCodeRequestResult?.RedirectUrl</pre>
+
+                        @if (AppState.AccessCodeRequestResult?.IsError == true &&
+                       AppState.AccessCodeRequestResult.Message != null)
+                        {
+                  <pre>@AppState.AccessCodeRequestResult?.Message</pre>
+                        }
+
+                        @if (AppState.AccessCodeRequestResult?.Cookies != null)
+                        {
+                            @if (AppState.AccessCodeRequestResult?.Cookies != null)
+                            {
+                      <pre style="font-weight: bold;">cookies:</pre>
+                        <pre>
+                                    @((MarkupString)String.Join("\r\n", AppState.AccessCodeRequestResult.Cookies))
+                        </pre>
+                            }
+                        }
             </MudPaper>
           </MudItem>
           <MudItem xs="5">
@@ -124,13 +177,19 @@
           </MudItem>
         </MudGrid>
 
-
-        <MudButton Class="mt-3"
-               ButtonType="ButtonType.Button"
-               Variant="Variant.Filled"
-               Disabled="@(AppState.RegistrationDocument == null)"
-               OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
-
+        <MudGrid Justify="Justify.FlexStart">
+          <MudItem xs="4">
+            <MudButton ButtonType="ButtonType.Button"
+                   Variant="Variant.Filled"
+                   Disabled="@(AppState.RegistrationDocument == null)"
+                   OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
+          </MudItem>
+          <MudItem xs="3">
+            <MudSwitch Label="@(LegacyMode ? "udap.org Mode (sub==iss==SubjectAltName)" : "HL7 FHIR Mode (sub==iss==client_id)")"
+                   T="bool"
+                   @bind-Checked="@LegacyMode" />
+          </MudItem>
+        </MudGrid>
         <MudGrid Spacing="1" Class="mt-8">
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
@@ -144,7 +203,10 @@
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Future Info</MudText>
-              <pre>Todo</pre>
+              <pre>@if (ClientAssertionDecoded != null)
+                            {
+                                @((MarkupString)ClientAssertionDecoded)
+                            }</pre>
             </MudPaper>
           </MudItem>
         </MudGrid>
@@ -166,12 +228,12 @@
     </MudGrid>
 
   </ChildContent>
-    <ErrorContent Context="ex">
+  <ErrorContent Context="ex">
         @{
             Console.Write(ex.Message);
         }
-        <pre class="blazor-error-boundary">
+    <pre class="blazor-error-boundary">
             @ex.Message
       </pre>
-    </ErrorContent>
+  </ErrorContent>
 </ErrorBoundary>

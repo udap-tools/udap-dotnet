@@ -24,7 +24,7 @@ namespace Udap.Model.Registration;
 public class UdapDcrBuilderForAuthorizationCode
 {
     private X509Certificate2? _certificate;
-    private UdapDynamicClientRegistrationDocument _document;
+    private readonly UdapDynamicClientRegistrationDocument _document;
     private DateTime _now;
 
     private UdapDcrBuilderForAuthorizationCode(X509Certificate2 certificate) : this()
@@ -37,7 +37,7 @@ public class UdapDcrBuilderForAuthorizationCode
         _now = DateTime.UtcNow;
 
         _document = new UdapDynamicClientRegistrationDocument();
-        _document.GrantTypes = new List<string?> { OidcConstants.GrantTypes.AuthorizationCode };
+        _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.AuthorizationCode };
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
     }
 
@@ -114,7 +114,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithContacts(ICollection<string?> contacts)
+    public UdapDcrBuilderForAuthorizationCode WithContacts(ICollection<string>? contacts)
     {
         _document.Contacts = contacts;
         return this;
@@ -126,19 +126,19 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithScope(string scope)
+    public UdapDcrBuilderForAuthorizationCode WithScope(string? scope)
     {
         _document.Scope = scope;
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithResponseTypes(ICollection<string?> responseTypes)
+    public UdapDcrBuilderForAuthorizationCode WithResponseTypes(ICollection<string>? responseTypes)
     {
         _document.ResponseTypes = responseTypes;
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithRedirectUrls(ICollection<string?> redirectUrls)
+    public UdapDcrBuilderForAuthorizationCode WithRedirectUrls(ICollection<string>? redirectUrls)
     {
         _document.RedirectUris = redirectUrls;
         return this;

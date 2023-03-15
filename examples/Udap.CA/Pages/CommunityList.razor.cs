@@ -66,7 +66,7 @@ public partial class CommunityList
         };
         AddEditionEvent($"CommunityEditPreview event: made a backup of Community {((Community)community).Name}");
         }
-        catch (Exception e)
+        catch 
         {
             throw;
         }

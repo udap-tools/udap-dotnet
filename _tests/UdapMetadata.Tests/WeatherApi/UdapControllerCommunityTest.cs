@@ -24,12 +24,12 @@ using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
-using program = WeatherApi.Program;
+using weatherApiProgram = WeatherApi.Program;
 
 
 namespace UdapMetadata.Tests.WeatherApi;
 
-public class ApiForCommunityTestFixture : WebApplicationFactory<program>
+public class ApiForCommunityTestFixture : WebApplicationFactory<weatherApiProgram>
 {
     public ITestOutputHelper? Output { get; set; }
     private Udap.Model.UdapMetadata? _wellKnownUdap;
@@ -48,7 +48,7 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<program>
 
                 response.StatusCode.Should().Be(HttpStatusCode.OK);
                 var content = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                _wellKnownUdap = System.Text.Json.JsonSerializer.Deserialize<Udap.Model.UdapMetadata>(content);
+                _wellKnownUdap = JsonSerializer.Deserialize<Udap.Model.UdapMetadata>(content);
             }
 
             return _wellKnownUdap;

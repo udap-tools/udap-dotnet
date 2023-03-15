@@ -8,12 +8,16 @@
 #endregion
 
 using System.Net;
+using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
+using IdentityModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
 using Udap.Model.Access;
+using Udap.Model.UdapAuthenticationExtensions;
 using UdapEd.Server.Extensions;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
@@ -25,16 +29,21 @@ namespace UdapEd.Server.Controllers;
 public class AccessController : Controller
 {
     private readonly HttpClient _httpClient;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<RegisterController> _logger;
 
-    public AccessController(HttpClient httpClient, ILogger<RegisterController> logger)
+    public AccessController(
+        HttpClient httpClient,
+        IHttpContextAccessor httpContextAccessor,
+        ILogger<RegisterController> logger)
     {
         _httpClient = httpClient;
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
     [HttpGet("{authorizeQuery}")]
-    public async Task<IActionResult> GetTokens(string authorizeQuery, CancellationToken token)
+    public async Task<IActionResult> GetAuthorizationCode(string authorizeQuery, CancellationToken token)
     {
         var handler = new HttpClientHandler() { AllowAutoRedirect = false };
         var httpClient = new HttpClient(handler);
@@ -43,21 +52,31 @@ public class AccessController : Controller
             .GetAsync(Base64UrlEncoder
                 .Decode(authorizeQuery), cancellationToken: token);
 
+        var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
+
+        if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.Found)
+        {
+            var message = await response.Content.ReadAsStringAsync(token);
+            _logger.LogWarning(message);
+
+            return Ok(new AccessCodeRequestResult
+            {
+                Message = $"{response.StatusCode}:: {message}" ,
+                IsError = true
+            });
+        }
+
         var result = new AccessCodeRequestResult
         {
-            RedirectUrl = response.Headers.Location?.AbsoluteUri
+            RedirectUrl = response.Headers.Location?.AbsoluteUri,
+            Cookies = cookies
         };
-
-        if (response.StatusCode != HttpStatusCode.Redirect)
-        {
-            result.IsError = true;
-        }
 
         return Ok(result);
     }
 
     [HttpPost("BuildRequestToken/authorization_code")]
-    public Task<IActionResult> RequestAccessTokenAuthCode([FromBody] AuthorizationCodeTokenRequestModel model)
+    public Task<IActionResult> RequestAccessTokenAuthCode([FromBody] AuthorizationCodeTokenRequestModel tokenRequestModel)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
@@ -70,19 +89,19 @@ public class AccessController : Controller
         var clientCert = new X509Certificate2(certBytes);
         
         var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
-            model.ClientId,
-            model.TokenEndpointUrl,
+            tokenRequestModel.ClientId,
+            tokenRequestModel.TokenEndpointUrl,
             clientCert,
-            model.RedirectUrl,
-            model.Code);
+            tokenRequestModel.RedirectUrl,
+            tokenRequestModel.Code);
 
-        var tokenRequest = tokenRequestBuilder.Build();
+        var tokenRequest = tokenRequestBuilder.Build(tokenRequestModel.LegacyMode);
         
         return Task.FromResult<IActionResult>(Ok(tokenRequest));
     }
 
     [HttpPost("BuildRequestToken/client_credentials")]
-    public Task<IActionResult> RequestAccessTokenClientCredentials([FromBody] ClientCredentialsTokenRequestModel model)
+    public Task<IActionResult> RequestAccessTokenClientCredentials([FromBody] ClientCredentialsTokenRequestModel tokenRequestModel)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
@@ -95,20 +114,42 @@ public class AccessController : Controller
         var clientCert = new X509Certificate2(certBytes);
 
         var tokenRequestBuilder = AccessTokenRequestForClientCredentialsBuilder.Create(
-            model.ClientId,
-            model.TokenEndpointUrl,
+            tokenRequestModel.ClientId,
+            tokenRequestModel.TokenEndpointUrl,
             clientCert);
 
-        var tokenRequest = tokenRequestBuilder.build();
+        var b2bHl7 = new B2BAuthorizationExtension()
+        {
+            SubjectId = "urn:oid:2.16.840.1.113883.4.6#1234567890",
+            OrganizationId = new Uri("https://fhirlabs.net/fhir/r4"),
+            OraganizationName = "FhirLabs",
+            PurposeOfUse = new HashSet<string>
+            {
+                "urn:oid:2.16.840.1.113883.5.8#TREAT"
+            }
+            // },
+            // ConsentReference = new HashSet<string>{
+            //     "https://fhirlabs.net/fhir/r4"
+            // }
+        };
+        tokenRequestBuilder.WithExtension("hl7-b2b", b2bHl7);
+
+
+        if (tokenRequestModel.Scope != null)
+        {
+            tokenRequestBuilder.WithScope(tokenRequestModel.Scope);
+        }
+
+        var tokenRequest = tokenRequestBuilder.Build(tokenRequestModel.LegacyMode);
         
         return Task.FromResult<IActionResult>(Ok(tokenRequest));
     }
 
     [HttpPost("RequestToken/client_credentials")]
-    public async Task<IActionResult> RequestAccessTokenForClientCredentials([FromBody] UdapClientCredentialsTokenRequest request)
+    public async Task<IActionResult> RequestAccessTokenForClientCredentials([FromBody] UdapClientCredentialsTokenRequestModel request)
     {
-        var tokenResponse = await _httpClient
-            .UdapRequestClientCredentialsTokenAsync(request);
+        var tokenRequest = request.ToUdapClientCredentialsTokenRequest();
+        var tokenResponse = await _httpClient.UdapRequestClientCredentialsTokenAsync(tokenRequest);
 
         var tokenResponseModel = new TokenResponseModel
         {
@@ -120,17 +161,20 @@ public class AccessController : Controller
             RefreshToken = tokenResponse.RefreshToken,
             ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn),
             Scope = tokenResponse.Raw,
-            TokenType = tokenResponse.TokenType
+            TokenType = tokenResponse.TokenType,
+            Headers = JsonSerializer.Serialize(
+                tokenResponse.HttpResponse.Headers,
+                new JsonSerializerOptions{WriteIndented = true})
         };
 
         return Ok(tokenResponseModel);
     }
 
     [HttpPost("RequestToken/authorization_code")]
-    public async Task<IActionResult> RequestAccessTokenForAuthorizationCode([FromBody] UdapAuthorizationCodeTokenRequest request)
+    public async Task<IActionResult> RequestAccessTokenForAuthorizationCode([FromBody] UdapAuthorizationCodeTokenRequestModel request)
     {
-        var tokenResponse = await _httpClient
-            .UdapRequestAuthorizationCodeTokenAsync(request);
+        var tokenRequest = request.ToUdapAuthorizationCodeTokenRequest();
+        var tokenResponse = await _httpClient.UdapRequestAuthorizationCodeTokenAsync(tokenRequest);
 
         var tokenResponseModel = new TokenResponseModel
         {
@@ -145,6 +189,7 @@ public class AccessController : Controller
             TokenType = tokenResponse.TokenType
         };
 
+        _logger.LogInformation("Goodbye joe serer side");
         return Ok(tokenResponseModel);
     }
 }

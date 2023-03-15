@@ -8,6 +8,7 @@
 #endregion
 
 using Blazored.LocalStorage;
+using BQuery;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
@@ -32,4 +33,4 @@ builder.Services.AddScoped<RegisterService>();
 builder.Services.AddScoped<DiscoveryService>();
 builder.Services.AddScoped<AccessService>();
 
-await builder.Build().RunAsync();
+await builder.Build().UseBQuery().RunAsync();

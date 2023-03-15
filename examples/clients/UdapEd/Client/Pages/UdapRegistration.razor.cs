@@ -7,6 +7,8 @@
 // */
 #endregion
 
+using System.IdentityModel.Tokens.Jwt;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Components;
@@ -50,10 +52,12 @@ public partial class UdapRegistration
             try
             {
                 jsonHeader = JsonNode.Parse(AppState.SoftwareStatementBeforeEncoding.Header)
-                    ?.ToJsonString(new JsonSerializerOptions()
-                    {
-                        WriteIndented = true
-                    });
+                    ?.ToJsonString(
+                        // new JsonSerializerOptions()
+                        // {
+                        //     WriteIndented = true
+                        // }
+                    ).Replace("\\u002B", "+");
             }
             catch
             {
@@ -79,13 +83,13 @@ public partial class UdapRegistration
 
             if (AppState.SoftwareStatementBeforeEncoding?.SoftwareStatement == null)
             {
-                return _beforeEncodingHeader;
+                return _beforeEncodingStatement;
             }
 
-            string? jsonHeader = null;
+            string? jsonStatement = null;
 
             try{
-                jsonHeader = JsonNode.Parse(AppState.SoftwareStatementBeforeEncoding.SoftwareStatement)
+                jsonStatement = JsonNode.Parse(AppState.SoftwareStatementBeforeEncoding.SoftwareStatement)
                 ?.ToJsonString(new JsonSerializerOptions()
                 {
                     WriteIndented = true
@@ -96,35 +100,35 @@ public partial class UdapRegistration
                 // ignored
             }
 
-            return jsonHeader ?? string.Empty;
+            return jsonStatement ?? string.Empty;
         }
 
-        set => _beforeEncodingStatement = value;
+        set
+        {
+            _beforeEncodingStatement = value;
+        }
     }
 
-    private void SetHeader(ChangeEventArgs obj)
-    {
-        _beforeEncodingHeader = obj.Value as string ?? string.Empty;
-    }
-
-    private void SetSoftwareStatement(ChangeEventArgs obj)
-    {
-        _beforeEncodingStatement = obj.Value as string ?? string.Empty;
-    }
 
     private void PersistSoftwareStatement()
     {
+        var statement = JsonSerializer
+            .Deserialize<UdapDynamicClientRegistrationDocument>(SoftwareStatementBeforeEncodingSoftwareStatement);
+        var beforeEncodingScope = statement?.Scope;
+        
         var rawStatement = new RawSoftwareStatementAndHeader
         {
             Header = SoftwareStatementBeforeEncodingHeader,
-            SoftwareStatement = SoftwareStatementBeforeEncodingSoftwareStatement
+            SoftwareStatement = SoftwareStatementBeforeEncodingSoftwareStatement,
+            Scope = beforeEncodingScope
         };
-
+        
         AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), rawStatement);
     }
 
     private string? _registrationResult;
-    private string? RegistrationResult
+
+    private string RegistrationResult
     {
         get
         {
@@ -135,7 +139,7 @@ public partial class UdapRegistration
 
             if (AppState.UdapRegistrationRequest == null)
             {
-                return _registrationResult;
+                return _registrationResult ?? string.Empty;
             }
 
             return JsonSerializer.Serialize(AppState
@@ -151,7 +155,7 @@ public partial class UdapRegistration
         set => AppState.SetProperty(this, nameof(AppState.Oauth2Flow), value);
     }
 
-    private string _requestBody = string.Empty;
+    private string? _requestBody;
 
     private string RequestBody
     {
@@ -164,7 +168,7 @@ public partial class UdapRegistration
 
             if (AppState.UdapRegistrationRequest == null)
             {
-                return _beforeEncodingHeader;
+                return _requestBody ?? string.Empty;
             }
 
             return JsonSerializer.Serialize(
@@ -179,7 +183,7 @@ public partial class UdapRegistration
     {
         SetRawMessage("Loading ...");
 
-        await Task.Delay(50);
+        await Task.Delay(150);
 
         if (AppState.Oauth2Flow == Oauth2FlowEnum.client_credentials)
         {
@@ -205,7 +209,7 @@ public partial class UdapRegistration
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-                .WithScope(RegisterService.GetScopes(AppState.UdapMetadata?.ScopesSupported))
+                .WithScope(RegisterService.GetScopesForClientCredentials(AppState.UdapMetadata?.ScopesSupported))
                 .Build();
 
 
@@ -213,8 +217,7 @@ public partial class UdapRegistration
             if (statement != null)
             {
                 SetRawStatement(statement.Header, statement.SoftwareStatement);
-
-                AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), statement);
+                await AppState.SetPropertyAsync(this, nameof(AppState.SoftwareStatementBeforeEncoding), statement);
             }
         }
         catch (Exception ex)
@@ -228,6 +231,8 @@ public partial class UdapRegistration
     {
         try
         {
+            var scope = RegisterService.GetScopesForAuthorizationCode(AppState.UdapMetadata?.ScopesSupported);
+
             var request = UdapDcrBuilderForAuthorizationCode.Create()
                 .WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
@@ -238,9 +243,9 @@ public partial class UdapRegistration
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-                .WithScope(RegisterService.GetScopes(AppState.UdapMetadata?.ScopesSupported))
                 .WithResponseTypes(new HashSet<string?> { "code" })
                 .WithRedirectUrls(new List<string?>{ $"{NavigationManager.BaseUri}udapBusinessToBusiness" })
+                .WithScope(scope)
                 .Build();
 
 
@@ -248,6 +253,7 @@ public partial class UdapRegistration
             if (statement?.Header != null)
             {
                 SetRawStatement(statement.Header, statement.SoftwareStatement);
+                statement.Scope = scope;
             }
 
             AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), statement);
@@ -272,7 +278,7 @@ public partial class UdapRegistration
             ?.ToJsonString(new JsonSerializerOptions()
             {
                 WriteIndented = true
-            });
+            }).Replace("\\u002B", "+");
         
         var jsonStatement = JsonNode.Parse(softwareStatement)
             ?.ToJsonString(new JsonSerializerOptions()
@@ -289,9 +295,9 @@ public partial class UdapRegistration
     {
         SetRawMessage(string.Empty);
         AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), string.Empty);
-        RequestBody = string.Empty;
+        _requestBody = null;
         AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), null);
-        RegistrationResult = string.Empty;
+        _registrationResult = null;
         AppState.SetProperty(this, nameof(AppState.RegistrationDocument), null);
     }
 

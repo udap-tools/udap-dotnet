@@ -8,12 +8,15 @@
 #endregion
 
 using Duende.IdentityServer.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Udap.Server.Storage.Stores;
 using Udap.Server.Validation.Default;
 
-namespace Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
+//
+// See reason for Microsoft.Extensions.DependencyInjection namespace
+// here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
+//
+namespace Microsoft.Extensions.DependencyInjection;
 
 public static class IdentityServerBuilderExtensionsAdditional
 {

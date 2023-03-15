@@ -432,8 +432,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     client.ClientName,
                     cert,
                     communityTrustAnchors,
-                    out X509ChainElementCollection? chainElements,
-                    rootCertificates))
+                    rootCertificates, out X509ChainElementCollection? chainElements))
             {
                 if (chainElements == null)
                 {

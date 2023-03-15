@@ -87,7 +87,7 @@ public class UdapDynamicClientRegistrationEndpoint
             return;
         }
 
-        var rootCertificates = await _store.GetRootCertificates(token);
+        var rootCertificates = await _store.GetIntermediateCertificates(token);
         var communityTrustAnchors = await _store.GetAnchorsCertificates(null, token);
 
         //TODO: null work

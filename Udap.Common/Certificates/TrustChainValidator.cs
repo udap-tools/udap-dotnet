@@ -111,12 +111,11 @@ namespace Udap.Common.Certificates
         }
 
 
-        public bool IsTrustedCertificate(
-            string clientName,
+        public bool IsTrustedCertificate(string clientName,
             X509Certificate2 certificate,
-            X509Certificate2Collection? communityTrustAnchors,
-            out X509ChainElementCollection? chainElements,
-            X509Certificate2Collection? trustedRoots = null)
+            X509Certificate2Collection? intermediateCertificates,
+            X509Certificate2Collection anchorCertificates,
+            out X509ChainElementCollection? chainElements)
         {
             chainElements = null;
 
@@ -126,7 +125,7 @@ namespace Udap.Common.Certificates
             }
             
             // if there are no anchors we should always fail
-            if (communityTrustAnchors.IsNullOrEmpty())
+            if (anchorCertificates.IsNullOrEmpty())
             {
                 this.NotifyUntrusted(certificate);
                 return false;
@@ -148,16 +147,18 @@ namespace Udap.Common.Certificates
 
                 var chainBuilder = new X509Chain();
 
-                if (!trustedRoots.IsNullOrEmpty())
+                if (!anchorCertificates.IsNullOrEmpty())
                 {
                     chainPolicy.CustomTrustStore.Clear();
                     chainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-                    chainPolicy.CustomTrustStore.AddRange(trustedRoots!);
-
+                    chainPolicy.CustomTrustStore.AddRange(anchorCertificates);
                 }
 
                 chainBuilder.ChainPolicy = chainPolicy;
-                chainBuilder.ChainPolicy.ExtraStore.AddRange(communityTrustAnchors!);
+                if (intermediateCertificates != null)
+                {
+                    chainBuilder.ChainPolicy.ExtraStore.AddRange(intermediateCertificates!);
+                }
                 var result = chainBuilder.Build(certificate);
 
                 // We're using the system class as a helper to build the chain
@@ -176,7 +177,7 @@ namespace Udap.Common.Certificates
                 // walk the chain starting at the leaf and see if we hit any issues before the anchor
                 foreach (var chainElement in chainElements)
                 {
-                    bool isAnchor = communityTrustAnchors?.FindByThumbprint(chainElement.Certificate.Thumbprint) != null;
+                    bool isAnchor = anchorCertificates?.FindByThumbprint(chainElement.Certificate.Thumbprint) != null;
 
                     if (this.ChainElementHasProblems(chainElement))
                     {

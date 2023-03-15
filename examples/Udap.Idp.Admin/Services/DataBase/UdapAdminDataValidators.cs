@@ -42,23 +42,23 @@ public class UdapAdminAnchorValidator : IUdapCertificateValidator<Anchor>
     }
 }
 
-public class UdapAdminRootCertificateValidator : IUdapCertificateValidator<RootCertificate>
+public class UdapAdminRootCertificateValidator : IUdapCertificateValidator<IntermediateCertificate>
 {
-    public bool Validate(RootCertificate rootCertificate)
+    public bool Validate(IntermediateCertificate intermediateCertificate)
     {
-        if (rootCertificate == null)
+        if (intermediateCertificate == null)
         {
-            throw new ArgumentNullException(nameof(rootCertificate));
+            throw new ArgumentNullException(nameof(intermediateCertificate));
         }
 
-        var cert = X509Certificate2.CreateFromPem(rootCertificate.X509Certificate);
+        var cert = X509Certificate2.CreateFromPem(intermediateCertificate.X509Certificate);
 
-        if (rootCertificate.BeginDate != cert.NotBefore)
+        if (intermediateCertificate.BeginDate != cert.NotBefore)
         {
             throw new Exception("Invalid begin date.");
         }
 
-        if (rootCertificate.EndDate != cert.NotAfter)
+        if (intermediateCertificate.EndDate != cert.NotAfter)
         {
             throw new Exception("Invalid end date.");
         }

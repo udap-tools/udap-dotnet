@@ -8,10 +8,10 @@ namespace Udap.Idp.Admin.Services.DataBase;
 
 public interface IRootCertificateService
 {
-    Task<ICollection<RootCertificate>> Get(CancellationToken token = default);
-    Task<RootCertificate> Get(int? id, CancellationToken token = default);
-    Task<RootCertificate> Add(RootCertificate rootCertificate, CancellationToken token = default);
-    Task Update(RootCertificate rootCertificate, CancellationToken token = default);
+    Task<ICollection<IntermediateCertificate>> Get(CancellationToken token = default);
+    Task<IntermediateCertificate> Get(int? id, CancellationToken token = default);
+    Task<IntermediateCertificate> Add(IntermediateCertificate intermediateCertificate, CancellationToken token = default);
+    Task Update(IntermediateCertificate intermediateCertificate, CancellationToken token = default);
     Task<bool> Delete(long? id, CancellationToken token = default);
 }
 
@@ -19,24 +19,24 @@ public interface IRootCertificateService
 public class RootCertificateService : IRootCertificateService
 {
     private IUdapDbAdminContext _dbContext;
-    IUdapCertificateValidator<RootCertificate> _validator;
+    IUdapCertificateValidator<IntermediateCertificate> _validator;
 
     //TODO: validation for RootCert or RootCertificate should have special handling.
     // Like if an rootCertificate has a crl signed by a CA then you have to include it...  Well more testing anyway...
-    public RootCertificateService(IUdapDbAdminContext dbContext, IUdapCertificateValidator<RootCertificate> validator)
+    public RootCertificateService(IUdapDbAdminContext dbContext, IUdapCertificateValidator<IntermediateCertificate> validator)
     {
         _dbContext = dbContext;
         _validator = validator;
     }
 
-    public async Task<RootCertificate> Add(RootCertificate rootCertificate, CancellationToken token)
+    public async Task<IntermediateCertificate> Add(IntermediateCertificate intermediateCertificate, CancellationToken token)
     {
-        _validator.Validate(rootCertificate);
+        _validator.Validate(intermediateCertificate);
 
         if (((DbContext)_dbContext).Database.IsRelational())
         {
-            var rootCertificates = await _dbContext.RootCertificates
-                .Where(a => a.Thumbprint == rootCertificate.Thumbprint)
+            var rootCertificates = await _dbContext.IntermediateCertificates
+                .Where(a => a.Thumbprint == intermediateCertificate.Thumbprint)
                 .ToListAsync(cancellationToken: token);
 
             if (rootCertificates.Any())
@@ -45,15 +45,15 @@ public class RootCertificateService : IRootCertificateService
             }
         }
 
-        _dbContext.RootCertificates.Add(rootCertificate);
+        _dbContext.IntermediateCertificates.Add(intermediateCertificate);
         await _dbContext.SaveChangesAsync(token);
 
-        return rootCertificate;
+        return intermediateCertificate;
     }
 
     public async Task<bool> Delete(long? id, CancellationToken token)
     {
-        var rootCertificate = await _dbContext.RootCertificates
+        var rootCertificate = await _dbContext.IntermediateCertificates
             .SingleOrDefaultAsync(d => d.Id == id, token);
 
         if (rootCertificate == null)
@@ -61,29 +61,29 @@ public class RootCertificateService : IRootCertificateService
             return false;
         }
 
-        _dbContext.RootCertificates.Remove(rootCertificate);
+        _dbContext.IntermediateCertificates.Remove(rootCertificate);
 
         await _dbContext.SaveChangesAsync(token);
 
         return true;
     }
 
-    public async Task<RootCertificate> Get(int? id, CancellationToken token)
+    public async Task<IntermediateCertificate> Get(int? id, CancellationToken token)
     {
-        return await _dbContext.RootCertificates
+        return await _dbContext.IntermediateCertificates
             .Where(c => c.Id == id)
             .SingleAsync(cancellationToken: token);
     }
 
-    public async Task<ICollection<RootCertificate>> Get(CancellationToken token = default)
+    public async Task<ICollection<IntermediateCertificate>> Get(CancellationToken token = default)
     {
-        return await _dbContext.RootCertificates.ToListAsync(cancellationToken: token);
+        return await _dbContext.IntermediateCertificates.ToListAsync(cancellationToken: token);
     }
 
-    public async Task Update(RootCertificate rootCertificate, CancellationToken token)
+    public async Task Update(IntermediateCertificate intermediateCertificate, CancellationToken token)
     {
-        _validator.Validate(rootCertificate);
-        _dbContext.RootCertificates.Update(rootCertificate);
+        _validator.Validate(intermediateCertificate);
+        _dbContext.IntermediateCertificates.Update(intermediateCertificate);
         await _dbContext.SaveChangesAsync(token);
     }
 }

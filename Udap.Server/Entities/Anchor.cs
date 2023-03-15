@@ -27,4 +27,6 @@ public class Anchor : ICertificateValidateMarker
     public int CommunityId { get; set; }
 
     public virtual ICollection<AnchorCertification> AnchorCertifications { get; set; } = default!;
+
+    public virtual ICollection<IntermediateCertificate> IntermediateCertificates { get; set; } = default!;
 }

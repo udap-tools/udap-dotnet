@@ -220,8 +220,7 @@ public class UdapJwtSecretValidator : ISecretValidator
                 parsedSecret.Id,
                 parsedSecret.GetUdapEndCertAsync(),
                 new X509Certificate2Collection(certChainList.ToArray()),
-                out X509ChainElementCollection? _,
-                new X509Certificate2Collection(certChainList.ToRootCertArray())))
+                new X509Certificate2Collection(certChainList.ToRootCertArray()), out X509ChainElementCollection? _))
         {
             return success;
         }

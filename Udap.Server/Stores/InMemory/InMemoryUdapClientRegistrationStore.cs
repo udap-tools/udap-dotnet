@@ -77,7 +77,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         return Task.FromResult(anchors.AsEnumerable());
     }
 
-    public Task<X509Certificate2Collection?> GetRootCertificates(CancellationToken token = default)
+    public Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default)
     {
         using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetRootCertificates");
 

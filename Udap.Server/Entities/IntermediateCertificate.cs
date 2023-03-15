@@ -9,10 +9,10 @@
 
 namespace Udap.Server.Entities;
 
-public class RootCertificate : ICertificateValidateMarker
+public class IntermediateCertificate : ICertificateValidateMarker
 {
     public int Id { get; set; }
-
+    public int AnchorId { get; set; }
     public bool Enabled { get; set; }
     public string Name { get; set; } = default!;
     /// <summary>
@@ -22,4 +22,6 @@ public class RootCertificate : ICertificateValidateMarker
     public string Thumbprint { get; set; } = default!;
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
+
+    public virtual Anchor Anchor { get; set; } = default!;
 }

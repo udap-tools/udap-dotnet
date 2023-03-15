@@ -282,9 +282,9 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     {
         var certStore = await _fixture.Services.GetService<ICertificateStore>()!.Resolve();
 
-        var trustedRoots = certStore.RootCAs;
+        var anchors = certStore.AnchorCertificates;
 
-        var anchors = certStore.Anchors
+        var intermediateCerts = certStore.IntermediateCertificates
             .Where(c => c.Community == _fixture.Community)
             .OrderBy(c => X509Certificate2.CreateFromPem(c.Certificate).NotBefore)
             .Select(c => c.Certificate);
@@ -301,10 +301,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         return validator.IsTrustedCertificate(
             "client_name",
             issuedCertificate2, 
-            anchors?.Select(a =>
+            intermediateCerts?.Select(a =>
             X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
-            out X509ChainElementCollection? chainElements,
-            trustedRoots.ToArray().ToX509Collection());
+            anchors.ToArray().ToX509Collection()!,
+            out X509ChainElementCollection? chainElements);
     }
 
     public class FakeChainValidatorDiagnostics

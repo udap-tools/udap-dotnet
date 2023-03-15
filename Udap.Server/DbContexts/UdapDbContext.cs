@@ -20,7 +20,7 @@ public interface IUdapDbAdminContext : IDisposable
 {
     DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; }
     DbSet<Anchor> Anchors { get; set; }
-    DbSet<RootCertificate> RootCertificates { get; set; }
+    DbSet<IntermediateCertificate> IntermediateCertificates { get; set; }
     DbSet<Community> Communities { get; set; }
     DbSet<Certification> Certifications { get; set; }
     /// <summary>
@@ -34,7 +34,7 @@ public interface IUdapDbContext : IDisposable
 {
     DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; }
     DbSet<Anchor> Anchors { get; set; }
-    DbSet<RootCertificate> RootCertificates { get; set; }
+    DbSet<IntermediateCertificate> IntermediateCertificates { get; set; }
     DbSet<Community> Communities { get; set; }
     DbSet<Certification> Certifications { get; set; }
 }
@@ -58,7 +58,7 @@ public class UdapDbContext<TContext> : DbContext, IUdapDbAdminContext, IUdapDbCo
 
 
     public DbSet<Anchor> Anchors { get; set; } = null!;
-    public DbSet<RootCertificate> RootCertificates { get; set; } = null!;
+    public DbSet<IntermediateCertificate> IntermediateCertificates { get; set; } = null!;
 
     public DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; } = null!;
     public DbSet<Community> Communities { get; set; } = null!;

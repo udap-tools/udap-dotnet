@@ -30,7 +30,7 @@ public static class RootCertificateMapper
     /// </summary>
     /// <param name="entity">The entity.</param>
     /// <returns></returns>
-    public static Udap.Common.Models.RootCertificate ToModel(this RootCertificate entity)
+    public static Udap.Common.Models.RootCertificate ToModel(this IntermediateCertificate entity)
     {
         return Mapper.Map<Udap.Common.Models.RootCertificate>(entity);
     }
@@ -40,9 +40,9 @@ public static class RootCertificateMapper
     /// </summary>
     /// <param name="model">The model.</param>
     /// <returns></returns>
-    public static RootCertificate ToEntity(this Udap.Common.Models.RootCertificate model)
+    public static IntermediateCertificate ToEntity(this Udap.Common.Models.RootCertificate model)
     {
-        return Mapper.Map<RootCertificate>(model);
+        return Mapper.Map<IntermediateCertificate>(model);
     }
 }
 
@@ -50,7 +50,7 @@ public class RootCertificateMapperProfile : Profile
 {
     public RootCertificateMapperProfile()
     {
-        CreateMap<RootCertificate, Udap.Common.Models.RootCertificate>(MemberList.Destination)
+        CreateMap<IntermediateCertificate, Udap.Common.Models.RootCertificate>(MemberList.Destination)
             .ConstructUsing(src => new Udap.Common.Models.RootCertificate())
 
 

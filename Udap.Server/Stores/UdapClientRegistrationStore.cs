@@ -42,7 +42,7 @@ namespace Udap.Server.Stores
 
         public async Task<int> AddClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.AddClient");
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.AddClient");
             activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
 
             _dbContext.Clients.Add(client.ToEntity());
@@ -51,7 +51,7 @@ namespace Udap.Server.Stores
 
         public async Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetAnchors");
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetAnchors");
             activity?.SetTag(Tracing.Properties.Community, community);
 
             List<Entities.Anchor> anchors;
@@ -76,11 +76,11 @@ namespace Udap.Server.Stores
             return anchors.Select(a => a.ToModel());
         }
 
-        public async Task<X509Certificate2Collection?> GetRootCertificates(CancellationToken token = default)
+        public async Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetRootCertificates");
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetRootCertificates");
 
-            var roots = await _dbContext.RootCertificates.ToListAsync(token).ConfigureAwait(false);
+            var roots = await _dbContext.IntermediateCertificates.ToListAsync(token).ConfigureAwait(false);
             
             _logger.LogInformation($"Found {roots?.Count() ?? 0} root certificates");
 
@@ -99,7 +99,7 @@ namespace Udap.Server.Stores
 
         public async Task<X509Certificate2Collection?> GetAnchorsCertificates(string? community, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetAnchorsCertificates");
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetAnchorsCertificates");
             activity?.SetTag(Tracing.Properties.Community, community);
 
             var anchors = (await GetAnchors(community, token).ConfigureAwait(false)).ToList();

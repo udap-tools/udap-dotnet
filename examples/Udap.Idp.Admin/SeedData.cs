@@ -97,13 +97,13 @@ public static class SeedData
 
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-        var x509Certificate2Collection = clientRegistrationStore.GetRootCertificates().Result;
+        var x509Certificate2Collection = clientRegistrationStore.GetIntermediateCertificates().Result;
         if (x509Certificate2Collection != null && !x509Certificate2Collection.Any())
         {
             var rootCert = new X509Certificate2(
                 Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
 
-            udapContext.RootCertificates.Add(new RootCertificate
+            udapContext.IntermediateCertificates.Add(new IntermediateCertificate
             {
                 BeginDate = rootCert.NotBefore,
                 EndDate = rootCert.NotAfter,

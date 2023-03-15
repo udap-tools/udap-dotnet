@@ -135,7 +135,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.* system/Practitioner.read")
+            .WithScope("system/Patient.rs system/Practitioner.read")
             .Build();
 
         var signedSoftwareStatement =
@@ -219,7 +219,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
-            Scope = "system/Patient.* system/Practitioner.read"
+            Scope = "system/Patient.read system/Practitioner.read"
         };
 
         _testOutputHelper.WriteLine("Client Token Request");
@@ -311,7 +311,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.* system/Practitioner.read")
+            .WithScope("system/Patient.rs system/Practitioner.read")
             .Build();
 
         var signedSoftwareStatement =
@@ -395,7 +395,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
-            Scope = "system/Patient.* system/Practitioner.read"
+            Scope = "system/Patient.rs system/Practitioner.read"
         };
 
         _testOutputHelper.WriteLine("Client Token Request");
@@ -472,7 +472,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.* system/Practitioner.read")
+            .WithScope("system/Patient.rs system/Practitioner.read")
             .Build();
 
         var signedSoftwareStatement =
@@ -557,7 +557,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.* system/Practitioner.read")
+            .WithScope("system/Patient.rs system/Practitioner.read")
             .Build();
 
 
@@ -631,7 +631,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.* system/Practitioner.read")
+            .WithScope("system/Patient.rs system/Practitioner.read")
             .Build();
 
 
@@ -744,7 +744,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.* system/Practitioner.read")
+            .WithScope("system/Patient.rs system/Practitioner.read")
             .BuildSoftwareStatement();
 
         var jsonToken = tokenHandler.ReadToken(signedSoftwareStatement);
@@ -839,7 +839,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
-            Scope = "system/Patient.* system/Practitioner.read"
+            Scope = "system/Patient.rs system/Practitioner.read"
         };
 
 
@@ -1078,7 +1078,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
-            Scope = "system.cruds"
+            Scope = "system/*.rs"
         };
 
 
@@ -1096,7 +1096,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
         _testOutputHelper.WriteLine(string.Empty);
 
-        tokenResponse.Scope.Should().Be("system.cruds");
+        tokenResponse.Scope.Should().Be("system/*.rs");
 
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
@@ -1566,7 +1566,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
         var jwt = tokenHandler.ReadJsonWebToken(metadata!.SignedMetadata);
         var publicCert = jwt?.GetPublicCertificate();
-        
+
+        // var subAltNames = publicCert.GetSubjectAltNames();
         var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
         {
             RequireSignedTokens = true,
@@ -1599,12 +1600,12 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.* system/Practitioner.read")
+            .WithScope("system/Patient.rs system/Practitioner.read")
             .Build();
 
         var signedSoftwareStatement =

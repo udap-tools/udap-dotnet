@@ -33,6 +33,8 @@ namespace UdapDb;
 
 public static class SeedData
 {
+    private static Anchor anchor;
+
     /// <summary>
     /// Load some test dat
     /// </summary>
@@ -96,28 +98,66 @@ public static class SeedData
 
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-        var x509Certificate2Collection = await clientRegistrationStore.GetRootCertificates();
 
-        var rootCert = new X509Certificate2(
-            Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
 
-        if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
-                .All(r => r.Thumbprint != rootCert.Thumbprint))
+        //
+        // Anchor surefhirlabs_community
+        //
+        var sureFhirLabsAnchor = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/anchors/SureFhirLabs_Anchor.cer"));
+
+        if ((await clientRegistrationStore.GetAnchors("udap://surefhir.labs"))
+            .All(a => a.Thumbprint != sureFhirLabsAnchor.Thumbprint))
         {
+            var community = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
 
-            udapContext.RootCertificates.Add(new RootCertificate
+            anchor = new Anchor
             {
-                BeginDate = rootCert.NotBefore.ToUniversalTime(),
-                EndDate = rootCert.NotAfter.ToUniversalTime(),
-                Name = rootCert.Subject,
-                X509Certificate = rootCert.ToPemFormat(),
-                Thumbprint = rootCert.Thumbprint,
+                BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
+                EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
+                Name = sureFhirLabsAnchor.Subject,
+                Community = community,
+                X509Certificate = sureFhirLabsAnchor.ToPemFormat(),
+                Thumbprint = sureFhirLabsAnchor.Thumbprint,
                 Enabled = true
-            });
+            };
 
-            await udapContext.SaveChangesAsync();
+            udapContext.Anchors.Add(anchor);
+
+            //
+            // Intermediate surefhirlabs_community
+            //
+            var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
+
+            var rootCert = new X509Certificate2(
+                Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
+
+            if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
+                    .All(r => r.Thumbprint != rootCert.Thumbprint))
+            {
+
+                udapContext.IntermediateCertificates.Add(new IntermediateCertificate
+                {
+                    BeginDate = rootCert.NotBefore.ToUniversalTime(),
+                    EndDate = rootCert.NotAfter.ToUniversalTime(),
+                    Name = rootCert.Subject,
+                    X509Certificate = rootCert.ToPemFormat(),
+                    Thumbprint = rootCert.Thumbprint,
+                    Enabled = true,
+                    Anchor = anchor
+                });
+
+                await udapContext.SaveChangesAsync();
+            }
         }
 
+
+
+       
+
+        //
+        // Anchor localhost_community
+        //
         var anchorLocalhostCert = new X509Certificate2(
             Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/anchorLocalhostCert.cer"));
 
@@ -140,30 +180,7 @@ public static class SeedData
             await udapContext.SaveChangesAsync();
         }
 
-        var sureFhirLabsAnchor = new X509Certificate2(
-            Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/anchors/SureFhirLabs_Anchor.cer"));
-
-        if ((await clientRegistrationStore.GetAnchors("udap://surefhir.labs"))
-            .All(a => a.Thumbprint != sureFhirLabsAnchor.Thumbprint))
-        {
-
-
-            var community = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
-
-            udapContext.Anchors.Add(new Anchor
-            {
-                BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
-                EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
-                Name = sureFhirLabsAnchor.Subject,
-                Community = community,
-                X509Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                Thumbprint = sureFhirLabsAnchor.Thumbprint,
-                Enabled = true
-            });
-
-            await udapContext.SaveChangesAsync();
-        }
-
+        
         await SeedFhirScopes(configDbContext, "patient");
         await SeedFhirScopes(configDbContext, "user");
         await SeedFhirScopes(configDbContext, "system");

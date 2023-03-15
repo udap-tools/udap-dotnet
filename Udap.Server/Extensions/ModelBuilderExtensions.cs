@@ -46,12 +46,19 @@ namespace Udap.Server.Extensions
                     .HasForeignKey(ac => ac.AnchorId)
                     .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_AnchorCertification_Anchor");
+
+                anchor.HasMany(a => a.IntermediateCertificates)
+                    .WithOne(ac => ac.Anchor)
+                    .IsRequired(false)
+                    .HasForeignKey(ac => ac.AnchorId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("FK_IntermediateCertificate_Anchor");
             });
 
-            modelBuilder.Entity<RootCertificate>(anchor =>
+            modelBuilder.Entity<IntermediateCertificate>(cert =>
             {
-                anchor.ToTable(storeOptions.RootCertificate);
-                anchor.HasKey(x => x.Id);
+                cert.ToTable(storeOptions.IntermediateCertificate);
+                cert.HasKey(x => x.Id);
             });
 
 

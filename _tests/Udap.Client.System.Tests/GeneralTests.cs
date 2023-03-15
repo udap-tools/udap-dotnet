@@ -308,9 +308,9 @@ namespace Udap.Client.System.Tests
             var sp = services.BuildServiceProvider();
             var certStore = sp.GetRequiredService<ICertificateStore>();
             var certificateStore = await certStore.Resolve();
-            var roots = certificateStore.RootCAs;
+            var roots = certificateStore.AnchorCertificates;
 
-            var anchors = certificateStore.Anchors
+            var anchors = certificateStore.IntermediateCertificates
                 .Where(c => c.Community == communityName)
                 .OrderBy(c => X509Certificate2.CreateFromPem(c.Certificate).NotBefore)
                 .Select(c => c.Certificate);
@@ -326,9 +326,9 @@ namespace Udap.Client.System.Tests
             return validator.IsTrustedCertificate(
                 "client_name",
                 issuedCertificate2,
-                anchors.Select(a => X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
-                out X509ChainElementCollection? chainElements,
-                roots.ToArray().ToX509Collection());
+                null,
+                roots.ToArray().ToX509Collection()!, 
+                out X509ChainElementCollection? chainElements);
         }
 
         public class FakeChainValidatorDiagnostics

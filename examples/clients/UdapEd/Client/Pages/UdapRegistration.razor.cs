@@ -7,8 +7,6 @@
 // */
 #endregion
 
-using System.IdentityModel.Tokens.Jwt;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Components;
@@ -137,7 +135,7 @@ public partial class UdapRegistration
                 return _registrationResult;
             }
 
-            if (AppState.UdapRegistrationRequest == null)
+            if (AppState.RegistrationDocument == null)
             {
                 return _registrationResult ?? string.Empty;
             }
@@ -204,7 +202,7 @@ public partial class UdapRegistration
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName(UdapEdConstants.ClientName)
-                .WithContacts(new HashSet<string?>
+                .WithContacts(new HashSet<string>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
@@ -238,13 +236,13 @@ public partial class UdapRegistration
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName(UdapEdConstants.ClientName)
-                .WithContacts(new HashSet<string?>
+                .WithContacts(new HashSet<string>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-                .WithResponseTypes(new HashSet<string?> { "code" })
-                .WithRedirectUrls(new List<string?>{ $"{NavigationManager.BaseUri}udapBusinessToBusiness" })
+                .WithResponseTypes(new HashSet<string> { "code" })
+                .WithRedirectUrls(new List<string>{ $"{NavigationManager.BaseUri}udapBusinessToBusiness" })
                 .WithScope(scope)
                 .Build();
 
@@ -314,12 +312,15 @@ public partial class UdapRegistration
         {
             await BuildRequestBodyForAuthorizationCode();
         }
+
+        RegistrationResult = string.Empty;
+        await AppState.SetPropertyAsync(this, nameof(AppState.RegistrationDocument), null);
     }
 
     private async Task BuildRequestBodyForClientCredentials()
     {
         var registerRequest = await RegisterService.BuildRequestBodyForClientCredentials(AppState.SoftwareStatementBeforeEncoding);
-        AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), registerRequest);
+        await AppState.SetPropertyAsync(this, nameof(AppState.UdapRegistrationRequest), registerRequest);
 
         RequestBody = JsonSerializer.Serialize(
             registerRequest,
@@ -329,7 +330,7 @@ public partial class UdapRegistration
     private async Task BuildRequestBodyForAuthorizationCode()
     {
         var registerRequest = await RegisterService.BuildRequestBodyForAuthorizationCode(AppState.SoftwareStatementBeforeEncoding);
-        AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), registerRequest);
+        await AppState.SetPropertyAsync(this, nameof(AppState.UdapRegistrationRequest), registerRequest);
 
         RequestBody = JsonSerializer.Serialize(
             registerRequest,

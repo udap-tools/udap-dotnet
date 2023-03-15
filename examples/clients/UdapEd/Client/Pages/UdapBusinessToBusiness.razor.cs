@@ -248,7 +248,6 @@ public partial class UdapBusinessToBusiness
     {
         TokenRequest1 = string.Empty;
         TokenRequest2 = string.Empty;
-        AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), null);
         TokenRequest3 = string.Empty;
         TokenRequest4 = string.Empty;
         AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), null);

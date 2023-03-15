@@ -58,7 +58,7 @@ namespace Udap.Idp.Admin.Services
         {
             var anchor = _mapper.Map<Common.Models.Anchor>(anchorView);
 
-            var response = await HttpClient.PutAsJsonAsync($"api/anchor/{anchor.Id}", anchor).ConfigureAwait(false);
+            var response = await HttpClient.PutAsJsonAsync($"api/intermediates/{anchor.Id}", anchor).ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {
@@ -74,7 +74,7 @@ namespace Udap.Idp.Admin.Services
 
         public async Task<bool> DeleteAnchor(long anchorId, CancellationToken token = default)
         {
-            var response = await HttpClient.DeleteAsync($"/api/anchor/{anchorId}");
+            var response = await HttpClient.DeleteAsync($"/api/intermediates/{anchorId}");
             
             if (response.IsSuccessStatusCode)
             {

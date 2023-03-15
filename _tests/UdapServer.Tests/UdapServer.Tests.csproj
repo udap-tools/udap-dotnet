@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\anchorLocalhostCert.cer" Link="CertStore\anchors\anchorLocalhostCert.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\intermediateLocalhostCert.cer" Link="CertStore\intermediates\intermediateLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\Udap.PKI.Generator\certstores\localhost_community\weatherApiClientLocalhostCert.pfx" Link="CertStore\issued\weatherApiClientLocalhostCert.pfx">
@@ -37,7 +37,7 @@
     <None Include="../Udap.PKI.Generator/certstores/surefhirlabs_community/issued/WeatherApiClient.pfx" Link="CertStore\issued\WeatherApiClient.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\anchors\SureFhirLabs_Anchor.cer" Link="CertStore\anchors\SureFhirLabs_Anchor.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\intermediates\SureFhirLabs_Intermediate.cer" Link="CertStore\intermediates\SureFhirLabs_Intermediate.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.client.pfx" Link="CertStore\issued\fhirlabs.net.client.pfx">
@@ -86,10 +86,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="CertStore\anchors\anchorLocalhostCert.cer">
+    <None Update="CertStore\intermediates\intermediateLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\anchors\EMRDirectTestCA.crt">
+    <None Update="CertStore\intermediates\EMRDirectTestCA.crt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">

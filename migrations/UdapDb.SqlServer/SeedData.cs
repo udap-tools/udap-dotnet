@@ -104,7 +104,7 @@ public static class SeedData
         // Anchor surefhirlabs_community
         //
         var sureFhirLabsAnchor = new X509Certificate2(
-            Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/anchors/SureFhirLabs_Anchor.cer"));
+            Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://surefhir.labs"))
             .All(a => a.Thumbprint != sureFhirLabsAnchor.Thumbprint))
@@ -159,7 +159,7 @@ public static class SeedData
         // Anchor localhost_community
         //
         var anchorLocalhostCert = new X509Certificate2(
-            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/anchorLocalhostCert.cer"));
+            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/intermediateLocalhostCert.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("http://localhost"))
             .All(a => a.Thumbprint != anchorLocalhostCert.Thumbprint))

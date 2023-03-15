@@ -135,7 +135,7 @@ UdapConfig:UdapMetadataConfigs:Community value is the link to UdapFileCertStoreM
             "Name": "http://localhost",
             "Anchors": [
               {
-                "FilePath": "CertStore/anchors/anchorLocalhostCert.cer"
+                "FilePath": "CertStore/intermediates/anchorLocalhostCert.cer"
               }
             ],
             "RootCAFilePaths": [

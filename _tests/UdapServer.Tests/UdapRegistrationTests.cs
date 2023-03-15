@@ -276,8 +276,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint!);
 
-        var cert = Path.Combine("CertStore/issued",
-            "weatherApiClientLocalhostCert.pfx");
+        var cert = Path.Combine("CertStore/issued", "weatherApiClientLocalhostCert.pfx");
 
         _testOutputHelper.WriteLine($"Path to Cert: {cert}");
         var clientCert = new X509Certificate2(cert, "udap-test");

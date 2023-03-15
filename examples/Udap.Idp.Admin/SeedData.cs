@@ -141,7 +141,7 @@ public static class SeedData
         if (!clientRegistrationStore.GetAnchors("udap://surefhir.labs").Result.Any())
         {
             var sureFhirLabsAnchor = new X509Certificate2(
-                Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/anchors/SureFhirLabs_Anchor.cer"));
+                Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
         
             var commnity = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
         

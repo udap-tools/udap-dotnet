@@ -12,13 +12,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="CertStore/anchors/" />
+    <Folder Include="CertStore/intermediates/" />
     <Folder Include="CertStore/issued/" />
     <Folder Include="CertStore/roots/" />
   </ItemGroup>
 
   <ItemGroup> <!-- SureFhir Community -->
-    <None Include="../../_tests/Udap.PKI.Generator/certstores/surefhirlabs_community/anchors/SureFhirLabs_Anchor.cer" Link="CertStore/anchors/SureFhirLabs_Anchor.cer">
+    <None Include="../../_tests/Udap.PKI.Generator/certstores/surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer" Link="CertStore/intermediates/SureFhirLabs_Intermediate.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="../../_tests/Udap.PKI.Generator/certstores/surefhirlabs_community/issued/WeatherApiClient.pfx" Link="CertStore/issued/WeatherApiClient.pfx">
@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup> <!-- Localhost Community -->
-    <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/anchorLocalhostCert.cer" Link="CertStore/anchors/anchorLocalhostCert.cer">
+    <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/intermediateLocalhostCert.cer" Link="CertStore/intermediates/intermediateLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/weatherApiClientLocalhostCert.pfx" Link="CertStore/issued/weatherApiClientLocalhostCert.pfx">

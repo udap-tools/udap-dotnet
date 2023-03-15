@@ -42,7 +42,7 @@
 
   <ItemGroup>
     <!-- SureFhir Community -->
-    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\anchors\SureFhirLabs_Anchor.cer" Link="CertStore\anchors\SureFhirLabs_Anchor.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\anchors\SureFhirLabs_Intermediate.cer" Link="CertStore\anchors\SureFhirLabs_Intermediate.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.client.pfx" Link="CertStore\issued\fhirlabs.net.client.pfx">

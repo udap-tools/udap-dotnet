@@ -10,13 +10,13 @@ I example apps are in the examples folder.
 
 ## What does it support
 
-The repository contains components and example uses to support the following items from [Security for Scalable Registration, Authentication, and Authorization](http://hl7.org/fhir/us/udap-security/).  The intent is to also support generic UDAP, but the driving force currently is supporting auto registration to FHIR servers.
+The repository contains components and example uses to support the following items from [Security for Scalable Registration, Authentication, and Authorization](http://hl7.org/fhir/us/udap-security/).  The intent is to also support generic UDAP, but the driving force currently is supporting auto registration to FHIR® servers.  FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of the contents of this repository by HL7
 
 | Feature   | Sub Feature             | Supported           | Comments                                               |
 |-------------------------|---|---------------------|--------------------------------------------------------|
 | Client                  | |Not Started         | Seems I ignored this in favor of server features.  I will get back to it soon. After all we need a client that can easily validated trust |
 | [Discovery](http://hl7.org/fhir/us/udap-security/discovery.html) || ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) |  Client certificate storage is a file strategy.  User can implement their own ICertificateStore.  May add a Entity Framework example in future. |
-| [Registration](http://hl7.org/fhir/us/udap-security/registration.html)|| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)  |  Highly Functional.  The Deployed example FHIR Server, "FhirLabsApi" is passing all udap.org Server Tests.  I am going to revisit the Client Secrets persistence layer.  Packages are dependent on Duende's Identity Server Nuget Packages. |
+| [Registration](http://hl7.org/fhir/us/udap-security/registration.html)|| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)  |  Highly Functional.  The Deployed example FHIR® Server, "FhirLabsApi" is passing all udap.org Server Tests.  I am going to revisit the Client Secrets persistence layer.  Packages are dependent on Duende's Identity Server Nuget Packages. |
 ||Inclusion of Certifications and Endorsements|Started|Some example certification integration tests included from the client side |
 Authorization and Authentication 
 | [Consumer-Facing](http://hl7.org/fhir/us/udap-security/consumer.html)|| Not Started | |
@@ -38,11 +38,11 @@ A .NET UI and CLI tool to generate certificates for UDAP communities.  A UI vers
 
 # Components (Nuget packages)
 
-See the following Udap.Metadata.Server and Udap.Server sections.  The Udap.Metadata.Server is for the resource server such a FHIR Server.  Udap.Server.Server is for the Identity Server.
+See the following Udap.Metadata.Server and Udap.Server sections.  The Udap.Metadata.Server is for the resource server such a FHIR® Server.  Udap.Server.Server is for the Identity Server.
 
 ## Udap.Metadata.Server
 
-Add this package to your FHIR server or any web api server to.  
+Add this package to your FHIR® server or any web api server to.  
 
 ```csharp
 dotnet new sln -o WebApiProject1

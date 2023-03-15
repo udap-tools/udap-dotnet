@@ -62,7 +62,7 @@
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">x509 certificates from x5c</MudText>
-              <pre>x509</pre>
+              <CertificateViewer JwtHeaderWithx5c="@SoftwareStatementBeforeEncodingHeader" />
             </MudPaper>
           </MudItem>
         </MudGrid>
@@ -82,7 +82,8 @@
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
-              <pre>Explanation Todo</pre>
+                <SignedJwtViewer 
+                    SignedSoftwareStatement="@AppState.UdapRegistrationRequest?.SoftwareStatement" />
             </MudPaper>
           </MudItem>
 

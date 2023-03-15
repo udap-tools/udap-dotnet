@@ -24,298 +24,368 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
+using X509Extension = System.Security.Cryptography.X509Certificates.X509Extension;
 
-namespace Udap.Util.Extensions
+namespace Udap.Util.Extensions;
+
+public static class X509Extensions
 {
-    public static class X509Extensions
+    /// <summary>
+    /// Performs a shallow clone or the specified <see cref="System.Security.Cryptography.X509Certificates.X509ChainPolicy"/>
+    /// </summary>
+    /// <param name="policy">The instance to clone.</param>
+    /// <returns>The shallow cloned instance.</returns>
+    public static X509ChainPolicy Clone(this X509ChainPolicy policy)
     {
-        /// <summary>
-        /// Performs a shallow clone or the specified <see cref="System.Security.Cryptography.X509Certificates.X509ChainPolicy"/>
-        /// </summary>
-        /// <param name="policy">The instance to clone.</param>
-        /// <returns>The shallow cloned instance.</returns>
-        public static X509ChainPolicy Clone(this X509ChainPolicy policy)
-        {
-            X509ChainPolicy newPolicy = new X509ChainPolicy();
-            newPolicy.ApplicationPolicy.Add(policy.ApplicationPolicy);
-            newPolicy.CertificatePolicy.Add(policy.CertificatePolicy);
-            newPolicy.ExtraStore.Add(policy.ExtraStore);
-            newPolicy.RevocationFlag = policy.RevocationFlag;
-            newPolicy.RevocationMode = policy.RevocationMode;
-            newPolicy.UrlRetrievalTimeout = policy.UrlRetrievalTimeout;
-            newPolicy.VerificationFlags = policy.VerificationFlags;
+        X509ChainPolicy newPolicy = new X509ChainPolicy();
+        newPolicy.ApplicationPolicy.Add(policy.ApplicationPolicy);
+        newPolicy.CertificatePolicy.Add(policy.CertificatePolicy);
+        newPolicy.ExtraStore.Add(policy.ExtraStore);
+        newPolicy.RevocationFlag = policy.RevocationFlag;
+        newPolicy.RevocationMode = policy.RevocationMode;
+        newPolicy.UrlRetrievalTimeout = policy.UrlRetrievalTimeout;
+        newPolicy.VerificationFlags = policy.VerificationFlags;
 
-            return newPolicy;
+        return newPolicy;
+    }
+
+    /// <summary>
+    /// Adds a collection of <see cref="System.Security.Cryptography.Oid"/> instances to this collection.
+    /// </summary>
+    /// <param name="oids">The collection to which to add values</param>
+    /// <param name="newOids">The collection to add from</param>
+    public static void Add(this OidCollection oids, OidCollection newOids)
+    {
+        if (newOids == null)
+        {
+            throw new ArgumentNullException(nameof(newOids));
         }
 
-        /// <summary>
-        /// Adds a collection of <see cref="System.Security.Cryptography.Oid"/> instances to this collection.
-        /// </summary>
-        /// <param name="oids">The collection to which to add values</param>
-        /// <param name="newOids">The collection to add from</param>
-        public static void Add(this OidCollection oids, OidCollection newOids)
+        for (int i = 0, count = newOids.Count; i < count; ++i)
         {
-            if (newOids == null)
-            {
-                throw new ArgumentNullException(nameof(newOids));
-            }
+            oids.Add(newOids[i]);
+        }
+    }
 
-            for (int i = 0, count = newOids.Count; i < count; ++i)
+    /// <summary>
+    /// Adds certificates from the supplied collection to this collection.
+    /// </summary>
+    /// <param name="certs">The collection to which to add certificates.</param>
+    /// <param name="newCerts">The collection from which to add certificates.</param>
+    public static void Add(this X509Certificate2Collection certs, X509Certificate2Collection? newCerts)
+    {
+        if (newCerts == null)
+        {
+            throw new ArgumentNullException(nameof(newCerts));
+        }
+
+        foreach (var cert in newCerts)
+        {
+            certs.Add(cert);
+        }
+    }
+
+    /// <summary>
+    /// Supplies an enumeration for this collection.
+    /// </summary>
+    /// <param name="certs">The collection to enumerate.</param>
+    /// <returns>The enumerator for this collection.</returns>
+    public static IEnumerable<X509Certificate2> Enumerate(this X509Certificate2Collection certs)
+    {
+        return certs.Enumerate(null);
+    }
+
+    /// <summary>
+    /// Supplies an filtered enumeration for this collection.
+    /// </summary>
+    /// <param name="certs">The collection to enumerate.</param>
+    /// <param name="filter">The filter testing each element of the source collection for enumeration. Elements for which the filter returns <c>false</c> will not be returned by the enumerator.</param>
+    /// <returns>The enumerator for this collection.</returns>
+    public static IEnumerable<X509Certificate2> Enumerate(this X509Certificate2Collection certs, Predicate<X509Certificate2>? filter)
+    {
+        foreach (X509Certificate2 cert in certs)
+        {
+            if (filter == null || filter(cert))
             {
-                oids.Add(newOids[i]);
+                yield return cert;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Return the first matching element whose certificate thumbprint matches the supplied <paramref name="thumbprint"/>
+    /// </summary>
+    /// <param name="certs">The source collection to test.</param>
+    /// <param name="thumbprint">The certificate thumbprint, as a string, to test against the source collection</param>
+    /// <returns>The first matching element, or <c>null</c> if no matching elements are found.</returns>
+    public static X509Certificate2? FindByThumbprint(this X509Certificate2Collection certs, string? thumbprint)
+    {
+        if (string.IsNullOrEmpty(thumbprint))
+        {
+            throw new ArgumentException("value was null or empty", nameof(thumbprint));
+        }
+
+        return certs.Find(x => x.Thumbprint == thumbprint);
+    }
+
+    /// <summary>
+    /// Returns the first element matching the supplied predicate.
+    /// </summary>
+    /// <param name="certs">The source collection to test.</param>
+    /// <param name="matcher">The matching predicate for which the first matching element will be returned.</param>
+    /// <returns>The first matching element, or <c>null</c> if no matching elements are found.</returns>
+    public static X509Certificate2? Find(this X509Certificate2Collection certs, Predicate<X509Certificate2> matcher)
+    {
+        int index = certs.IndexOf(matcher);
+
+        if (index >= 0)
+        {
+            return certs[index];
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Returns the index of the first certificate matching the supplied <paramref name="matcher"/>.
+    /// </summary>
+    /// <param name="certs">The source collection to test.</param>
+    /// <param name="matcher">The matching predicate for which the index of the first matching element will be returned.</param>
+    /// <returns>The zero-based index of the first matching element, or -1 if no matching elements are found</returns>
+    public static int IndexOf(this X509Certificate2Collection certs, Predicate<X509Certificate2> matcher)
+    {
+        if (matcher == null)
+        {
+            throw new ArgumentNullException(nameof(matcher));
+        }
+
+        for (int i = 0, count = certs.Count; i < count; ++i)
+        {
+            if (matcher(certs[i]))
+            {
+                return i;
             }
         }
 
-        /// <summary>
-        /// Adds certificates from the supplied collection to this collection.
-        /// </summary>
-        /// <param name="certs">The collection to which to add certificates.</param>
-        /// <param name="newCerts">The collection from which to add certificates.</param>
-        public static void Add(this X509Certificate2Collection certs, X509Certificate2Collection? newCerts)
+        return -1;
+    }
+
+    [DebuggerStepThrough]
+    public static X509Certificate2Collection? ToX509Collection(this X509Certificate2[] source)
+    {
+        if (!source.Any())
         {
-            if (newCerts == null)
-            {
-                throw new ArgumentNullException(nameof(newCerts));
-            }
-
-            foreach (var cert in newCerts)
-            {
-                certs.Add(cert);
-            }
-        }
-
-        /// <summary>
-        /// Supplies an enumeration for this collection.
-        /// </summary>
-        /// <param name="certs">The collection to enumerate.</param>
-        /// <returns>The enumerator for this collection.</returns>
-        public static IEnumerable<X509Certificate2> Enumerate(this X509Certificate2Collection certs)
-        {
-            return certs.Enumerate(null);
-        }
-
-        /// <summary>
-        /// Supplies an filtered enumeration for this collection.
-        /// </summary>
-        /// <param name="certs">The collection to enumerate.</param>
-        /// <param name="filter">The filter testing each element of the source collection for enumeration. Elements for which the filter returns <c>false</c> will not be returned by the enumerator.</param>
-        /// <returns>The enumerator for this collection.</returns>
-        public static IEnumerable<X509Certificate2> Enumerate(this X509Certificate2Collection certs, Predicate<X509Certificate2>? filter)
-        {
-            foreach (X509Certificate2 cert in certs)
-            {
-                if (filter == null || filter(cert))
-                {
-                    yield return cert;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Return the first matching element whose certificate thumbprint matches the supplied <paramref name="thumbprint"/>
-        /// </summary>
-        /// <param name="certs">The source collection to test.</param>
-        /// <param name="thumbprint">The certificate thumbprint, as a string, to test against the source collection</param>
-        /// <returns>The first matching element, or <c>null</c> if no matching elements are found.</returns>
-        public static X509Certificate2? FindByThumbprint(this X509Certificate2Collection certs, string? thumbprint)
-        {
-            if (string.IsNullOrEmpty(thumbprint))
-            {
-                throw new ArgumentException("value was null or empty", nameof(thumbprint));
-            }
-
-            return certs.Find(x => x.Thumbprint == thumbprint);
-        }
-
-        /// <summary>
-        /// Returns the first element matching the supplied predicate.
-        /// </summary>
-        /// <param name="certs">The source collection to test.</param>
-        /// <param name="matcher">The matching predicate for which the first matching element will be returned.</param>
-        /// <returns>The first matching element, or <c>null</c> if no matching elements are found.</returns>
-        public static X509Certificate2? Find(this X509Certificate2Collection certs, Predicate<X509Certificate2> matcher)
-        {
-            int index = certs.IndexOf(matcher);
-
-            if (index >= 0)
-            {
-                return certs[index];
-            }
-
             return null;
         }
 
-        /// <summary>
-        /// Returns the index of the first certificate matching the supplied <paramref name="matcher"/>.
-        /// </summary>
-        /// <param name="certs">The source collection to test.</param>
-        /// <param name="matcher">The matching predicate for which the index of the first matching element will be returned.</param>
-        /// <returns>The zero-based index of the first matching element, or -1 if no matching elements are found</returns>
-        public static int IndexOf(this X509Certificate2Collection certs, Predicate<X509Certificate2> matcher)
-        {
-            if (matcher == null)
-            {
-                throw new ArgumentNullException(nameof(matcher));
-            }
+        var x509Coll = new X509Certificate2Collection();
 
-            for (int i = 0, count = certs.Count; i < count; ++i)
+        foreach (var cert in source)
+        {
+            x509Coll.Add(cert);
+        }
+
+        return x509Coll;
+    }
+
+    public static string Summarize(this X509ChainStatus[] chainStatuses, X509ChainStatusFlags problemFlags)
+    {
+        var builder = new StringBuilder();
+
+
+        foreach (var status in chainStatuses)
+        {
+            if ((status.Status & problemFlags) != 0)
             {
-                if (matcher(certs[i]))
+                builder.Append($"({status.Status}) {status.StatusInformation}");
+                builder.Append(" : ");
+            }
+        }
+
+        return builder.ToString();
+    }
+
+    public static string Summarize(this X509ChainElementCollection chainElementCollection)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine();
+
+        foreach (var element in chainElementCollection)
+        {
+            foreach (var status in element.ChainElementStatus)
+            {
+
+                if ((status.Status) != 0)
                 {
-                    return i;
+                    builder.AppendLine($"SubAltName:: {element.Certificate.GetNameInfo(X509NameType.UrlName, false)} ({status.Status}) {status.StatusInformation}");
                 }
             }
-
-            return -1;
         }
 
-        [DebuggerStepThrough]
-        public static X509Certificate2Collection? ToX509Collection(this X509Certificate2[] source)
+        return builder.ToString();
+    }
+
+    public static string ToPemFormat(this X509Certificate2? cert)
+    {
+        if (cert == null)
         {
-            if (!source.Any())
-            {
-                return null;
-            }
-
-            var x509Coll = new X509Certificate2Collection();
-
-            foreach (var cert in source)
-            {
-                x509Coll.Add(cert);
-            }
-
-            return x509Coll;
+            return string.Empty;
         }
 
-        public static string Summarize(this X509ChainStatus[] chainStatuses, X509ChainStatusFlags problemFlags)
+        var pem = new StringBuilder();
+        pem.AppendLine("-----BEGIN CERTIFICATE-----");
+        pem.AppendLine(Convert.ToBase64String(cert.RawData, Base64FormattingOptions.InsertLineBreaks));
+        pem.AppendLine("-----END CERTIFICATE-----");
+
+        return pem.ToString();
+    }
+
+    /// <summary>
+    /// Gets the specified certificate extension field from the certificate as a <see cref="DerObjectIdentifier"/>.  
+    /// The extension field is determined by the oid parameter />
+    /// <param name="cert">The certificate to extract the extension field from.</param>
+    /// <returns>The extension field as DerObjectIdentifier.  If the extension does not exist in the certificate, then null is returned. </returns>
+    /// </summary>
+    public static Asn1Object? GetExtensionValue(this X509Certificate2 cert, string oid)
+    {
+        var x509Extension = cert.Extensions[oid];
+
+        if (x509Extension != null)
         {
-            var builder = new StringBuilder();
+            var bytes = x509Extension.RawData;
 
-
-            foreach (var status in chainStatuses)
-            {
-                if ((status.Status & problemFlags) != 0)
-                {
-                    builder.Append($"({status.Status}) {status.StatusInformation}");
-                    builder.Append(" : ");
-                }
-            }
-
-            return builder.ToString();
+            return GetObject(bytes);
         }
-
-        public static string Summarize(this X509ChainElementCollection chainElementCollection)
-        {
-            var builder = new StringBuilder();
-            builder.AppendLine();
-
-            foreach (var element in chainElementCollection)
-            {
-                foreach (var status in element.ChainElementStatus)
-                {
-
-                    if ((status.Status) != 0)
-                    {
-                        builder.AppendLine($"SubAltName:: {element.Certificate.GetNameInfo(X509NameType.UrlName, false)} ({status.Status}) {status.StatusInformation}");
-                    }
-                }
-            }
-
-            return builder.ToString();
-        }
-
-        public static string ToPemFormat(this X509Certificate2? cert)
-        {
-            if (cert == null)
-            {
-                return string.Empty;
-            }
-
-            var pem = new StringBuilder();
-            pem.AppendLine("-----BEGIN CERTIFICATE-----");
-            pem.AppendLine(Convert.ToBase64String(cert.RawData, Base64FormattingOptions.InsertLineBreaks));
-            pem.AppendLine("-----END CERTIFICATE-----");
-
-            return pem.ToString();
-        }
-
-        /// <summary>
-        /// Gets the specified certificate extension field from the certificate as a <see cref="DerObjectIdentifier"/>.  
-        /// The extension field is determined by the oid parameter />
-        /// <param name="cert">The certificate to extract the extension field from.</param>
-        /// <returns>The extension field as DerObjectIdentifier.  If the extension does not exist in the certificate, then null is returned. </returns>
-        /// </summary>
-        public static Asn1Object? GetExtensionValue(this X509Certificate2 cert, string oid)
-        {
-            var x509Extension = cert.Extensions[oid];
-
-            if (x509Extension != null)
-            {
-                var bytes = x509Extension.RawData;
-
-                return GetObject(bytes);
-            }
-            return null;
-        }
+        return null;
+    }
 
 #if NET6_0_OR_GREATER
-        public static X509Certificate2[]  ToRootCertArray(this List<X509Certificate2> certificates)
+    public static X509Certificate2[] ToRootCertArray(this List<X509Certificate2> certificates)
+    {
+        X509Certificate2Collection caCerts = new X509Certificate2Collection();
+
+        foreach (var x509Cert in certificates)
         {
-            X509Certificate2Collection caCerts = new X509Certificate2Collection();
+            var extension = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") as X509BasicConstraintsExtension;
+            var subjectIdentifier = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
 
-            foreach (var x509Cert in certificates)
+            //
+            // dotnet 7.0
+            //
+            // var authorityIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid.Value == "2.5.29.35") as X509AuthorityKeyIdentifierExtension;
+
+            string? authorityIdentifierValue = null;
+
+            Asn1Object? exValue = x509Cert.GetExtensionValue("2.5.29.35");
+            if (exValue != null)
             {
-                var extension = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") as X509BasicConstraintsExtension;
-                var subjectIdentifier = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
+                var aki = AuthorityKeyIdentifier.GetInstance(exValue);
+                byte[] keyId = aki.GetKeyIdentifier();
+                authorityIdentifierValue = keyId.CreateByteStringRep();
+            }
 
-                //
-                // dotnet 7.0
-                //
-                // var authorityIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid.Value == "2.5.29.35") as X509AuthorityKeyIdentifierExtension;
-
-                string? authorityIdentifierValue = null;
-
-                Asn1Object? exValue = x509Cert.GetExtensionValue("2.5.29.35");
-                if (exValue != null)
+            if (extension != null && extension.CertificateAuthority)
+            {
+                if (authorityIdentifierValue == null ||
+                    subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
                 {
-                    var aki = AuthorityKeyIdentifier.GetInstance(exValue);
-                    byte[] keyId = aki.GetKeyIdentifier();
-                    authorityIdentifierValue = keyId.CreateByteStringRep();
-                }
-
-                if (extension != null && extension.CertificateAuthority)
-                {
-                    if (authorityIdentifierValue == null ||
-                        subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
-                    {
-                        caCerts.Add(x509Cert);
-                    }
+                    caCerts.Add(x509Cert);
                 }
             }
-            
-            return caCerts.ToArray();
         }
+
+        return caCerts.ToArray();
+    }
 #endif
 
-        /// <summary>
-        /// Converts an encoded internal octet string object to a DERObject
-        /// </summary>
-        /// <param name="ext">The encoded octet string as a byte array</param>
-        /// <returns>The converted Asn1Object (DERObject)</returns>
-        private static Asn1Object GetObject(byte[] ext)
-        {
-            Asn1InputStream aIn;
+    /// <summary>
+    /// Converts an encoded internal octet string object to a DERObject
+    /// </summary>
+    /// <param name="ext">The encoded octet string as a byte array</param>
+    /// <returns>The converted Asn1Object (DERObject)</returns>
+    private static Asn1Object GetObject(byte[] ext)
+    {
+        Asn1InputStream aIn;
 
-            using (aIn = new Asn1InputStream(ext))
+        using (aIn = new Asn1InputStream(ext))
+        {
+            var octets = aIn.ReadObject();
+            Asn1InputStream aInDerEncoded;
+            using (aInDerEncoded = new Asn1InputStream(octets.GetDerEncoded()))
             {
-                var octets = aIn.ReadObject();
-                Asn1InputStream aInDerEncoded;
-                using (aInDerEncoded = new Asn1InputStream(octets.GetDerEncoded()))
-                {
-                    return aInDerEncoded.ReadObject();
-                }
+                return aInDerEncoded.ReadObject();
             }
         }
+    }
+
+    public static IEnumerable<string> ToKeyUsageToString(this X509KeyUsageFlags flags)
+    {
+        if (flags.HasFlag(X509KeyUsageFlags.KeyAgreement)) { yield return X509KeyUsageFlags.KeyAgreement.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.CrlSign)) { yield return X509KeyUsageFlags.CrlSign.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.DataEncipherment)) { yield return X509KeyUsageFlags.DataEncipherment.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.DecipherOnly)) { yield return X509KeyUsageFlags.DecipherOnly.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.DigitalSignature)) { yield return X509KeyUsageFlags.DigitalSignature.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.EncipherOnly)) { yield return X509KeyUsageFlags.EncipherOnly.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.KeyCertSign)) { yield return X509KeyUsageFlags.KeyCertSign.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.KeyEncipherment)) { yield return X509KeyUsageFlags.KeyEncipherment.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.NonRepudiation)) { yield return X509KeyUsageFlags.NonRepudiation.ToString(); }
+    }
+
+    public static List<string> GetSubjectAltNames(this X509Certificate2 cert)
+    {
+        var extension = cert.GetExtensionValue("2.5.29.17");
+        var generalNames = GeneralNames.GetInstance(extension);
+        var names = new List<string>();
+
+        foreach (var name in generalNames.GetNames())
+        {
+            var type = FromTag<GeneralNameType>(name.TagNo);
+            names.Add(type + " : " + name.Name);
+        }
+
+        return names;
+    }
+
+    public static TEnum FromTag<TEnum>(int tagNo)
+    {
+        return (TEnum)Enum.ToObject(typeof(TEnum), tagNo);
+    }
+
+    /// <summary>
+    /// General name types as describe in section 4.2.1.6 of RFC5280
+    /// <remarks>
+    /// <![CDATA[
+    /// SubjectAltName ::= GeneralNames<br/>
+    ///  
+    /// GeneralNames ::= SEQUENCE SIZE (1..MAX) OF GeneralName<br/>
+    ///  
+    /// GeneralName ::= CHOICE {<br/>
+    ///      otherName                       [0]     OtherName,<br/>
+    ///      rfc822Name                      [1]     IA5String,<br/>
+    ///      dNSName                         [2]     IA5String,<br/>
+    ///      x400Address                     [3]     ORAddress,<br/>
+    ///      directoryName                   [4]     Name,<br/>
+    ///      ediPartyName                    [5]     EDIPartyName,<br/>
+    ///      uniformResourceIdentifier       [6]     IA5String,<br/>
+    ///      iPAddress                       [7]     OCTET STRING,<br/>
+    ///      registeredID                    [8]     OBJECT IDENTIFIER }<br/>
+    /// ]]>
+    ///
+    /// I will rename for presentation...
+    /// </remarks>
+    /// </summary>
+    public enum GeneralNameType
+    {
+        OtherName = 0,
+        RFC822Name = 1,
+        DNS = 2,
+        X400Address = 3,
+        DirectoryName = 4,
+        EdiPartyName = 5,
+        URI = 6,
+        IPAddress = 7,
+        RegisteredId = 8
 
     }
 }
+

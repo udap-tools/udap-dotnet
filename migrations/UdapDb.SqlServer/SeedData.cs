@@ -19,6 +19,7 @@ using Duende.IdentityServer.Models;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Udap.Common.Extensions;
+using Udap.Model;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 using Udap.Server.Models;
@@ -175,12 +176,17 @@ public static class SeedData
             var identityResource = new IdentityResources.OpenId();
             configDbContext.IdentityResources.Add(identityResource.ToEntity());
 
-            var fhirUserIdentity = new UdapIdentityResources.FhirUser();
-            configDbContext.IdentityResources.Add(fhirUserIdentity.ToEntity());
-            
             await configDbContext.SaveChangesAsync();
         }
 
+        if (configDbContext.IdentityResources.All(i => i.Name != UdapConstants.StandardScopes.FhirUser))
+        {
+            var fhirUserIdentity = new UdapIdentityResources.FhirUser();
+            configDbContext.IdentityResources.Add(fhirUserIdentity.ToEntity());
+
+            await configDbContext.SaveChangesAsync();
+        }
+        
         //
         // profile
         //

@@ -9,9 +9,11 @@
 
 using System.Collections;
 using System.Collections.Specialized;
+using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Internal;
 using Udap.Model;
 using UdapEd.Client.Services;
@@ -180,5 +182,11 @@ public partial class UdapDiscovery
     protected override void OnParametersSet()
     {
         ErrorBoundary?.Recover();
+    }
+
+    private string? GetJwtHeader()
+    {
+        var jwt = new JwtSecurityToken(AppState.UdapMetadata?.SignedMetadata);
+        return UdapEd.Shared.JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader));
     }
 }

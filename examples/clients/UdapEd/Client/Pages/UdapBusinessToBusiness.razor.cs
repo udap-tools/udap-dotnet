@@ -355,14 +355,14 @@ public partial class UdapBusinessToBusiness
         sb.Append($"udap={UdapConstants.UdapVersionsSupportedValue}&\r\n");
         TokenRequest4 = sb.ToString();
 
-        sb = new StringBuilder();
-        sb.AppendLine("<p class=\"text-line\">HEADER: <span>Algorithm & TOKEN TYPE</span></p>");
-        var jwt = new JwtSecurityToken(AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value);
-        sb.AppendLine($"{JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader))}");
-        sb.AppendLine("<p class=\"text-line\">PAYLOAD: <span>DATA</span></p>");
-        // .NET 7 Blazor Json does not deserialize complex JWT payloads like the extensions object.
-        sb.AppendLine(JsonSerializer.Serialize(jwt.Payload, new JsonSerializerOptions { WriteIndented = true }));
-        ClientAssertionDecoded = sb.ToString();
+        // sb = new StringBuilder();
+        // sb.AppendLine("<p class=\"text-line\">HEADER: <span>Algorithm & TOKEN TYPE</span></p>");
+        // var jwt = new JwtSecurityToken(AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value);
+        // sb.AppendLine($"{JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader))}");
+        // sb.AppendLine("<p class=\"text-line\">PAYLOAD: <span>DATA</span></p>");
+        // // .NET 7 Blazor Json does not deserialize complex JWT payloads like the extensions object.
+        // sb.AppendLine(JsonSerializer.Serialize(jwt.Payload, new JsonSerializerOptions { WriteIndented = true }));
+        // ClientAssertionDecoded = sb.ToString();
     }
 
     private void BuildAccessTokenRequestVisualForAuthorizationCode()

@@ -9,6 +9,7 @@
 
 using System.Net.Http.Json;
 using Udap.Model;
+using UdapEd.Shared.Model;
 
 namespace UdapEd.Client.Services;
 
@@ -29,6 +30,42 @@ public class DiscoveryService
             var result = await _http.GetFromJsonAsync<UdapMetadata>(udapMetadataUrl, token);
 
             return result;
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
+    public async Task<CertificateViewModel?> GetCertificateData(IEnumerable<string>? base64EncodedCertificate,
+        CancellationToken token)
+    {
+        try
+        {
+            var udapMetadataUrl = $"Metadata/CertificateDisplayFromJwtHeader";
+            var result = await _http.PostAsJsonAsync(udapMetadataUrl, base64EncodedCertificate, cancellationToken: token);
+
+            result.EnsureSuccessStatusCode();
+
+            return await result.Content.ReadFromJsonAsync<CertificateViewModel>(cancellationToken: token);
+        }
+        catch (Exception ex)
+        {
+            return null;
+        }
+    }
+
+    public async Task<CertificateViewModel?> GetCertificateData(string? base64EncodedCertificate,
+        CancellationToken token)
+    {
+        try
+        {
+            var udapMetadataUrl = $"Metadata/CertificateDisplay";
+            var result = await _http.PostAsJsonAsync(udapMetadataUrl, base64EncodedCertificate, cancellationToken: token);
+
+            result.EnsureSuccessStatusCode();
+
+            return await result.Content.ReadFromJsonAsync<CertificateViewModel>(cancellationToken: token);
         }
         catch (Exception ex)
         {

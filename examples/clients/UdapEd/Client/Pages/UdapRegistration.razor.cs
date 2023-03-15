@@ -122,7 +122,7 @@ public partial class UdapRegistration
             SoftwareStatement = SoftwareStatementBeforeEncodingSoftwareStatement,
             Scope = beforeEncodingScope
         };
-
+        
         AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), rawStatement);
     }
 
@@ -217,8 +217,7 @@ public partial class UdapRegistration
             if (statement != null)
             {
                 SetRawStatement(statement.Header, statement.SoftwareStatement);
-
-                AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), statement);
+                await AppState.SetPropertyAsync(this, nameof(AppState.SoftwareStatementBeforeEncoding), statement);
             }
         }
         catch (Exception ex)

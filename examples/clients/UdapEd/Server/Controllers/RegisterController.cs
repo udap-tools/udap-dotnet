@@ -323,7 +323,7 @@ public class RegisterController : Controller
         
         if (!response.IsSuccessStatusCode)
         {
-            return Ok(await response.Content.ReadAsStringAsync());
+            return BadRequest(await response.Content.ReadAsStringAsync());
         }
 
         var result = await response.Content

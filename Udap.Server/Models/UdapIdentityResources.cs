@@ -10,6 +10,7 @@
 using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
 using IdentityModel;
+using Udap.Model;
 
 namespace Udap.Server.Models;
 
@@ -26,7 +27,7 @@ public static class UdapIdentityResources
         /// </summary>
         public FhirUser()
         {
-            Name = IdentityServerConstants.StandardScopes.OpenId;
+            Name = UdapConstants.StandardScopes.FhirUser;
             DisplayName = "FHIR resource representation of the current user.";
             Required = false;
             UserClaims.Add(JwtClaimTypes.Subject);

@@ -90,6 +90,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 ValidateIssuer = true,
                 ValidIssuers = new[]
                 {
+                    // Udap section 4.3 is strict concerning the SANs being of type uniformResourceIdentifier. https://www.udap.org/udap-dynamic-client-registration.html
+                    // See RFC 2459 for SAN choice semantics https://www.rfc-editor.org/rfc/rfc2459#section-4.2.1.7
                     publicCert.GetNameInfo(X509NameType.UrlName, false)
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata

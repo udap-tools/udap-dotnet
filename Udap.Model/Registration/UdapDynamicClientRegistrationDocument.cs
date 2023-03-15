@@ -29,6 +29,9 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Udap.Model.Registration;
 
+/// <summary>
+/// https://www.rfc-editor.org/rfc/rfc7591
+/// </summary>
 public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>, ISoftwareStatementSerializer
 {
     private string? _clientId;
@@ -41,11 +44,11 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     private string? _jwtId;
     private string? _clientName;
     private Uri? _clientUri;
-    private ICollection<string?> _redirectUris = new List<string?>();
+    private ICollection<string>? _redirectUris = new List<string>();
     private Uri? _logoUri;
-    private ICollection<string?> _contacts = new HashSet<string?>();
-    private ICollection<string?> _grantTypes = new HashSet<string?>();
-    private ICollection<string?> _responseTypes = new HashSet<string?>();
+    private ICollection<string>? _contacts = new HashSet<string>();
+    private ICollection<string>? _grantTypes = new HashSet<string>();
+    private ICollection<string>? _responseTypes = new HashSet<string>();
     private string? _tokenEndpointAuthMethod;
     private string? _scope;
     
@@ -254,7 +257,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         {
             if (_clientUri == null)
             {
-                if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientName), UriKind.Absolute, out var value ))
+                if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientUri), UriKind.Absolute, out var value ))
                 {
                     _clientUri = value;
                 }
@@ -264,7 +267,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         set
         {
             _clientUri = value;
-            if (value != null) this[UdapConstants.RegistrationDocumentValues.ClientName] = value;
+            if (value != null) this[UdapConstants.RegistrationDocumentValues.ClientUri] = value;
         }
     }
 
@@ -276,11 +279,11 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     /// Clients using flows with redirection must register their redirection URI values.
     /// </remarks>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.RedirectUris)]
-    public ICollection<string?> RedirectUris
+    public ICollection<string>? RedirectUris
     {
         get
         {
-            if (!_redirectUris.Any())
+            if (_redirectUris != null && !_redirectUris.Any())
             {
                 _redirectUris = GetIListClaims(UdapConstants.RegistrationDocumentValues.RedirectUris);
             }
@@ -289,7 +292,14 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         set
         {
             _redirectUris = value;
-            this[UdapConstants.RegistrationDocumentValues.RedirectUris] = value;
+            if (value == null)
+            {
+                this[UdapConstants.RegistrationDocumentValues.RedirectUris] = new HashSet<string>();
+            }
+            else
+            {
+                this[UdapConstants.RegistrationDocumentValues.RedirectUris] = value;
+            }
         }
     }
 
@@ -325,11 +335,11 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     /// A string containing the human readable name of the client application
     /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.Contacts)]
-    public ICollection<string?> Contacts
+    public ICollection<string>? Contacts
     {
         get
         {
-            if (!_contacts.Any())
+            if (_contacts != null && !_contacts.Any())
             {
                 _contacts = GetIListClaims(UdapConstants.RegistrationDocumentValues.Contacts);
             }
@@ -338,7 +348,14 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         set
         {
             _contacts = value;
-            this[UdapConstants.RegistrationDocumentValues.Contacts] = value;
+            if (value == null)
+            {
+                this[UdapConstants.RegistrationDocumentValues.Contacts] = new HashSet<string>();
+            }
+            else
+            {
+                this[UdapConstants.RegistrationDocumentValues.Contacts] = value;
+            }
         }
     }
 
@@ -349,11 +366,11 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     /// Example: "authorization_code", "client_credentials", "refresh_token".
     /// </remarks>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.GrantTypes)]
-    public ICollection<string?> GrantTypes
+    public ICollection<string>? GrantTypes
     {
         get
         {
-            if (!_grantTypes.Any())
+            if (_grantTypes != null && !_grantTypes.Any())
             {
                 _grantTypes = GetIListClaims(UdapConstants.RegistrationDocumentValues.GrantTypes);
             }
@@ -362,7 +379,15 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         set
         {
             _grantTypes = value;
-            this[UdapConstants.RegistrationDocumentValues.GrantTypes] = value;
+            
+            if (value == null)
+            {
+                this[UdapConstants.RegistrationDocumentValues.GrantTypes] = new HashSet<string>();
+            }
+            else
+            {
+                this[UdapConstants.RegistrationDocumentValues.GrantTypes] = value;
+            }
         }
     }
 
@@ -371,11 +396,11 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     /// have a fixed value of ["code"], and SHALL be omitted otherwise
     /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ResponseTypes)]
-    public ICollection<string?> ResponseTypes
+    public ICollection<string>? ResponseTypes
     {
         get
         {
-            if (!_responseTypes.Any())
+            if (_responseTypes != null && !_responseTypes.Any())
             {
                 _responseTypes = GetIListClaims(UdapConstants.RegistrationDocumentValues.ResponseTypes);
             }
@@ -384,7 +409,15 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         set
         {
             _responseTypes = value;
-            this[UdapConstants.RegistrationDocumentValues.ResponseTypes] = value;
+            
+            if (value == null)
+            {
+                this[UdapConstants.RegistrationDocumentValues.ResponseTypes] = new HashSet<string>();
+            }
+            else
+            {
+                this[UdapConstants.RegistrationDocumentValues.ResponseTypes] = value;
+            }
         }
     }
 
@@ -530,9 +563,9 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     }
 
     
-    internal IList<string?> GetIListClaims(string claimType)
+    internal IList<string> GetIListClaims(string claimType)
     {
-        var claimValues = new List<string?>();
+        var claimValues = new List<string>();
 
         if (!TryGetValue(claimType, out var value))
         {
@@ -542,6 +575,15 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         if (value is string str)
         {
             claimValues.Add(str);
+            return claimValues;
+        }
+
+        if (value is JsonElement { ValueKind: JsonValueKind.Array } element)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                claimValues.Add(item.ToString());
+            }
             return claimValues;
         }
 
@@ -591,7 +633,11 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
 
             if (value is int numInt)
                 return numInt;
-            
+
+            if (value is JsonElement { ValueKind: JsonValueKind.Number } element)
+            {
+                return element.GetInt64();
+            }
             return 0;
         }
 

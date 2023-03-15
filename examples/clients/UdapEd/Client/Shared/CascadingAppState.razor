@@ -3,6 +3,7 @@
 @using Udap.Model.Access
 @using UdapEd.Client.Services
 @using UdapEd.Shared.Model
+@using System.Collections.Specialized
 @implements UdapEd.Client.Services.IAppState
 @inject ILocalStorageService LocalStorageService
 
@@ -32,7 +33,7 @@
                 prop.SetValue(this, propertyValue);
                 if (saveChanges)
                 {
-                    this.SaveChanges();
+                    this.SaveChanges().GetAwaiter().GetResult();
                 }
                 if (fhirStateHasChanged)
                 {
@@ -46,13 +47,45 @@
         }
     }
 
-    private string? _metadataUrl = "https://fhirlabs.net/fhir/r4/.well-known/udap";
-    public string? MetadataUrl
+    public async Task SetPropertyAsync(
+        ComponentBase caller,
+        string propertyName,
+        object? propertyValue, 
+        bool saveChanges = true,
+        bool fhirStateHasChanged = true)
     {
-        get => _metadataUrl;
+        try
+        {
+            var prop = this.GetType().GetProperty(propertyName);
+            if (prop != null)
+            {
+                this._caller = caller.GetType().Name;
+                prop.SetValue(this, propertyValue);
+                if (saveChanges)
+                {
+                    await SaveChanges();
+                }
+                if (fhirStateHasChanged)
+                {
+                    StateHasChanged();
+                }
+            }
+        }
+        catch (Exception)
+        {
+            Console.WriteLine($"$Failed to set property: {propertyName}");
+        }
+    }
+
+    private const string CERT_DEFAULT_BASE_URL = "https://fhirlabs.net/fhir/r4";
+    private string? _baseUrl = CERT_DEFAULT_BASE_URL;
+
+    public string? BaseUrl
+    {
+        get => _baseUrl;
         private set
         {
-            _metadataUrl = value;
+            _baseUrl = value;
             if (_caller == "Toolbar")
             {
                 // The Toolbar component changed the AppState Message property
@@ -60,12 +93,27 @@
         }
     }
 
-    private ClientStatus _status = new ClientStatus(false, "Missing");
+    private OrderedDictionary? _baseUrls;
 
+    public OrderedDictionary? BaseUrls
+    {
+        get
+        {
+            if (_baseUrls == null || !(_baseUrls.Count > 0))
+            {
+                _baseUrls = new OrderedDictionary();
+                _baseUrls.Add(CERT_DEFAULT_BASE_URL, null);
+            }
+            return _baseUrls;
+        }
+        set => _baseUrls = value;
+    }
+
+    private ClientStatus _status = new ClientStatus(false, "Missing");
 
     public UdapMetadata? UdapMetadata { get; private set; }
 
-    public string SoftwareStatementBeforeEncoding { get; private set; } = string.Empty;
+    public RawSoftwareStatementAndHeader? SoftwareStatementBeforeEncoding { get; private set; }
 
     public UdapRegisterRequest? UdapRegistrationRequest { get; private set; }
 
@@ -163,7 +211,7 @@
         }
     }
 
-    public void SaveChanges()
+    public async Task SaveChanges()
     {
         // LocalStorage allows up to 5MB by default.
         // Test: https://arty.name/localstorage.html
@@ -171,6 +219,6 @@
 
         var appState = (IAppState)this;
         var json = JsonSerializer.Serialize(appState);
-        LocalStorageService.SetItemAsStringAsync(UdapStateKeyName, json);
+        await LocalStorageService.SetItemAsStringAsync(UdapStateKeyName, json);
     }
 }

@@ -25,7 +25,7 @@ public static class StringExtensions
        if (!Uri.TryCreate(uri, UriKind.Absolute, out Uri? result))
        {
            throw new UriFormatException(
-               "Community SHALL be a URI.  See https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#multiple-trust-communities");
+               "Community SHALL be a URI.  See http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities");
        }
 
        return uri;

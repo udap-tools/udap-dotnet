@@ -1,8 +1,16 @@
-﻿using AutoMapper;
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Udap.CA.DbContexts;
 using Udap.CA.Mappers;
-
 
 namespace Udap.CA.Services;
 

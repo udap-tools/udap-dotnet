@@ -495,7 +495,7 @@ public class MockExternalAuthenticationHandler :
 internal static class StringExtensions
 {
     [DebuggerStepThrough]
-    public static string EnsureLeadingSlash(this string url)
+    public static string? EnsureLeadingSlash(this string? url)
     {
         if (url != null && !url.StartsWith("/"))
         {

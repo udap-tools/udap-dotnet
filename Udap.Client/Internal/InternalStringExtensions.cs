@@ -11,7 +11,7 @@ using System.Diagnostics;
 
 namespace Udap.Client.Internal;
 
-internal static class InternalStringExtensions
+public static class InternalStringExtensions
 {
     [DebuggerStepThrough]
     public static bool IsMissing(this string value)

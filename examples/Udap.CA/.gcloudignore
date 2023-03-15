@@ -1,0 +1,9 @@
+.gcloudignore
+.git
+.gitignore
+bin\**
+obj\**
+.vs\**
+Udap.CA.db*
+launchSettings.json
+host.docker.internal.pfx

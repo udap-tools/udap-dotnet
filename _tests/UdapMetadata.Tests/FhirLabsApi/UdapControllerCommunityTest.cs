@@ -24,12 +24,12 @@ using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
-using program = FhirLabsApi.Program;
+using fhirLabsProgram = FhirLabsApi.Program;
 
 
 namespace UdapMetadata.Tests.FhirLabsApi;
 
-public class ApiForCommunityTestFixture : WebApplicationFactory<program>
+public class ApiForCommunityTestFixture : WebApplicationFactory<fhirLabsProgram>
 {
     public ITestOutputHelper? Output { get; set; }
     private Udap.Model.UdapMetadata? _wellKnownUdap;

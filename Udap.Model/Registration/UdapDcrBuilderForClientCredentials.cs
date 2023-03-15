@@ -9,10 +9,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
 
@@ -25,20 +23,22 @@ namespace Udap.Model.Registration;
 /// </summary>
 public class UdapDcrBuilderForClientCredentials
 {
-    private readonly X509Certificate2 _certificate;
+    private X509Certificate2? _certificate;
     private UdapDynamicClientRegistrationDocument _document;
     private DateTime _now;
 
-    private UdapDcrBuilderForClientCredentials(X509Certificate2 certificate)
+    private UdapDcrBuilderForClientCredentials(X509Certificate2 certificate) : this()
     {
-        _certificate = certificate;
+        this.WithCertificate(certificate);
+    }
+
+    private UdapDcrBuilderForClientCredentials()
+    {
         _now = DateTime.UtcNow;
 
         _document = new UdapDynamicClientRegistrationDocument();
-        _document.GrantTypes = new List<string?> { OidcConstants.GrantTypes.ClientCredentials };
+        _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.ClientCredentials };
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
-        _document.Issuer = certificate.GetNameInfo(X509NameType.UrlName, false);
-        _document.Subject = certificate.GetNameInfo(X509NameType.UrlName, false);
     }
 
     public static UdapDcrBuilderForClientCredentials Create(X509Certificate2 cert)
@@ -51,6 +51,12 @@ public class UdapDcrBuilderForClientCredentials
     {
         return new UdapDcrBuilderForClientCredentials(cert);
     }
+    
+    public static UdapDcrBuilderForClientCredentials Create()
+    {
+        return new UdapDcrBuilderForClientCredentials();
+    }
+
 
     /// <summary>
     /// Set at construction time. 
@@ -91,6 +97,17 @@ public class UdapDcrBuilderForClientCredentials
     }
 
     /// <summary>
+    /// Typically easier to use <see cref="WithExpiration(TimeSpan)"/>
+    /// </summary>
+    /// <param name="secondsSinceEpoch"></param>
+    /// <returns></returns>
+    public UdapDcrBuilderForClientCredentials WithExpiration(long secondsSinceEpoch)
+    {
+        _document.Expiration = secondsSinceEpoch;
+        return this;
+    }
+
+    /// <summary>
     /// Generally one should just let the constructor set IssuedAt
     /// </summary>
     /// <param name="issuedAt"></param>
@@ -101,9 +118,9 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
     
-    public UdapDcrBuilderForClientCredentials WithJwtId()
+    public UdapDcrBuilderForClientCredentials WithJwtId(string? jwtId = null)
     {
-        _document.JwtId = CryptoRandom.CreateUniqueId();
+        _document.JwtId = jwtId ?? CryptoRandom.CreateUniqueId();
         return this;
     }
 
@@ -113,7 +130,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithContacts(ICollection<string?> contacts)
+    public UdapDcrBuilderForClientCredentials WithContacts(ICollection<string> contacts)
     {
         _document.Contacts = contacts;
         return this;
@@ -124,10 +141,10 @@ public class UdapDcrBuilderForClientCredentials
         _document.TokenEndpointAuthMethod = tokenEndpointAuthMethod;
         return this;
     }
-
-    public UdapDcrBuilderForClientCredentials WithScope(string Scope)
+    
+    public UdapDcrBuilderForClientCredentials WithScope(string? scope)
     {
-        _document.Scope = Scope;
+        _document.Scope = scope;
         return this;
     }
 
@@ -137,13 +154,29 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
+    //TODO: should be able to build with all certs in path.
+    public UdapDcrBuilderForClientCredentials WithCertificate(X509Certificate2 certificate)
+    {
+        _certificate = certificate;
+
+        _document.Issuer = certificate.GetNameInfo(X509NameType.UrlName, false);
+        _document.Subject = certificate.GetNameInfo(X509NameType.UrlName, false);
+
+        return this;
+    }
+
     public UdapDynamicClientRegistrationDocument Build()
     {
         return _document;
     }
-
-    public string? BuildSoftwareStatement()
+    
+    public string BuildSoftwareStatement()
     {
+        if (_certificate == null)
+        {
+            return "missing certificate";
+        }
+
         return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
                 .Create(_certificate, _document)
                 .Build();

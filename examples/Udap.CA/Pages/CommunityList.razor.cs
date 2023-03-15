@@ -1,4 +1,13 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Udap.CA.Services;
@@ -10,28 +19,23 @@ namespace Udap.CA.Pages;
 public partial class CommunityList
 {
 
-    [Inject] CommunityService CommunityService { get; set; }
-    [Inject] RootCertificateService RootCertificateService { get; set; }
-    [Inject] CommunityState CommunityState { get; set; }
-    [Inject] private IJSRuntime Js { get; set; }
+    [Inject] private CommunityService CommunityService { get; set; } = null!;
+    [Inject] private RootCertificateService RootCertificateService { get; set; } = null!;
+    [Inject] CommunityState CommunityState { get; set; } = null!;
+    [Inject] private IJSRuntime Js { get; set; } = null!;
     ErrorBoundary? ErrorBoundary { get; set; }
-    private List<string> editEvents = new();
-    private string searchString = "";
-    private Community communityBeforeEdit;
-    private ICollection<Community> Communities = new List<Community>();
-    private ICollection<RootCertificate> RootCertificates = new List<RootCertificate>();
+    private readonly List<string> _editEvents = new();
+    private string _searchString = "";
+    private Community? _communityBeforeEdit;
+    private ICollection<Community> _communities = new List<Community>();
+    private ICollection<RootCertificate> _rootCertificates = new List<RootCertificate>();
 
     protected override async Task OnInitializedAsync()
     {
-        var taskCommunities = CommunityService.Get();
-        var taskRootCertificates = RootCertificateService.Get();
+        _communities = await CommunityService.Get();
+        _rootCertificates = await RootCertificateService.Get();
 
-        await Task.WhenAll(taskCommunities, taskRootCertificates);
-
-        Communities = await taskCommunities;
-        RootCertificates = await taskRootCertificates;
-
-        CommunityState.SetState(RootCertificates);
+        CommunityState.SetState(_rootCertificates);
     }
 
     protected override void OnParametersSet()
@@ -41,12 +45,12 @@ public partial class CommunityList
 
     private void ClearEventLog()
     {
-        editEvents.Clear();
+        _editEvents.Clear();
     }
 
     private void AddEditionEvent(string message)
     {
-        editEvents.Add(message);
+        _editEvents.Add(message);
         StateHasChanged();
     }
 
@@ -54,7 +58,7 @@ public partial class CommunityList
     {
         try
         {
-            communityBeforeEdit = new()
+            _communityBeforeEdit = new()
         {
             Id = ((Community)community).Id,
             Name = ((Community)community).Name,
@@ -62,7 +66,7 @@ public partial class CommunityList
         };
         AddEditionEvent($"CommunityEditPreview event: made a backup of Community {((Community)community).Name}");
         }
-        catch (Exception e)
+        catch 
         {
             throw;
         }
@@ -87,7 +91,12 @@ public partial class CommunityList
         {
             // FYI there is a work around to this sync over async 
             var resultAnchor = Task.Run(() => CommunityService.Create(communityViewModel)).GetAwaiter().GetResult();
-            _communityRowInEdit.Id = resultAnchor.Id;
+            
+            if (_communityRowInEdit != null)
+            {
+                _communityRowInEdit.Id = resultAnchor.Id;
+            }
+
             AddEditionEvent($"CommunityEditCommit event: Changes to Community {((Community)community).Name} committed");
         }
 
@@ -101,9 +110,14 @@ public partial class CommunityList
             AddEditionEvent($"CommunityEditCancel event: Null community.  Probably related data open.");
             return;
         }
-        ((Community)community).Id = communityBeforeEdit.Id;
-        ((Community)community).Name = communityBeforeEdit.Name;
-        ((Community)community).Enabled = communityBeforeEdit.Enabled;
+
+        if (_communityBeforeEdit != null)
+        {
+            ((Community)community).Id = _communityBeforeEdit.Id;
+            ((Community)community).Name = _communityBeforeEdit.Name;
+            ((Community)community).Enabled = _communityBeforeEdit.Enabled;
+        }
+
         AddEditionEvent($"CommunityEditCancel event: Editing of Community {((Community)community).Name} cancelled");
 
         _communityRowIsInEdit = false;
@@ -119,7 +133,7 @@ public partial class CommunityList
         {
         };
 
-        Communities.Add(_communityRowInEdit);
+        _communities.Add(_communityRowInEdit);
         await Task.Delay(1);
         StateHasChanged();
 
@@ -137,7 +151,7 @@ public partial class CommunityList
             if (true)
             {
                 _communityRowIsInEdit = false;
-                Communities.Remove(community);
+                _communities.Remove(community);
                 _communityRowInEdit = null;
                 StateHasChanged();
                 return true;
@@ -155,9 +169,9 @@ public partial class CommunityList
 
     private bool FilterFunc(Community community)
     {
-        if (string.IsNullOrWhiteSpace(searchString))
+        if (string.IsNullOrWhiteSpace(_searchString))
             return true;
-        if (community.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+        if (community.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;        
         return false;
     }

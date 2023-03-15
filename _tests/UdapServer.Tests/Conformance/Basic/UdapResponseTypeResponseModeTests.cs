@@ -158,7 +158,7 @@ public class UdapResponseTypeResponseModeTests
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
             .WithResponseTypes(new List<string?> { "code" })
-            .WithRedirectUrls(new List<string?> { "https://code_client/callback" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
         var signedSoftwareStatement =
@@ -237,7 +237,7 @@ public class UdapResponseTypeResponseModeTests
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
             .WithResponseTypes(new List<string?> { "code" })
-            .WithRedirectUrls(new List<string?> { "https://code_client/callback" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
         var nonce = Guid.NewGuid().ToString();
@@ -310,7 +310,7 @@ public class UdapResponseTypeResponseModeTests
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
             .WithResponseTypes(new List<string?> { "code" })
-            .WithRedirectUrls(new List<string?> { "https://code_client/callback" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
         var signedSoftwareStatement =
@@ -384,7 +384,7 @@ public class UdapResponseTypeResponseModeTests
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
             .WithResponseTypes(new List<string?> { "code" })
-            .WithRedirectUrls(new List<string?> { "https://code_client/callback" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
 
@@ -453,7 +453,7 @@ public class UdapResponseTypeResponseModeTests
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
             .WithResponseTypes(new List<string?> { "code" })
-            .WithRedirectUrls(new List<string?> { "https://code_client/callback" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
         
         var signedSoftwareStatement =
@@ -521,9 +521,10 @@ public class UdapResponseTypeResponseModeTests
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
             .WithResponseTypes(new List<string?> {"code"})
-            .WithRedirectUrls(new List<string?> { "https://code_client/callback" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
+        
         var signedSoftwareStatement = 
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
             .Create(clientCert, document)
@@ -532,9 +533,10 @@ public class UdapResponseTypeResponseModeTests
         var requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
         );
-        
+       
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
 
         var response = await _mockPipeline.BrowserClient.PostAsync(

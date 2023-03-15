@@ -18,7 +18,7 @@ using Microsoft.Extensions.Options;
 namespace Udap.Model;
 
 /// <summary>
-/// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
+/// <a href="http://hl7.org/fhir/us/udap-security/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
 /// </summary>
 public class UdapMetadata
 {
@@ -36,7 +36,7 @@ public class UdapMetadata
 
 
     /// <summary>
-    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
+    /// <a href="http://hl7.org/fhir/us/udap-security/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
     /// </summary>
     [JsonConstructor]
     public UdapMetadata(
@@ -68,13 +68,13 @@ public class UdapMetadata
     }
 
     /// <summary>
-    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
+    /// <a href="http://hl7.org/fhir/us/udap-security/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
     /// </summary>
-    public UdapMetadata(IOptionsMonitor<UdapConfig> udapConfig) : this(udapConfig.CurrentValue)
+    public UdapMetadata(IOptionsMonitor<UdapConfig> udapConfig, HashSet<string>? scopes) : this(udapConfig.CurrentValue, scopes)
     {
     }
 
-    public UdapMetadata(UdapConfig udapConfig)
+    public UdapMetadata(UdapConfig udapConfig, IEnumerable<string>? scopes)
     {
         _udapMetadataConfigs = udapConfig.UdapMetadataConfigs;
         UdapVersionsSupported = new HashSet<string> { UdapConstants.UdapVersionsSupportedValue };
@@ -116,11 +116,15 @@ public class UdapMetadata
         ScopesSupported = new HashSet<string>
         {
                 OidcConstants.StandardScopes.OpenId,
-                UdapConstants.FhirScopes.SystemPatientRead,
-                UdapConstants.FhirScopes.SystemAllergyIntoleranceRead,
-                UdapConstants.FhirScopes.SystemProcedureRead,
-                "system/Observation.read"
         };
+
+        if (scopes != null)
+        {
+            foreach (var scope in scopes)
+            {
+                ScopesSupported.Add(scope);
+            }
+        }
 
         TokenEndpointAuthMethodsSupported = new HashSet<string> { UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue };
         TokenEndpointAuthSigningAlgValuesSupported = new HashSet<string> { UdapConstants.SupportedAlgorithm.RS256 };
@@ -142,7 +146,7 @@ public class UdapMetadata
     /// If the grant_types_supported parameter includes the string "client_credentials", then the array SHALL also include: <br/>
     /// "udap_authz" for UDAP Client Authorization Grants using JSON Web Tokens to indicate support for Authorization Extension Objects.
     /// If the server supports the user authentication workflow described in
-    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/user.html#tiered-oauth-for-user-authentication">Section 6</a>,
+    /// <a href="http://hl7.org/fhir/us/udap-security/user.html">Section 6</a>,
     /// then the array SHALL also include: <br/>
     /// "udap_to" for UDAP Tiered OAuth for User Authentication.
     /// </summary>
@@ -153,7 +157,7 @@ public class UdapMetadata
     /// <span style="background-color:#5cb85c;">required</span><br/>
     /// An array of zero or more recognized key names for Authorization Extension Objects supported by the Authorization Server.
     /// If the Authorization Server supports the B2B Authorization Extension Object defined in
-    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/user.html#tiered-oauth-for-user-authentication">Section 6</a>,
+    /// <a href="http://hl7.org/fhir/us/udap-security/user.html">Section 6</a>,
     /// then the following key name SHALL be included:
     /// ["hl7-b2b"]
     /// </summary>
@@ -166,7 +170,7 @@ public class UdapMetadata
     /// Authorization Server in every token request. This metadata parameter SHALL be present if the value
     /// of the udap_authorization_extensions_supported parameter is not an empty array. If the Authorization
     /// Server requires the B2B Authorization Extension Object defined in
-    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/b2b.html#b2b-authorization-extension-object"> Section 5.2.1.1</a>
+    /// <a href="http://hl7.org/fhir/us/udap-security/b2b.html#b2b-authorization-extension-object"> Section 5.2.1.1</a>
     /// in every token request, then the following key name SHALL be included: <br/>
     /// ["hl7-b2b"]
     /// </summary>
@@ -269,7 +273,7 @@ public class UdapMetadata
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
     /// A string containing a JWT listing the server's endpoints, as defined in
-    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#signed-metadata-elements">[Section 2.3].</a>
+    /// <a href="http://hl7.org/fhir/us/udap-security/discovery.html#signed-metadata-elements">[Section 2.3].</a>
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.SignedMetadata)]
     public string? SignedMetadata { get; set; }

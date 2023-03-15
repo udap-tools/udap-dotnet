@@ -19,6 +19,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Services\**" />
+    <EmbeddedResource Remove="Services\**" />
+    <None Remove="Services\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Registration\UdapDynamicClientRegistrationValidator.cs~RF38b682b5.TMP" />
   </ItemGroup>
 
@@ -38,10 +44,6 @@
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />
     <None Include="docs\README.md" Pack="true" PackagePath="\" />
     <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Services\Default\" />
   </ItemGroup>
 
 </Project>

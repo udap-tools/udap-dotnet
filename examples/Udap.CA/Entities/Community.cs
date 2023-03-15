@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -11,6 +11,13 @@ namespace Udap.CA.Entities;
 
 public class Community
 {
+    /// <summary>Initializes a new instance of the <see cref="T:System.Object" /> class.</summary>
+    public Community(string name, bool enabled)
+    {
+        Name = name;
+        Enabled = enabled;
+    }
+
     public int Id { get; set; }
 
     public string Name { get; set; }

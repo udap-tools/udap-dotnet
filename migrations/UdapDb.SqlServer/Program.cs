@@ -9,7 +9,6 @@
 
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Options;
 using UdapDb;
 
@@ -46,9 +45,7 @@ await SeedData.EnsureSeedData(
 
 // Configure the HTTP request pipeline.
 
-return 0;
-
-app.Run();
+await app.RunAsync(new CancellationTokenSource(500).Token);
 
 
 namespace UdapDb

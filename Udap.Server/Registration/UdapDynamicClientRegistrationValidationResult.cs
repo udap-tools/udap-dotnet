@@ -14,7 +14,7 @@ namespace Udap.Server.Registration;
 public class UdapDynamicClientRegistrationValidationResult
 {
     public UdapDynamicClientRegistrationValidationResult(
-        Duende.IdentityServer.Models.Client client, 
+        Duende.IdentityServer.Models.Client? client, 
         UdapDynamicClientRegistrationDocument document)
     {
         ArgumentNullException.ThrowIfNull(client);
@@ -23,7 +23,7 @@ public class UdapDynamicClientRegistrationValidationResult
         Document = document;
     }
 
-    public UdapDynamicClientRegistrationValidationResult(string error, string errorDescription = null)
+    public UdapDynamicClientRegistrationValidationResult(string error, string? errorDescription = null)
     {
         ArgumentNullException.ThrowIfNull(error);
         
@@ -33,7 +33,7 @@ public class UdapDynamicClientRegistrationValidationResult
     
     public Duende.IdentityServer.Models.Client? Client { get; }
 
-    public UdapDynamicClientRegistrationDocument Document;
+    public UdapDynamicClientRegistrationDocument? Document;
 
     public string? Error { get; }
     

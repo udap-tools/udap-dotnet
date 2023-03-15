@@ -16,7 +16,7 @@ using Udap.Model.Registration;
 namespace Udap.Model.Statement;
 
 /// <summary>
-/// JwtPayLoad already implements the <see cref="ISoftwareStatementSerializer"/>
+/// JwtPayLoad already implements the same methods as <see cref="ISoftwareStatementSerializer"/>
 /// members.
 /// </summary>
 public class JwtPayLoadExtension : JwtPayload, ISoftwareStatementSerializer

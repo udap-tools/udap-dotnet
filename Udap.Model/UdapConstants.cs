@@ -7,10 +7,12 @@
 // */
 #endregion
 
+using Udap.Model.UdapAuthenticationExtensions;
+
 namespace Udap.Model;
 
 /// <summary>
-/// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/branches/main/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
+/// <a href="http://hl7.org/fhir/us/udap-security/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
 /// </summary>
 public static class UdapConstants
 {
@@ -157,9 +159,23 @@ public static class UdapConstants
         public const string JwksUri = "jwks_uri";
     }
 
+    public static class B2BAuthorizationExtension
+    {
+        public const string Version = "version";
+        public const string SubjectName = "subject_name";
+        public const string SubjectId = "subject_id";
+        public const string SubjectRole = "subject_role";
+        public const string OraganizationName = "organization_name";
+        public const string OrganizationId = "organization_id";
+        public const string PurposeOfUse = "purpose_of_use";
+        public const string ConsentPolicy = "consent_policy";
+        public const string ConsentReference = "consent_reference";
+    }
+
     public static class JwtClaimTypes
     {
         public static string Extensions = "extensions";
+        public static string FhirUser = "fhiruser";
     }
 
     public static class TokenRequest
@@ -173,6 +189,12 @@ public static class UdapConstants
         /// RFC 6750 1.1 and 2.1.  Bearer name in the header is case sensitive
         /// </summary>
         public const string Bearer = "Bearer";
+    }
+
+    public static class StandardScopes
+    {
+        /// <summary>Permission to retrieve information about the current logged-in user.</summary>
+        public const string FhirUser = "fhiruser";
     }
 }
 

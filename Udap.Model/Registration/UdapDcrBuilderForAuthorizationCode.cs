@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Model.Statement;
 
 namespace Udap.Model.Registration;
 
@@ -22,29 +23,38 @@ namespace Udap.Model.Registration;
 /// </summary>
 public class UdapDcrBuilderForAuthorizationCode
 {
+    private X509Certificate2? _certificate;
+    private readonly UdapDynamicClientRegistrationDocument _document;
     private DateTime _now;
-    private UdapDynamicClientRegistrationDocument _document;
 
-    private UdapDcrBuilderForAuthorizationCode(X509Certificate2 cert)
+    private UdapDcrBuilderForAuthorizationCode(X509Certificate2 certificate) : this()
+    {
+        this.WithCertificate(certificate);
+    }
+
+    private UdapDcrBuilderForAuthorizationCode()
     {
         _now = DateTime.UtcNow;
 
         _document = new UdapDynamicClientRegistrationDocument();
-        _document.GrantTypes = new List<string?> { OidcConstants.GrantTypes.AuthorizationCode };
+        _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.AuthorizationCode };
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
-        _document.Issuer = cert.GetNameInfo(X509NameType.UrlName, false);
-        _document.Subject = cert.GetNameInfo(X509NameType.UrlName, false);
     }
 
-    public static UdapDcrBuilderForAuthorizationCode Create(X509Certificate2 cert)
+    public static UdapDcrBuilderForAuthorizationCode Create(X509Certificate2 certificate)
     {
-        return new UdapDcrBuilderForAuthorizationCode(cert);
+        return new UdapDcrBuilderForAuthorizationCode(certificate);
     }
 
     //TODO: Safe for multi SubjectAltName scenarios
     public static UdapDcrBuilderForAuthorizationCode Create(X509Certificate2 cert, string subjectAltName)
     {
         return new UdapDcrBuilderForAuthorizationCode(cert);
+    }
+
+    public static UdapDcrBuilderForAuthorizationCode Create()
+    {
+        return new UdapDcrBuilderForAuthorizationCode();
     }
 
     /// <summary>
@@ -71,6 +81,17 @@ public class UdapDcrBuilderForAuthorizationCode
     }
 
     /// <summary>
+    /// Typically easier to use <see cref="WithExpiration(TimeSpan)"/>
+    /// </summary>
+    /// <param name="secondsSinceEpoch"></param>
+    /// <returns></returns>
+    public UdapDcrBuilderForAuthorizationCode WithExpiration(long secondsSinceEpoch)
+    {
+        _document.Expiration = secondsSinceEpoch;
+        return this;
+    }
+
+    /// <summary>
     /// Generally one should just let the constructor set IssuedAt
     /// </summary>
     /// <param name="issuedAt"></param>
@@ -81,9 +102,9 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithJwtId()
+    public UdapDcrBuilderForAuthorizationCode WithJwtId(string? jwtId = null)
     {
-        _document.JwtId = CryptoRandom.CreateUniqueId();
+        _document.JwtId = jwtId ?? CryptoRandom.CreateUniqueId();
         return this;
     }
 
@@ -93,7 +114,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithContacts(ICollection<string?> contacts)
+    public UdapDcrBuilderForAuthorizationCode WithContacts(ICollection<string>? contacts)
     {
         _document.Contacts = contacts;
         return this;
@@ -105,19 +126,19 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithScope(string scope)
+    public UdapDcrBuilderForAuthorizationCode WithScope(string? scope)
     {
         _document.Scope = scope;
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithResponseTypes(ICollection<string?> responseTypes)
+    public UdapDcrBuilderForAuthorizationCode WithResponseTypes(ICollection<string>? responseTypes)
     {
         _document.ResponseTypes = responseTypes;
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithRedirectUrls(ICollection<string?> redirectUrls)
+    public UdapDcrBuilderForAuthorizationCode WithRedirectUrls(ICollection<string>? redirectUrls)
     {
         _document.RedirectUris = redirectUrls;
         return this;
@@ -129,8 +150,31 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
+    //TODO: should be able to build with all certs in path.
+    public UdapDcrBuilderForAuthorizationCode WithCertificate(X509Certificate2 certificate)
+    {
+        _certificate = certificate;
+
+        _document.Issuer = certificate.GetNameInfo(X509NameType.UrlName, false);
+        _document.Subject = certificate.GetNameInfo(X509NameType.UrlName, false);
+
+        return this;
+    }
+
     public UdapDynamicClientRegistrationDocument Build()
     {
         return _document;
+    }
+
+    public string BuildSoftwareStatement()
+    {
+        if (_certificate == null)
+        {
+            return "missing certificate";
+        }
+
+        return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+            .Create(_certificate, _document)
+            .Build();
     }
 }

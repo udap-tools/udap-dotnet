@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,8 +7,6 @@
 // */
 #endregion
 
-using System.Security.Cryptography.X509Certificates;
-
 namespace Udap.CA.Entities;
 
 public class IssuedCertificate
@@ -16,12 +14,12 @@ public class IssuedCertificate
     public int Id { get; set; }
     public int AnchorId { get; set; }
     public bool Enabled { get; set; }
-    public string Name { get; set; }
-    public string Community { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Community { get; set; } = string.Empty; 
 
-    public string Certificate { get; set; }
+    public string Certificate { get; set; } = string.Empty;
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
 
-    public Anchor Anchor { get; set; }
+    public Anchor? Anchor { get; set; }
 }

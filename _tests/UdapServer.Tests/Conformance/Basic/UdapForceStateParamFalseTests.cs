@@ -162,7 +162,7 @@ public class UdapForceStateParamFalseTests
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
             .WithResponseTypes(new List<string?> { "code" })
-            .WithRedirectUrls(new List<string?> { "https://code_client/callback" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
         var signedSoftwareStatement =

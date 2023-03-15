@@ -13,14 +13,8 @@ public class ClientCredentialsTokenRequestModel
 {
     public string? ClientId { get; set; }
     public string? TokenEndpointUrl { get; set; }
-}
 
-public class AuthorizationCodeTokenRequestModel
-{
-    public string? ClientId { get; set; }
-    public string? TokenEndpointUrl { get; set; }
+    public bool LegacyMode { get; set; } = false;
 
-    public string? Code { get; set; }
-
-    public string? RedirectUrl { get; set; }
+    public string? Scope { get; set; }
 }

@@ -34,8 +34,7 @@ public class FileCertificateStore : ICertificateStore
         _manifest = manifest;
         _resourceServerName = resourceServerName;
         _logger = logger;
-        ;
-
+        
         _manifest.OnChange(_ =>
         {
             _resolved = false;
@@ -120,74 +119,75 @@ public class FileCertificateStore : ICertificateStore
                     _logger.LogWarning($"Missing file path in on of the anchors {nameof(community.IssuedCerts)}");
                 }
 
-                var path = Path.Combine(AppContext.BaseDirectory, communityIssuer.FilePath);
-
-                if (!File.Exists(path))
+                if (communityIssuer.FilePath != null)
                 {
-                    _logger.LogWarning($"Cannot find file: {path}");
-                    continue;
-                }
-                
-                var certificates = new X509Certificate2Collection();
-                certificates.Import(path, communityIssuer.Password);
-                
-                foreach (var x509Cert in certificates)
-                {
-                    var extension = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") as X509BasicConstraintsExtension;
-                    var subjectIdentifier = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
-                    
-                    var endCerts = new X509Certificate2Collection();
+                    var path = Path.Combine(AppContext.BaseDirectory, communityIssuer.FilePath);
 
-                    //
-                    // dotnet 7.0
-                    //
-                    // var authorityIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid.Value == "2.5.29.35") as X509AuthorityKeyIdentifierExtension;
-                    
-                    string? authorityIdentifierValue = null;
-
-                    Asn1Object? exValue = x509Cert.GetExtensionValue("2.5.29.35");
-                    if (exValue != null)
+                    if (!File.Exists(path))
                     {
-                        var aki = AuthorityKeyIdentifier.GetInstance(exValue);
-                        byte[] keyId = aki.GetKeyIdentifier();
-                        authorityIdentifierValue = keyId.CreateByteStringRep();
+                        _logger.LogWarning($"Cannot find file: {path}");
+                        continue;
                     }
+                
+                    var certificates = new X509Certificate2Collection();
+                    certificates.Import(path, communityIssuer.Password);
+                
+                    foreach (var x509Cert in certificates)
+                    {
+                        var extension = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") as X509BasicConstraintsExtension;
+                        var subjectIdentifier = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as X509SubjectKeyIdentifierExtension;
+
+                        //
+                        // dotnet 7.0
+                        //
+                        // var authorityIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid.Value == "2.5.29.35") as X509AuthorityKeyIdentifierExtension;
+                    
+                        string? authorityIdentifierValue = null;
+
+                        Asn1Object? exValue = x509Cert.GetExtensionValue("2.5.29.35");
+                        if (exValue != null)
+                        {
+                            var aki = AuthorityKeyIdentifier.GetInstance(exValue);
+                            byte[] keyId = aki.GetKeyIdentifier();
+                            authorityIdentifierValue = keyId.CreateByteStringRep();
+                        }
                     
 
-                    if (extension != null)
-                    {
-                        if (extension.CertificateAuthority)
+                        if (extension != null)
                         {
-                            if (authorityIdentifierValue == null || 
-                                subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
+                            if (extension.CertificateAuthority)
                             {
-                                _logger.LogInformation($"Found root ca in {path} certificate.  Will add the root to roots if not already explicitly loaded.");
+                                if (authorityIdentifierValue == null || 
+                                    subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
+                                {
+                                    _logger.LogInformation($"Found root ca in {path} certificate.  Will add the root to roots if not already explicitly loaded.");
 
-                                RootCAs.Add(x509Cert);
+                                    RootCAs.Add(x509Cert);
+                                }
+                                else
+                                {
+                                    _logger.LogInformation($"Found intermediate ca in {path} certificate.  Will add if not already explicitly loaded.");
+
+                                    Anchors.Add(new Anchor(x509Cert) { Community = community.Name });
+                                }
                             }
                             else
                             {
-                                _logger.LogInformation($"Found intermediate ca in {path} certificate.  Will add if not already explicitly loaded.");
-
-                                Anchors.Add(new Anchor(x509Cert) { Community = community.Name });
+                                IssuedCertificates.Add(new IssuedCertificate
+                                {
+                                    Community = community.Name,
+                                    Certificate = x509Cert
+                                });
                             }
                         }
-                        else
-                        {
-                            IssuedCertificates.Add(new IssuedCertificate
-                            {
-                                Community = community.Name,
-                                Certificate = x509Cert
-                            });
-                        }
                     }
-                }
 
-                IssuedCertificates.Add(new IssuedCertificate
-                {
-                    Community = community.Name,
-                    Certificate = certificates.First()
-                });
+                    IssuedCertificates.Add(new IssuedCertificate
+                    {
+                        Community = community.Name,
+                        Certificate = certificates.First()
+                    });
+                }
             }
         }
     }

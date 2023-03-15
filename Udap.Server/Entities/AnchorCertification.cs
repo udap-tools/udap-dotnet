@@ -14,8 +14,8 @@ namespace Udap.Server.Entities;
 /// </summary>
 public class AnchorCertification
 {
-    public virtual Anchor Anchor { get; set; }
+    public virtual Anchor Anchor { get; set; } = default!;
     public int AnchorId { get; set; }
-    public virtual Certification Certification { get; set; }
+    public virtual Certification Certification { get; set; } = default!;
     public int CertificationId { get; set; }
 }

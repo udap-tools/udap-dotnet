@@ -4,7 +4,8 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "GCPDeploy": "false"
+        "GCPDeploy": "false",
+        "UdapIdpBaseUrl": "https://host.docker.internal:5002"
 
       },
       "sslPort": 5002,
@@ -18,7 +19,22 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ServerSettings:ServerSupport": "UDAP",
         "ServerSettings:DefaultSystemScopes": "udap system.cruds",
-        "ServerSettings:DefaultUserScopes": "udap user.cruds"
+        "ServerSettings:DefaultUserScopes": "udap user.cruds",
+        "UdapIdpBaseUrl": "https://host.docker.internal:5002"
+      },
+      "sslPort": 5002,
+      "applicationUrl": "https://host.docker.internal:5002"
+    },
+    "UDAPServerMode.GCP": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "GCPDeploy": "true",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ServerSettings:ServerSupport": "UDAP",
+        "ServerSettings:DefaultSystemScopes": "udap system.cruds",
+        "ServerSettings:DefaultUserScopes": "udap user.cruds",
+        "UdapIdpBaseUrl": "https://host.docker.internal:5002"
       },
       "sslPort": 5002,
       "applicationUrl": "https://host.docker.internal:5002"
@@ -27,7 +43,8 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "UdapIdpBaseUrl": "http://localhost:5002"
       },
       "applicationUrl": "http://localhost:5002"
     },
@@ -35,7 +52,8 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "UdapIdpBaseUrl": "https://securedcontrols.net:5002"
       },
       "sslPort": 5002,
       "applicationUrl": "https://securedcontrols.net:5002"
@@ -48,7 +66,8 @@
       "useSSL": true,
       "environmentVariables": {
         "ASPNETCORE_URLS": "http://*:8080;https://*:443",
-        "GCPDeploy": "false"
+        "GCPDeploy": "false",
+        "UdapIdpBaseUrl": "https://localhost:5002"
       }
     },
     "Docker_GCP": {
@@ -59,7 +78,8 @@
       "useSSL": true,
       "environmentVariables": {
         "ASPNETCORE_URLS": "http://*:8080;https://*:443",
-        "GCPDeploy": "true"
+        "GCPDeploy": "true",
+        "UdapIdpBaseUrl": "https://localhost:5002"
       }
     },
     "WSL": {
@@ -68,7 +88,8 @@
       "launchUrl": "https://localhost:5002",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "https://localhost:5002"
+        "ASPNETCORE_URLS": "https://localhost:5002",
+        "UdapIdpBaseUrl": "https://localhost:5002"
       },
       "distributionName": "Ubuntu-20.04"
     }

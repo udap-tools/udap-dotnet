@@ -27,8 +27,6 @@ using Microsoft.Extensions.Logging;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Server;
-using Udap.Server.Configuration;
-using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
 using Udap.Server.Registration;
 
 namespace UdapServer.Tests.Common;
@@ -105,9 +103,13 @@ public class UdapIdentityServerPipeline
 
         if (enableLogging)
         {
-            builder.ConfigureLogging((ctx, b) => b.AddConsole());
+            builder.ConfigureLogging((ctx, b) =>
+            {
+                b.AddConsole(c => c.LogToStandardErrorThreshold = LogLevel.Debug);
+                b.SetMinimumLevel(LogLevel.Trace);
+            });
         }
-
+        
         Server = new TestServer(builder);
         Handler = Server.CreateHandler();
             

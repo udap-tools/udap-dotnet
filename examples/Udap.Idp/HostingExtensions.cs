@@ -11,17 +11,12 @@ using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Google.Cloud.SecretManager.V1;
-using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using Udap.Server.Configuration;
-using Udap.Server.Configuration.DependencyInjection;
-using Udap.Server.Extensions;
-using Udap.Server.Configuration.DependencyInjection.BuilderExtensions;
-using Udap.Server.Registration;
 
 namespace Udap.Idp;
 
@@ -37,17 +32,15 @@ internal static class HostingExtensions
         var provider = builder.Configuration.GetValue("provider", "SqlServer");
         var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
 
-        string dbChoice;
         string connectionString;
 
-        dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
+        var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
 
 
         // foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
         // {
         //     Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
         // }
-
         //Ugly but works so far.
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
         {
@@ -58,7 +51,7 @@ internal static class HostingExtensions
             Log.Logger.Information("Creating client");
             var client = SecretManagerServiceClient.Create();
 
-            var secretResource = "projects/288013792534/secrets/gcp_db/versions/latest";
+            const string secretResource = "projects/288013792534/secrets/gcp_db/versions/latest";
 
             Log.Logger.Information("Requesting {secretResource");
             // Call the API.
@@ -82,11 +75,9 @@ internal static class HostingExtensions
         builder.Services.AddMemoryCache();
         builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
         builder.Services.AddInMemoryRateLimiting();
-
         builder.Services.AddHttpContextAccessor();
-        
         builder.Services.AddRazorPages();
-
+        
         builder.Services.AddIdentityServer(options =>
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
@@ -94,6 +85,7 @@ internal static class HostingExtensions
                 options.InputLengthRestrictions.Scope =
                     7000; //TODO: Very large!  Again I need to solve the policy/community/certification concept
             })
+            .AddServerSideSessions()
             .AddConfigurationStore(options =>
                 _ = provider switch
                 {
@@ -146,9 +138,7 @@ internal static class HostingExtensions
 
                         _ => throw new Exception($"Unsupported provider: {provider}")
                     });
-
         
-        // configuration (resolvers, counter key builders)
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
         //
@@ -179,16 +169,26 @@ internal static class HostingExtensions
                     });
             });
 
-        builder.Services.AddHttpLogging(options =>
-        {
-            options.LoggingFields = HttpLoggingFields.All;
-        });
+        // builder.Services.AddHttpLogging(options =>
+        // {
+        //     options.LoggingFields = HttpLoggingFields.All;
+        // });
 
         return builder.Build();
     }
 
     public static WebApplication ConfigurePipeline(this WebApplication app, string[] args)
     {
+        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
+        {
+            app.Use(async (ctx, next) =>
+            {
+                ctx.Request.Scheme = ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedProtoHeaderName];
+
+                await next();
+            });
+        }
+        
         app.UseHttpLogging();
 
         if (!args.Any(a => a.Contains("skipRateLimiting")))
@@ -198,7 +198,6 @@ internal static class HostingExtensions
 
         if (!app.Environment.IsDevelopment())
         {
-            app.UseForwardedHeaders();
             app.UseHsts();
         }
 
@@ -216,12 +215,11 @@ internal static class HostingExtensions
         app.UseUdapServer();
         app.UseIdentityServer();
 
-        
 
         // uncomment if you want to add a UI
         app.UseAuthorization();
         app.MapRazorPages().RequireAuthorization();
-
+        
         return app;
     }
 }

@@ -1,34 +1,39 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using Udap.CA.Services;
 using Udap.CA.Services.State;
 using Udap.CA.ViewModel;
-using static MudBlazor.CategoryTypes;
 
 namespace Udap.CA.Pages;
 
 public partial class RootCertEditComponent
 {
-    [Inject] RootCertificateService RootCertService { get; set; }
+    [Inject] RootCertificateService RootCertService { get; set; } = null!;
 
-    [Inject] CommunityState CommunityState { get; set; }
+    [Inject] CommunityState CommunityState { get; set; } = null!;
 
-    [Inject] private IJSRuntime Js { get; set; }
+    [Inject] private IJSRuntime Js { get; set; } = null!;
 
     ErrorBoundary? ErrorBoundary { get; set; }
 
     private List<string> _editEvents = new();
-    private RootCertificate _rootCertificateBeforeEdit = new RootCertificate();
-    private ICollection<RootCertificate> _rootCertificates;
-    public RootCertificate _rootCertificateRowInEdit { get; set; }
+    private RootCertificate _rootCertificateBeforeEdit = new();
+    private ICollection<RootCertificate>? _rootCertificates;
+    private RootCertificate? RootCertificateRowInEdit { get; set; }
     private bool _rootCertificateRowIsInEditMode;
     private bool _rootFormActive;
-    private ElementReference? _newRootCertificateRowElement;
-    private MudBlazor.MudTable<ICollection<RootCertificate>> table;
+    
 
     protected override void OnInitialized()
     {
@@ -69,7 +74,7 @@ public partial class RootCertEditComponent
 
             AddEditionEvent($"RowEditPreview event: made a backup of Community {((RootCertificate)rootCertificate).Name}");
         }
-        catch (Exception e)
+        catch 
         {
             throw;
         }
@@ -87,11 +92,12 @@ public partial class RootCertEditComponent
         }
         else
         {
-            rootCertificateViewModel.BeginDate = rootCertificateViewModel.Certificate.NotBefore;
-            rootCertificateViewModel.EndDate = rootCertificateViewModel.Certificate.NotAfter;
+            rootCertificateViewModel.BeginDate = rootCertificateViewModel.Certificate?.NotBefore;
+            rootCertificateViewModel.EndDate = rootCertificateViewModel.Certificate?.NotAfter;
             var resultRootCertificate = RootCertService.Create(rootCertificateViewModel).GetAwaiter().GetResult();
             AddEditionEvent($"RowEditCommit event: Adding root certificate {rootCertificateViewModel.Name} committed");
-            _rootCertificateRowInEdit.Id = resultRootCertificate.Id; //bind up the new id...
+            if (RootCertificateRowInEdit != null)
+                RootCertificateRowInEdit.Id = resultRootCertificate.Id; //bind up the new id...
         }
 
         _rootCertificateRowIsInEditMode = false;
@@ -111,7 +117,7 @@ public partial class RootCertEditComponent
         {
             if (((RootCertificate)rootCertificate).Id == 0)
             {
-                _rootCertificates.Remove((RootCertificate)rootCertificate);
+                _rootCertificates?.Remove((RootCertificate)rootCertificate);
                 AddEditionEvent($"RowEditCancel event: Editing of new RootCertificate cancelled");
             }
 
@@ -121,7 +127,7 @@ public partial class RootCertEditComponent
             ((RootCertificate)rootCertificate).Certificate = _rootCertificateBeforeEdit.Certificate;
             ((RootCertificate)rootCertificate).Thumbprint = _rootCertificateBeforeEdit.Thumbprint;
             
-            AddEditionEvent($"RowEditCancel event: Editing of RootCertificate {((ViewModel.RootCertificate)rootCertificate).Name} cancelled");
+            AddEditionEvent($"RowEditCancel event: Editing of RootCertificate {((RootCertificate)rootCertificate).Name} cancelled");
         }
         catch
         {
@@ -134,7 +140,7 @@ public partial class RootCertEditComponent
 
     private async Task AddRootCertificate()
     {
-        _rootCertificateRowInEdit = new ViewModel.RootCertificate() {};
+        RootCertificateRowInEdit = new RootCertificate() {};
         _rootFormActive = true;
         await Task.Delay(1);
         StateHasChanged();
@@ -146,11 +152,11 @@ public partial class RootCertEditComponent
         {
             var result = await RootCertService.Delete(rootCertificate.Id);
 
-            if (true)
+            if (result)
             {
                 _rootCertificateRowIsInEditMode = false;
-                _rootCertificates.Remove(rootCertificate);
-                _rootCertificateRowInEdit = null;
+                _rootCertificates?.Remove(rootCertificate);
+                RootCertificateRowInEdit = null;
                 StateHasChanged();
                 return true;
             }
@@ -158,23 +164,32 @@ public partial class RootCertEditComponent
         return false;
     }
 
-    MudForm? rootCertForm;
+    MudForm? _rootCertForm;
     
     private async Task Submit()
     {
-        await rootCertForm?.Validate()!;
+        await _rootCertForm?.Validate()!;
 
-        if (rootCertForm.IsValid)
+        if (_rootCertForm.IsValid)
         {
             var generator = new CertificateUtilities();
-            var rootCert = generator.GenerateRootCA(_rootCertificateRowInEdit.Name);
-            _rootCertificateRowInEdit.Certificate = rootCert;
-            _rootCertificateRowInEdit.Thumbprint = rootCert.Thumbprint;
-            _rootCertificateRowInEdit.CommunityId = CommunityState.Community.Id;
-            var cert = await RootCertService.Create(_rootCertificateRowInEdit);
-            Snackbar.Add("Cert Generated!");
 
-            _rootFormActive = false;
+            if (RootCertificateRowInEdit != null)
+            {
+                var rootCert = generator.GenerateRootCA(RootCertificateRowInEdit.Name);
+                RootCertificateRowInEdit.Certificate = rootCert;
+                RootCertificateRowInEdit.Thumbprint = rootCert.Thumbprint;
+
+                if (CommunityState.Community != null)
+                {
+                    RootCertificateRowInEdit.CommunityId = CommunityState.Community.Id;
+                }
+
+                var cert = await RootCertService.Create(RootCertificateRowInEdit);
+                Snackbar.Add($"{cert.Name} certificate generated!");
+
+                _rootFormActive = false;
+            }
         }
     }
 }

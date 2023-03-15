@@ -23,10 +23,9 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Udap.Common;
+using Udap.Common.Extensions;
 using Udap.Metadata.Server;
-
-
-
+using Udap.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddUserSecrets<Program>(optional:true);  // I want user secrets even in release mode.
@@ -61,27 +60,39 @@ builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(s => {
     return systemService;
 });
 
+var udapConfig = builder.Configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>();
+
+var udapMetadata = new UdapMetadata(
+    udapConfig!, 
+    Hl7ModelInfoExtensions
+        .BuildHl7FhirV1AndV2Scopes(new List<string>{"patient", "user", "system"} )
+        .Where(s => s.Contains("/*")) //Just show the wild card
+    );
+
+builder.Services.AddSingleton(udapMetadata);
+builder.Services.AddSingleton<UdapMetaDataBuilder>();
+builder.Services.AddScoped<UdapMetaDataEndpoint>();
 
 builder.Services
-    
     .UseFhirServerController( /*systemService,*/ options =>
     {
         // An example HTML formatter that puts the raw XML on the output
         options.OutputFormatters.Add(new SimpleHtmlFhirOutputFormatter());
         // need this to serialize udap metadata becaue UseFhirServerController clears OutputFormatters
         options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));
+        
     })
-    .AddUdapMetaDataServer(builder.Configuration)
     .AddNewtonsoftJson(options =>
     {
         options.SerializerSettings.ContractResolver = new DefaultContractResolver
         {
             NamingStrategy = new SnakeCaseNamingStrategy(),
-
+    
         };
         options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
         options.SerializerSettings.Formatting = Formatting.Indented;
-    });
+    })
+    ;
 
 builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
 
@@ -156,6 +167,7 @@ app.Use(async (context, next) =>
 //
 app.UseCors();
 
+app.UseUdapMetadataServer();
 
 app.MapControllers()
     .RequireAuthorization()
@@ -174,8 +186,8 @@ IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webAppl
 
         Log.Logger.Information("Creating client");
         var client = SecretManagerServiceClient.Create();
-
-        var secretResource = "projects/341821616593/secrets/UdapFileCertStoreManifest/versions/latest";
+        
+        var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest/versions/latest";
 
         Log.Logger.Information("Requesting {secretResource");
         // Call the API.

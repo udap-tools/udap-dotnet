@@ -9,11 +9,14 @@
 
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
+using Udap.Model.UdapAuthenticationExtensions;
 
 namespace Udap.Model.Access;
 
@@ -28,7 +31,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
     private string? _clientId;
     private DateTime _now;
     private X509Certificate2 _certificate;
-    private string _clientCertAsBase64;
+    private string? _scope;
 
     private AccessTokenRequestForClientCredentialsBuilder(string? clientId, string? tokenEndpoint, X509Certificate2 certificate)
     {
@@ -36,7 +39,6 @@ public  class AccessTokenRequestForClientCredentialsBuilder
         _tokenEndoint = tokenEndpoint;
         _clientId = clientId;
         _certificate = certificate;
-        _clientCertAsBase64 = Convert.ToBase64String(certificate.Export(X509ContentType.Cert));
 
         _claims = new List<Claim>
         {
@@ -63,9 +65,45 @@ public  class AccessTokenRequestForClientCredentialsBuilder
         return this;
     }
 
-    public UdapClientCredentialsTokenRequest build()
+    public AccessTokenRequestForClientCredentialsBuilder WithScope(string scope)
     {
-        var clientAssertion = BuildClientAssertion();
+        _scope = scope;
+        return this;
+    }
+
+    // private string BuildHl7B2BExtensions()
+    // {
+    //     return "{\"version\": \"1\", \"subject_name\": \"todo.  more work to do here\"}";
+    // }
+
+    private Dictionary<string, B2BAuthorizationExtension>? _extensions;
+    
+    public AccessTokenRequestForClientCredentialsBuilder WithExtension(string key, B2BAuthorizationExtension value)
+    {
+        //TODO: Hack for connect-a-thon.
+        if (_extensions == null)
+        {
+            _extensions = new Dictionary<string, B2BAuthorizationExtension>();
+        }
+
+        _extensions[key] = value;
+        
+        return this;
+    }
+
+    /// <summary>
+    /// Legacy refers to the current udap.org/UDAPTestTool behavior as documented in
+    /// udap.org profiles.  The HL7 Security IG has the following constraint to make it
+    /// more friendly with OIDC and SMART launch frameworks.
+    /// sub == iss == client_id
+    /// Where as the Legacy is the following behavior
+    /// sub == iis == SubAlt Name
+    /// </summary>
+    /// <param name="legacy"></param>
+    /// <returns></returns>
+    public UdapClientCredentialsTokenRequest Build(bool legacy = false)
+    {
+        var clientAssertion = BuildClientAssertion(legacy);
 
         return new UdapClientCredentialsTokenRequest
         {
@@ -76,28 +114,51 @@ public  class AccessTokenRequestForClientCredentialsBuilder
                 Type = OidcConstants.ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
-            Udap = UdapConstants.UdapVersionsSupportedValue
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = _scope,
         };
     }
     
 
-    private string? BuildClientAssertion()
+    private string BuildClientAssertion(bool legacy = false)
     {
-        var jwtPayload = new JwtPayLoadExtension(
-            _clientId,
+        JwtPayLoadExtension jwtPayload;
+
+        if (legacy)
+        {
+            //udap.org profile
+            jwtPayload = new JwtPayLoadExtension(
+                _certificate.GetNameInfo(X509NameType.UrlName,
+                    false), //TODO:: Let user pick the subject alt name.  Create will need extra param.
                 _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
                 _claims,
                 _now,
                 _now.AddMinutes(5)
             );
+        }
+
+        else
+        {
+            //HL7 FHIR IG profile
+            jwtPayload = new JwtPayLoadExtension(
+                _clientId, //TODO:: Let user pick the subject alt name.  Create will need extra param.
+                _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
+                _claims,
+                _now,
+                _now.AddMinutes(5)
+            );
+        }
+
+        if (_extensions != null)
+        {
+            var payload = jwtPayload as Dictionary<string, object>;
+            payload.Add(UdapConstants.JwtClaimTypes.Extensions, _extensions);
+        }
+        
+        Console.WriteLine(JsonSerializer.Serialize(jwtPayload, new JsonSerializerOptions{WriteIndented = true}));
 
         return SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(_certificate, jwtPayload)
                 .Build();
     }
-
-    // private string BuildHl7B2BExtensions()
-    // {
-    //     return "{\"version\": \"1\", \"subject_name\": \"todo.  more work to do here\"}";
-    // }
 }

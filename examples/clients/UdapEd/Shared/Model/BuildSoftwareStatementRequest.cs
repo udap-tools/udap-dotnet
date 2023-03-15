@@ -19,6 +19,8 @@ public class BuildSoftwareStatementRequest
     public Oauth2FlowEnum Oauth2Flow { get; set; }
 
     public string? RedirectUri { get; set; }
+
+    public string? Scope { get; set; }
 }
 
 public class RawSoftwareStatementAndHeader
@@ -26,6 +28,8 @@ public class RawSoftwareStatementAndHeader
     public string Header { get; set; } = string.Empty;
 
     public string SoftwareStatement { get; set; } = string.Empty;
+
+    public string? Scope { get; set; } = string.Empty;
 }
 
 public class RegistrationRequest

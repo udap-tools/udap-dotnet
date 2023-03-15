@@ -13,7 +13,7 @@ public class Community
 {
     public int Id { get; set; }
 
-    public string Name { get; set; }
+    public string Name { get; set; } = default!;
 
     public bool Enabled { get; set; }
 
@@ -32,5 +32,5 @@ public class Community
     /// </summary>
     public ICollection<Certification>? Certifications { get; set; }
 
-    public virtual ICollection<CommunityCertification> CommunityCertifications { get; set; }
+    public virtual ICollection<CommunityCertification> CommunityCertifications { get; set; } = default!;
 }

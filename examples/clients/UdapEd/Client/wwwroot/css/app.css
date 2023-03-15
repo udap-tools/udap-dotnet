@@ -109,14 +109,26 @@ pre {
 }
 
 .pre {
+  overflow-wrap: break-word;
   word-wrap: break-word; /* Internet Explorer 5.5+ */
   display: block;
   unicode-bidi: embed;
   font-family: monospace;
-  white-space: pre;
+  white-space: pre-wrap;
   width: 100%;
 }
 
 .udap-indent-1 {
   padding-left: 10px
+}
+
+.jwt-playground, .algorithm-code, .tab-content, .jwt-explained, .text-line {
+  margin: 0;
+  font-size: 12px;
+  color: #000;
+  zoom: 1;
+  border-top: 1px solid rgba(155,155,155,0.5);
+  border-bottom: 1px solid rgba(155,155,155,0.5);
+  line-height: 2.5;
+  padding: 0 10px;
 }

@@ -7,11 +7,16 @@
 // */
 #endregion
 
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Udap.Server.Registration;
 
-namespace Udap.Server.Registration;
+//
+// See reason for Microsoft.Extensions.DependencyInjection namespace
+// here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
+//
+
+namespace Microsoft.AspNetCore.Builder;
 
 public static class UdapConfigurationEndpointExtensions
 {

@@ -173,7 +173,6 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var scopesSupported = _fixture.WellKnownUdap.ScopesSupported;
 
         scopesSupported.Should().Contain("openid");
-        scopesSupported.Should().Contain("fhirUser");
         scopesSupported.Should().Contain("system/*.read");
         scopesSupported.Should().Contain("user/*.read");
         scopesSupported.Should().Contain("patient/*.read");

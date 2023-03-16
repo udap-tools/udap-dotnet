@@ -18,7 +18,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 {
     private readonly ICollection<Duende.IdentityServer.Models.Client> _clients;
     private readonly IEnumerable<Community> _communities;
-    private readonly IEnumerable<RootCertificate> _rootCertificates;
+    private readonly IEnumerable<IntermediateCertificate> _rootCertificates;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InMemoryClientStore"/> class.
@@ -29,7 +29,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
     public InMemoryUdapClientRegistrationStore(
         List<Duende.IdentityServer.Models.Client> clients,
         IEnumerable<Community> communities, 
-        IEnumerable<RootCertificate> rootCertificates)
+        IEnumerable<IntermediateCertificate> rootCertificates)
     {
         _clients = clients;
         _communities = communities;

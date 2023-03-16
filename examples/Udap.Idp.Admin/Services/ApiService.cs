@@ -27,7 +27,7 @@ namespace Udap.Idp.Admin.Services
 
         public async Task<ICollection<RootCertificate>> GetRootCertificates()
         {
-            var response = await HttpClient.GetFromJsonAsync<ICollection<Common.Models.RootCertificate>>("api/rootCertificate");
+            var response = await HttpClient.GetFromJsonAsync<ICollection<Common.Models.IntermediateCertificate>>("api/rootCertificate");
 
             var rootCertificates = _mapper.Map<ICollection<RootCertificate>>(response);
 
@@ -89,13 +89,13 @@ namespace Udap.Idp.Admin.Services
 
         internal async Task<RootCertificate> Save(RootCertificate rootCertificateView)
         {
-            var anchor = _mapper.Map<Common.Models.RootCertificate>(rootCertificateView);
+            var anchor = _mapper.Map<Common.Models.IntermediateCertificate>(rootCertificateView);
 
             var response = await HttpClient.PostAsJsonAsync("api/rootCertificate", anchor).ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {
-                var anchorModel = await response.Content.ReadFromJsonAsync<Common.Models.RootCertificate>();
+                var anchorModel = await response.Content.ReadFromJsonAsync<Common.Models.IntermediateCertificate>();
                 return _mapper.Map<RootCertificate>(anchorModel);
             }
             else
@@ -108,7 +108,7 @@ namespace Udap.Idp.Admin.Services
 
         public async Task Update(RootCertificate rootCertificateView)
         {
-            var anchor = _mapper.Map<Common.Models.RootCertificate>(rootCertificateView);
+            var anchor = _mapper.Map<Common.Models.IntermediateCertificate>(rootCertificateView);
 
             var response = await HttpClient.PutAsJsonAsync($"api/rootCertificate/{anchor.Id}", anchor).ConfigureAwait(false);
 

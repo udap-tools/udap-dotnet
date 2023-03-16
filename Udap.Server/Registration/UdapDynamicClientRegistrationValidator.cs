@@ -59,8 +59,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     /// <inheritdoc />
     public Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request,
-        X509Certificate2Collection? communityTrustAnchors,
-        X509Certificate2Collection? communityRoots = null
+        X509Certificate2Collection? intermediateCertificates,
+        X509Certificate2Collection anchorCertificates
         )
     {
         using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
@@ -227,17 +227,22 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         };
 
         
-        if (!ValidateChain(client, jsonWebToken, jwtHeader, communityTrustAnchors, communityRoots))
+        if (!ValidateChain(client, jsonWebToken, jwtHeader, intermediateCertificates, anchorCertificates))
         {
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate);
 
             var sb = new StringBuilder();
             sb.AppendLine($"Client Thumbprint: {publicCert.Thumbprint}");
-            sb.AppendLine($"Anchor Thumbprints: {String.Join(" | ", communityTrustAnchors.Select(a => a.Thumbprint))}");
-            if (communityRoots != null){
-                sb.AppendLine($"Root Certificate Thumbprints: {String.Join(" | ", communityRoots.Select(a => a.Thumbprint))}");
+            
+            if (intermediateCertificates != null)
+            {
+                sb.AppendLine(
+                    $"Intermediate Thumbprints: {string.Join(" | ", intermediateCertificates.Select(a => a.Thumbprint))}");
+
             }
+
+            sb.AppendLine($"Anchor Certificate Thumbprints: {string.Join(" | ", anchorCertificates.Select(a => a.Thumbprint))}");
             _logger.LogWarning(sb.ToString());
 
             return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
@@ -416,8 +421,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         Duende.IdentityServer.Models.Client client,
         JsonWebToken jwtSecurityToken,
         JwtHeader jwtHeader,
-        X509Certificate2Collection communityTrustAnchors,
-        X509Certificate2Collection? rootCertificates)
+        X509Certificate2Collection? intermediateCertificates,
+        X509Certificate2Collection anchorCertificates)
     {
         var x5cArray = Getx5c(jwtHeader);
 
@@ -431,8 +436,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             if (_trustChainValidator.IsTrustedCertificate(
                     client.ClientName,
                     cert,
-                    communityTrustAnchors,
-                    rootCertificates, out X509ChainElementCollection? chainElements))
+                    intermediateCertificates,
+                    anchorCertificates, 
+                    out X509ChainElementCollection? chainElements))
             {
                 if (chainElements == null)
                 {
@@ -458,7 +464,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         _logger.LogDebug($"jwt payload {jwtSecurityToken.EncodedPayload}");
-        _logger.LogDebug($"X5c { jwtHeader.X5c }");
+        _logger.LogDebug($"x5c { jwtHeader.X5c }");
 
         return false;
     }
@@ -475,8 +481,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         var x5cArray = JsonSerializer.Deserialize<string[]>(jwtHeader.X5c);
-
-
+        
         if (x5cArray != null && !x5cArray.Any())
         {
             return null;

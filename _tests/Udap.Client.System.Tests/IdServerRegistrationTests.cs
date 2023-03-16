@@ -52,16 +52,16 @@ public class TestFixture
             .AddUserSecrets<IdServerRegistrationTests>()
             .Build();
 
-        Manifest = TestConfig.GetSection("UdapFileCertStoreManifest").Get<UdapFileCertStoreManifest>();
+        Manifest = TestConfig.GetSection("UdapFileCertStoreManifest").Get<UdapFileCertStoreManifest>()!;
     }
 }
 
 /// <summary>
-/// Full Web tests.  Using <see cref="Udap.Idp"/> web server.
+/// Full Web tests.  Using Udap.Idp web server.
 /// </summary>
 public class IdServerRegistrationTests : IClassFixture<TestFixture>
 {
-    private TestFixture _fixture;
+    private readonly TestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
 
     public IdServerRegistrationTests(TestFixture fixture, ITestOutputHelper testOutputHelper)
@@ -107,7 +107,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             ValidateAudience = false, // No aud for UDAP metadata
             ValidateLifetime = true,
             IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { jwt.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+            ValidAlgorithms = new[] { jwt!.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg) }, //must match signing algorithm
         });
 
         validatedToken.IsValid.Should().BeTrue(validatedToken.Exception?.Message);
@@ -130,7 +130,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -190,11 +190,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
 
         var jwtPayload = new JwtPayLoadExtension(
-            result.ClientId,
+            result!.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.Subject, result.ClientId!),
                 //TODO: this is required according to spec.  I was missing it.  We also need to assert this in IdentityServer.
                 new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(),  ClaimValueTypes.Integer64),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
@@ -215,7 +215,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
@@ -270,7 +270,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var tokenHandler = new JsonWebTokenHandler();
         var jwt = tokenHandler.ReadJsonWebToken(metadata!.SignedMetadata);
-        var publicCert = jwt?.GetPublicCertificate();
+        var publicCert = jwt!.GetPublicCertificate();
 
         var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
         {
@@ -306,7 +306,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -366,11 +366,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
 
         var jwtPayload = new JwtPayLoadExtension(
-            result.ClientId,
+            result!.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.Subject, result.ClientId!),
                 //TODO: this is required according to spec.  I was missing it.  We also need to assert this in IdentityServer.
                 new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(),  ClaimValueTypes.Integer64),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
@@ -391,7 +391,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
@@ -442,7 +442,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
@@ -467,7 +467,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithJwtId()
             .WithClientName("dotnet system test client")
             .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -484,13 +484,13 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var certifications = new List<string>();
 
-        var certifiation = new UdapCertificationAndEndorsementDocument("HoboJoes Basic Interop Certification");
-        certifiation.LogoUri = "https://avatars.githubusercontent.com/u/77421324?s=48&v=4";
+        var certification = new UdapCertificationAndEndorsementDocument("HoboJoes Basic Interop Certification");
+        certification.LogoUri = "https://avatars.githubusercontent.com/u/77421324?s=48&v=4";
 
         //TODO: Create a UdapCertificationAndEndorsementDocument builder to build a collection of statements
         var certificationSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapCertificationAndEndorsementDocument>
-                .Create(clientCert, certifiation)
+                .Create(clientCert, certification)
                 .Build();
 
         certifications.Add(certificationSoftwareStatement);
@@ -531,11 +531,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        // var discoJsonFormatted =
+        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
@@ -552,7 +552,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -575,17 +575,16 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         );
 
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(requestBody));
-
-        return;
-        // var response = await client.PostAsJsonAsync(reg, requestBody);
-        //
-        //
-        // // response.StatusCode.Should().Be(HttpStatusCode.Created);
-        //
-        // var documentAsJson = JsonSerializer.Serialize(document);
-        // var result = await response.Content.ReadAsStringAsync();
-        // // _testOutputHelper.WriteLine(result);
-        // result.Should().BeEquivalentTo(documentAsJson);
+        
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+        
+        
+        // response.StatusCode.Should().Be(HttpStatusCode.Created);
+        
+        var documentAsJson = JsonSerializer.Serialize(document);
+        var result = await response.Content.ReadAsStringAsync();
+        // _testOutputHelper.WriteLine(result);
+        result.Should().BeEquivalentTo(documentAsJson);
     }
 
 
@@ -605,11 +604,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        // var discoJsonFormatted =
+        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
@@ -626,7 +625,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -659,7 +658,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var documentAsJson = JsonSerializer.Serialize(document);
         var result = await response.Content.ReadAsStringAsync();
         // _testOutputHelper.WriteLine(result);
-        // result.Should().BeEquivalentTo(documentAsJson);
+        result.Should().BeEquivalentTo(documentAsJson);
     }
 
 
@@ -684,13 +683,13 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         // Get signed payload and compare registration_endpoint
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
+        var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -703,9 +702,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
-        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray.First().ToString()));
+        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
 
-        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
+        var validatedToken = await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
@@ -739,7 +738,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -755,11 +754,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var sb = new StringBuilder();
         sb.Append("[");
-        sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedHeader));
+        sb.Append(Base64UrlEncoder.Decode(requestToken!.EncodedHeader));
         sb.Append(",");
         sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedPayload));
         sb.Append("]");
-        _testOutputHelper.WriteLine(JsonObject.Parse(sb.ToString()).ToJsonString(new JsonSerializerOptions(){WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));
+        _testOutputHelper.WriteLine(JsonNode.Parse(sb.ToString())!.ToJsonString(new JsonSerializerOptions(){WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));
         _testOutputHelper.WriteLine("---------"); 
         _testOutputHelper.WriteLine(string.Empty);
 
@@ -811,11 +810,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var now = DateTime.UtcNow;
 
         var jwtPayload = new JwtPayLoadExtension(
-            result.ClientId,
+            result!.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.Subject, result.ClientId!),
                 new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
@@ -835,7 +834,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
@@ -877,12 +876,12 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // Interesting discussion if you are into this sort of stuff
         // https://github.com/dotnet/runtime/issues/39835
         //
-        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, _) =>
+        handler.ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
         {
-            chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+            chain!.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
             chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer"));
             chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
-            return chain.Build(cert);
+            return chain.Build(cert!);
         };
 
         // using var fhirLabsClient = new HttpClient(handler);
@@ -900,17 +899,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        // var discoJsonFormatted =
+        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         // Get signed payload and compare registration_endpoint
 
 
-        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
+        var metadata = disco.Json.Deserialize<UdapMetadata>();
+        var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -923,21 +922,21 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
-        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray.First().ToString()));
+        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
 
-        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
-        {
-            RequireSignedTokens = true,
-            ValidateIssuer = true,
-            ValidIssuers = new[]
+        var validatedToken = await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
+            {
+                RequireSignedTokens = true,
+                ValidateIssuer = true,
+                ValidIssuers = new[]
                 {
                     "https://fhirlabs.net:7016/fhir/r4"
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-            ValidateAudience = false, // No aud for UDAP metadata
-            ValidateLifetime = true,
-            IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
-        } // , out SecurityToken validatedToken
+                ValidateAudience = false, // No aud for UDAP metadata
+                ValidateLifetime = true,
+                IssuerSigningKey = new X509SecurityKey(publicCert),
+                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+            } // , out SecurityToken validatedToken
         );
 
         validatedToken.IsValid.Should().BeTrue(validatedToken.Exception?.Message);
@@ -959,7 +958,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -977,11 +976,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var sb = new StringBuilder();
         sb.Append("[");
-        sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedHeader));
+        sb.Append(Base64UrlEncoder.Decode(requestToken!.EncodedHeader));
         sb.Append(",");
         sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedPayload));
         sb.Append("]");
-        _testOutputHelper.WriteLine(JsonObject.Parse(sb.ToString()).ToJsonString(new JsonSerializerOptions() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
+        _testOutputHelper.WriteLine(JsonNode.Parse(sb.ToString())!.ToJsonString(new JsonSerializerOptions() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
         _testOutputHelper.WriteLine("---------");
         _testOutputHelper.WriteLine(string.Empty);
 
@@ -1050,11 +1049,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         var now = DateTime.UtcNow;
         var jwtPayload = new JwtPayLoadExtension(
-            result.ClientId,
+            result!.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.Subject, result.ClientId!),
                 new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
@@ -1074,7 +1073,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
@@ -1126,17 +1125,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        // var discoJsonFormatted =
+        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         // Get signed payload and compare registration_endpoint
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
+        var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -1149,21 +1148,21 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
-        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray.First().ToString()));
+        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
 
-        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
-        {
-            RequireSignedTokens = true,
-            ValidateIssuer = true,
-            ValidIssuers = new[]
+        await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
+            {
+                RequireSignedTokens = true,
+                ValidateIssuer = true,
+                ValidIssuers = new[]
                 {
                     "https://localhost:7016/fhir/r4"
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-            ValidateAudience = false, // No aud for UDAP metadata
-            ValidateLifetime = true,
-            IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
-        } // , out SecurityToken validatedToken
+                ValidateAudience = false, // No aud for UDAP metadata
+                ValidateLifetime = true,
+                IssuerSigningKey = new X509SecurityKey(publicCert),
+                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+            } // , out SecurityToken validatedToken
         );
 
         jwt.Payload.Claims
@@ -1183,13 +1182,13 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             // .WithScope("user/Patient.* user/Practitioner.read") //Comment out for UDAP Server mode.
-            .WithResponseTypes(new HashSet<string?> { "code" })
+            .WithResponseTypes(new HashSet<string> { "code" })
             .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri }!)
             .Build();
 
@@ -1250,11 +1249,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var now = DateTime.UtcNow;
 
         var jwtPayload = new JwtPayLoadExtension(
-            result.ClientId,
+            result!.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.Subject, result.ClientId!),
                 new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
@@ -1274,7 +1273,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
@@ -1297,7 +1296,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             responseType: "code",
             state: CryptoRandom.CreateUniqueId(),
             scope: "udap user.cruds",
-            redirectUri: document.RedirectUris.First());
+            redirectUri: document.RedirectUris!.First());
 
         _testOutputHelper.WriteLine(url);
 
@@ -1308,9 +1307,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
 
-        var authUri = new Uri(disco.AuthorizeEndpoint);
+        var authUri = new Uri(disco.AuthorizeEndpoint!);
         var loginUrl = $"{authUri.Scheme}://{authUri.Authority}/Account/Login";
-        response.Headers?.Location?.ToString().Should()
+        response.Headers.Location?.ToString().Should()
             .StartWith(loginUrl);
 
 
@@ -1368,17 +1367,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        // var discoJsonFormatted =
+        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         // Get signed payload and compare registration_endpoint
 
 
-        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
+        var metadata = disco.Json.Deserialize<UdapMetadata>();
+        var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -1391,21 +1390,21 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
-        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray.First().ToString()));
+        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
 
-        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
-        {
-            RequireSignedTokens = true,
-            ValidateIssuer = true,
-            ValidIssuers = new[]
+        await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
+            {
+                RequireSignedTokens = true,
+                ValidateIssuer = true,
+                ValidIssuers = new[]
                 {
                     "https://localhost:7016/fhir/r4"
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-            ValidateAudience = false, // No aud for UDAP metadata
-            ValidateLifetime = true,
-            IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
-        } // , out SecurityToken validatedToken
+                ValidateAudience = false, // No aud for UDAP metadata
+                ValidateLifetime = true,
+                IssuerSigningKey = new X509SecurityKey(publicCert),
+                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+            } // , out SecurityToken validatedToken
         );
 
         jwt.Payload.Claims
@@ -1425,7 +1424,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -1488,7 +1487,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.Subject, result!.ClientId!),
                 new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
@@ -1508,7 +1507,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
@@ -1565,17 +1564,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         var tokenHandler = new JsonWebTokenHandler();
         var jwt = tokenHandler.ReadJsonWebToken(metadata!.SignedMetadata);
-        var publicCert = jwt?.GetPublicCertificate();
+        var publicCert = jwt!.GetPublicCertificate();
 
         // var subAltNames = publicCert.GetSubjectAltNames();
-        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
+        var validatedToken = await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
         {
             RequireSignedTokens = true,
             ValidateIssuer = true,
             ValidIssuers = new[]
-                {
-                    "https://fhirlabs.net:7016/fhir/r4"
-                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+            {
+                "https://fhirlabs.net:7016/fhir/r4"
+            }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
             ValidateAudience = false, // No aud for UDAP metadata
             ValidateLifetime = true,
             IssuerSigningKey = new X509SecurityKey(publicCert),
@@ -1651,7 +1650,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //  B2B section.  Obtain an Access Token
         //
         //
-        _testOutputHelper.WriteLine($"Authorization Endpoint:: {result.Audience}");
+        _testOutputHelper.WriteLine($"Authorization Endpoint:: {result!.Audience}");
         // var idpDisco = await idpClient.GetDiscoveryDocumentAsync(disco.AuthorizeEndpoint);
         //
         // idpDisco.IsError.Should().BeFalse(idpDisco.Error);
@@ -1669,7 +1668,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.Subject, result.ClientId!),
                 new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
@@ -1689,7 +1688,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
@@ -1730,12 +1729,12 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // Interesting discussion if you are into this sort of stuff
         // https://github.com/dotnet/runtime/issues/39835
         //
-        handler.ServerCertificateCustomValidationCallback = (message, cert, chain, _) =>
+        handler.ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
         {
-            chain.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+            chain!.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
             chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer"));
             chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
-            return chain.Build(cert);
+            return chain.Build(cert!);
         };
 
         // using var fhirLabsClient = new HttpClient(handler);
@@ -1753,17 +1752,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        // var discoJsonFormatted =
+        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         // Get signed payload and compare registration_endpoint
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
+        var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -1776,21 +1775,21 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
-        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray.First().ToString()));
+        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
 
-        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
-        {
-            RequireSignedTokens = true,
-            ValidateIssuer = true,
-            ValidIssuers = new[]
+        await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
+            {
+                RequireSignedTokens = true,
+                ValidateIssuer = true,
+                ValidIssuers = new[]
                 {
                     "https://fhirlabs.net:7016/fhir/r4"
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-            ValidateAudience = false, // No aud for UDAP metadata
-            ValidateLifetime = true,
-            IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
-        } // , out SecurityToken validatedToken
+                ValidateAudience = false, // No aud for UDAP metadata
+                ValidateLifetime = true,
+                IssuerSigningKey = new X509SecurityKey(publicCert),
+                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+            } // , out SecurityToken validatedToken
         );
 
         jwt.Payload.Claims
@@ -1813,13 +1812,13 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("user/Patient.* user/Practitioner.read")
-            .WithResponseTypes(new HashSet<string?> { "code" })
+            .WithResponseTypes(new HashSet<string> { "code" })
             .WithRedirectUrls(redirectUrls!)
             .BuildSoftwareStatement();
 
@@ -1876,11 +1875,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var now = DateTime.UtcNow;
 
         var jwtPayload = new JwtPayLoadExtension(
-            result.ClientId,
+            result!.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.Subject, result.ClientId!),
                 new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
@@ -1900,7 +1899,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue,
@@ -1968,17 +1967,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         
-        var discoJsonFormatted =
-            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        // var discoJsonFormatted =
+        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
-        var reg = new Uri(regEndpoint);
+        var reg = new Uri(regEndpoint!);
 
         // Get signed payload and compare registration_endpoint
 
 
         var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
-        var jwt = new JwtSecurityToken(metadata?.SignedMetadata);
+        var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
 
@@ -1991,9 +1990,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
-        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray.First().ToString()));
+        var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
 
-        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
+        var validatedToken = await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
@@ -2027,7 +2026,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("dotnet system test client")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
@@ -2080,11 +2079,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var now = DateTime.UtcNow;
 
         var jwtPayload = new JwtPayLoadExtension(
-            result.ClientId,
+            result!.ClientId,
             disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, result.ClientId),
+                new Claim(JwtClaimTypes.Subject, result.ClientId!),
                 new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
                 new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
@@ -2104,7 +2103,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             ClientAssertion = new ClientAssertion()
             {
-                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Type = ClientAssertionTypes.JwtBearer,
                 Value = clientAssertion
             },
             Udap = UdapConstants.UdapVersionsSupportedValue

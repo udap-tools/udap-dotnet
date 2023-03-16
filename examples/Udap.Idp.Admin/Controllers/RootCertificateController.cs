@@ -19,7 +19,7 @@ public class RootCertificateController : ControllerBase
 
     // GET: api/<RootCertificateController>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<RootCertificate>>> GetAsync(CancellationToken token)
+    public async Task<ActionResult<IEnumerable<IntermediateCertificate>>> GetAsync(CancellationToken token)
     {
         var entitities = await _rootCertificateService.Get(token);
 
@@ -35,7 +35,7 @@ public class RootCertificateController : ControllerBase
 
     // GET api/<RootCertificateController>/5
     [HttpGet("{id}")]
-    public async Task<ActionResult<RootCertificate>> Get(int id, CancellationToken token)
+    public async Task<ActionResult<IntermediateCertificate>> Get(int id, CancellationToken token)
     {
         var entity = await _rootCertificateService.Get(id, token);
 
@@ -50,7 +50,7 @@ public class RootCertificateController : ControllerBase
 
     // POST api/<RootCertificateController>
     [HttpPost]
-    public async Task<ActionResult<RootCertificate>> Post([FromBody] RootCertificate value, CancellationToken token)
+    public async Task<ActionResult<IntermediateCertificate>> Post([FromBody] IntermediateCertificate value, CancellationToken token)
     {
         try
         {
@@ -73,7 +73,7 @@ public class RootCertificateController : ControllerBase
 
     // PUT api/<RootCertificateController>/5
     [HttpPut("{id}")]
-    public async Task<ActionResult> Put(int id, [FromBody] RootCertificate value, CancellationToken token)
+    public async Task<ActionResult> Put(int id, [FromBody] IntermediateCertificate value, CancellationToken token)
     {
         try
         {

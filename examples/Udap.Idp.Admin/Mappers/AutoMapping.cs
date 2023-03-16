@@ -22,7 +22,7 @@ public class AutoMapping : Profile
                     model.Certificate.ToPemFormat()));
 
 
-        CreateMap<RootCertificate, ViewModel.RootCertificate>(MemberList.Destination)
+        CreateMap<IntermediateCertificate, ViewModel.RootCertificate>(MemberList.Destination)
             .ConstructUsing(src => new ViewModel.RootCertificate())
             .ForMember(vm => vm.Certificate, opts =>
                 opts.MapFrom(model =>

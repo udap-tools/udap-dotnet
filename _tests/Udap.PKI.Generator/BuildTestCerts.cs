@@ -171,7 +171,7 @@ namespace Udap.PKI.Generator
                     File.WriteAllBytes($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", parentBytes);
                     char[] caPem = PemEncoding.Write("CERTIFICATE", caCert.RawData);
                     File.WriteAllBytes($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer", caPem.Select(c => (byte)c).ToArray());
-                    // UpdateWindowsMachineStore(caCert);
+                    UpdateWindowsMachineStore(caCert);
 
             #endregion 
 

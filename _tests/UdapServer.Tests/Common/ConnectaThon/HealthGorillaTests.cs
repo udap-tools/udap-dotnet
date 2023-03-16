@@ -95,7 +95,7 @@ public class HealthGorillaTests
             }}
         });
 
-        _mockPipeline.RootCertificates.Add(new RootCertificate
+        _mockPipeline.IntermediateCertificates.Add(new IntermediateCertificate
         {
             BeginDate = rootCert.NotBefore.ToUniversalTime(),
             EndDate = rootCert.NotAfter.ToUniversalTime(),

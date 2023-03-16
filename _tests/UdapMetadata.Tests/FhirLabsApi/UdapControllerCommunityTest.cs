@@ -305,6 +305,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             intermediateCertificates.Select(a =>
             X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
             certStore.AnchorCertificates.ToArray().ToX509Collection()!,
+            out _,
             out _); 
     }
 

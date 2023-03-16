@@ -21,7 +21,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
     private readonly IEnumerable<IntermediateCertificate> _intermediateCertificates;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="InMemoryClientStore"/> class.
+    /// Initializes a new instance of the <see cref="InMemoryUdapClientRegistrationStore"/> class.
     /// </summary>
     /// <param name="clients"></param>
     /// <param name="communities"></param>
@@ -62,19 +62,48 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         if (community == null)
         {
             anchors = _communities
-                .Where(c => c.Enabled)
-                .SelectMany(c => c.Anchors)
+                .Where(c => c.Enabled && c.Anchors != null)
+                .SelectMany(c => c.Anchors!)
                 .ToList();
         }
         else
         {
             anchors = _communities
-                .Where(c => c.Name == community)
-                .SelectMany(c => c.Anchors)
+                .Where(c => c.Name == community && c.Anchors != null)
+                .SelectMany(c => c.Anchors!)
                 .ToList();
         }
 
         return Task.FromResult(anchors.AsEnumerable());
+    }
+
+    public Task<IEnumerable<X509Certificate2>>? GetCommunityCertificates(long communityId, CancellationToken token = default)
+    {
+        using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetCommunityCertificates");
+        activity?.SetTag(Tracing.Properties.CommunityId, communityId);
+
+        var anchors = _communities
+            .Where(c => c.Id == communityId && c.Anchors != null)
+            .SelectMany(c => c.Anchors!)
+            .ToList();
+
+        if (!anchors.Any())
+        {
+            return null;
+        }
+        
+        var encodedCerts = new List<X509Certificate2>();
+        
+        foreach (var anchor in anchors)
+        {
+            encodedCerts.Add(X509Certificate2.CreateFromPem(anchor.Certificate));
+            if (anchor.IntermediateCertificates != null)
+            {
+                encodedCerts.AddRange(anchor.IntermediateCertificates.Select(i => X509Certificate2.CreateFromPem(i.Certificate)));
+            }
+        }
+
+        return Task.FromResult(encodedCerts.AsEnumerable())!;
     }
 
     public Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default)

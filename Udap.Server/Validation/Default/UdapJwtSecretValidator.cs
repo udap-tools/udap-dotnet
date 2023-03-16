@@ -20,6 +20,7 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Certificates;
 using Udap.Server.Configuration;
 using Udap.Server.Extensions;
+using Udap.Server.Storage.Stores;
 using Udap.Util.Extensions;
 
 namespace Udap.Server.Validation.Default;
@@ -35,6 +36,7 @@ public class UdapJwtSecretValidator : ISecretValidator
     private readonly IdentityServerOptions _options;
     private TrustChainValidator _trustChainValidator;
     private readonly ServerSettings _serverSettings;
+    private readonly IUdapClientRegistrationStore _clientStore;
     private readonly ILogger _logger;
 
     private const string Purpose = nameof(UdapJwtSecretValidator);
@@ -46,6 +48,7 @@ public class UdapJwtSecretValidator : ISecretValidator
         IdentityServerOptions options,
         TrustChainValidator trustChainValidator,
         ServerSettings serverSettings,
+        IUdapClientRegistrationStore clientStore,
         ILogger<UdapJwtSecretValidator> logger)
     {
         _issuerNameService = issuerNameService;
@@ -54,6 +57,7 @@ public class UdapJwtSecretValidator : ISecretValidator
         _options = options;
         _trustChainValidator = trustChainValidator;
         _serverSettings = serverSettings;
+        _clientStore = clientStore;
 
         _logger = logger;
     }
@@ -87,11 +91,11 @@ public class UdapJwtSecretValidator : ISecretValidator
             return fail;
         }
 
-        List<X509Certificate2> certChainList;
+        IList<X509Certificate2>? certChainList;
 
         try
         {
-            certChainList = await secrets.GetUdapChainsAsync();
+            certChainList = await secrets.GetUdapChainsAsync(_clientStore);
         }
         catch (Exception e)
         {
@@ -99,7 +103,7 @@ public class UdapJwtSecretValidator : ISecretValidator
             return fail;
         }
 
-        if (!certChainList.Any())
+        if (certChainList != null && !certChainList.Any())
         {
             _logger.LogError("There are no anchors available to validate client assertion.");
 
@@ -213,14 +217,16 @@ public class UdapJwtSecretValidator : ISecretValidator
             await _replayCache.AddAsync(Purpose, jti, exp.AddMinutes(5));
         }
 
-        ///
-        /// PKI chain validation, including CRL checking
-        ///
+        //
+        // PKI chain validation, including CRL checking
+        //
         if (_trustChainValidator.IsTrustedCertificate(
                 parsedSecret.Id,
                 parsedSecret.GetUdapEndCertAsync(),
                 new X509Certificate2Collection(certChainList.ToArray()),
-                new X509Certificate2Collection(certChainList.ToRootCertArray()), out X509ChainElementCollection? _))
+                new X509Certificate2Collection(certChainList.ToRootCertArray()),
+                out X509ChainElementCollection? _,
+                out _))
         {
             return success;
         }

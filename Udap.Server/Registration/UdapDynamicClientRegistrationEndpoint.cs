@@ -88,7 +88,7 @@ public class UdapDynamicClientRegistrationEndpoint
 
         var intermediateCertificates = await _store.GetIntermediateCertificates(token);
         var communityTrustAnchors = await _store.GetAnchorsCertificates(null, token);
-
+        var anchors = await _store.GetAnchors(null, token);
         //TODO: null work
         UdapDynamicClientRegistrationValidationResult? result = null;
 
@@ -96,7 +96,7 @@ public class UdapDynamicClientRegistrationEndpoint
         {
             // Not in pattern with other validators in IdentityServer.  Typically all errors handled in ValidateAsync...  TODO
 
-            result = await _validator.ValidateAsync(request, intermediateCertificates, communityTrustAnchors);
+            result = await _validator.ValidateAsync(request, intermediateCertificates, communityTrustAnchors, anchors);
 
             if (result == null)
             {

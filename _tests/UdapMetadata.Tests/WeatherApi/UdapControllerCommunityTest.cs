@@ -151,7 +151,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             IssuerSigningKey = new X509SecurityKey(cert),
             ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
 
-        }, out SecurityToken validatedToken);
+        }, out _);
 
 
         var issClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.Issuer);
@@ -206,7 +206,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             IssuerSigningKey = new X509SecurityKey(cert),
             ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
 
-        }, out SecurityToken valdatedToken);
+        }, out _);
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
                                   X509ChainStatusFlags.Revoked |
@@ -245,7 +245,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             IssuerSigningKey = new X509SecurityKey(cert),
             ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
 
-        }, out SecurityToken validatedToken);
+        }, out _);
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
                            X509ChainStatusFlags.Revoked |
@@ -294,17 +294,18 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         // Help while writing tests to see problems summarized.
         // Note:  the Logger injected above also logs.
-        validator.Error += (certificate2, exception) => _testOutputHelper.WriteLine("Error: " + exception.Message);
+        validator.Error += (_, exception) => _testOutputHelper.WriteLine("Error: " + exception.Message);
         validator.Problem += element => _testOutputHelper.WriteLine("Problem: " + element.ChainElementStatus.Summarize(problemFlags));
         validator.Untrusted += certificate2 => _testOutputHelper.WriteLine("Untrusted: " + certificate2.Subject);
 
         return validator.IsTrustedCertificate(
             "client_name",
             issuedCertificate2, 
-            intermediateCerts?.Select(a =>
+            intermediateCerts.Select(a =>
             X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
             anchors.ToArray().ToX509Collection()!,
-            out X509ChainElementCollection? chainElements);
+            out _, 
+            out _);
     }
 
     public class FakeChainValidatorDiagnostics

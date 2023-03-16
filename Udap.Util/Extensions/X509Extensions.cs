@@ -260,7 +260,7 @@ public static class X509Extensions
     }
 
 #if NET6_0_OR_GREATER
-    public static X509Certificate2[] ToRootCertArray(this List<X509Certificate2> certificates)
+    public static X509Certificate2[] ToRootCertArray(this IList<X509Certificate2> certificates)
     {
         X509Certificate2Collection caCerts = new X509Certificate2Collection();
 

@@ -15,6 +15,7 @@ public class IntermediateCertificate : IEquatable<IntermediateCertificate>
         Name = name ?? cert.Subject;
     }
     public long Id { get; set; }
+    public long AnchorId { get; set; }
     public bool Enabled { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Certificate { get; set; } = string.Empty;
@@ -22,6 +23,7 @@ public class IntermediateCertificate : IEquatable<IntermediateCertificate>
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
 
+    public virtual Anchor Anchor { get; set; } = default!;
 
     /// <summary>Returns a string that represents the current object.</summary>
     /// <returns>A string that represents the current object.</returns>

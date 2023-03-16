@@ -28,6 +28,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common;
 using Udap.Common.Certificates;
+using Udap.Common.Models;
 using Udap.Model.Registration;
 using Udap.Server.Configuration;
 using Udap.Util.Extensions;
@@ -60,7 +61,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     public Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request,
         X509Certificate2Collection? intermediateCertificates,
-        X509Certificate2Collection anchorCertificates
+        X509Certificate2Collection anchorCertificates,
+        IEnumerable<Anchor> anchors
         )
     {
         using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
@@ -220,6 +222,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing));
         }
 
+        //TODO Inject the client
         var client = new Duende.IdentityServer.Models.Client
         {
             //TODO: Maybe inject a component to generate the clientID so a user can use their own technique.
@@ -227,7 +230,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         };
 
         
-        if (!ValidateChain(client, jsonWebToken, jwtHeader, intermediateCertificates, anchorCertificates))
+        if (!ValidateChain(client, jsonWebToken, jwtHeader, intermediateCertificates, anchorCertificates, anchors))
         {
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate);
@@ -422,10 +425,10 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         JsonWebToken jwtSecurityToken,
         JwtHeader jwtHeader,
         X509Certificate2Collection? intermediateCertificates,
-        X509Certificate2Collection anchorCertificates)
+        X509Certificate2Collection anchorCertificates,
+        IEnumerable<Anchor> anchors)
     {
         var x5cArray = Getx5c(jwtHeader);
-
         
         
         // TODO: no test cases for x5c with intermediate certificates.  
@@ -434,11 +437,13 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
 
             if (_trustChainValidator.IsTrustedCertificate(
-                    client.ClientName,
+                    client.ClientName, //TODO: clientName is not set?
                     cert,
                     intermediateCertificates,
                     anchorCertificates, 
-                    out X509ChainElementCollection? chainElements))
+                    out X509ChainElementCollection? chainElements,
+                    out long? communityId,
+                    anchors))
             {
                 if (chainElements == null)
                 {
@@ -449,15 +454,19 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
                 var clientSecrets = client.ClientSecrets = new List<Secret>();
 
-                foreach (var chainElement in chainElements.Skip(1))
+               clientSecrets.Add(new()
                 {
-                    clientSecrets.Add(new()
-                    {
-                        Expiration = chainElements.First().Certificate.NotAfter,
-                        Type = UdapServerConstants.SecretTypes.Udap_X509_Pem,
-                        Value = Convert.ToBase64String(chainElement.Certificate.Export(X509ContentType.Cert))
-                    });
-                }
+                    Expiration = chainElements.First().Certificate.NotAfter,
+                    Type = UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME,
+                    Value = jwtSecurityToken.Issuer
+                });
+
+                clientSecrets.Add(new()
+                {
+                    Expiration = chainElements.First().Certificate.NotAfter,
+                    Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY,
+                    Value = communityId.ToString()
+                });
 
                 return true;
             }

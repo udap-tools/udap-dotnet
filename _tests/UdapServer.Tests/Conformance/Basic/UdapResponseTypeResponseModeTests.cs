@@ -151,13 +151,13 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
-            .WithResponseTypes(new List<string?> { "code" })
+            .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
@@ -230,13 +230,13 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
-            .WithResponseTypes(new List<string?> { "code" })
+            .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
@@ -277,7 +277,7 @@ public class UdapResponseTypeResponseModeTests
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
-        var query = response.Headers.Location.Query;
+        var query = response.Headers.Location?.Query;
         _testOutputHelper.WriteLine(query);
         var responseParams = QueryHelpers.ParseQuery(query);
         responseParams["error"].Should().BeEquivalentTo("invalid_request");
@@ -303,13 +303,13 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
-            .WithResponseTypes(new List<string?> { "code" })
+            .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
@@ -377,13 +377,13 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
-            .WithResponseTypes(new List<string?> { "code" })
+            .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 
@@ -446,13 +446,13 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
-            .WithResponseTypes(new List<string?> { "code" })
+            .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
         
@@ -514,13 +514,13 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
-            .WithResponseTypes(new List<string?> {"code"})
+            .WithResponseTypes(new List<string> {"code"})
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 

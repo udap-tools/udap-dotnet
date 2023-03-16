@@ -6,6 +6,7 @@
 //  See LICENSE in the project root for license information.
 // */
 #endregion
+#pragma warning disable 
 
 using System.Net;
 using System.Security.Claims;
@@ -114,7 +115,7 @@ public class UdapIdentityServerPipeline
         Handler = Server.CreateHandler();
             
         BrowserClient = new BrowserClient(new BrowserHandler(Handler));
-        // BackChannelClient = new HttpClient(Handler);
+        BackChannelClient = new HttpClient(Handler);
 
     }
 

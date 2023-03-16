@@ -76,6 +76,22 @@ namespace Udap.Server.Stores
             return anchors.Select(a => a.ToModel());
         }
 
+        public async Task<IEnumerable<X509Certificate2>>? GetCommunityCertificates(long communityId, CancellationToken token = default)
+        {
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetCommunityCertificates");
+            activity?.SetTag(Tracing.Properties.Community, communityId);
+
+            var encodedCerts = await _dbContext.Anchors
+                .Where(c => c.CommunityId == communityId)
+                .Include(c => c.IntermediateCertificates)
+                .SelectMany(c => c.IntermediateCertificates.Select(i => 
+                    i.X509Certificate).ToList().Append(c.X509Certificate))
+                .ToListAsync(token);
+
+            return encodedCerts.Select(e => 
+                new X509Certificate2(Convert.FromBase64String(e)));
+        }
+
         public async Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default)
         {
             using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetRootCertificates");
@@ -90,10 +106,8 @@ namespace Udap.Server.Stores
                     .Select(a => X509Certificate2.CreateFromPem(a.X509Certificate)).ToArray());
 
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
 

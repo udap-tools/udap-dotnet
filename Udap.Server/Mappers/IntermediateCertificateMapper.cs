@@ -12,13 +12,13 @@ using Udap.Server.Entities;
 
 namespace Udap.Server.Mappers;
 
-public static class RootCertificateMapper
+public static class IntermediateCertificateMapper
 {
-    static RootCertificateMapper()
+    static IntermediateCertificateMapper()
     {
         Mapper = new MapperConfiguration(cfg =>
         {
-            cfg.AddProfile<RootCertificateMapperProfile>();
+            cfg.AddProfile<IntermediateCertificateMapperProfile>();
         })
             .CreateMapper();
     }
@@ -46,9 +46,9 @@ public static class RootCertificateMapper
     }
 }
 
-public class RootCertificateMapperProfile : Profile
+public class IntermediateCertificateMapperProfile : Profile
 {
-    public RootCertificateMapperProfile()
+    public IntermediateCertificateMapperProfile()
     {
         CreateMap<IntermediateCertificate, Udap.Common.Models.IntermediateCertificate>(MemberList.Destination)
             .ConstructUsing(src => new Udap.Common.Models.IntermediateCertificate())
@@ -61,7 +61,6 @@ public class RootCertificateMapperProfile : Profile
 
             .ForMember(entity => entity.X509Certificate, opts =>
                 opts.MapFrom(model => model.Certificate));
-
     }
 }
 

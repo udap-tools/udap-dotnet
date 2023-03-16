@@ -27,6 +27,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
+using Udap.Common.Models;
 using Udap.Util.Extensions;
 
 namespace Udap.Common.Certificates
@@ -115,8 +116,11 @@ namespace Udap.Common.Certificates
             X509Certificate2 certificate,
             X509Certificate2Collection? intermediateCertificates,
             X509Certificate2Collection anchorCertificates,
-            out X509ChainElementCollection? chainElements)
+            out X509ChainElementCollection? chainElements,
+            out long? communityId,
+            IEnumerable<Anchor>? anchors = null)
         {
+            communityId = null;
             chainElements = null;
 
             if (certificate == null)
@@ -192,6 +196,10 @@ namespace Udap.Common.Certificates
                         // Found a valid anchor!
                         // Because we found an anchor we trust, we can skip trust
                         foundAnchor = true;
+                        if (anchors != null)
+                        {
+                            communityId = anchors.First(a => a.Thumbprint == chainElement.Certificate.Thumbprint).Id;
+                        }
                         continue;
                     }
 

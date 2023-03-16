@@ -1,4 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using Microsoft.EntityFrameworkCore;
 using Udap.Common;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
@@ -6,7 +15,7 @@ using Udap.Server.Entities;
 namespace Udap.Idp.Admin.Services.DataBase;
 
 
-public interface IRootCertificateService
+public interface IIntermediateCertificateService
 {
     Task<ICollection<IntermediateCertificate>> Get(CancellationToken token = default);
     Task<IntermediateCertificate> Get(int? id, CancellationToken token = default);
@@ -16,14 +25,14 @@ public interface IRootCertificateService
 }
 
 
-public class RootCertificateService : IRootCertificateService
+public class IntermediateCertificateService : IIntermediateCertificateService
 {
-    private IUdapDbAdminContext _dbContext;
-    IUdapCertificateValidator<IntermediateCertificate> _validator;
+    private readonly IUdapDbAdminContext _dbContext;
+    readonly IUdapCertificateValidator<IntermediateCertificate> _validator;
 
-    //TODO: validation for RootCert or RootCertificate should have special handling.
-    // Like if an rootCertificate has a crl signed by a CA then you have to include it...  Well more testing anyway...
-    public RootCertificateService(IUdapDbAdminContext dbContext, IUdapCertificateValidator<IntermediateCertificate> validator)
+    //TODO: validation for IntermediateCert or IntermediateCertificate should have special handling.
+    // Like if an intermediateCertificate has a crl signed by a CA then you have to include it...  Well more testing anyway...
+    public IntermediateCertificateService(IUdapDbAdminContext dbContext, IUdapCertificateValidator<IntermediateCertificate> validator)
     {
         _dbContext = dbContext;
         _validator = validator;
@@ -35,13 +44,13 @@ public class RootCertificateService : IRootCertificateService
 
         if (((DbContext)_dbContext).Database.IsRelational())
         {
-            var rootCertificates = await _dbContext.IntermediateCertificates
+            var intermediateCertificates = await _dbContext.IntermediateCertificates
                 .Where(a => a.Thumbprint == intermediateCertificate.Thumbprint)
                 .ToListAsync(cancellationToken: token);
 
-            if (rootCertificates.Any())
+            if (intermediateCertificates.Any())
             {
-                throw new DuplicateRootCertificateException($"Duplicate rootCertificate.");
+                throw new DuplicateIntermediateCertificateException($"Duplicate intermediateCertificate.");
             }
         }
 
@@ -53,15 +62,15 @@ public class RootCertificateService : IRootCertificateService
 
     public async Task<bool> Delete(long? id, CancellationToken token)
     {
-        var rootCertificate = await _dbContext.IntermediateCertificates
+        var intermediateCertificate = await _dbContext.IntermediateCertificates
             .SingleOrDefaultAsync(d => d.Id == id, token);
 
-        if (rootCertificate == null)
+        if (intermediateCertificate == null)
         {
             return false;
         }
 
-        _dbContext.IntermediateCertificates.Remove(rootCertificate);
+        _dbContext.IntermediateCertificates.Remove(intermediateCertificate);
 
         await _dbContext.SaveChangesAsync(token);
 

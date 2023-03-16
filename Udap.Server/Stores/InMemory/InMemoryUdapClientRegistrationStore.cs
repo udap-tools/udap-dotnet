@@ -18,22 +18,22 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 {
     private readonly ICollection<Duende.IdentityServer.Models.Client> _clients;
     private readonly IEnumerable<Community> _communities;
-    private readonly IEnumerable<IntermediateCertificate> _rootCertificates;
+    private readonly IEnumerable<IntermediateCertificate> _intermediateCertificates;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InMemoryClientStore"/> class.
     /// </summary>
     /// <param name="clients"></param>
     /// <param name="communities"></param>
-    /// <param name="rootCertificates"></param>
+    /// <param name="intermediateCertificates"></param>
     public InMemoryUdapClientRegistrationStore(
         List<Duende.IdentityServer.Models.Client> clients,
-        IEnumerable<Community> communities, 
-        IEnumerable<IntermediateCertificate> rootCertificates)
+        IEnumerable<Community> communities,
+        IEnumerable<IntermediateCertificate> intermediateCertificates)
     {
         _clients = clients;
         _communities = communities;
-        _rootCertificates = rootCertificates;
+        _intermediateCertificates = intermediateCertificates;
     }
 
 
@@ -81,19 +81,11 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
     {
         using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetRootCertificates");
 
-        var roots = _rootCertificates.ToList();
-        
-        if (roots != null)
-        {
-            var certificates = new X509Certificate2Collection(roots
-                .Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());
+        var roots = _intermediateCertificates.ToList();
+        var certificates = new X509Certificate2Collection(roots
+                    .Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());
 
-            return Task.FromResult<X509Certificate2Collection?>(certificates);
-        }
-        else
-        {
-            return Task.FromResult<X509Certificate2Collection?>(null);
-        }
+        return Task.FromResult<X509Certificate2Collection?>(certificates);
     }
 
     public Task<X509Certificate2Collection?> GetAnchorsCertificates(string? community, CancellationToken token = default)
@@ -101,8 +93,8 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetAnchorsCertificates");
         activity?.SetTag(Tracing.Properties.Community, community);
 
-        var anchors = GetAnchors(community).Result.ToList();
-        
+        var anchors = GetAnchors(community, token).Result.ToList();
+
         if (!anchors.Any())
         {
             return Task.FromResult<X509Certificate2Collection?>(null);

@@ -20,9 +20,9 @@ public class DuplicateAnchorException : Exception
     }
 }
 
-public class DuplicateRootCertificateException : Exception
+public class DuplicateIntermediateCertificateException : Exception
 {
-    public DuplicateRootCertificateException(string message) : base(message)
+    public DuplicateIntermediateCertificateException(string message) : base(message)
     {
     }
 }

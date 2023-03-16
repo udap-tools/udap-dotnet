@@ -19,7 +19,7 @@ public partial class CommunityList
     private string searchString = "";
     private Community communityBeforeEdit;
     private ICollection<Community> Communities = new List<Community>();
-    private ICollection<RootCertificate> RootCertificates = new List<RootCertificate>();
+    private ICollection<IntermediateCertificate>? RootCertificates = new List<IntermediateCertificate>();
 
     protected override async Task OnInitializedAsync()
     {

@@ -97,7 +97,7 @@ namespace Udap.Server.Stores
         }
 
 
-        public async Task<X509Certificate2Collection?> GetAnchorsCertificates(string? community, CancellationToken token = default)
+        public async Task<X509Certificate2Collection> GetAnchorsCertificates(string? community, CancellationToken token = default)
         {
             using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetAnchorsCertificates");
             activity?.SetTag(Tracing.Properties.Community, community);
@@ -109,7 +109,7 @@ namespace Udap.Server.Stores
 
             if (!anchors.Any())
             {
-                return null;
+                return new X509Certificate2Collection();
             }
 
             return new X509Certificate2Collection(anchors.Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());

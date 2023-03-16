@@ -38,7 +38,6 @@ public class UdapDynamicClientRegistrationEndpoint
         _logger = logger;
     }
     
-    //TODO: ProcessAsync?
     /// <summary>
     /// Initiate UDAP Dynamic Client Registration for <see cref="UdapDynamicClientRegistrationEndpoint"/>
     /// </summary>
@@ -87,7 +86,7 @@ public class UdapDynamicClientRegistrationEndpoint
             return;
         }
 
-        var rootCertificates = await _store.GetIntermediateCertificates(token);
+        var intermediateCertificates = await _store.GetIntermediateCertificates(token);
         var communityTrustAnchors = await _store.GetAnchorsCertificates(null, token);
 
         //TODO: null work
@@ -97,7 +96,7 @@ public class UdapDynamicClientRegistrationEndpoint
         {
             // Not in pattern with other validators in IdentityServer.  Typically all errors handled in ValidateAsync...  TODO
 
-            result = await _validator.ValidateAsync(request, communityTrustAnchors, rootCertificates);
+            result = await _validator.ValidateAsync(request, intermediateCertificates, communityTrustAnchors);
 
             if (result == null)
             {

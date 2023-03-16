@@ -1,4 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using Microsoft.AspNetCore.Mvc;
 using Udap.Common.Models;
 using Udap.Idp.Admin.Services.DataBase;
 using Udap.Server.Mappers;

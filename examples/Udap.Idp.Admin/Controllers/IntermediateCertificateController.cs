@@ -1,4 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Udap.Common.Models;
 using Udap.Idp.Admin.Services.DataBase;
@@ -6,22 +15,22 @@ using Udap.Server.Mappers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class RootCertificateController : ControllerBase
+public class IntermediateCertificateController : ControllerBase
 {
-    IRootCertificateService _rootCertificateService;
-    ILogger<RootCertificateController> _logger;
+    IIntermediateCertificateService _intermediateCertificateService;
+    ILogger<IntermediateCertificateController> _logger;
 
-    public RootCertificateController(IRootCertificateService rootCertificateService, ILogger<RootCertificateController> logger)
+    public IntermediateCertificateController(IIntermediateCertificateService intermediateCertificateService, ILogger<IntermediateCertificateController> logger)
     {
-        _rootCertificateService = rootCertificateService;
+        _intermediateCertificateService = intermediateCertificateService;
         _logger = logger;
     }
 
-    // GET: api/<RootCertificateController>
+    // GET: api/<IntermediateCertificateController>
     [HttpGet]
     public async Task<ActionResult<IEnumerable<IntermediateCertificate>>> GetAsync(CancellationToken token)
     {
-        var entitities = await _rootCertificateService.Get(token);
+        var entitities = await _intermediateCertificateService.Get(token);
 
         if (!entitities.Any())
         {
@@ -33,28 +42,28 @@ public class RootCertificateController : ControllerBase
         return Ok(communities);
     }
 
-    // GET api/<RootCertificateController>/5
+    // GET api/<IntermediateCertificateController>/5
     [HttpGet("{id}")]
     public async Task<ActionResult<IntermediateCertificate>> Get(int id, CancellationToken token)
     {
-        var entity = await _rootCertificateService.Get(id, token);
+        var entity = await _intermediateCertificateService.Get(id, token);
 
         if (entity == null)
         {
             return NotFound();
         }
-        var rootCertificate = entity.ToModel();
+        var intermediateCertificate = entity.ToModel();
 
-        return Ok(rootCertificate);
+        return Ok(intermediateCertificate);
     }
 
-    // POST api/<RootCertificateController>
+    // POST api/<IntermediateCertificateController>
     [HttpPost]
     public async Task<ActionResult<IntermediateCertificate>> Post([FromBody] IntermediateCertificate value, CancellationToken token)
     {
         try
         {
-            var result = await _rootCertificateService.Add(value.ToEntity(), token).ConfigureAwait(false);
+            var result = await _intermediateCertificateService.Add(value.ToEntity(), token).ConfigureAwait(false);
 
             return Created(result.Id.ToString(), result.ToModel());
         }
@@ -71,13 +80,13 @@ public class RootCertificateController : ControllerBase
         }
     }
 
-    // PUT api/<RootCertificateController>/5
+    // PUT api/<IntermediateCertificateController>/5
     [HttpPut("{id}")]
     public async Task<ActionResult> Put(int id, [FromBody] IntermediateCertificate value, CancellationToken token)
     {
         try
         {
-            await _rootCertificateService.Update(value.ToEntity(), token).ConfigureAwait(false);
+            await _intermediateCertificateService.Update(value.ToEntity(), token).ConfigureAwait(false);
 
             return NoContent(); // https://www.rfc-editor.org/rfc/rfc9110.html#name-204-no-content
                                 // Although... https://blog.ploeh.dk/2013/04/30/rest-lesson-learned-avoid-204-responses/
@@ -95,11 +104,11 @@ public class RootCertificateController : ControllerBase
         }
     }
 
-    // DELETE api/<RootCertificateController>/5
+    // DELETE api/<IntermediateCertificateController>/5
     [HttpDelete("{id}")]
     public async Task<ActionResult<bool>> Delete(int id, CancellationToken token)
     {
-        var response = await _rootCertificateService.Delete(id, token);
+        var response = await _intermediateCertificateService.Delete(id, token);
 
         if (response)
         {

@@ -4,7 +4,7 @@
 
 <ErrorBoundary @ref="ErrorBoundary">
   <ChildContent>
-    <MudTable Items="@_rootCertificates" Dense="@false" Hover="@true" ReadOnly="@false" CanCancelEdit="@true"
+    <MudTable Items="@_intermediateCertificates" Dense="@false" Hover="@true" ReadOnly="@false" CanCancelEdit="@true"
               SortLabel="Sort By" CommitEditTooltip="Commit Edit"
               OnCommitEditClick="@(() => Snackbar.Add("Commit Edit Handler Invoked"))"
               RowEditPreview="BackupItem"
@@ -18,9 +18,9 @@
 
         <MudFab Icon="@Icons.Material.Filled.Add"
                 Color="Color.Inherit"
-                @onclick="AddRootCertificate"
+                @onclick="AddIntermediateCertificate"
                 Label="Add"
-                disabled="@_rootCertificateRowIsInEditMode" />
+                disabled="@_intermediateCertificateRowIsInEditMode" />
       </ToolBarContent>
       <ColGroup>
         <col style="width:0px" />
@@ -30,10 +30,10 @@
         <col />
       </ColGroup>
       <HeaderContent>
-        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<ViewModel.RootCertificate, object>(x=>x.Name)">Name</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=>x.Enabled)">Enabled</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=>x.Certificate.Thumbprint)">Thumbprint</MudTableSortLabel></MudTh>
-        <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.RootCertificate, object>(x=>x.Certificate.GetNameInfo(X509NameType.SimpleName, false))">Certificate Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel InitialDirection="SortDirection.Ascending" SortBy="new Func<ViewModel.IntermediateCertificate, object>(x=>x.Name)">Name</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.IntermediateCertificate, object>(x=>x.Enabled)">Enabled</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.IntermediateCertificate, object>(x=>x.Certificate.Thumbprint)">Thumbprint</MudTableSortLabel></MudTh>
+        <MudTh><MudTableSortLabel SortBy="new Func<ViewModel.IntermediateCertificate, object>(x=>x.Certificate.GetNameInfo(X509NameType.SimpleName, false))">Certificate Name</MudTableSortLabel></MudTh>
         <MudTh />
       </HeaderContent>
       <RowTemplate>
@@ -57,8 +57,8 @@
                   Icon="@Icons.Filled.DeleteForever"
                   Label="Delete"
                   class="ma-2"
-                  OnClick="@(() => DeleteRootCertificate(context))"
-                  Disabled="@_rootCertificateRowIsInEditMode" />
+                  OnClick="@(() => DeleteIntermediateCertificate(context))"
+                  Disabled="@_intermediateCertificateRowIsInEditMode" />
                     }
         </MudTd>
       </RowTemplate>

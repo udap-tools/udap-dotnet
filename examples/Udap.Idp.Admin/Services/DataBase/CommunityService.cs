@@ -1,4 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using Microsoft.EntityFrameworkCore;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 

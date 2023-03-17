@@ -133,13 +133,22 @@ public class UdapDynamicClientRegistrationEndpoint
             return;
         }
 
-        // var anchors = (await _store.GetAnchors()).ToList();
-
         if (result.Client != null)
         {
-            var saved = await _store.AddClient(result.Client, token);
+            try
+            {
+                var upsertFlag = await _store.UpsertClient(result.Client, token);
 
-            if (saved == 0)
+                if (upsertFlag)
+                {
+                    context.Response.StatusCode = StatusCodes.Status200OK;
+                }
+                else
+                {
+                    context.Response.StatusCode = StatusCodes.Status201Created;
+                }
+            }
+            catch (Exception ex)
             {
                 await context.Response.WriteAsJsonAsync(new UdapDynamicClientRegistrationErrorResponse
                 (
@@ -147,10 +156,10 @@ public class UdapDynamicClientRegistrationEndpoint
                     "Udap registration failed to save a client."
                 ), cancellationToken: token);
 
+                _logger.LogError(ex, "Udap registration failed to save a client.");
                 return;
             }
         }
-
 
         var registrationResponse = BuildResponseDocument(request, result);
 
@@ -159,7 +168,6 @@ public class UdapDynamicClientRegistrationEndpoint
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
         
-        context.Response.StatusCode = StatusCodes.Status201Created;
         await context.Response.WriteAsJsonAsync(registrationResponse, options, "application/json");
     }
 

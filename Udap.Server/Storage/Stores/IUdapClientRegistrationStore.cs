@@ -10,7 +10,13 @@ public interface IUdapClientRegistrationStore
 {
     Task<Duende.IdentityServer.Models.Client?> GetClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default);
 
-    Task<int> AddClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default);
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="client"></param>
+    /// <param name="token"></param>
+    /// <returns>Returns true if client is updated, false if created</returns>
+    Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default);
 
     Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default);
 

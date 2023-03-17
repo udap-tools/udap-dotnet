@@ -23,12 +23,13 @@ using Udap.Server.Entities;
 using Udap.Server.Storage.Stores;
 using Udap.Server.Stores;
 using Udap.Util.Extensions;
+using Task = System.Threading.Tasks.Task;
 
 namespace UdapServer.Tests;
 
 public static class SeedData
 {
-    public static void EnsureSeedData(string connectionString, ILogger logger)
+    public static async Task EnsureSeedData(string connectionString, ILogger logger)
     {
         var services = new ServiceCollection();
 
@@ -52,7 +53,7 @@ public static class SeedData
                 sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
         });
 
-        using var serviceProvider = services.BuildServiceProvider();
+        await using var serviceProvider = services.BuildServiceProvider();
         using var scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
 
 
@@ -60,7 +61,7 @@ public static class SeedData
         // context?.Database.Migrate();
 
         var udapContext = scope.ServiceProvider.GetRequiredService<UdapDbContext>();
-        udapContext.Database.EnsureCreated();
+        await udapContext.Database.EnsureCreatedAsync();
 
         var configDbContext = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
 
@@ -77,7 +78,7 @@ public static class SeedData
             community.Enabled = true;
             community.Default = true;
             udapContext.Communities.Add(community);
-            udapContext.SaveChanges();
+            await udapContext.SaveChangesAsync();
         }
 
         if (!udapContext.Communities.Any(c => c.Name == "udap://surefhir.labs"))
@@ -85,7 +86,7 @@ public static class SeedData
             var community = new Community { Name = "udap://surefhir.labs" };
             community.Enabled = true;
             udapContext.Communities.Add(community);
-            udapContext.SaveChanges();
+            await udapContext.SaveChangesAsync();
         }
 
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
@@ -99,14 +100,14 @@ public static class SeedData
             var anchorLocalhostCert = new X509Certificate2(
                 Path.Combine(assemblyPath!, "CertStore/intermediates/intermediateLocalhostCert.cer"));
 
-            var commnity = udapContext.Communities.Single(c => c.Name == "http://localhost");
+            var community = udapContext.Communities.Single(c => c.Name == "http://localhost");
 
             var anchor = new Anchor
             {
                 BeginDate = anchorLocalhostCert.NotBefore,
                 EndDate = anchorLocalhostCert.NotAfter,
                 Name = anchorLocalhostCert.Subject,
-                Community = commnity,
+                Community = community,
                 X509Certificate = anchorLocalhostCert.ToPemFormat(),
                 Thumbprint = anchorLocalhostCert.Thumbprint,
                 Enabled = true
@@ -134,7 +135,7 @@ public static class SeedData
                     Anchor = anchor
                 });
 
-                udapContext.SaveChanges();
+                await udapContext.SaveChangesAsync();
             }
 
         }
@@ -144,23 +145,23 @@ public static class SeedData
 
         if (!clientRegistrationStore.GetAnchors("udap://surefhir.labs").Result.Any())
         {
-            var SureFhirLabs_Anchor = new X509Certificate2(
+            var sureFhirLabsAnchor = new X509Certificate2(
                 Path.Combine(assemblyPath!, "./CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
 
-            var commnity = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
+            var community = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
 
             udapContext.Anchors.Add(new Anchor
             {
-                BeginDate = SureFhirLabs_Anchor.NotBefore,
-                EndDate = SureFhirLabs_Anchor.NotAfter,
-                Name = SureFhirLabs_Anchor.Subject,
-                Community = commnity,
-                X509Certificate = SureFhirLabs_Anchor.ToPemFormat(),
-                Thumbprint = SureFhirLabs_Anchor.Thumbprint,
+                BeginDate = sureFhirLabsAnchor.NotBefore,
+                EndDate = sureFhirLabsAnchor.NotAfter,
+                Name = sureFhirLabsAnchor.Subject,
+                Community = community,
+                X509Certificate = sureFhirLabsAnchor.ToPemFormat(),
+                Thumbprint = sureFhirLabsAnchor.Thumbprint,
                 Enabled = true
             });
 
-            udapContext.SaveChanges();
+            await udapContext.SaveChangesAsync();
         }
 
         var seedScopes = new List<string>();
@@ -185,14 +186,14 @@ public static class SeedData
             }
         }
 
-        configDbContext.SaveChanges();
+        await configDbContext.SaveChangesAsync();
 
         if (configDbContext.ApiScopes.All(s => s.Name != "udap"))
         {
             var apiScope = new ApiScope("udap");
             configDbContext.ApiScopes.Add(apiScope.ToEntity());
 
-            configDbContext.SaveChanges();
+            await configDbContext.SaveChangesAsync();
         }
 
     }

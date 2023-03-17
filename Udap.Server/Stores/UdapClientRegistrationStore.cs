@@ -9,6 +9,7 @@
 
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using Duende.IdentityServer.EntityFramework.Entities;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -40,13 +41,34 @@ namespace Udap.Server.Stores
             return entity.ToModel();
         }
 
-        public async Task<int> AddClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
+        public async Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
         {
             using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.AddClient");
             activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
 
-            _dbContext.Clients.Add(client.ToEntity());
-            return await _dbContext.SaveChangesAsync(token);
+            var iss = client.ClientSecrets
+                .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+                ?.Value;
+
+            var existingClient = _dbContext.Clients.SingleOrDefault(c => c.ClientSecrets.Any(cs =>
+                cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
+                cs.Value == iss));
+
+            if (existingClient != null)
+            {
+                existingClient.AllowedScopes = client.AllowedScopes
+                    .Select(s => new ClientScope(){ClientId = existingClient.Id, Scope = s})
+                    .ToList();
+
+                await _dbContext.SaveChangesAsync(token);
+                return true;
+            }
+            else
+            {
+                _dbContext.Clients.Add(client.ToEntity());
+                await _dbContext.SaveChangesAsync(token);
+                return false;
+            }
         }
 
         public async Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default)

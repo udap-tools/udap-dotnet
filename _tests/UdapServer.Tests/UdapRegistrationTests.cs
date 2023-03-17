@@ -40,12 +40,15 @@ namespace UdapServer.Tests;
 public class UdapApiTestFixture : WebApplicationFactory<Program>
 {
     public ITestOutputHelper? Output { get; set; }
+    public IUdapDbAdminContext UdapDbAdminContext { get; set; } = null!;
 
-    // this test harness's AppSettings
-    
+    private ServiceProvider _serviceProvider = null!;
+    private IServiceScope _serviceScope = null!;
+
+
     public UdapApiTestFixture()
     {
-        SeedData.EnsureSeedData("Data Source=./Udap.Idp.db;", new Mock<Serilog.ILogger>().Object);
+        SeedData.EnsureSeedData("Data Source=./Udap.Idp.db;", new Mock<Serilog.ILogger>().Object).GetAwaiter().GetResult();
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
@@ -84,12 +87,17 @@ public class UdapApiTestFixture : WebApplicationFactory<Program>
                 },
                 Output!.ToLogger<TrustChainValidator>()));
 
+            _serviceProvider = services.BuildServiceProvider();
+            _serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            UdapDbAdminContext = _serviceScope.ServiceProvider.GetRequiredService<IUdapDbAdminContext>();
         });
 
-        var overrideSettings = new Dictionary<string, string>();
-        overrideSettings.Add("ConnectionStrings:DefaultConnection", "Data Source=Udap.Idp.db;");
-        
-        overrideSettings.Add("ServerSettings:ServerSupport", "UDAP");
+        var overrideSettings = new Dictionary<string, string>
+        {
+            { "ConnectionStrings:DefaultConnection", "Data Source=Udap.Idp.db;" },
+            { "ServerSettings:ServerSupport", "UDAP" }
+        };
+
         var sb = new StringBuilder();
         
         foreach (var resName in ModelInfo.SupportedResources)
@@ -123,6 +131,14 @@ public class UdapApiTestFixture : WebApplicationFactory<Program>
         var app = base.CreateHost(builder);
 
         return app;
+    }
+
+    /// <inheritdoc />
+    public override async ValueTask DisposeAsync()
+    {
+        _serviceScope.Dispose();
+        await _serviceProvider.DisposeAsync();
+        await base.DisposeAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -160,6 +176,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     public async Task RegistrationSuccess_authorization_code_Test()
     {
         using var client = _fixture.CreateClient();
+        await ResetClientInDatabase();
+
         var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -193,10 +211,10 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "authorization_code" }!,
-            ResponseTypes = new HashSet<string> { "code" }!,
-            RedirectUris = new List<string>(){ "http://localhost/signin-oidc" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "authorization_code" },
+            ResponseTypes = new HashSet<string> { "code" },
+            RedirectUris = new List<string>(){ "http://localhost/signin-oidc" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "user/Patient.*"
         };
@@ -266,6 +284,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     public async Task RegisrationSuccessTest()
     {
         using var client = _fixture.CreateClient();
+        await ResetClientInDatabase();
+
         var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -292,8 +312,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue
         };
 
@@ -391,8 +411,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -428,7 +448,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_Signature_Test()
+    public async Task RegistrationInvalidSoftwareStatement_Signature_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -455,8 +475,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -519,8 +539,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
@@ -584,8 +604,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -648,8 +668,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -714,8 +734,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -779,8 +799,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -844,8 +864,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -909,8 +929,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -974,8 +994,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -1039,8 +1059,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             //IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -1104,8 +1124,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             // ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -1169,11 +1189,11 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "authorization_code" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "authorization_code" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "user/Patient.* user/Practitioner.read",  
-            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri }!,
+            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
         };
 
         document.Add("Extra", "Stuff" as string);
@@ -1235,8 +1255,8 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             //TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -1269,5 +1289,15 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         errorResponse.Should().NotBeNull();
         errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing}");
+    }
+
+    private async Task ResetClientInDatabase()
+    {
+        foreach (var dbClient in _fixture.UdapDbAdminContext.Clients)
+        {
+            _fixture.UdapDbAdminContext.Clients.Remove(dbClient);
+        }
+
+        await _fixture.UdapDbAdminContext.SaveChangesAsync();
     }
 }

@@ -318,6 +318,7 @@ namespace Udap.PKI.Generator
                         sureFhirLabsClientReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsIntermediateCrl));
 
                         subAltNameBuilder = new SubjectAlternativeNameBuilder();
+                        subAltNameBuilder.AddUri(new Uri("https://fhirlabs.net/fhir/r4")); //Same as iss claim
                         subAltNameBuilder.AddUri(new Uri("https://fhirlabs.net:7016/fhir/r4")); //Same as iss claim
                         x509Extension = subAltNameBuilder.Build();
                         sureFhirLabsClientReq.CertificateExtensions.Add(x509Extension);

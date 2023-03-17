@@ -85,17 +85,16 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
-       
+        var subAltNames = publicCert.GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI);
+
         var validatedToken = tokenHandler.ValidateToken(request.SoftwareStatement, new TokenValidationParameters
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[]
-                {
-                    // Udap section 4.3 is strict concerning the SANs being of type uniformResourceIdentifier. https://www.udap.org/udap-dynamic-client-registration.html
-                    // See RFC 2459 for SAN choice semantics https://www.rfc-editor.org/rfc/rfc2459#section-4.2.1.7
-                    publicCert.GetNameInfo(X509NameType.UrlName, false)
-                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                // Udap section 4.3 is strict concerning the SANs being of type uniformResourceIdentifier. https://www.udap.org/udap-dynamic-client-registration.html
+                // See RFC 2459 for SAN choice semantics https://www.rfc-editor.org/rfc/rfc2459#section-4.2.1.7
+                ValidIssuers = subAltNames.Select(san => san.Item2).ToArray(),
+                //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(publicCert),

@@ -96,7 +96,7 @@ public class MetadataController : Controller
             return String.Empty;
         }
 
-        return string.Join("\r\n", sans);
+        return string.Join("\r\n", $"{sans.Select(s => s.Item1)} : {sans.Select(s => s.Item2)}");
     }
 
     private string BuildPolicyInfo(X509Certificate2 cert)

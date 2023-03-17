@@ -62,7 +62,7 @@ namespace UdapServer.Tests
                 new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/intermediates"),
                     "intermediateLocalhostCert.cer"));
 
-            SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", new Mock<Serilog.ILogger>().Object);
+            await SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", new Mock<Serilog.ILogger>().Object);
 
             // await SeedData();
         }
@@ -161,7 +161,7 @@ namespace UdapServer.Tests
 
             client = new Client();
             client.ClientId = Guid.NewGuid().ToString("N");
-            await adminStore.AddClient(client);
+            await adminStore.UpsertClient(client);
             
 
             client = await store.GetClient(client);
@@ -383,7 +383,7 @@ namespace UdapServer.Tests
                 .Select(s => X509Certificate2.CreateFromPem(s.Certificate)).ToArray());
 
             var result = await validator.ValidateAsync(
-                requestBody,
+                requestBody, 
                 intermediateCerts, 
                 communityAnchors, 
                 anchors);

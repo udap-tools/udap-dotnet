@@ -9,10 +9,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
+using Udap.Util.Extensions;
 
 namespace Udap.Model.Registration;
 
@@ -56,8 +58,7 @@ public class UdapDcrBuilderForClientCredentials
     {
         return new UdapDcrBuilderForClientCredentials();
     }
-
-
+    
     /// <summary>
     /// Set at construction time. 
     /// </summary>
@@ -68,22 +69,24 @@ public class UdapDcrBuilderForClientCredentials
         }
     }
 
-    //
-    // Not sure I want to Expose these
-    //
-
-    // public UdapClientCredentialsDcrBuilder WithIssuer(string issuer)
-    // {
-    //     _document.Issuer = issuer;
-    //     return this;
-    // }
-    //
-    // public UdapClientCredentialsDcrBuilder WithSubject(string subject)
-    // {
-    //     _document.Subject = subject;
-    //     return this;
-    // }
-
+    /// <summary>
+    /// If the certificate has more than one uniformResourceIdentifier in the Subject Alternative Name
+    /// extension of the client certificate then this will allow one to be picked.
+    /// </summary>
+    /// <param name="issuer"></param>
+    /// <returns></returns>
+    public UdapDcrBuilderForClientCredentials WithIssuer(Uri issuer)
+    {
+        var uriNames = _certificate!.GetSubjectAltNames(n=>n.TagNo == (int)X509Extensions.GeneralNameType.URI);
+        if (!uriNames.Select(u => u.Item2).Contains(issuer.AbsoluteUri))
+        {
+            throw new Exception($"Certificate does not contain a URI Subject Alternative Name of, {issuer.AbsoluteUri}");
+        }
+        _document.Issuer = issuer.AbsoluteUri;
+        _document.Subject = issuer.AbsoluteUri;
+        return this;
+    }
+    
     public UdapDcrBuilderForClientCredentials WithAudience(string? audience)
     {
         _document.Audience = audience;

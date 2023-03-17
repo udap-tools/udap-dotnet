@@ -8,6 +8,7 @@
 #endregion
 
 using System.Security.Cryptography.X509Certificates;
+using Hl7.Fhir.Utility;
 using Udap.Common;
 using Udap.Common.Models;
 using Udap.Server.Storage.Stores;
@@ -42,14 +43,28 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         throw new NotImplementedException();
     }
 
-    public Task<int> AddClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
+
+    public Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
     {
         using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.AddClient");
         activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
+        
+        var existingClient = _clients.SingleOrDefault(c => c.ClientSecrets.Any(cs =>
+            cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME
+            && cs.Value == client.ClientSecrets.SingleOrDefault(i =>
+                i.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+                ?.Value));
 
-        _clients.Add(client);
-
-        return Task.FromResult(_clients.Count + 1);
+        if (existingClient != null)
+        {
+            existingClient.AllowedScopes = client.AllowedScopes;
+            return Task.FromResult<bool>(true);
+        }
+        else
+        {
+            _clients.Add(client);
+            return Task.FromResult<bool>(false);
+        }
     }
 
     public Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default)
@@ -99,7 +114,8 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             encodedCerts.Add(X509Certificate2.CreateFromPem(anchor.Certificate));
             if (anchor.IntermediateCertificates != null)
             {
-                encodedCerts.AddRange(anchor.IntermediateCertificates.Select(i => X509Certificate2.CreateFromPem(i.Certificate)));
+                encodedCerts.AddRange(anchor.IntermediateCertificates.Select(i => 
+                    X509Certificate2.CreateFromPem(i.Certificate)));
             }
         }
 

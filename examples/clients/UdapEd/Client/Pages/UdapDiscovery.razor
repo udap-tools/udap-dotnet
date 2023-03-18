@@ -1,13 +1,14 @@
 ﻿@page "/udapDiscovery"
+@using UdapEd.Shared
 
 
 <ErrorBoundary @ref="ErrorBoundary">
   <ChildContent>
     <MudGrid Class="mt-4">
-      <MudItem xs="12" sm="12" md="12">
+      <MudItem xs="12" >
         <MudText Typo="Typo.h4">Udap Metadata</MudText>
       </MudItem>
-      <MudItem xs="12" sm="12" md="12">
+      <MudItem xs="12" >
         <MudGrid Spacing="2" Justify="Justify.FlexStart">
           <MudItem>
             <MudButton Class="mt-3"
@@ -22,14 +23,21 @@
                        OnClick="RemoveBaseUrl">Remove Base Url</MudButton>
           </MudItem>
         </MudGrid>
-        <MudAutocomplete T="string"
-                         Label="Enter BaseUrl"
-                         AutoFocus="true"
-                         HelperText=@($"UDAP Metadata URL: {GetWellKnownUdap(BaseUrl)}")
-                         @bind-Value="BaseUrl"
-                         @bind-Text="BaseUrl"
-                         SearchFuncWithCancel="@GetMetadata"
-                         ResetValueOnEmptyText="true" />
+        <MudGrid Spacing="2" Justify="Justify.FlexStart">
+          <MudItem xs="8">
+            <MudAutocomplete T="string"
+                             Label="Enter BaseUrl"
+                             AutoFocus="true"
+                             HelperText=@($"UDAP Metadata URL: {RequestUrl.GetWellKnownUdap(BaseUrl, Community)}")
+                             @bind-Value="BaseUrl"
+                             @bind-Text="BaseUrl"
+                             SearchFuncWithCancel="@GetMetadata"
+                             ResetValueOnEmptyText="true" />
+          </MudItem>
+            <MudItem xs="4">
+            <MudTextField @bind-Value="Community" Label="Community" Variant="Variant.Text"></MudTextField>
+            </MudItem>
+        </MudGrid>
       </MudItem>
       <MudGrid Spacing="1" Class="mt-8">
         <MudItem xs="7">
@@ -39,10 +47,10 @@
         </MudItem>
         <MudItem xs="5">
           <MudPaper Class="pa-4 ma-2" Elevation="3">
-              <MudText Align="Align.Right" Color="Color.Tertiary">Discovery | Metadata | Signed | Communities</MudText>
-              <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+            <MudText Align="Align.Right" Color="Color.Tertiary">Discovery | Metadata | Signed | Communities</MudText>
+            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
               <MudTabPanel Text="Signed Software Statement">
-                    <SignedJwtViewer SignedSoftwareStatement="@AppState.UdapMetadata?.SignedMetadata" />
+                <SignedJwtViewer SignedSoftwareStatement="@AppState.UdapMetadata?.SignedMetadata" />
               </MudTabPanel>
               <MudTabPanel Text="Certificates">
                 <CertificateViewer JwtHeaderWithx5c="@GetJwtHeader()" />

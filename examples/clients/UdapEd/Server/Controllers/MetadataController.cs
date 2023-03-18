@@ -1,9 +1,9 @@
 ﻿using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Udap.Model;
@@ -30,7 +30,8 @@ public class MetadataController : Controller
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] string metadataUrl)
     {
-        var response = await _httpClient.GetStringAsync(metadataUrl);
+        _logger.LogDebug(Base64UrlEncoder.Decode(metadataUrl));
+        var response = await _httpClient.GetStringAsync(Base64UrlEncoder.Decode(metadataUrl));
         var result = JsonSerializer.Deserialize<UdapMetadata>(response);
 
         return Ok(result);
@@ -96,7 +97,14 @@ public class MetadataController : Controller
             return String.Empty;
         }
 
-        return string.Join("\r\n", $"{sans.Select(s => s.Item1)} : {sans.Select(s => s.Item2)}");
+        var sb = new StringBuilder();
+
+        foreach (var tuple in sans)
+        {
+            sb.AppendLine($"{tuple.Item1} : {tuple.Item2}");
+        }
+        
+        return sb.ToString();
     }
 
     private string BuildPolicyInfo(X509Certificate2 cert)

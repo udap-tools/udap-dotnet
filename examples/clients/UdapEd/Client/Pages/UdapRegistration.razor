@@ -1,4 +1,5 @@
 ﻿@page "/udapRegistration"
+@using UdapEd.Shared
 
 
 <ErrorBoundary @ref="ErrorBoundary">
@@ -7,7 +8,7 @@
     <MudGrid Class="mt-4">
       <MudItem xs="12" sm="12" md="12">
         <MudText Typo="Typo.h4">Udap Registration</MudText>
-        <MudText> (@AppState.BaseUrl)</MudText>
+        <MudLink Href="/udapDiscovery" Color="Color.Info"> [ @RequestUrl.GetWellKnownUdap(AppState.BaseUrl, AppState.Community ) ]</MudLink>
       </MudItem>
       <MudItem xs="12" sm="12" md="12">
 
@@ -27,6 +28,7 @@
 
         <MudButton Class="mt-3" ButtonType="ButtonType.Button"
                    Variant="Variant.Filled"
+                   Disabled="@(! AppState.CertificateLoaded)"
                    OnClick="BuildRawSoftwareStatement">
 
                     @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
@@ -70,6 +72,7 @@
 
         <MudButton Class="mt-3" ButtonType="ButtonType.Button"
                    Variant="Variant.Filled"
+                   Disabled="@(! AppState.CertificateLoaded)"
                    OnClick="BuildRequestBody">Build Request Body</MudButton>
 
         <MudGrid Spacing="1" Class="mt-8">
@@ -91,6 +94,7 @@
 
         <MudButton Class="mt-3" ButtonType="ButtonType.Button"
                    Variant="Variant.Filled"
+                   Disabled="@(! AppState.CertificateLoaded)"
                    OnClick="PerformRegistration">Register (DCR)</MudButton>
 
         <MudGrid Spacing="1" Class="mt-8">

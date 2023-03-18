@@ -93,6 +93,8 @@
         }
     }
 
+    public string Community { get; private set; }
+
     private OrderedDictionary? _baseUrls;
 
     public OrderedDictionary? BaseUrls
@@ -175,14 +177,19 @@
             _status = value;
             if (_caller == "udapBusinessToBusiness")
             {
-              //example of potential logic
+                //example of potential logic
             }
         }
     }
 
+    /// <summary>
+    /// Is the client cert loaded with private key?
+    /// </summary>
+    public bool CertificateLoaded { get; set; }
+
     public AuthorizationCodeRequest? AuthorizationCodeRequest { get; private set; }
 
-        private const string UdapStateKeyName = "udapClientState";
+    private const string UdapStateKeyName = "udapClientState";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

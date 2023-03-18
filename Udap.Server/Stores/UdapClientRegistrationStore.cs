@@ -50,7 +50,9 @@ namespace Udap.Server.Stores
                 .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
                 ?.Value;
 
-            var existingClient = _dbContext.Clients.SingleOrDefault(c =>
+            var existingClient = _dbContext.Clients
+                .Include(c => c.AllowedScopes)
+                .SingleOrDefault(c =>
                 c.AllowedGrantTypes.Any(grant => client.AllowedGrantTypes.Contains(grant.GrantType)) &&
                 c.ClientSecrets.Any(cs =>
                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&

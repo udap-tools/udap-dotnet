@@ -9,6 +9,8 @@ public interface IAppState
 {
     string BaseUrl { get; }
     
+    string Community { get; }
+
     OrderedDictionary BaseUrls { get; set; }
 
     UdapMetadata? UdapMetadata { get; }

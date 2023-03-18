@@ -104,7 +104,7 @@ public static class SeedData
         // Anchor surefhirlabs_community
         //
         var sureFhirLabsAnchor = new X509Certificate2(
-            Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
+            Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://surefhir.labs"))
             .All(a => a.Thumbprint != sureFhirLabsAnchor.Thumbprint))
@@ -129,20 +129,20 @@ public static class SeedData
             //
             var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
 
-            var rootCert = new X509Certificate2(
-                Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
+            var intermediateCert = new X509Certificate2(
+                Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
 
             if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
-                    .All(r => r.Thumbprint != rootCert.Thumbprint))
+                    .All(r => r.Thumbprint != intermediateCert.Thumbprint))
             {
 
                 udapContext.IntermediateCertificates.Add(new IntermediateCertificate
                 {
-                    BeginDate = rootCert.NotBefore.ToUniversalTime(),
-                    EndDate = rootCert.NotAfter.ToUniversalTime(),
-                    Name = rootCert.Subject,
-                    X509Certificate = rootCert.ToPemFormat(),
-                    Thumbprint = rootCert.Thumbprint,
+                    BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
+                    EndDate = intermediateCert.NotAfter.ToUniversalTime(),
+                    Name = intermediateCert.Subject,
+                    X509Certificate = intermediateCert.ToPemFormat(),
+                    Thumbprint = intermediateCert.Thumbprint,
                     Enabled = true,
                     Anchor = anchor
                 });
@@ -151,10 +151,7 @@ public static class SeedData
             }
         }
 
-
-
-       
-
+        
         //
         // Anchor localhost_community
         //

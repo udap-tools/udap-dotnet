@@ -227,7 +227,7 @@ namespace Udap.PKI.Generator
                         File.WriteAllBytes($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", intermediateBytes);
                         char[] intermediatePem = PemEncoding.Write("CERTIFICATE", intermediateCertWithoutKey.RawData);
                         File.WriteAllBytes($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.cer", intermediatePem.Select(c => (byte)c).ToArray());
-                        // UpdateWindowsMachineStore(intermediateCertWithoutKey);
+                        UpdateWindowsMachineStore(intermediateCertWithoutKey);
 
                         #endregion
 
@@ -623,7 +623,7 @@ namespace Udap.PKI.Generator
                             new X509SubjectKeyIdentifierExtension(hostDockerInternal.PublicKey, false));
 
                         AddAuthorityKeyIdentifier(caCert, hostDockerInternal, _testOutputHelper);
-                        hostDockerInternal.CertificateExtensions.Add(MakeCdp(SureFhirLabsRootCrl)); 
+                        // hostDockerInternal.CertificateExtensions.Add(MakeCdp(SureFhirLabsRootCrl)); 
 
                         subAltNameBuilder = new SubjectAlternativeNameBuilder();
                         subAltNameBuilder.AddDnsName("host.docker.internal");
@@ -697,6 +697,10 @@ namespace Udap.PKI.Generator
 
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
                 $"{BaseDir}/../../examples/Udap.Idp.Admin/host.docker.internal.pfx",
+                true);
+
+            File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
+                $"{BaseDir}/../../examples/clients/UdapEd/Server/host.docker.internal.pfx",
                 true);
         }
 

@@ -26,6 +26,8 @@ public class UdapClientState : IAppState
 
     public string BaseUrl { get; set; } = "https://fhirlabs.net/fhir/r4/.well-known/udap";
 
+    public string Community { get; set; }
+
     public OrderedDictionary BaseUrls { get; set; }
 
     public UdapMetadata? UdapMetadata { get; set; }

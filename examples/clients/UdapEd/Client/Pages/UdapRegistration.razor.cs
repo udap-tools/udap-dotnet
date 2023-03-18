@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using MudBlazor;
 using Udap.Model;
 using Udap.Model.Registration;
 using UdapEd.Client.Services;
@@ -24,6 +25,9 @@ public partial class UdapRegistration
 {
     [CascadingParameter]
     public CascadingAppState AppState { get; set; } = null!;
+
+    [CascadingParameter] 
+    public MainLayout Layout { get; set; } = null!;
 
     ErrorBoundary? ErrorBoundary { get; set; }
     [Inject] RegisterService RegisterService { get; set; } = null!;

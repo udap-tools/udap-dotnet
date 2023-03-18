@@ -90,7 +90,7 @@
 
     private async Task Events_OnFocus(FocusEventArgs obj)
     {
-        SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+        await SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
         _checkServerSession = true;
     }
 
@@ -99,24 +99,29 @@
         _checkServerSession = false;
     }
     
-    private void SetCertLoadedColor(CertLoadedEnum isCertLoaded)
+    private async Task SetCertLoadedColor(CertLoadedEnum isCertLoaded)
     {
         switch (isCertLoaded)
         {
             case CertLoadedEnum.Negative:
                 CertLoadedColor = Color.Error;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
                 break;
             case CertLoadedEnum.Positive:
                 CertLoadedColor = Color.Success;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), true);
                 break;
             case CertLoadedEnum.InvalidPassword:
                 CertLoadedColor = Color.Warning;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
                 break;
             default:
                 CertLoadedColor = Color.Error;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
                 break;
         }
-        StateHasChanged();
+
+        this.StateHasChanged();
     }
 
 
@@ -177,7 +182,7 @@
         {
             if (_checkServerSession)
             {
-                SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+                await SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
             }
         }
     }
@@ -186,5 +191,5 @@
     public void Dispose()
     {
         _periodicTimer?.Dispose();
-    }
+    } 
 }

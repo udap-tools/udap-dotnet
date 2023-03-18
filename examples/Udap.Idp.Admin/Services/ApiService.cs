@@ -27,13 +27,67 @@ namespace Udap.Idp.Admin.Services
 
         public async Task<ICollection<IntermediateCertificate>?> GetRootCertificates()
         {
-            var response = await HttpClient.GetFromJsonAsync<ICollection<Common.Models.IntermediateCertificate>>("api/rootCertificate");
+            var response = await HttpClient.GetFromJsonAsync<ICollection<Common.Models.IntermediateCertificate>>("api/intermediateCertificate");
 
             var intermediateCertificates = _mapper.Map<ICollection<IntermediateCertificate>>(response);
 
             return intermediateCertificates;
         }
+        
 
+        internal async Task<Community> Save(Community communityView)
+        {
+            var community = _mapper.Map<Common.Models.Community>(communityView);
+
+
+            var response = await HttpClient.PostAsJsonAsync("api/community", community).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var anchorModel = await response.Content.ReadFromJsonAsync<Common.Models.Community>();
+                return _mapper.Map<Community>(anchorModel);
+            }
+            else
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>().ConfigureAwait(false);
+
+                throw new Exception(JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions { WriteIndented = true }));
+            }
+        }
+
+        public async Task Update(Community communityView)
+        {
+            var community = _mapper.Map<Common.Models.Community>(communityView);
+
+            var response = await HttpClient.PutAsJsonAsync($"api/community/{community.Id}", community).ConfigureAwait(false);
+
+            if (response.IsSuccessStatusCode)
+            {
+                return;
+            }
+            else
+            {
+                var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>().ConfigureAwait(false);
+
+                throw new Exception(JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions { WriteIndented = true }));
+            }
+        }
+
+        public async Task<bool> DeleteCommunity(long communityId, CancellationToken token = default)
+        {
+            var response = await HttpClient.DeleteAsync($"/api/community/{communityId}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                return true;
+            }
+
+            var problemDetails = await response.Content.ReadFromJsonAsync<ProblemDetails>(new JsonSerializerOptions { WriteIndented = true }, token);
+
+            throw new Exception(JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        
         internal async Task<Anchor> Save(Anchor anchorView)
         {
             var anchor = _mapper.Map<Common.Models.Anchor>(anchorView);
@@ -58,7 +112,7 @@ namespace Udap.Idp.Admin.Services
         {
             var anchor = _mapper.Map<Common.Models.Anchor>(anchorView);
 
-            var response = await HttpClient.PutAsJsonAsync($"api/intermediates/{anchor.Id}", anchor).ConfigureAwait(false);
+            var response = await HttpClient.PutAsJsonAsync($"api/anchor/{anchor.Id}", anchor).ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {
@@ -74,7 +128,7 @@ namespace Udap.Idp.Admin.Services
 
         public async Task<bool> DeleteAnchor(long anchorId, CancellationToken token = default)
         {
-            var response = await HttpClient.DeleteAsync($"/api/intermediates/{anchorId}");
+            var response = await HttpClient.DeleteAsync($"/api/anchor/{anchorId}");
             
             if (response.IsSuccessStatusCode)
             {
@@ -91,7 +145,7 @@ namespace Udap.Idp.Admin.Services
         {
             var anchor = _mapper.Map<Common.Models.IntermediateCertificate>(intermediateCertificateView);
 
-            var response = await HttpClient.PostAsJsonAsync("api/rootCertificate", anchor).ConfigureAwait(false);
+            var response = await HttpClient.PostAsJsonAsync("api/intermediateCertificate", anchor).ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {
@@ -110,7 +164,7 @@ namespace Udap.Idp.Admin.Services
         {
             var anchor = _mapper.Map<Common.Models.IntermediateCertificate>(intermediateCertificateView);
 
-            var response = await HttpClient.PutAsJsonAsync($"api/rootCertificate/{anchor.Id}", anchor).ConfigureAwait(false);
+            var response = await HttpClient.PutAsJsonAsync($"api/intermediateCertificate/{anchor.Id}", anchor).ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {
@@ -126,7 +180,7 @@ namespace Udap.Idp.Admin.Services
 
         public async Task<bool> DeleteIntermediateCertificate(long rootCertificateId, CancellationToken token = default)
         {
-            var response = await HttpClient.DeleteAsync($"/api/rootCertificate/{rootCertificateId}");
+            var response = await HttpClient.DeleteAsync($"/api/intermediateCertificate/{rootCertificateId}");
 
             if (response.IsSuccessStatusCode)
             {

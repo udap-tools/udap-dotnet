@@ -8,6 +8,7 @@
 #endregion
 
 using Microsoft.EntityFrameworkCore;
+using Udap.Common;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 
@@ -18,8 +19,8 @@ namespace Udap.Idp.Admin.Services.DataBase
         Task<ICollection<Community>> Get(CancellationToken token = default);
         Task<Community> Get(int? id, CancellationToken token = default);
         Task<Community> Add(Community community, CancellationToken token = default);
-        Task<Community> Update(Community community, CancellationToken token = default);
-        Task<bool> Delete(long? id, CancellationToken token = default);
+        Task Update(Community community, CancellationToken token = default);
+        Task<bool> Delete(int? id, CancellationToken token = default);
     }
     public class CommunityService : ICommunityService
     {
@@ -32,14 +33,43 @@ namespace Udap.Idp.Admin.Services.DataBase
             _validator = validator;
         }
 
-        public Task<Community> Add(Community community, CancellationToken token)
+        public async Task<Community> Add(Community community, CancellationToken token)
         {
-            throw new NotImplementedException();
+            // _validator.Validate(community);
+
+            if (((DbContext)_dbContext).Database.IsRelational())
+            {
+                var communities = await _dbContext.Communities
+                    .Where(c => c.Id == community.Id)
+                    .ToListAsync(cancellationToken: token);
+
+                if (communities.Any())
+                {
+                    throw new DuplicateCommunityException($"Duplicate anchor.  Anchor exists in \"{communities.First().Name}\" community");
+                }
+            }
+
+            _dbContext.Communities.Add(community);
+            await _dbContext.SaveChangesAsync(token);
+
+            return community;
         }
 
-        public Task<bool> Delete(long? id, CancellationToken token)
+        public async Task<bool> Delete(int? id, CancellationToken token)
         {
-            throw new NotImplementedException();
+            var community = await _dbContext.Communities
+                .SingleOrDefaultAsync(d => d.Id == id, token);
+
+            if (community == null)
+            {
+                return false;
+            }
+
+            _dbContext.Communities.Remove(community);
+
+            await _dbContext.SaveChangesAsync(token);
+
+            return true;
         }
 
         public async Task<Community> Get(int? id, CancellationToken token)
@@ -56,9 +86,11 @@ namespace Udap.Idp.Admin.Services.DataBase
                 .ToListAsync(cancellationToken: token);
         }
 
-        public Task<Community> Update(Community community, CancellationToken token)
+        public async Task Update(Community community, CancellationToken token)
         {
-            throw new NotImplementedException();
+            // _validator.Validate(community);
+            _dbContext.Communities.Update(community);
+            await _dbContext.SaveChangesAsync(token);
         }
     }
 }

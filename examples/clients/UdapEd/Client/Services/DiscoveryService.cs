@@ -8,6 +8,8 @@
 #endregion
 
 using System.Net.Http.Json;
+using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Internal;
 using Udap.Model;
 using UdapEd.Shared.Model;
 
@@ -22,11 +24,11 @@ public class DiscoveryService
         _http = http;
     }
 
-    public async Task<UdapMetadata?> GetMetadata(string? metadataUrl, CancellationToken token)
+    public async Task<UdapMetadata?> GetMetadata(string metadataUrl, CancellationToken token)
     {
         try
         {
-            var udapMetadataUrl = $"Metadata?metadataUrl={metadataUrl}";
+            var udapMetadataUrl = $"Metadata?metadataUrl={Base64UrlEncoder.Encode(metadataUrl) }";
             var result = await _http.GetFromJsonAsync<UdapMetadata>(udapMetadataUrl, token);
 
             return result;

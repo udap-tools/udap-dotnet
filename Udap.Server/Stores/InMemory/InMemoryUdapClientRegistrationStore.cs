@@ -49,7 +49,9 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.AddClient");
         activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
         
-        var existingClient = _clients.SingleOrDefault(c => c.ClientSecrets.Any(cs =>
+        var existingClient = _clients.SingleOrDefault(c => 
+            c.AllowedGrantTypes.Any(grant => client.AllowedGrantTypes.Contains(grant)) &&
+            c.ClientSecrets.Any(cs =>
             cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME
             && cs.Value == client.ClientSecrets.SingleOrDefault(i =>
                 i.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)

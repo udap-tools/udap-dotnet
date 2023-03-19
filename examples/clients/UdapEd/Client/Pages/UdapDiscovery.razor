@@ -50,7 +50,7 @@
             <MudText Align="Align.Right" Color="Color.Tertiary">Discovery | Metadata | Signed | Communities</MudText>
             <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
               <MudTabPanel Text="Signed Software Statement">
-                <SignedJwtViewer SignedSoftwareStatement="@AppState.UdapMetadata?.SignedMetadata" />
+                <SignedJwtViewer Title="<b>Decoded software_statement::</b>" SignedSoftwareStatement="@AppState.UdapMetadata?.SignedMetadata" />
               </MudTabPanel>
               <MudTabPanel Text="Certificates">
                 <CertificateViewer JwtHeaderWithx5c="@GetJwtHeader()" />

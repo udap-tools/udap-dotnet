@@ -156,14 +156,13 @@ public static class SeedData
         // Anchor localhost_community
         //
         var anchorLocalhostCert = new X509Certificate2(
-            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/intermediateLocalhostCert.cer"));
+            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/caLocalhostCert.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("http://localhost"))
             .All(a => a.Thumbprint != anchorLocalhostCert.Thumbprint))
         {
             var community = udapContext.Communities.Single(c => c.Name == "http://localhost");
-
-            udapContext.Anchors.Add(new Anchor
+            var anchor = new Anchor
             {
                 BeginDate = anchorLocalhostCert.NotBefore.ToUniversalTime(),
                 EndDate = anchorLocalhostCert.NotAfter.ToUniversalTime(),
@@ -172,9 +171,36 @@ public static class SeedData
                 X509Certificate = anchorLocalhostCert.ToPemFormat(),
                 Thumbprint = anchorLocalhostCert.Thumbprint,
                 Enabled = true
-            });
+            };
+            udapContext.Anchors.Add(anchor);
 
             await udapContext.SaveChangesAsync();
+
+            //
+            // Intermediate surefhirlabs_community
+            //
+            var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
+
+            var intermediateCert = new X509Certificate2(
+                Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/intermediateLocalhostCert.cer"));
+
+            if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
+                    .All(r => r.Thumbprint != intermediateCert.Thumbprint))
+            {
+
+                udapContext.IntermediateCertificates.Add(new IntermediateCertificate
+                {
+                    BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
+                    EndDate = intermediateCert.NotAfter.ToUniversalTime(),
+                    Name = intermediateCert.Subject,
+                    X509Certificate = intermediateCert.ToPemFormat(),
+                    Thumbprint = intermediateCert.Thumbprint,
+                    Enabled = true,
+                    Anchor = anchor
+                });
+
+                await udapContext.SaveChangesAsync();
+            }
         }
 
         

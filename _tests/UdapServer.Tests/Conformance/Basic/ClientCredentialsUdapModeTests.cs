@@ -42,7 +42,7 @@ public class ClientCredentialsUdapModeTests
     public ClientCredentialsUdapModeTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        var sureFhirLabsAnchor = new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer");
+        var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
 
         _mockPipeline.OnPostConfigureServices += s =>
@@ -250,6 +250,8 @@ public class ClientCredentialsUdapModeTests
         var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
         regDocumentResult!.Scope.Should().Be("system/Patient.rs");
 
+        var clientIdWithDefaultSubAltName = regDocumentResult.ClientId;
+
         //
         // Second Registration
         //
@@ -287,10 +289,13 @@ public class ClientCredentialsUdapModeTests
         regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
         regDocumentResult!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
 
+        regDocumentResult!.ClientId.Should().Be(clientIdWithDefaultSubAltName);
+
         //
         // Third Registration with different Uri Subject Alt Name from same client certificate
         // expect 201 created because I changed the SAN selected by calling WithIssuer
         //
+
         document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithIssuer(new Uri("https://fhirlabs.net:7016/fhir/r4"))
@@ -323,9 +328,10 @@ public class ClientCredentialsUdapModeTests
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         regResponse.StatusCode.Should().Be(HttpStatusCode.Created, await regResponse.Content.ReadAsStringAsync());
-        regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        regDocumentResult!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
-
+        var regDocumentResultForSelectedSubAltName = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        regDocumentResultForSelectedSubAltName!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
+        var clientIdWithSelectedSubAltName = regDocumentResultForSelectedSubAltName.ClientId;
+        clientIdWithSelectedSubAltName.Should().NotBe(clientIdWithDefaultSubAltName);
 
         //
         // Fourth Registration with different Uri Subject Alt Name from same client certificate
@@ -364,8 +370,10 @@ public class ClientCredentialsUdapModeTests
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         regResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        regDocumentResult!.Scope.Should().Be("system/Patient.rs");
+        var regDocumentResultForSelectedSubAltNameSecond = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        regDocumentResultForSelectedSubAltNameSecond!.Scope.Should().Be("system/Patient.rs");
+
+        regDocumentResultForSelectedSubAltNameSecond!.ClientId.Should().Be(clientIdWithSelectedSubAltName);
 
     }
 

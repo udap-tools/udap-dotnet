@@ -59,8 +59,8 @@ namespace UdapServer.Tests
         public async Task InitializeAsync()
         {
             AnchorCert =
-                new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/intermediates"),
-                    "intermediateLocalhostCert.cer"));
+                new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
+                    "caLocalhostCert.cer"));
 
             await SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", new Mock<Serilog.ILogger>().Object);
 

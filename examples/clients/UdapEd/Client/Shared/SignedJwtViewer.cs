@@ -15,6 +15,9 @@ public partial class SignedJwtViewer
     [Parameter]
     public string? SignedSoftwareStatement { get; set; }
 
+    [Parameter]
+    public string? Title { get; set; }
+
     private string? DecodedJwt => BuildAccessTokenRequestVisualForClientCredentials();
 
     private string BuildAccessTokenRequestVisualForClientCredentials()

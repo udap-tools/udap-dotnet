@@ -43,10 +43,10 @@
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.client.pfx" Link="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\roots\SureFhirLabs_CA.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\anchors\SureFhirLabs_CA.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\caLocalhostCert.cer" Link="CertStore\roots\caLocalhostCert.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\caLocalhostCert.cer" Link="CertStore\anchors\caLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

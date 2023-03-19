@@ -85,8 +85,8 @@
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
-                <SignedJwtViewer 
-                    SignedSoftwareStatement="@AppState.UdapRegistrationRequest?.SoftwareStatement" />
+                <SignedJwtViewer Title="<b>Decoded software_statement::</b>"
+                               SignedSoftwareStatement="@AppState.UdapRegistrationRequest?.SoftwareStatement" />
             </MudPaper>
           </MudItem>
 
@@ -107,7 +107,15 @@
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
-              <pre>Explanation Todo</pre>
+                <pre>
+<a href="http://hl7.org/fhir/us/udap-security/registration.html#request-body">Per UDAP Security IG</a> 
+If a new registration is successful, the Authorization Server SHALL return a registration response with a 201 Created HTTP response code as per Section 5.1 of UDAP Dynamic Client Registration, including the unique client_id assigned by the Authorization Server to that client app. If a new registration is not successful, e.g. it is rejected by the server for any reason, the Authorization Server SHALL return an error response as per <a href="https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-5.1">Section 5.2</a> of UDAP Dynamic Client Registration.
+
+<a href="https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-6">For Modifying or Cancelling previous registration see section 6</a>
+
+<br/>
+</pre>
+              <SignedJwtViewer Title="<b>Decoded software_statement::</b>" SignedSoftwareStatement="@AppState.RegistrationDocument?.SoftwareStatement"></SignedJwtViewer>
             </MudPaper>
           </MudItem>
         </MudGrid>

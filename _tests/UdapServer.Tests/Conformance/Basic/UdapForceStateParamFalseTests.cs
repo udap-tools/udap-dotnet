@@ -47,7 +47,7 @@ public class UdapForceStateParamFalseTests
     public UdapForceStateParamFalseTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        var sureFhirLabsAnchor = new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer");
+        var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCertificate = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
 
         _mockPipeline.OnPostConfigureServices += s =>

@@ -198,7 +198,7 @@ namespace Udap.Common.Certificates
                         foundAnchor = true;
                         if (anchors != null)
                         {
-                            communityId = anchors.First(a => a.Thumbprint == chainElement.Certificate.Thumbprint).Id;
+                            communityId = anchors.First(a => a.Thumbprint == chainElement.Certificate.Thumbprint).CommunityId;
                         }
                         continue;
                     }

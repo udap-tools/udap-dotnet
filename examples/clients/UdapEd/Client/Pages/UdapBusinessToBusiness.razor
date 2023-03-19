@@ -63,8 +63,8 @@
               @*               { *@
               @*                   @((MarkupString)ClientAssertionDecoded) *@
               @*               }</pre> *@
-              <SignedJwtViewer 
-                  SignedSoftwareStatement="@AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value" />
+              <SignedJwtViewer Title="<b>Decoded client_assertion::</b>"
+                           SignedSoftwareStatement="@AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value" />
             </MudPaper>
           </MudItem>
 

@@ -59,6 +59,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
         if (existingClient != null)
         {
+            client.ClientId = existingClient.ClientId;
             existingClient.AllowedScopes = client.AllowedScopes;
             return Task.FromResult<bool>(true);
         }

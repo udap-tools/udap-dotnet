@@ -26,7 +26,9 @@
           </MudSelect>
         </MudItem>
 
-        <MudButton Class="mt-3" ButtonType="ButtonType.Button"
+        <MudButton Class="mt-3"
+                   Color="Color.Primary"
+                   ButtonType="ButtonType.Button"
                    Variant="Variant.Filled"
                    Disabled="@(! AppState.CertificateLoaded)"
                    OnClick="BuildRawSoftwareStatement">
@@ -48,17 +50,16 @@
           <MudItem xs="7">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Raw Software Statement</MudText>
-              <pre>[</pre>
-                <InputTextArea 
-                    id="StatementHeader" 
-                    Class="pre udap-indent-1"
+              <pre Class="@ValidRawSoftwareStatementStyle">[</pre>
+              <InputTextArea id="StatementHeader"
+                             Class="@ValidRawSoftwareStatementStyle"
                              rows="@(SoftwareStatementBeforeEncodingHeader.Count(s => s == '\n' ) + 5)"
-                    @bind-Value="SoftwareStatementBeforeEncodingHeader"/>,
-                <InputTextArea Class="pre udap-indent-1"
+                             @bind-Value="SoftwareStatementBeforeEncodingHeader" />,
+              <InputTextArea Class="@ValidRawSoftwareStatementStyle"
                              rows="@(SoftwareStatementBeforeEncodingSoftwareStatement.Count(s => s == '\n' ) + 1)"
                              @bind-Value="SoftwareStatementBeforeEncodingSoftwareStatement"
-                             @onblur="PersistSoftwareStatement"/>
-              <pre>]</pre>
+                             @onfocusout="PersistSoftwareStatement" />
+              <pre Class="@ValidRawSoftwareStatementStyle">]</pre>
             </MudPaper>
           </MudItem>
           <MudItem xs="5">
@@ -70,7 +71,9 @@
         </MudGrid>
 
 
-        <MudButton Class="mt-3" ButtonType="ButtonType.Button"
+        <MudButton Class="mt-3" 
+                   Color="Color.Primary"
+                   ButtonType="ButtonType.Button"
                    Variant="Variant.Filled"
                    Disabled="@(! AppState.CertificateLoaded)"
                    OnClick="BuildRequestBody">Build Request Body</MudButton>
@@ -85,14 +88,16 @@
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
-                <SignedJwtViewer Title="<b>Decoded software_statement::</b>"
+              <SignedJwtViewer Title="<b>Decoded software_statement::</b>"
                                SignedSoftwareStatement="@AppState.UdapRegistrationRequest?.SoftwareStatement" />
             </MudPaper>
           </MudItem>
 
         </MudGrid>
 
-        <MudButton Class="mt-3" ButtonType="ButtonType.Button"
+        <MudButton Class="mt-3" 
+                   Color="Color.Primary" 
+                   ButtonType="ButtonType.Button"
                    Variant="Variant.Filled"
                    Disabled="@(! AppState.CertificateLoaded)"
                    OnClick="PerformRegistration">Register (DCR)</MudButton>
@@ -107,13 +112,13 @@
           <MudItem xs="5">
             <MudPaper Class="pa-4 ma-2" Elevation="3">
               <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
-                <pre>
+              <pre>
 <a href="http://hl7.org/fhir/us/udap-security/registration.html#request-body">Per UDAP Security IG</a> 
 If a new registration is successful, the Authorization Server SHALL return a registration response with a 201 Created HTTP response code as per Section 5.1 of UDAP Dynamic Client Registration, including the unique client_id assigned by the Authorization Server to that client app. If a new registration is not successful, e.g. it is rejected by the server for any reason, the Authorization Server SHALL return an error response as per <a href="https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-5.1">Section 5.2</a> of UDAP Dynamic Client Registration.
 
 <a href="https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-6">For Modifying or Cancelling previous registration see section 6</a>
 
-<br/>
+<br />
 </pre>
               <SignedJwtViewer Title="<b>Decoded software_statement::</b>" SignedSoftwareStatement="@AppState.RegistrationDocument?.SoftwareStatement"></SignedJwtViewer>
             </MudPaper>

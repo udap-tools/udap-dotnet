@@ -8,7 +8,7 @@
 
 <InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 
-<MudAppBar Elevation="3" Color="Color.Transparent" >
+<MudAppBar Elevation="3" Style="background-image: linear-gradient( 109.6deg,  rgba(240,240,240,1) 11.2%, rgba(240,240,240,1) 91.1% );">
   <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
                  OnClick="@DrawerToggle" />
   <MudSpacer />
@@ -39,9 +39,9 @@
             @onclick="@GoToIG" />
   <MudAvatar Class="cursor-pointer mud-ripple" Image="https://avatars.githubusercontent.com/u/77421324" Alt="UDAP Avatar" Size="Size.Small"
              @onclick="@GoToUdapOrg" />
-  <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit"
+  <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Dark"
                  Link="https://github.com/udap-tools/udap-dotnet/" Target="_blank" />
-  <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+  <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Dark" Edge="Edge.End" />
 </MudAppBar>
 
 <MudDrawer @bind-Open="_drawerOpen" Elevation="2">

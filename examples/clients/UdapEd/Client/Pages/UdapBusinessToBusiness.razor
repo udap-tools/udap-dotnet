@@ -24,7 +24,8 @@
         {
         <MudGrid>
           <MudItem xs="4">
-            <MudButton Class="d-inline m-3"
+              <MudButton Class="d-inline m-3"
+                   Color="Color.Primary"
                    ButtonType="ButtonType.Button"
                    Variant="Variant.Filled"
                    Disabled="@(AppState.RegistrationDocument == null && string.IsNullOrEmpty(ClientId))"
@@ -73,7 +74,8 @@
 
         @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
         {
-        <MudButton Class="d-inline m-3"
+            <MudButton Class="d-inline m-3"
+               Color="Color.Primary"
                ButtonType="ButtonType.Button"
                Variant="Variant.Filled"
                Disabled="@(AppState.RegistrationDocument == null)"
@@ -106,14 +108,16 @@
 
         <MudGrid>
           <MudItem>
-            <MudButton Class="mt-3"
+              <MudButton Class="mt-3"
+                   Color="Color.Primary"
                    ButtonType="ButtonType.Button"
                    Variant="Variant.Filled"
                    Disabled="@(AppState.RegistrationDocument == null)"
                    OnClick="GetAccessCode">View Intermediate Redirect</MudButton>
           </MudItem>
           <MudItem>
-            <MudButton Class="mt-3"
+              <MudButton Class="mt-3"
+                   Color="Color.Primary"
                    Disabled="@(string.IsNullOrWhiteSpace(AuthCodeRequestLink))"
                    OnClick="@LaunchAuthorize">
               Run Authorize Code Request
@@ -179,7 +183,8 @@
 
         <MudGrid Justify="Justify.FlexStart">
           <MudItem xs="4">
-            <MudButton ButtonType="ButtonType.Button"
+              <MudButton ButtonType="ButtonType.Button"
+                   Color="Color.Primary"
                    Variant="Variant.Filled"
                    Disabled="@(AppState.RegistrationDocument == null)"
                    OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
@@ -212,7 +217,8 @@
         </MudGrid>
         }
 
-    <MudButton Class="mt-3"
+  <MudButton Class="mt-3"
+               Color="Color.Primary"
                ButtonType="ButtonType.Button"
                Variant="Variant.Filled"
                Disabled="@(AppState.RegistrationDocument == null)"

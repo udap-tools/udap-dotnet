@@ -111,21 +111,34 @@ public partial class UdapRegistration
         }
     }
 
+    private const string validStyle = "pre udap-indent-1";
+    private const string invalidStyle = "pre udap-indent-1 jwt-invalid";
+    public string ValidRawSoftwareStatementStyle { get; set; } = validStyle;
 
     private void PersistSoftwareStatement()
     {
-        var statement = JsonSerializer
-            .Deserialize<UdapDynamicClientRegistrationDocument>(SoftwareStatementBeforeEncodingSoftwareStatement);
-        var beforeEncodingScope = statement?.Scope;
-        
-        var rawStatement = new RawSoftwareStatementAndHeader
+        try
         {
-            Header = SoftwareStatementBeforeEncodingHeader,
-            SoftwareStatement = SoftwareStatementBeforeEncodingSoftwareStatement,
-            Scope = beforeEncodingScope
-        };
-        
-        AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), rawStatement);
+            var statement = JsonSerializer
+                .Deserialize<UdapDynamicClientRegistrationDocument>(SoftwareStatementBeforeEncodingSoftwareStatement);
+            var beforeEncodingScope = statement?.Scope;
+
+            var rawStatement = new RawSoftwareStatementAndHeader
+            {
+                Header = SoftwareStatementBeforeEncodingHeader,
+                SoftwareStatement = SoftwareStatementBeforeEncodingSoftwareStatement,
+                Scope = beforeEncodingScope
+            };
+
+            ValidRawSoftwareStatementStyle = validStyle;
+            AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), rawStatement);
+            Console.WriteLine("hello joe");
+        }
+        catch
+        {
+            Console.WriteLine("Error joe");
+            ValidRawSoftwareStatementStyle = invalidStyle;
+        }
     }
 
     private string? _registrationResult;
@@ -180,7 +193,7 @@ public partial class UdapRegistration
         set => _requestBody = value;
     }
 
-   
+    
     private async Task BuildRawSoftwareStatement()
     {
         SetRawMessage("Loading ...");

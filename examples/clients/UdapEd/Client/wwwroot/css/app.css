@@ -122,6 +122,10 @@ pre {
   padding-left: 10px
 }
 
+.jwt-invalid {
+  color: red
+}
+
 .jwt-playground, .algorithm-code, .tab-content, .jwt-explained, .text-line {
   margin: 0;
   font-size: 12px;

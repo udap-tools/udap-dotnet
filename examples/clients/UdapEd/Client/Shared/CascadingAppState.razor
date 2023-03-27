@@ -33,7 +33,7 @@
                 prop.SetValue(this, propertyValue);
                 if (saveChanges)
                 {
-                    this.SaveChanges().GetAwaiter().GetResult();
+                    this.SaveChanges(); //WASM:: Cannot .GetAwaiter().GetResult() will not work.  Error: "Cannot wait on monitors on this runtime
                 }
                 if (fhirStateHasChanged)
                 {
@@ -41,8 +41,9 @@
                 }
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex);
             Console.WriteLine($"$Failed to set property: {propertyName}");
         }
     }
@@ -71,8 +72,9 @@
                 }
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex);
             Console.WriteLine($"$Failed to set property: {propertyName}");
         }
     }

@@ -64,7 +64,7 @@ namespace Udap.Server.Stores
                 existingClient.AllowedScopes = client.AllowedScopes
                     .Select(s => new ClientScope(){ClientId = existingClient.Id, Scope = s})
                     .ToList();
-
+                existingClient.RedirectUris = existingClient.RedirectUris;
                 await _dbContext.SaveChangesAsync(token);
                 return true;
             }

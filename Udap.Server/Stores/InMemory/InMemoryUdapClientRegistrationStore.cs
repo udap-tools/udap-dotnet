@@ -61,6 +61,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         {
             client.ClientId = existingClient.ClientId;
             existingClient.AllowedScopes = client.AllowedScopes;
+            existingClient.RedirectUris = client.RedirectUris;
             return Task.FromResult<bool>(true);
         }
         else

@@ -43,6 +43,7 @@ public class UdapResponseTypeResponseModeTests
     private const string Category = "Conformance.Basic.UdapResponseTypeResponseModeTests";
 
     private UdapIdentityServerPipeline _mockPipeline = new UdapIdentityServerPipeline();
+    
 
     public UdapResponseTypeResponseModeTests(ITestOutputHelper testOutputHelper)
     {
@@ -568,6 +569,140 @@ public class UdapResponseTypeResponseModeTests
         response.Headers.Location!.AbsoluteUri.Should().Contain("https://code_client/callback");
         _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+        queryParams.Should().Contain(p => p.Key == "code");
+        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("udap");
+        queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
+        //iss ???
+    }
+
+    [Fact]
+    [Trait("Category", Category)]
+    public async Task Request_accepted_RegisterWithDifferentRedirectUrl()
+    {
+        string _httpsCodeClientCallback = "https://code_client/callback";
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+
+        await _mockPipeline.LoginAsync("bob");
+
+        var document = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("udap")
+            .WithResponseTypes(new List<string> { "code" })
+            .WithRedirectUrls(new List<string> { _httpsCodeClientCallback })
+            .Build();
+
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+            .Create(clientCert, document)
+            .Build();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+        var response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        var state = Guid.NewGuid().ToString();
+        var nonce = Guid.NewGuid().ToString();
+
+        var url = _mockPipeline.CreateAuthorizeUrl(
+            clientId: resultDocument!.ClientId!,
+            responseType: "code",
+            scope: "udap",
+            redirectUri: _httpsCodeClientCallback,
+            state: state,
+            nonce: nonce);
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
+        response = await _mockPipeline.BrowserClient.GetAsync(url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location!.AbsoluteUri.Should().Contain(_httpsCodeClientCallback);
+        _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+        queryParams.Should().Contain(p => p.Key == "code");
+        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("udap");
+        queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
+        //iss ???
+
+
+        //
+        // Re-Register
+        //
+
+        _httpsCodeClientCallback = "https://code_client/different_callback";
+        document.RedirectUris = new List<string> { _httpsCodeClientCallback };
+
+        signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+        response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        //
+        // Get AccessToken again
+        //
+        state = Guid.NewGuid().ToString();
+        nonce = Guid.NewGuid().ToString();
+
+        url = _mockPipeline.CreateAuthorizeUrl(
+            clientId: resultDocument!.ClientId!,
+            responseType: "code",
+            scope: "udap",
+            redirectUri: _httpsCodeClientCallback,
+            state: state,
+            nonce: nonce);
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
+        response = await _mockPipeline.BrowserClient.GetAsync(url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
+
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location!.AbsoluteUri.Should().Contain(_httpsCodeClientCallback);
+        _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
         queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("udap");
         queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);

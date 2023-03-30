@@ -384,7 +384,7 @@ public class ClientCredentialsUdapModeTests
 
     [Fact]
     [Trait("Category", Category)]
-    public async Task RegistraterClientCredentialsThenAuthorizationCode()
+    public async Task RegisterClientCredentialsThenRegisterAuthorizationCode()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
@@ -519,7 +519,7 @@ public class ClientCredentialsUdapModeTests
     public async Task ChangeRegistrationBetweenCommunitiesWhereSubAltNamesTheSame()
     {
         var clientCertCommunity1 = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
-        var clientCertCommunity2 = new X509Certificate2("CertStore/issued/fhirlabs.7016.net.client.pfx", "udap-test");
+        // var clientCertCommunity2 = new X509Certificate2("CertStore/issued/fhirlabs.7016.net.client.pfx", "udap-test");
 
         //
         // First Registration

@@ -194,6 +194,7 @@ namespace UdapServer.Tests
             }
         }
 
+
         [Fact]
         public async Task UdapDynamicClientRegistrationDocumentCompareToJwtPayloadTest()
         {
@@ -372,13 +373,6 @@ namespace UdapServer.Tests
             var store = sp.GetRequiredService<IUdapClientRegistrationStore>();
             var communityAnchors = await store.GetAnchorsCertificates("http://localhost");
             var anchors = await store.GetAnchors("http://localhost");
-            // TODO Store still needs a trusted roots place to store data
-            // var trustedRoots = await store.GetRootCertificates("http://localhost");
-            //var trustedRoots = new X509Certificate2Collection();
-            // trustedRoots.Add(new X509Certificate2(
-            //     Path.Combine(AppContext.BaseDirectory, "CertStore/roots", "caLocalhostCert.cer")
-            // ));
-
             var intermediateCerts = new X509Certificate2Collection(anchors.First().IntermediateCertificates
                 .Select(s => X509Certificate2.CreateFromPem(s.Certificate)).ToArray());
 
@@ -390,8 +384,10 @@ namespace UdapServer.Tests
 
             result.IsError.Should().BeFalse($"{result.Error} : {result.ErrorDescription}");
             result.Document.Should().BeEquivalentTo(document);
-        }
 
+
+        }
+        
         /// <summary>
         /// Issuer of the JWT -- unique identifying client URI. This SHALL match the value of a
         /// uniformResourceIdentifier entry in the Subject Alternative Name extension of the client's

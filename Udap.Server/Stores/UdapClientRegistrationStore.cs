@@ -52,6 +52,7 @@ namespace Udap.Server.Stores
 
             var existingClient = _dbContext.Clients
                 .Include(c => c.AllowedScopes)
+                .Include(c => c.RedirectUris)
                 .SingleOrDefault(c =>
                 c.AllowedGrantTypes.Any(grant => client.AllowedGrantTypes.Contains(grant.GrantType)) &&
                 c.ClientSecrets.Any(cs =>
@@ -64,7 +65,7 @@ namespace Udap.Server.Stores
                 existingClient.AllowedScopes = client.AllowedScopes
                     .Select(s => new ClientScope(){ClientId = existingClient.Id, Scope = s})
                     .ToList();
-                existingClient.RedirectUris = existingClient.RedirectUris;
+                existingClient.RedirectUris = client.ToEntity().RedirectUris;
                 await _dbContext.SaveChangesAsync(token);
                 return true;
             }

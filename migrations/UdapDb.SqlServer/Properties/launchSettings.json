@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "UdapDb": {
+    "Local_Migrate": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

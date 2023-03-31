@@ -1,4 +1,7 @@
 #!/bin/bash
+#Be very carefull to always save with unix line endings and no BOM.  
+#Avoid saving with Visual Studio on Windows.  Use something like Notepad++
+#Save with ANSI encoding
 set -eo pipefail
 
 # Create mount directory for service

@@ -19,13 +19,13 @@ using Udap.Server.Stores;
 
 namespace UdapServer.Tests.EntityFramework.Stores;
 
-public class UdapClientRegistrationStoreTests : StorageFixture<ClientStoreTests, UdapDbContext, UdapConfigurationStoreOptions>
+public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistrationStoreTests, UdapDbContext, UdapConfigurationStoreOptions>
 {
-    public UdapClientRegistrationStoreTests(TestDatabaseProvider<UdapDbContext> fixture) : base(fixture)
+     public UdapClientRegistrationStoreTests(TestDatabaseProvider<UdapDbContext> fixture) : base(fixture)
     {
         foreach (var options in TestDatabaseProviders.SelectMany(x => x.Select(y => (DbContextOptions<UdapDbContext>)y)).ToList())
         {
-            using var context = new UdapDbContext(options);
+            using var context = new UdapDbContext(options, true);
             context.Database.EnsureCreated();
         }
     }

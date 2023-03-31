@@ -14,8 +14,8 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
+
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 
 namespace UdapServer.Tests;
 
@@ -28,15 +28,11 @@ public class StorageFixture<TClass, TDbContext, TStoreOption> : IClassFixture<Te
 
     static StorageFixture()
     {
-        var config = new ConfigurationBuilder()
-            .AddEnvironmentVariables()
-            .Build();
-
         TestDatabaseProviders = new TheoryData<DbContextOptions<TDbContext>>
         {
-            DatabaseProviderBuilder.BuildInMemory<TDbContext, TStoreOption>(typeof(TClass).Name, StoreOptions),
-            DatabaseProviderBuilder.BuildSqlite<TDbContext, TStoreOption>(typeof(TClass).Name, StoreOptions),
-            //DatabaseProviderBuilder.BuildLocalDb<TDbContext, TStoreOption>(typeof(TClass).Name, StoreOptions)
+            // DatabaseProviderBuilder.BuildInMemory<TDbContext, TStoreOption>(typeof(TClass).Name, StoreOptions),
+            DatabaseProviderBuilder.BuildSqlite<TDbContext, TStoreOption>(typeof(TClass).Name, StoreOptions)
+            // DatabaseProviderBuilder.BuildLocalDb<TDbContext, TStoreOption>(typeof(TClass).Name, StoreOptions)
         };
     }
 

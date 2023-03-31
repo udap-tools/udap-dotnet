@@ -56,8 +56,8 @@ public class UdapResponseTypeResponseModeTests
             s.AddSingleton<ServerSettings>(new ServerSettings
             {
                 ServerSupport = ServerSupport.UDAP,
-                DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap",
+                DefaultUserScopes = "user/*.read",
+                DefaultSystemScopes = "system/*.read",
                 ForceStateParamOnAuthorizationCode = true
             });
         };
@@ -72,26 +72,6 @@ public class UdapResponseTypeResponseModeTests
 
         _mockPipeline.Initialize(enableLogging: true);
         _mockPipeline.BrowserClient.AllowAutoRedirect = false;
-
-        _mockPipeline.Clients.Add(new Client
-        {
-            Enabled = true,
-            ClientId = "code_client",
-            ClientSecrets = new List<Secret>
-            {
-                new Secret("secret".Sha512())
-            },
-
-            AllowedGrantTypes = GrantTypes.Code,
-            AllowedScopes = { "openid" },
-
-            RequireConsent = false,
-            RequirePkce = false,
-            RedirectUris = new List<string>
-            {
-                "https://code_client/callback"
-            }
-        });
         
         _mockPipeline.Communities.Add(new Community
         {
@@ -122,6 +102,8 @@ public class UdapResponseTypeResponseModeTests
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockPipeline.IdentityScopes.Add(new IdentityResources.Profile());
+
+        _mockPipeline.ApiScopes.Add(new ApiScope("user/*.read"));
         _mockPipeline.ApiScopes.Add(new ApiScope("udap"));
 
         _mockPipeline.Users.Add(new TestUser
@@ -157,7 +139,7 @@ public class UdapResponseTypeResponseModeTests
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap")
+            .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
@@ -191,7 +173,7 @@ public class UdapResponseTypeResponseModeTests
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
             //responseType: null!, // missing
-            scope: "udap",
+            scope: "openid",
             redirectUri: "https://code_client/callback",
             state: state,
             nonce: nonce);
@@ -206,7 +188,7 @@ public class UdapResponseTypeResponseModeTests
         responseParams["error"].Should().BeEquivalentTo("invalid_request");
         responseParams["error_description"].Should().BeEquivalentTo("Missing response_type");
         responseParams.Count(r => r.Key == "response_type").Should().Be(0);
-        responseParams["scope"].Should().BeEquivalentTo("udap");
+        responseParams["scope"].Should().BeEquivalentTo("openid");
         responseParams["state"].Should().BeEquivalentTo(state);
         responseParams["nonce"].Should().BeEquivalentTo(nonce);
     }
@@ -236,7 +218,7 @@ public class UdapResponseTypeResponseModeTests
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap")
+            .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
@@ -269,7 +251,7 @@ public class UdapResponseTypeResponseModeTests
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
             responseType: "code",
-            scope: "udap",
+            scope: "openid",
             redirectUri: "https://code_client/callback",
             // state: state, //missing state
             nonce: nonce);
@@ -284,7 +266,7 @@ public class UdapResponseTypeResponseModeTests
         responseParams["error"].Should().BeEquivalentTo("invalid_request");
         responseParams["error_description"].Should().BeEquivalentTo("Missing state");
         responseParams["response_type"].Should().BeEquivalentTo("code");
-        responseParams["scope"].Should().BeEquivalentTo("udap");
+        responseParams["scope"].Should().BeEquivalentTo("openid");
         responseParams.Count(r => r.Key == "state").Should().Be(0);
         responseParams["nonce"].Should().BeEquivalentTo(nonce);
     }
@@ -309,7 +291,7 @@ public class UdapResponseTypeResponseModeTests
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap")
+            .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
@@ -343,7 +325,7 @@ public class UdapResponseTypeResponseModeTests
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
             responseType: "invalid_response_type", // invalid
-            scope: "udap",
+            scope: "openid",
             redirectUri: "https://code_client/callback",
             state: state,
             nonce: nonce);
@@ -358,7 +340,7 @@ public class UdapResponseTypeResponseModeTests
         responseParams["error"].Should().BeEquivalentTo("invalid_request");
         responseParams["error_description"].Should().BeEquivalentTo("Response type not supported");
         responseParams["response_type"].Should().BeEquivalentTo("invalid_response_type");
-        responseParams["scope"].Should().BeEquivalentTo("udap");
+        responseParams["scope"].Should().BeEquivalentTo("openid");
         responseParams["state"].Should().BeEquivalentTo(state);
         responseParams["nonce"].Should().BeEquivalentTo(nonce);
     }
@@ -383,7 +365,7 @@ public class UdapResponseTypeResponseModeTests
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap")
+            .WithScope("openid system/*.read")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
@@ -418,7 +400,7 @@ public class UdapResponseTypeResponseModeTests
         var url = _mockPipeline.CreateAuthorizeUrl(
             // clientId: null,
             responseType: "code",
-            scope: "udap",
+            // scope: "openid",
             redirectUri: "https://code_client/callback",
             state: state,
             nonce: nonce);
@@ -452,7 +434,7 @@ public class UdapResponseTypeResponseModeTests
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap")
+            .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
@@ -485,7 +467,7 @@ public class UdapResponseTypeResponseModeTests
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: $"{resultDocument!.ClientId!}_Invalid",
             responseType: "code",
-            scope: "udap",
+            scope: "openid",
             redirectUri: "https://code_client/callback",
             state: state,
             nonce: nonce);
@@ -520,7 +502,7 @@ public class UdapResponseTypeResponseModeTests
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap")
+            .WithScope("openid")
             .WithResponseTypes(new List<string> {"code"})
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
@@ -555,7 +537,7 @@ public class UdapResponseTypeResponseModeTests
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
             responseType: "code",
-            scope: "udap",
+            scope: "openid",
             redirectUri: "https://code_client/callback",
             state: state,
             nonce: nonce);
@@ -563,14 +545,14 @@ public class UdapResponseTypeResponseModeTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = false;
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
 
         response.Headers.Location.Should().NotBeNull();
         response.Headers.Location!.AbsoluteUri.Should().Contain("https://code_client/callback");
         _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
-        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("udap");
+        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");
         queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
         //iss ???
     }
@@ -595,7 +577,7 @@ public class UdapResponseTypeResponseModeTests
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap")
+            .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { _httpsCodeClientCallback })
             .Build();
@@ -630,7 +612,7 @@ public class UdapResponseTypeResponseModeTests
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
             responseType: "code",
-            scope: "udap",
+            scope: "openid",
             redirectUri: _httpsCodeClientCallback,
             state: state,
             nonce: nonce);
@@ -638,14 +620,14 @@ public class UdapResponseTypeResponseModeTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = false;
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
 
         response.Headers.Location.Should().NotBeNull();
         response.Headers.Location!.AbsoluteUri.Should().Contain(_httpsCodeClientCallback);
         _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
-        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("udap");
+        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");
         queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
         //iss ???
 
@@ -689,7 +671,7 @@ public class UdapResponseTypeResponseModeTests
         url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
             responseType: "code",
-            scope: "udap",
+            scope: "openid",
             redirectUri: _httpsCodeClientCallback,
             state: state,
             nonce: nonce);
@@ -704,7 +686,7 @@ public class UdapResponseTypeResponseModeTests
         _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
-        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("udap");
+        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");
         queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
         //iss ???
     }

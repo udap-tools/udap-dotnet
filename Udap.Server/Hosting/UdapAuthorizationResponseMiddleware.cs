@@ -122,7 +122,7 @@ internal class UdapAuthorizationResponseMiddleware
                                     requestParamCollection.Get(AuthorizeRequest.ClientId));
                             var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
 
-                            if (client == null && scope != null && scope.Contains("udap")) //TODO not test and why does this exist.  It would be for a Tiered OAuth flow.
+                            if (client == null) 
                             {
                                 await RenderErrorResponse(context, interactionService, errorId);
                             }

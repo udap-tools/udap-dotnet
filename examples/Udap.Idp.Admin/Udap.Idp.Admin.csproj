@@ -20,7 +20,7 @@
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="7.0.4" />
     <PackageReference Include="MudBlazor" Version="6.2.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.1-dev-10301" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>
 

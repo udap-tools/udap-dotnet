@@ -167,6 +167,7 @@ public class AccessController : Controller
                 new JsonSerializerOptions{WriteIndented = true})
         };
 
+        HttpContext.Session.SetString(UdapEdConstants.TOKEN, tokenResponseModel.AccessToken!);
         return Ok(tokenResponseModel);
     }
 
@@ -189,7 +190,7 @@ public class AccessController : Controller
             TokenType = tokenResponse.TokenType
         };
 
-        _logger.LogInformation("Goodbye joe serer side");
+        HttpContext.Session.SetString(UdapEdConstants.TOKEN, tokenResponseModel.AccessToken!);
         return Ok(tokenResponseModel);
     }
 }

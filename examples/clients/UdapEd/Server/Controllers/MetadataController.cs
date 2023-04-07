@@ -6,9 +6,11 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
+using Udap.Client.Internal;
 using Udap.Model;
 using Udap.Util.Extensions;
 using UdapEd.Server.Extensions;
+using UdapEd.Shared;
 using UdapEd.Shared.Model;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
@@ -27,14 +29,25 @@ public class MetadataController : Controller
         _logger = logger;
     }
 
+    // get metadata from .well-known/udap  
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] string metadataUrl)
     {
-        _logger.LogDebug(Base64UrlEncoder.Decode(metadataUrl));
-        var response = await _httpClient.GetStringAsync(Base64UrlEncoder.Decode(metadataUrl));
+        var baseUrl = Base64UrlEncoder.Decode(metadataUrl);
+        _logger.LogDebug(baseUrl);
+        var response = await _httpClient.GetStringAsync(baseUrl);
         var result = JsonSerializer.Deserialize<UdapMetadata>(response);
+        HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseUrl.GetBaseUrlFromMetadataUrl());
 
         return Ok(result);
+    }
+
+    [HttpPut]
+    public IActionResult SetBaseFhirUrl([FromBody] string baseFhirUrl)
+    {
+        HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseFhirUrl);
+
+        return Ok();
     }
 
     [HttpGet("MyIp")]
@@ -75,7 +88,7 @@ public class MetadataController : Controller
         data.Add("Start Date", cert.GetEffectiveDateString());
         data.Add("End Date", cert.GetExpirationDateString());
         data.Add("Key Usage", GetKeyUsage(cert));
-        // data.Add("Extended Key Usage", GetExtendeKeyUsage(cert));
+        // data.Add("Extended Key Usage", GetExtendedKeyUsage(cert));
         data.Add("Issuer", cert.Issuer);
         data.Add("Subject Key Identifier", GetSubjectKeyIdentifier(cert));
         data.Add("Authority Key Identifier", GetAuthorityKeyIdentifier(cert));
@@ -133,7 +146,7 @@ public class MetadataController : Controller
         return string.Join("; ", keyUsage.ToKeyUsageToString());
     }
 
-    private string GetExtendeKeyUsage(X509Certificate2 cert)
+    private string GetExtendedKeyUsage(X509Certificate2 cert)
     {
         var ext = cert.GetExtensionValue(X509Extensions.ExtendedKeyUsage.Id) as Asn1OctetString;
 

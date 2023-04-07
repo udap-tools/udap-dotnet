@@ -8,10 +8,16 @@
 #endregion
 
 using System.Text.Json;
+using Hl7.Fhir.Rest;
+using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
+using Udap.Client.Authentication;
+using Udap.Client.Rest;
+using UdapEd.Server.Authentication;
 using UdapEd.Server.Extensions;
+using UdapEd.Server.Rest;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -76,7 +82,12 @@ builder.Services.AddAuthentication(options =>
 
     });
 
-builder.Services.AddScoped(sp => new HttpClient());
+builder.Services.AddScoped<IBaseUrlProvider, BaseUrlProvider>();
+builder.Services.AddScoped<IAccessTokenProvider, AccessTokenProvider>();
+builder.Services.AddHttpClient<FhirClientForDI>((sp, httpClient) =>
+{ })
+    .AddHttpMessageHandler(x => new AuthTokenHttpMessageHandler(x.GetRequiredService<IAccessTokenProvider>()));
+
 builder.Services.AddHttpContextAccessor();
 
 builder.AddRateLimiting();

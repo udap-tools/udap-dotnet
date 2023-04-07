@@ -14,28 +14,30 @@ using System.Text.Json.Serialization;
 using Udap.Model.Registration;
 using Udap.Util.Extensions;
 using UdapEd.Shared.Model;
+using static System.Net.WebRequestMethods;
+using Task = System.Threading.Tasks.Task;
 
 namespace UdapEd.Client.Services;
 
 public class RegisterService
 {
-    readonly HttpClient _http;
+    readonly HttpClient _httpClient;
 
-    public RegisterService(HttpClient http)
+    public RegisterService(HttpClient httpClientClient)
     {
-        _http = http;
+        _httpClient = httpClientClient;
     }
 
     public async Task UploadClientCert(string certBytes)
     {
-        var result = await _http.PostAsJsonAsync("Register/UploadClientCert", certBytes);
+        var result = await _httpClient.PostAsJsonAsync("Register/UploadClientCert", certBytes);
 
         result.EnsureSuccessStatusCode();
     }
 
     public async Task<RawSoftwareStatementAndHeader?> BuildSoftwareStatementForClientCredentials(UdapDynamicClientRegistrationDocument request)
     {
-        var result = await _http.PostAsJsonAsync("Register/BuildSoftwareStatement/ClientCredentials", request);
+        var result = await _httpClient.PostAsJsonAsync("Register/BuildSoftwareStatement/ClientCredentials", request);
 
         result.EnsureSuccessStatusCode();
 
@@ -44,7 +46,7 @@ public class RegisterService
 
     public async Task<RawSoftwareStatementAndHeader?> BuildSoftwareStatementForAuthorizationCode(UdapDynamicClientRegistrationDocument request)
     {
-        var result = await _http.PostAsJsonAsync("Register/BuildSoftwareStatement/AuthorizationCode", request);
+        var result = await _httpClient.PostAsJsonAsync("Register/BuildSoftwareStatement/AuthorizationCode", request);
 
         result.EnsureSuccessStatusCode();
 
@@ -53,7 +55,7 @@ public class RegisterService
 
     public async Task<UdapRegisterRequest?> BuildRequestBodyForClientCredentials(RawSoftwareStatementAndHeader? request)
     {
-        var result = await _http.PostAsJsonAsync("Register/BuildRequestBody/ClientCredentials", request);
+        var result = await _httpClient.PostAsJsonAsync("Register/BuildRequestBody/ClientCredentials", request);
 
         result.EnsureSuccessStatusCode();
 
@@ -62,7 +64,7 @@ public class RegisterService
 
     public async Task<UdapRegisterRequest?> BuildRequestBodyForAuthorizationCode(RawSoftwareStatementAndHeader? request)
     {
-        var result = await _http.PostAsJsonAsync("Register/BuildRequestBody/AuthorizationCode", request);
+        var result = await _httpClient.PostAsJsonAsync("Register/BuildRequestBody/AuthorizationCode", request);
 
         result.EnsureSuccessStatusCode();
 
@@ -71,7 +73,7 @@ public class RegisterService
 
     public async Task<RegistrationResult?> Register(RegistrationRequest registrationRequest)
     {
-        var result = await _http.PostAsJsonAsync(
+        var result = await _httpClient.PostAsJsonAsync(
             "Register/Register",
             registrationRequest,
             new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
@@ -96,7 +98,7 @@ public class RegisterService
 
     public async Task<CertLoadedEnum> ValidateCertificate(string password)
     {
-        var result = await _http.PostAsJsonAsync(
+        var result = await _httpClient.PostAsJsonAsync(
             "Register/ValidateCertificate",
             password);
 
@@ -112,14 +114,14 @@ public class RegisterService
 
     public async Task<CertLoadedEnum> ClientCertificateLoadStatus()
     {
-        var response = await _http.GetFromJsonAsync<CertLoadedEnum>("Register/IsClientCertificateLoaded");
+        var response = await _httpClient.GetFromJsonAsync<CertLoadedEnum>("Register/IsClientCertificateLoaded");
 
         return response;
     }
 
     public async Task<CertLoadedEnum> LoadTestCertificate()
     {
-        var response = await _http.PutAsJsonAsync("Register/UploadTestClientCert", "fhirlabs.net.client.pfx");
+        var response = await _httpClient.PutAsJsonAsync("Register/UploadTestClientCert", "fhirlabs.net.client.pfx");
 
         if (!response.IsSuccessStatusCode)
         {

@@ -132,11 +132,9 @@ public partial class UdapRegistration
 
             ValidRawSoftwareStatementStyle = validStyle;
             AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), rawStatement);
-            Console.WriteLine("hello joe");
         }
         catch
         {
-            Console.WriteLine("Error joe");
             ValidRawSoftwareStatementStyle = invalidStyle;
         }
     }
@@ -218,7 +216,7 @@ public partial class UdapRegistration
                 .WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
-                .WithClientName(UdapEdConstants.ClientName)
+                .WithClientName(UdapEdConstants.CLIENT_NAME)
                 .WithContacts(new HashSet<string>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
@@ -252,7 +250,7 @@ public partial class UdapRegistration
                 .WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
-                .WithClientName(UdapEdConstants.ClientName)
+                .WithClientName(UdapEdConstants.CLIENT_NAME)
                 .WithContacts(new HashSet<string>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"

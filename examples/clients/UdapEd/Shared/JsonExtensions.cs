@@ -12,16 +12,16 @@ using System.Text.Json;
 namespace UdapEd.Shared;
 public static class JsonExtensions
 {
-    public static string? AsJson<T>(this T source)
+    public static string AsJson<T>(this T source)
     {
         var options = new JsonSerializerOptions();
         options.WriteIndented = true;
         
 
-        return JsonSerializer.Serialize<T>(source, options);
+        return JsonSerializer.Serialize(source, options);
     }
 
-    private const string INDENT_STRING = "  ";
+    private const string IndentString = "  ";
 
     /// <summary>
     /// Routine is from https://stackoverflow.com/questions/4580397/json-formatter-in-c/24782322#24782322
@@ -36,9 +36,9 @@ public static class JsonExtensions
         var result =
             from ch in json
             let quotes = ch == '"' ? quoteCount++ : quoteCount
-            let lineBreak = ch == ',' && quotes % 2 == 0 ? ch + Environment.NewLine + String.Concat(Enumerable.Repeat(INDENT_STRING, indentation)) : null
-            let openChar = ch == '{' || ch == '[' ? ch + Environment.NewLine + String.Concat(Enumerable.Repeat(INDENT_STRING, ++indentation)) : ch.ToString()
-            let closeChar = ch == '}' || ch == ']' ? Environment.NewLine + String.Concat(Enumerable.Repeat(INDENT_STRING, --indentation)) + ch : ch.ToString()
+            let lineBreak = ch == ',' && quotes % 2 == 0 ? ch + Environment.NewLine + String.Concat(Enumerable.Repeat(IndentString, indentation)) : null
+            let openChar = ch == '{' || ch == '[' ? ch + Environment.NewLine + String.Concat(Enumerable.Repeat(IndentString, ++indentation)) : ch.ToString()
+            let closeChar = ch == '}' || ch == ']' ? Environment.NewLine + String.Concat(Enumerable.Repeat(IndentString, --indentation)) + ch : ch.ToString()
             select lineBreak == null
                 ? openChar.Length > 1
                     ? openChar

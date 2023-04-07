@@ -1,0 +1,222 @@
+﻿@page "/patientSearch"
+@using Hl7.Fhir.Model
+@using Hl7.Fhir.Serialization
+@using UdapEd.Client.Services
+@using Task = System.Threading.Tasks.Task
+@using System.Net
+
+
+<MudCard Elevation="3" Style="margin-top: 10px">
+    <MudForm Model="_model" @ref="form" />
+    <MudCardContent>
+        <MudGrid Justify="Justify.FlexStart">
+            <MudItem md="4" sm="6" xs="12">
+                <MudText Color="Color.Primary">Access Token:</MudText>
+                <MudText Color="@(AppState.Status is {IsValid: false }
+                                    ? Color.Error : Color.Success)">@AppState.AccessTokens?.AccessToken</MudText>
+            </MudItem>
+            <MudItem md="4" sm="6" xs="12">
+                <MudText Color="Color.Primary">Base FHIR URL:</MudText>
+                <MudLink Href="/udapDiscovery" Color="Color.Info">@AppState.BaseUrl</MudLink>
+            </MudItem>
+
+        </MudGrid>
+        <MudGrid>
+            <MudItem md="4" sm="6" xs="12">
+                <MudTextField @bind-Value="_model.Family"
+                              For="@(() => _model.Family)"
+                              Label="Family (last)" />
+            </MudItem>
+            <MudItem md="4" sm="6" xs="12">
+                <MudTextField @bind-Value="_model.Given"
+                              For="@(() => _model.Given)"
+                              Label="Given (first)" />
+            </MudItem>
+            <MudItem md="4" sm="6" xs="12">
+                <MudTextField @bind-Value="_model.Name"
+                              For="@(() => _model.Name)"
+                              Label="first, last or middle" />
+            </MudItem>
+            <MudItem md="4" sm="6" xs="12">
+                <MudDatePicker @bind-Date="_model.BirthDate"
+                               Label="yyyy-MM-dd"
+                               Editable="true"
+                               Mask="@(new DateMask("0000-00-00"))"
+                               DateFormat="yyyy-MM-dd"
+                               Placeholder="ISO Date" />
+            </MudItem>
+            <MudItem md="4" sm="6" xs="12">
+                <MudTextField @bind-Value="_model.Id"
+                              For="@(() => _model.Id)"
+                              Label="Resource Id" />
+            </MudItem>
+            <MudItem md="4" sm="6" xs="12">
+                <MudTextField @bind-Value="_model.Identifier"
+                              For="@(() => _model.Identifier)"
+                              Label="Fhir Identifier" />
+            </MudItem>
+            <MudCardActions>
+                <MudButton Class="mt-3"
+                           Color="Color.Primary"
+                           ButtonType="ButtonType.Button"
+                           Variant="Variant.Text"
+                           OnClick="Search">Search</MudButton>
+                <MudButton Class="mt-3"
+                           Color="Color.Primary"
+                           ButtonType="ButtonType.Button"
+                           Variant="Variant.Text"
+                           OnClick="Cancel">Cancel</MudButton>
+            </MudCardActions>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+@if (_patients != null || _outComeMessage != null)
+{
+    <MudCard Elevation="3" Style="margin-top: 10px">
+        <MudCardContent>
+            <MudTable @ref="_table"
+                      T="Patient"
+                      Items="@_patients"
+                      MultiSelection="true"
+                      Dense="@false"
+                      Hover="@true"
+                      ReadOnly="@true"
+                      SortLabel="Name"
+                      CommitEditTooltip="Commit Edit"
+                      IsEditRowSwitchingBlocked="@true"
+                      ApplyButtonPosition="@TableApplyButtonPosition.Start"
+                      OnRowClick="@OnRowClick">
+                <HeaderContent>
+                    <MudTh>Name</MudTh>
+                    <MudTh>BirthDate</MudTh>
+                    <MudTh>Id</MudTh>
+                    <MudTh>Identifier</MudTh>
+                    <MudTh/>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Name">@(new MarkupString(string.Join("<br/> ", context.Name.Select(hn => $"{hn.Given.First()}, {hn.Family}"))))</MudTd>
+                    <MudTd DataLabel="BirthDate">@context.BirthDate</MudTd>
+                    <MudTd DataLabel="Id">@context.Id</MudTd>
+                    <MudTd DataLabel="Identifier">@(new MarkupString(string.Join("<br/> ", context.Identifier.Select(identifier => $"{identifier.System}|{identifier.Value}"))))</MudTd>
+                </RowTemplate>
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new [] { 50, 100 }"/>
+                </PagerContent>
+
+            </MudTable>
+
+            @if (_outComeMessage != null)
+            {
+                <MudAlert Severity="Severity.Error">@_outComeMessage</MudAlert>
+            }
+        </MudCardContent>
+    </MudCard>
+}
+
+@if (!string.IsNullOrEmpty(_selectedItemText))
+{
+    <MudCard Elevation="3" Style="margin-top: 10px">
+        <MudCardContent>
+            <pre>@_selectedItemText</pre>
+        </MudCardContent>
+    </MudCard>
+}
+@code {
+
+    MudForm form;
+
+    private MudTable<Patient> _table;
+    PatientQuery _model = new();
+    List<Patient>? _patients;
+    string? _outComeMessage;
+    private string _selectedItemText = string.Empty;
+
+    [CascadingParameter]
+    public CascadingAppState AppState { get; set; } = null!;
+
+    [CascadingParameter]
+    public MainLayout Layout { get; set; } = null!;
+
+    [Inject] FhirService FhirService { get; set; } = null!;
+    [Inject] DiscoveryService DiscoveryService { get; set; } = null!;
+
+    //
+    // Potential container for post formatting presentation.
+    //
+    // public class PatientViewModel
+    // {
+    //     public string Name { get; set; }
+    //     public string BirthDate { get; set; }
+    //     public string Id { get; set; }
+    //     public string Identifier { get; set; }
+    // }
+
+    private async Task Search()
+    {
+        _selectedItemText = string.Empty;
+        _patients = null;
+        StateHasChanged();
+        await Task.Delay(100);
+
+        if (AppState.BaseUrl != null)
+        {
+            var model = new PatientSearchModel
+                {
+                    BaseUrl = new Uri(AppState.BaseUrl),
+                    PatientQuery = _model
+                };
+
+            var result = await FhirService.SearchPatient(model);
+
+            if (result.UnAuthorized)
+            {
+                _outComeMessage = HttpStatusCode.Unauthorized.ToString();
+            }
+            else if (result.HttpStatusCode == HttpStatusCode.PreconditionFailed)
+            {
+                var setResult = await DiscoveryService.SetBaseFhirUrl(AppState.BaseUrl);
+                _outComeMessage = "BaseUrl was reset.  Try again";
+            }
+
+            else if (result.OperationOutCome != null)
+            {
+                _patients = null;
+                string? errorMessage = null;
+
+                foreach (var issue in result.OperationOutCome.Issue)
+                {
+                    errorMessage += "Error:: Details: " + issue.Details?.Text
+                                    + " Diagnostics: " + issue.Diagnostics
+                                    + "IssueType: " + issue.Code
+                                    + "\n";
+                }
+
+                _outComeMessage = errorMessage;
+            }
+            else
+            {
+                _outComeMessage = null;
+                _patients = result.Result;
+            }
+        }
+    }
+
+    private void Cancel()
+    {
+        _model = new();
+    }
+
+    void OnRowClick(TableRowClickEventArgs<Patient> args)
+    {
+        if (args.Row.IsChecked)
+        {
+            _selectedItemText = new FhirJsonSerializer(new SerializerSettings { Pretty = true })
+                .SerializeToString(args.Item);
+        }
+        else
+        {
+            _selectedItemText = string.Empty;
+        }
+    }
+}

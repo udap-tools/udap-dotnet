@@ -17,11 +17,11 @@ namespace UdapEd.Client.Services;
 
 public class DiscoveryService
 {
-    readonly HttpClient _http;
+    readonly HttpClient _httpClient;
 
-    public DiscoveryService(HttpClient http)
+    public DiscoveryService(HttpClient httpClient)
     {
-        _http = http;
+        _httpClient = httpClient;
     }
 
     public async Task<UdapMetadata?> GetMetadata(string metadataUrl, CancellationToken token)
@@ -29,7 +29,7 @@ public class DiscoveryService
         try
         {
             var udapMetadataUrl = $"Metadata?metadataUrl={Base64UrlEncoder.Encode(metadataUrl) }";
-            var result = await _http.GetFromJsonAsync<UdapMetadata>(udapMetadataUrl, token);
+            var result = await _httpClient.GetFromJsonAsync<UdapMetadata>(udapMetadataUrl, token);
 
             return result;
         }
@@ -39,13 +39,25 @@ public class DiscoveryService
         }
     }
 
+    public async Task<bool> SetBaseFhirUrl(string baseFhirUrl)
+    {
+        var response = await _httpClient.PutAsJsonAsync("Metadata", baseFhirUrl);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     public async Task<CertificateViewModel?> GetCertificateData(IEnumerable<string>? base64EncodedCertificate,
         CancellationToken token)
     {
         try
         {
             var udapMetadataUrl = $"Metadata/CertificateDisplayFromJwtHeader";
-            var result = await _http.PostAsJsonAsync(udapMetadataUrl, base64EncodedCertificate, cancellationToken: token);
+            var result = await _httpClient.PostAsJsonAsync(udapMetadataUrl, base64EncodedCertificate, cancellationToken: token);
 
             result.EnsureSuccessStatusCode();
 
@@ -63,7 +75,7 @@ public class DiscoveryService
         try
         {
             var udapMetadataUrl = $"Metadata/CertificateDisplay";
-            var result = await _http.PostAsJsonAsync(udapMetadataUrl, base64EncodedCertificate, cancellationToken: token);
+            var result = await _httpClient.PostAsJsonAsync(udapMetadataUrl, base64EncodedCertificate, cancellationToken: token);
 
             result.EnsureSuccessStatusCode();
 

@@ -36,36 +36,35 @@ public class FhirController : ControllerBase
     public async Task<IActionResult> SearchForPatient([FromBody] PatientSearchModel model)
     {
         var searchParams = new SearchParams();
-        var patientQuery = model.PatientQuery;
 
-        if (!string.IsNullOrEmpty(patientQuery.Id))
+        if (!string.IsNullOrEmpty(model.Id))
         {
-            searchParams.Add("_id", patientQuery.Id);
+            searchParams.Add("_id", model.Id);
         }
 
-        if (!string.IsNullOrEmpty(patientQuery.Identifier))
+        if (!string.IsNullOrEmpty(model.Identifier))
         {
-            searchParams.Add("identifier", patientQuery.Identifier);
+            searchParams.Add("identifier", model.Identifier);
         }
 
-        if (!string.IsNullOrEmpty(patientQuery.Family))
+        if (!string.IsNullOrEmpty(model.Family))
         {
-            searchParams.Add("family", patientQuery.Family);
+            searchParams.Add("family", model.Family);
         }
 
-        if (!string.IsNullOrEmpty(patientQuery.Given))
+        if (!string.IsNullOrEmpty(model.Given))
         {
-            searchParams.Add("given", patientQuery.Given);
+            searchParams.Add("given", model.Given);
         }
 
-        if (!string.IsNullOrEmpty(patientQuery.Name))
+        if (!string.IsNullOrEmpty(model.Name))
         {
-            searchParams.Add("name", patientQuery.Name);
+            searchParams.Add("name", model.Name);
         }
 
-        if (patientQuery.BirthDate.HasValue)
+        if (model.BirthDate.HasValue)
         {
-            searchParams.Add("birthdate", patientQuery.BirthDate.Value.ToString("yyyy-MM-dd"));
+            searchParams.Add("birthdate", model.BirthDate.Value.ToString("yyyy-MM-dd"));
         }
 
         try
@@ -77,12 +76,44 @@ public class FhirController : ControllerBase
         catch (FhirOperationException ex)
         {
             _logger.LogWarning(ex.Message);
-            var outcomeJson = await new FhirJsonSerializer().SerializeToStringAsync(ex.Outcome);
 
             if (ex.Status == HttpStatusCode.Unauthorized)
             {
                 return Unauthorized();
             }
+
+            var outcomeJson = await new FhirJsonSerializer().SerializeToStringAsync(ex.Outcome);
+            
+            return NotFound(outcomeJson);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex.Message);
+            throw;
+        }
+    }
+
+    [HttpPost("MatchPatient")]
+    public async Task<IActionResult> MatchPatient([FromBody] string parametersJson)
+    {
+        try
+        {
+            var parametersResource = await new FhirJsonParser().ParseAsync<Parameters>(parametersJson);
+            var bundle = await _fhirClient.TypeOperationAsync<Patient>("match", parametersResource);
+            var bundleJson = await new FhirJsonSerializer().SerializeToStringAsync(bundle);
+
+            return Ok(bundleJson);
+        }
+        catch (FhirOperationException ex)
+        {
+            _logger.LogWarning(ex.Message);
+
+            if (ex.Status == HttpStatusCode.Unauthorized)
+            {
+                return Unauthorized();
+            }
+
+            var outcomeJson = await new FhirJsonSerializer().SerializeToStringAsync(ex.Outcome);
 
             return NotFound(outcomeJson);
         }

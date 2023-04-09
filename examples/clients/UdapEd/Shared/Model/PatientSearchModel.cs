@@ -7,16 +7,12 @@
 // */
 #endregion
 
+using Hl7.Fhir.Model;
 using Hl7.Fhir.Rest;
 
 namespace UdapEd.Shared.Model;
-public class PatientSearchModel
-{
-    public Uri BaseUrl { get; set; }
-    public PatientQuery PatientQuery { get; set; }
-}
 
-public class PatientQuery
+public class PatientSearchModel
 {
     public string? Family { get; set; }
     public string? Given { get; set; }
@@ -24,4 +20,15 @@ public class PatientQuery
     public DateTime? BirthDate { get; set; }
     public string? Id { get; set; }
     public string? Identifier { get; set; }
+}
+
+public class PatientMatchModel
+{
+    public string? Family { get; set; }
+    public string? Given { get; set; }
+    public AdministrativeGender? Gender { get; set; }
+    public DateTime? BirthDate { get; set; }
+
+    public string? Identifier { get; set; }
+
 }

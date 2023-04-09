@@ -8,7 +8,10 @@
 #endregion
 
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 using UdapEd.Shared.Model;
@@ -34,7 +37,7 @@ public class FhirService
             var bundle = new FhirJsonParser().Parse<Bundle>(result);
             var patients = bundle.Entry.Select(e => e.Resource as Patient).ToList();
 
-            return new FhirResultModel<List<Patient>>(patients);
+            return new FhirResultModel<List<Patient>>(patients, response.StatusCode, response.Version);
         }
 
         if(response.StatusCode == HttpStatusCode.Unauthorized)
@@ -53,7 +56,7 @@ public class FhirService
                     ResourceBase = null
                 };
 
-                return new FhirResultModel<List<Patient>>(operationOutCome, HttpStatusCode.PreconditionFailed);
+                return new FhirResultModel<List<Patient>>(operationOutCome, HttpStatusCode.PreconditionFailed, response.Version);
             }
         }
 
@@ -61,7 +64,54 @@ public class FhirService
             var result = await response.Content.ReadAsStringAsync();
             var operationOutcome = new FhirJsonParser().Parse<OperationOutcome>(result);
 
-            return new FhirResultModel<List<Patient>>(operationOutcome, response.StatusCode);
+            return new FhirResultModel<List<Patient>>(operationOutcome, response.StatusCode, response.Version);
+        }
+    }
+
+    public async Task<FhirResultModel<Bundle>> MatchPatient(string parametersJson)
+    {
+        var parameters = await new FhirJsonParser().ParseAsync<Parameters>(parametersJson);
+        var json = await new FhirJsonSerializer().SerializeToStringAsync(parameters); // removing line feeds
+        var jsonMessage = JsonSerializer.Serialize(json); // needs to be json
+        var content = new StringContent(jsonMessage, Encoding.UTF8, new MediaTypeHeaderValue("application/json"));
+        var response = await _httpClient.PostAsync("Fhir/MatchPatient", content);
+
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadAsStringAsync();
+            var bundle = new FhirJsonParser().Parse<Bundle>(result);
+            // var patients = bundle.Entry.Select(e => e.Resource as Patient).ToList();
+
+            return new FhirResultModel<Bundle>(bundle, response.StatusCode, response.Version);
+        }
+        
+        Console.WriteLine(response.StatusCode);
+        
+        if (response.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            return new FhirResultModel<Bundle>(true);
+        }
+
+        if (response.StatusCode == HttpStatusCode.InternalServerError)
+        {
+            var result = await response.Content.ReadAsStringAsync();
+
+            if (result.Contains(nameof(UriFormatException)))
+            {
+                var operationOutCome = new OperationOutcome()
+                {
+                    ResourceBase = null
+                };
+
+                return new FhirResultModel<Bundle>(operationOutCome, HttpStatusCode.PreconditionFailed, response.Version);
+            }
+        }
+
+        {
+            var result = await response.Content.ReadAsStringAsync();
+            var operationOutcome = new FhirJsonParser().Parse<OperationOutcome>(result);
+
+            return new FhirResultModel<Bundle>(operationOutcome, response.StatusCode, response.Version);
         }
     }
 }

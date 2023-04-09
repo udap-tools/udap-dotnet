@@ -4,6 +4,7 @@
 @using UdapEd.Client.Services
 @using Task = System.Threading.Tasks.Task
 @using System.Net
+@using UdapEd.Shared.Extensions
 
 
 <MudCard Elevation="3" Style="margin-top: 10px">
@@ -13,8 +14,8 @@
             <MudItem md="4" sm="6" xs="12">
                 <MudText Color="Color.Primary">Access Token:</MudText>
                 <MudText Color="@(AppState.Status is {IsValid: false }
-                                    ? Color.Error : Color.Success)">@AppState.AccessTokens?.AccessToken</MudText>
-            </MudItem>
+                                    ? Color.Error : Color.Success)">@AppState.AccessTokens?.AccessToken.TrimForDisplay(30, "...")</MudText>
+                </MudItem>
             <MudItem md="4" sm="6" xs="12">
                 <MudText Color="Color.Primary">Base FHIR URL:</MudText>
                 <MudLink Href="/udapDiscovery" Color="Color.Info">@AppState.BaseUrl</MudLink>
@@ -55,19 +56,19 @@
                               For="@(() => _model.Identifier)"
                               Label="Fhir Identifier" />
             </MudItem>
-            <MudCardActions>
-                <MudButton Class="mt-3"
-                           Color="Color.Primary"
-                           ButtonType="ButtonType.Button"
-                           Variant="Variant.Text"
-                           OnClick="Search">Search</MudButton>
-                <MudButton Class="mt-3"
-                           Color="Color.Primary"
-                           ButtonType="ButtonType.Button"
-                           Variant="Variant.Text"
-                           OnClick="Cancel">Cancel</MudButton>
-            </MudCardActions>
         </MudGrid>
+        <MudCardActions>
+            <MudButton Class="mt-3"
+                       Color="Color.Primary"
+                       ButtonType="ButtonType.Button"
+                       Variant="Variant.Text"
+                       OnClick="Search">Search</MudButton>
+            <MudButton Class="mt-3"
+                       Color="Color.Primary"
+                       ButtonType="ButtonType.Button"
+                       Variant="Variant.Text"
+                       OnClick="Cancel">Cancel</MudButton>
+        </MudCardActions>
     </MudCardContent>
 </MudCard>
 
@@ -108,7 +109,7 @@
 
             @if (_outComeMessage != null)
             {
-                <MudAlert Severity="Severity.Error">@_outComeMessage</MudAlert>
+                <MudAlert Severity="Severity.Error">@(new MarkupString(_outComeMessage))</MudAlert>
             }
         </MudCardContent>
     </MudCard>
@@ -124,10 +125,9 @@
 }
 @code {
 
-    MudForm form;
-
-    private MudTable<Patient> _table;
-    PatientQuery _model = new();
+    MudForm form = null!;
+    private MudTable<Patient> _table = null!;
+    PatientSearchModel _model = new();
     List<Patient>? _patients;
     string? _outComeMessage;
     private string _selectedItemText = string.Empty;
@@ -161,13 +161,7 @@
 
         if (AppState.BaseUrl != null)
         {
-            var model = new PatientSearchModel
-                {
-                    BaseUrl = new Uri(AppState.BaseUrl),
-                    PatientQuery = _model
-                };
-
-            var result = await FhirService.SearchPatient(model);
+            var result = await FhirService.SearchPatient(_model);
 
             if (result.UnAuthorized)
             {
@@ -186,10 +180,9 @@
 
                 foreach (var issue in result.OperationOutCome.Issue)
                 {
-                    errorMessage += "Error:: Details: " + issue.Details?.Text
-                                    + " Diagnostics: " + issue.Diagnostics
-                                    + "IssueType: " + issue.Code
-                                    + "\n";
+                    errorMessage += $"Error:: Details: {issue.Details?.Text}.<br/>"
+                                    + $"Diagnostics: {issue.Diagnostics}.<br/>"
+                                    + $"IssueType: {issue.Code}.<br/>";
                 }
 
                 _outComeMessage = errorMessage;

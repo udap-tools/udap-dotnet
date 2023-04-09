@@ -13,15 +13,18 @@ using Hl7.Fhir.Model;
 namespace UdapEd.Shared.Model;
 public class FhirResultModel<T>
 {
-    public FhirResultModel(T result)
+    public FhirResultModel(T result, HttpStatusCode httpStatusCode, Version version)
     {
         Result = result;
+        this.HttpStatusCode = httpStatusCode;
+        this.Version = version;
     }
 
-    public FhirResultModel(OperationOutcome? operationOutCome, HttpStatusCode httpStatusCode)
+    public FhirResultModel(OperationOutcome? operationOutCome, HttpStatusCode httpStatusCode, Version version)
     {
-        OperationOutCome = operationOutCome;
+        this.OperationOutCome = operationOutCome;
         this.HttpStatusCode = httpStatusCode;
+        this.Version = version;
     }
 
     public FhirResultModel(bool unAuthorized)
@@ -36,4 +39,6 @@ public class FhirResultModel<T>
     public bool UnAuthorized { get; }
 
     public HttpStatusCode? HttpStatusCode { get; }
+
+    public Version? Version { get; }
 }

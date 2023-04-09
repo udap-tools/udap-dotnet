@@ -141,7 +141,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
                 .Create(clientCert, document)
-                .Build();
+                .Build(UdapConstants.SupportedAlgorithm.RS384);
 
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
@@ -207,7 +207,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var clientAssertion =
             SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(clientCert, jwtPayload)
-                .Build();
+                .Build(UdapConstants.SupportedAlgorithm.RS384);
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {
@@ -1573,7 +1573,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             ValidateIssuer = true,
             ValidIssuers = new[]
             {
-                "https://fhirlabs.net:7016/fhir/r4"
+                "https://fhirlabs.net/fhir/r4"
             }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
             ValidateAudience = false, // No aud for UDAP metadata
             ValidateLifetime = true,
@@ -1610,7 +1610,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
                 .Create(clientCert, document)
-                .Build();
+                .Build(UdapConstants.SupportedAlgorithm.RS384);
 
         // _testOutputHelper.WriteLine(signedSoftwareStatement);
 
@@ -1633,7 +1633,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         }
 
         response.Content.Headers.ContentType!.ToString().Should().Be("application/json");
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.EnsureSuccessStatusCode();
 
         // var documentAsJson = JsonSerializer.Serialize(document);
         var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
@@ -1680,7 +1680,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var clientAssertion =
             SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(clientCert, jwtPayload)
-                .Build();
+                .Build(UdapConstants.SupportedAlgorithm.RS384);
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {

@@ -37,10 +37,10 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
     // we could add more builder methods
     //
 
-    public string Build()
+    public string Build(string? algorithm = UdapConstants.SupportedAlgorithm.RS256)
     {
         var securityKey = new X509SecurityKey(_certificate);
-        var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
+        var signingCredentials = new SigningCredentials(securityKey, algorithm);
 
         var pem = Convert.ToBase64String(_certificate.Export(X509ContentType.Cert));
         var jwtHeader = new JwtHeader

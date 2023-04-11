@@ -33,6 +33,7 @@
           IconSize="Size.Small"
           OnClick="@LoadTestCertificate" />
 
+
   <MudSpacer />
   <MudText Color="Color.Primary">Token Status:</MudText>&nbsp;<MudText Color="@(AppState.Status is {IsValid: false } ? Color.Error : Color.Success)">@AppState.Status.StatusMessage</MudText>
   <MudImage Class="cursor-pointer mud-ripple ma-2" Src="images/hl7/icon-fhir-32.png" Alt="Fhir Icon"  style="height: 24px; width: 24px"
@@ -69,12 +70,16 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
 
+    private List<string> sans = new List<string>();
+
     PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
     private bool _checkServerSession = false;
 
     protected override async Task OnInitializedAsync()
     {
-        SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+        var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
+        AppState.SetProperty(this, nameof(AppState.CertificateInfo), clientCertificateLoadStatus);
+        SetCertLoadedColor(clientCertificateLoadStatus.CertLoaded);
         RunTimer();
     }
 
@@ -90,7 +95,9 @@
 
     private async Task Events_OnFocus(FocusEventArgs obj)
     {
-        await SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+        var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
+        AppState.SetProperty(this, nameof(AppState.CertificateInfo), clientCertificateLoadStatus);
+        await SetCertLoadedColor(clientCertificateLoadStatus.CertLoaded);
         _checkServerSession = true;
     }
 
@@ -182,7 +189,9 @@
         {
             if (_checkServerSession)
             {
-                await SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+                var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
+                AppState.SetProperty(this, nameof(AppState.CertificateInfo), clientCertificateLoadStatus);
+                await SetCertLoadedColor(clientCertificateLoadStatus.CertLoaded);
             }
         }
     }

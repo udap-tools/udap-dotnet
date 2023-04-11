@@ -83,7 +83,7 @@ public class MetadataController : Controller
 
         data.Add("Serial Number", cert.SerialNumber);
         data.Add("Subject", cert.Subject);
-        data.Add("Subject Alternative Name", GetSANs(cert));
+        data.Add("Subject Alternative Names", GetSANs(cert));
         data.Add("Certificate Policy", BuildPolicyInfo(cert));
         data.Add("Start Date", cert.GetEffectiveDateString());
         data.Add("End Date", cert.GetExpirationDateString());

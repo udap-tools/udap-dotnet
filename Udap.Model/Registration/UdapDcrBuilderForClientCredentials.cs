@@ -25,16 +25,28 @@ namespace Udap.Model.Registration;
 /// </summary>
 public class UdapDcrBuilderForClientCredentials
 {
-    private X509Certificate2? _certificate;
-    private UdapDynamicClientRegistrationDocument _document;
     private DateTime _now;
+    private UdapDynamicClientRegistrationDocument _document;
+    private X509Certificate2? _certificate;
 
-    private UdapDcrBuilderForClientCredentials(X509Certificate2 certificate) : this()
+    protected X509Certificate2? Certificate
+    {
+        get => _certificate;
+        set => _certificate = value;
+    }
+
+    protected  UdapDynamicClientRegistrationDocument Document
+    {
+        get => _document;
+        set => _document = value;
+    }
+    
+    protected UdapDcrBuilderForClientCredentials(X509Certificate2 certificate) : this()
     {
         this.WithCertificate(certificate);
     }
 
-    private UdapDcrBuilderForClientCredentials()
+    protected UdapDcrBuilderForClientCredentials()
     {
         _now = DateTime.UtcNow;
 
@@ -87,6 +99,8 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
     
+
+
     public UdapDcrBuilderForClientCredentials WithAudience(string? audience)
     {
         _document.Audience = audience;
@@ -158,7 +172,7 @@ public class UdapDcrBuilderForClientCredentials
     }
 
     //TODO: should be able to build with all certs in path.
-    public UdapDcrBuilderForClientCredentials WithCertificate(X509Certificate2 certificate)
+    public virtual UdapDcrBuilderForClientCredentials WithCertificate(X509Certificate2 certificate)
     {
         _certificate = certificate;
 
@@ -170,10 +184,10 @@ public class UdapDcrBuilderForClientCredentials
 
     public UdapDynamicClientRegistrationDocument Build()
     {
-        return _document;
+        return Document;
     }
     
-    public string BuildSoftwareStatement()
+    public string BuildSoftwareStatement(string? signingAlgorithm = UdapConstants.SupportedAlgorithm.RS256)
     {
         if (_certificate == null)
         {
@@ -181,7 +195,7 @@ public class UdapDcrBuilderForClientCredentials
         }
 
         return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(_certificate, _document)
-                .Build();
+                .Create(_certificate, Document)
+                .Build(signingAlgorithm);
     }
 }

@@ -25,7 +25,10 @@ public interface IAppState
 
     UdapClientCredentialsTokenRequestModel? ClientCredentialsTokenRequest { get; }
 
+    CertificateStatusViewModel? CertificateInfo { get; }
+    
     UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest { get; }
+
     AccessCodeRequestResult? AccessCodeRequestResult { get;  }
 
     LoginCallBackResult? LoginCallBackResult { get;  }

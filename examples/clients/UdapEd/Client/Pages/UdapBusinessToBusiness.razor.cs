@@ -37,6 +37,8 @@ public partial class UdapBusinessToBusiness
     
     [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
 
+    private string _signingAlgorithm = UdapConstants.SupportedAlgorithm.RS256;
+
     private string LoginRedirectLinkText { get; set; } = "Login Redirect";
 
     public bool LegacyMode { get; set; } = false;
@@ -299,7 +301,7 @@ public partial class UdapBusinessToBusiness
             tokenRequestModel.LegacyMode = LegacyMode;
 
             var requestToken = await AccessService
-                .BuildRequestAccessTokenForAuthCode(tokenRequestModel);
+                .BuildRequestAccessTokenForAuthCode(tokenRequestModel, _signingAlgorithm);
             
             AppState.SetProperty(this, nameof(AppState.AuthorizationCodeTokenRequest), requestToken);
 
@@ -326,7 +328,7 @@ public partial class UdapBusinessToBusiness
             };
 
             var requestToken = await AccessService
-                .BuildRequestAccessTokenForClientCredentials(tokenRequestModel);
+                .BuildRequestAccessTokenForClientCredentials(tokenRequestModel, _signingAlgorithm);
 
             AppState.SetProperty(this, nameof(AppState.ClientCredentialsTokenRequest), requestToken);
 
@@ -460,5 +462,11 @@ public partial class UdapBusinessToBusiness
         BuildAuthorizeLink();
 
         await JSRuntime.InvokeVoidAsync("open", @AuthCodeRequestLink, "_self");
+    }
+
+    private string? GetJwtHeader()
+    {
+        var jwt = new JwtSecurityToken(AppState.AuthorizationCodeTokenRequest?.ClientAssertion?.Value);
+        return UdapEd.Shared.JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader));
     }
 }

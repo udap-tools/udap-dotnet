@@ -211,17 +211,21 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     [Fact]
     public void token_endpoint_auth_signing_alg_values_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.TokenEndpointAuthSigningAlgValuesSupported?.SingleOrDefault();
+        var scopesSupported = _fixture.WellKnownUdap.RegistrationEndpointJwtSigningAlgValuesSupported;
         scopesSupported.Should().NotBeNullOrEmpty();
-        scopesSupported.Should().Be(UdapConstants.SupportedAlgorithm.RS256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
+        scopesSupported.Count.Should().Be(2);
     }
 
     [Fact]
     public void registration_endpoint_jwt_signing_alg_values_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.RegistrationEndpointJwtSigningAlgValuesSupported?.SingleOrDefault();
+        var scopesSupported = _fixture.WellKnownUdap.RegistrationEndpointJwtSigningAlgValuesSupported;
         scopesSupported.Should().NotBeNullOrEmpty();
-        scopesSupported.Should().Be(UdapConstants.SupportedAlgorithm.RS256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
+        scopesSupported.Count.Should().Be(2);
     }
 
     [Fact]

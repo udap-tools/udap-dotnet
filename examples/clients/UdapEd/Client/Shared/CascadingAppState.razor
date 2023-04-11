@@ -114,7 +114,7 @@
     }
 
     private ClientStatus _status = new ClientStatus(false, "Missing");
-
+    
     public UdapMetadata? UdapMetadata { get; private set; }
 
     public RawSoftwareStatementAndHeader? SoftwareStatementBeforeEncoding { get; private set; }
@@ -188,6 +188,8 @@
     /// Is the client cert loaded with private key?
     /// </summary>
     public bool CertificateLoaded { get; set; }
+
+    public CertificateStatusViewModel? CertificateInfo { get; set; }
 
     public AuthorizationCodeRequest? AuthorizationCodeRequest { get; private set; }
 

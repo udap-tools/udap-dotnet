@@ -35,36 +35,47 @@ public class RegisterService
         result.EnsureSuccessStatusCode();
     }
 
-    public async Task<RawSoftwareStatementAndHeader?> BuildSoftwareStatementForClientCredentials(UdapDynamicClientRegistrationDocument request)
+    public async Task<RawSoftwareStatementAndHeader?> BuildSoftwareStatementForClientCredentials(
+        UdapDynamicClientRegistrationDocument request, 
+        string signingAlgorithm)
     {
-        var result = await _httpClient.PostAsJsonAsync("Register/BuildSoftwareStatement/ClientCredentials", request);
+        var result = await _httpClient.PostAsJsonAsync(
+            $"Register/BuildSoftwareStatement/ClientCredentials?alg={signingAlgorithm}", 
+            request);
 
         result.EnsureSuccessStatusCode();
 
         return await result.Content.ReadFromJsonAsync<RawSoftwareStatementAndHeader>();
     }
 
-    public async Task<RawSoftwareStatementAndHeader?> BuildSoftwareStatementForAuthorizationCode(UdapDynamicClientRegistrationDocument request)
+    public async Task<RawSoftwareStatementAndHeader?> BuildSoftwareStatementForAuthorizationCode(
+        UdapDynamicClientRegistrationDocument request,
+        string signingAlgorithm)
     {
-        var result = await _httpClient.PostAsJsonAsync("Register/BuildSoftwareStatement/AuthorizationCode", request);
-
+        var result = await _httpClient.PostAsJsonAsync(
+            $"Register/BuildSoftwareStatement/AuthorizationCode?alg={signingAlgorithm}", 
+            request);
         result.EnsureSuccessStatusCode();
 
         return await result.Content.ReadFromJsonAsync<RawSoftwareStatementAndHeader>();
     }
 
-    public async Task<UdapRegisterRequest?> BuildRequestBodyForClientCredentials(RawSoftwareStatementAndHeader? request)
+    public async Task<UdapRegisterRequest?> BuildRequestBodyForClientCredentials(
+        RawSoftwareStatementAndHeader? request,
+        string signingAlgorithm)
     {
-        var result = await _httpClient.PostAsJsonAsync("Register/BuildRequestBody/ClientCredentials", request);
+        var result = await _httpClient.PostAsJsonAsync($"Register/BuildRequestBody/ClientCredentials?alg={signingAlgorithm}", request);
 
         result.EnsureSuccessStatusCode();
 
         return await result.Content.ReadFromJsonAsync<UdapRegisterRequest>();
     }
 
-    public async Task<UdapRegisterRequest?> BuildRequestBodyForAuthorizationCode(RawSoftwareStatementAndHeader? request)
+    public async Task<UdapRegisterRequest?> BuildRequestBodyForAuthorizationCode(
+        RawSoftwareStatementAndHeader? request,
+        string signingAlgorithm)
     {
-        var result = await _httpClient.PostAsJsonAsync("Register/BuildRequestBody/AuthorizationCode", request);
+        var result = await _httpClient.PostAsJsonAsync($"Register/BuildRequestBody/AuthorizationCode?alg={signingAlgorithm}", request);
 
         result.EnsureSuccessStatusCode();
 
@@ -112,9 +123,9 @@ public class RegisterService
         return await result.Content.ReadFromJsonAsync<CertLoadedEnum>();
     }
 
-    public async Task<CertLoadedEnum> ClientCertificateLoadStatus()
+    public async Task<CertificateStatusViewModel> ClientCertificateLoadStatus()
     {
-        var response = await _httpClient.GetFromJsonAsync<CertLoadedEnum>("Register/IsClientCertificateLoaded");
+        var response = await _httpClient.GetFromJsonAsync<CertificateStatusViewModel>("Register/IsClientCertificateLoaded");
 
         return response;
     }

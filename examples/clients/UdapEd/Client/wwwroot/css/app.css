@@ -136,3 +136,20 @@ pre {
   line-height: 2.5;
   padding: 0 10px;
 }
+
+.udap-input {
+  padding: 8px;
+  margin: 8px;
+}
+
+.udap-analyzed {
+  background-color: #EDE7F6;
+  padding: 8px;
+  margin: 8px;
+}
+
+.udap-knowledge {
+  background-color: #E8F5E9;
+  padding: 8px;
+  margin: 8px;
+}

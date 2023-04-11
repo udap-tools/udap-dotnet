@@ -22,6 +22,7 @@ using Udap.Util.Extensions;
 using UdapEd.Server.Extensions;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Model.Registration;
 
 namespace UdapEd.Server.Controllers;
 
@@ -95,7 +96,10 @@ public class RegisterController : Controller
     [HttpGet("IsClientCertificateLoaded")]
     public IActionResult Get()
     {
-        CertLoadedEnum result = CertLoadedEnum.Negative;
+        var result = new CertificateStatusViewModel
+        {
+            CertLoaded = CertLoadedEnum.Negative
+        };
 
         try
         {
@@ -103,18 +107,25 @@ public class RegisterController : Controller
 
             if (clientCertSession != null)
             {
-                result = CertLoadedEnum.InvalidPassword;
+                result.CertLoaded = CertLoadedEnum.InvalidPassword;
             }
             else
             {
-                result = CertLoadedEnum.Negative;
+                result.CertLoaded = CertLoadedEnum.Negative;
             }
 
             var certBytesWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
             if (certBytesWithKey != null)
             {
-                result = CertLoadedEnum.Positive;
+                result.CertLoaded = CertLoadedEnum.Positive;
+                var certBytes = Convert.FromBase64String(certBytesWithKey);
+                var clientCert = new X509Certificate2(certBytes);
+
+                result.SubjectAltNames = clientCert
+                    .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI)
+                    .Select(tuple => tuple.Item2)
+                    .ToList();
             }
 
             return Ok(result);
@@ -128,7 +139,9 @@ public class RegisterController : Controller
     }
 
     [HttpPost("BuildSoftwareStatement/ClientCredentials")]
-    public IActionResult BuildSoftwareStatementWithHeaderForClientCredentials([FromBody] UdapDynamicClientRegistrationDocument request)
+    public IActionResult BuildSoftwareStatementWithHeaderForClientCredentials(
+        [FromBody] UdapDynamicClientRegistrationDocument request, 
+        [FromQuery] string alg)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
@@ -139,9 +152,15 @@ public class RegisterController : Controller
 
         var certBytes = Convert.FromBase64String(clientCertWithKey);
         var clientCert = new X509Certificate2(certBytes);
-        
-        var document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
+
+        var dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked
+            .Create(clientCert) as UdapDcrBuilderForClientCredentialsUnchecked;
+
+        dcrBuilder.Document.Issuer = request.Issuer;
+        dcrBuilder.Document.Subject = request.Subject;
+
+
+        var document = dcrBuilder
             //TODO: this only gets the first SubAltName
             .WithAudience(request.Audience)
             .WithExpiration(request.Expiration)
@@ -156,7 +175,7 @@ public class RegisterController : Controller
         var signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
                 .Create(clientCert, document)
-                .Build();
+                .Build(alg);
 
         var tokenHandler = new JsonWebTokenHandler();
         var jsonToken = tokenHandler.ReadToken(signedSoftwareStatement);
@@ -180,7 +199,9 @@ public class RegisterController : Controller
     
 
     [HttpPost("BuildSoftwareStatement/AuthorizationCode")]
-    public IActionResult BuildSoftwareStatementWithHeaderForAuthorizationCode([FromBody] UdapDynamicClientRegistrationDocument request)
+    public IActionResult BuildSoftwareStatementWithHeaderForAuthorizationCode(
+        [FromBody] UdapDynamicClientRegistrationDocument request, 
+        [FromQuery] string alg)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
@@ -192,8 +213,14 @@ public class RegisterController : Controller
         var certBytes = Convert.FromBase64String(clientCertWithKey);
         var clientCert = new X509Certificate2(certBytes);
 
-        var document = UdapDcrBuilderForAuthorizationCode
-            .Create(clientCert)
+        var dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked
+            .Create(clientCert) as UdapDcrBuilderForAuthorizationCodeUnchecked;
+
+        dcrBuilder.Document.Issuer = request.Issuer;
+        dcrBuilder.Document.Subject = request.Subject;
+
+
+        var document = dcrBuilder
             .WithAudience(request.Audience)
             .WithExpiration(request.Expiration)
             .WithJwtId(request.JwtId)
@@ -208,7 +235,7 @@ public class RegisterController : Controller
         var signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
                 .Create(clientCert, document)
-                .Build();
+                .Build(alg);
 
         var tokenHandler = new JsonWebTokenHandler();
         var jsonToken = tokenHandler.ReadToken(signedSoftwareStatement);
@@ -230,7 +257,9 @@ public class RegisterController : Controller
     }
 
     [HttpPost("BuildRequestBody/ClientCredentials")]
-    public IActionResult BuildRequestBodyForClientCredentials([FromBody] RawSoftwareStatementAndHeader request)
+    public IActionResult BuildRequestBodyForClientCredentials(
+        [FromBody] RawSoftwareStatementAndHeader request, 
+        [FromQuery] string alg)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
         
@@ -245,18 +274,23 @@ public class RegisterController : Controller
         var document = JsonSerializer
             .Deserialize<UdapDynamicClientRegistrationDocument>(request.SoftwareStatement)!;
 
-        var signedSoftwareStatement = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            //TODO: this only gets the first SubAltName
-            .WithAudience(document.Audience)
+        var dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked
+            .Create(clientCert) as UdapDcrBuilderForClientCredentialsUnchecked;
+
+        dcrBuilder.Document.Issuer = document.Issuer;
+        dcrBuilder.Document.Subject = document.Subject;
+
+        //TODO: this only gets the first SubAltName
+        dcrBuilder.WithAudience(document.Audience)
             .WithExpiration(document.Expiration)
             .WithJwtId(document.JwtId)
             .WithClientName(document.ClientName!)
             .WithContacts(document.Contacts)
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope(document.Scope!)
-            .BuildSoftwareStatement();
+            .WithScope(document.Scope!) ;
         
+        var signedSoftwareStatement = dcrBuilder.BuildSoftwareStatement(alg);
+
         var requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,
@@ -267,7 +301,9 @@ public class RegisterController : Controller
     }
 
     [HttpPost("BuildRequestBody/AuthorizationCode")]
-    public IActionResult BuildRequestBodyForAuthorizationCode([FromBody] RawSoftwareStatementAndHeader request)
+    public IActionResult BuildRequestBodyForAuthorizationCode(
+        [FromBody] RawSoftwareStatementAndHeader request, 
+        [FromQuery] string alg)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
     
@@ -281,10 +317,14 @@ public class RegisterController : Controller
 
         var document = JsonSerializer
             .Deserialize<UdapDynamicClientRegistrationDocument>(request.SoftwareStatement)!;
-        
-        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
-                .Create(clientCert)
-                .WithAudience(document.Audience)
+
+        var dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked
+            .Create(clientCert) as UdapDcrBuilderForAuthorizationCodeUnchecked;
+
+        dcrBuilder.Document.Issuer = document.Issuer;
+        dcrBuilder.Document.Subject = document.Subject;
+
+        dcrBuilder.WithAudience(document.Audience)
                 .WithExpiration(document.Expiration)
                 .WithJwtId(document.JwtId)
                 .WithClientName(document.ClientName!)
@@ -292,8 +332,9 @@ public class RegisterController : Controller
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithScope(document.Scope!)
                 .WithResponseTypes(document.ResponseTypes)
-                .WithRedirectUrls(document.RedirectUris)
-                .BuildSoftwareStatement();
+                .WithRedirectUrls(document.RedirectUris);
+
+        var signedSoftwareStatement = dcrBuilder.BuildSoftwareStatement(alg);
 
         var requestBody = new UdapRegisterRequest
         (

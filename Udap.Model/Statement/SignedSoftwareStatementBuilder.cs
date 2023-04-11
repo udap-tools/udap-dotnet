@@ -39,6 +39,8 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
 
     public string Build(string? algorithm = UdapConstants.SupportedAlgorithm.RS256)
     {
+        algorithm ??= UdapConstants.SupportedAlgorithm.RS256;
+
         var securityKey = new X509SecurityKey(_certificate);
         var signingCredentials = new SigningCredentials(securityKey, algorithm);
 

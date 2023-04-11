@@ -76,7 +76,9 @@ public class AccessController : Controller
     }
 
     [HttpPost("BuildRequestToken/authorization_code")]
-    public Task<IActionResult> RequestAccessTokenAuthCode([FromBody] AuthorizationCodeTokenRequestModel tokenRequestModel)
+    public Task<IActionResult> RequestAccessTokenAuthCode(
+        [FromBody] AuthorizationCodeTokenRequestModel tokenRequestModel,
+        [FromQuery] string alg)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
@@ -95,13 +97,15 @@ public class AccessController : Controller
             tokenRequestModel.RedirectUrl,
             tokenRequestModel.Code);
 
-        var tokenRequest = tokenRequestBuilder.Build(tokenRequestModel.LegacyMode);
+        var tokenRequest = tokenRequestBuilder.Build(tokenRequestModel.LegacyMode, alg);
         
         return Task.FromResult<IActionResult>(Ok(tokenRequest));
     }
 
     [HttpPost("BuildRequestToken/client_credentials")]
-    public Task<IActionResult> RequestAccessTokenClientCredentials([FromBody] ClientCredentialsTokenRequestModel tokenRequestModel)
+    public Task<IActionResult> RequestAccessTokenClientCredentials(
+        [FromBody] ClientCredentialsTokenRequestModel tokenRequestModel,
+        [FromQuery] string alg)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
@@ -140,7 +144,7 @@ public class AccessController : Controller
             tokenRequestBuilder.WithScope(tokenRequestModel.Scope);
         }
 
-        var tokenRequest = tokenRequestBuilder.Build(tokenRequestModel.LegacyMode);
+        var tokenRequest = tokenRequestBuilder.Build(tokenRequestModel.LegacyMode, alg);
         
         return Task.FromResult<IActionResult>(Ok(tokenRequest));
     }
@@ -167,7 +171,11 @@ public class AccessController : Controller
                 new JsonSerializerOptions{WriteIndented = true})
         };
 
-        HttpContext.Session.SetString(UdapEdConstants.TOKEN, tokenResponseModel.AccessToken!);
+        if (tokenResponseModel.AccessToken != null)
+        {
+            HttpContext.Session.SetString(UdapEdConstants.TOKEN, tokenResponseModel.AccessToken);
+        }
+
         return Ok(tokenResponseModel);
     }
 
@@ -190,7 +198,11 @@ public class AccessController : Controller
             TokenType = tokenResponse.TokenType
         };
 
-        HttpContext.Session.SetString(UdapEdConstants.TOKEN, tokenResponseModel.AccessToken!);
+        if (tokenResponseModel.AccessToken != null)
+        {
+            HttpContext.Session.SetString(UdapEdConstants.TOKEN, tokenResponseModel.AccessToken);
+        }
+
         return Ok(tokenResponseModel);
     }
 }

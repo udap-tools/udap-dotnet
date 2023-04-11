@@ -83,13 +83,12 @@
                                                          SignedSoftwareStatement="@AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value"/>
                                     </MudTabPanel>
                                     <MudTabPanel Text="Certificates">
-                                        <CertificateViewer JwtHeaderWithx5c="@GetJwtHeader()" />
+                                        <CertificateViewer JwtHeaderWithx5c="@GetJwtHeader(AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value)" />
                                     </MudTabPanel>
                                 </MudTabs>
                             </MudPaper>
                         </MudItem>
-
-              
+                        
 
                     </MudGrid>
                 </MudCardContent>
@@ -283,7 +282,7 @@
                                             }</pre>
                     </MudTabPanel>
                     <MudTabPanel Text="Certificates">
-                      <CertificateViewer JwtHeaderWithx5c="@GetJwtHeader()" />
+                      <CertificateViewer JwtHeaderWithx5c="@GetJwtHeader(AppState.AuthorizationCodeTokenRequest?.ClientAssertion?.Value)" />
                     </MudTabPanel>
                   </MudTabs>
                 </MudPaper>

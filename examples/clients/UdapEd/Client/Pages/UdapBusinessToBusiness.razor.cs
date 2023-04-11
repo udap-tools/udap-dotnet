@@ -464,9 +464,14 @@ public partial class UdapBusinessToBusiness
         await JSRuntime.InvokeVoidAsync("open", @AuthCodeRequestLink, "_self");
     }
 
-    private string? GetJwtHeader()
+    private string? GetJwtHeader(string? tokenString)
     {
-        var jwt = new JwtSecurityToken(AppState.AuthorizationCodeTokenRequest?.ClientAssertion?.Value);
-        return UdapEd.Shared.JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader));
+        if (string.IsNullOrEmpty(tokenString))
+        {
+            return string.Empty;
+        }
+
+        var jwt = new JwtSecurityToken(tokenString);
+        return JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader));
     }
 }

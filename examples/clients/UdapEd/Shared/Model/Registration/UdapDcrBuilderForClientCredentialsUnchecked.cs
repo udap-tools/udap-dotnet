@@ -24,31 +24,54 @@ public class UdapDcrBuilderForClientCredentialsUnchecked : UdapDcrBuilderForClie
         set => base.Document = value;
     }
 
-    protected UdapDcrBuilderForClientCredentialsUnchecked(X509Certificate2 certificate) : base(certificate)
+    protected UdapDcrBuilderForClientCredentialsUnchecked(X509Certificate2 certificate, bool cancelRegistration) : base(cancelRegistration)
+    {
+        this.WithCertificate(certificate);
+    }
+
+    protected UdapDcrBuilderForClientCredentialsUnchecked(bool cancelRegistration) :base(cancelRegistration)
     {
     }
 
-    protected UdapDcrBuilderForClientCredentialsUnchecked():base()
-    {
-    }
-
+    /// <inheritdoc />
     public new static UdapDcrBuilderForClientCredentialsUnchecked Create(X509Certificate2 cert)
     {
-        return new UdapDcrBuilderForClientCredentialsUnchecked(cert);
+        return new UdapDcrBuilderForClientCredentialsUnchecked(cert, false);
     }
 
     //TODO: Safe for multi SubjectAltName scenarios
+    /// <inheritdoc />
     public new static UdapDcrBuilderForClientCredentialsUnchecked Create(X509Certificate2 cert, string subjectAltName)
     {
-        return new UdapDcrBuilderForClientCredentialsUnchecked(cert);
+        return new UdapDcrBuilderForClientCredentialsUnchecked(cert, false);
     }
 
+    /// <inheritdoc />
     public new static UdapDcrBuilderForClientCredentialsUnchecked Create()
     {
-        return new UdapDcrBuilderForClientCredentialsUnchecked();
+        return new UdapDcrBuilderForClientCredentialsUnchecked(false);
     }
 
-    public override UdapDcrBuilderForClientCredentials WithCertificate(X509Certificate2 certificate)
+    /// <inheritdoc />
+    public new static UdapDcrBuilderForClientCredentialsUnchecked Cancel(X509Certificate2 cert)
+    {
+        return new UdapDcrBuilderForClientCredentialsUnchecked(cert, true);
+    }
+
+    //TODO: Safe for multi SubjectAltName scenarios
+    /// <inheritdoc />
+    public new static UdapDcrBuilderForClientCredentialsUnchecked Cancel(X509Certificate2 cert, string subjectAltName)
+    {
+        return new UdapDcrBuilderForClientCredentialsUnchecked(cert, true);
+    }
+
+    /// <inheritdoc />
+    public new static UdapDcrBuilderForClientCredentialsUnchecked Cancel()
+    {
+        return new UdapDcrBuilderForClientCredentialsUnchecked(true);
+    }
+
+    public new UdapDcrBuilderForClientCredentialsUnchecked WithCertificate(X509Certificate2 certificate)
     {
         base.Certificate = certificate;
 

@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.ComponentModel;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -20,6 +21,7 @@ using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using Udap.Client.Client.Extensions;
 using Udap.Common.Models;
 using Udap.Model;
@@ -598,5 +600,198 @@ public class ClientCredentialsUdapModeTests
         regDocumentResult!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
 
         regDocumentResult!.ClientId.Should().Be(clientIdWithDefaultSubAltName);
+    }
+
+    [Fact]
+    [Trait("Category", Category)]
+    public async Task CancelRegistration()
+    {
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+
+        //
+        // Registration
+        //
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.rs")
+            .Build();
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        var regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        regDocumentResult!.Scope.Should().Be("system/Patient.rs");
+
+        var clientIdWithDefaultSubAltName = regDocumentResult.ClientId;
+
+        //
+        // Cancel Registration
+        //
+        document = UdapDcrBuilderForClientCredentials
+            .Cancel(clientCert)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.rs system/Appointment.rs")
+            .Build();
+
+        signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+
+
+        regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 204 status code
+        
+        //
+        // Even during a cancel registration it is expected that he SoftwareStatement returned is the same.
+        //
+        regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        regDocumentResult!.SoftwareStatement.Should().Be(signedSoftwareStatement);
+        // regDocumentResult.ClientId.Should().Be(clientIdWithDefaultSubAltName);  //with a cancel it is possible to delete multiple client ids.
+
+        //
+        // Repeated un-register should be 404 now found
+        //
+        regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.NotFound); // Deleted finished so returns a 204 status code
+
+        //
+        // Registration with different Uri Subject Alt Name from same client certificate
+        // expect 201 created because I changed the SAN selected by calling WithIssuer
+        //
+
+        document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithIssuer(new Uri("https://fhirlabs.net:7016/fhir/r4"))
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.rs system/Appointment.rs")
+            .Build();
+
+        signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.Created, await regResponse.Content.ReadAsStringAsync());
+        var regDocumentResultForSelectedSubAltName =
+            await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        regDocumentResultForSelectedSubAltName!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
+        var clientIdWithSelectedSubAltName = regDocumentResultForSelectedSubAltName.ClientId;
+        clientIdWithSelectedSubAltName.Should().NotBe(clientIdWithDefaultSubAltName);
+
+        
+        //
+        // Cancel Registration
+        //
+        document = UdapDcrBuilderForClientCredentials
+            .Cancel(clientCert)
+            .WithIssuer(new Uri("https://fhirlabs.net:7016/fhir/r4"))
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.rs")
+            .Build();
+
+        signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 204 status code
+        //
+        // Even during a cancel registration it is expected that he SoftwareStatement returned is the same.
+        //
+        regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        regDocumentResult!.SoftwareStatement.Should().Be(signedSoftwareStatement);
+        // regDocumentResult.ClientId.Should().Be(clientIdWithSelectedSubAltName);  //with a cancel it is possible to delete multiple client ids.
+        //
+        // Repeated un-register should be 404 now found
+        //
+        regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.NotFound); // Deleted finished so returns a 404 status code
     }
 }

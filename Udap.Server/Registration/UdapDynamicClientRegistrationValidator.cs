@@ -264,8 +264,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             client.AllowedGrantTypes.Add(GrantType.AuthorizationCode); 
         }
 
-        // we only support the two above grant types
-        if (client.AllowedGrantTypes.Count == 0)
+        // we only support the two above grant types but, an empty GrantType is an indication of a cancel registration action.
+        // TODO: This whole method needs to be migrated into a better software pattern.
+        if (client.AllowedGrantTypes.Count == 0 && 
+            document.GrantTypes != null && 
+            document.GrantTypes.Any())
         {
             return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -331,8 +334,6 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing));
             }
         }
-
-
 
         if (client.AllowedGrantTypes.Count == 1 &&
             client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)

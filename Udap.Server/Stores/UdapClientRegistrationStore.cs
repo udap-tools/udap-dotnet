@@ -41,6 +41,7 @@ namespace Udap.Server.Stores
             return entity.ToModel();
         }
 
+        
         public async Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
         {
             using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.AddClient");
@@ -69,12 +70,39 @@ namespace Udap.Server.Stores
                 await _dbContext.SaveChangesAsync(token);
                 return true;
             }
-            else
+
+            _dbContext.Clients.Add(client.ToEntity());
+            await _dbContext.SaveChangesAsync(token);
+            return false;
+        }
+
+        public async Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
+        {
+            //TODO: combine into one query
+            var iss = client.ClientSecrets
+                .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+                ?.Value;
+
+            var clientsFound = _dbContext.Clients
+                .Where(c =>
+                    c.ClientSecrets.Any(cs =>
+                        cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
+                        cs.Value == iss))
+                .Select(c => c)
+                .ToList();
+
+            if (clientsFound.Any())
             {
-                _dbContext.Clients.Add(client.ToEntity());
+                foreach (var clientFound in clientsFound)
+                {
+                    _dbContext.Clients.Remove(clientFound);
+                }
+
                 await _dbContext.SaveChangesAsync(token);
-                return false;
+                return clientsFound.Count;
             }
+
+            return 0;
         }
 
         public async Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default)

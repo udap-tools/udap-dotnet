@@ -106,7 +106,7 @@
         _checkServerSession = false;
     }
     
-    private async Task SetCertLoadedColor(CertLoadedEnum isCertLoaded)
+    private async Task SetCertLoadedColor(CertLoadedEnum? isCertLoaded)
     {
         switch (isCertLoaded)
         {
@@ -173,14 +173,16 @@
         var options = new DialogOptions { CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Password_Dialog>("Certificate Password", options);
         var result = await dialog.Result;
-        var certLoaded = await RegisterService.ValidateCertificate(result.Data.ToString() ?? "");
-        SetCertLoadedColor(certLoaded);
+        var certViewModel = await RegisterService.ValidateCertificate(result.Data.ToString() ?? "");
+        await SetCertLoadedColor(certViewModel?.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.CertificateInfo), certViewModel);
     }
 
     private async Task LoadTestCertificate()
     {
-        var result = await RegisterService.LoadTestCertificate();
-        SetCertLoadedColor(result);
+        var certViewModel = await RegisterService.LoadTestCertificate();
+        await SetCertLoadedColor(certViewModel.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.CertificateInfo), certViewModel);
     }
 
     async void RunTimer()
@@ -189,9 +191,9 @@
         {
             if (_checkServerSession)
             {
-                var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
-                AppState.SetProperty(this, nameof(AppState.CertificateInfo), clientCertificateLoadStatus);
-                await SetCertLoadedColor(clientCertificateLoadStatus.CertLoaded);
+                var certViewModel = await RegisterService.ClientCertificateLoadStatus();
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateInfo), certViewModel);
+                await SetCertLoadedColor(certViewModel?.CertLoaded);
             }
         }
     }

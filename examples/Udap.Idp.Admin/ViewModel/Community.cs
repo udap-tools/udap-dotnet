@@ -47,6 +47,8 @@ namespace Udap.Idp.Admin.ViewModel
         public string? Thumbprint { get; set; }
         public DateTime? BeginDate { get; set; }
         public DateTime? EndDate { get; set; }
+
+        public virtual Anchor Anchor { get; set; } = default!;
     }
 
     public class Certification

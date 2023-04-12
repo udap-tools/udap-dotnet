@@ -123,15 +123,23 @@ public static class SeedData
             };
 
             udapContext.Anchors.Add(anchor);
+            await udapContext.SaveChangesAsync();
+        }
+
+        var intermediateCert = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath,
+                "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
+
+        if ((await clientRegistrationStore.GetIntermediateCertificates())
+            .All(a => a.Thumbprint != intermediateCert.Thumbprint))
+        {
+            var anchor = udapContext.Anchors.Single(a => a.Thumbprint == sureFhirLabsAnchor.Thumbprint);
 
             //
             // Intermediate surefhirlabs_community
             //
             var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
-
-            var intermediateCert = new X509Certificate2(
-                Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
-
+            
             if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
                     .All(r => r.Thumbprint != intermediateCert.Thumbprint))
             {
@@ -151,7 +159,7 @@ public static class SeedData
             }
         }
 
-        
+
         //
         // Anchor localhost_community
         //
@@ -181,7 +189,7 @@ public static class SeedData
             //
             var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
 
-            var intermediateCert = new X509Certificate2(
+            intermediateCert = new X509Certificate2(
                 Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/intermediateLocalhostCert.cer"));
 
             if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()

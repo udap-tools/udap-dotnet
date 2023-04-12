@@ -91,12 +91,13 @@ public class RegisterService
 
         if (!result.IsSuccessStatusCode)
         {
-            Console.WriteLine(await result.Content.ReadAsStringAsync());
+            var joe = await result.Content.ReadAsStringAsync();
+            Console.WriteLine(joe);
 
             return new RegistrationResult
             {
                 Success = false,
-                ErrorMessage = await result.Content.ReadAsStringAsync()
+                ErrorMessage = joe
             };
         }
 
@@ -107,8 +108,9 @@ public class RegisterService
         };
     }
 
-    public async Task<CertLoadedEnum> ValidateCertificate(string password)
+    public async Task<CertificateStatusViewModel?> ValidateCertificate(string password)
     {
+
         var result = await _httpClient.PostAsJsonAsync(
             "Register/ValidateCertificate",
             password);
@@ -117,20 +119,23 @@ public class RegisterService
         {
             Console.WriteLine(await result.Content.ReadAsStringAsync());
 
-            return CertLoadedEnum.Negative;
+            return new CertificateStatusViewModel
+            {
+                CertLoaded = CertLoadedEnum.Negative
+            };
         }
 
-        return await result.Content.ReadFromJsonAsync<CertLoadedEnum>();
+        return await result.Content.ReadFromJsonAsync<CertificateStatusViewModel>();
     }
 
-    public async Task<CertificateStatusViewModel> ClientCertificateLoadStatus()
+    public async Task<CertificateStatusViewModel?> ClientCertificateLoadStatus()
     {
         var response = await _httpClient.GetFromJsonAsync<CertificateStatusViewModel>("Register/IsClientCertificateLoaded");
 
         return response;
     }
 
-    public async Task<CertLoadedEnum> LoadTestCertificate()
+    public async Task<CertificateStatusViewModel?> LoadTestCertificate()
     {
         var response = await _httpClient.PutAsJsonAsync("Register/UploadTestClientCert", "fhirlabs.net.client.pfx");
 
@@ -139,7 +144,7 @@ public class RegisterService
             Console.WriteLine(await response.Content.ReadAsStringAsync());
         }
 
-        return await response.Content.ReadFromJsonAsync<CertLoadedEnum>();
+        return await response.Content.ReadFromJsonAsync<CertificateStatusViewModel>();
     }
 
     /// <summary>

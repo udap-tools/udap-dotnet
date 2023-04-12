@@ -8,7 +8,6 @@
 #endregion
 
 using System.Security.Cryptography.X509Certificates;
-using Hl7.Fhir.Utility;
 using Udap.Common;
 using Udap.Common.Models;
 using Udap.Server.Storage.Stores;
@@ -62,6 +61,8 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             client.ClientId = existingClient.ClientId;
             existingClient.AllowedScopes = client.AllowedScopes;
             existingClient.RedirectUris = client.RedirectUris;
+            //TODO update Certifications
+            //TODO update others?
             return Task.FromResult<bool>(true);
         }
         else
@@ -69,6 +70,30 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             _clients.Add(client);
             return Task.FromResult<bool>(false);
         }
+    }
+
+    public Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
+    {
+        var clientsFound = _clients.Where(c =>
+            c.ClientSecrets.Any(cs =>
+                cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME
+                && cs.Value == client.ClientSecrets.SingleOrDefault(i =>
+                        i.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+                    ?.Value))
+            .Select(c => c)
+            .ToList();
+
+        if (clientsFound.Any())
+        {
+            foreach (var clientFound in clientsFound)
+            {
+                _clients.Remove(clientFound);
+            }
+
+            return Task.FromResult(clientsFound.Count);
+        }
+
+        return Task.FromResult(0);
     }
 
     public Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default)

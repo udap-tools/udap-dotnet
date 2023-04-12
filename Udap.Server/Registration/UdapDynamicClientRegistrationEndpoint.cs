@@ -128,24 +128,39 @@ public class UdapDynamicClientRegistrationEndpoint
             
             _logger.LogWarning(JsonSerializer.Serialize(error));
 
-            await context.Response.WriteAsJsonAsync(error);
+            await context.Response.WriteAsJsonAsync(error, cancellationToken: token);
 
             return;
         }
+
 
         if (result.Client != null)
         {
             try
             {
-                var upsertFlag = await _store.UpsertClient(result.Client, token);
-
-                if (upsertFlag)
+                if (!result.Client.AllowedGrantTypes.Any())
                 {
+                    var numberOfClientsRemoved = await _store.CancelRegistration(result.Client, token);
+
+                    if (numberOfClientsRemoved == 0)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        return;
+                    }
                     context.Response.StatusCode = StatusCodes.Status200OK;
                 }
                 else
                 {
-                    context.Response.StatusCode = StatusCodes.Status201Created;
+                    var upsertFlag = await _store.UpsertClient(result.Client, token);
+
+                    if (upsertFlag)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status200OK;
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = StatusCodes.Status201Created;
+                    }
                 }
             }
             catch (Exception ex)
@@ -168,7 +183,7 @@ public class UdapDynamicClientRegistrationEndpoint
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
         
-        await context.Response.WriteAsJsonAsync(registrationResponse, options, "application/json");
+        await context.Response.WriteAsJsonAsync(registrationResponse, options, "application/json", cancellationToken: token);
     }
 
     private async Task<string> GetBody(HttpContext context)

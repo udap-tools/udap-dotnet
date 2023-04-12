@@ -24,31 +24,56 @@ public class UdapDcrBuilderForAuthorizationCodeUnchecked : UdapDcrBuilderForAuth
         set => base.Document = value;
     }
 
-    protected UdapDcrBuilderForAuthorizationCodeUnchecked(X509Certificate2 certificate) : base(certificate)
+    /// <inheritdoc />
+    protected UdapDcrBuilderForAuthorizationCodeUnchecked(X509Certificate2 certificate, bool cancelRegistration) : base(cancelRegistration)
+    {
+        this.WithCertificate(certificate);
+    }
+
+    /// <inheritdoc />
+    protected UdapDcrBuilderForAuthorizationCodeUnchecked(bool cancelRegistration) : base(cancelRegistration)
     {
     }
 
-    protected UdapDcrBuilderForAuthorizationCodeUnchecked() : base()
-    {
-    }
-
+    /// <inheritdoc />
     public new static UdapDcrBuilderForAuthorizationCodeUnchecked Create(X509Certificate2 cert)
     {
-        return new UdapDcrBuilderForAuthorizationCodeUnchecked(cert);
+        return new UdapDcrBuilderForAuthorizationCodeUnchecked(cert, false);
     }
 
     //TODO: Safe for multi SubjectAltName scenarios
+    /// <inheritdoc />
     public new static UdapDcrBuilderForAuthorizationCodeUnchecked Create(X509Certificate2 cert, string subjectAltName)
     {
-        return new UdapDcrBuilderForAuthorizationCodeUnchecked(cert);
+        return new UdapDcrBuilderForAuthorizationCodeUnchecked(cert, false);
     }
 
+    /// <inheritdoc />
     public new static UdapDcrBuilderForAuthorizationCodeUnchecked Create()
     {
-        return new UdapDcrBuilderForAuthorizationCodeUnchecked();
+        return new UdapDcrBuilderForAuthorizationCodeUnchecked(false);
     }
 
-    public override UdapDcrBuilderForAuthorizationCode WithCertificate(X509Certificate2 certificate)
+    /// <inheritdoc />
+    public new static UdapDcrBuilderForAuthorizationCodeUnchecked Cancel(X509Certificate2 cert)
+    {
+        return new UdapDcrBuilderForAuthorizationCodeUnchecked(cert, true);
+    }
+
+    //TODO: Safe for multi SubjectAltName scenarios
+    /// <inheritdoc />
+    public new static UdapDcrBuilderForAuthorizationCodeUnchecked Cancel(X509Certificate2 cert, string subjectAltName)
+    {
+        return new UdapDcrBuilderForAuthorizationCodeUnchecked(cert, true);
+    }
+
+    /// <inheritdoc />
+    public new static UdapDcrBuilderForAuthorizationCodeUnchecked Cancel()
+    {
+        return new UdapDcrBuilderForAuthorizationCodeUnchecked(true);
+    }
+
+    public new UdapDcrBuilderForAuthorizationCode WithCertificate(X509Certificate2 certificate)
     {
         base.Certificate = certificate;
 

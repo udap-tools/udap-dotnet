@@ -41,36 +41,86 @@ public class UdapDcrBuilderForClientCredentials
         set => _document = value;
     }
     
-    protected UdapDcrBuilderForClientCredentials(X509Certificate2 certificate) : this()
+    protected UdapDcrBuilderForClientCredentials(X509Certificate2 certificate, bool cancelRegistration) : this(cancelRegistration)
     {
         this.WithCertificate(certificate);
     }
 
-    protected UdapDcrBuilderForClientCredentials()
+    protected UdapDcrBuilderForClientCredentials(bool cancelRegistration)
     {
         _now = DateTime.UtcNow;
 
         _document = new UdapDynamicClientRegistrationDocument();
-        _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.ClientCredentials };
+        if (!cancelRegistration)
+        {
+            _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.ClientCredentials };
+        }
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
     }
 
+    /// <summary>
+    /// Register or update an existing registration
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
     public static UdapDcrBuilderForClientCredentials Create(X509Certificate2 cert)
     {
-        return new UdapDcrBuilderForClientCredentials(cert);
+        return new UdapDcrBuilderForClientCredentials(cert, false);
     }
 
     //TODO: Safe for multi SubjectAltName scenarios
+    /// <summary>
+    /// Register or update an existing registration by subjectAltName
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
     public static UdapDcrBuilderForClientCredentials Create(X509Certificate2 cert, string subjectAltName)
     {
-        return new UdapDcrBuilderForClientCredentials(cert);
+        return new UdapDcrBuilderForClientCredentials(cert, false);
     }
-    
+
+    /// <summary>
+    /// Register or update an existing registration
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
     public static UdapDcrBuilderForClientCredentials Create()
     {
-        return new UdapDcrBuilderForClientCredentials();
+        return new UdapDcrBuilderForClientCredentials(false);
     }
-    
+
+    /// <summary>
+    /// Cancel an existing registration.
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
+    public static UdapDcrBuilderForClientCredentials Cancel(X509Certificate2 cert)
+    {
+        return new UdapDcrBuilderForClientCredentials(cert, true);
+    }
+
+    //TODO: Safe for multi SubjectAltName scenarios
+    /// <summary>
+    /// Cancel an existing registration by subject alt name.
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <param name="subjectAltName"></param>
+    /// <returns></returns>
+    public static UdapDcrBuilderForClientCredentials Cancel(X509Certificate2 cert, string subjectAltName)
+    {
+        return new UdapDcrBuilderForClientCredentials(cert, true);
+    }
+
+    /// <summary>
+    /// Cancel an existing registration.
+    /// </summary>
+    /// <returns></returns>
+    public static UdapDcrBuilderForClientCredentials Cancel()
+    {
+        return new UdapDcrBuilderForClientCredentials(true);
+    }
+
+
     /// <summary>
     /// Set at construction time. 
     /// </summary>
@@ -172,7 +222,7 @@ public class UdapDcrBuilderForClientCredentials
     }
 
     //TODO: should be able to build with all certs in path.
-    public virtual UdapDcrBuilderForClientCredentials WithCertificate(X509Certificate2 certificate)
+    public UdapDcrBuilderForClientCredentials WithCertificate(X509Certificate2 certificate)
     {
         _certificate = certificate;
 

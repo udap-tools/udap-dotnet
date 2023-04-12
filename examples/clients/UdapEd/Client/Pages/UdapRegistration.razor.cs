@@ -211,12 +211,36 @@ public partial class UdapRegistration
             await BuildRawSoftwareStatementForAuthorizationCode();
         }
     }
+    private async Task BuildRawCancelSoftwareStatement()
+    {
+        SetRawMessage("Loading ...");
 
-    private async Task BuildRawSoftwareStatementForClientCredentials()
+        await Task.Delay(150);
+
+        if (AppState.Oauth2Flow == Oauth2FlowEnum.client_credentials)
+        {
+            await BuildRawSoftwareStatementForClientCredentials(true);
+        }
+        else
+        {
+            await BuildRawSoftwareStatementForAuthorizationCode(true);
+        }
+    }
+
+    private async Task BuildRawSoftwareStatementForClientCredentials(bool cancelRegistration = false)
     {
         try
         {
-            var dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked.Create() as UdapDcrBuilderForClientCredentialsUnchecked;
+            UdapDcrBuilderForClientCredentialsUnchecked dcrBuilder;
+
+            if (cancelRegistration)
+            {
+                dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked.Cancel();
+            }
+            else
+            {
+                dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked.Create();
+            }
 
             dcrBuilder.WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
@@ -233,7 +257,7 @@ public partial class UdapRegistration
             dcrBuilder.Document.Issuer = _subjectAltName;
             
             var request = dcrBuilder.Build();
-            
+
             var statement = await RegisterService
                 .BuildSoftwareStatementForClientCredentials(request, _signingAlgorithm);
             if (statement != null)
@@ -250,13 +274,23 @@ public partial class UdapRegistration
         }
     }
     
-    private async Task BuildRawSoftwareStatementForAuthorizationCode()
+    private async Task BuildRawSoftwareStatementForAuthorizationCode(bool cancelRegistration = false)
     {
         try
         {
             var scope = RegisterService.GetScopesForAuthorizationCode(AppState.UdapMetadata?.ScopesSupported);
+            
+            UdapDcrBuilderForAuthorizationCodeUnchecked dcrBuilder;
 
-            var dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Create() as UdapDcrBuilderForAuthorizationCodeUnchecked;
+            if (cancelRegistration)
+            {
+                dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Cancel() as UdapDcrBuilderForAuthorizationCodeUnchecked;
+            }
+            else
+            {
+                dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Create() as UdapDcrBuilderForAuthorizationCodeUnchecked;
+            }
+
 
             dcrBuilder.WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))

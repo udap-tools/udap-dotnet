@@ -96,6 +96,7 @@ public partial class IntermediateCertEditComponent
         {
             intermediateCertificateView.BeginDate = intermediateCertificateView.Certificate?.NotBefore;
             intermediateCertificateView.EndDate = intermediateCertificateView.Certificate?.NotAfter;
+            // intermediateCertificateView.Anchor = _
             var resultIntermediateCertificate = ApiService.Save(intermediateCertificateView).GetAwaiter().GetResult();
             AddEditionEvent($"RowEditCommit event: Adding intermediate certificate {intermediateCertificateView.Name} committed");
             _intermediateCertificateRowInEdit.Id = resultIntermediateCertificate.Id; //bind up the new id...

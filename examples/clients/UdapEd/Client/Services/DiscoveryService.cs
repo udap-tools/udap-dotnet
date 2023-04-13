@@ -39,9 +39,9 @@ public class DiscoveryService
         }
     }
 
-    public async Task<bool> SetBaseFhirUrl(string baseFhirUrl)
+    public async Task<bool> SetBaseFhirUrl(string? baseFhirUrl, bool resetToken = false)
     {
-        var response = await _httpClient.PutAsJsonAsync("Metadata", baseFhirUrl);
+        var response = await _httpClient.PutAsJsonAsync($"Metadata?resetToken={resetToken}", baseFhirUrl);
 
         if (response.IsSuccessStatusCode)
         {

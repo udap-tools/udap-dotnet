@@ -43,9 +43,14 @@ public class MetadataController : Controller
     }
 
     [HttpPut]
-    public IActionResult SetBaseFhirUrl([FromBody] string baseFhirUrl)
+    public IActionResult SetBaseFhirUrl([FromBody] string baseFhirUrl, [FromQuery] bool resetToken)
     {
         HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseFhirUrl);
+
+        if (resetToken)
+        {
+            HttpContext.Session.Remove(UdapEdConstants.TOKEN);
+        }
 
         return Ok();
     }

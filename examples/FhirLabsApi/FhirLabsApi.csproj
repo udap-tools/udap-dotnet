@@ -34,7 +34,7 @@
     <!-- <PackageReference Include="Hl7.Fhir.Specification.Data.R5" Version="5.0.0" /> -->
     <!-- <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="5.0.0" /> -->
     <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="4.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json" Version="2.2.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />

@@ -231,6 +231,8 @@ namespace Udap.PKI.Generator
 
                     #endregion
 
+                    SurefhirlabsUdapIssued.EnsureDirectoryExists();
+
                     #region weatherapi.lab Client (Issued) Certificates
 
                     BuildClientCertificate(
@@ -778,7 +780,8 @@ namespace Udap.PKI.Generator
                     File.WriteAllBytes($"{LocalhostCertStore}/intermediateLocalhostCert.cer",
                         intermediatePem.Select(c => (byte)c).ToArray());
 
-                    //
+                    LocalhostCertStore.EnsureDirectoryExists();
+
                     // UDAP client certificate
                     // for fhirlabs.net
                     //

@@ -88,7 +88,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         //
         var services = new ServiceCollection();
 
-        services.AddScoped<I>()
+        // services.AddScoped<I>()
     }
 
     /// <summary>

@@ -12,7 +12,7 @@ namespace Udap.Client.Client
 
     public interface IUdapClient
     {
-        string ClientName { get; set; }
+        string UdapDynamicClientRegistrationDocument { get; set; }
 
     }
 
@@ -24,5 +24,7 @@ namespace Udap.Client.Client
         {
             _httpClient = httpClient;
         }
+
+        public string UdapDynamicClientRegistrationDocument { get; set; }
     }
 }

@@ -16,6 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Common;
+using Udap.Common.Certificates;
 using Udap.Metadata.Server;
 using Udap.Model;
 using WeatherApi;

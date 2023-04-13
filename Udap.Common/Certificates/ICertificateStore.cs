@@ -10,7 +10,7 @@
 using System.Security.Cryptography.X509Certificates;
 using Udap.Common.Models;
 
-namespace Udap.Common;
+namespace Udap.Common.Certificates;
 
 public interface ICertificateStore
 {

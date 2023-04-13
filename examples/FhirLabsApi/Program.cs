@@ -24,6 +24,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Udap.Common;
+using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Metadata.Server;
 using Udap.Model;

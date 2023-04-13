@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common;
+using Udap.Common.Certificates;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;

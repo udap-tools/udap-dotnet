@@ -12,11 +12,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
-using Udap.Common;
 using Udap.Common.Models;
 using Udap.Util.Extensions;
 
-namespace Udap.Metadata.Server;
+namespace Udap.Common.Certificates;
 
 public class FileCertificateStore : ICertificateStore
 {

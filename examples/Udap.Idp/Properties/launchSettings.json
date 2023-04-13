@@ -20,6 +20,7 @@
         "ServerSettings:ServerSupport": "UDAP",
         "ServerSettings:DefaultSystemScopes": "udap system.cruds",
         "ServerSettings:DefaultUserScopes": "udap user.cruds",
+        "ServerSettings:ForceStateParamOnAuthorizationCode": "true",
         "UdapIdpBaseUrl": "https://host.docker.internal:5002"
       },
       "sslPort": 5002,

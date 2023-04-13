@@ -21,6 +21,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Udap.Model;
+using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using fhirLabsProgram = FhirLabsApi.Program;
 
@@ -210,17 +211,21 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     [Fact]
     public void token_endpoint_auth_signing_alg_values_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.TokenEndpointAuthSigningAlgValuesSupported?.SingleOrDefault();
+        var scopesSupported = _fixture.WellKnownUdap.RegistrationEndpointJwtSigningAlgValuesSupported;
         scopesSupported.Should().NotBeNullOrEmpty();
-        scopesSupported.Should().Be(UdapConstants.SupportedAlgorithm.RS256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
+        scopesSupported.Count.Should().Be(2);
     }
 
     [Fact]
     public void registration_endpoint_jwt_signing_alg_values_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.RegistrationEndpointJwtSigningAlgValuesSupported?.SingleOrDefault();
+        var scopesSupported = _fixture.WellKnownUdap.RegistrationEndpointJwtSigningAlgValuesSupported;
         scopesSupported.Should().NotBeNullOrEmpty();
-        scopesSupported.Should().Be(UdapConstants.SupportedAlgorithm.RS256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
+        scopesSupported.Count.Should().Be(2);
     }
 
     [Fact]
@@ -265,8 +270,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         // should be the same as the web base url
         issClaim.Value.Should().Be("https://fhirlabs.net:7016/fhir/r4");
 
-        var subjectAltName = cert.GetNameInfo(X509NameType.UrlName, false);
-        subjectAltName.Should().Be(issClaim.Value, $"iss: {issClaim.Value} does not match Subject Alternative Name extension");
+        var subjectAltNames = cert.GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI); //specification (predicate) will filter to only SANs of type uniformResourceIdentifier
+
+        subjectAltNames.Select(s => s.Item2).Should().Contain(issClaim.Value, $"iss: {issClaim.Value} does not match Subject Alternative Name extension");
         
         var subClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.Subject);
         subClaim.ValueType.Should().Be(ClaimValueTypes.String);

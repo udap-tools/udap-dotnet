@@ -37,7 +37,7 @@ public class UdapConfigurationStoreOptions : ConfigurationStoreOptions
     /// <value>
     /// The client.
     /// </value>
-    public TableConfiguration RootCertificate { get; set; } = new TableConfiguration("UdapRootCertificates");
+    public TableConfiguration IntermediateCertificate { get; set; } = new TableConfiguration("UdapIntermediateCertificates");
 
 
     /// <summary>

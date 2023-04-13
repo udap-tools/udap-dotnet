@@ -260,7 +260,7 @@ public static class X509Extensions
     }
 
 #if NET6_0_OR_GREATER
-    public static X509Certificate2[] ToRootCertArray(this List<X509Certificate2> certificates)
+    public static X509Certificate2[] ToRootCertArray(this IList<X509Certificate2> certificates)
     {
         X509Certificate2Collection caCerts = new X509Certificate2Collection();
 
@@ -331,20 +331,23 @@ public static class X509Extensions
         if (flags.HasFlag(X509KeyUsageFlags.NonRepudiation)) { yield return X509KeyUsageFlags.NonRepudiation.ToString(); }
     }
 
-    public static List<string> GetSubjectAltNames(this X509Certificate2 cert)
+    public static List<Tuple<string, string>> GetSubjectAltNames(this X509Certificate2 cert, Func<GeneralName, bool>? sanFilter = null)
     {
         var extension = cert.GetExtensionValue("2.5.29.17");
         var generalNames = GeneralNames.GetInstance(extension);
-        var names = new List<string>();
+        var names = new List<Tuple<string, string>>();
 
-        foreach (var name in generalNames.GetNames())
+        foreach (var name in generalNames.GetNames().Where(sanFilter ?? (n => true)))
         {
             var type = FromTag<GeneralNameType>(name.TagNo);
-            names.Add(type + " : " + name.Name);
+            names.Add(new Tuple<string, string>(
+                type.ToString(), 
+                name.Name.ToString() ?? "Unknown Name (error)"));
         }
 
         return names;
     }
+    
 
     public static TEnum FromTag<TEnum>(int tagNo)
     {

@@ -100,10 +100,13 @@ public  class AccessTokenRequestForClientCredentialsBuilder
     /// sub == iis == SubAlt Name
     /// </summary>
     /// <param name="legacy"></param>
+    /// <param name="algorithm"></param>
     /// <returns></returns>
-    public UdapClientCredentialsTokenRequest Build(bool legacy = false)
+    public UdapClientCredentialsTokenRequest Build(
+        bool legacy = false, 
+        string? algorithm = UdapConstants.SupportedAlgorithm.RS256)
     {
-        var clientAssertion = BuildClientAssertion(legacy);
+        var clientAssertion = BuildClientAssertion(algorithm, legacy);
 
         return new UdapClientCredentialsTokenRequest
         {
@@ -120,7 +123,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
     }
     
 
-    private string BuildClientAssertion(bool legacy = false)
+    private string BuildClientAssertion(string algorithm, bool legacy = false)
     {
         JwtPayLoadExtension jwtPayload;
 
@@ -159,6 +162,6 @@ public  class AccessTokenRequestForClientCredentialsBuilder
 
         return SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(_certificate, jwtPayload)
-                .Build();
+                .Build(algorithm);
     }
 }

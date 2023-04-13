@@ -13,7 +13,7 @@ public static class UdapServerConstants
 {
     public static class SecretTypes
     {
-        public const string Udapx5c = "UDAP_x5c";
-        public const string Udap_X509_Pem = "Udap_X509_Pem";
+        public const string UDAP_SAN_URI_ISS_NAME = "UDAP_SAN_URI_ISS_NAME";
+        public const string UDAP_COMMUNITY = "UDAP_COMMUNITY";
     }
 }

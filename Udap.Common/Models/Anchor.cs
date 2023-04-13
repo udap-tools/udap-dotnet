@@ -33,6 +33,7 @@ public class Anchor : IEquatable<Anchor>
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
 
+    public virtual ICollection<IntermediateCertificate>? IntermediateCertificates { get; set; } = default!;
 
     /// <summary>Returns a string that represents the current object.</summary>
     /// <returns>A string that represents the current object.</returns>

@@ -11,14 +11,14 @@
 
   <ItemGroup>
     <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="4.3.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.3">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.5">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.3" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.5" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.1-dev-10301" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup>

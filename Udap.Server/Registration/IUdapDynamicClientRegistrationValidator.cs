@@ -8,7 +8,9 @@
 #endregion
 
 using System.Security.Cryptography.X509Certificates;
+using Udap.Common.Models;
 using Udap.Model.Registration;
+
 
 namespace Udap.Server.Registration;
 
@@ -22,9 +24,12 @@ public interface IUdapDynamicClientRegistrationValidator
     /// UDAP Dynamic Client Registration section 4, Authorization Server validates request</a>
     /// </remarks>
     /// <param name="request"></param>
+    /// <param name="intermediateCertificates"></param>
+    /// <param name="anchorCertificates"></param>
     /// <returns></returns>
     Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request, 
-        X509Certificate2Collection? communityTrustAnchors,
-        X509Certificate2Collection? communityRoots);
+        X509Certificate2Collection? intermediateCertificates,
+        X509Certificate2Collection anchorCertificates,
+        IEnumerable<Anchor>? anchors);
 }

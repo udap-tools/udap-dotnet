@@ -37,6 +37,8 @@ public partial class UdapBusinessToBusiness
     
     [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
 
+    private string _signingAlgorithm = UdapConstants.SupportedAlgorithm.RS256;
+
     private string LoginRedirectLinkText { get; set; } = "Login Redirect";
 
     public bool LegacyMode { get; set; } = false;
@@ -248,7 +250,6 @@ public partial class UdapBusinessToBusiness
     {
         TokenRequest1 = string.Empty;
         TokenRequest2 = string.Empty;
-        AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), null);
         TokenRequest3 = string.Empty;
         TokenRequest4 = string.Empty;
         AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), null);
@@ -300,7 +301,7 @@ public partial class UdapBusinessToBusiness
             tokenRequestModel.LegacyMode = LegacyMode;
 
             var requestToken = await AccessService
-                .BuildRequestAccessTokenForAuthCode(tokenRequestModel);
+                .BuildRequestAccessTokenForAuthCode(tokenRequestModel, _signingAlgorithm);
             
             AppState.SetProperty(this, nameof(AppState.AuthorizationCodeTokenRequest), requestToken);
 
@@ -327,7 +328,7 @@ public partial class UdapBusinessToBusiness
             };
 
             var requestToken = await AccessService
-                .BuildRequestAccessTokenForClientCredentials(tokenRequestModel);
+                .BuildRequestAccessTokenForClientCredentials(tokenRequestModel, _signingAlgorithm);
 
             AppState.SetProperty(this, nameof(AppState.ClientCredentialsTokenRequest), requestToken);
 
@@ -461,5 +462,16 @@ public partial class UdapBusinessToBusiness
         BuildAuthorizeLink();
 
         await JSRuntime.InvokeVoidAsync("open", @AuthCodeRequestLink, "_self");
+    }
+
+    private string? GetJwtHeader(string? tokenString)
+    {
+        if (string.IsNullOrEmpty(tokenString))
+        {
+            return string.Empty;
+        }
+
+        var jwt = new JwtSecurityToken(tokenString);
+        return JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader));
     }
 }

@@ -49,6 +49,28 @@ internal class UdapAuthorizationResponseMiddleware
         _logger = logger;
     }
 
+    /// <summary>
+    /// During a Server request to "/authorize", while Server is configured for
+    /// <see cref="ServerSettings.ForceStateParamOnAuthorizationCode"/>, and the
+    /// state parameter is missing and client has a <see cref="Duende.IdentityServer.Models.Secret"/>
+    /// of type  <see cref="UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME"/>
+    ///
+    /// Comment regarding missing state.  Requiring in UDAP to encourage CSRF protection.  The client
+    /// is already required in section 10.12 of RFC 6749 to implement CSRF.  But
+    /// it only says, "Should utilize the "state" request parameter to deliver this value"
+    ///
+    /// During a redirect response, if a "errorId" parameter is present and the client exists
+    /// as a <see cref="UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME"/> client then
+    /// transform the default Duende error response which would have redirected the client
+    /// to a Duende error page to what is expected according to RFC 6749.  The redirect,
+    /// is the clients original redirect url and params are error and error_description
+    ///
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="clients"></param>
+    /// <param name="udapServerOptions"></param>
+    /// <param name="interactionService"></param>
+    /// <returns></returns>
     public async Task Invoke(
         HttpContext context,
         IClientStore clients,
@@ -72,10 +94,10 @@ internal class UdapAuthorizationResponseMiddleware
 
                         if (client != null &&
                             client.ClientSecrets.Any(cs =>
-                                cs.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem))
+                                cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                         {
                             await RenderMissingStateErrorResponse(context);
-
+                            _logger.LogInformation($"{nameof(UdapAuthorizationResponseMiddleware)} executed");
                             return;
                         }
                     }
@@ -100,14 +122,14 @@ internal class UdapAuthorizationResponseMiddleware
                                     requestParamCollection.Get(AuthorizeRequest.ClientId));
                             var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
 
-                            if (client == null && scope != null && scope.Contains("udap"))
+                            if (client == null) 
                             {
                                 await RenderErrorResponse(context, interactionService, errorId);
                             }
 
                             if (client != null &&
                                 client.ClientSecrets.Any(cs =>
-                                    cs.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem))
+                                    cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                             {
                                 await RenderErrorResponse(context, interactionService, errorId);
                             }
@@ -120,14 +142,6 @@ internal class UdapAuthorizationResponseMiddleware
         await _next(context);
     }
 
-    /// <summary>
-    ///
-    /// Missing state.  Requiring in UDAP to encourage CSRF protection.  The client
-    /// is already required in section 10.12 of RFC 6749 to implement CSRF.  But
-    /// it only says, "Should utilize the "state" request parameter to deliver this value" 
-    ///
-    /// </summary>
-    /// <param name="context"></param>
     private Task RenderMissingStateErrorResponse(HttpContext context)
     {
         if (context.Request.Query.TryGetValue(

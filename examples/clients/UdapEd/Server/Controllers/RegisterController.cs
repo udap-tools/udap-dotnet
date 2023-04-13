@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Net;
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -22,6 +23,7 @@ using Udap.Util.Extensions;
 using UdapEd.Server.Extensions;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Model.Registration;
 
 namespace UdapEd.Server.Controllers;
 
@@ -42,19 +44,33 @@ public class RegisterController : Controller
     [HttpPut("UploadTestClientCert")]
     public IActionResult UploadTestClientCert([FromBody] string testClientCert)
     {
+        var result = new CertificateStatusViewModel
+        {
+            CertLoaded = CertLoadedEnum.Negative
+        };
+
         try
         {
             //todo secretManager
-            var clientCertWithKeyBytes = new X509Certificate2(testClientCert, "udap-test", X509KeyStorageFlags.Exportable).Export(X509ContentType.Pkcs12);
+            var certificate = new X509Certificate2(testClientCert, "udap-test", X509KeyStorageFlags.Exportable);
+            var clientCertWithKeyBytes = certificate.Export(X509ContentType.Pkcs12);
             HttpContext.Session.SetString(UdapEdConstants.CLIENT_CERT_WITH_KEY, Convert.ToBase64String(clientCertWithKeyBytes));
+
+            result.CertLoaded = CertLoadedEnum.Positive;
+            result.SubjectAltNames = certificate
+                .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI)
+                .Select(tuple => tuple.Item2)
+                .ToList();
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex.Message);
-            return Ok(CertLoadedEnum.InvalidPassword);
+            result.CertLoaded = CertLoadedEnum.InvalidPassword;
+
+            return Ok(result);
         }
 
-        return Ok(CertLoadedEnum.Positive);
+        return Ok(result);
     }
 
     [HttpPost("UploadClientCert")]
@@ -68,6 +84,11 @@ public class RegisterController : Controller
     [HttpPost("ValidateCertificate")]
     public IActionResult ValidateCertificate([FromBody] string password)
     {
+        var result = new CertificateStatusViewModel
+        {
+            CertLoaded = CertLoadedEnum.Negative
+        };
+
         var clientCertSession = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT);
 
         if (clientCertSession == null)
@@ -82,20 +103,30 @@ public class RegisterController : Controller
 
             var clientCertWithKeyBytes = clientCert.Export(X509ContentType.Pkcs12);
             HttpContext.Session.SetString(UdapEdConstants.CLIENT_CERT_WITH_KEY, Convert.ToBase64String(clientCertWithKeyBytes));
+
+            result.CertLoaded = CertLoadedEnum.Positive;
+            result.SubjectAltNames = clientCert
+                .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI)
+                .Select(tuple => tuple.Item2)
+                .ToList();
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex.Message);
-            return Ok(CertLoadedEnum.InvalidPassword);
+            result.CertLoaded = CertLoadedEnum.InvalidPassword;
+            return Ok(result);
         }
 
-        return Ok(CertLoadedEnum.Positive);
+        return Ok(result);
     }
 
     [HttpGet("IsClientCertificateLoaded")]
     public IActionResult Get()
     {
-        CertLoadedEnum result = CertLoadedEnum.Negative;
+        var result = new CertificateStatusViewModel
+        {
+            CertLoaded = CertLoadedEnum.Negative
+        };
 
         try
         {
@@ -103,18 +134,25 @@ public class RegisterController : Controller
 
             if (clientCertSession != null)
             {
-                result = CertLoadedEnum.InvalidPassword;
+                result.CertLoaded = CertLoadedEnum.InvalidPassword;
             }
             else
             {
-                result = CertLoadedEnum.Negative;
+                result.CertLoaded = CertLoadedEnum.Negative;
             }
 
             var certBytesWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
             if (certBytesWithKey != null)
             {
-                result = CertLoadedEnum.Positive;
+                result.CertLoaded = CertLoadedEnum.Positive;
+                var certBytes = Convert.FromBase64String(certBytesWithKey);
+                var clientCert = new X509Certificate2(certBytes);
+
+                result.SubjectAltNames = clientCert
+                    .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI)
+                    .Select(tuple => tuple.Item2)
+                    .ToList();
             }
 
             return Ok(result);
@@ -128,7 +166,9 @@ public class RegisterController : Controller
     }
 
     [HttpPost("BuildSoftwareStatement/ClientCredentials")]
-    public IActionResult BuildSoftwareStatementWithHeaderForClientCredentials([FromBody] UdapDynamicClientRegistrationDocument request)
+    public IActionResult BuildSoftwareStatementWithHeaderForClientCredentials(
+        [FromBody] UdapDynamicClientRegistrationDocument request, 
+        [FromQuery] string alg)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
@@ -139,14 +179,29 @@ public class RegisterController : Controller
 
         var certBytes = Convert.FromBase64String(clientCertWithKey);
         var clientCert = new X509Certificate2(certBytes);
-        
-        var document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
+
+        UdapDcrBuilderForClientCredentialsUnchecked dcrBuilder;
+
+        if (request.GrantTypes == null || !request.GrantTypes.Any())
+        {
+            dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked
+                .Cancel(clientCert);
+        }
+        else{
+            dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked
+                .Create(clientCert);
+        }
+
+        dcrBuilder.Document.Issuer = request.Issuer;
+        dcrBuilder.Document.Subject = request.Subject;
+
+
+        var document = dcrBuilder
             //TODO: this only gets the first SubAltName
             .WithAudience(request.Audience)
             .WithExpiration(request.Expiration)
             .WithJwtId(request.JwtId)
-            .WithClientName(request.ClientName ?? UdapEdConstants.ClientName)
+            .WithClientName(request.ClientName ?? UdapEdConstants.CLIENT_NAME)
             .WithContacts(request.Contacts)
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope(request.Scope ?? string.Empty)
@@ -156,7 +211,7 @@ public class RegisterController : Controller
         var signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
                 .Create(clientCert, document)
-                .Build();
+                .Build(alg);
 
         var tokenHandler = new JsonWebTokenHandler();
         var jsonToken = tokenHandler.ReadToken(signedSoftwareStatement);
@@ -180,7 +235,9 @@ public class RegisterController : Controller
     
 
     [HttpPost("BuildSoftwareStatement/AuthorizationCode")]
-    public IActionResult BuildSoftwareStatementWithHeaderForAuthorizationCode([FromBody] UdapDynamicClientRegistrationDocument request)
+    public IActionResult BuildSoftwareStatementWithHeaderForAuthorizationCode(
+        [FromBody] UdapDynamicClientRegistrationDocument request, 
+        [FromQuery] string alg)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
 
@@ -192,12 +249,28 @@ public class RegisterController : Controller
         var certBytes = Convert.FromBase64String(clientCertWithKey);
         var clientCert = new X509Certificate2(certBytes);
 
-        var document = UdapDcrBuilderForAuthorizationCode
-            .Create(clientCert)
+        UdapDcrBuilderForAuthorizationCodeUnchecked dcrBuilder;
+        
+        if (request.GrantTypes == null || !request.GrantTypes.Any())
+        {
+            dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked
+                .Cancel(clientCert);
+        }
+        else
+        {
+            dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked
+                .Create(clientCert);
+        }
+        
+        dcrBuilder.Document.Issuer = request.Issuer;
+        dcrBuilder.Document.Subject = request.Subject;
+
+
+        var document = dcrBuilder
             .WithAudience(request.Audience)
             .WithExpiration(request.Expiration)
             .WithJwtId(request.JwtId)
-            .WithClientName(request.ClientName ?? UdapEdConstants.ClientName)
+            .WithClientName(request.ClientName ?? UdapEdConstants.CLIENT_NAME)
             .WithContacts(request.Contacts)
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope(request.Scope ?? string.Empty)
@@ -208,7 +281,7 @@ public class RegisterController : Controller
         var signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
                 .Create(clientCert, document)
-                .Build();
+                .Build(alg);
 
         var tokenHandler = new JsonWebTokenHandler();
         var jsonToken = tokenHandler.ReadToken(signedSoftwareStatement);
@@ -230,7 +303,9 @@ public class RegisterController : Controller
     }
 
     [HttpPost("BuildRequestBody/ClientCredentials")]
-    public IActionResult BuildRequestBodyForClientCredentials([FromBody] RawSoftwareStatementAndHeader request)
+    public IActionResult BuildRequestBodyForClientCredentials(
+        [FromBody] RawSoftwareStatementAndHeader request, 
+        [FromQuery] string alg)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
         
@@ -245,18 +320,34 @@ public class RegisterController : Controller
         var document = JsonSerializer
             .Deserialize<UdapDynamicClientRegistrationDocument>(request.SoftwareStatement)!;
 
-        var signedSoftwareStatement = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            //TODO: this only gets the first SubAltName
-            .WithAudience(document.Audience)
+        UdapDcrBuilderForClientCredentialsUnchecked dcrBuilder;
+
+        if (document.GrantTypes == null || !document.GrantTypes.Any())
+        {
+            dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked
+                .Cancel(clientCert);
+        }
+        else
+        {
+            dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked
+                .Create(clientCert);
+        }
+        
+
+        dcrBuilder.Document.Issuer = document.Issuer;
+        dcrBuilder.Document.Subject = document.Subject;
+
+        //TODO: this only gets the first SubAltName
+        dcrBuilder.WithAudience(document.Audience)
             .WithExpiration(document.Expiration)
             .WithJwtId(document.JwtId)
             .WithClientName(document.ClientName!)
             .WithContacts(document.Contacts)
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope(document.Scope!)
-            .BuildSoftwareStatement();
+            .WithScope(document.Scope!) ;
         
+        var signedSoftwareStatement = dcrBuilder.BuildSoftwareStatement(alg);
+
         var requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,
@@ -267,7 +358,9 @@ public class RegisterController : Controller
     }
 
     [HttpPost("BuildRequestBody/AuthorizationCode")]
-    public IActionResult BuildRequestBodyForAuthorizationCode([FromBody] RawSoftwareStatementAndHeader request)
+    public IActionResult BuildRequestBodyForAuthorizationCode(
+        [FromBody] RawSoftwareStatementAndHeader request, 
+        [FromQuery] string alg)
     {
         var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
     
@@ -281,10 +374,24 @@ public class RegisterController : Controller
 
         var document = JsonSerializer
             .Deserialize<UdapDynamicClientRegistrationDocument>(request.SoftwareStatement)!;
-        
-        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
-                .Create(clientCert)
-                .WithAudience(document.Audience)
+
+        UdapDcrBuilderForAuthorizationCodeUnchecked dcrBuilder;
+
+        if (document.GrantTypes == null || !document.GrantTypes.Any())
+        {
+            dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked
+                .Cancel(clientCert);
+        }
+        else
+        {
+            dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked
+                .Create(clientCert);
+        }
+
+        dcrBuilder.Document.Issuer = document.Issuer;
+        dcrBuilder.Document.Subject = document.Subject;
+
+        dcrBuilder.WithAudience(document.Audience)
                 .WithExpiration(document.Expiration)
                 .WithJwtId(document.JwtId)
                 .WithClientName(document.ClientName!)
@@ -292,8 +399,9 @@ public class RegisterController : Controller
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithScope(document.Scope!)
                 .WithResponseTypes(document.ResponseTypes)
-                .WithRedirectUrls(document.RedirectUris)
-                .BuildSoftwareStatement();
+                .WithRedirectUrls(document.RedirectUris);
+
+        var signedSoftwareStatement = dcrBuilder.BuildSoftwareStatement(alg);
 
         var requestBody = new UdapRegisterRequest
         (
@@ -320,12 +428,18 @@ public class RegisterController : Controller
             new MediaTypeHeaderValue("application/json"));
 
         var response = await _httpClient.PostAsync(request.RegistrationEndpoint, content);
-        
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return BadRequest("Registration not found.");
+        }
+
         if (!response.IsSuccessStatusCode)
         {
             return BadRequest(await response.Content.ReadAsStringAsync());
         }
 
+       
         var result = await response.Content
             .ReadFromJsonAsync<RegistrationDocument>();
 

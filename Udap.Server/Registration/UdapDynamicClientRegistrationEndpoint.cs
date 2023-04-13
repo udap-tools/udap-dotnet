@@ -38,7 +38,6 @@ public class UdapDynamicClientRegistrationEndpoint
         _logger = logger;
     }
     
-    //TODO: ProcessAsync?
     /// <summary>
     /// Initiate UDAP Dynamic Client Registration for <see cref="UdapDynamicClientRegistrationEndpoint"/>
     /// </summary>
@@ -87,9 +86,9 @@ public class UdapDynamicClientRegistrationEndpoint
             return;
         }
 
-        var rootCertificates = await _store.GetRootCertificates(token);
+        var intermediateCertificates = await _store.GetIntermediateCertificates(token);
         var communityTrustAnchors = await _store.GetAnchorsCertificates(null, token);
-
+        var anchors = await _store.GetAnchors(null, token);
         //TODO: null work
         UdapDynamicClientRegistrationValidationResult? result = null;
 
@@ -97,7 +96,7 @@ public class UdapDynamicClientRegistrationEndpoint
         {
             // Not in pattern with other validators in IdentityServer.  Typically all errors handled in ValidateAsync...  TODO
 
-            result = await _validator.ValidateAsync(request, communityTrustAnchors, rootCertificates);
+            result = await _validator.ValidateAsync(request, intermediateCertificates, communityTrustAnchors, anchors);
 
             if (result == null)
             {
@@ -129,18 +128,42 @@ public class UdapDynamicClientRegistrationEndpoint
             
             _logger.LogWarning(JsonSerializer.Serialize(error));
 
-            await context.Response.WriteAsJsonAsync(error);
+            await context.Response.WriteAsJsonAsync(error, cancellationToken: token);
 
             return;
         }
 
-        // var anchors = (await _store.GetAnchors()).ToList();
 
         if (result.Client != null)
         {
-            var saved = await _store.AddClient(result.Client, token);
+            try
+            {
+                if (!result.Client.AllowedGrantTypes.Any())
+                {
+                    var numberOfClientsRemoved = await _store.CancelRegistration(result.Client, token);
 
-            if (saved == 0)
+                    if (numberOfClientsRemoved == 0)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        return;
+                    }
+                    context.Response.StatusCode = StatusCodes.Status200OK;
+                }
+                else
+                {
+                    var upsertFlag = await _store.UpsertClient(result.Client, token);
+
+                    if (upsertFlag)
+                    {
+                        context.Response.StatusCode = StatusCodes.Status200OK;
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = StatusCodes.Status201Created;
+                    }
+                }
+            }
+            catch (Exception ex)
             {
                 await context.Response.WriteAsJsonAsync(new UdapDynamicClientRegistrationErrorResponse
                 (
@@ -148,10 +171,10 @@ public class UdapDynamicClientRegistrationEndpoint
                     "Udap registration failed to save a client."
                 ), cancellationToken: token);
 
+                _logger.LogError(ex, "Udap registration failed to save a client.");
                 return;
             }
         }
-
 
         var registrationResponse = BuildResponseDocument(request, result);
 
@@ -160,8 +183,7 @@ public class UdapDynamicClientRegistrationEndpoint
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         };
         
-        context.Response.StatusCode = StatusCodes.Status201Created;
-        await context.Response.WriteAsJsonAsync(registrationResponse, options, "application/json");
+        await context.Response.WriteAsJsonAsync(registrationResponse, options, "application/json", cancellationToken: token);
     }
 
     private async Task<string> GetBody(HttpContext context)

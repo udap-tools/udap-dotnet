@@ -60,9 +60,9 @@ namespace UdapServer.Tests
         {
             AnchorCert =
                 new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
-                    "anchorLocalhostCert.cer"));
+                    "caLocalhostCert.cer"));
 
-            SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", new Mock<Serilog.ILogger>().Object);
+            await SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", new Mock<Serilog.ILogger>().Object);
 
             // await SeedData();
         }
@@ -161,7 +161,7 @@ namespace UdapServer.Tests
 
             client = new Client();
             client.ClientId = Guid.NewGuid().ToString("N");
-            await adminStore.AddClient(client);
+            await adminStore.UpsertClient(client);
             
 
             client = await store.GetClient(client);
@@ -193,6 +193,7 @@ namespace UdapServer.Tests
                 anchors.First().Certificate.ToLf().Should().BeEquivalentTo(_anchorCert.ToPemFormat().ToLf());
             }
         }
+
 
         [Fact]
         public async Task UdapDynamicClientRegistrationDocumentCompareToJwtPayloadTest()
@@ -371,19 +372,22 @@ namespace UdapServer.Tests
 
             var store = sp.GetRequiredService<IUdapClientRegistrationStore>();
             var communityAnchors = await store.GetAnchorsCertificates("http://localhost");
-            // TODO Store still needs a trusted roots place to store data
-            // var trustedRoots = await store.GetRootCertificates("http://localhost");
-            var trustedRoots = new X509Certificate2Collection();
-            trustedRoots.Add(new X509Certificate2(
-                Path.Combine(AppContext.BaseDirectory, "CertStore/roots", "caLocalhostCert.cer")
-            ));
-            
-            var result = await validator.ValidateAsync(requestBody, communityAnchors, trustedRoots);
+            var anchors = await store.GetAnchors("http://localhost");
+            var intermediateCerts = new X509Certificate2Collection(anchors.First().IntermediateCertificates
+                .Select(s => X509Certificate2.CreateFromPem(s.Certificate)).ToArray());
+
+            var result = await validator.ValidateAsync(
+                requestBody, 
+                intermediateCerts, 
+                communityAnchors, 
+                anchors);
 
             result.IsError.Should().BeFalse($"{result.Error} : {result.ErrorDescription}");
             result.Document.Should().BeEquivalentTo(document);
-        }
 
+
+        }
+        
         /// <summary>
         /// Issuer of the JWT -- unique identifying client URI. This SHALL match the value of a
         /// uniformResourceIdentifier entry in the Subject Alternative Name extension of the client's

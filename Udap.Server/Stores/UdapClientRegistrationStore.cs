@@ -9,6 +9,7 @@
 
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using Duende.IdentityServer.EntityFramework.Entities;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -40,49 +41,128 @@ namespace Udap.Server.Stores
             return entity.ToModel();
         }
 
-        public async Task<int> AddClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
+        
+        public async Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.AddClient");
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.AddClient");
             activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
 
+            var iss = client.ClientSecrets
+                .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+                ?.Value;
+
+            var existingClient = _dbContext.Clients
+                .Include(c => c.AllowedScopes)
+                .Include(c => c.RedirectUris)
+                .SingleOrDefault(c =>
+                c.AllowedGrantTypes.Any(grant => client.AllowedGrantTypes.Contains(grant.GrantType)) &&
+                c.ClientSecrets.Any(cs =>
+                cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
+                cs.Value == iss));
+
+            if (existingClient != null)
+            {
+                client.ClientId = existingClient.ClientId;
+                existingClient.AllowedScopes = client.AllowedScopes
+                    .Select(s => new ClientScope(){ClientId = existingClient.Id, Scope = s})
+                    .ToList();
+                existingClient.RedirectUris = client.ToEntity().RedirectUris;
+                await _dbContext.SaveChangesAsync(token);
+                return true;
+            }
+
             _dbContext.Clients.Add(client.ToEntity());
-            return await _dbContext.SaveChangesAsync(token);
+            await _dbContext.SaveChangesAsync(token);
+            return false;
+        }
+
+        public async Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
+        {
+            //TODO: combine into one query
+            var iss = client.ClientSecrets
+                .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+                ?.Value;
+
+            var clientsFound = _dbContext.Clients
+                .Where(c =>
+                    c.ClientSecrets.Any(cs =>
+                        cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
+                        cs.Value == iss))
+                .Select(c => c)
+                .ToList();
+
+            if (clientsFound.Any())
+            {
+                foreach (var clientFound in clientsFound)
+                {
+                    _dbContext.Clients.Remove(clientFound);
+                }
+
+                await _dbContext.SaveChangesAsync(token);
+                return clientsFound.Count;
+            }
+
+            return 0;
         }
 
         public async Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetAnchors");
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetAnchors");
             activity?.SetTag(Tracing.Properties.Community, community);
 
             List<Entities.Anchor> anchors;
 
             if (community == null)
             {
-                anchors = await _dbContext.Communities
-                    .Where(c => c.Enabled)
-                    .Include(a => a.Anchors)
-                    .SelectMany(c => c.Anchors)
+                anchors = await _dbContext.Anchors
+                    .Include(a => a.Community)
+                    .Include(a => a.IntermediateCertificates)
+                    .Where(a => a.Community.Enabled && a.Enabled)
+                    .Select(a => a)
                     .ToListAsync(token);
             }
             else
             {
-                anchors = await _dbContext.Communities
-                    .Where(c => c.Name == community)
-                    .Include(c => c.Anchors)
-                    .SelectMany(c => c.Anchors)
+                anchors = await _dbContext.Anchors
+                    .Include(a => a.Community)
+                    .Include(a => a.IntermediateCertificates)
+                    .Where(a => a.Community.Enabled && a.Community.Name == community && a.Enabled)
+                    .Select(a => a)
                     .ToListAsync(token);
             }
 
             return anchors.Select(a => a.ToModel());
         }
 
-        public async Task<X509Certificate2Collection?> GetRootCertificates(CancellationToken token = default)
+        public async Task<IEnumerable<X509Certificate2>>? GetCommunityCertificates(long communityId, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetRootCertificates");
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetCommunityCertificates");
+            activity?.SetTag(Tracing.Properties.Community, communityId);
 
-            var roots = await _dbContext.RootCertificates.ToListAsync(token).ConfigureAwait(false);
+            var encodedCerts = await _dbContext.Anchors
+                .Where(c => c.CommunityId == communityId)
+                .Include(c => c.IntermediateCertificates)
+                .ToListAsync(token);
+
+            var certs = encodedCerts.Select(anchor =>
+                X509Certificate2.CreateFromPem(anchor.X509Certificate));
+
+            foreach (var intCert in encodedCerts.SelectMany(anchor => anchor.IntermediateCertificates))
+            {
+                certs.Append(X509Certificate2.CreateFromPem(intCert.X509Certificate));
+            }
+           
+            return certs;
+        }
+
+        //TODO.  This is still coded with the old concept of getting root certificates.
+        public async Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default)
+        {
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetRootCertificates");
+
+            var roots = await _dbContext.IntermediateCertificates.ToListAsync(token).ConfigureAwait(false);
             
-            _logger.LogInformation($"Found {roots?.Count() ?? 0} root certificates");
+            _logger.LogInformation($"Found {roots?.Count() ?? 0} anchor certificates");
 
             if (roots != null)
             {
@@ -90,16 +170,14 @@ namespace Udap.Server.Stores
                     .Select(a => X509Certificate2.CreateFromPem(a.X509Certificate)).ToArray());
 
             }
-            else
-            {
-                return null;
-            }
+
+            return null;
         }
 
 
-        public async Task<X509Certificate2Collection?> GetAnchorsCertificates(string? community, CancellationToken token = default)
+        public async Task<X509Certificate2Collection> GetAnchorsCertificates(string? community, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetAnchorsCertificates");
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetAnchorsCertificates");
             activity?.SetTag(Tracing.Properties.Community, community);
 
             var anchors = (await GetAnchors(community, token).ConfigureAwait(false)).ToList();
@@ -109,7 +187,7 @@ namespace Udap.Server.Stores
 
             if (!anchors.Any())
             {
-                return null;
+                return new X509Certificate2Collection();
             }
 
             return new X509Certificate2Collection(anchors.Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());

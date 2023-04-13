@@ -74,7 +74,8 @@ public static class Tracing
         public const string ScopeNames = "scope_names";
         public const string ApiResourceNames = "api_resource_names";
 
-        public const string Community = "community";
+        public const string Community = "Community_Name";
+        public const string CommunityId = "CommunityId";
         public const string AnchorCertificate = "anchor_certificate";
         public const string RootCertificate = "root_certificate";
     }

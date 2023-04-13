@@ -32,5 +32,6 @@ builder.Services.AddSingleton<UdapClientState>(); //Singleton in Blazor wasm and
 builder.Services.AddScoped<RegisterService>();
 builder.Services.AddScoped<DiscoveryService>();
 builder.Services.AddScoped<AccessService>();
+builder.Services.AddScoped<FhirService>();
 
 await builder.Build().UseBQuery().RunAsync();

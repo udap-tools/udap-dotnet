@@ -14,10 +14,9 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Client.Internal;
-using Udap.Model;
 using UdapEd.Client.Services;
 using UdapEd.Client.Shared;
+using UdapEd.Shared;
 
 namespace UdapEd.Client.Pages;
 
@@ -74,6 +73,28 @@ public partial class UdapDiscovery
         }
     }
 
+    private string _community;
+
+    private string? Community
+    {
+        get
+        {
+            if (!string.IsNullOrEmpty(_community))
+            {
+                return _community;
+            }
+
+            _community = AppState.Community;
+
+            return _community;
+        }
+        set
+        {
+            _community = value;
+            AppState.SetProperty(this, nameof(AppState.Community), _community);
+        }
+    }
+
     private async Task GetMetadata()
     {
         Result = "Loading ...";
@@ -84,7 +105,7 @@ public partial class UdapDiscovery
             await AppState.SetPropertyAsync(
                 this, 
                 nameof(AppState.UdapMetadata), 
-                await MetadataService.GetMetadata(GetWellKnownUdap(BaseUrl), default));
+                await MetadataService.GetMetadata(RequestUrl.GetWellKnownUdap(BaseUrl, Community), default));
 
             Result = AppState.UdapMetadata != null
                 ? JsonSerializer.Serialize(AppState.UdapMetadata, new JsonSerializerOptions { WriteIndented = true })
@@ -123,7 +144,7 @@ public partial class UdapDiscovery
 
         if (Uri.TryCreate(value, UriKind.Absolute, out var baseUri))
         {
-            var result = await MetadataService.GetMetadata(GetWellKnownUdap(BaseUrl), token);
+            var result = await MetadataService.GetMetadata(RequestUrl.GetWellKnownUdap(BaseUrl, Community), token);
             if (result != null)
             {
                 AppendOrMoveBaseUrl(baseUri.AbsoluteUri);
@@ -167,16 +188,6 @@ public partial class UdapDiscovery
 
         Result = "";
         NavigationManager.NavigateTo("udapDiscovery", true);
-    }
-
-    private string? GetWellKnownUdap(string? baseUrl)
-    {
-        if (!string.IsNullOrEmpty(baseUrl) && !baseUrl.EndsWith(UdapConstants.Discovery.DiscoveryEndpoint, StringComparison.OrdinalIgnoreCase))
-        {
-            return $"{baseUrl!.RemoveTrailingSlash()}{UdapConstants.Discovery.DiscoveryEndpoint}" ;
-        }
-
-        return baseUrl ;
     }
 
     protected override void OnParametersSet()

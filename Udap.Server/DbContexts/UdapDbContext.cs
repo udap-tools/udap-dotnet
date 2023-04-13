@@ -20,7 +20,7 @@ public interface IUdapDbAdminContext : IDisposable
 {
     DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; }
     DbSet<Anchor> Anchors { get; set; }
-    DbSet<RootCertificate> RootCertificates { get; set; }
+    DbSet<IntermediateCertificate> IntermediateCertificates { get; set; }
     DbSet<Community> Communities { get; set; }
     DbSet<Certification> Certifications { get; set; }
     /// <summary>
@@ -34,22 +34,29 @@ public interface IUdapDbContext : IDisposable
 {
     DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; }
     DbSet<Anchor> Anchors { get; set; }
-    DbSet<RootCertificate> RootCertificates { get; set; }
+    DbSet<IntermediateCertificate> IntermediateCertificates { get; set; }
     DbSet<Community> Communities { get; set; }
     DbSet<Certification> Certifications { get; set; }
 }
 
 public class UdapDbContext : UdapDbContext<UdapDbContext>
 {
-    public UdapDbContext(DbContextOptions<UdapDbContext> options) : base(options)
+    public UdapDbContext(DbContextOptions<UdapDbContext> options)
+        : base(options)
     {
+    }
 
+    public UdapDbContext(DbContextOptions<UdapDbContext> options, bool migrateClientTables = false) 
+        : base(options, migrateClientTables)
+    {
     }
 }
 
 public class UdapDbContext<TContext> : DbContext, IUdapDbAdminContext, IUdapDbContext
     where TContext : DbContext, IUdapDbAdminContext, IUdapDbContext
 {
+    private bool _migrateClientTables;
+
     /// <summary>
     /// The udap store options.
     /// Overrides ConfigurationStoreOptions.
@@ -58,14 +65,15 @@ public class UdapDbContext<TContext> : DbContext, IUdapDbAdminContext, IUdapDbCo
 
 
     public DbSet<Anchor> Anchors { get; set; } = null!;
-    public DbSet<RootCertificate> RootCertificates { get; set; } = null!;
+    public DbSet<IntermediateCertificate> IntermediateCertificates { get; set; } = null!;
 
     public DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; } = null!;
     public DbSet<Community> Communities { get; set; } = null!;
     public DbSet<Certification> Certifications { get; set; } = null!;
 
-    public UdapDbContext(DbContextOptions<TContext> options) : base(options)
+    public UdapDbContext(DbContextOptions<TContext> options, bool migrateClientTables = false) : base(options)
     {
+        _migrateClientTables = migrateClientTables;
         UdapStoreOptions = this.GetService<UdapConfigurationStoreOptions>();
     }
 
@@ -94,17 +102,34 @@ public class UdapDbContext<TContext> : DbContext, IUdapDbAdminContext, IUdapDbCo
         // Do not want to own the ConfigurationDbContext from Identity Server, so exclude them
         // from EF migration.
         //
-        modelBuilder.Entity<Duende.IdentityServer.EntityFramework.Entities.Client>().ToTable("Clients", t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<ClientClaim>().ToTable("ClientClaims", t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<ClientCorsOrigin>().ToTable("ClientCorsOrigins", t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<ClientGrantType>().ToTable("ClientGrantTypes", t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<ClientIdPRestriction>().ToTable("ClientIdPRestrictions", t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<ClientPostLogoutRedirectUri>().ToTable("ClientPostLogoutRedirectUris", t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<ClientProperty>().ToTable("ClientProperties", t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<ClientRedirectUri>().ToTable("ClientRedirectUris", t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<ClientSecret>().ToTable("ClientSecrets", t => t.ExcludeFromMigrations());
-        modelBuilder.Entity<ClientScope>().ToTable("ClientScopes", t => t.ExcludeFromMigrations());
-        
+
+        if (!_migrateClientTables)
+        {
+            modelBuilder.Entity<Duende.IdentityServer.EntityFramework.Entities.Client>().ToTable("Clients", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<ClientClaim>().ToTable("ClientClaims", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<ClientCorsOrigin>().ToTable("ClientCorsOrigins", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<ClientGrantType>().ToTable("ClientGrantTypes", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<ClientIdPRestriction>().ToTable("ClientIdPRestrictions", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<ClientPostLogoutRedirectUri>().ToTable("ClientPostLogoutRedirectUris", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<ClientProperty>().ToTable("ClientProperties", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<ClientRedirectUri>().ToTable("ClientRedirectUris", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<ClientSecret>().ToTable("ClientSecrets", t => t.ExcludeFromMigrations());
+            modelBuilder.Entity<ClientScope>().ToTable("ClientScopes", t => t.ExcludeFromMigrations());
+        }
+        else
+        {
+            modelBuilder.Entity<Duende.IdentityServer.EntityFramework.Entities.Client>().ToTable("Clients");
+            modelBuilder.Entity<ClientClaim>().ToTable("ClientClaims");
+            modelBuilder.Entity<ClientCorsOrigin>().ToTable("ClientCorsOrigins");
+            modelBuilder.Entity<ClientGrantType>().ToTable("ClientGrantTypes");
+            modelBuilder.Entity<ClientIdPRestriction>().ToTable("ClientIdPRestrictions");
+            modelBuilder.Entity<ClientPostLogoutRedirectUri>().ToTable("ClientPostLogoutRedirectUris");
+            modelBuilder.Entity<ClientProperty>().ToTable("ClientProperties");
+            modelBuilder.Entity<ClientRedirectUri>().ToTable("ClientRedirectUris");
+            modelBuilder.Entity<ClientSecret>().ToTable("ClientSecrets");
+            modelBuilder.Entity<ClientScope>().ToTable("ClientScopes");
+        }
+
         base.OnModelCreating(modelBuilder);
     }
 }

@@ -15,7 +15,6 @@ using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Udap.Server.Extensions;
 using Udap.Server.Options;
-using Udap.Server.Registration;
 using static Udap.Server.Constants;
 
 //

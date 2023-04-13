@@ -56,7 +56,7 @@ public class UnitTest1
         var subject = "CN=SureFhir-TestAnchor, OU=Anchor, O=Fhir Coding, L=Portland, S=Oregon, C=US";
         var subjectAltName = new Uri("http://fhirwalker.com");
         var crl = new Uri("http://crl.fhircerts.net/crl/SureFhir-TestAnchor.crl");
-        var certificateAuthIssuerUri = new Uri("http://crl.fhircerts.net/certs/anchors/SureFhir-TestAnchor.cer");
+        var certificateAuthIssuerUri = new Uri("http://crl.fhircerts.net/certs/intermediates/SureFhir-TestAnchor.cer");
         
         var certificateUtilities = new CertificateUtilities();
 
@@ -82,7 +82,7 @@ public class UnitTest1
         var subject = "CN=test.fhirlabs.net, OU=Do not use for PHI, O=Fhir Coding, L=Portland, S=Oregon, C=US";
         var subjectAltName = new Uri("https://test.fhirlabs.net/fhir/r4");
         var crl = new Uri("http://crl.fhircerts.net/crl/surefhirlabs.crl");
-        var certificateAuthIssuerUri = new Uri("http://crl.fhircerts.net/certs/anchors/SureFhirLabs_Anchor.cer");
+        var certificateAuthIssuerUri = new Uri("http://crl.fhircerts.net/certs/intermediates/SureFhirLabs_Intermediate.cer");
 
         var certificateUtilities = new CertificateUtilities();
 

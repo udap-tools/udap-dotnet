@@ -8,10 +8,10 @@
 #endregion
 
 using System.Security.Cryptography.X509Certificates;
-using System.Text.Json.Nodes;
 using Duende.IdentityServer.Models;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Server.Storage.Stores;
 
 namespace Udap.Server.Extensions;
 
@@ -22,52 +22,45 @@ public static class ClientExtensions
     /// 
     /// </summary>
     /// <param name="secrets">The secrets</param>
+    /// <param name="store"></param>
     /// <returns>List{X509Certificate2Collection}</returns>
-    public static Task<List<X509Certificate2>> GetUdapChainsAsync(this IEnumerable<Secret> secrets)
+    public static async Task<IList<X509Certificate2>?> GetUdapChainsAsync(
+        this IEnumerable<Secret> secrets, 
+        IUdapClientRegistrationStore store)
     {
         var secretList = secrets.ToList().AsReadOnly();
-        var certificates = GetCertificates(secretList).ToList();
+        var certificates = await GetCertificates(secretList, store);
 
-        return Task.FromResult(certificates);
+        if (certificates != null)
+        {
+            return certificates.ToList();
+        }
+
+        return null;
     }
 
-    private static IEnumerable<X509Certificate2> GetCertificates(IEnumerable<Secret> secrets)
+    private static async Task<IEnumerable<X509Certificate2>?> GetCertificates(IEnumerable<Secret> secrets, IUdapClientRegistrationStore store)
     {
-        //
-        // While ClientSecrets.Value column is only varchar(4000) this technique will tend to fail for truncation
-        //
+        var enumerable = secrets as Secret[] ?? secrets.ToArray();
 
-        // var joe = secrets
-        //     .Where(s => s.Type == UdapServerConstants.SecretTypes.Udapx5c)
-        //     .Select(s =>
-        //     {
-        //         var x5CArray = JsonNode.Parse(s.Value)?.AsArray();
-        //
-        //         if (x5CArray == null)
-        //         {
-        //             return null;
-        //         }
-        //
-        //         var certChain = new X509Certificate2Collection();
-        //         foreach (var item in x5CArray)
-        //         {
-        //             certChain.Add(new X509Certificate2(Convert.FromBase64String(item.ToString())));
-        //         }
-        //
-        //         return certChain;
-        //     })
-        //     .Where(c => c != null)
-        //     .ToList();
-        //
-        // return joe;
+        if (enumerable
+            .Any(s => s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
+                      s.Expiration > DateTime.Now.ToUniversalTime()))
+        {
+            var communityId = enumerable.SingleOrDefault(s =>
+                    s.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY)
+                ?.Value;
 
+            if (communityId != null)
+            {
+                var id = long.Parse(communityId);
 
-        var certificates = secrets
-            .Where(s => s.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem &&
-                        s.Expiration > DateTime.Now.ToUniversalTime())
-            .Select(s => new X509Certificate2(Convert.FromBase64String(s.Value)));
+                var certificates = await store.GetCommunityCertificates(id);
+                return certificates;
+            }
+        }
 
-        return certificates;
+        return null;
     }
 
     public static Task<List<SecurityKey>> GetUdapKeysAsync(this ParsedSecret secret)

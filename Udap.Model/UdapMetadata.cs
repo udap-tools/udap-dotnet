@@ -127,8 +127,9 @@ public class UdapMetadata
         }
 
         TokenEndpointAuthMethodsSupported = new HashSet<string> { UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue };
-        TokenEndpointAuthSigningAlgValuesSupported = new HashSet<string> { UdapConstants.SupportedAlgorithm.RS256 };
-        RegistrationEndpointJwtSigningAlgValuesSupported = new HashSet<string> { UdapConstants.SupportedAlgorithm.RS256 };
+        //TODO: All of this should be configurable, via config string and builder pattern.
+        TokenEndpointAuthSigningAlgValuesSupported = new HashSet<string> { UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384 };
+        RegistrationEndpointJwtSigningAlgValuesSupported = new HashSet<string> { UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384 };
     }
 
     /// <summary>

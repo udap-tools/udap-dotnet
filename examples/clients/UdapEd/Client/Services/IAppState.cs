@@ -9,6 +9,8 @@ public interface IAppState
 {
     string BaseUrl { get; }
     
+    string Community { get; }
+
     OrderedDictionary BaseUrls { get; set; }
 
     UdapMetadata? UdapMetadata { get; }
@@ -23,7 +25,10 @@ public interface IAppState
 
     UdapClientCredentialsTokenRequestModel? ClientCredentialsTokenRequest { get; }
 
+    CertificateStatusViewModel? CertificateInfo { get; }
+    
     UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest { get; }
+
     AccessCodeRequestResult? AccessCodeRequestResult { get;  }
 
     LoginCallBackResult? LoginCallBackResult { get;  }

@@ -4,24 +4,34 @@
 @using UdapEd.Client.Services
 
 
-<MudTable Items="@_certificateView?.TableDisplay.First()"
-          Hover="true" 
-          Dense="true"
-          Breakpoint="Breakpoint.Sm">
-    <ToolBarContent>
-        <MudText Typo="Typo.h6">Certificates found: </MudText>
-    </ToolBarContent>
-    <ColGroup>
-        <col />
-        <col />
-    </ColGroup>
-    
-    <RowTemplate>
-        <MudTd DataLabel="Name"><strong>@context.Key</strong></MudTd>
-        <MudTd DataLabel="Value"><pre>@context.Value</pre></MudTd>
-    </RowTemplate>
-</MudTable>
+@if (_certificateView?.TableDisplay.First() != null)
+{
+    string color = "#E8F5E9";
+    int i = 0;
 
+    <MudCard>
+        <MudCardHeader><MudText Typo="Typo.h6">Certificates in x5c header: </MudText></MudCardHeader>
+        <MudCardContent>
+            
+            <MudGrid >
+                @foreach (KeyValuePair<string, string> keyValuePair in _certificateView?.TableDisplay.First())
+                {
+                    if (i % 2 == 0)
+                    {
+                        color = "background-color: #E8F5E9;";
+                    }
+                    else
+                    {
+                        color = "background-color: #EDE7F6";
+                    }
+                    <MudItem Style="@color" md="6" sm="12" xs="12"><strong>@keyValuePair.Key</strong></MudItem>
+                    <MudItem Style="@color" md="6" sm="12" xs="12"><pre>@keyValuePair.Value</pre></MudItem>
+                    i++;
+                }
+            </MudGrid>
+        </MudCardContent>
+    </MudCard>
+}
 @code {
 
     private CancellationTokenSource _cts = new();
@@ -62,6 +72,8 @@
         {
             _certificateView = await MetadataService.GetCertificateData(Certificate, _cts.Token);
         }
+
+        
     }
 
     

@@ -17,7 +17,7 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.1")
+                .HasAnnotation("ProductVersion", "7.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -526,13 +526,16 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                     b.ToTable("UdapCommunityCertification", (string)null);
                 });
 
-            modelBuilder.Entity("Udap.Server.Entities.RootCertificate", b =>
+            modelBuilder.Entity("Udap.Server.Entities.IntermediateCertificate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AnchorId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("BeginDate")
                         .HasColumnType("datetime2");
@@ -557,7 +560,9 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
 
                     b.HasKey("Id");
 
-                    b.ToTable("UdapRootCertificates", (string)null);
+                    b.HasIndex("AnchorId");
+
+                    b.ToTable("UdapIntermediateCertificates", (string)null);
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientClaim", b =>
@@ -715,6 +720,17 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                     b.Navigation("Community");
                 });
 
+            modelBuilder.Entity("Udap.Server.Entities.IntermediateCertificate", b =>
+                {
+                    b.HasOne("Udap.Server.Entities.Anchor", "Anchor")
+                        .WithMany("IntermediateCertificates")
+                        .HasForeignKey("AnchorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("FK_IntermediateCertificate_Anchor");
+
+                    b.Navigation("Anchor");
+                });
+
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.Client", b =>
                 {
                     b.Navigation("AllowedCorsOrigins");
@@ -739,6 +755,8 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
             modelBuilder.Entity("Udap.Server.Entities.Anchor", b =>
                 {
                     b.Navigation("AnchorCertifications");
+
+                    b.Navigation("IntermediateCertificates");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.Certification", b =>

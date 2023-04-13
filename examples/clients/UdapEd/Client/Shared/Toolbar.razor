@@ -8,8 +8,8 @@
 
 <InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 
-<MudAppBar Elevation="3" Color="Color.Transparent" >
-  <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+<MudAppBar Elevation="3" Style="background-image: linear-gradient( 109.6deg,  rgba(240,240,240,1) 11.2%, rgba(240,240,240,1) 91.1% );">
+  <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Primary" Edge="Edge.Start"
                  OnClick="@DrawerToggle" />
   <MudSpacer />
   
@@ -33,15 +33,16 @@
           IconSize="Size.Small"
           OnClick="@LoadTestCertificate" />
 
+
   <MudSpacer />
-  Token Status:&nbsp;<MudText Color="@(AppState.Status is {IsValid: false } ? Color.Error : Color.Success)">@AppState.Status.StatusMessage</MudText>
+  <MudText Color="Color.Primary">Token Status:</MudText>&nbsp;<MudText Color="@(AppState.Status is {IsValid: false } ? Color.Error : Color.Success)">@AppState.Status.StatusMessage</MudText>
   <MudImage Class="cursor-pointer mud-ripple ma-2" Src="images/hl7/icon-fhir-32.png" Alt="Fhir Icon"  style="height: 24px; width: 24px"
             @onclick="@GoToIG" />
   <MudAvatar Class="cursor-pointer mud-ripple" Image="https://avatars.githubusercontent.com/u/77421324" Alt="UDAP Avatar" Size="Size.Small"
              @onclick="@GoToUdapOrg" />
-  <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit"
+  <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Dark"
                  Link="https://github.com/udap-tools/udap-dotnet/" Target="_blank" />
-  <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Inherit" Edge="Edge.End" />
+  <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Dark" Edge="Edge.End" />
 </MudAppBar>
 
 <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
@@ -69,12 +70,16 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
 
+    private List<string> sans = new List<string>();
+
     PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
     private bool _checkServerSession = false;
 
     protected override async Task OnInitializedAsync()
     {
-        SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+        var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
+        AppState.SetProperty(this, nameof(AppState.CertificateInfo), clientCertificateLoadStatus);
+        SetCertLoadedColor(clientCertificateLoadStatus.CertLoaded);
         RunTimer();
     }
 
@@ -90,7 +95,9 @@
 
     private async Task Events_OnFocus(FocusEventArgs obj)
     {
-        SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+        var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
+        AppState.SetProperty(this, nameof(AppState.CertificateInfo), clientCertificateLoadStatus);
+        await SetCertLoadedColor(clientCertificateLoadStatus.CertLoaded);
         _checkServerSession = true;
     }
 
@@ -99,24 +106,29 @@
         _checkServerSession = false;
     }
     
-    private void SetCertLoadedColor(CertLoadedEnum isCertLoaded)
+    private async Task SetCertLoadedColor(CertLoadedEnum? isCertLoaded)
     {
         switch (isCertLoaded)
         {
             case CertLoadedEnum.Negative:
                 CertLoadedColor = Color.Error;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
                 break;
             case CertLoadedEnum.Positive:
                 CertLoadedColor = Color.Success;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), true);
                 break;
             case CertLoadedEnum.InvalidPassword:
                 CertLoadedColor = Color.Warning;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
                 break;
             default:
                 CertLoadedColor = Color.Error;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
                 break;
         }
-        StateHasChanged();
+
+        this.StateHasChanged();
     }
 
 
@@ -161,14 +173,16 @@
         var options = new DialogOptions { CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Password_Dialog>("Certificate Password", options);
         var result = await dialog.Result;
-        var certLoaded = await RegisterService.ValidateCertificate(result.Data.ToString() ?? "");
-        SetCertLoadedColor(certLoaded);
+        var certViewModel = await RegisterService.ValidateCertificate(result.Data.ToString() ?? "");
+        await SetCertLoadedColor(certViewModel?.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.CertificateInfo), certViewModel);
     }
 
     private async Task LoadTestCertificate()
     {
-        var result = await RegisterService.LoadTestCertificate();
-        SetCertLoadedColor(result);
+        var certViewModel = await RegisterService.LoadTestCertificate();
+        await SetCertLoadedColor(certViewModel.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.CertificateInfo), certViewModel);
     }
 
     async void RunTimer()
@@ -177,7 +191,9 @@
         {
             if (_checkServerSession)
             {
-                SetCertLoadedColor(await RegisterService.ClientCertificateLoadStatus());
+                var certViewModel = await RegisterService.ClientCertificateLoadStatus();
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateInfo), certViewModel);
+                await SetCertLoadedColor(certViewModel?.CertLoaded);
             }
         }
     }
@@ -186,5 +202,5 @@
     public void Dispose()
     {
         _periodicTimer?.Dispose();
-    }
+    } 
 }

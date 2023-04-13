@@ -6,6 +6,9 @@ Run buildSchema.bat to regenerate migrations.  It will place migrations in Udap/
 
 Note: Identity Server migrations were generated from the Duende source code and place in the Migrations folder.  In the future I might generate them from here.
 
+Install dotnet ef tools
+
+dotnet tool install --global dotnet-ef
 
 Deploy the schema by simple running the application.
 

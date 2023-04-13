@@ -7,9 +7,6 @@
 // */
 #endregion
 
-using System.Text.Json;
-using Hl7.Fhir.Rest;
-using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;

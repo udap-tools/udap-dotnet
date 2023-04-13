@@ -155,7 +155,7 @@
             </MudTabPanel>
             <MudTabPanel Text="Bundle Response">
                 <InputTextArea Class="@ValidPatientResourceStyle"
-                               rows="@(_matchResultRaw.Count(s => s == '\n') + 1)"
+                               rows="@(_matchResultRaw?.Count(s => s == '\n') + 1)"
                                @bind-Value="_matchResultRaw"
                                @onfocusout="PersistSoftwareStatement" />
             </MudTabPanel>

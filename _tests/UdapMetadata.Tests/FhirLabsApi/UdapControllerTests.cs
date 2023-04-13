@@ -16,6 +16,7 @@ using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -78,12 +79,16 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
 
     public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper output)
     {
-        //
-        // Tests json once
-        //
         if (fixture == null) throw new ArgumentNullException(nameof(fixture));
         fixture.Output = output;
         _fixture = fixture;
+
+        //
+        // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory
+        //
+        var services = new ServiceCollection();
+
+        services.AddScoped<I>()
     }
 
     /// <summary>

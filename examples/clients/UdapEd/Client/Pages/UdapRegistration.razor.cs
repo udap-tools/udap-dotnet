@@ -7,18 +7,18 @@
 // */
 #endregion
 
-using System.IdentityModel.Tokens.Jwt;
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using MudBlazor;
 using Udap.Model;
 using Udap.Model.Registration;
 using UdapEd.Client.Services;
 using UdapEd.Client.Shared;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Model.Registration;
 
 namespace UdapEd.Client.Pages;
 
@@ -27,10 +27,15 @@ public partial class UdapRegistration
     [CascadingParameter]
     public CascadingAppState AppState { get; set; } = null!;
 
+    [CascadingParameter] 
+    public MainLayout Layout { get; set; } = null!;
+
     ErrorBoundary? ErrorBoundary { get; set; }
     [Inject] RegisterService RegisterService { get; set; } = null!;
 
     [Inject] NavigationManager NavigationManager { get; set; } = null!;
+
+    private string RawSoftwareStatementError { get; set; } = string.Empty;
 
     private string _beforeEncodingHeader = string.Empty;
     private string SoftwareStatementBeforeEncodingHeader
@@ -109,21 +114,32 @@ public partial class UdapRegistration
         }
     }
 
+    private const string validStyle = "pre udap-indent-1";
+    private const string invalidStyle = "pre udap-indent-1 jwt-invalid";
+    public string ValidRawSoftwareStatementStyle { get; set; } = validStyle;
 
     private void PersistSoftwareStatement()
     {
-        var statement = JsonSerializer
-            .Deserialize<UdapDynamicClientRegistrationDocument>(SoftwareStatementBeforeEncodingSoftwareStatement);
-        var beforeEncodingScope = statement?.Scope;
-        
-        var rawStatement = new RawSoftwareStatementAndHeader
+        try
         {
-            Header = SoftwareStatementBeforeEncodingHeader,
-            SoftwareStatement = SoftwareStatementBeforeEncodingSoftwareStatement,
-            Scope = beforeEncodingScope
-        };
-        
-        AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), rawStatement);
+            var statement = JsonSerializer
+                .Deserialize<UdapDynamicClientRegistrationDocument>(_beforeEncodingStatement);
+            var beforeEncodingScope = statement?.Scope;
+
+            var rawStatement = new RawSoftwareStatementAndHeader
+            {
+                Header = SoftwareStatementBeforeEncodingHeader,
+                SoftwareStatement = _beforeEncodingStatement,
+                Scope = beforeEncodingScope
+            };
+
+            ValidRawSoftwareStatementStyle = validStyle;
+            AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), rawStatement);
+        }
+        catch
+        {
+            ValidRawSoftwareStatementStyle = invalidStyle;
+        }
     }
 
     private string? _registrationResult;
@@ -137,7 +153,7 @@ public partial class UdapRegistration
                 return _registrationResult;
             }
 
-            if (AppState.UdapRegistrationRequest == null)
+            if (AppState.RegistrationDocument == null)
             {
                 return _registrationResult ?? string.Empty;
             }
@@ -155,6 +171,8 @@ public partial class UdapRegistration
         set => AppState.SetProperty(this, nameof(AppState.Oauth2Flow), value);
     }
 
+    private string? _subjectAltName;
+    private string _signingAlgorithm = UdapConstants.SupportedAlgorithm.RS256;
     private string? _requestBody;
 
     private string RequestBody
@@ -178,7 +196,6 @@ public partial class UdapRegistration
         set => _requestBody = value;
     }
 
-   
     private async Task BuildRawSoftwareStatement()
     {
         SetRawMessage("Loading ...");
@@ -194,26 +211,55 @@ public partial class UdapRegistration
             await BuildRawSoftwareStatementForAuthorizationCode();
         }
     }
+    private async Task BuildRawCancelSoftwareStatement()
+    {
+        SetRawMessage("Loading ...");
 
-    private async Task BuildRawSoftwareStatementForClientCredentials()
+        await Task.Delay(150);
+
+        if (AppState.Oauth2Flow == Oauth2FlowEnum.client_credentials)
+        {
+            await BuildRawSoftwareStatementForClientCredentials(true);
+        }
+        else
+        {
+            await BuildRawSoftwareStatementForAuthorizationCode(true);
+        }
+    }
+
+    private async Task BuildRawSoftwareStatementForClientCredentials(bool cancelRegistration = false)
     {
         try
         {
-            var request = UdapDcrBuilderForClientCredentials.Create()
-                .WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
+            UdapDcrBuilderForClientCredentialsUnchecked dcrBuilder;
+
+            if (cancelRegistration)
+            {
+                dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked.Cancel();
+            }
+            else
+            {
+                dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked.Create();
+            }
+
+            dcrBuilder.WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
-                .WithClientName(UdapEdConstants.ClientName)
-                .WithContacts(new HashSet<string?>
+                .WithClientName(UdapEdConstants.CLIENT_NAME)
+                .WithContacts(new HashSet<string>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-                .WithScope(RegisterService.GetScopesForClientCredentials(AppState.UdapMetadata?.ScopesSupported))
-                .Build();
+                .WithScope(RegisterService.GetScopesForClientCredentials(AppState.UdapMetadata?.ScopesSupported));
 
+            dcrBuilder.Document.Subject = _subjectAltName;
+            dcrBuilder.Document.Issuer = _subjectAltName;
+            
+            var request = dcrBuilder.Build();
 
-            var statement = await RegisterService.BuildSoftwareStatementForClientCredentials(request);
+            var statement = await RegisterService
+                .BuildSoftwareStatementForClientCredentials(request, _signingAlgorithm);
             if (statement != null)
             {
                 SetRawStatement(statement.Header, statement.SoftwareStatement);
@@ -222,34 +268,49 @@ public partial class UdapRegistration
         }
         catch (Exception ex)
         {
-            SetRawMessage(ex.Message);
-            ResetSoftwareStatement();
+            SetRawMessage(string.Empty);
+            await ResetSoftwareStatement();
+            RawSoftwareStatementError = ex.Message;
         }
     }
     
-    private async Task BuildRawSoftwareStatementForAuthorizationCode()
+    private async Task BuildRawSoftwareStatementForAuthorizationCode(bool cancelRegistration = false)
     {
         try
         {
             var scope = RegisterService.GetScopesForAuthorizationCode(AppState.UdapMetadata?.ScopesSupported);
+            
+            UdapDcrBuilderForAuthorizationCodeUnchecked dcrBuilder;
 
-            var request = UdapDcrBuilderForAuthorizationCode.Create()
-                .WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
+            if (cancelRegistration)
+            {
+                dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Cancel() as UdapDcrBuilderForAuthorizationCodeUnchecked;
+            }
+            else
+            {
+                dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Create() as UdapDcrBuilderForAuthorizationCodeUnchecked;
+            }
+
+
+            dcrBuilder.WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
-                .WithClientName(UdapEdConstants.ClientName)
-                .WithContacts(new HashSet<string?>
+                .WithClientName(UdapEdConstants.CLIENT_NAME)
+                .WithContacts(new HashSet<string>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-                .WithResponseTypes(new HashSet<string?> { "code" })
-                .WithRedirectUrls(new List<string?>{ $"{NavigationManager.BaseUri}udapBusinessToBusiness" })
-                .WithScope(scope)
-                .Build();
+                .WithResponseTypes(new HashSet<string> { "code" })
+                .WithRedirectUrls(new List<string> { $"{NavigationManager.BaseUri}udapBusinessToBusiness" })
+                .WithScope(scope);
 
+            dcrBuilder.Document.Subject = _subjectAltName;
+            dcrBuilder.Document.Issuer = _subjectAltName;
 
-            var statement = await RegisterService.BuildSoftwareStatementForAuthorizationCode(request);
+            var request = dcrBuilder.Build();
+
+            var statement = await RegisterService.BuildSoftwareStatementForAuthorizationCode(request, _signingAlgorithm);
             if (statement?.Header != null)
             {
                 SetRawStatement(statement.Header, statement.SoftwareStatement);
@@ -267,6 +328,7 @@ public partial class UdapRegistration
 
     private void SetRawMessage(string message)
     {
+        RawSoftwareStatementError = string.Empty;
         SoftwareStatementBeforeEncodingHeader = message;
         SoftwareStatementBeforeEncodingSoftwareStatement = string.Empty;
     }
@@ -291,14 +353,14 @@ public partial class UdapRegistration
         SoftwareStatementBeforeEncodingSoftwareStatement = jsonStatement ?? string.Empty;
     }
 
-    private void ResetSoftwareStatement()
+    private async Task ResetSoftwareStatement()
     {
         SetRawMessage(string.Empty);
-        AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), string.Empty);
+        await AppState.SetPropertyAsync(this, nameof(AppState.SoftwareStatementBeforeEncoding), null);
         _requestBody = null;
-        AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), null);
+        await AppState.SetPropertyAsync(this, nameof(AppState.UdapRegistrationRequest), null);
         _registrationResult = null;
-        AppState.SetProperty(this, nameof(AppState.RegistrationDocument), null);
+        await AppState.SetPropertyAsync(this, nameof(AppState.RegistrationDocument), null);
     }
 
     private async Task BuildRequestBody()
@@ -314,12 +376,19 @@ public partial class UdapRegistration
         {
             await BuildRequestBodyForAuthorizationCode();
         }
+
+        RegistrationResult = string.Empty;
+        await AppState.SetPropertyAsync(this, nameof(AppState.RegistrationDocument), null);
     }
 
     private async Task BuildRequestBodyForClientCredentials()
     {
-        var registerRequest = await RegisterService.BuildRequestBodyForClientCredentials(AppState.SoftwareStatementBeforeEncoding);
-        AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), registerRequest);
+        var registerRequest = await RegisterService
+            .BuildRequestBodyForClientCredentials(
+                AppState.SoftwareStatementBeforeEncoding,
+                _signingAlgorithm);
+
+        await AppState.SetPropertyAsync(this, nameof(AppState.UdapRegistrationRequest), registerRequest);
 
         RequestBody = JsonSerializer.Serialize(
             registerRequest,
@@ -328,8 +397,12 @@ public partial class UdapRegistration
 
     private async Task BuildRequestBodyForAuthorizationCode()
     {
-        var registerRequest = await RegisterService.BuildRequestBodyForAuthorizationCode(AppState.SoftwareStatementBeforeEncoding);
-        AppState.SetProperty(this, nameof(AppState.UdapRegistrationRequest), registerRequest);
+        var registerRequest = await RegisterService
+            .BuildRequestBodyForAuthorizationCode(
+                AppState.SoftwareStatementBeforeEncoding,
+                _signingAlgorithm);
+
+        await AppState.SetPropertyAsync(this, nameof(AppState.UdapRegistrationRequest), registerRequest);
 
         RequestBody = JsonSerializer.Serialize(
             registerRequest,
@@ -368,5 +441,11 @@ public partial class UdapRegistration
     protected override void OnParametersSet()
     {
         ErrorBoundary?.Recover();
+        if (AppState.CertificateInfo?.SubjectAltNames != null && AppState.CertificateInfo.SubjectAltNames.Any())
+        {
+            _subjectAltName = AppState.CertificateInfo.SubjectAltNames.First();
+            StateHasChanged();
+            Task.Delay(50);
+        }
     }
 }

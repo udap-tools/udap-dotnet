@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Components;
+﻿using System.Diagnostics;
+using Microsoft.AspNetCore.Components;
 using Udap.Idp.Admin.Services;
 using Udap.Idp.Admin.Services.DataBase;
 using Udap.Idp.Admin.Services.State;
@@ -18,8 +19,10 @@ public partial class CommunityList
     private List<string> editEvents = new();
     private string searchString = "";
     private Community communityBeforeEdit;
+    private Community? _communityRowInEdit;
+    private bool _communityRowIsInEditMode;
     private ICollection<Community> Communities = new List<Community>();
-    private ICollection<RootCertificate> RootCertificates = new List<RootCertificate>();
+    private ICollection<IntermediateCertificate>? RootCertificates = new List<IntermediateCertificate>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -55,11 +58,36 @@ public partial class CommunityList
             Default = ((Community)community).Default
         };
         AddEditionEvent($"RowEditPreview event: made a backup of Community {((Community)community).Name}");
+
+        _communityRowIsInEditMode = true;
     }
 
     private void ItemHasBeenCommitted(object community)
     {
-        AddEditionEvent($"RowEditCommit event: Changes to Community {((Community)community).Name} committed");
+        var communityView = (Community)community;
+
+        if (communityView.Id > 0)
+        {
+            UpdateRecord(communityView);
+        }
+        else
+        {
+            // communityView.BeginDate = communityView.Certificate.NotBefore;
+            // communityView.EndDate = communityView.Certificate.NotAfter;
+            var resultAnchor = ApiService.Save(communityView).GetAwaiter().GetResult();
+            AddEditionEvent($"RowEditCommit event: Changes to Community {((Community)community).Name} committed");
+            Debug.Assert(_communityRowInEdit != null, nameof(_communityRowInEdit) + " != null");
+            _communityRowInEdit.Id = resultAnchor.Id; //bind up the new id...
+        }
+
+        _communityRowIsInEditMode = false;
+        StateHasChanged();
+    }
+
+    private void UpdateRecord(Community communityView)
+    {
+        ApiService.Update(communityView).GetAwaiter().GetResult();
+        AddEditionEvent($"RowEditCommit event: Updating anchor {communityView.Name} committed");
     }
 
     private void ResetItemToOriginalValues(object community)
@@ -68,11 +96,16 @@ public partial class CommunityList
             AddEditionEvent($"RowEditCancel event: Null community.  Probably related data open.");
             return;
         }
+
         ((Community)community).Id = communityBeforeEdit.Id;
         ((Community)community).Name = communityBeforeEdit.Name;
         ((Community)community).Enabled = communityBeforeEdit.Enabled;
         ((Community)community).Default = communityBeforeEdit.Default;
+
         AddEditionEvent($"RowEditCancel event: Editing of Community {((Community)community).Name} cancelled");
+
+        _communityRowIsInEditMode = false;
+        StateHasChanged();
     }
 
 
@@ -92,5 +125,17 @@ public partial class CommunityList
         return false;
     }
     
+    private async Task AddCommunity()
+    {
+        _communityRowInEdit = new ViewModel.Community();
+
+        Communities.Add(_communityRowInEdit);
+        await Task.Delay(1);
+        StateHasChanged();
+
+        // await Js.InvokeVoidAsync("UdapAdmin.setFocus", "AnchorId:0");
+
+        // StateHasChanged();
+    }
 }
 

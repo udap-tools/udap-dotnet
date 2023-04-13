@@ -1,14 +1,16 @@
 ﻿using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
-using Google.Protobuf.WellKnownTypes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
+using Udap.Client.Internal;
 using Udap.Model;
 using Udap.Util.Extensions;
 using UdapEd.Server.Extensions;
+using UdapEd.Shared;
 using UdapEd.Shared.Model;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
@@ -27,13 +29,25 @@ public class MetadataController : Controller
         _logger = logger;
     }
 
+    // get metadata from .well-known/udap  
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] string metadataUrl)
     {
-        var response = await _httpClient.GetStringAsync(metadataUrl);
+        var baseUrl = Base64UrlEncoder.Decode(metadataUrl);
+        _logger.LogDebug(baseUrl);
+        var response = await _httpClient.GetStringAsync(baseUrl);
         var result = JsonSerializer.Deserialize<UdapMetadata>(response);
+        HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseUrl.GetBaseUrlFromMetadataUrl());
 
         return Ok(result);
+    }
+
+    [HttpPut]
+    public IActionResult SetBaseFhirUrl([FromBody] string baseFhirUrl)
+    {
+        HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseFhirUrl);
+
+        return Ok();
     }
 
     [HttpGet("MyIp")]
@@ -69,12 +83,12 @@ public class MetadataController : Controller
 
         data.Add("Serial Number", cert.SerialNumber);
         data.Add("Subject", cert.Subject);
-        data.Add("Subject Alternative Name", GetSANs(cert));
+        data.Add("Subject Alternative Names", GetSANs(cert));
         data.Add("Certificate Policy", BuildPolicyInfo(cert));
         data.Add("Start Date", cert.GetEffectiveDateString());
         data.Add("End Date", cert.GetExpirationDateString());
         data.Add("Key Usage", GetKeyUsage(cert));
-        // data.Add("Extended Key Usage", GetExtendeKeyUsage(cert));
+        // data.Add("Extended Key Usage", GetExtendedKeyUsage(cert));
         data.Add("Issuer", cert.Issuer);
         data.Add("Subject Key Identifier", GetSubjectKeyIdentifier(cert));
         data.Add("Authority Key Identifier", GetAuthorityKeyIdentifier(cert));
@@ -96,7 +110,14 @@ public class MetadataController : Controller
             return String.Empty;
         }
 
-        return string.Join("\r\n", sans);
+        var sb = new StringBuilder();
+
+        foreach (var tuple in sans)
+        {
+            sb.AppendLine($"{tuple.Item1} : {tuple.Item2}");
+        }
+        
+        return sb.ToString();
     }
 
     private string BuildPolicyInfo(X509Certificate2 cert)
@@ -125,7 +146,7 @@ public class MetadataController : Controller
         return string.Join("; ", keyUsage.ToKeyUsageToString());
     }
 
-    private string GetExtendeKeyUsage(X509Certificate2 cert)
+    private string GetExtendedKeyUsage(X509Certificate2 cert)
     {
         var ext = cert.GetExtensionValue(X509Extensions.ExtendedKeyUsage.Id) as Asn1OctetString;
 

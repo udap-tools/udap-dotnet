@@ -26,6 +26,8 @@ public class UdapClientState : IAppState
 
     public string BaseUrl { get; set; } = "https://fhirlabs.net/fhir/r4/.well-known/udap";
 
+    public string Community { get; set; }
+
     public OrderedDictionary BaseUrls { get; set; }
 
     public UdapMetadata? UdapMetadata { get; set; }
@@ -41,6 +43,9 @@ public class UdapClientState : IAppState
     public UdapClientCredentialsTokenRequestModel? ClientCredentialsTokenRequest { get; set; }
 
     public UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest { get; set; }
+
+    public CertificateStatusViewModel? CertificateInfo { get; set; }
+
     public AccessCodeRequestResult? AccessCodeRequestResult { get; set; }
    
     public LoginCallBackResult? LoginCallBackResult { get; set; }

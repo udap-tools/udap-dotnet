@@ -23,40 +23,99 @@ namespace Udap.Model.Registration;
 /// </summary>
 public class UdapDcrBuilderForAuthorizationCode
 {
-    private X509Certificate2? _certificate;
-    private readonly UdapDynamicClientRegistrationDocument _document;
     private DateTime _now;
+    private UdapDynamicClientRegistrationDocument _document;
+    private X509Certificate2? _certificate;
 
-    private UdapDcrBuilderForAuthorizationCode(X509Certificate2 certificate) : this()
+    protected X509Certificate2? Certificate
+    {
+        get => _certificate;
+        set => _certificate = value;
+    }
+
+    protected UdapDynamicClientRegistrationDocument Document
+    {
+        get => _document;
+        set => _document = value;
+    }
+    
+    protected UdapDcrBuilderForAuthorizationCode(X509Certificate2 certificate, bool cancelRegistration) : this(cancelRegistration)
     {
         this.WithCertificate(certificate);
     }
 
-    private UdapDcrBuilderForAuthorizationCode()
+    protected UdapDcrBuilderForAuthorizationCode(bool cancelRegistration)
     {
         _now = DateTime.UtcNow;
 
         _document = new UdapDynamicClientRegistrationDocument();
-        _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.AuthorizationCode };
+        if (!cancelRegistration)
+        {
+            _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.AuthorizationCode };
+        }
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
     }
-
-    public static UdapDcrBuilderForAuthorizationCode Create(X509Certificate2 certificate)
+    /// <summary>
+    /// Register or update an existing registration
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
+    public static UdapDcrBuilderForAuthorizationCode Create(X509Certificate2 cert)
     {
-        return new UdapDcrBuilderForAuthorizationCode(certificate);
+        return new UdapDcrBuilderForAuthorizationCode(cert, false);
     }
 
     //TODO: Safe for multi SubjectAltName scenarios
+    /// <summary>
+    /// Register or update an existing registration by subjectAltName
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
     public static UdapDcrBuilderForAuthorizationCode Create(X509Certificate2 cert, string subjectAltName)
     {
-        return new UdapDcrBuilderForAuthorizationCode(cert);
+        return new UdapDcrBuilderForAuthorizationCode(cert, false);
     }
 
+    /// <summary>
+    /// Register or update an existing registration
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
     public static UdapDcrBuilderForAuthorizationCode Create()
     {
-        return new UdapDcrBuilderForAuthorizationCode();
+        return new UdapDcrBuilderForAuthorizationCode(false);
     }
 
+    /// <summary>
+    /// Cancel an existing registration.
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
+    public static UdapDcrBuilderForAuthorizationCode Cancel(X509Certificate2 cert)
+    {
+        return new UdapDcrBuilderForAuthorizationCode(cert, true);
+    }
+
+    //TODO: Safe for multi SubjectAltName scenarios
+    /// <summary>
+    /// Cancel an existing registration by subject alt name.
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <param name="subjectAltName"></param>
+    /// <returns></returns>
+    public static UdapDcrBuilderForAuthorizationCode Cancel(X509Certificate2 cert, string subjectAltName)
+    {
+        return new UdapDcrBuilderForAuthorizationCode(cert, true);
+    }
+
+    /// <summary>
+    /// Cancel an existing registration.
+    /// </summary>
+    /// <returns></returns>
+    public static UdapDcrBuilderForAuthorizationCode Cancel()
+    {
+        return new UdapDcrBuilderForAuthorizationCode(true);
+    }
     /// <summary>
     /// Set at construction time. 
     /// </summary>
@@ -163,10 +222,10 @@ public class UdapDcrBuilderForAuthorizationCode
 
     public UdapDynamicClientRegistrationDocument Build()
     {
-        return _document;
+        return Document;
     }
 
-    public string BuildSoftwareStatement()
+    public string BuildSoftwareStatement(string? signingAlgorithm = UdapConstants.SupportedAlgorithm.RS256)
     {
         if (_certificate == null)
         {
@@ -174,7 +233,7 @@ public class UdapDcrBuilderForAuthorizationCode
         }
 
         return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-            .Create(_certificate, _document)
-            .Build();
+            .Create(_certificate, Document)
+            .Build(signingAlgorithm);
     }
 }

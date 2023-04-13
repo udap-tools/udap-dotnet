@@ -6,6 +6,7 @@
 //  See LICENSE in the project root for license information.
 // */
 #endregion
+#pragma warning disable 
 
 using System.Net;
 using System.Security.Claims;
@@ -64,7 +65,7 @@ public class UdapIdentityServerPipeline
     public List<ApiScope> ApiScopes { get; set; } = new List<ApiScope>();
     public List<TestUser> Users { get; set; } = new List<TestUser>();
     public List<Community> Communities { get; set; } = new List<Community>();
-    public List<RootCertificate> RootCertificates { get; set; } = new List<RootCertificate>();
+    public List<IntermediateCertificate> IntermediateCertificates { get; set; } = new List<IntermediateCertificate>();
 
     public TestServer Server { get; set; }
     public HttpMessageHandler Handler { get; set; }
@@ -114,7 +115,7 @@ public class UdapIdentityServerPipeline
         Handler = Server.CreateHandler();
             
         BrowserClient = new BrowserClient(new BrowserHandler(Handler));
-        // BackChannelClient = new HttpClient(Handler);
+        BackChannelClient = new HttpClient(Handler);
 
     }
 
@@ -158,7 +159,7 @@ public class UdapIdentityServerPipeline
             .AddTestUsers(Users)
             .AddDeveloperSigningCredential(persistKey: false)
             .AddUdapServer(BaseUrl)
-            .AddInMemoryUdapCertificates(Communities, RootCertificates);
+            .AddInMemoryUdapCertificates(Communities, IntermediateCertificates);
 
         services.AddHttpClient(IdentityServerConstants.HttpClients.BackChannelLogoutHttpClient)
             .AddHttpMessageHandler(() => BackChannelMessageHandler);

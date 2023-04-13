@@ -35,13 +35,16 @@ namespace UdapServer.Tests;
 
 public class HL7ApiTestFixture : WebApplicationFactory<Program>
 {
-    public ITestOutputHelper Output { get; set; }
+    public ITestOutputHelper Output { get; set; } = null!;
 
-    // this test harness's AppSettings
-    
+    public IUdapDbAdminContext UdapDbAdminContext { get; set; } = null!;
+
+    private ServiceProvider _serviceProvider = null!;
+    private IServiceScope _serviceScope = null!;
+
     public HL7ApiTestFixture()
     {
-        SeedData.EnsureSeedData("Data Source=./Udap.Idp.db.HL7;", new Mock<Serilog.ILogger>().Object);
+        SeedData.EnsureSeedData("Data Source=./Udap.Idp.db.HL7;", new Mock<Serilog.ILogger>().Object).GetAwaiter().GetResult();
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
@@ -78,14 +81,20 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
                     RevocationMode = X509RevocationMode.NoCheck // This is the change unit testing with no revocation endpoint to host the revocation list.
                 },
                 Output.ToLogger<TrustChainValidator>()));
-
+            
+            _serviceProvider = services.BuildServiceProvider();
+            _serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+            UdapDbAdminContext = _serviceScope.ServiceProvider.GetRequiredService<IUdapDbAdminContext>();
+            
         });
+        
+        var overrideSettings = new Dictionary<string, string>
+        {
+            { "ConnectionStrings:DefaultConnection", "Data Source=Udap.Idp.db.HL7;" },
+            { "ServerSettings:ServerSupport", "Hl7SecurityIG" }
+        };
 
-        var overrideSettings = new Dictionary<string, string>();
-        overrideSettings.Add("ConnectionStrings:DefaultConnection", "Data Source=Udap.Idp.db.HL7;");
-        overrideSettings.Add("ServerSettings:ServerSupport", "Hl7SecurityIG");
-
-        builder.ConfigureHostConfiguration(b => b.AddInMemoryCollection(overrideSettings));
+        builder.ConfigureHostConfiguration(b => b.AddInMemoryCollection(overrideSettings!));
         
         builder.ConfigureLogging(logging =>
         {
@@ -96,6 +105,14 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
         var app = base.CreateHost(builder);
 
         return app;
+    }
+
+    /// <inheritdoc />
+    public override async ValueTask DisposeAsync()
+    {
+        _serviceScope.Dispose();
+        await _serviceProvider.DisposeAsync();
+        await base.DisposeAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -110,6 +127,8 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
         //This is not working for linux tests like it did in other projects.
         builder.UseSetting("contentRoot", "../../../../../examples/Udap.Idp/");
     }
+
+    
 }
 
 /// <summary>
@@ -118,10 +137,12 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
 [Collection("Udap.Idp")]
 public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 {
-    private HL7ApiTestFixture _fixture;
+    private readonly HL7ApiTestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
-
-    public Hl7RegistrationTests(HL7ApiTestFixture fixture, ITestOutputHelper testOutputHelper)
+   
+    public Hl7RegistrationTests(
+        HL7ApiTestFixture fixture, 
+        ITestOutputHelper testOutputHelper)
     {
         if (fixture == null) throw new ArgumentNullException(nameof(fixture));
         fixture.Output = testOutputHelper;
@@ -130,9 +151,11 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     [Fact]
-    public async Task RegisrationSuccess_authorization_code_Test()
+    public async Task RegistrationSuccess_authorization_code_Test()
     {
         using var client = _fixture.CreateClient();
+        await ResetClientInDatabase();
+
         var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -166,10 +189,10 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "authorization_code" }!,
-            ResponseTypes = new HashSet<string> { "code" }!,
-            RedirectUris = new List<string>(){ "http://localhost/signin-oidc" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "authorization_code" },
+            ResponseTypes = new HashSet<string> { "code" },
+            RedirectUris = new List<string>(){ "http://localhost/signin-oidc" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "user/Patient.*"
         };
@@ -235,9 +258,11 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     [Fact]
-    public async Task RegisrationSuccessTest()
+    public async Task RegistrationSuccessTest()
     {
         using var client = _fixture.CreateClient();
+        await ResetClientInDatabase();
+
         var disco = await client.GetUdapDiscoveryDocument();
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -266,8 +291,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -331,6 +356,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         clientEntity.AllowOfflineAccess.Should().BeFalse();
     }
 
+    
     [Fact]
     public async Task RegistrationMissingX5cHeaderTest()
     {
@@ -364,8 +390,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -403,7 +429,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_Signature_Test()
+    public async Task RegistrationInvalidSoftwareStatement_Signature_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -430,8 +456,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -469,7 +495,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_issMatchesUriName_Test()
+    public async Task RegistrationInvalidSoftwareStatement_issMatchesUriName_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -496,8 +522,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
@@ -536,7 +562,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_issMissing_Test()
+    public async Task RegistrationInvalidSoftwareStatement_issMissing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -563,8 +589,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -600,7 +626,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_subMissing_Test()
+    public async Task RegistrationInvalidSoftwareStatement_subMissing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -627,8 +653,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -666,7 +692,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_subNotEqualtoIss_Test()
+    public async Task RegistrationInvalidSoftwareStatement_subNotEqualtoIss_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -693,8 +719,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -731,7 +757,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_audMissing_Test()
+    public async Task RegistrationInvalidSoftwareStatement_audMissing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -758,8 +784,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -796,7 +822,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_audEqualsRegistrationEndpoint_Test()
+    public async Task RegistrationInvalidSoftwareStatement_audEqualsRegistrationEndpoint_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -823,8 +849,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -861,7 +887,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_expMissing_Test()
+    public async Task RegistrationInvalidSoftwareStatement_expMissing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -888,8 +914,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -926,7 +952,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_expExpired_Test()
+    public async Task RegistrationInvalidSoftwareStatement_expExpired_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -953,8 +979,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -991,7 +1017,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_iatMissing_Test()
+    public async Task RegistrationInvalidSoftwareStatement_iatMissing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1018,8 +1044,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             //IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -1056,7 +1082,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_clientNameMissing_Test()
+    public async Task RegistrationInvalidSoftwareStatement_clientNameMissing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1083,8 +1109,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             // ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -1121,7 +1147,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_responseTypesMissing_Test()
+    public async Task RegistrationInvalidSoftwareStatement_responseTypesMissing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1148,11 +1174,11 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "authorization_code" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "authorization_code" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "user/Patient.* user/Practitioner.read",  
-            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri }!,
+            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
         };
 
         document.Add("Extra", "Stuff" as string);
@@ -1187,7 +1213,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_tokenEndpointAuthMethodMissing_Test()
+    public async Task RegistrationInvalidSoftwareStatement_tokenEndpointAuthMethodMissing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1214,8 +1240,8 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
-            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" }!,
-            GrantTypes = new HashSet<string> { "client_credentials" }!,
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
             //TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "system/Patient.* system/Practitioner.read"
         };
@@ -1248,5 +1274,15 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         errorResponse.Should().NotBeNull();
         errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing}");
+    }
+
+    private async Task ResetClientInDatabase()
+    {
+        foreach (var dbClient in _fixture.UdapDbAdminContext.Clients)
+        {
+            _fixture.UdapDbAdminContext.Clients.Remove(dbClient);
+        }
+
+        await _fixture.UdapDbAdminContext.SaveChangesAsync();
     }
 }

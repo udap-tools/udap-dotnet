@@ -14,13 +14,13 @@ namespace Udap.Idp.Admin.ViewModel
 
         public ICollection<Anchor> Anchors { get; set; } = new HashSet<Anchor>();
 
-        public ICollection<RootCertificate> RootCertificates { get; set; } = new HashSet<RootCertificate>();
+        public ICollection<IntermediateCertificate> IntermediateCertificates { get; set; } = new HashSet<IntermediateCertificate>();
         
         public ICollection<Certification> Certifications { get; set; } = new HashSet<Certification>();
         
         public bool ShowAnchors { get; set; }
 
-        public bool ShowRootCertificates { get; set; }
+        public bool ShowIntermediateCertificates { get; set; }
 
         public bool ShowCertifications { get; set; }
     }
@@ -38,7 +38,7 @@ namespace Udap.Idp.Admin.ViewModel
         public DateTime? EndDate { get; set; }
     }
 
-    public class RootCertificate
+    public class IntermediateCertificate
     {
         public long Id { get; set; }
         public bool Enabled { get; set; }
@@ -47,6 +47,8 @@ namespace Udap.Idp.Admin.ViewModel
         public string? Thumbprint { get; set; }
         public DateTime? BeginDate { get; set; }
         public DateTime? EndDate { get; set; }
+
+        public virtual Anchor Anchor { get; set; } = default!;
     }
 
     public class Certification

@@ -16,7 +16,7 @@ The repository contains components and example uses to support the following ite
 |-------------------------|---|---------------------|--------------------------------------------------------|
 | Client                  | |Not Started         | Seems I ignored this in favor of server features.  I will get back to it soon. After all we need a client that can easily validated trust |
 | [Discovery](http://hl7.org/fhir/us/udap-security/discovery.html) || ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) |  Client certificate storage is a file strategy.  User can implement their own ICertificateStore.  May add a Entity Framework example in future. |
-| [Registration](http://hl7.org/fhir/us/udap-security/registration.html)|| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)  |  Highly Functional.  The Deployed example FHIR® Server, "FhirLabsApi" is passing all udap.org Server Tests.  I am going to revisit the Client Secrets persistence layer.  Packages are dependent on Duende's Identity Server Nuget Packages. |
+| [Registration](http://hl7.org/fhir/us/udap-security/registration.html)|| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)  |  Highly Functional.  The Deployed example FHIR® Server, "FhirLabsApi" is passing all udap.org Server Tests.  I am going to revisit the Client Secrets persistence layer.  Packages are dependent on Duende's Identity Server Nuget Packages. <ul><li>✔️ Registration with 201 created</li><li>✔️ Registration with 200 updated</li><li>✔️ Cancel registration with 200</li><li>✔️ Cancel registration with 404 not found</li></ul> |
 ||Inclusion of Certifications and Endorsements|Started|Some example certification integration tests included from the client side |
 Authorization and Authentication 
 | [Consumer-Facing](http://hl7.org/fhir/us/udap-security/consumer.html)|| Not Started | |
@@ -135,7 +135,7 @@ UdapConfig:UdapMetadataConfigs:Community value is the link to UdapFileCertStoreM
             "Name": "http://localhost",
             "Anchors": [
               {
-                "FilePath": "CertStore/anchors/anchorLocalhostCert.cer"
+                "FilePath": "CertStore/intermediates/anchorLocalhostCert.cer"
               }
             ],
             "RootCAFilePaths": [
@@ -221,7 +221,7 @@ A this point a success would result in a result similar to the following json.  
 - [FhirLabsApi example project](/examples//FhirLabsApi/)
 - [WeatherApi example project](/examples//WeatherApi/)
 - [FhirLabs Published](https://fhirlabs.net/fhir/r4/.well-known/udap)
-- [FhirLabs UdapEd Tool | Discovery | Registration | B2B ](https://fhirlabs-udaped-v46zp6zteq-uw.a.run.app/udapDiscovery)
+- [FhirLabs UdapEd Tool | Discovery | Registration | B2B | Patient Match | National Directory ](https://fhirlabs-udaped-v46zp6zteq-uw.a.run.app)
 
 ### Udap.Client
 

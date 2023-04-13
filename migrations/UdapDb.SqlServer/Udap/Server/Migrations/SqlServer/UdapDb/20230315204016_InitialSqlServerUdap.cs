@@ -27,24 +27,6 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                 });
 
             migrationBuilder.CreateTable(
-                name: "UdapRootCertificates",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Enabled = table.Column<bool>(type: "bit", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    X509Certificate = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Thumbprint = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    BeginDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_UdapRootCertificates", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "UdapAnchors",
                 columns: table => new
                 {
@@ -86,6 +68,31 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                         column: x => x.CommunityId,
                         principalTable: "UdapCommunities",
                         principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UdapIntermediateCertificates",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AnchorId = table.Column<int>(type: "int", nullable: false),
+                    Enabled = table.Column<bool>(type: "bit", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    X509Certificate = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Thumbprint = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    BeginDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    EndDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UdapIntermediateCertificates", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_IntermediateCertificate_Anchor",
+                        column: x => x.AnchorId,
+                        principalTable: "UdapAnchors",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -154,6 +161,11 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                 name: "IX_UdapCommunityCertification_CertificationId",
                 table: "UdapCommunityCertification",
                 column: "CertificationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UdapIntermediateCertificates_AnchorId",
+                table: "UdapIntermediateCertificates",
+                column: "AnchorId");
         }
 
         /// <inheritdoc />
@@ -166,13 +178,13 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                 name: "UdapCommunityCertification");
 
             migrationBuilder.DropTable(
-                name: "UdapRootCertificates");
-
-            migrationBuilder.DropTable(
-                name: "UdapAnchors");
+                name: "UdapIntermediateCertificates");
 
             migrationBuilder.DropTable(
                 name: "UdapCertifications");
+
+            migrationBuilder.DropTable(
+                name: "UdapAnchors");
 
             migrationBuilder.DropTable(
                 name: "UdapCommunities");

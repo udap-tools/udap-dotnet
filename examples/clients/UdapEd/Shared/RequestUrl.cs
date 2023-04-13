@@ -1,4 +1,7 @@
-﻿namespace UdapEd.Shared;
+﻿using Udap.Client.Internal;
+using Udap.Model;
+
+namespace UdapEd.Shared;
 public  class RequestUrl
 {
     private readonly string _url;
@@ -32,5 +35,20 @@ public  class RequestUrl
         }
 
         return _url + queryParams;
+    }
+
+    public static string GetWellKnownUdap(string? baseUrl, string? community)
+    {
+        if (!string.IsNullOrEmpty(community))
+        {
+            community = $"?community={community}";
+        }
+
+        if (!string.IsNullOrEmpty(baseUrl) && !baseUrl.EndsWith(UdapConstants.Discovery.DiscoveryEndpoint, StringComparison.OrdinalIgnoreCase))
+        {
+            return $"{baseUrl!.RemoveTrailingSlash()}{UdapConstants.Discovery.DiscoveryEndpoint}{community}" ;
+        }
+
+        return baseUrl ?? string.Empty ;
     }
 }

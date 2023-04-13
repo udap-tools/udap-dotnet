@@ -28,7 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\anchorLocalhostCert.cer" Link="CertStore\anchors\anchorLocalhostCert.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\intermediateLocalhostCert.cer" Link="CertStore\intermediates\intermediateLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\Udap.PKI.Generator\certstores\localhost_community\weatherApiClientLocalhostCert.pfx" Link="CertStore\issued\weatherApiClientLocalhostCert.pfx">
@@ -37,16 +37,16 @@
     <None Include="../Udap.PKI.Generator/certstores/surefhirlabs_community/issued/WeatherApiClient.pfx" Link="CertStore\issued\WeatherApiClient.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\anchors\SureFhirLabs_Anchor.cer" Link="CertStore\anchors\SureFhirLabs_Anchor.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\intermediates\SureFhirLabs_Intermediate.cer" Link="CertStore\intermediates\SureFhirLabs_Intermediate.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.client.pfx" Link="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\roots\SureFhirLabs_CA.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\anchors\SureFhirLabs_CA.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\caLocalhostCert.cer" Link="CertStore\roots\caLocalhostCert.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\caLocalhostCert.cer" Link="CertStore\anchors\caLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
@@ -58,13 +58,14 @@
     <PackageReference Include="IdentityModel" Version="6.0.0" />
     <PackageReference Include="JetBrains.DotMemoryUnit" Version="3.2.20220510" />
     <PackageReference Include="MartinCostello.Logging.XUnit" Version="0.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.3">
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="7.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
     <PackageReference Include="Moq" Version="4.18.4" />
     <PackageReference Include="xunit" Version="2.4.2" />
@@ -86,10 +87,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="CertStore\anchors\anchorLocalhostCert.cer">
+    <None Update="CertStore\intermediates\intermediateLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\anchors\EMRDirectTestCA.crt">
+    <None Update="CertStore\intermediates\EMRDirectTestCA.crt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">

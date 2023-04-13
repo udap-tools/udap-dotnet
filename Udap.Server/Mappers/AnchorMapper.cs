@@ -19,6 +19,7 @@ public static class AnchorMapper
         Mapper = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<AnchorMapperProfile>();
+                cfg.AddProfile<IntermediateCertificateMapperProfile>();
             })
             .CreateMapper();
     }
@@ -68,8 +69,6 @@ public class AnchorMapperProfile : Profile
                 opts.MapFrom(model => model.Certificate))
 
             .ForMember(entity => entity.Community, opts => opts.Ignore());
-
-
     }
 }
 

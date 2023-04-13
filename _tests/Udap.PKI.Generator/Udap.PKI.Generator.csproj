@@ -44,7 +44,6 @@
     <Folder Include="certstores\Kestrel\IdentityServer\" />
     <Folder Include="certstores\Kestrel\WeatherApi\" />
     <Folder Include="certstores\localhost_community\" />
-    <Folder Include="certstores\surefhirlabs_community\anchors\" />
     <Folder Include="certstores\surefhirlabs_community\crl\" />
     <Folder Include="certstores\surefhirlabs_community\issued\" />
   </ItemGroup>

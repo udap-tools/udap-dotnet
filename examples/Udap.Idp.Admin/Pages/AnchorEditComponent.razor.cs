@@ -90,7 +90,7 @@ public partial class AnchorEditComponent
             anchorView.EndDate = anchorView.Certificate.NotAfter;
             var resultAnchor = ApiService.Save(anchorView).GetAwaiter().GetResult();
             AddEditionEvent($"RowEditCommit event: Adding Anchor {((Anchor)anchor).Name} committed");
-            _anchorRowInEdit.Id = resultAnchor.Id; //bind up the new id...
+            if (_anchorRowInEdit != null) _anchorRowInEdit.Id = resultAnchor.Id; //bind up the new id...
         }
         
         _anchorRowIsInEditMode = false;

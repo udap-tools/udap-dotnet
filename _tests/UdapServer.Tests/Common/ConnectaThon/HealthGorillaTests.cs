@@ -33,8 +33,8 @@ public class HealthGorillaTests
     public HealthGorillaTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        var rootCert = new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer");
-        var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_Anchor.cer");
+        var rootCert = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
+        var sureFhirLabsAnchor = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
 
         _mockPipeline.OnPostConfigureServices += s =>
         {
@@ -95,7 +95,7 @@ public class HealthGorillaTests
             }}
         });
 
-        _mockPipeline.RootCertificates.Add(new RootCertificate
+        _mockPipeline.IntermediateCertificates.Add(new IntermediateCertificate
         {
             BeginDate = rootCert.NotBefore.ToUniversalTime(),
             EndDate = rootCert.NotAfter.ToUniversalTime(),

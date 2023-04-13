@@ -123,7 +123,7 @@
 //         if (!clientRegistrationStore.GetAnchors("http://localhost").Result.Any())
 //         {
 //             var anchorLocalhostCert = new X509Certificate2(
-//                 Path.Combine(assemblyPath!, "CertStore/anchors/anchorLocalhostCert.cer"));
+//                 Path.Combine(assemblyPath!, "CertStore/intermediates/anchorLocalhostCert.cer"));
 //
 //             var commnity = udapContext.Communities.Single(c => c.Name == "http://localhost");
 //
@@ -145,7 +145,7 @@
 //         if (!clientRegistrationStore.GetAnchors("udap://surefhir.labs").Result.Any())
 //         {
 //             var SureFhirLabs_Anchor = new X509Certificate2(
-//                 Path.Combine(assemblyPath!, "./CertStore/anchors/SureFhirLabs_Anchor.cer"));
+//                 Path.Combine(assemblyPath!, "./CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
 //
 //             var commnity = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
 //

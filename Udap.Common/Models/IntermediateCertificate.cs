@@ -3,10 +3,10 @@ using Udap.Util.Extensions;
 
 namespace Udap.Common.Models;
 
-public class RootCertificate : IEquatable<RootCertificate>
+public class IntermediateCertificate : IEquatable<IntermediateCertificate>
 {
-    public RootCertificate() { }
-    public RootCertificate(X509Certificate2 cert, string? name = null)
+    public IntermediateCertificate() { }
+    public IntermediateCertificate(X509Certificate2 cert, string? name = null)
     {
         Certificate = cert.ToPemFormat();
         BeginDate = cert.NotBefore;
@@ -15,6 +15,7 @@ public class RootCertificate : IEquatable<RootCertificate>
         Name = name ?? cert.Subject;
     }
     public long Id { get; set; }
+    public long AnchorId { get; set; }
     public bool Enabled { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Certificate { get; set; } = string.Empty;
@@ -22,6 +23,7 @@ public class RootCertificate : IEquatable<RootCertificate>
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
 
+    public virtual Anchor Anchor { get; set; } = default!;
 
     /// <summary>Returns a string that represents the current object.</summary>
     /// <returns>A string that represents the current object.</returns>
@@ -41,7 +43,7 @@ public class RootCertificate : IEquatable<RootCertificate>
     /// <param name="other">An object to compare with this object.</param>
     /// <returns>
     /// <see langword="true" /> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <see langword="false" />.</returns>
-    public bool Equals(RootCertificate? other)
+    public bool Equals(IntermediateCertificate? other)
     {
         if (other == null) return false;
         return other.Thumbprint == this.Thumbprint;
@@ -53,7 +55,7 @@ public class RootCertificate : IEquatable<RootCertificate>
     /// <see langword="true" /> if the specified object  is equal to the current object; otherwise, <see langword="false" />.</returns>
     public override bool Equals(object? obj)
     {
-        if (obj is RootCertificate rootCertificate) return Equals(rootCertificate);
+        if (obj is IntermediateCertificate rootCertificate) return Equals(rootCertificate);
         return false;
     }
 }

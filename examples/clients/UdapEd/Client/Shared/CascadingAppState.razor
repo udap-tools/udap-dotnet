@@ -33,7 +33,7 @@
                 prop.SetValue(this, propertyValue);
                 if (saveChanges)
                 {
-                    this.SaveChanges().GetAwaiter().GetResult();
+                    this.SaveChanges(); //WASM:: Cannot .GetAwaiter().GetResult() will not work.  Error: "Cannot wait on monitors on this runtime
                 }
                 if (fhirStateHasChanged)
                 {
@@ -41,8 +41,9 @@
                 }
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex);
             Console.WriteLine($"$Failed to set property: {propertyName}");
         }
     }
@@ -71,8 +72,9 @@
                 }
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            Console.WriteLine(ex);
             Console.WriteLine($"$Failed to set property: {propertyName}");
         }
     }
@@ -93,6 +95,8 @@
         }
     }
 
+    public string Community { get; private set; }
+
     private OrderedDictionary? _baseUrls;
 
     public OrderedDictionary? BaseUrls
@@ -110,7 +114,7 @@
     }
 
     private ClientStatus _status = new ClientStatus(false, "Missing");
-
+    
     public UdapMetadata? UdapMetadata { get; private set; }
 
     public RawSoftwareStatementAndHeader? SoftwareStatementBeforeEncoding { get; private set; }
@@ -175,14 +179,21 @@
             _status = value;
             if (_caller == "udapBusinessToBusiness")
             {
-              //example of potential logic
+                //example of potential logic
             }
         }
     }
 
+    /// <summary>
+    /// Is the client cert loaded with private key?
+    /// </summary>
+    public bool CertificateLoaded { get; set; }
+
+    public CertificateStatusViewModel? CertificateInfo { get; set; }
+
     public AuthorizationCodeRequest? AuthorizationCodeRequest { get; private set; }
 
-        private const string UdapStateKeyName = "udapClientState";
+    private const string UdapStateKeyName = "udapClientState";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

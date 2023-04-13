@@ -14,6 +14,7 @@ using FhirLabsApi.Extensions;
 using Google.Cloud.SecretManager.V1;
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
+using Hl7.Fhir.Utility;
 using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
@@ -120,6 +121,27 @@ builder.Services.AddSingleton<ICertificateStore>(sp =>
 
 builder.AddRateLimiting();
 
+
+builder.Services.AddTransient<FhirSmartAppLaunchConfiguration>(options =>
+{
+    var result = new FhirSmartAppLaunchConfiguration();
+    var authBaseAddress = $"{builder.Configuration["Jwt:Authority"].EnsureEndsWith("/")}connect/";
+    result.authorization_endpoint = $"{authBaseAddress}authorize";
+    result.token_endpoint = $"{authBaseAddress}token";
+
+    result.introspection_endpoint = $"{authBaseAddress}introspect";
+    result.revocation_endpoint = $"{authBaseAddress}revocation";
+    result.token_endpoint_auth_methods_supported = new string[] { "client_secret_basic", "client_secret_post" };
+    result.scopes_supported = new string[] { "openid", "profile", "launch", "patient/*.*", "user/*.*", "system/*.*", "offline_access" };
+    result.response_types_supported = new string[] { "code", "code id_token", "id_token", "refresh_token" };
+    result.capabilities = new string[] { "launch-ehr", "launch-standalone", "client-public", "client-confidential-symmetric" };
+    result.code_challenge_methods_supported = new[] { "S256" };
+
+    return result;
+});
+
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -169,9 +191,11 @@ app.UseCors();
 
 app.UseUdapMetadataServer();
 
+app.MapFhirSmartAppLaunchController();
 app.MapControllers()
     .RequireAuthorization()
     .RequireRateLimiting(RateLimitExtensions.GetPolicy);
+
 
 app.Run();
 

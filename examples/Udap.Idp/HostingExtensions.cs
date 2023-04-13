@@ -145,9 +145,9 @@ internal static class HostingExtensions
         // You don't need this unless you are down with OTEL
         //
         builder.Services.AddOpenTelemetry()
-            .WithTracing(builder =>
+            .WithTracing(traceBuilder =>
             {
-                builder
+                traceBuilder
                     .AddSource(IdentityServerConstants.Tracing.Basic)
                     .AddSource(IdentityServerConstants.Tracing.Cache)
                     .AddSource(IdentityServerConstants.Tracing.Services)

@@ -53,7 +53,9 @@ namespace Udap.Server.Mappers
         {
             
             CreateMap<Community, Common.Models.Community>(MemberList.Destination)
-                .ConstructUsing(src => new Common.Models.Community());
+                .ConstructUsing(src => new Common.Models.Community())
+                .ReverseMap()
+                ;
                 
             CreateMap<ICollection<Anchor>, ICollection<Common.Models.Anchor>>()
                  .ConstructUsing(src =>
@@ -72,6 +74,7 @@ namespace Udap.Server.Mappers
                      }).ToHashSet()
                  )
                  .ForAllMembers(opt => opt.Ignore());
+
 
             AllowNullCollections = true;
             

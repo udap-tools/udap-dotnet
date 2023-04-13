@@ -14,9 +14,9 @@ namespace Udap.Common;
 
 public interface ICertificateStore
 {
-    ICollection<X509Certificate2> RootCAs { get; set; }
+    ICollection<X509Certificate2> AnchorCertificates { get; set; }
 
-    ICollection<Anchor> Anchors { get; set; }
+    ICollection<Anchor> IntermediateCertificates { get; set; }
 
     ICollection<IssuedCertificate> IssuedCertificates { get; set; }
 

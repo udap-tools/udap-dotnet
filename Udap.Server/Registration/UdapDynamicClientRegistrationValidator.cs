@@ -28,6 +28,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common;
 using Udap.Common.Certificates;
+using Udap.Common.Models;
 using Udap.Model.Registration;
 using Udap.Server.Configuration;
 using Udap.Util.Extensions;
@@ -59,8 +60,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     /// <inheritdoc />
     public Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request,
-        X509Certificate2Collection? communityTrustAnchors,
-        X509Certificate2Collection? communityRoots = null
+        X509Certificate2Collection? intermediateCertificates,
+        X509Certificate2Collection anchorCertificates,
+        IEnumerable<Anchor> anchors
         )
     {
         using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
@@ -83,17 +85,16 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
-       
+        var subAltNames = publicCert.GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI);
+
         var validatedToken = tokenHandler.ValidateToken(request.SoftwareStatement, new TokenValidationParameters
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[]
-                {
-                    // Udap section 4.3 is strict concerning the SANs being of type uniformResourceIdentifier. https://www.udap.org/udap-dynamic-client-registration.html
-                    // See RFC 2459 for SAN choice semantics https://www.rfc-editor.org/rfc/rfc2459#section-4.2.1.7
-                    publicCert.GetNameInfo(X509NameType.UrlName, false)
-                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                // Udap section 4.3 is strict concerning the SANs being of type uniformResourceIdentifier. https://www.udap.org/udap-dynamic-client-registration.html
+                // See RFC 2459 for SAN choice semantics https://www.rfc-editor.org/rfc/rfc2459#section-4.2.1.7
+                ValidIssuers = subAltNames.Select(san => san.Item2).ToArray(),
+                //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(publicCert),
@@ -220,6 +221,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing));
         }
 
+        //TODO Inject the client
         var client = new Duende.IdentityServer.Models.Client
         {
             //TODO: Maybe inject a component to generate the clientID so a user can use their own technique.
@@ -227,17 +229,22 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         };
 
         
-        if (!ValidateChain(client, jsonWebToken, jwtHeader, communityTrustAnchors, communityRoots))
+        if (!ValidateChain(client, jsonWebToken, jwtHeader, intermediateCertificates, anchorCertificates, anchors))
         {
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate);
 
             var sb = new StringBuilder();
             sb.AppendLine($"Client Thumbprint: {publicCert.Thumbprint}");
-            sb.AppendLine($"Anchor Thumbprints: {String.Join(" | ", communityTrustAnchors.Select(a => a.Thumbprint))}");
-            if (communityRoots != null){
-                sb.AppendLine($"Root Certificate Thumbprints: {String.Join(" | ", communityRoots.Select(a => a.Thumbprint))}");
+            
+            if (intermediateCertificates != null)
+            {
+                sb.AppendLine(
+                    $"Intermediate Thumbprints: {string.Join(" | ", intermediateCertificates.Select(a => a.Thumbprint))}");
+
             }
+
+            sb.AppendLine($"Anchor Certificate Thumbprints: {string.Join(" | ", anchorCertificates.Select(a => a.Thumbprint))}");
             _logger.LogWarning(sb.ToString());
 
             return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
@@ -257,8 +264,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             client.AllowedGrantTypes.Add(GrantType.AuthorizationCode); 
         }
 
-        // we only support the two above grant types
-        if (client.AllowedGrantTypes.Count == 0)
+        // we only support the two above grant types but, an empty GrantType is an indication of a cancel registration action.
+        // TODO: This whole method needs to be migrated into a better software pattern.
+        if (client.AllowedGrantTypes.Count == 0 && 
+            document.GrantTypes != null && 
+            document.GrantTypes.Any())
         {
             return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -324,8 +334,6 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing));
             }
         }
-
-
 
         if (client.AllowedGrantTypes.Count == 1 &&
             client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
@@ -416,11 +424,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         Duende.IdentityServer.Models.Client client,
         JsonWebToken jwtSecurityToken,
         JwtHeader jwtHeader,
-        X509Certificate2Collection communityTrustAnchors,
-        X509Certificate2Collection? rootCertificates)
+        X509Certificate2Collection? intermediateCertificates,
+        X509Certificate2Collection anchorCertificates,
+        IEnumerable<Anchor> anchors)
     {
         var x5cArray = Getx5c(jwtHeader);
-
         
         
         // TODO: no test cases for x5c with intermediate certificates.  
@@ -429,11 +437,13 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
 
             if (_trustChainValidator.IsTrustedCertificate(
-                    client.ClientName,
+                    client.ClientName, //TODO: clientName is not set?
                     cert,
-                    communityTrustAnchors,
+                    intermediateCertificates,
+                    anchorCertificates, 
                     out X509ChainElementCollection? chainElements,
-                    rootCertificates))
+                    out long? communityId,
+                    anchors))
             {
                 if (chainElements == null)
                 {
@@ -444,22 +454,26 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
                 var clientSecrets = client.ClientSecrets = new List<Secret>();
 
-                foreach (var chainElement in chainElements.Skip(1))
+               clientSecrets.Add(new()
                 {
-                    clientSecrets.Add(new()
-                    {
-                        Expiration = chainElements.First().Certificate.NotAfter,
-                        Type = UdapServerConstants.SecretTypes.Udap_X509_Pem,
-                        Value = Convert.ToBase64String(chainElement.Certificate.Export(X509ContentType.Cert))
-                    });
-                }
+                    Expiration = chainElements.First().Certificate.NotAfter,
+                    Type = UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME,
+                    Value = jwtSecurityToken.Issuer
+                });
+
+                clientSecrets.Add(new()
+                {
+                    Expiration = chainElements.First().Certificate.NotAfter,
+                    Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY,
+                    Value = communityId.ToString()
+                });
 
                 return true;
             }
         }
 
         _logger.LogDebug($"jwt payload {jwtSecurityToken.EncodedPayload}");
-        _logger.LogDebug($"X5c { jwtHeader.X5c }");
+        _logger.LogDebug($"x5c { jwtHeader.X5c }");
 
         return false;
     }
@@ -476,8 +490,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         var x5cArray = JsonSerializer.Deserialize<string[]>(jwtHeader.X5c);
-
-
+        
         if (x5cArray != null && !x5cArray.Any())
         {
             return null;

@@ -18,7 +18,7 @@ public class Anchor
     public string Subject { get; set; } = string.Empty;
     public string SubjectAltName { get; set; } = string.Empty;
     public string CertificateRevocation { get; set; } = "http://crl.fhircerts.net:7026/crl/SureFhir-Anchor.crl";
-    public string CertificateAuthIssuerUri { get; set; } = "http://crl.fhircerts.net:7026/certs/anchors/SureFhir-TestAnchor.cer";
+    public string CertificateAuthIssuerUri { get; set; } = "http://crl.fhircerts.net:7026/certs/intermediates/SureFhir-TestAnchor.cer";
     public X509Certificate2? Certificate { get; set; }
     public string? Thumbprint { get; set; }
     public DateTime? BeginDate { get; set; }

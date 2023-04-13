@@ -9,5 +9,3 @@
 
 namespace UdapEd.Shared.Model;
 public enum Oauth2FlowEnum { client_credentials, authorization_code }
-
-public enum CertLoadedEnum { Negative, Positive, InvalidPassword }

@@ -80,10 +80,8 @@ internal class UdapScopeEnrichmentMiddleware
                             StringSplitOptions.RemoveEmptyEntries);
 
                         if (client.ClientSecrets.All(s =>
-                                s.Type == UdapServerConstants.SecretTypes.Udapx5c ||
-                                s.Type == UdapServerConstants.SecretTypes.Udap_X509_Pem))
+                                s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                         {
-
                             var form = (await context.Request.ReadFormAsync()).AsNameValueCollection();
                             if (!string.IsNullOrEmpty(form.Get("scope")))
                             {

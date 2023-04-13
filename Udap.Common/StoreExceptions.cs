@@ -13,6 +13,14 @@ public enum UdapStoreError
 {
     UniqueConstraint,
 }
+
+public class DuplicateCommunityException : Exception
+{
+    public DuplicateCommunityException(string message) : base(message)
+    {
+    }
+}
+
 public class DuplicateAnchorException : Exception
 {
     public DuplicateAnchorException(string message) : base(message)
@@ -20,9 +28,9 @@ public class DuplicateAnchorException : Exception
     }
 }
 
-public class DuplicateRootCertificateException : Exception
+public class DuplicateIntermediateCertificateException : Exception
 {
-    public DuplicateRootCertificateException(string message) : base(message)
+    public DuplicateIntermediateCertificateException(string message) : base(message)
     {
     }
 }

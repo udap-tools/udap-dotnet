@@ -37,9 +37,11 @@ public class AccessService
     }
 
     public async Task<UdapAuthorizationCodeTokenRequestModel?> BuildRequestAccessTokenForAuthCode(
-        AuthorizationCodeTokenRequestModel tokenRequestModel)
+        AuthorizationCodeTokenRequestModel tokenRequestModel,
+        string signingAlgorithm)
     {
-        var result = await _httpClient.PostAsJsonAsync("Access/BuildRequestToken/authorization_code", tokenRequestModel);
+        var result = await _httpClient.PostAsJsonAsync(
+            $"Access/BuildRequestToken/authorization_code?alg={signingAlgorithm}", tokenRequestModel);
 
         if (!result.IsSuccessStatusCode)
         {
@@ -60,9 +62,11 @@ public class AccessService
 
     
     public async Task<UdapClientCredentialsTokenRequestModel?> BuildRequestAccessTokenForClientCredentials(
-        ClientCredentialsTokenRequestModel tokenRequestModel)
+        ClientCredentialsTokenRequestModel tokenRequestModel,
+        string signingAlgorithm)
     {
-        var result = await _httpClient.PostAsJsonAsync("Access/BuildRequestToken/client_credentials", tokenRequestModel);
+        var result = await _httpClient.PostAsJsonAsync(
+            $"Access/BuildRequestToken/client_credentials?alg={signingAlgorithm}", tokenRequestModel);
         
         if (!result.IsSuccessStatusCode)
         {

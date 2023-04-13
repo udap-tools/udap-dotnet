@@ -25,8 +25,8 @@ public class Community
     public bool Enabled { get; set; }
     
     /// <summary>
-    /// Generally a community has one root certificate.
-    /// But during rollover from an expired root certificate to a new certificate
+    /// Generally a community has one anchor certificate.
+    /// But during rollover from an expired anchor certificate to a new certificate
     /// there could be two for a short time.
     /// </summary>
     public ICollection<RootCertificate>? RootCertificates { get; set; } = new HashSet<RootCertificate>();

@@ -9,10 +9,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
+using Udap.Util.Extensions;
 
 namespace Udap.Model.Registration;
 
@@ -23,38 +25,99 @@ namespace Udap.Model.Registration;
 /// </summary>
 public class UdapDcrBuilderForClientCredentials
 {
-    private X509Certificate2? _certificate;
-    private UdapDynamicClientRegistrationDocument _document;
     private DateTime _now;
+    private UdapDynamicClientRegistrationDocument _document;
+    private X509Certificate2? _certificate;
 
-    private UdapDcrBuilderForClientCredentials(X509Certificate2 certificate) : this()
+    protected X509Certificate2? Certificate
+    {
+        get => _certificate;
+        set => _certificate = value;
+    }
+
+    protected  UdapDynamicClientRegistrationDocument Document
+    {
+        get => _document;
+        set => _document = value;
+    }
+    
+    protected UdapDcrBuilderForClientCredentials(X509Certificate2 certificate, bool cancelRegistration) : this(cancelRegistration)
     {
         this.WithCertificate(certificate);
     }
 
-    private UdapDcrBuilderForClientCredentials()
+    protected UdapDcrBuilderForClientCredentials(bool cancelRegistration)
     {
         _now = DateTime.UtcNow;
 
         _document = new UdapDynamicClientRegistrationDocument();
-        _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.ClientCredentials };
+        if (!cancelRegistration)
+        {
+            _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.ClientCredentials };
+        }
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
     }
 
+    /// <summary>
+    /// Register or update an existing registration
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
     public static UdapDcrBuilderForClientCredentials Create(X509Certificate2 cert)
     {
-        return new UdapDcrBuilderForClientCredentials(cert);
+        return new UdapDcrBuilderForClientCredentials(cert, false);
     }
 
     //TODO: Safe for multi SubjectAltName scenarios
+    /// <summary>
+    /// Register or update an existing registration by subjectAltName
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
     public static UdapDcrBuilderForClientCredentials Create(X509Certificate2 cert, string subjectAltName)
     {
-        return new UdapDcrBuilderForClientCredentials(cert);
+        return new UdapDcrBuilderForClientCredentials(cert, false);
     }
-    
+
+    /// <summary>
+    /// Register or update an existing registration
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
     public static UdapDcrBuilderForClientCredentials Create()
     {
-        return new UdapDcrBuilderForClientCredentials();
+        return new UdapDcrBuilderForClientCredentials(false);
+    }
+
+    /// <summary>
+    /// Cancel an existing registration.
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <returns></returns>
+    public static UdapDcrBuilderForClientCredentials Cancel(X509Certificate2 cert)
+    {
+        return new UdapDcrBuilderForClientCredentials(cert, true);
+    }
+
+    //TODO: Safe for multi SubjectAltName scenarios
+    /// <summary>
+    /// Cancel an existing registration by subject alt name.
+    /// </summary>
+    /// <param name="cert"></param>
+    /// <param name="subjectAltName"></param>
+    /// <returns></returns>
+    public static UdapDcrBuilderForClientCredentials Cancel(X509Certificate2 cert, string subjectAltName)
+    {
+        return new UdapDcrBuilderForClientCredentials(cert, true);
+    }
+
+    /// <summary>
+    /// Cancel an existing registration.
+    /// </summary>
+    /// <returns></returns>
+    public static UdapDcrBuilderForClientCredentials Cancel()
+    {
+        return new UdapDcrBuilderForClientCredentials(true);
     }
 
 
@@ -68,21 +131,25 @@ public class UdapDcrBuilderForClientCredentials
         }
     }
 
-    //
-    // Not sure I want to Expose these
-    //
+    /// <summary>
+    /// If the certificate has more than one uniformResourceIdentifier in the Subject Alternative Name
+    /// extension of the client certificate then this will allow one to be picked.
+    /// </summary>
+    /// <param name="issuer"></param>
+    /// <returns></returns>
+    public UdapDcrBuilderForClientCredentials WithIssuer(Uri issuer)
+    {
+        var uriNames = _certificate!.GetSubjectAltNames(n=>n.TagNo == (int)X509Extensions.GeneralNameType.URI);
+        if (!uriNames.Select(u => u.Item2).Contains(issuer.AbsoluteUri))
+        {
+            throw new Exception($"Certificate does not contain a URI Subject Alternative Name of, {issuer.AbsoluteUri}");
+        }
+        _document.Issuer = issuer.AbsoluteUri;
+        _document.Subject = issuer.AbsoluteUri;
+        return this;
+    }
+    
 
-    // public UdapClientCredentialsDcrBuilder WithIssuer(string issuer)
-    // {
-    //     _document.Issuer = issuer;
-    //     return this;
-    // }
-    //
-    // public UdapClientCredentialsDcrBuilder WithSubject(string subject)
-    // {
-    //     _document.Subject = subject;
-    //     return this;
-    // }
 
     public UdapDcrBuilderForClientCredentials WithAudience(string? audience)
     {
@@ -167,10 +234,10 @@ public class UdapDcrBuilderForClientCredentials
 
     public UdapDynamicClientRegistrationDocument Build()
     {
-        return _document;
+        return Document;
     }
     
-    public string BuildSoftwareStatement()
+    public string BuildSoftwareStatement(string? signingAlgorithm = UdapConstants.SupportedAlgorithm.RS256)
     {
         if (_certificate == null)
         {
@@ -178,7 +245,7 @@ public class UdapDcrBuilderForClientCredentials
         }
 
         return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(_certificate, _document)
-                .Build();
+                .Create(_certificate, Document)
+                .Build(signingAlgorithm);
     }
 }

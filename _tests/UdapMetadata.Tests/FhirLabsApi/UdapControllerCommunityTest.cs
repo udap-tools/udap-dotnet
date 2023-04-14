@@ -286,7 +286,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     {
         var certStore = await _fixture.Services.GetService<ICertificateStore>()!.Resolve();
 
-        var intermediateCertificates = certStore.IntermediateCertificates
+        var anchorCertificates = certStore.AnchorCertificates
             .Where(c => c.Community == _fixture.Community)
             .OrderBy(c => X509Certificate2.CreateFromPem(c.Certificate).NotBefore)
             .Select(c => c.Certificate);
@@ -302,9 +302,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         return validator.IsTrustedCertificate(
             "client_name",
             issuedCertificate2, 
-            intermediateCertificates.Select(a =>
-            X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
-            certStore.AnchorCertificates.ToArray().ToX509Collection()!,
+            anchorCertificates.Select(a => X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
+            certStore.IntermediateCertificates.ToArray().ToX509Collection()!,
             out _,
             out _); 
     }

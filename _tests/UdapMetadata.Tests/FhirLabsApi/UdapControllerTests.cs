@@ -20,7 +20,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Moq;
 using Newtonsoft.Json;
+using Udap.Client.Client;
+using Udap.Common.Certificates;
 using Udap.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
@@ -76,6 +79,7 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
 public class UdapControllerTests : IClassFixture<ApiTestFixture>
 {
     private readonly ApiTestFixture _fixture;
+    private IServiceProvider _serviceProvider;
 
     public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper output)
     {
@@ -88,7 +92,31 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         //
         var services = new ServiceCollection();
 
-        // services.AddScoped<I>()
+        services.AddScoped <ICertificateStore, ClientMemoryCertificateStore>();
+        services.AddScoped<IUdapClient>(sp => 
+            new UdapClient(_fixture.CreateClient(), 
+                sp.GetRequiredService<ICertificateStore>(), 
+                new Mock<ILogger<UdapClient>>().Object));
+
+        // Use this method in an application
+        //services.AddHttpClient<IUdapClient, UdapClient>();
+
+        _serviceProvider = services.BuildServiceProvider();
+    }
+
+    [Fact]
+    public async Task UdapClientTest()
+    {
+        // var memoryStore = _serviceProvider.GetRequiredService<ICertificateStore>();
+        // memoryStore.IntermediateCertificates = new List<X509Certificate2>();
+        // memoryStore.IntermediateCertificates.Add(X509Certificate2.CreateFromPemFile(""));
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var httpStatusCode = await udapClient.ValidateResource(_fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+        Assert.Equal(HttpStatusCode.OK, httpStatusCode);
+        Assert.NotNull(udapClient.UdapServerMetaData);
+
+
     }
 
     /// <summary>

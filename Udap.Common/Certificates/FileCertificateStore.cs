@@ -50,9 +50,9 @@ public class FileCertificateStore : ICertificateStore
         return Task.FromResult(this as ICertificateStore);
     }
 
-    public ICollection<X509Certificate2> AnchorCertificates { get; set; } = new HashSet<X509Certificate2>();
+    public ICollection<X509Certificate2> IntermediateCertificates { get; set; } = new HashSet<X509Certificate2>();
 
-    public ICollection<Anchor> IntermediateCertificates { get; set; } = new HashSet<Anchor>();
+    public ICollection<Anchor> AnchorCertificates { get; set; } = new HashSet<Anchor>();
     public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new HashSet<IssuedCertificate>();
 
     // TODO convert to Lazy<T> to protect from race conditions
@@ -87,7 +87,7 @@ public class FileCertificateStore : ICertificateStore
             {
                 foreach (var communityRootCaFilePath in community.RootCAFilePaths)
                 {
-                    AnchorCertificates.Add(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, communityRootCaFilePath)));
+                    IntermediateCertificates.Add(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, communityRootCaFilePath)));
                 }
             }
 
@@ -105,7 +105,7 @@ public class FileCertificateStore : ICertificateStore
                     throw new FileNotFoundException($"Cannot find file: {path}");
                 }
 
-                IntermediateCertificates.Add(new Anchor(new X509Certificate2(path))
+                AnchorCertificates.Add(new Anchor(new X509Certificate2(path))
                 {
                     Community = community.Name,
                 });
@@ -161,13 +161,13 @@ public class FileCertificateStore : ICertificateStore
                                 {
                                     _logger.LogInformation($"Found root ca in {path} certificate.  Will add the root to roots if not already explicitly loaded.");
 
-                                    AnchorCertificates.Add(x509Cert);
+                                    IntermediateCertificates.Add(x509Cert);
                                 }
                                 else
                                 {
                                     _logger.LogInformation($"Found intermediate ca in {path} certificate.  Will add if not already explicitly loaded.");
 
-                                    IntermediateCertificates.Add(new Anchor(x509Cert) { Community = community.Name });
+                                    AnchorCertificates.Add(new Anchor(x509Cert) { Community = community.Name });
                                 }
                             }
                             else

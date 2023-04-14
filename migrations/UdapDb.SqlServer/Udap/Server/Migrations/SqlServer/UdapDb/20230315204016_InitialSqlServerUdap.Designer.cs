@@ -726,7 +726,7 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
             modelBuilder.Entity("Udap.Server.Entities.IntermediateCertificate", b =>
                 {
                     b.HasOne("Udap.Server.Entities.Anchor", "Anchor")
-                        .WithMany("IntermediateCertificates")
+                        .WithMany("AnchorCertificates")
                         .HasForeignKey("AnchorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("FK_IntermediateCertificate_Anchor");
@@ -759,7 +759,7 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                 {
                     b.Navigation("AnchorCertifications");
 
-                    b.Navigation("IntermediateCertificates");
+                    b.Navigation("AnchorCertificates");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.Certification", b =>

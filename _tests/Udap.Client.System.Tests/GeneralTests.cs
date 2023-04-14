@@ -293,9 +293,9 @@ namespace Udap.Client.System.Tests
             var sp = services.BuildServiceProvider();
             var certStore = sp.GetRequiredService<ICertificateStore>();
             var certificateStore = await certStore.Resolve();
-            var roots = certificateStore.AnchorCertificates;
+            var roots = certificateStore.IntermediateCertificates;
 
-            // var anchors = certificateStore.IntermediateCertificates
+            // var anchors = certificateStore.AnchorCertificates
             //     .Where(c => c.Community == communityName)
             //     .OrderBy(c => X509Certificate2.CreateFromPem(c.Certificate).NotBefore)
             //     .Select(c => c.Certificate);

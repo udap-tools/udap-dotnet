@@ -109,7 +109,7 @@ public class UdapForceStateParamFalseTests
             }}
         });
 
-        _mockPipeline.IntermediateCertificates.Add(new IntermediateCertificate
+        _mockPipeline.IntermediateCertificates.Add(new Intermediate
         {
             BeginDate = intermediateCertificate.NotBefore.ToUniversalTime(),
             EndDate = intermediateCertificate.NotAfter.ToUniversalTime(),

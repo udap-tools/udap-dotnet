@@ -85,9 +85,9 @@ public class ClientCredentialsUdapModeTests
                     Certificate = sureFhirLabsAnchor.ToPemFormat(),
                     Thumbprint = sureFhirLabsAnchor.Thumbprint,
                     Enabled = true,
-                    IntermediateCertificates = new List<IntermediateCertificate>()
+                    Intermediates = new List<Intermediate>()
                     {
-                        new IntermediateCertificate
+                        new Intermediate
                         {
                             BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = intermediateCert.NotAfter.ToUniversalTime(),
@@ -101,7 +101,7 @@ public class ClientCredentialsUdapModeTests
             }
         });
 
-        _mockPipeline.IntermediateCertificates.Add(new IntermediateCertificate
+        _mockPipeline.IntermediateCertificates.Add(new Intermediate
         {
             BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
             EndDate = intermediateCert.NotAfter.ToUniversalTime(),

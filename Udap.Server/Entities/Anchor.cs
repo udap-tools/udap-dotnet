@@ -28,5 +28,5 @@ public class Anchor : ICertificateValidateMarker
 
     public virtual ICollection<AnchorCertification> AnchorCertifications { get; set; } = default!;
 
-    public virtual ICollection<IntermediateCertificate> IntermediateCertificates { get; set; } = default!;
+    public virtual ICollection<Intermediate> Intermediates { get; set; } = default!;
 }

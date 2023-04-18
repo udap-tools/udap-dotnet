@@ -85,6 +85,7 @@ public class FileCertificateStore : ICertificateStore
         {
             if (community.Intermediates.Any())
             {
+                // var Intermediates = new 
                 foreach (var communityRootCaFilePath in community.Intermediates)
                 {
                     IntermediateCertificates.Add(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, communityRootCaFilePath)));
@@ -107,7 +108,8 @@ public class FileCertificateStore : ICertificateStore
 
                 AnchorCertificates.Add(new Anchor(new X509Certificate2(path))
                 {
-                    Community = community.Name
+                    Community = community.Name,
+                     // Intermediates = 
                 });
             }
 

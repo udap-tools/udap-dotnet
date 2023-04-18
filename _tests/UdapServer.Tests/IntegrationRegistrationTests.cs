@@ -373,7 +373,7 @@ namespace UdapServer.Tests
             var store = sp.GetRequiredService<IUdapClientRegistrationStore>();
             var communityAnchors = await store.GetAnchorsCertificates("http://localhost");
             var anchors = await store.GetAnchors("http://localhost");
-            var intermediateCerts = new X509Certificate2Collection(anchors.First().IntermediateCertificates
+            var intermediateCerts = new X509Certificate2Collection(anchors.First().Intermediates
                 .Select(s => X509Certificate2.CreateFromPem(s.Certificate)).ToArray());
 
             var result = await validator.ValidateAsync(

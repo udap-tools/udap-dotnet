@@ -144,7 +144,7 @@ public static class SeedData
                     .All(r => r.Thumbprint != intermediateCert.Thumbprint))
             {
 
-                udapContext.IntermediateCertificates.Add(new IntermediateCertificate
+                udapContext.IntermediateCertificates.Add(new Intermediate
                 {
                     BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                     EndDate = intermediateCert.NotAfter.ToUniversalTime(),
@@ -196,7 +196,7 @@ public static class SeedData
                     .All(r => r.Thumbprint != intermediateCert.Thumbprint))
             {
 
-                udapContext.IntermediateCertificates.Add(new IntermediateCertificate
+                udapContext.IntermediateCertificates.Add(new Intermediate
                 {
                     BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                     EndDate = intermediateCert.NotAfter.ToUniversalTime(),

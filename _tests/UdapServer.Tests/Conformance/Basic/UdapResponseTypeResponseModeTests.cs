@@ -90,7 +90,7 @@ public class UdapResponseTypeResponseModeTests
             }}
         });
 
-        _mockPipeline.IntermediateCertificates.Add(new IntermediateCertificate
+        _mockPipeline.IntermediateCertificates.Add(new Intermediate
         {
             BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
             EndDate = intermediateCert.NotAfter.ToUniversalTime(),

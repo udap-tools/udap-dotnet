@@ -116,7 +116,7 @@ namespace Udap.Server.Stores
             {
                 anchors = await _dbContext.Anchors
                     .Include(a => a.Community)
-                    .Include(a => a.IntermediateCertificates)
+                    .Include(a => a.Intermediates)
                     .Where(a => a.Community.Enabled && a.Enabled)
                     .Select(a => a)
                     .ToListAsync(token);
@@ -125,7 +125,7 @@ namespace Udap.Server.Stores
             {
                 anchors = await _dbContext.Anchors
                     .Include(a => a.Community)
-                    .Include(a => a.IntermediateCertificates)
+                    .Include(a => a.Intermediates)
                     .Where(a => a.Community.Enabled && a.Community.Name == community && a.Enabled)
                     .Select(a => a)
                     .ToListAsync(token);
@@ -141,14 +141,14 @@ namespace Udap.Server.Stores
 
             var encodedCerts = await _dbContext.Anchors
                 .Where(c => c.CommunityId == communityId)
-                .Include(c => c.IntermediateCertificates)
+                .Include(c => c.Intermediates)
                 .ToListAsync(token);
 
             var certificates = encodedCerts.Select(anchor =>
                 X509Certificate2.CreateFromPem(anchor.X509Certificate))
                 .ToList();
 
-            foreach (var intCert in encodedCerts.SelectMany(anchor => anchor.IntermediateCertificates))
+            foreach (var intCert in encodedCerts.SelectMany(anchor => anchor.Intermediates))
             {
                 certificates.Append(X509Certificate2.CreateFromPem(intCert.X509Certificate));
             }

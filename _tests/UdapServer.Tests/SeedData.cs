@@ -124,7 +124,7 @@ public static class SeedData
                 var rootCert = new X509Certificate2(
                     Path.Combine(assemblyPath!, "CertStore/intermediates/intermediateLocalhostCert.cer"));
 
-                udapContext.IntermediateCertificates.Add(new IntermediateCertificate
+                udapContext.IntermediateCertificates.Add(new Intermediate
                 {
                     BeginDate = rootCert.NotBefore,
                     EndDate = rootCert.NotAfter,
@@ -175,7 +175,7 @@ public static class SeedData
                 var rootCert = new X509Certificate2(
                     Path.Combine(assemblyPath!, "CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
 
-                udapContext.IntermediateCertificates.Add(new IntermediateCertificate
+                udapContext.IntermediateCertificates.Add(new Intermediate
                 {
                     BeginDate = rootCert.NotBefore,
                     EndDate = rootCert.NotAfter,

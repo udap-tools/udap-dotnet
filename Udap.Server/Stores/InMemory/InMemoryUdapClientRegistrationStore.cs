@@ -18,7 +18,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 {
     private readonly ICollection<Duende.IdentityServer.Models.Client> _clients;
     private readonly IEnumerable<Community> _communities;
-    private readonly IEnumerable<IntermediateCertificate> _intermediateCertificates;
+    private readonly IEnumerable<Intermediate> _intermediateCertificates;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="InMemoryUdapClientRegistrationStore"/> class.
@@ -29,7 +29,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
     public InMemoryUdapClientRegistrationStore(
         List<Duende.IdentityServer.Models.Client> clients,
         IEnumerable<Community> communities,
-        IEnumerable<IntermediateCertificate> intermediateCertificates)
+        IEnumerable<Intermediate> intermediateCertificates)
     {
         _clients = clients;
         _communities = communities;
@@ -141,9 +141,9 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         foreach (var anchor in anchors)
         {
             encodedCerts.Add(X509Certificate2.CreateFromPem(anchor.Certificate));
-            if (anchor.IntermediateCertificates != null)
+            if (anchor.Intermediates != null)
             {
-                encodedCerts.AddRange(anchor.IntermediateCertificates.Select(i => 
+                encodedCerts.AddRange(anchor.Intermediates.Select(i => 
                     X509Certificate2.CreateFromPem(i.Certificate)));
             }
         }

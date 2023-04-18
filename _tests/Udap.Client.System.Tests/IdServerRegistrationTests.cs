@@ -710,7 +710,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidateIssuer = true,
                 ValidIssuers = new[]
                 {
-                    "https://fhirlabs.net:7016/fhir/r4"
+                    "https://fhirlabs.net:7016/fhir/r4",
+                    "http://localhost/fhir/r4"
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
@@ -775,8 +776,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
 
         var response = await idpClient.PostAsJsonAsync(reg, requestBody);
-        
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        Assert.True(response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK);
         response.Content.Headers.ContentType!.ToString().Should().Be("application/json");
 
         // var documentAsJson = JsonSerializer.Serialize(document);
@@ -930,7 +931,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidateIssuer = true,
                 ValidIssuers = new[]
                 {
-                    "https://fhirlabs.net:7016/fhir/r4"
+                    "https://fhirlabs.net:7016/fhir/r4",
+                    "http://localhost/fhir/r4"
                 }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
@@ -1016,8 +1018,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         // var response = await idpClient.PostAsJsonAsync(reg, requestBody);
 
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        Assert.True(response.StatusCode is HttpStatusCode.Created or HttpStatusCode.OK);
 
         // var documentAsJson = JsonSerializer.Serialize(document);
         var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();

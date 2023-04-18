@@ -41,6 +41,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Udap.Idp\Udap.Idp.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="host.docker.internal.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

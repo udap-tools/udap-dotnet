@@ -49,9 +49,7 @@ public class FileCertificateStore : ICertificateStore
 
         return Task.FromResult(this as ICertificateStore);
     }
-
-    public ICollection<X509Certificate2> IntermediateCertificates { get; set; } = new HashSet<X509Certificate2>();
-
+    
     public ICollection<Anchor> AnchorCertificates { get; set; } = new HashSet<Anchor>();
     public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new HashSet<IssuedCertificate>();
 
@@ -83,12 +81,12 @@ public class FileCertificateStore : ICertificateStore
 
         foreach (var community in communities)
         {
+            var intermediates = new List<Intermediate>();
             if (community.Intermediates.Any())
             {
-                // var Intermediates = new 
                 foreach (var communityRootCaFilePath in community.Intermediates)
                 {
-                    IntermediateCertificates.Add(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, communityRootCaFilePath)));
+                    intermediates.Add(new Intermediate(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, communityRootCaFilePath))));
                 }
             }
 
@@ -109,7 +107,7 @@ public class FileCertificateStore : ICertificateStore
                 AnchorCertificates.Add(new Anchor(new X509Certificate2(path))
                 {
                     Community = community.Name,
-                     // Intermediates = 
+                    Intermediates = intermediates
                 });
             }
 
@@ -161,13 +159,28 @@ public class FileCertificateStore : ICertificateStore
                                 if (authorityIdentifierValue == null || 
                                     subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
                                 {
-                                    _logger.LogInformation($"Found intermediate in {path} certificate.  Will add if not already explicitly loaded.");
-                                    AnchorCertificates.Add(new Anchor(x509Cert) { Community = community.Name });
+                                    _logger.LogInformation($"Ignore anchor in {path} certificate.  Never add the anchor to anchors if not already explicitly loaded.");
                                 }
                                 else
                                 {
-                                    _logger.LogInformation($"Found anchor in {path} certificate.  Will add the anchor to anchors if not already explicitly loaded.");
-                                    IntermediateCertificates.Add(x509Cert);
+                                    _logger.LogInformation($"Found intermediate in {path} certificate.  Will add if not already explicitly loaded.");
+
+                                    var anchor = AnchorCertificates.SingleOrDefault(a =>
+                                    {
+                                        var certificate = X509Certificate2.CreateFromPem(a.Certificate);
+                                        var subjectIdentifierOfAnchor =
+                                            certificate.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as 
+                                                X509SubjectKeyIdentifierExtension;
+
+                                        if (subjectIdentifierOfAnchor?.SubjectKeyIdentifier == authorityIdentifierValue)
+                                        {
+                                            return true;
+                                        }
+
+                                        return false;
+                                    });
+
+                                    anchor?.Intermediates?.Add(new Intermediate(x509Cert));
                                 }
                             }
                             else
@@ -175,17 +188,12 @@ public class FileCertificateStore : ICertificateStore
                                 IssuedCertificates.Add(new IssuedCertificate
                                 {
                                     Community = community.Name,
-                                    Certificate = x509Cert
+                                    Certificate = x509Cert,
+                                    Thumbprint = x509Cert.Thumbprint
                                 });
                             }
                         }
                     }
-
-                    IssuedCertificates.Add(new IssuedCertificate
-                    {
-                        Community = community.Name,
-                        Certificate = certificates.First()
-                    });
                 }
             }
         }

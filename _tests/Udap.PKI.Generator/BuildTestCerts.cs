@@ -244,7 +244,7 @@ namespace Udap.PKI.Generator
                         $"{SurefhirlabsUdapIssued}/WeatherApiClient",
                         SureFhirLabsIntermediateCrl,
                         true);
-                    
+
                     #endregion
 
                     #region fhirlabs.net Client (Issued) Certificates
@@ -283,7 +283,7 @@ namespace Udap.PKI.Generator
 
                     for (int i = 1; i < 10; i++)
                     {
-                        var word = numberToWord[i-1];
+                        var word = numberToWord[i - 1];
 
                         BuildClientCertificate(
                             intermediateCertWithoutKey,
@@ -682,16 +682,57 @@ namespace Udap.PKI.Generator
 
                 var baseDir = streamReader.ReadToEnd();
 
-                return $"{baseDir.TrimEnd()}/certstores/localhost_community";
+                return $"{baseDir.TrimEnd()}/certstores/";
             }
         }
 
-        public static string LocalhostCrl { get; } = $"{LocalhostCertStore}/crl";
-        public static string LocalhostCdp { get; } = "http://localhost/crl/localhost.crl";
-        public static string LocalhostUdapIntermediates { get; } = $"{LocalhostCertStore}/intermediates";
-        public static string LocalhostUdapIssued { get; } = $"{SureFhirLabsCertStore}/issued";
+        public static IEnumerable<object[]> LocalhostCommunities()
+        {
+            yield return new object[]
+            {
+                $"{LocalhostCertStore}/localhost_fhirlabs_community1",                      //communityStorePath
+                "caLocalhostCert",                                                          //anchorName
+                "intermediateLocalhostCert",                                                //intermediateName
+                "fhirLabsApiClientLocalhostCert",                                           //issuedName
+                "CN=localhost, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US", //issuedDistinguishedName
+                new List<string> { "http://localhost/fhir/r4" },                            //SubjAltNames
+                "FhirLabsApi"                                                               //deliveryProjectPath    
+            };
 
-        public static string LocalhostPkcsFileCrl { get; } = "localhost.crl";
+            yield return new object[]
+            {
+                $"{LocalhostCertStore}/localhost_fhirlabs_community2",                      //communityStorePath
+                "caLocalhostCert2",                                                         //anchorName
+                "intermediateLocalhostCert2",                                               //intermediateName
+                "fhirLabsApiClientLocalhostCert2",                                          //issuedName
+                "CN=localhost2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",//issuedDistinguishedName
+                new List<string> { "http://localhost/fhir/r4" },                            //SubjAltNames
+                "FhirLabsApi"                                                               //deliveryProjectPath    
+            };
+
+            yield return new object[]
+            {
+                $"{LocalhostCertStore}/localhost_weatherapi_community1",                    //communityStorePath
+                "caWeatherApiLocalhostCert",                                                //anchorName
+                "intermediateWeatherApiLocalhostCert",                                      //intermediateName
+                "weatherApiClientLocalhostCert1",                                           //issuedName
+                "CN=localhost, OU=WeatherApi, O=Fhir Coding, L=Portland, S=Oregon, C=US",   //issuedDistinguishedName
+                new List<string> { "http://localhost/" },                                   //SubjAltNames
+                "WeatherApi"                                                                //deliveryProjectPath                    
+            };
+
+            yield return new object[]
+            {
+                $"{LocalhostCertStore}/localhost_weatherapi_community2",                    //communityStorePath
+                "caWeatherApiLocalhostCert2",                                               //anchorName
+                "intermediateWeatherApiLocalhostCert2",                                     //intermediateName
+                "weatherApiClientLocalhostCert2",                                           //issuedName
+                "CN=localhost2, OU=WeatherApi, O=Fhir Coding, L=Portland, S=Oregon, C=US",  //issuedDistinguishedName
+                new List<string> { "http://localhost/" },                                   //SubjAltNames
+                "WeatherApi"                                                                //deliveryProjectPath    
+            };
+        }
+
 
         /// <summary>
         /// default community uri = http://localhost
@@ -703,14 +744,29 @@ namespace Udap.PKI.Generator
         /// WeatherApi Client   => 
         /// FhirLabsApi Client  =>  
         /// </summary>
-        [Fact]
-        public void MakeCaWithIntermediateUdapForLocalhostCommunity()
+        [Theory]
+        [MemberData(nameof(LocalhostCommunities))]
+        public void MakeCaWithIntermediateUdapForLocalhostCommunity(
+            string communityStorePath,
+            string anchorName,
+            string intermediateName,
+            string issuedName,
+            string issuedDistinguishedName,
+            List<string> issuedSubjectAltNames,
+            string deliverProjectPath)
         {
+            var LocalhostCrl = $"{communityStorePath}/crl";
+            var LocalhostCdp = "http://localhost/crl/localhost.crl";
+            var LocalhostUdapIntermediates = $"{communityStorePath}/intermediates";
+            var LocalhostUdapIssued = $"{communityStorePath}/issued";
+            var LocalhostPkcsFileCrl = "localhost.crl";
+
+
             using (RSA parent = RSA.Create(4096))
             using (RSA intermediate = RSA.Create(4096))
             {
                 var parentReq = new CertificateRequest(
-                    "CN=UDAP-Localhost-CA, OU=Root, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                    $"CN={anchorName}, OU=Root, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                     parent,
                     HashAlgorithmName.SHA256,
                     RSASignaturePadding.Pkcs1);
@@ -732,15 +788,15 @@ namespace Udap.PKI.Generator
                 {
 
                     var parentBytes = caCert.Export(X509ContentType.Pkcs12, "udap-test");
-                    LocalhostCertStore.EnsureDirectoryExists();
-                    File.WriteAllBytes($"{LocalhostCertStore}/caLocalhostCert.pfx", parentBytes);
+                    communityStorePath.EnsureDirectoryExists();
+                    File.WriteAllBytes($"{communityStorePath}/{anchorName}.pfx", parentBytes);
                     char[] caPem = PemEncoding.Write("CERTIFICATE", caCert.RawData);
-                    File.WriteAllBytes($"{LocalhostCertStore}/caLocalhostCert.cer",
+                    File.WriteAllBytes($"{communityStorePath}/{anchorName}.cer",
                         caPem.Select(c => (byte)c).ToArray());
 
 
                     var intermediateReq = new CertificateRequest(
-                        "CN=UDAP-Localhost-Intermediate, OU=Intermediate, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                        $"CN={intermediateName}, OU=Intermediate, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                         intermediate,
                         HashAlgorithmName.SHA256,
                         RSASignaturePadding.Pkcs1);
@@ -774,121 +830,128 @@ namespace Udap.PKI.Generator
                         new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16)));
                     var intermediateCertWithKey = intermediateCert.CopyWithPrivateKey(intermediate);
                     var intermediateBytes = intermediateCertWithKey.Export(X509ContentType.Pkcs12, "udap-test");
-                    File.WriteAllBytes($"{LocalhostCertStore}/intermediateLocalhostCert.pfx",
+                    LocalhostUdapIntermediates.EnsureDirectoryExists();
+                    File.WriteAllBytes($"{LocalhostUdapIntermediates}/{intermediateName}.pfx",
                         intermediateBytes);
                     char[] intermediatePem = PemEncoding.Write("CERTIFICATE", intermediateCert.RawData);
-                    File.WriteAllBytes($"{LocalhostCertStore}/intermediateLocalhostCert.cer",
+                    File.WriteAllBytes($"{LocalhostUdapIntermediates}/{intermediateName}.cer",
                         intermediatePem.Select(c => (byte)c).ToArray());
 
-                    LocalhostCertStore.EnsureDirectoryExists();
+                    communityStorePath.EnsureDirectoryExists();
+                    $"{LocalhostUdapIssued}".EnsureDirectoryExists();
 
-                    // UDAP client certificate
-                    // for fhirlabs.net
-                    //
-                    BuildClientCertificate(
-                        intermediateCert,
-                        caCert,
-                        intermediate,
-                        "CN=localhost, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                        new List<string> { "http://localhost/fhir/r4" },
-                        $"{LocalhostCertStore}/fhirLabsApiClientLocalhostCert",
-                        LocalhostCdp
-                    );
 
                     BuildClientCertificate(
                         intermediateCert,
                         caCert,
                         intermediate,
-                        "CN=localhost, OU=WeatherApi, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                        new List<string> { "http://localhost/" },
-                        $"{LocalhostCertStore}/weatherApiClientLocalhostCert",
+                        issuedDistinguishedName,
+                        issuedSubjectAltNames,
+                        $"{LocalhostUdapIssued}/{issuedName}",
                         LocalhostCdp
                     );
                 }
             }
 
-            //Distribute
+            //
+            // Distribute
+            //
 
-            File.Copy($"{LocalhostCertStore}/fhirLabsApiClientLocalhostCert.pfx",
-                $"{BaseDir}/../../examples/FhirLabsApi/CertStore/issued/fhirLabsApiClientLocalhostCert.pfx",
+            //
+            // Issued -> Project
+            //
+            File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",
+                $"{BaseDir}/../../examples/{deliverProjectPath}/CertStore/issued/{issuedName}.pfx",
                 true);
+
+
+            //
+            // Distribute to UdapMetadata.Test project
+            //
+            File.Copy($"{communityStorePath}/{anchorName}.cer",
+                $"{BaseDir}/../UdapMetadata.Tests/CertStore/anchors/{anchorName}.cer",
+                true);
+            File.Copy($"{LocalhostUdapIntermediates}/{intermediateName}.cer",
+                $"{BaseDir}/../UdapMetadata.Tests/CertStore/intermediates/{intermediateName}.cer",
+                true);
+           
         }
 
         private void BuildClientCertificate(
             X509Certificate2 intermediateCert,
-            X509Certificate2 caCert, 
-            RSA intermediate, 
+            X509Certificate2 caCert,
+            RSA intermediate,
             string distinguishedName,
             List<string> subjectAltNames,
             string clientCertFilePath,
             string? crl,
             bool buildAIAExtensions = false)
         {
-           
-                var intermediateCertWithKey = intermediateCert.CopyWithPrivateKey(intermediate);
 
-                using RSA rsaKey = RSA.Create(2048);
+            var intermediateCertWithKey = intermediateCert.CopyWithPrivateKey(intermediate);
 
-                var clientCertRequest = new CertificateRequest(
-                    distinguishedName,
-                    rsaKey,
-                    HashAlgorithmName.SHA256,
-                    RSASignaturePadding.Pkcs1);
+            using RSA rsaKey = RSA.Create(2048);
 
-                clientCertRequest.CertificateExtensions.Add(
-                    new X509BasicConstraintsExtension(false, false, 0, true));
+            var clientCertRequest = new CertificateRequest(
+                distinguishedName,
+                rsaKey,
+                HashAlgorithmName.SHA256,
+                RSASignaturePadding.Pkcs1);
 
-                clientCertRequest.CertificateExtensions.Add(
-                    new X509KeyUsageExtension(
-                        X509KeyUsageFlags.DigitalSignature,
-                        true));
+            clientCertRequest.CertificateExtensions.Add(
+                new X509BasicConstraintsExtension(false, false, 0, true));
 
-                clientCertRequest.CertificateExtensions.Add(
-                    new X509SubjectKeyIdentifierExtension(clientCertRequest.PublicKey, false));
+            clientCertRequest.CertificateExtensions.Add(
+                new X509KeyUsageExtension(
+                    X509KeyUsageFlags.DigitalSignature,
+                    true));
 
-                AddAuthorityKeyIdentifier(intermediateCert, clientCertRequest, _testOutputHelper);
+            clientCertRequest.CertificateExtensions.Add(
+                new X509SubjectKeyIdentifierExtension(clientCertRequest.PublicKey, false));
 
-                if (crl != null)
-                {
-                    clientCertRequest.CertificateExtensions.Add(MakeCdp(crl));
-                }
+            AddAuthorityKeyIdentifier(intermediateCert, clientCertRequest, _testOutputHelper);
 
-                var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-                foreach (var subjectAltName in subjectAltNames)
-                {
-                    subAltNameBuilder.AddUri(new Uri(subjectAltName)); //Same as iss claim
-                }
-                
-                var x509Extension = subAltNameBuilder.Build();
-                clientCertRequest.CertificateExtensions.Add(x509Extension);
+            if (crl != null)
+            {
+                clientCertRequest.CertificateExtensions.Add(MakeCdp(crl));
+            }
 
-                if (buildAIAExtensions)
-                {
-                    var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
-                    authorityInfoAccessBuilder.AdCertificateAuthorityIssuerUri(new Uri(SureFhirLabsIntermediatePublicCertHosted));
-                    var aiaExtension = authorityInfoAccessBuilder.Build();
-                    clientCertRequest.CertificateExtensions.Add(aiaExtension);
-                }
+            var subAltNameBuilder = new SubjectAlternativeNameBuilder();
+            foreach (var subjectAltName in subjectAltNames)
+            {
+                subAltNameBuilder.AddUri(new Uri(subjectAltName)); //Same as iss claim
+            }
 
-                using var clientCert = clientCertRequest.Create(
-                    intermediateCertWithKey,
-                    DateTimeOffset.UtcNow.AddDays(-1),
-                    DateTimeOffset.UtcNow.AddYears(2),
-                    new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16)));
-                // Do something with these certs, like export them to PFX,
-                // or add them to an X509Store, or whatever.
-                var clientCertWithKey = clientCert.CopyWithPrivateKey(rsaKey);
-                
+            var x509Extension = subAltNameBuilder.Build();
+            clientCertRequest.CertificateExtensions.Add(x509Extension);
 
-                var certPackage = new X509Certificate2Collection();
-                certPackage.Add(clientCertWithKey);
-                certPackage.Add(intermediateCert);
-                certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
+            if (buildAIAExtensions)
+            {
+                var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
+                authorityInfoAccessBuilder.AdCertificateAuthorityIssuerUri(new Uri(SureFhirLabsIntermediatePublicCertHosted));
+                var aiaExtension = authorityInfoAccessBuilder.Build();
+                clientCertRequest.CertificateExtensions.Add(aiaExtension);
+            }
 
-                var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
-                File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes);
-                char[] clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
-                File.WriteAllBytes($"{clientCertFilePath}.cer", clientPem.Select(c => (byte)c).ToArray());
+            using var clientCert = clientCertRequest.Create(
+                intermediateCertWithKey,
+                DateTimeOffset.UtcNow.AddDays(-1),
+                DateTimeOffset.UtcNow.AddYears(2),
+                new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16)));
+            // Do something with these certs, like export them to PFX,
+            // or add them to an X509Store, or whatever.
+            var clientCertWithKey = clientCert.CopyWithPrivateKey(rsaKey);
+
+
+            var certPackage = new X509Certificate2Collection();
+            certPackage.Add(clientCertWithKey);
+            certPackage.Add(intermediateCert);
+            certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
+
+            var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
+            File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes);
+            char[] clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
+            File.WriteAllBytes($"{clientCertFilePath}.cer", clientPem.Select(c => (byte)c).ToArray());
         }
 
         private void UpdateWindowsMachineStore(X509Certificate2 certificate)

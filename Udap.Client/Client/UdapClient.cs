@@ -18,6 +18,7 @@ using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Common.Models;
 using Udap.Model;
 using Udap.Util.Extensions;
 
@@ -33,6 +34,21 @@ namespace Udap.Client.Client
 
         UdapMetadata? UdapDynamicClientRegistrationDocument { get; set; }
         UdapMetadata? UdapServerMetaData { get; set; }
+
+        /// <summary>
+        /// Event fired when a certificate is untrusted
+        /// </summary>
+        event Action<X509Certificate2>? Untrusted;
+
+        /// <summary>
+        /// Event fired if a certificate has a problem.
+        /// </summary>
+        event Action<X509ChainElement>? Problem;
+
+        /// <summary>
+        /// Event fired if there was an error during certificate validation
+        /// </summary>
+        event Action<X509Certificate2, Exception>? Error;
     }
 
     public class UdapClient: IUdapClient
@@ -59,6 +75,33 @@ namespace Udap.Client.Client
 
         public UdapMetadata? UdapDynamicClientRegistrationDocument { get; set; }
         public UdapMetadata? UdapServerMetaData { get; set; }
+
+        /// <summary>
+        /// Event fired when a certificate is untrusted
+        /// </summary>
+        public event Action<X509Certificate2>? Untrusted
+        {
+            add => _trustChainValidator.Untrusted += value;
+            remove => _trustChainValidator.Untrusted -= value;
+        }
+
+        /// <summary>
+        /// Event fired if a certificate has a problem.
+        /// </summary>
+        public event Action<X509ChainElement>? Problem
+        {
+            add => _trustChainValidator.Problem += value;
+            remove => _trustChainValidator.Problem -= value;
+        }
+
+        /// <summary>
+        /// Event fired if there was an error during certificate validation
+        /// </summary>
+        public event Action<X509Certificate2, Exception>? Error
+        {
+            add => _trustChainValidator.Error += value;
+            remove => _trustChainValidator.Error -= value;
+        }
 
         public async Task<UdapDiscoveryDocumentResponse> ValidateResource(
             string baseUrl, 
@@ -134,9 +177,9 @@ namespace Udap.Client.Client
             }
 
             var store = await _certificateStore.Resolve();
-            var anchorCertificates = X509Certificate2Collection(community, store);
+            var anchors = X509Certificate2Collection(community, store).ToList();
             
-            if (anchorCertificates == null)
+            if (!anchors.Any())
             {
                 _logger.LogWarning($"{nameof(UdapClient)} does not contain any anchor certificates");
                 return false;
@@ -145,25 +188,24 @@ namespace Udap.Client.Client
             return _trustChainValidator.IsTrustedCertificate(
                 nameof(UdapClient), 
                 publicCert,
-                _certificateStore.IntermediateCertificates.ToArray().ToX509Collection(),
-                anchorCertificates);
+                anchors.SelectMany(a => a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate))).ToArray().ToX509Collection(),
+                anchors.ToX509Collection());
         }
 
 
-        private static X509Certificate2Collection? X509Certificate2Collection(string? community, ICertificateStore store)
+        private static IEnumerable<Anchor> X509Certificate2Collection(string? community, ICertificateStore store)
         {
-            X509Certificate2Collection? anchorCertificates;
+            IEnumerable<Anchor> anchorCertificates;
 
             if (community != null)
             {
                 anchorCertificates = store.AnchorCertificates
                     .Where(a => a.Community == community)
-                    .ToX509Collection();
+                    .Select(a => a);
             }
             else
             {
-                anchorCertificates = store.AnchorCertificates
-                    .ToX509Collection();
+                anchorCertificates = store.AnchorCertificates;
             }
 
             return anchorCertificates;

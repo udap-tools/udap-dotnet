@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
@@ -16,14 +17,20 @@ using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Moq;
+using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 using fhirLabsProgram = FhirLabsApi.Program;
 
 
@@ -34,27 +41,7 @@ public class ApiForCommunityTestFixture : WebApplicationFactory<fhirLabsProgram>
     public ITestOutputHelper? Output { get; set; }
     private Udap.Model.UdapMetadata? _wellKnownUdap;
     public string Community = "http://localhost";
-
-    public Udap.Model.UdapMetadata? WellKnownUdap
-    {
-        get
-        {
-            if (_wellKnownUdap == null)
-            {
-                var response = CreateClient()
-                    .GetAsync($"fhir/r4/.well-known/udap?community={Community}")
-                    .GetAwaiter()
-                    .GetResult();
-
-                response.StatusCode.Should().Be(HttpStatusCode.OK);
-                var content = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                _wellKnownUdap = JsonSerializer.Deserialize<Udap.Model.UdapMetadata>(content);
-            }
-
-            return _wellKnownUdap;
-        }
-    }
-
+    
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         //
@@ -83,6 +70,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 {
     private readonly ApiForCommunityTestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
+    private IServiceProvider _serviceProvider;
     private readonly FakeChainValidatorDiagnostics _diagnosticsChainValidator = new FakeChainValidatorDiagnostics();
 
     public UdapControllerCommunityTest(ApiForCommunityTestFixture fixture, ITestOutputHelper testOutputHelper)
@@ -91,7 +79,147 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         fixture.Output = testOutputHelper;
         _fixture = fixture;
         _testOutputHelper = testOutputHelper;
+
+
+        //
+        // This are is for client Dependency injection and Configuration
+        //
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", false, true)
+            // .AddUserSecrets<UdapControllerTests>()
+            .Build();
+
+        //
+        // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory
+        //
+        var services = new ServiceCollection();
+
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddXUnit(testOutputHelper);
+        });
+
+        // UDAP CertStore
+        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
+        services.AddSingleton<ICertificateStore>(sp =>
+            new FileCertificateStore(
+                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                new Mock<ILogger<FileCertificateStore>>().Object,
+                "FhirLabsApi")); //Note: FhirLabsApi is the key to pick the correct data from appsettings.json
+
+        var problemFlags = X509ChainStatusFlags.NotTimeValid |
+                           X509ChainStatusFlags.Revoked |
+                           X509ChainStatusFlags.NotSignatureValid |
+                           X509ChainStatusFlags.InvalidBasicConstraints |
+                           X509ChainStatusFlags.CtlNotTimeValid |
+                           // X509ChainStatusFlags.OfflineRevocation |
+                           X509ChainStatusFlags.CtlNotSignatureValid;
+        // X509ChainStatusFlags.RevocationStatusUnknown;
+
+
+        services.TryAddSingleton<TrustChainValidator>(sp => new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>()));
+
+        services.AddScoped<IUdapClient>(sp =>
+            new UdapClient(_fixture.CreateClient(),
+                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<ICertificateStore>(),
+                sp.GetRequiredService<ILogger<UdapClient>>()));
+
+        //
+        // Use this method in an application
+        //
+        //services.AddHttpClient<IUdapClient, UdapClient>();
+
+        _serviceProvider = services.BuildServiceProvider();
     }
+
+    [Fact]
+    public async Task ValidateChainTest()
+    {
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://fhirlabs2/");
+
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsChainValidator.Called.Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Special test to check <see cref="TrustChainValidator"/> notification events.
+    /// In this case assert a IUdapClient can register for the Problem events.
+    /// </summary>
+    /// <returns></returns>
+    [Fact]
+    public async Task ValidateChainOffLineRevocationTest2()
+    {
+        //
+        // This are is for client Dependency injection and Configuration
+        //
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", false, true)
+            // .AddUserSecrets<UdapControllerTests>()
+            .Build();
+
+        //
+        // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory
+        //
+        var services = new ServiceCollection();
+
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddXUnit(_testOutputHelper);
+        });
+
+        // UDAP CertStore
+        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
+        services.AddSingleton<ICertificateStore>(sp =>
+            new FileCertificateStore(
+                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                new Mock<ILogger<FileCertificateStore>>().Object,
+                "FhirLabsApi"));
+
+        var problemFlags = X509ChainStatusFlags.NotTimeValid |
+                       X509ChainStatusFlags.Revoked |
+                       X509ChainStatusFlags.NotSignatureValid |
+                       X509ChainStatusFlags.InvalidBasicConstraints |
+                       X509ChainStatusFlags.CtlNotTimeValid |
+                       X509ChainStatusFlags.OfflineRevocation |
+                       X509ChainStatusFlags.CtlNotSignatureValid |
+                       X509ChainStatusFlags.RevocationStatusUnknown |
+                       X509ChainStatusFlags.PartialChain;
+
+
+        services.TryAddSingleton<TrustChainValidator>(sp => new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>()));
+
+        services.AddScoped<IUdapClient>(sp =>
+            new UdapClient(_fixture.CreateClient(),
+                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<ICertificateStore>(),
+                sp.GetRequiredService<ILogger<UdapClient>>()));
+        
+        var serviceProvider = services.BuildServiceProvider();
+
+        var udapClient = serviceProvider.GetRequiredService<IUdapClient>();
+        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://fhirlabs2/");
+
+        disco.IsError.Should().BeTrue($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+
+        _diagnosticsChainValidator.ActualErrorMessages.Any(m =>
+                m.Contains("OfflineRevocation"))
+            .Should().BeTrue();
+    }
+
 
     [Fact(Skip = "Swagger friction with net7 and non default pathBase.  Save for another day.  Maybe put behind Yarp and/or follow through on this PR: https://github.com/brianpos/fhir-net-web-api/pull/13")] //Swagger
     public async Task OpenApiTest()
@@ -128,40 +256,34 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
     [Fact]
-    public void signed_metatdataContentTest()
+    public async Task signed_metatdataContentTest()
     {
-        var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
-        var tokenHeader = jwt.Header;
-        var x5CArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
 
-        // bad keys
-        // var x5cArray = new string[1];
-        // x5cArray[0] = "MIIFVzCCAz+gAwIBAgIEAQIDBDANBgkqhkiG9w0BAQsFADBzMQswCQYDVQQGEwJVUzEPMA0GA1UECBMGT3JlZ29uMREwDwYDVQQHEwhQb3J0bGFuZDEUMBIGA1UEChMLSG9ibyBDb2RpbmcxDzANBgNVBAsTBkFuY2hvcjEZMBcGA1UEAxMQVURBUC1UZXN0LUFuY2hvcjAeFw0yMjA4MzEyMDI4NDBaFw0yNDA5MDEyMDI4NDBaMG8xCzAJBgNVBAYTAlVTMQ8wDQYDVQQIEwZPcmVnb24xETAPBgNVBAcTCFBvcnRsYW5kMRQwEgYDVQQKEwtIb2JvIENvZGluZzENMAsGA1UECxMEVURBUDEXMBUGA1UEAxMOd2VhdGhlcmFwaS5sYWIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkU61gOhliibnE2L2SMX4bNE/WqVxpgdRyW2Ii7kbdW5f/eATAhWjrm1koKrCiR9/fH6hK/HEYPBgT/QKU6fTEgBjJEf51ouGHEZzYkEldKMZCjZnxCYRYbF+PhflhnLyj0R0NagH2OFzrrKj3qwPZ3WDSUDC/kxh7YNWJGnOo33bhD+gh+SYdq598cJiXsyfL1N9iTstXYKCKwmP+iJNQ5dV14dbDm693XlVe/G3JwADNzxRoIRVe9Yb9KcE7o7BIy18jUjJySfrAa3Y3Z9jX5ng89CVI3HHiQ9fVHrZjkYUaqe+0c88Asg3op3HPQNyk6bjKxgU7tHfZm5O+KyM9AgMBAAGjgfYwgfMwDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCBsAwHQYDVR0OBBYEFGYofTfZyODDCPMoMV7QaUpVGNKHMB8GA1UdIwQYMBaAFEKu+NexBjBGKrtMYo6DzwUKs4tJMD0GA1UdHwQ2MDQwMqAwoC6GLGh0dHA6Ly9jZXJ0cy53ZWF0aGVyYXBpLmxhYi9jcmwvY3JsX2xpc3QuY3JsMCsGA1UdEQQkMCKGIGh0dHBzOi8vd2VhdGhlcmFwaS5sYWI6NTAyMS9maGlyMCoGA1UdJQEB/wQgMB4GCCsGAQUFBwMCBggrBgEFBQcDAQYIKwYBBQUHAwgwDQYJKoZIhvcNAQELBQADggIBADaTQff7z0BZNgoKDkjxzZNKfUsHfWIsuOe8zfAfYzXAqUiyBWl8pdrL7EW9JoKLchQPC5grWW8uUfzknD3El0QGLgXNvm+imsk0NXaH0R9vEIafJhGXkZWIZx61GekoUQ8+7xEbf9gr5BGA3jMWAtkO6+LvZuhdkTd1k2RlVpl39Yx56Ivg/KpgRXM1PyISl1obbC/b5PCQ/t4kysTmkU9GVz1Z7+rUPcCP+fKFblsLLToVgxA13ozYRAF9/k2V9n/ZiHSOJmwPwLwBs9yHwsdefBlQ9G0Rzm9oU89G5o74HNlhInqD4wQspm+uhewwIAzRkGfL+t992nn1il8rt+VnnZ97rMIZ+cCjyvB0JmlsRQlngRt9cJbHp0OAo5jD8WJwbwgJ0Z3qClCvxZVwT9H5c+klre31ef61XrC0foPkX3TBSytnWh2iQkAdME6ChKl2RZKac2V4zCG8JgSRcP85lDooigsnBk5Sqmf3cifxm29Fte4X/0JG1IpSCLFLcaLyj2me0mVUNDnzIalLaBwwY4kNLPEppJhlFUUV16efaHwOesSQJvGk77tCGaGsG3kPUQcOa0tb2lYJho0Jnq6xymcNZuUQ5PLXmq6l7/gGJ7AqCb1fDghF0PlTwOkh+ZFiaja1YxzN9SsqsR9hyAUJt0mpzqzLNXjWa3PAcy+P";
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
 
-        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()));
-        var tokenHandler = new JwtSecurityTokenHandler();
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://fhirlabs2/");
 
-        tokenHandler.ValidateToken(_fixture.WellKnownUdap?.SignedMetadata, new TokenValidationParameters
-        {
-            RequireSignedTokens = true,
-            ValidateIssuer = true,
-            //With ValidateIssuer = true issuer is validated against this list.
-            //Docs are not clear on this, thus this example.
-            ValidIssuers = new[] { "http://localhost/fhir/r4" }, 
-            ValidateAudience = false, // No aud for UDAP metadata
-            ValidateLifetime = true,
-            IssuerSigningKey = new X509SecurityKey(cert),
-            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsChainValidator.Called.Should().BeFalse();
 
-        }, out _);
-
-
+        //
+        // this should all happen in udapClient.ValidateResource()
+        //
+        var jwt = new JwtSecurityToken(disco.SignedMetadata);
+        
         var issClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.Issuer);
         issClaim.ValueType.Should().Be(ClaimValueTypes.String);
 
         // should be the same as the web base url, but this would be localhost
         issClaim.Value.Should().Be("http://localhost/fhir/r4");
-        
+
+        var tokenHeader = jwt.Header;
+        var x5CArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
+        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()));
         var subjectAltName = cert.GetNameInfo(X509NameType.UrlName, false);
         subjectAltName.Should().Be(issClaim.Value,
             $"iss: {issClaim.Value} does not match Subject Alternative Name extension");
@@ -182,132 +304,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         var year = DateTimeOffset.FromUnixTimeSeconds(exp).AddYears(1).ToUnixTimeSeconds();
         iat.Should().BeLessOrEqualTo((int)year);
     }
-
-    [Fact]
-    public async Task ValidateChainTest()
-    {
-        var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
-        var tokenHeader = jwt.Header;
-
-        var x5cArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
-
-        // bad keys
-        // var x5cArray = new string[1];
-        // x5cArray[0] = "MIIFVzCCAz+gAwIBAgIEAQIDBDANBgkqhkiG9w0BAQsFADBzMQswCQYDVQQGEwJVUzEPMA0GA1UECBMGT3JlZ29uMREwDwYDVQQHEwhQb3J0bGFuZDEUMBIGA1UEChMLSG9ibyBDb2RpbmcxDzANBgNVBAsTBkFuY2hvcjEZMBcGA1UEAxMQVURBUC1UZXN0LUFuY2hvcjAeFw0yMjA4MzEyMDI4NDBaFw0yNDA5MDEyMDI4NDBaMG8xCzAJBgNVBAYTAlVTMQ8wDQYDVQQIEwZPcmVnb24xETAPBgNVBAcTCFBvcnRsYW5kMRQwEgYDVQQKEwtIb2JvIENvZGluZzENMAsGA1UECxMEVURBUDEXMBUGA1UEAxMOd2VhdGhlcmFwaS5sYWIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkU61gOhliibnE2L2SMX4bNE/WqVxpgdRyW2Ii7kbdW5f/eATAhWjrm1koKrCiR9/fH6hK/HEYPBgT/QKU6fTEgBjJEf51ouGHEZzYkEldKMZCjZnxCYRYbF+PhflhnLyj0R0NagH2OFzrrKj3qwPZ3WDSUDC/kxh7YNWJGnOo33bhD+gh+SYdq598cJiXsyfL1N9iTstXYKCKwmP+iJNQ5dV14dbDm693XlVe/G3JwADNzxRoIRVe9Yb9KcE7o7BIy18jUjJySfrAa3Y3Z9jX5ng89CVI3HHiQ9fVHrZjkYUaqe+0c88Asg3op3HPQNyk6bjKxgU7tHfZm5O+KyM9AgMBAAGjgfYwgfMwDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCBsAwHQYDVR0OBBYEFGYofTfZyODDCPMoMV7QaUpVGNKHMB8GA1UdIwQYMBaAFEKu+NexBjBGKrtMYo6DzwUKs4tJMD0GA1UdHwQ2MDQwMqAwoC6GLGh0dHA6Ly9jZXJ0cy53ZWF0aGVyYXBpLmxhYi9jcmwvY3JsX2xpc3QuY3JsMCsGA1UdEQQkMCKGIGh0dHBzOi8vd2VhdGhlcmFwaS5sYWI6NTAyMS9maGlyMCoGA1UdJQEB/wQgMB4GCCsGAQUFBwMCBggrBgEFBQcDAQYIKwYBBQUHAwgwDQYJKoZIhvcNAQELBQADggIBADaTQff7z0BZNgoKDkjxzZNKfUsHfWIsuOe8zfAfYzXAqUiyBWl8pdrL7EW9JoKLchQPC5grWW8uUfzknD3El0QGLgXNvm+imsk0NXaH0R9vEIafJhGXkZWIZx61GekoUQ8+7xEbf9gr5BGA3jMWAtkO6+LvZuhdkTd1k2RlVpl39Yx56Ivg/KpgRXM1PyISl1obbC/b5PCQ/t4kysTmkU9GVz1Z7+rUPcCP+fKFblsLLToVgxA13ozYRAF9/k2V9n/ZiHSOJmwPwLwBs9yHwsdefBlQ9G0Rzm9oU89G5o74HNlhInqD4wQspm+uhewwIAzRkGfL+t992nn1il8rt+VnnZ97rMIZ+cCjyvB0JmlsRQlngRt9cJbHp0OAo5jD8WJwbwgJ0Z3qClCvxZVwT9H5c+klre31ef61XrC0foPkX3TBSytnWh2iQkAdME6ChKl2RZKac2V4zCG8JgSRcP85lDooigsnBk5Sqmf3cifxm29Fte4X/0JG1IpSCLFLcaLyj2me0mVUNDnzIalLaBwwY4kNLPEppJhlFUUV16efaHwOesSQJvGk77tCGaGsG3kPUQcOa0tb2lYJho0Jnq6xymcNZuUQ5PLXmq6l7/gGJ7AqCb1fDghF0PlTwOkh+ZFiaja1YxzN9SsqsR9hyAUJt0mpzqzLNXjWa3PAcy+P";
-
-        var cert = new X509Certificate2(Convert.FromBase64String(x5cArray!.First()));
-        var tokenHandler = new JwtSecurityTokenHandler();
-
-        tokenHandler.ValidateToken(_fixture.WellKnownUdap?.SignedMetadata, new TokenValidationParameters
-        {
-            RequireSignedTokens = true,
-            ValidateIssuer = true,
-            ValidIssuers = new[] { "http://localhost/fhir/r4" }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-            ValidateAudience = false, // No aud for UDAP metadata
-            ValidateLifetime = true,
-            IssuerSigningKey = new X509SecurityKey(cert),
-            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
-
-        }, out _);
-
-        var problemFlags = X509ChainStatusFlags.NotTimeValid |
-                                  X509ChainStatusFlags.Revoked |
-                                  X509ChainStatusFlags.NotSignatureValid |
-                                  X509ChainStatusFlags.InvalidBasicConstraints |
-                                  X509ChainStatusFlags.CtlNotTimeValid |
-                                  // X509ChainStatusFlags.OfflineRevocation |
-                                  X509ChainStatusFlags.CtlNotSignatureValid;
-
-        (await ValidateCertificateChain(cert, problemFlags)).Should().BeTrue();
-        _diagnosticsChainValidator.Called.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task ValidateChainOffLineRevocationTest()
-    {
-        var jwt = new JwtSecurityToken(_fixture.WellKnownUdap?.SignedMetadata);
-        var tokenHeader = jwt.Header;
-
-        var x5cArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
-
-        // bad keys
-        // var x5cArray = new string[1];
-        // x5cArray[0] = "MIIFVzCCAz+gAwIBAgIEAQIDBDANBgkqhkiG9w0BAQsFADBzMQswCQYDVQQGEwJVUzEPMA0GA1UECBMGT3JlZ29uMREwDwYDVQQHEwhQb3J0bGFuZDEUMBIGA1UEChMLSG9ibyBDb2RpbmcxDzANBgNVBAsTBkFuY2hvcjEZMBcGA1UEAxMQVURBUC1UZXN0LUFuY2hvcjAeFw0yMjA4MzEyMDI4NDBaFw0yNDA5MDEyMDI4NDBaMG8xCzAJBgNVBAYTAlVTMQ8wDQYDVQQIEwZPcmVnb24xETAPBgNVBAcTCFBvcnRsYW5kMRQwEgYDVQQKEwtIb2JvIENvZGluZzENMAsGA1UECxMEVURBUDEXMBUGA1UEAxMOd2VhdGhlcmFwaS5sYWIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCkU61gOhliibnE2L2SMX4bNE/WqVxpgdRyW2Ii7kbdW5f/eATAhWjrm1koKrCiR9/fH6hK/HEYPBgT/QKU6fTEgBjJEf51ouGHEZzYkEldKMZCjZnxCYRYbF+PhflhnLyj0R0NagH2OFzrrKj3qwPZ3WDSUDC/kxh7YNWJGnOo33bhD+gh+SYdq598cJiXsyfL1N9iTstXYKCKwmP+iJNQ5dV14dbDm693XlVe/G3JwADNzxRoIRVe9Yb9KcE7o7BIy18jUjJySfrAa3Y3Z9jX5ng89CVI3HHiQ9fVHrZjkYUaqe+0c88Asg3op3HPQNyk6bjKxgU7tHfZm5O+KyM9AgMBAAGjgfYwgfMwDAYDVR0TAQH/BAIwADALBgNVHQ8EBAMCBsAwHQYDVR0OBBYEFGYofTfZyODDCPMoMV7QaUpVGNKHMB8GA1UdIwQYMBaAFEKu+NexBjBGKrtMYo6DzwUKs4tJMD0GA1UdHwQ2MDQwMqAwoC6GLGh0dHA6Ly9jZXJ0cy53ZWF0aGVyYXBpLmxhYi9jcmwvY3JsX2xpc3QuY3JsMCsGA1UdEQQkMCKGIGh0dHBzOi8vd2VhdGhlcmFwaS5sYWI6NTAyMS9maGlyMCoGA1UdJQEB/wQgMB4GCCsGAQUFBwMCBggrBgEFBQcDAQYIKwYBBQUHAwgwDQYJKoZIhvcNAQELBQADggIBADaTQff7z0BZNgoKDkjxzZNKfUsHfWIsuOe8zfAfYzXAqUiyBWl8pdrL7EW9JoKLchQPC5grWW8uUfzknD3El0QGLgXNvm+imsk0NXaH0R9vEIafJhGXkZWIZx61GekoUQ8+7xEbf9gr5BGA3jMWAtkO6+LvZuhdkTd1k2RlVpl39Yx56Ivg/KpgRXM1PyISl1obbC/b5PCQ/t4kysTmkU9GVz1Z7+rUPcCP+fKFblsLLToVgxA13ozYRAF9/k2V9n/ZiHSOJmwPwLwBs9yHwsdefBlQ9G0Rzm9oU89G5o74HNlhInqD4wQspm+uhewwIAzRkGfL+t992nn1il8rt+VnnZ97rMIZ+cCjyvB0JmlsRQlngRt9cJbHp0OAo5jD8WJwbwgJ0Z3qClCvxZVwT9H5c+klre31ef61XrC0foPkX3TBSytnWh2iQkAdME6ChKl2RZKac2V4zCG8JgSRcP85lDooigsnBk5Sqmf3cifxm29Fte4X/0JG1IpSCLFLcaLyj2me0mVUNDnzIalLaBwwY4kNLPEppJhlFUUV16efaHwOesSQJvGk77tCGaGsG3kPUQcOa0tb2lYJho0Jnq6xymcNZuUQ5PLXmq6l7/gGJ7AqCb1fDghF0PlTwOkh+ZFiaja1YxzN9SsqsR9hyAUJt0mpzqzLNXjWa3PAcy+P";
-
-        var cert = new X509Certificate2(Convert.FromBase64String(x5cArray!.First()));
-        var tokenHandler = new JwtSecurityTokenHandler();
-
-        tokenHandler.ValidateToken(_fixture.WellKnownUdap?.SignedMetadata, new TokenValidationParameters
-        {
-            RequireSignedTokens = true,
-            ValidateIssuer = true,
-            ValidIssuers = new[] { "http://localhost/fhir/r4" }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-            ValidateAudience = false, // No aud for UDAP metadata
-            ValidateLifetime = true,
-            IssuerSigningKey = new X509SecurityKey(cert),
-            ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
-
-        }, out _);
-
-        var problemFlags = X509ChainStatusFlags.NotTimeValid |
-                           X509ChainStatusFlags.Revoked |
-                           X509ChainStatusFlags.NotSignatureValid |
-                           X509ChainStatusFlags.InvalidBasicConstraints |
-                           X509ChainStatusFlags.CtlNotTimeValid |
-                           // X509ChainStatusFlags.OfflineRevocation |
-                           X509ChainStatusFlags.CtlNotSignatureValid |
-                           X509ChainStatusFlags.PartialChain;
-        // X509ChainStatusFlags.RevocationStatusUnknown;
-
-        //
-        // Trusted anchor
-        //
-        (await ValidateCertificateChain(cert, problemFlags)).Should().BeTrue();
-
-
-        problemFlags = X509ChainStatusFlags.NotTimeValid |
-                       X509ChainStatusFlags.Revoked |
-                       X509ChainStatusFlags.NotSignatureValid |
-                       X509ChainStatusFlags.InvalidBasicConstraints |
-                       X509ChainStatusFlags.CtlNotTimeValid |
-                       X509ChainStatusFlags.OfflineRevocation |
-                       X509ChainStatusFlags.CtlNotSignatureValid |
-                       X509ChainStatusFlags.RevocationStatusUnknown |
-                       X509ChainStatusFlags.PartialChain;
-
-        (await ValidateCertificateChain(cert, problemFlags)).Should().BeFalse();
-
-        _diagnosticsChainValidator.ActualErrorMessages.Any(m =>
-                m.Contains("OfflineRevocation"))
-            .Should().BeTrue();
-    }
-
-    public async Task<bool> ValidateCertificateChain(X509Certificate2 issuedCertificate2, X509ChainStatusFlags problemFlags)
-    {
-        var certStore = await _fixture.Services.GetService<ICertificateStore>()!.Resolve();
-
-        var anchorCertificates = certStore.AnchorCertificates
-            .Where(c => c.Community == _fixture.Community)
-            .OrderBy(c => X509Certificate2.CreateFromPem(c.Certificate).NotBefore)
-            .Select(c => c.Certificate);
-
-        var validator = new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>());
-        validator.Problem += _diagnosticsChainValidator.OnChainProblem;
-
-        // Help while writing tests to see problems summarized.
-        validator.Error += (_, exception) => _testOutputHelper.WriteLine("Error: " + exception.Message);
-        validator.Problem += element => _testOutputHelper.WriteLine("Problem: " + element.ChainElementStatus.Summarize(problemFlags));
-        validator.Untrusted += certificate2 => _testOutputHelper.WriteLine("Untrusted: " + certificate2.Subject);
-
-        return validator.IsTrustedCertificate(
-            "client_name",
-            issuedCertificate2, 
-            anchorCertificates.Select(a => X509Certificate2.CreateFromPem(a)).ToArray().ToX509Collection(),
-            certStore.IntermediateCertificates.ToArray().ToX509Collection()!,
-            out _,
-            out _); 
-    }
-
+  
     public class FakeChainValidatorDiagnostics
     {
         public bool Called;

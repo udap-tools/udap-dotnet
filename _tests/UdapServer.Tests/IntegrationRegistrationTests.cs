@@ -60,7 +60,7 @@ namespace UdapServer.Tests
         {
             AnchorCert =
                 new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
-                    "caLocalhostCert.cer"));
+                    "caWeatherApiLocalhostCert.cer"));
 
             await SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", new Mock<Serilog.ILogger>().Object);
 
@@ -201,7 +201,7 @@ namespace UdapServer.Tests
             var now = DateTime.UtcNow;
             var jwtId = CryptoRandom.CreateUniqueId();
 
-            var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"), "weatherApiClientLocalhostCert.pfx");
+            var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"), "weatherApiClientLocalhostCert1.pfx");
             var clientCert = new X509Certificate2(cert, "udap-test");
             var securityKey = new X509SecurityKey(clientCert);
             var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
@@ -335,7 +335,7 @@ namespace UdapServer.Tests
             var validator = sp.GetRequiredService<IUdapDynamicClientRegistrationValidator>();
 
             
-            var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "weatherApiClientLocalhostCert.pfx");
+            var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "weatherApiClientLocalhostCert1.pfx");
             var clientCert = new X509Certificate2(cert, "udap-test");
             var now = DateTime.UtcNow;
             var jwtId = CryptoRandom.CreateUniqueId();
@@ -433,7 +433,7 @@ namespace UdapServer.Tests
             var now = DateTime.UtcNow;
             var jwtId = CryptoRandom.CreateUniqueId();
 
-            var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"), "weatherApiClientLocalhostCert.pfx");
+            var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"), "weatherApiClientLocalhostCert1.pfx");
             var clientCert = new X509Certificate2(cert, "udap-test");
             var securityKey = new X509SecurityKey(clientCert);
             var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);

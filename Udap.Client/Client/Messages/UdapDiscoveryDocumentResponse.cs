@@ -64,7 +64,7 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     public IEnumerable<string> UdapCertificationsRequired => TryGetStringArray(UdapConstants.Discovery.UdapCertificationsRequired);
     public IEnumerable<string> GrantTypesSupported => TryGetStringArray(UdapConstants.Discovery.GrantTypesSupported);
     public IEnumerable<string> ScopesSupported => TryGetStringArray(UdapConstants.Discovery.ScopesSupported);
-    public string? TokenEndpointAuthMethodsSupported => TryGetString(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported);
+    public IEnumerable<string> TokenEndpointAuthMethodsSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported);
     public IEnumerable<string> TokenEndpointAuthSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported);
     public IEnumerable<string> RegistrationEndpointJwtSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.RegistrationEndpointJwtSigningAlgValuesSupported);
 

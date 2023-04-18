@@ -39,14 +39,14 @@ public class Anchor : IEquatable<Anchor>
     /// <returns>A string that represents the current object.</returns>
     public override string ToString()
     {
-        return $"Thumbprint {Thumbprint} | Name {Name}";
+        return $"Thumbprint {Thumbprint} | Name {Name} | Community {Community}";
     }
 
     /// <summary>Serves as the default hash function.</summary>
     /// <returns>A hash code for the current object.</returns>
     public override int GetHashCode()
     {
-        return ToString().GetHashCode();
+        return (ToString()).GetHashCode();
     }
 
     /// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
@@ -56,7 +56,7 @@ public class Anchor : IEquatable<Anchor>
     public bool Equals(Anchor? other)
     {
         if (other == null) return false;
-        return other.Thumbprint == this.Thumbprint;
+        return other.Thumbprint == this.Thumbprint && other.Community == this.Community;
     }
 
     /// <summary>Determines whether the specified object is equal to the current object.</summary>

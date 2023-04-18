@@ -182,7 +182,7 @@ app.Use(async (context, next) =>
     await next.Invoke();
 });
 
-// app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 //
 // Diagram to decide where cors middleware should be applied.

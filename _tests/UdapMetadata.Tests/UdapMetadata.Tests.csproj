@@ -50,38 +50,45 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="CertStore\anchors\" />
-    <Folder Include="CertStore\intermediates\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\caLocalhostCert.cer" Link="CertStore\anchors\caLocalhostCert.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\intermediateLocalhostCert.cer" Link="CertStore\intermediates\intermediateLocalhostCert.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <!-- <None Include="..\Udap.PKI.Generator\certstores\localhost_community\weatherApiClientLocalhostCert.pfx" Link="CertStore\issued\weatherApiClientLocalhostCert.pfx"> -->
-    <!--   <CopyToOutputDirectory>Always</CopyToOutputDirectory> -->
-    <!-- </None> -->
-    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\intermediates\SureFhirLabs_Intermediate.cer" Link="CertStore\intermediates\SureFhirLabs_Intermediate.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <!-- <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.client.pfx" Link="CertStore\issued\fhirlabs.net.client.pfx"> -->
-    <!--   <CopyToOutputDirectory>Always</CopyToOutputDirectory> -->
-    <!-- </None> -->
-    <!-- <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\WeatherApiClient.pfx" Link="CertStore\issued\WeatherApiClient.pfx"> -->
-    <!--   <CopyToOutputDirectory>Always</CopyToOutputDirectory> -->
-    <!-- </None> -->
-    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\anchors\SureFhirLabs_CA.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="CertStore\anchors\.gitignore">
+      <LastGenOutput>.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="CertStore\anchors\caLocalhostCert.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\anchors\caLocalhostCert2.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\anchors\caWeatherApiLocalhostCert.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\anchors\caWeatherApiLocalhostCert2.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\intermediates\.gitignore">
+      <LastGenOutput>.cs</LastGenOutput>
+      <Generator>TextTemplatingFileGenerator</Generator>
+    </None>
+    <None Update="CertStore\intermediates\intermediateLocalhostCert.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\intermediates\intermediateLocalhostCert2.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\intermediates\intermediateWeatherApiLocalhostCert.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\intermediates\intermediateWeatherApiLocalhostCert2.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
   </ItemGroup>
 
 </Project>

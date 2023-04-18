@@ -14,11 +14,10 @@ namespace Udap.Common.Certificates;
 
 public interface ICertificateStore
 {
-    ICollection<X509Certificate2> IntermediateCertificates { get; set; }
-
     ICollection<Anchor> AnchorCertificates { get; set; }
 
     ICollection<IssuedCertificate> IssuedCertificates { get; set; }
 
     Task<ICertificateStore> Resolve();
+
 }

@@ -294,9 +294,14 @@ namespace Udap.Client.System.Tests
             var sp = services.BuildServiceProvider();
             var certStore = sp.GetRequiredService<ICertificateStore>();
             var certificateStore = await certStore.Resolve();
-            var intermediates = certificateStore.IntermediateCertificates.ToArray().ToX509Collection();
             var anchors = certificateStore.AnchorCertificates
-                .Where(c => c.Community == communityName)
+                .Where(c => c.Community == communityName);
+
+            var intermediates = anchors
+                .SelectMany(a => a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate))).ToArray()
+                .ToX509Collection();
+
+            var anchorCertificates = anchors
                 .Select(c => X509Certificate2.CreateFromPem(c.Certificate))
                 .OrderBy(certificate => certificate.NotBefore)
                 .ToArray()
@@ -314,7 +319,7 @@ namespace Udap.Client.System.Tests
                 "client_name",
                 issuedCertificate2,
                 intermediates,
-                anchors!, 
+                anchorCertificates!, 
                 out _, 
                 out _);
         }

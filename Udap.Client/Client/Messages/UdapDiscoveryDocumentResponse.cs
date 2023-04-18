@@ -107,7 +107,7 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     }
 
     /// <summary>
-    /// Validates the endoints and jwks_uri according to the security policy.
+    /// Validates the endpoints and jwks_uri according to the security policy.
     /// </summary>
     /// <param name="json">The json.</param>
     /// <param name="policy">The policy.</param>

@@ -153,10 +153,10 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetRootCertificates");
+        using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetIntermediateCertificates");
 
-        var roots = _intermediateCertificates.ToList();
-        var certificates = new X509Certificate2Collection(roots
+        var intermediates = _intermediateCertificates.ToList();
+        var certificates = new X509Certificate2Collection(intermediates
                     .Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());
 
         return Task.FromResult<X509Certificate2Collection?>(certificates);

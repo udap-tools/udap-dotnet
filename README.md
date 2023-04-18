@@ -112,7 +112,7 @@ To continue this example, copy the following files from the Udap.PKI.Generator t
     - anchorLocalhostCert.cer
   - issued
     - weatherApiClientLocalhostCert.pfx
-  - roots
+  - anchors
     - caLocalhostCert.cer
 
 Add configuration to AppSettings to point to the certificates.
@@ -135,11 +135,11 @@ UdapConfig:UdapMetadataConfigs:Community value is the link to UdapFileCertStoreM
             "Name": "http://localhost",
             "Anchors": [
               {
-                "FilePath": "CertStore/intermediates/anchorLocalhostCert.cer"
+                "FilePath": "CertStore/anchors/caLocalhostCert.cer"
               }
             ],
-            "RootCAFilePaths": [
-              "CertStore/roots/caLocalhostCert.cer"
+            "Intermediates": [
+              "CertStore/intermediates/anchorLocalhostCert.cer"
             ],
             "IssuedCerts": [
               {

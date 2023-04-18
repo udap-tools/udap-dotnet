@@ -14,7 +14,7 @@
   <ItemGroup>
     <Folder Include="CertStore/intermediates/" />
     <Folder Include="CertStore/issued/" />
-    <Folder Include="CertStore/roots/" />
+    <Folder Include="CertStore/anchors/" />
   </ItemGroup>
 
   <ItemGroup> <!-- SureFhir Community -->
@@ -33,7 +33,7 @@
     <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/weatherApiClientLocalhostCert.pfx" Link="CertStore/issued/weatherApiClientLocalhostCert.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/caLocalhostCert.cer" Link="CertStore/roots/caLocalhostCert.cer">
+    <None Include="../../_tests/Udap.PKI.Generator/certstores/localhost_community/caLocalhostCert.cer" Link="CertStore/anchors/caLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

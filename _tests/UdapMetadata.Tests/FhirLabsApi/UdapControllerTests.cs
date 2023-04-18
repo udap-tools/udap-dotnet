@@ -16,13 +16,18 @@ using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Newtonsoft.Json;
 using Udap.Client.Client;
+using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Model;
 using Udap.Util.Extensions;
@@ -36,7 +41,8 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
 {
     private Udap.Model.UdapMetadata? _wellKnownUdap;
     public ITestOutputHelper? Output { get; set; }
-    
+    public const string ProgramPath = "../../../../../examples/FhirLabsApi";
+
     public Udap.Model.UdapMetadata WellKnownUdap
     {
         get
@@ -60,7 +66,7 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
         // Still works with Windows but what a pain.  This feels fragile
         // TODO: 
         //
-        builder.UseSetting("contentRoot", "../../../../../examples/FhirLabsApi");
+        builder.UseSetting("contentRoot", ProgramPath);
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
@@ -79,26 +85,68 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
 public class UdapControllerTests : IClassFixture<ApiTestFixture>
 {
     private readonly ApiTestFixture _fixture;
+    private readonly ITestOutputHelper _testOutputHelper;
     private IServiceProvider _serviceProvider;
 
-    public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper output)
+    public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper output, ITestOutputHelper testOutputHelper)
     {
+        //
+        // Fixture is for FHIR Server configuration
+        //
         if (fixture == null) throw new ArgumentNullException(nameof(fixture));
         fixture.Output = output;
         _fixture = fixture;
+        _testOutputHelper = testOutputHelper;
+
+
+        //
+        // This are is for client Dependency injection and Configuration
+        //
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", false, true)
+            // .AddUserSecrets<UdapControllerTests>()
+            .Build();
 
         //
         // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory
         //
         var services = new ServiceCollection();
 
-        services.AddScoped <ICertificateStore, ClientMemoryCertificateStore>();
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddXUnit(output);
+        });
+        
+        // UDAP CertStore
+        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
+        services.AddSingleton<ICertificateStore>(sp =>
+            new FileCertificateStore(
+                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                new Mock<ILogger<FileCertificateStore>>().Object,
+                "FhirLabsApi"));
+
+        var problemFlags = X509ChainStatusFlags.NotTimeValid |
+                           X509ChainStatusFlags.Revoked |
+                           X509ChainStatusFlags.NotSignatureValid |
+                           X509ChainStatusFlags.InvalidBasicConstraints |
+                           X509ChainStatusFlags.CtlNotTimeValid |
+                           // X509ChainStatusFlags.OfflineRevocation |
+                           X509ChainStatusFlags.CtlNotSignatureValid;
+                       // X509ChainStatusFlags.RevocationStatusUnknown;
+
+
+        services.TryAddSingleton<TrustChainValidator>(sp => new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>()));
+
         services.AddScoped<IUdapClient>(sp => 
             new UdapClient(_fixture.CreateClient(), 
-                sp.GetRequiredService<ICertificateStore>(), 
-                new Mock<ILogger<UdapClient>>().Object));
+                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<ICertificateStore>(),
+                sp.GetRequiredService<ILogger<UdapClient>>()));
 
+        //
         // Use this method in an application
+        //
         //services.AddHttpClient<IUdapClient, UdapClient>();
 
         _serviceProvider = services.BuildServiceProvider();
@@ -107,16 +155,14 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     [Fact]
     public async Task UdapClientTest()
     {
-        // var memoryStore = _serviceProvider.GetRequiredService<ICertificateStore>();
-        // memoryStore.IntermediateCertificates = new List<X509Certificate2>();
-        // memoryStore.IntermediateCertificates.Add(X509Certificate2.CreateFromPemFile(""));
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
 
-        var httpStatusCode = await udapClient.ValidateResource(_fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
-        Assert.Equal(HttpStatusCode.OK, httpStatusCode);
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "http://localhost");
+        
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
-
-
     }
 
     /// <summary>
@@ -286,8 +332,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()));
 
         var tokenHandler = new JwtSecurityTokenHandler();
-
-
+        
         tokenHandler.ValidateToken(_fixture.WellKnownUdap.SignedMetadata, new TokenValidationParameters
         {
             ValidateIssuer = false,

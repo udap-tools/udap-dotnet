@@ -172,7 +172,8 @@ namespace Udap.Client.System.Tests
             var client = new HttpClient();
             var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
             {
-                Address = "https://fhirlabs.net:7016/fhir/r4/.well-known/udap", 
+                Address = "https://fhirlabs.net/fhir/r4", 
+                Community = "udap://surefhir.labs",
                 Policy = new DiscoveryPolicy { 
                     ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                     ValidateEndpoints = false   // Authority endpoints are not hosted on same domain as Identity Provider.
@@ -183,7 +184,7 @@ namespace Udap.Client.System.Tests
             // var discoJsonFormatted = JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
             //_testOutputHelper.WriteLine(discoJsonFormatted);
 
-            var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
+            var metadata = disco.Json.Deserialize<UdapMetadata>();
             var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
             var tokenHeader = jwt.Header;
             // _testOutputHelper.WriteLine(tokenHeader.X5c);
@@ -196,7 +197,7 @@ namespace Udap.Client.System.Tests
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[] { "https://fhirlabs.net:7016/fhir/r4" }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                ValidIssuers = new[] { "https://fhirlabs.net/fhir/r4" }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(cert),
@@ -234,7 +235,7 @@ namespace Udap.Client.System.Tests
             // var discoJsonFormatted = JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
             // _testOutputHelper.WriteLine(discoJsonFormatted);
 
-            var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
+            var metadata = disco.Json.Deserialize<UdapMetadata>();
 
             var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
             var tokenHeader = jwt.Header;
@@ -293,12 +294,13 @@ namespace Udap.Client.System.Tests
             var sp = services.BuildServiceProvider();
             var certStore = sp.GetRequiredService<ICertificateStore>();
             var certificateStore = await certStore.Resolve();
-            var roots = certificateStore.IntermediateCertificates;
-
-            // var anchors = certificateStore.AnchorCertificates
-            //     .Where(c => c.Community == communityName)
-            //     .OrderBy(c => X509Certificate2.CreateFromPem(c.Certificate).NotBefore)
-            //     .Select(c => c.Certificate);
+            var intermediates = certificateStore.IntermediateCertificates.ToArray().ToX509Collection();
+            var anchors = certificateStore.AnchorCertificates
+                .Where(c => c.Community == communityName)
+                .Select(c => X509Certificate2.CreateFromPem(c.Certificate))
+                .OrderBy(certificate => certificate.NotBefore)
+                .ToArray()
+                .ToX509Collection();
             
             var validator = new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>());
             validator.Problem += _diagnosticsChainValidator.OnChainProblem;
@@ -311,8 +313,8 @@ namespace Udap.Client.System.Tests
             return validator.IsTrustedCertificate(
                 "client_name",
                 issuedCertificate2,
-                null,
-                roots.ToArray().ToX509Collection()!, 
+                intermediates,
+                anchors!, 
                 out _, 
                 out _);
         }

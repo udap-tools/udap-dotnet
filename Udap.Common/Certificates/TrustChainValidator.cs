@@ -111,6 +111,20 @@ namespace Udap.Common.Certificates
             _logger = logger;
         }
 
+        public bool IsTrustedCertificate(
+            string clientName,
+            X509Certificate2 certificate,
+            X509Certificate2Collection? intermediateCertificates,
+            X509Certificate2Collection anchorCertificates)
+        {
+            return IsTrustedCertificate(
+                clientName,
+                certificate,
+                intermediateCertificates,
+                anchorCertificates,
+                out X509ChainElementCollection? _,
+                out _);
+        }
 
         public bool IsTrustedCertificate(string clientName,
             X509Certificate2 certificate,

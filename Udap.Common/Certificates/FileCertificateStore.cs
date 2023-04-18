@@ -83,9 +83,9 @@ public class FileCertificateStore : ICertificateStore
 
         foreach (var community in communities)
         {
-            if (community.RootCAFilePaths.Any())
+            if (community.Intermediates.Any())
             {
-                foreach (var communityRootCaFilePath in community.RootCAFilePaths)
+                foreach (var communityRootCaFilePath in community.Intermediates)
                 {
                     IntermediateCertificates.Add(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, communityRootCaFilePath)));
                 }
@@ -107,7 +107,7 @@ public class FileCertificateStore : ICertificateStore
 
                 AnchorCertificates.Add(new Anchor(new X509Certificate2(path))
                 {
-                    Community = community.Name,
+                    Community = community.Name
                 });
             }
 
@@ -159,15 +159,13 @@ public class FileCertificateStore : ICertificateStore
                                 if (authorityIdentifierValue == null || 
                                     subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
                                 {
-                                    _logger.LogInformation($"Found root ca in {path} certificate.  Will add the root to roots if not already explicitly loaded.");
-
-                                    IntermediateCertificates.Add(x509Cert);
+                                    _logger.LogInformation($"Found intermediate in {path} certificate.  Will add if not already explicitly loaded.");
+                                    AnchorCertificates.Add(new Anchor(x509Cert) { Community = community.Name });
                                 }
                                 else
                                 {
-                                    _logger.LogInformation($"Found intermediate ca in {path} certificate.  Will add if not already explicitly loaded.");
-
-                                    AnchorCertificates.Add(new Anchor(x509Cert) { Community = community.Name });
+                                    _logger.LogInformation($"Found anchor in {path} certificate.  Will add the anchor to anchors if not already explicitly loaded.");
+                                    IntermediateCertificates.Add(x509Cert);
                                 }
                             }
                             else
@@ -190,5 +188,6 @@ public class FileCertificateStore : ICertificateStore
             }
         }
     }
+
 }
 

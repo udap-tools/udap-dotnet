@@ -281,7 +281,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
     
     [Fact]
-    public async Task RegisrationSuccessTest()
+    public async Task RegistrationSuccessTest()
     {
         using var client = _fixture.CreateClient();
         await ResetClientInDatabase();

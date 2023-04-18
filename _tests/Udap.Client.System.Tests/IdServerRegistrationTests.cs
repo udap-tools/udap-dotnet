@@ -879,7 +879,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         handler.ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
         {
             chain!.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-            chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer"));
+            chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
             chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
             return chain.Build(cert!);
         };
@@ -1732,7 +1732,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         handler.ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
         {
             chain!.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-            chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/roots/SureFhirLabs_CA.cer"));
+            chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
             chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
             return chain.Build(cert!);
         };

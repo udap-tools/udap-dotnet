@@ -70,16 +70,16 @@
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
 
-    private List<string> sans = new List<string>();
+    private List<string> _sans = new List<string>();
 
-    PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
+    readonly PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
     private bool _checkServerSession = false;
 
     protected override async Task OnInitializedAsync()
     {
         var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
-        AppState.SetProperty(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
-        SetCertLoadedColor(clientCertificateLoadStatus.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
+        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
         RunTimer();
     }
 
@@ -96,8 +96,8 @@
     private async Task Events_OnFocus(FocusEventArgs obj)
     {
         var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
-        AppState.SetProperty(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
-        await SetCertLoadedColor(clientCertificateLoadStatus.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
+        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
         _checkServerSession = true;
     }
 
@@ -196,6 +196,6 @@
 
     public void Dispose()
     {
-        _periodicTimer?.Dispose();
+        _periodicTimer.Dispose();
     } 
 }

@@ -298,9 +298,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         disco.IsError.Should().BeTrue(disco.Raw);
         udapClient.UdapServerMetaData.Should().NotBeNull();
-        _diagnosticsChainValidator.ProblemCalled.Should().BeTrue($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-        _diagnosticsChainValidator.UntrustedCalled.Should().BeTrue();
-        _diagnosticsChainValidator.UnTrustedCertificate.Should().Be("CN=SureFhir-CA, OU=Root, O=Fhir Coding, L=Portland, S=Oregon, C=US");
+         _diagnosticsChainValidator.UntrustedCalled.Should().BeTrue();
+        _diagnosticsChainValidator.UnTrustedCertificate.Should().Be("CN=localhost3, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
+        _diagnosticsChainValidator.ProblemCalled.Should().BeFalse();
+        _diagnosticsChainValidator.ErrorCalled.Should().BeFalse();
     }
 
 

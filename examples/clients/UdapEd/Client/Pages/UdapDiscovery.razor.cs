@@ -11,6 +11,7 @@ using System.Collections;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
+using BQuery;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
@@ -36,9 +37,9 @@ public partial class UdapDiscovery: IDisposable
 
     [Inject] private DiscoveryService DiscoveryService { get; set; } = null!;
 
-    PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
+    readonly PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
     
-    private bool _checkServerSession = false;
+    private bool _checkServerSession;
 
     private string? _result;
 
@@ -53,7 +54,7 @@ public partial class UdapDiscovery: IDisposable
 
             if (AppState.UdapMetadata == null)
             {
-                return _result;
+                return _result ?? string.Empty;
             }
 
             return JsonSerializer.Serialize(AppState.UdapMetadata, new JsonSerializerOptions { WriteIndented = true });
@@ -61,7 +62,7 @@ public partial class UdapDiscovery: IDisposable
         set => _result = value;
     }
 
-    private string _baseUrl;
+    private string? _baseUrl;
 
     private string? BaseUrl
     {
@@ -82,7 +83,7 @@ public partial class UdapDiscovery: IDisposable
         }
     }
 
-    private string _community;
+    private string? _community;
 
     private string? Community
     {
@@ -106,6 +107,37 @@ public partial class UdapDiscovery: IDisposable
 
     public Color CertLoadedColor { get; set; } = Color.Error;
 
+    protected override async Task OnInitializedAsync()
+    {
+        var clientCertificateLoadStatus = await DiscoveryService.AnchorCertificateLoadStatus();
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
+        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
+        RunTimer();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Bq.Events.OnBlur += Events_OnBlur;
+            Bq.Events.OnFocusAsync += Events_OnFocus;
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task Events_OnFocus(FocusEventArgs obj)
+    {
+        var clientCertificateLoadStatus = await DiscoveryService.AnchorCertificateLoadStatus();
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
+        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
+        _checkServerSession = true;
+    }
+
+    private void Events_OnBlur(FocusEventArgs obj)
+    {
+        _checkServerSession = false;
+    }
+
     private async Task GetMetadata()
     {
         Result = "Loading ...";
@@ -123,13 +155,13 @@ public partial class UdapDiscovery: IDisposable
                 : string.Empty;
             await AppState.SetPropertyAsync(this, nameof(AppState.BaseUrl), BaseUrl);
 
-            if (_result.Contains("udap_versions_supported"))
+            if (_result != null && _result.Contains("udap_versions_supported"))
             {
                 AppendOrMoveBaseUrl(BaseUrl);
             }
             else
             {
-                RemoveBaseUrl();
+                await RemoveBaseUrl();
             }
         }
         catch (Exception ex)
@@ -206,7 +238,7 @@ public partial class UdapDiscovery: IDisposable
         ErrorBoundary?.Recover();
     }
 
-    private string? GetJwtHeader()
+    private string GetJwtHeader()
     {
         var jwt = new JwtSecurityToken(AppState.UdapMetadata?.SignedMetadata);
         return UdapEd.Shared.JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader));
@@ -267,6 +299,6 @@ public partial class UdapDiscovery: IDisposable
 
     public void Dispose()
     {
-        _periodicTimer?.Dispose();
+        _periodicTimer.Dispose();
     }
 }

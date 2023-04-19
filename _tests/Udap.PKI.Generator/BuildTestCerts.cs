@@ -712,6 +712,17 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
+                $"{LocalhostCertStore}/localhost_fhirlabs_community3",                      //communityStorePath
+                "caLocalhostCert3",                                                         //anchorName
+                "intermediateLocalhostCert3",                                               //intermediateName
+                "fhirLabsApiClientLocalhostCert3",                                          //issuedName
+                "CN=localhost3, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",//issuedDistinguishedName
+                new List<string> { "http://localhost/fhir/r4" },                            //SubjAltNames
+                "FhirLabsApi"                                                               //deliveryProjectPath    
+            };
+
+            yield return new object[]
+            {
                 $"{LocalhostCertStore}/localhost_weatherapi_community1",                    //communityStorePath
                 "caWeatherApiLocalhostCert",                                                //anchorName
                 "intermediateWeatherApiLocalhostCert",                                      //intermediateName

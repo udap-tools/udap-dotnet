@@ -1,7 +1,7 @@
 ﻿@page "/udapDiscovery"
 @using UdapEd.Shared
 
-
+<InputFile id="anchorFileInput" OnChange="UploadFilesAsync" hidden />
 <ErrorBoundary @ref="ErrorBoundary">
   <ChildContent>
     <MudGrid Class="mt-4">
@@ -12,23 +12,36 @@
         <MudCard Class="pa-2 ma-2" Elevation="3">
             <MudCardActions>
                 
-              <MudGrid Spacing="2" Justify="Justify.FlexStart">
-              <MudItem  >
+                <MudGrid Spacing="2" Justify="Justify.FlexStart">
+                    <MudItem  >
                         <MudButton Class="mt-3"
                                    Color="Color.Primary"
                                    ButtonType="ButtonType.Button"
                                    Variant="Variant.Filled"
-                                   Disabled="@(!AppState.CertificateLoaded)"
+                                   Disabled="@(!AppState.AnchorLoaded)"
                                    OnClick="GetMetadata">Query</MudButton>
                     </MudItem>
-              <MudItem >
+                    <MudItem >
                         <MudButton Class="mt-3"
                                    Color="Color.Primary"
                                    ButtonType="ButtonType.Button"
                                    Variant="Variant.Filled"
                                    OnClick="RemoveBaseUrl">Remove Base Url</MudButton>
                     </MudItem>
+                    <MudSpacer/>
+                    <MudItem>
+                        <MudFab Class="ma-2"
+                                HtmlTag="label"
+                                Size="Size.Small"
+                                Color="@CertLoadedColor"
+                                Icon="@AppState.CertificateIcon"
+                                Label="Anchor Certificate"
+                                Title="Upload Anchor Certificate"
+                                IconSize="Size.Small"
+                                for="anchorFileInput" />
+                    </MudItem>
                 </MudGrid>
+
             </MudCardActions>
             <MudCardContent>
                 <MudGrid Spacing="2" Justify="Justify.FlexStart">

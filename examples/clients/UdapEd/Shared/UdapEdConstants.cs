@@ -2,9 +2,9 @@
 
 public static class UdapEdConstants
 {
-    public const string CLIENT_CERT_WITH_KEY = "clientCertWithKey";
-    public const string CLIENT_CERT = "clientCertKey";
-
+    public const string CLIENT_CERTIFICATE_WITH_KEY = "clientCertificateWithKey";
+    public const string CLIENT_CERTIFICATE = "clientCertificate";
+    public const string ANCHOR_CERTIFICATE = "anchorCertificate";
     public const string CLIENT_NAME = "FhirLabs UdapEd";
 
     public const string TOKEN = "Token";

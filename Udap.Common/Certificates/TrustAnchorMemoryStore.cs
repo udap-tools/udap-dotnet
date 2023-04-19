@@ -11,9 +11,12 @@ using Udap.Common.Models;
 
 namespace Udap.Common.Certificates;
 
-public interface ICertificateStore
+public class TrustAnchorMemoryStore : ITrustAnchorStore
 {
-    ICollection<Anchor> AnchorCertificates { get; set; }
-    ICollection<IssuedCertificate> IssuedCertificates { get; set; }
-    Task<ICertificateStore> Resolve();
+    public ICollection<Anchor> AnchorCertificates { get; set; } = new HashSet<Anchor>();
+
+    public Task<ITrustAnchorStore> Resolve()
+    {
+        return Task.FromResult(this as ITrustAnchorStore);
+    }
 }

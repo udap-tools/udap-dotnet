@@ -17,7 +17,7 @@
           HtmlTag="label"
           Size="Size.Small"
           Color="@CertLoadedColor"
-          Icon="@_certificate"
+          Icon="@AppState.CertificateIcon"
           Label="Client Cert"
           Title="Upload Client Certificate"
           IconSize="Size.Small"
@@ -27,7 +27,7 @@
           Class="ma-2"
           Size="Size.Small"
           Color="@CertLoadedColor"
-          Icon="@_certificate"
+          Icon="@AppState.CertificateIcon"
           Label="Test Cert"
           Title="Use Test Client Certificate"
           IconSize="Size.Small"
@@ -78,7 +78,7 @@
     protected override async Task OnInitializedAsync()
     {
         var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
-        AppState.SetProperty(this, nameof(AppState.CertificateInfo), clientCertificateLoadStatus);
+        AppState.SetProperty(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
         SetCertLoadedColor(clientCertificateLoadStatus.CertLoaded);
         RunTimer();
     }
@@ -96,7 +96,7 @@
     private async Task Events_OnFocus(FocusEventArgs obj)
     {
         var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
-        AppState.SetProperty(this, nameof(AppState.CertificateInfo), clientCertificateLoadStatus);
+        AppState.SetProperty(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
         await SetCertLoadedColor(clientCertificateLoadStatus.CertLoaded);
         _checkServerSession = true;
     }
@@ -151,12 +151,7 @@
         await JSRuntime.InvokeVoidAsync("open", "http://udap.org/", "_blank");
     }
 
-
-    //Certificate from Material Design Icons
-    string _certificate = "<svg style=\"width:24px;height:24px\" viewBox=\"0 0 24 24\">" +
-        "<path fill=\"currentColor\" d=\"M13 21L15 20L17 21V14H13M17 9V7L15 8L13 7V9L11 10L13 11V13L15 12L17 13V11L19 10M20 3H4A2 2 0 0 0 2 5V15A2 2 0 0 0 4 17H11V15H4V5H20V15H19V17H20A2 2 0 0 0 22 15V5A2 2 0 0 0 20 3M11 8H5V6H11M9 11H5V9H9M11 14H5V12H11Z\" />" +
-        "</svg>";
-
+    
 
     private async Task UploadFilesAsync(InputFileChangeEventArgs e)
     {
@@ -167,7 +162,7 @@
         await uploadStream.CopyToAsync(ms);
         var certBytes = ms.ToArray();
 
-        await RegisterService.UploadClientCert(Convert.ToBase64String(certBytes));
+        await RegisterService.UploadClientCertificate(Convert.ToBase64String(certBytes));
 
         //dialog
         var options = new DialogOptions { CloseOnEscapeKey = true };
@@ -175,14 +170,14 @@
         var result = await dialog.Result;
         var certViewModel = await RegisterService.ValidateCertificate(result.Data.ToString() ?? "");
         await SetCertLoadedColor(certViewModel?.CertLoaded);
-        await AppState.SetPropertyAsync(this, nameof(AppState.CertificateInfo), certViewModel);
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
     }
 
     private async Task LoadTestCertificate()
     {
         var certViewModel = await RegisterService.LoadTestCertificate();
         await SetCertLoadedColor(certViewModel.CertLoaded);
-        await AppState.SetPropertyAsync(this, nameof(AppState.CertificateInfo), certViewModel);
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
     }
 
     async void RunTimer()
@@ -192,7 +187,7 @@
             if (_checkServerSession)
             {
                 var certViewModel = await RegisterService.ClientCertificateLoadStatus();
-                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateInfo), certViewModel);
+                await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
                 await SetCertLoadedColor(certViewModel?.CertLoaded);
             }
         }

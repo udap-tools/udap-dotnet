@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +7,10 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
+using Udap.Client.Client;
 using Udap.Client.Internal;
+using Udap.Common.Certificates;
+using Udap.Common.Models;
 using Udap.Model;
 using Udap.Util.Extensions;
 using UdapEd.Server.Extensions;
@@ -20,12 +24,12 @@ namespace UdapEd.Server.Controllers;
 [EnableRateLimiting(RateLimitExtensions.Policy)]
 public class MetadataController : Controller
 {
-    private readonly HttpClient _httpClient;
+    private readonly IUdapClient _udapClient;
     private readonly ILogger<MetadataController> _logger;
 
-    public MetadataController(HttpClient httpClient, ILogger<MetadataController> logger)
+    public MetadataController(IUdapClient udapClient, ILogger<MetadataController> logger)
     {
-        _httpClient = httpClient;
+        _udapClient = udapClient;
         _logger = logger;
     }
 
@@ -34,12 +38,67 @@ public class MetadataController : Controller
     public async Task<IActionResult> Get([FromQuery] string metadataUrl)
     {
         var baseUrl = Base64UrlEncoder.Decode(metadataUrl);
-        _logger.LogDebug(baseUrl);
-        var response = await _httpClient.GetStringAsync(baseUrl);
-        var result = JsonSerializer.Deserialize<UdapMetadata>(response);
-        HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseUrl.GetBaseUrlFromMetadataUrl());
+        var anchorString = HttpContext.Session.GetString(UdapEdConstants.ANCHOR_CERTIFICATE);
 
-        return Ok(result);
+        if (anchorString != null)
+        {
+            var certBytes = Convert.FromBase64String(anchorString);
+            var anchorCert = new X509Certificate2(certBytes);
+            var trustAnchorStore = new TrustAnchorMemoryStore()
+            {
+                AnchorCertificates = new HashSet<Anchor>
+                {
+                    new Anchor(anchorCert)
+                }
+            };
+            var response = await _udapClient.ValidateResource(baseUrl, trustAnchorStore);
+            // var result = JsonSerializer.Deserialize<UdapMetadata>(response);
+            var result = _udapClient.UdapServerMetaData;
+            HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseUrl.GetBaseUrlFromMetadataUrl());
+
+            return Ok(result);
+        }
+
+        return BadRequest("Missing anchor");
+    }
+
+    [HttpPost("UploadAnchorCertificate")]
+    public IActionResult UploadAnchorCertificate([FromBody] string base64String)
+    {
+        HttpContext.Session.SetString(UdapEdConstants.ANCHOR_CERTIFICATE, base64String);
+
+        return Ok(new CertificateStatusViewModel { CertLoaded = CertLoadedEnum.Positive });
+    }
+
+    [HttpGet("IsAnchorCertificateLoaded")]
+    public IActionResult IsAnchorCertificateLoaded()
+    {
+        var result = new CertificateStatusViewModel
+        {
+            CertLoaded = CertLoadedEnum.Negative
+        };
+
+        try
+        {
+            var clientCertSession = HttpContext.Session.GetString(UdapEdConstants.ANCHOR_CERTIFICATE);
+
+            if (clientCertSession != null)
+            {
+                result.CertLoaded = CertLoadedEnum.Positive;
+            }
+            else
+            {
+                result.CertLoaded = CertLoadedEnum.Negative;
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex.Message);
+
+            return Ok(result);
+        }
     }
 
     [HttpPut]

@@ -12,15 +12,18 @@ using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.IdentityModel.Tokens;
+using MudBlazor;
 using UdapEd.Client.Services;
 using UdapEd.Client.Shared;
 using UdapEd.Shared;
+using UdapEd.Shared.Model;
 
 namespace UdapEd.Client.Pages;
 
-public partial class UdapDiscovery
+public partial class UdapDiscovery: IDisposable
 {
     [CascadingParameter]
     public CascadingAppState AppState { get; set; } = null!;
@@ -30,6 +33,12 @@ public partial class UdapDiscovery
     [Inject] DiscoveryService MetadataService { get; set; } = null!;
 
     [Inject] NavigationManager NavigationManager { get; set; } = null!;
+
+    [Inject] private DiscoveryService DiscoveryService { get; set; } = null!;
+
+    PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
+    
+    private bool _checkServerSession = false;
 
     private string? _result;
 
@@ -95,6 +104,8 @@ public partial class UdapDiscovery
         }
     }
 
+    public Color CertLoadedColor { get; set; } = Color.Error;
+
     private async Task GetMetadata()
     {
         Result = "Loading ...";
@@ -130,11 +141,11 @@ public partial class UdapDiscovery
 
     private async Task<IEnumerable<string>?> GetMetadata(string value, CancellationToken token)
     {
-        await Task.Delay(5);
+        await Task.Delay(5, token);
 
         if (AppState.BaseUrls == null)
         {
-            AppState.SetProperty(this, nameof(AppState.BaseUrls), new OrderedDictionary(), true, false);
+            await AppState.SetPropertyAsync(this, nameof(AppState.BaseUrls), new OrderedDictionary(), true, false);
         }
 
         if (AppState.BaseUrls!.Contains(value))
@@ -199,5 +210,63 @@ public partial class UdapDiscovery
     {
         var jwt = new JwtSecurityToken(AppState.UdapMetadata?.SignedMetadata);
         return UdapEd.Shared.JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader));
+    }
+
+    private async Task UploadFilesAsync(InputFileChangeEventArgs e)
+    {
+        long maxFileSize = 1024 * 10;
+
+        var uploadStream = await new StreamContent(e.File.OpenReadStream(maxFileSize)).ReadAsStreamAsync();
+        var ms = new MemoryStream();
+        await uploadStream.CopyToAsync(ms);
+        var certBytes = ms.ToArray();
+
+        var certViewModel = await DiscoveryService.UploadAnchorCertificate(Convert.ToBase64String(certBytes));
+
+        await SetCertLoadedColor(certViewModel?.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.AnchorCertificateInfo), certViewModel);
+    }
+
+    private async Task SetCertLoadedColor(CertLoadedEnum? isCertLoaded)
+    {
+        switch (isCertLoaded)
+        {
+            case CertLoadedEnum.Negative:
+                CertLoadedColor = Color.Error;
+                await AppState.SetPropertyAsync(this, nameof(AppState.AnchorLoaded), false);
+                break;
+            case CertLoadedEnum.Positive:
+                CertLoadedColor = Color.Success;
+                await AppState.SetPropertyAsync(this, nameof(AppState.AnchorLoaded), true);
+                break;
+            case CertLoadedEnum.InvalidPassword:
+                CertLoadedColor = Color.Warning;
+                await AppState.SetPropertyAsync(this, nameof(AppState.AnchorLoaded), false);
+                break;
+            default:
+                CertLoadedColor = Color.Error;
+                await AppState.SetPropertyAsync(this, nameof(AppState.AnchorLoaded), false);
+                break;
+        }
+
+        this.StateHasChanged();
+    }
+
+    async void RunTimer()
+    {
+        while (await _periodicTimer.WaitForNextTickAsync())
+        {
+            if (_checkServerSession)
+            {
+                var certViewModel = await DiscoveryService.AnchorCertificateLoadStatus();
+                await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
+                await SetCertLoadedColor(certViewModel?.CertLoaded);
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        _periodicTimer?.Dispose();
     }
 }

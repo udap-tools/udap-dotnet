@@ -11,9 +11,8 @@ using Udap.Common.Models;
 
 namespace Udap.Common.Certificates;
 
-public interface ICertificateStore
+public interface IPrivateCertificateStore
 {
-    ICollection<Anchor> AnchorCertificates { get; set; }
     ICollection<IssuedCertificate> IssuedCertificates { get; set; }
-    Task<ICertificateStore> Resolve();
+    Task<IPrivateCertificateStore> Resolve();
 }

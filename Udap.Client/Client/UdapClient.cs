@@ -32,6 +32,12 @@ namespace Udap.Client.Client
             string? community = null,
             DiscoveryPolicy? discoveryPolicy = null);
 
+        Task<UdapDiscoveryDocumentResponse> ValidateResource(
+            string baseUrl,
+            ITrustAnchorStore trustAnchorStore,
+            string? community = null,
+            DiscoveryPolicy? discoveryPolicy = null);
+
         UdapMetadata? UdapDynamicClientRegistrationDocument { get; set; }
         UdapMetadata? UdapServerMetaData { get; set; }
 
@@ -55,20 +61,20 @@ namespace Udap.Client.Client
     {
         private readonly HttpClient _httpClient;
         private readonly TrustChainValidator _trustChainValidator;
-        private readonly ICertificateStore _certificateStore;
+        private ITrustAnchorStore? _trustAnchorStore;
         private DiscoveryPolicy _discoveryPolicy;
         private readonly ILogger<UdapClient> _logger;
 
         public UdapClient(
             HttpClient httpClient,
             TrustChainValidator trustChainValidator,
-            ICertificateStore certificateStore,
             ILogger<UdapClient> logger,
+            ITrustAnchorStore? trustAnchorStore = null,
             DiscoveryPolicy? discoveryPolicy = null)
         {
             _httpClient = httpClient;
             _trustChainValidator = trustChainValidator;
-            _certificateStore = certificateStore;
+            _trustAnchorStore = trustAnchorStore;
             _logger = logger;
             _discoveryPolicy = discoveryPolicy ?? DiscoveryPolicy.DefaultMetadataServerPolicy();
         }
@@ -103,6 +109,14 @@ namespace Udap.Client.Client
             remove => _trustChainValidator.Error -= value;
         }
 
+        /// <summary>
+        /// Typical dependency injection client where the trust anchors are loaded from a static resource.
+        /// </summary>
+        /// <param name="baseUrl"></param>
+        /// <param name="community"></param>
+        /// <param name="discoveryPolicy"></param>
+        /// <returns></returns>
+        /// <exception cref="UnauthorizedAccessException"></exception>
         public async Task<UdapDiscoveryDocumentResponse> ValidateResource(
             string baseUrl, 
             string? community,
@@ -142,6 +156,25 @@ namespace Udap.Client.Client
             }
         }
 
+        /// <summary>
+        /// Client dynamically supplying the trustAnchorStore
+        /// </summary>
+        /// <param name="baseUrl"></param>
+        /// <param name="trustAnchorStore"></param>
+        /// <param name="community"></param>
+        /// <param name="discoveryPolicy"></param>
+        /// <returns></returns>
+        public Task<UdapDiscoveryDocumentResponse> ValidateResource(
+            string baseUrl,
+            ITrustAnchorStore trustAnchorStore,
+            string? community = null,
+            DiscoveryPolicy? discoveryPolicy = null)
+        {
+            _trustAnchorStore = trustAnchorStore;
+
+            return ValidateResource(baseUrl, community, discoveryPolicy);
+        }
+
         private async Task<bool> ValidateMetadata(UdapMetadata udapServerMetaData, string baseUrl, string? community)
         {
             var tokenHandler = new JsonWebTokenHandler();
@@ -176,7 +209,7 @@ namespace Udap.Client.Client
                 return false;
             }
 
-            var store = await _certificateStore.Resolve();
+            var store = _trustAnchorStore == null ? null : await _trustAnchorStore.Resolve();
             var anchors = X509Certificate2Collection(community, store).ToList();
             
             if (!anchors.Any())
@@ -185,19 +218,35 @@ namespace Udap.Client.Client
                 return false;
             }
 
+            var anchorCertificates = anchors.ToX509Collection();
+
+            if (anchorCertificates == null || !anchorCertificates.Any())
+            {
+                _logger.LogWarning($"{nameof(UdapClient)} does not contain any anchor certificates");
+                return false;
+            }
+
             return _trustChainValidator.IsTrustedCertificate(
                 nameof(UdapClient), 
                 publicCert,
-                anchors.SelectMany(a => a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate))).ToArray().ToX509Collection(),
-                anchors.ToX509Collection());
+                anchors.SelectMany(a => a.Intermediates == null ? 
+                        Enumerable.Empty<X509Certificate2>() : 
+                        a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate)))
+                    .ToArray().ToX509Collection(),
+                anchorCertificates);
         }
 
 
-        private static IEnumerable<Anchor> X509Certificate2Collection(string? community, ICertificateStore store)
+        private static IEnumerable<Anchor> X509Certificate2Collection(string? community, ITrustAnchorStore? store)
         {
             IEnumerable<Anchor> anchorCertificates;
 
-            if (community != null)
+            if (store == null)
+            {
+                return Enumerable.Empty<Anchor>();
+            }
+
+            if (community != null && store.AnchorCertificates.Any(a => a.Community != null))
             {
                 anchorCertificates = store.AnchorCertificates
                     .Where(a => a.Community == community)

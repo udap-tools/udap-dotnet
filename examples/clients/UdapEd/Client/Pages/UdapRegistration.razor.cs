@@ -441,9 +441,9 @@ public partial class UdapRegistration
     protected override void OnParametersSet()
     {
         ErrorBoundary?.Recover();
-        if (AppState.CertificateInfo?.SubjectAltNames != null && AppState.CertificateInfo.SubjectAltNames.Any())
+        if (AppState.ClientCertificateInfo?.SubjectAltNames != null && AppState.ClientCertificateInfo.SubjectAltNames.Any())
         {
-            _subjectAltName = AppState.CertificateInfo.SubjectAltNames.First();
+            _subjectAltName = AppState.ClientCertificateInfo.SubjectAltNames.First();
             StateHasChanged();
             Task.Delay(50);
         }

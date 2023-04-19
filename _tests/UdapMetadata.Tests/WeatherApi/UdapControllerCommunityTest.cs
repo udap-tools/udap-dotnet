@@ -99,10 +99,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         // UDAP CertStore
         services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
-        services.AddSingleton<ICertificateStore>(sp =>
-            new FileCertificateStore(
+        services.AddSingleton<ITrustAnchorStore>(sp =>
+            new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<FileCertificateStore>>().Object,
+                new Mock<ILogger<TrustAnchorFileStore>>().Object,
                 "WeatherApi"));
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
@@ -115,14 +115,14 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         // X509ChainStatusFlags.RevocationStatusUnknown;
 
 
-        services.TryAddSingleton(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+        services.TryAddScoped(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags,
             testOutputHelper.ToLogger<TrustChainValidator>()));
 
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
                 sp.GetRequiredService<TrustChainValidator>(),
-                sp.GetRequiredService<ICertificateStore>(),
-                sp.GetRequiredService<ILogger<UdapClient>>()));
+                sp.GetRequiredService<ILogger<UdapClient>>(),
+                sp.GetRequiredService<ITrustAnchorStore>()));
 
         //
         // Use this method in an application
@@ -249,10 +249,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         // UDAP CertStore
         services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
-        services.AddSingleton<ICertificateStore>(sp =>
-            new FileCertificateStore(
+        services.AddSingleton<ITrustAnchorStore>(sp =>
+            new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<FileCertificateStore>>().Object,
+                new Mock<ILogger<TrustAnchorFileStore>>().Object,
                 "WeatherApi"));
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
@@ -264,13 +264,13 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                            X509ChainStatusFlags.CtlNotSignatureValid |
                            X509ChainStatusFlags.RevocationStatusUnknown;
 
-        services.TryAddSingleton<TrustChainValidator>(sp => new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>()));
+        services.TryAddScoped<TrustChainValidator>(sp => new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>()));
 
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
                 sp.GetRequiredService<TrustChainValidator>(),
-                sp.GetRequiredService<ICertificateStore>(),
-                sp.GetRequiredService<ILogger<UdapClient>>()));
+                sp.GetRequiredService<ILogger<UdapClient>>(),
+                sp.GetRequiredService<ITrustAnchorStore>()));
 
         var serviceProvider = services.BuildServiceProvider();
 

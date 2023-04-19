@@ -7,11 +7,15 @@
 // */
 #endregion
 
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using Udap.Client.Authentication;
+using Udap.Client.Client;
 using Udap.Client.Rest;
+using Udap.Common;
+using Udap.Common.Certificates;
 using UdapEd.Server.Authentication;
 using UdapEd.Server.Extensions;
 using UdapEd.Server.Rest;
@@ -44,40 +48,43 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 // builder.Services.AddBff();
 
+//
+// builder.Services.AddAuthentication(options =>
+//     {
+//         options.DefaultScheme = "cookie";
+//         options.DefaultChallengeScheme = "oidc";
+//         options.DefaultSignOutScheme = "oidc";
+//     })
+//     .AddCookie("cookie", options =>
+//     {
+//         options.Cookie.Name = "__UdapClientBackend";
+//         options.Cookie.SameSite = SameSiteMode.Strict;
+//     })
+//     .AddOpenIdConnect("oidc", options =>
+//     {
+//         options.Authority = "https://loclahost:5002";
+//
+//         // Udap Authorization code flow
+//         options.ClientId = "interactive.confidential";  //TODO Dynamic
+//         options.ClientSecret = "secret";
+//         options.ResponseType = "code";
+//         options.ResponseMode = "query";
+//
+//         options.MapInboundClaims = false;
+//         options.GetClaimsFromUserInfoEndpoint = true;
+//         options.SaveTokens = true;
+//
+//         // request scopes + refresh tokens
+//         options.Scope.Clear();
+//         options.Scope.Add("openid");
+//         options.Scope.Add("profile");
+//         options.Scope.Add("api");
+//         options.Scope.Add("offline_access");
+//
+//     });
 
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = "cookie";
-        options.DefaultChallengeScheme = "oidc";
-        options.DefaultSignOutScheme = "oidc";
-    })
-    .AddCookie("cookie", options =>
-    {
-        options.Cookie.Name = "__UdapClientBackend";
-        options.Cookie.SameSite = SameSiteMode.Strict;
-    })
-    .AddOpenIdConnect("oidc", options =>
-    {
-        options.Authority = "https://loclahost:5002";
-
-        // Udap Authorization code flow
-        options.ClientId = "interactive.confidential";  //TODO Dynamic
-        options.ClientSecret = "secret";
-        options.ResponseType = "code";
-        options.ResponseMode = "query";
-
-        options.MapInboundClaims = false;
-        options.GetClaimsFromUserInfoEndpoint = true;
-        options.SaveTokens = true;
-
-        // request scopes + refresh tokens
-        options.Scope.Clear();
-        options.Scope.Add("openid");
-        options.Scope.Add("profile");
-        options.Scope.Add("api");
-        options.Scope.Add("offline_access");
-
-    });
+builder.Services.AddScoped<TrustChainValidator>();
+builder.Services.AddHttpClient<IUdapClient, UdapClient>();
 
 builder.Services.AddScoped<IBaseUrlProvider, BaseUrlProvider>();
 builder.Services.AddScoped<IAccessTokenProvider, AccessTokenProvider>();

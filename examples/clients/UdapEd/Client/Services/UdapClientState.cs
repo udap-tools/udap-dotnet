@@ -44,7 +44,7 @@ public class UdapClientState : IAppState
 
     public UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest { get; set; }
 
-    public CertificateStatusViewModel? CertificateInfo { get; set; }
+    public CertificateStatusViewModel? ClientCertificateInfo { get; set; }
 
     public AccessCodeRequestResult? AccessCodeRequestResult { get; set; }
    

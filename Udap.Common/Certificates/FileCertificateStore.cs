@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -39,6 +39,7 @@ public class FileCertificateStore : ICertificateStore
             _resolved = false;
         });
     }
+    
     public Task<ICertificateStore> Resolve()
     {
         if (_resolved == false)
@@ -51,8 +52,10 @@ public class FileCertificateStore : ICertificateStore
     }
     
     public ICollection<Anchor> AnchorCertificates { get; set; } = new HashSet<Anchor>();
-    public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new HashSet<IssuedCertificate>();
 
+    
+    public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new HashSet<IssuedCertificate>();
+    
     // TODO convert to Lazy<T> to protect from race conditions
 
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
@@ -84,9 +87,9 @@ public class FileCertificateStore : ICertificateStore
             var intermediates = new List<Intermediate>();
             if (community.Intermediates.Any())
             {
-                foreach (var communityRootCaFilePath in community.Intermediates)
+                foreach (var intermediateFilePath in community.Intermediates)
                 {
-                    intermediates.Add(new Intermediate(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, communityRootCaFilePath))));
+                    intermediates.Add(new Intermediate(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, intermediateFilePath))));
                 }
             }
 

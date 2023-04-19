@@ -8,10 +8,8 @@
 #endregion
 
 using System.Net;
-using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
-using IdentityModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -80,7 +78,7 @@ public class AccessController : Controller
         [FromBody] AuthorizationCodeTokenRequestModel tokenRequestModel,
         [FromQuery] string alg)
     {
-        var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
+        var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERTIFICATE_WITH_KEY);
 
         if (clientCertWithKey == null)
         {
@@ -107,7 +105,7 @@ public class AccessController : Controller
         [FromBody] ClientCredentialsTokenRequestModel tokenRequestModel,
         [FromQuery] string alg)
     {
-        var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
+        var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERTIFICATE_WITH_KEY);
 
         if (clientCertWithKey == null)
         {

@@ -39,6 +39,21 @@ public class DiscoveryService
         }
     }
 
+    public async Task<CertificateStatusViewModel?> UploadAnchorCertificate(string certBytes)
+    {
+        var result = await _httpClient.PostAsJsonAsync("Metadata/UploadAnchorCertificate", certBytes);
+        result.EnsureSuccessStatusCode();
+
+        return await result.Content.ReadFromJsonAsync<CertificateStatusViewModel>();
+    }
+
+    public async Task<CertificateStatusViewModel?> AnchorCertificateLoadStatus()
+    {
+        var response = await _httpClient.GetFromJsonAsync<CertificateStatusViewModel>("Metadata/IsAnchorCertificateLoaded");
+
+        return response;
+    }
+
     public async Task<bool> SetBaseFhirUrl(string? baseFhirUrl, bool resetToken = false)
     {
         var response = await _httpClient.PutAsJsonAsync($"Metadata?resetToken={resetToken}", baseFhirUrl);

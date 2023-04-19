@@ -26,7 +26,7 @@
               </MudSelect>
           </MudItem>
 
-          @if (AppState.CertificateInfo?.SubjectAltNames != null)
+          @if (AppState.ClientCertificateInfo?.SubjectAltNames != null)
           {
               <MudItem md="4" sm="6" xs="12">
                   <MudSelect @bind-Value="_subjectAltName"
@@ -37,7 +37,7 @@
                              AdornmentColor="Color.Primary"
                              Variant="Variant.Outlined">
 
-                      @foreach (var item in AppState.CertificateInfo.SubjectAltNames)
+                      @foreach (var item in AppState.ClientCertificateInfo.SubjectAltNames)
                       {
                           <MudSelectItem Value="@item">@item</MudSelectItem>
                       }

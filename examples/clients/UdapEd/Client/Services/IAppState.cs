@@ -2,6 +2,7 @@
 using Udap.Model;
 using Udap.Model.Registration;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Model.Discovery;
 
 namespace UdapEd.Client.Services;
 
@@ -13,7 +14,7 @@ public interface IAppState
 
     OrderedDictionary BaseUrls { get; set; }
 
-    UdapMetadata? UdapMetadata { get; }
+    public MetadataVerificationModel? MetadataVerificationModel { get; }
 
     RawSoftwareStatementAndHeader SoftwareStatementBeforeEncoding { get; }
 

@@ -4,6 +4,7 @@
 @using UdapEd.Client.Services
 @using UdapEd.Shared.Model
 @using System.Collections.Specialized
+@using UdapEd.Shared.Model.Discovery
 @implements UdapEd.Client.Services.IAppState
 @inject ILocalStorageService LocalStorageService
 
@@ -115,7 +116,7 @@
 
     private ClientStatus _status = new ClientStatus(false, "Missing");
 
-    public UdapMetadata? UdapMetadata { get; private set; }
+    public MetadataVerificationModel? MetadataVerificationModel { get; private set; }
 
     public RawSoftwareStatementAndHeader? SoftwareStatementBeforeEncoding { get; private set; }
 

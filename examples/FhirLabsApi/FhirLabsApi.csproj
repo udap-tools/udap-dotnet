@@ -56,6 +56,12 @@
     <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert3.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert4.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert5.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="CertStore\issued\udap-sandbox-surescripts.p12">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

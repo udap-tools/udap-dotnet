@@ -9,7 +9,9 @@
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using BQuery;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using Udap.Model;
@@ -34,6 +36,8 @@ public partial class UdapRegistration
     [Inject] RegisterService RegisterService { get; set; } = null!;
 
     [Inject] NavigationManager NavigationManager { get; set; } = null!;
+
+    [Inject] IDialogService DialogService { get; set; } = null!;
 
     private string RawSoftwareStatementError { get; set; } = string.Empty;
 
@@ -114,9 +118,9 @@ public partial class UdapRegistration
         }
     }
 
-    private const string validStyle = "pre udap-indent-1";
-    private const string invalidStyle = "pre udap-indent-1 jwt-invalid";
-    public string ValidRawSoftwareStatementStyle { get; set; } = validStyle;
+    private const string VALID_STYLE = "pre udap-indent-1";
+    private const string INVALID_STYLE = "pre udap-indent-1 jwt-invalid";
+    public string ValidRawSoftwareStatementStyle { get; set; } = VALID_STYLE;
 
     private void PersistSoftwareStatement()
     {
@@ -133,12 +137,12 @@ public partial class UdapRegistration
                 Scope = beforeEncodingScope
             };
 
-            ValidRawSoftwareStatementStyle = validStyle;
+            ValidRawSoftwareStatementStyle = VALID_STYLE;
             AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), rawStatement);
         }
         catch
         {
-            ValidRawSoftwareStatementStyle = invalidStyle;
+            ValidRawSoftwareStatementStyle = INVALID_STYLE;
         }
     }
 
@@ -242,7 +246,7 @@ public partial class UdapRegistration
                 dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked.Create();
             }
 
-            dcrBuilder.WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
+            dcrBuilder.WithAudience(AppState.MetadataVerificationModel?.UdapServerMetaData?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName(UdapEdConstants.CLIENT_NAME)
@@ -251,7 +255,7 @@ public partial class UdapRegistration
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-                .WithScope(RegisterService.GetScopesForClientCredentials(AppState.UdapMetadata?.ScopesSupported));
+                .WithScope(RegisterService.GetScopesForClientCredentials(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported));
 
             dcrBuilder.Document.Subject = _subjectAltName;
             dcrBuilder.Document.Issuer = _subjectAltName;
@@ -278,7 +282,7 @@ public partial class UdapRegistration
     {
         try
         {
-            var scope = RegisterService.GetScopesForAuthorizationCode(AppState.UdapMetadata?.ScopesSupported);
+            var scope = RegisterService.GetScopesForAuthorizationCode(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported);
             
             UdapDcrBuilderForAuthorizationCodeUnchecked dcrBuilder;
 
@@ -292,7 +296,7 @@ public partial class UdapRegistration
             }
 
 
-            dcrBuilder.WithAudience(AppState.UdapMetadata?.RegistrationEndpoint)
+            dcrBuilder.WithAudience(AppState.MetadataVerificationModel?.UdapServerMetaData?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName(UdapEdConstants.CLIENT_NAME)
@@ -417,7 +421,7 @@ public partial class UdapRegistration
 
         var registrationRequest = new RegistrationRequest
         {
-            RegistrationEndpoint = AppState.UdapMetadata?.RegistrationEndpoint,
+            RegistrationEndpoint = AppState.MetadataVerificationModel?.UdapServerMetaData?.RegistrationEndpoint,
             UdapRegisterRequest = AppState.UdapRegistrationRequest
         };
 
@@ -447,5 +451,116 @@ public partial class UdapRegistration
             StateHasChanged();
             Task.Delay(50);
         }
+    }
+
+
+
+    readonly PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
+    private bool _checkServerSession = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
+        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
+        RunTimer();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Bq.Events.OnBlur += Events_OnBlur;
+            Bq.Events.OnFocusAsync += Events_OnFocus;
+        }
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task Events_OnFocus(FocusEventArgs obj)
+    {
+        var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
+        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
+        _checkServerSession = true;
+    }
+
+    private void Events_OnBlur(FocusEventArgs obj)
+    {
+        _checkServerSession = false;
+    }
+
+    private async Task SetCertLoadedColor(CertLoadedEnum? isCertLoaded)
+    {
+        switch (isCertLoaded)
+        {
+            case CertLoadedEnum.Negative:
+                CertLoadedColor = Color.Error;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
+                break;
+            case CertLoadedEnum.Positive:
+                CertLoadedColor = Color.Success;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), true);
+                break;
+            case CertLoadedEnum.InvalidPassword:
+                CertLoadedColor = Color.Warning;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
+                break;
+            default:
+                CertLoadedColor = Color.Error;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
+                break;
+        }
+
+        this.StateHasChanged();
+    }
+
+
+    public Color CertLoadedColor { get; set; } = Color.Error;
+
+
+    private async Task UploadFilesAsync(InputFileChangeEventArgs e)
+    {
+        long maxFileSize = 1024 * 10;
+
+        var uploadStream = await new StreamContent(e.File.OpenReadStream(maxFileSize)).ReadAsStreamAsync();
+        var ms = new MemoryStream();
+        await uploadStream.CopyToAsync(ms);
+        var certBytes = ms.ToArray();
+
+        await RegisterService.UploadClientCertificate(Convert.ToBase64String(certBytes));
+
+        //dialog
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<Password_Dialog>("Certificate Password", options);
+        var result = await dialog.Result;
+        var certViewModel = await RegisterService.ValidateCertificate(result.Data.ToString() ?? "");
+        await SetCertLoadedColor(certViewModel?.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
+    }
+
+    private async Task LoadTestCertificate()
+    {
+        var certViewModel = await RegisterService.LoadTestCertificate();
+        await SetCertLoadedColor(certViewModel.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
+    }
+
+    async void RunTimer()
+    {
+        while (await _periodicTimer.WaitForNextTickAsync())
+        {
+            if (_checkServerSession)
+            {
+                var certViewModel = await RegisterService.ClientCertificateLoadStatus();
+                await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
+                await SetCertLoadedColor(certViewModel?.CertLoaded);
+            }
+        }
+    }
+
+
+    public void Dispose()
+    {
+        _periodicTimer.Dispose();
     }
 }

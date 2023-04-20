@@ -10,6 +10,7 @@
 using System.Collections;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.NetworkInformation;
 using System.Text.Json;
 using BQuery;
 using Microsoft.AspNetCore.Components;
@@ -52,12 +53,13 @@ public partial class UdapDiscovery: IDisposable
                 return _result;
             }   
 
-            if (AppState.UdapMetadata == null)
+            if (AppState.MetadataVerificationModel == null ||
+                AppState.MetadataVerificationModel.UdapServerMetaData == null)
             {
                 return _result ?? string.Empty;
             }
 
-            return JsonSerializer.Serialize(AppState.UdapMetadata, new JsonSerializerOptions { WriteIndented = true });
+            return JsonSerializer.Serialize(AppState.MetadataVerificationModel.UdapServerMetaData, new JsonSerializerOptions { WriteIndented = true });
         }
         set => _result = value;
     }
@@ -79,6 +81,11 @@ public partial class UdapDiscovery: IDisposable
         }
         set
         {
+            if (_baseUrl != value)
+            {
+                Reset();
+            }
+
             _baseUrl = value;
         }
     }
@@ -109,9 +116,10 @@ public partial class UdapDiscovery: IDisposable
 
     protected override async Task OnInitializedAsync()
     {
-        var clientCertificateLoadStatus = await DiscoveryService.AnchorCertificateLoadStatus();
-        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
-        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
+        _baseUrl = AppState.BaseUrl;
+        var anchorCertificateLoadStatus = await DiscoveryService.AnchorCertificateLoadStatus();
+        await AppState.SetPropertyAsync(this, nameof(AppState.AnchorCertificateInfo), anchorCertificateLoadStatus);
+        await SetCertLoadedColor(anchorCertificateLoadStatus?.CertLoaded);
         RunTimer();
     }
 
@@ -127,9 +135,9 @@ public partial class UdapDiscovery: IDisposable
 
     private async Task Events_OnFocus(FocusEventArgs obj)
     {
-        var clientCertificateLoadStatus = await DiscoveryService.AnchorCertificateLoadStatus();
-        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
-        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
+        var anchorCertificateLoadStatus = await DiscoveryService.AnchorCertificateLoadStatus();
+        await AppState.SetPropertyAsync(this, nameof(AppState.AnchorCertificateInfo), anchorCertificateLoadStatus);
+        await SetCertLoadedColor(anchorCertificateLoadStatus?.CertLoaded);
         _checkServerSession = true;
     }
 
@@ -138,6 +146,25 @@ public partial class UdapDiscovery: IDisposable
         _checkServerSession = false;
     }
 
+    private void Reset()
+    {
+        if (AppState.MetadataVerificationModel != null)
+        {
+            AppState.MetadataVerificationModel.Notifications = new List<string>();
+        }
+
+        if (AppState.MetadataVerificationModel != null)
+        {
+            AppState.MetadataVerificationModel.UdapServerMetaData = null;
+        }
+
+        Result = string.Empty;
+        StateHasChanged();
+    }
+
+    //
+    // Button 
+    //
     private async Task GetMetadata()
     {
         Result = "Loading ...";
@@ -145,13 +172,11 @@ public partial class UdapDiscovery: IDisposable
 
         try
         {
-            await AppState.SetPropertyAsync(
-                this, 
-                nameof(AppState.UdapMetadata), 
-                await MetadataService.GetMetadata(RequestUrl.GetWellKnownUdap(BaseUrl, Community), default));
+            var model = await MetadataService.GetMetadataVerificationModel(RequestUrl.GetWellKnownUdap(BaseUrl, Community), default);
+            await AppState.SetPropertyAsync(this, nameof(AppState.MetadataVerificationModel), model);
 
-            Result = AppState.UdapMetadata != null
-                ? JsonSerializer.Serialize(AppState.UdapMetadata, new JsonSerializerOptions { WriteIndented = true })
+            Result = AppState.MetadataVerificationModel?.UdapServerMetaData != null
+                ? JsonSerializer.Serialize(AppState.MetadataVerificationModel.UdapServerMetaData, new JsonSerializerOptions { WriteIndented = true })
                 : string.Empty;
             await AppState.SetPropertyAsync(this, nameof(AppState.BaseUrl), BaseUrl);
 
@@ -167,10 +192,13 @@ public partial class UdapDiscovery: IDisposable
         catch (Exception ex)
         {
             Result = ex.Message;
-            await AppState.SetPropertyAsync(this, nameof(AppState.UdapMetadata), null);
+            await AppState.SetPropertyAsync(this, nameof(AppState.MetadataVerificationModel), null);
         }
     }
 
+    //
+    // Just validates that a url in the list view are valid
+    //
     private async Task<IEnumerable<string>?> GetMetadata(string value, CancellationToken token)
     {
         await Task.Delay(5, token);
@@ -187,8 +215,9 @@ public partial class UdapDiscovery: IDisposable
 
         if (Uri.TryCreate(value, UriKind.Absolute, out var baseUri))
         {
-            var result = await MetadataService.GetMetadata(RequestUrl.GetWellKnownUdap(BaseUrl, Community), token);
-            if (result != null)
+            var result = await MetadataService.GetMetadataVerificationModel(RequestUrl.GetWellKnownUdap(BaseUrl, Community), token);
+
+            if (result != null && result.UdapServerMetaData != null)
             {
                 AppendOrMoveBaseUrl(baseUri.AbsoluteUri);
             }
@@ -240,7 +269,14 @@ public partial class UdapDiscovery: IDisposable
 
     private string GetJwtHeader()
     {
-        var jwt = new JwtSecurityToken(AppState.UdapMetadata?.SignedMetadata);
+        var jwtEncodedString = AppState.MetadataVerificationModel?.UdapServerMetaData?.SignedMetadata;
+        
+        if (string.IsNullOrEmpty(jwtEncodedString))
+        {
+            return string.Empty;
+        }
+
+        var jwt = new JwtSecurityToken(jwtEncodedString);
         return UdapEd.Shared.JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader));
     }
 
@@ -254,9 +290,8 @@ public partial class UdapDiscovery: IDisposable
         var certBytes = ms.ToArray();
 
         var certViewModel = await DiscoveryService.UploadAnchorCertificate(Convert.ToBase64String(certBytes));
-
-        await SetCertLoadedColor(certViewModel?.CertLoaded);
         await AppState.SetPropertyAsync(this, nameof(AppState.AnchorCertificateInfo), certViewModel);
+        await SetCertLoadedColor(certViewModel?.CertLoaded);
     }
 
     private async Task SetCertLoadedColor(CertLoadedEnum? isCertLoaded)
@@ -291,7 +326,7 @@ public partial class UdapDiscovery: IDisposable
             if (_checkServerSession)
             {
                 var certViewModel = await DiscoveryService.AnchorCertificateLoadStatus();
-                await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
+                await AppState.SetPropertyAsync(this, nameof(AppState.AnchorCertificateInfo), certViewModel);
                 await SetCertLoadedColor(certViewModel?.CertLoaded);
             }
         }

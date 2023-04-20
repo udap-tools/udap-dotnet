@@ -22,6 +22,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client;
 using Udap.Common;
@@ -67,7 +68,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     private readonly ApiForCommunityTestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
     private IServiceProvider _serviceProvider;
-    private readonly FakeChainValidatorDiagnostics _diagnosticsChainValidator = new FakeChainValidatorDiagnostics();
+    private readonly FakeValidatorDiagnostics _diagnosticsValidator = new FakeValidatorDiagnostics();
 
     public UdapControllerCommunityTest(ApiForCommunityTestFixture fixture, ITestOutputHelper testOutputHelper)
     {
@@ -137,7 +138,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     public async Task ValidateChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
@@ -145,14 +146,48 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
-        _diagnosticsChainValidator.ProblemCalled.Should().BeFalse();
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task InvalidJwtTokentBadIssMatchToSubjectAltNameTest()
+    {
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+        udapClient.TokenError += _diagnosticsValidator.OnTokenError;
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://IssMissMatchToSubjAltName/");
+
+        disco.IsError.Should().BeTrue(disco.Raw);
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.TokenErrorCalled.Should().BeTrue();
+        _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("Failed JWT Validation")).Should().BeTrue();
+        // http://localhost/fhir/r99 is the subject alt used to sign software statement
+        _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("http://localhost/fhir/r99")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task InvalidJwtTokentBadIssMatchToBaseUrlTest()
+    {
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+        udapClient.TokenError += _diagnosticsValidator.OnTokenError;
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://IssMissMatchToBaseUrl/");
+
+        disco.IsError.Should().BeTrue(disco.Raw);
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.TokenErrorCalled.Should().BeTrue();
+        _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("JWT iss does not match baseUrl.")).Should().BeTrue();
     }
 
     [Fact]
     public async Task ValidateChainWithMyAnchorAndIntermediateTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
@@ -174,30 +209,31 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
-        _diagnosticsChainValidator.ProblemCalled.Should().BeFalse();
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     }
 
-    // [Fact]
-    // public async Task ValidateChainWithMyAnchorTest()
-    // {
-    //     var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-    //     udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
-    //
-    //     var disco = await udapClient.ValidateResource(
-    //         _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-    //         new TrustAnchorMemoryStore()
-    //         {
-    //             AnchorCertificates = new HashSet<Anchor>
-    //             {
-    //                 new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert2.cer"))
-    //             }
-    //         },
-    //         "udap://fhirlabs2/");
-    //
-    //     disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-    //     Assert.NotNull(udapClient.UdapServerMetaData);
-    //     _diagnosticsChainValidator.ProblemCalled.Should().BeFalse();
-    // }
+    [Fact]
+    public async Task ValidateChainWithMyAnchorTest()
+    {
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+        udapClient.Untrusted += _diagnosticsValidator.OnUnTrusted;
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            new TrustAnchorMemoryStore()
+            {
+                AnchorCertificates = new HashSet<Anchor>
+                {
+                    new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert2.cer"))
+                    // No intermediate and no way to load it because this test cert has not AIA extension to follow.
+                }
+            },
+            "udap://fhirlabs2/");
+    
+        disco.IsError.Should().BeTrue(disco.Raw);
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
+    }
 
     /// <summary>
     /// Notice the community and TrustAnchorMemoryStore are different
@@ -207,8 +243,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
-        udapClient.Untrusted += _diagnosticsChainValidator.OnUnTrusted;
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+        udapClient.Untrusted += _diagnosticsValidator.OnUnTrusted;
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
@@ -219,7 +255,6 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                     new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"))
                     {
                         Community = "udap://fhirlabs2/",
-                        //TODO:  Implement a ICertificateResolver, injected into TrustChainValidator to follow AIA extensions, resolving intermediate certificates
                         Intermediates = new List<Intermediate>
                         {
                             new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert.cer"))
@@ -231,11 +266,9 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         disco.IsError.Should().BeTrue(disco.Raw);
         Assert.NotNull(udapClient.UdapServerMetaData);
-        _diagnosticsChainValidator.ProblemCalled.Should().BeFalse();
-        _diagnosticsChainValidator.UntrustedCalled.Should().BeTrue();
-        _diagnosticsChainValidator.UnTrustedCertificate.Should().Be("CN=localhost2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
-
-
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+        _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
+        _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=localhost2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
     }
 
     /// <summary>
@@ -246,8 +279,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     public async Task ValidateChainWithMyAnchorFailTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
-        udapClient.Untrusted += _diagnosticsChainValidator.OnUnTrusted;
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+        udapClient.Untrusted += _diagnosticsValidator.OnUnTrusted;
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
@@ -262,9 +295,9 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         disco.IsError.Should().BeTrue(disco.Raw);
         Assert.NotNull(udapClient.UdapServerMetaData);
-        _diagnosticsChainValidator.ProblemCalled.Should().BeFalse();
-        _diagnosticsChainValidator.UntrustedCalled.Should().BeTrue();
-        _diagnosticsChainValidator.UnTrustedCertificate.Should().Be("CN=localhost2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+        _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
+        _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=localhost2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
 
 
     }
@@ -273,7 +306,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     public async Task MissingCommunityChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
@@ -281,16 +314,16 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         disco.IsError.Should().BeTrue(disco.Raw);
         udapClient.UdapServerMetaData.Should().BeNull();
-        _diagnosticsChainValidator.ProblemCalled.Should().BeFalse();
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     }
 
     [Fact]
     public async Task UntrustedChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
-        udapClient.Error += _diagnosticsChainValidator.OnError;
-        udapClient.Untrusted += _diagnosticsChainValidator.OnUnTrusted;
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+        udapClient.Error += _diagnosticsValidator.OnError;
+        udapClient.Untrusted += _diagnosticsValidator.OnUnTrusted;
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
@@ -298,10 +331,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         disco.IsError.Should().BeTrue(disco.Raw);
         udapClient.UdapServerMetaData.Should().NotBeNull();
-         _diagnosticsChainValidator.UntrustedCalled.Should().BeTrue();
-        _diagnosticsChainValidator.UnTrustedCertificate.Should().Be("CN=localhost3, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
-        _diagnosticsChainValidator.ProblemCalled.Should().BeFalse();
-        _diagnosticsChainValidator.ErrorCalled.Should().BeFalse();
+         _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
+        _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=localhost3, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+        _diagnosticsValidator.ErrorCalled.Should().BeFalse();
     }
 
 
@@ -365,7 +398,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         var serviceProvider = services.BuildServiceProvider();
 
         var udapClient = serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
@@ -374,7 +407,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         disco.IsError.Should().BeTrue($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
 
-        _diagnosticsChainValidator.ActualErrorMessages.Any(m =>
+        _diagnosticsValidator.ActualErrorMessages.Any(m =>
                 m.Contains("OfflineRevocation"))
             .Should().BeTrue();
     }
@@ -419,7 +452,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     {
 
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
@@ -427,7 +460,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
-        _diagnosticsChainValidator.ProblemCalled.Should().BeFalse();
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
 
         //
         // this should all happen in udapClient.ValidateResource()
@@ -464,11 +497,13 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         iat.Should().BeLessOrEqualTo((int)year);
     }
   
-    public class FakeChainValidatorDiagnostics
+    public class FakeValidatorDiagnostics
     {
         public bool ProblemCalled;
         public bool ErrorCalled;
         public bool UntrustedCalled;
+        public bool TokenErrorCalled;
+
         public string UnTrustedCertificate = string.Empty;
 
         private readonly List<string> _actualErrorMessages = new List<string>();
@@ -499,6 +534,12 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             UnTrustedCertificate = certificate.SubjectName.Name;
             _actualErrorMessages.Add($"Untrusted validating certificate: {certificate.SubjectName.Name}");
             UntrustedCalled = true;
+        }
+
+        public void OnTokenError(string message)
+        {
+            _actualErrorMessages.Add($"Failed JWT Validation: {message}");
+            TokenErrorCalled = true;
         }
     }
 }

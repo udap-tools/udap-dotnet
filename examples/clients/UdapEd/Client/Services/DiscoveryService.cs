@@ -9,9 +9,8 @@
 
 using System.Net.Http.Json;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Client.Internal;
-using Udap.Model;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Model.Discovery;
 
 namespace UdapEd.Client.Services;
 
@@ -24,12 +23,12 @@ public class DiscoveryService
         _httpClient = httpClient;
     }
 
-    public async Task<UdapMetadata?> GetMetadata(string metadataUrl, CancellationToken token)
+    public async Task<MetadataVerificationModel?> GetMetadataVerificationModel(string metadataUrl, CancellationToken token)
     {
         try
         {
             var udapMetadataUrl = $"Metadata?metadataUrl={Base64UrlEncoder.Encode(metadataUrl) }";
-            var result = await _httpClient.GetFromJsonAsync<UdapMetadata>(udapMetadataUrl, token);
+            var result = await _httpClient.GetFromJsonAsync<MetadataVerificationModel>(udapMetadataUrl, token);
 
             return result;
         }

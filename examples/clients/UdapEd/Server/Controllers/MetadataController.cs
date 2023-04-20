@@ -16,6 +16,7 @@ using Udap.Util.Extensions;
 using UdapEd.Server.Extensions;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Model.Discovery;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
 namespace UdapEd.Server.Controllers;
@@ -42,6 +43,8 @@ public class MetadataController : Controller
 
         if (anchorString != null)
         {
+            var result = new MetadataVerificationModel();
+
             var certBytes = Convert.FromBase64String(anchorString);
             var anchorCert = new X509Certificate2(certBytes);
             var trustAnchorStore = new TrustAnchorMemoryStore()
@@ -51,9 +54,16 @@ public class MetadataController : Controller
                     new Anchor(anchorCert)
                 }
             };
-            var response = await _udapClient.ValidateResource(baseUrl, trustAnchorStore);
-            // var result = JsonSerializer.Deserialize<UdapMetadata>(response);
-            var result = _udapClient.UdapServerMetaData;
+
+            
+            _udapClient.Problem += element =>
+                result.Notifications.Add(element.ChainElementStatus.Summarize(TrustChainValidator.DefaultProblemFlags));
+            _udapClient.Untrusted += certificate2 => result.Notifications.Add("Untrusted: " + certificate2.Subject);
+            _udapClient.TokenError += message => result.Notifications.Add("TokenError: " + message);
+
+            var response = await _udapClient.ValidateResource(baseUrl.GetBaseUrlFromMetadataUrl(), trustAnchorStore);
+            // var result = JsonSerializer.Deserialize<MetadataVerificationModel>(response);
+            result.UdapServerMetaData = _udapClient.UdapServerMetaData;
             HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseUrl.GetBaseUrlFromMetadataUrl());
 
             return Ok(result);
@@ -65,9 +75,26 @@ public class MetadataController : Controller
     [HttpPost("UploadAnchorCertificate")]
     public IActionResult UploadAnchorCertificate([FromBody] string base64String)
     {
-        HttpContext.Session.SetString(UdapEdConstants.ANCHOR_CERTIFICATE, base64String);
+        var result =  new CertificateStatusViewModel { CertLoaded = CertLoadedEnum.Negative };
 
-        return Ok(new CertificateStatusViewModel { CertLoaded = CertLoadedEnum.Positive });
+        try
+        {
+            var certBytes = Convert.FromBase64String(base64String);
+            var certificate = new X509Certificate2(certBytes);
+            result.DistinguishedName = certificate.SubjectName.Name;
+            result.Thumbprint = certificate.Thumbprint;
+            result.CertLoaded = CertLoadedEnum.Positive;
+            HttpContext.Session.SetString(UdapEdConstants.ANCHOR_CERTIFICATE, base64String);
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                $"Failed loading certificate from {nameof(base64String)} {base64String}");
+
+            return BadRequest(result);
+        }
     }
 
     [HttpGet("IsAnchorCertificateLoaded")]
@@ -80,10 +107,14 @@ public class MetadataController : Controller
 
         try
         {
-            var clientCertSession = HttpContext.Session.GetString(UdapEdConstants.ANCHOR_CERTIFICATE);
+            var base64String = HttpContext.Session.GetString(UdapEdConstants.ANCHOR_CERTIFICATE);
 
-            if (clientCertSession != null)
+            if (base64String != null)
             {
+                var certBytes = Convert.FromBase64String(base64String);
+                var certificate = new X509Certificate2(certBytes);
+                result.DistinguishedName = certificate.SubjectName.Name;
+                result.Thumbprint = certificate.Thumbprint;
                 result.CertLoaded = CertLoadedEnum.Positive;
             }
             else

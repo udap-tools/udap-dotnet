@@ -50,9 +50,15 @@ public static class InternalStringExtensions
     [DebuggerStepThrough]
     public static string GetBaseUrlFromMetadataUrl(this string url)
     {
-        url = url.Substring(0, url.IndexOf(".well-known/udap"));
+        var index = url.IndexOf(".well-known/udap", StringComparison.OrdinalIgnoreCase);
+        if (index != -1)
+        {
+            url = url[..(index-1)];
+        }
 
-        return url;
+        var uri = new Uri(url);
+
+        return uri.AbsoluteUri;
     }
-    
+
 }

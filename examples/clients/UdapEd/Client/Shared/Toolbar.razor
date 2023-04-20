@@ -1,39 +1,15 @@
 ﻿@using UdapEd.Client.Services
 @using UdapEd.Shared.Model
-@using BQuery
 @inject IJSRuntime JSRuntime
 @inject RegisterService RegisterService
-@inject IDialogService DialogService
-@implements IDisposable
 
-<InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
+
+
 
 <MudAppBar Elevation="3" Style="background-image: linear-gradient( 109.6deg,  rgba(240,240,240,1) 11.2%, rgba(240,240,240,1) 91.1% );">
   <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Primary" Edge="Edge.Start"
                  OnClick="@DrawerToggle" />
-  <MudSpacer />
   
-  <MudFab Class="ma-2"
-          HtmlTag="label"
-          Size="Size.Small"
-          Color="@CertLoadedColor"
-          Icon="@AppState.CertificateIcon"
-          Label="Client Cert"
-          Title="Upload Client Certificate"
-          IconSize="Size.Small"
-          for="fileInput" />
-
-  <MudFab HtmlTag="label"
-          Class="ma-2"
-          Size="Size.Small"
-          Color="@CertLoadedColor"
-          Icon="@AppState.CertificateIcon"
-          Label="Test Cert"
-          Title="Use Test Client Certificate"
-          IconSize="Size.Small"
-          OnClick="@LoadTestCertificate" />
-
-
   <MudSpacer />
   <MudText Color="Color.Primary">Token Status:</MudText>&nbsp;<MudText Color="@(AppState.Status is {IsValid: false } ? Color.Error : Color.Success)">@AppState.Status.StatusMessage</MudText>
   <MudImage Class="cursor-pointer mud-ripple ma-2" Src="images/hl7/icon-fhir-32.png" Alt="Fhir Icon"  style="height: 24px; width: 24px"
@@ -64,76 +40,9 @@
 
 
 @code {
-
+    
     [CascadingParameter]
     public CascadingAppState AppState { get; set; } = null!;
-
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
-
-    private List<string> _sans = new List<string>();
-
-    readonly PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
-    private bool _checkServerSession = false;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
-        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
-        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
-        RunTimer();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            Bq.Events.OnBlur += Events_OnBlur;
-            Bq.Events.OnFocusAsync += Events_OnFocus;
-        }
-        await base.OnAfterRenderAsync(firstRender);
-    }
-
-    private async Task Events_OnFocus(FocusEventArgs obj)
-    {
-        var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
-        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
-        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
-        _checkServerSession = true;
-    }
-
-    private void Events_OnBlur(FocusEventArgs obj)
-    {
-        _checkServerSession = false;
-    }
-    
-    private async Task SetCertLoadedColor(CertLoadedEnum? isCertLoaded)
-    {
-        switch (isCertLoaded)
-        {
-            case CertLoadedEnum.Negative:
-                CertLoadedColor = Color.Error;
-                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
-                break;
-            case CertLoadedEnum.Positive:
-                CertLoadedColor = Color.Success;
-                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), true);
-                break;
-            case CertLoadedEnum.InvalidPassword:
-                CertLoadedColor = Color.Warning;
-                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
-                break;
-            default:
-                CertLoadedColor = Color.Error;
-                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
-                break;
-        }
-
-        this.StateHasChanged();
-    }
-
-
-    public Color CertLoadedColor { get; set; } = Color.Error;
-
     bool _drawerOpen = true;
 
     void DrawerToggle()
@@ -150,52 +59,4 @@
     {
         await JSRuntime.InvokeVoidAsync("open", "http://udap.org/", "_blank");
     }
-
-    
-
-    private async Task UploadFilesAsync(InputFileChangeEventArgs e)
-    {
-        long maxFileSize = 1024 * 10;
-
-        var uploadStream = await new StreamContent(e.File.OpenReadStream(maxFileSize)).ReadAsStreamAsync();
-        var ms = new MemoryStream();
-        await uploadStream.CopyToAsync(ms);
-        var certBytes = ms.ToArray();
-
-        await RegisterService.UploadClientCertificate(Convert.ToBase64String(certBytes));
-
-        //dialog
-        var options = new DialogOptions { CloseOnEscapeKey = true };
-        var dialog = await DialogService.ShowAsync<Password_Dialog>("Certificate Password", options);
-        var result = await dialog.Result;
-        var certViewModel = await RegisterService.ValidateCertificate(result.Data.ToString() ?? "");
-        await SetCertLoadedColor(certViewModel?.CertLoaded);
-        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
-    }
-
-    private async Task LoadTestCertificate()
-    {
-        var certViewModel = await RegisterService.LoadTestCertificate();
-        await SetCertLoadedColor(certViewModel.CertLoaded);
-        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
-    }
-
-    async void RunTimer()
-    {
-        while (await _periodicTimer.WaitForNextTickAsync())
-        {
-            if (_checkServerSession)
-            {
-                var certViewModel = await RegisterService.ClientCertificateLoadStatus();
-                await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
-                await SetCertLoadedColor(certViewModel?.CertLoaded);
-            }
-        }
-    }
-
-
-    public void Dispose()
-    {
-        _periodicTimer.Dispose();
-    } 
 }

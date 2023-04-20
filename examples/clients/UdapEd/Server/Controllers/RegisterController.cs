@@ -55,7 +55,8 @@ public class RegisterController : Controller
             var certificate = new X509Certificate2(testClientCert, "udap-test", X509KeyStorageFlags.Exportable);
             var clientCertWithKeyBytes = certificate.Export(X509ContentType.Pkcs12);
             HttpContext.Session.SetString(UdapEdConstants.CLIENT_CERTIFICATE_WITH_KEY, Convert.ToBase64String(clientCertWithKeyBytes));
-
+            result.DistinguishedName = certificate.SubjectName.Name;
+            result.Thumbprint = certificate.Thumbprint;
             result.CertLoaded = CertLoadedEnum.Positive;
             result.SubjectAltNames = certificate
                 .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI)
@@ -99,13 +100,14 @@ public class RegisterController : Controller
         var certBytes = Convert.FromBase64String(clientCertSession);
         try
         {
-            var clientCert = new X509Certificate2(certBytes, password, X509KeyStorageFlags.Exportable);
+            var certificate = new X509Certificate2(certBytes, password, X509KeyStorageFlags.Exportable);
 
-            var clientCertWithKeyBytes = clientCert.Export(X509ContentType.Pkcs12);
+            var clientCertWithKeyBytes = certificate.Export(X509ContentType.Pkcs12);
             HttpContext.Session.SetString(UdapEdConstants.CLIENT_CERTIFICATE_WITH_KEY, Convert.ToBase64String(clientCertWithKeyBytes));
-
+            result.DistinguishedName = certificate.SubjectName.Name;
+            result.Thumbprint = certificate.Thumbprint;
             result.CertLoaded = CertLoadedEnum.Positive;
-            result.SubjectAltNames = clientCert
+            result.SubjectAltNames = certificate
                 .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI)
                 .Select(tuple => tuple.Item2)
                 .ToList();
@@ -145,11 +147,13 @@ public class RegisterController : Controller
 
             if (certBytesWithKey != null)
             {
-                result.CertLoaded = CertLoadedEnum.Positive;
                 var certBytes = Convert.FromBase64String(certBytesWithKey);
-                var clientCert = new X509Certificate2(certBytes);
+                var certificate = new X509Certificate2(certBytes);
+                result.DistinguishedName = certificate.SubjectName.Name;
+                result.Thumbprint = certificate.Thumbprint;
+                result.CertLoaded = CertLoadedEnum.Positive;
 
-                result.SubjectAltNames = clientCert
+                result.SubjectAltNames = certificate
                     .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI)
                     .Select(tuple => tuple.Item2)
                     .ToList();

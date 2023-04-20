@@ -721,6 +721,41 @@ namespace Udap.PKI.Generator
                 "FhirLabsApi"                                                               //deliveryProjectPath    
             };
 
+            //
+            // Use case: software_statement iss does not match any subject alt names
+            //
+            yield return new object[]
+            {
+                $"{LocalhostCertStore}/localhost_fhirlabs_community4",                      //communityStorePath
+                "caLocalhostCert4",                                                         //anchorName
+                "intermediateLocalhostCert4",                                               //intermediateName
+                "fhirLabsApiClientLocalhostCert4",                                          //issuedName
+                "CN=IssNoMatchIss, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",//issuedDistinguishedName
+                new List<string>
+                {
+                    "http://localhost/fhir/r99", 
+                    "http://localhost/fhir/r999"
+                },                                                                          //SubjAltNames
+                "FhirLabsApi"                                                               //deliveryProjectPath    
+            };
+
+            //
+            // Use case: baseUrl does not match any subject alt names
+            //
+            yield return new object[]
+            {
+                $"{LocalhostCertStore}/localhost_fhirlabs_community5",                      //communityStorePath
+                "caLocalhostCert5",                                                         //anchorName
+                "intermediateLocalhostCert5",                                               //intermediateName
+                "fhirLabsApiClientLocalhostCert5",                                          //issuedName
+                "CN=IssNoMatchBaseUrl, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",//issuedDistinguishedName
+                new List<string>
+                {
+                    "http://localhost/IssMissMatchToBaseUrl/r4"
+                },                                                                          //SubjAltNames
+                "FhirLabsApi"                                                               //deliveryProjectPath    
+            };
+
             yield return new object[]
             {
                 $"{LocalhostCertStore}/localhost_weatherapi_community1",                    //communityStorePath

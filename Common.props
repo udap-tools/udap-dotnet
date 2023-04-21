@@ -5,7 +5,7 @@
     <LangVersion>latest</LangVersion>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
-    <UdapDotNetPackageVersion>0.1.0</UdapDotNetPackageVersion>
+    <UdapDotNetPackageVersion>0.1.0.1</UdapDotNetPackageVersion>
   </PropertyGroup>
   
 </Project>

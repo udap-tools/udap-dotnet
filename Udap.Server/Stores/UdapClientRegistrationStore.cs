@@ -156,7 +156,6 @@ namespace Udap.Server.Stores
             return certificates;
         }
 
-        //TODO.  This is still coded with the old concept of getting root certificates.
         public async Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default)
         {
             using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetIntermediateCertificates");

@@ -182,7 +182,7 @@ public class UdapResponseTypeResponseModeTests
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
-        var query = response.Headers.Location.Query;
+        var query = response.Headers.Location?.Query;
         _testOutputHelper.WriteLine(query);
         var responseParams = QueryHelpers.ParseQuery(query);
         responseParams["error"].Should().BeEquivalentTo("invalid_request");

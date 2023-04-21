@@ -8,32 +8,22 @@
     <!-- <UserSecretsId>e17eb5d1-fcd6-4149-b420-26b7e7d50e28</UserSecretsId> -->
   </PropertyGroup>
 
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.5" />
-  </ItemGroup>
-
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.4" />
-  </ItemGroup>
-
-
   <ItemGroup>
-    <PackageReference Include="FluentAssertions" Version="6.10.0" />
-    <PackageReference Include="FluentAssertions.Analyzers" Version="0.17.2">
+    <PackageReference Include="FluentAssertions"  />
+    <PackageReference Include="FluentAssertions.Analyzers">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="MartinCostello.Logging.XUnit" Version="0.3.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
-    <PackageReference Include="Moq" Version="4.18.4" />
-    <PackageReference Include="xunit" Version="2.4.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+    <PackageReference Include="MartinCostello.Logging.XUnit" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" >
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="3.2.0">
+    <PackageReference Include="coverlet.collector">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>

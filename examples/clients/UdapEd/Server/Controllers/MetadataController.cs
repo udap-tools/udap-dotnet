@@ -283,7 +283,7 @@ public class MetadataController : Controller
             return string.Empty;
         }
 
-        var bytes = extensions.First().KeyIdentifier.Value.ToArray();
+        var bytes = extensions.First().KeyIdentifier?.ToArray();
 
         if (bytes == null)
         {

@@ -155,13 +155,13 @@ public class UdapForceStateParamFalseTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithContacts(new HashSet<string?>
+            .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("udap")
-            .WithResponseTypes(new List<string?> { "code" })
+            .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
 

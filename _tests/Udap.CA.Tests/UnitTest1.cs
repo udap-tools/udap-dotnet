@@ -110,7 +110,7 @@ public class UnitTest1
         var aiaExtensions =
             issuedCertificate.Extensions["1.3.6.1.5.5.7.1.1"] as X509AuthorityInformationAccessExtension;
         aiaExtensions.Should().NotBeNull();
-        aiaExtensions.EnumerateCAIssuersUris().Single().Should().Be(certificateAuthIssuerUri.AbsoluteUri);
+        aiaExtensions!.EnumerateCAIssuersUris().Single().Should().Be(certificateAuthIssuerUri.AbsoluteUri);
 
         //
         // No good because it just gets the first one

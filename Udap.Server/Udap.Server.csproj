@@ -29,14 +29,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper" Version="12.0.1" />
-    <PackageReference Include="Duende.IdentityServer" Version="6.2.3" />
-    <PackageReference Include="Duende.IdentityServer.AspNetIdentity" Version="6.2.3" />
-    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="6.2.3" />
-    <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection" Version="6.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.5" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.28.1" />
+    <PackageReference Include="AutoMapper"  />
+    <PackageReference Include="Duende.IdentityServer" />
+    <PackageReference Include="Duende.IdentityServer.AspNetIdentity" />
+    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage"  />
+    <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore"  />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt"  />
   </ItemGroup>
 
   <ItemGroup>

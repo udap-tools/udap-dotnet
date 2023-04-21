@@ -125,7 +125,7 @@
                     ButtonType="ButtonType.Button"
                     Variant="Variant.Filled"
                     Disabled="@(!AppState.CertificateLoaded)"
-                    OnClick="BuildRawSoftwareStatement">Register</MudButton>
+                    OnClick="BuildRawSoftwareStatement">Build Register</MudButton>
 
             </MudItem>
 
@@ -134,7 +134,7 @@
                            ButtonType="ButtonType.Button"
                            Variant="Variant.Filled"
                            Disabled="@(!AppState.CertificateLoaded)"
-                           OnClick="BuildRawCancelSoftwareStatement">Cancel</MudButton>
+                           OnClick="BuildRawCancelSoftwareStatement">Build Cancel</MudButton>
             </MudItem>
 
             @if (!string.IsNullOrEmpty(RawSoftwareStatementError))

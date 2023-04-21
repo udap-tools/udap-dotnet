@@ -6,7 +6,6 @@
       "environmentVariables": {
         "GCPDeploy": "false",
         "UdapIdpBaseUrl": "https://host.docker.internal:5002"
-
       },
       "sslPort": 5002,
       "applicationUrl": "https://host.docker.internal:5002"
@@ -63,25 +62,25 @@
       "commandName": "Docker",
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
-      "publishAllPorts": true,
-      "useSSL": true,
       "environmentVariables": {
         "ASPNETCORE_URLS": "http://*:8080;https://*:443",
         "GCPDeploy": "false",
         "UdapIdpBaseUrl": "https://localhost:5002"
-      }
+      },
+      "publishAllPorts": true,
+      "useSSL": true
     },
     "Docker_GCP": {
       "commandName": "Docker",
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
-      "publishAllPorts": true,
-      "useSSL": true,
       "environmentVariables": {
         "ASPNETCORE_URLS": "http://*:8080;https://*:443",
         "GCPDeploy": "true",
         "UdapIdpBaseUrl": "https://localhost:5002"
-      }
+      },
+      "publishAllPorts": true,
+      "useSSL": true
     },
     "WSL": {
       "commandName": "WSL2",

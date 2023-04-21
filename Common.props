@@ -1,0 +1,11 @@
+<Project>
+
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
+    <UdapDotNetPackageVersion>0.1.0</UdapDotNetPackageVersion>
+  </PropertyGroup>
+  
+</Project>

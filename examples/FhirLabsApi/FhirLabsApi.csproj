@@ -74,7 +74,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Metadata.Server" Version="0.0.4-preview*" />
+    <PackageReference Include="Udap.Metadata.Server" Version="$(UdapDotNetPackageVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">

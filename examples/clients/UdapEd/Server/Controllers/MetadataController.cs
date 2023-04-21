@@ -1,17 +1,23 @@
-﻿using System.Net.Sockets;
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Udap.Client.Client;
-using Udap.Client.Internal;
 using Udap.Common.Certificates;
+using Udap.Common.Extensions;
 using Udap.Common.Models;
-using Udap.Model;
 using Udap.Util.Extensions;
 using UdapEd.Server.Extensions;
 using UdapEd.Shared;

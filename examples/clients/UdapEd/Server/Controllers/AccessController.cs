@@ -27,7 +27,6 @@ namespace UdapEd.Server.Controllers;
 public class AccessController : Controller
 {
     private readonly HttpClient _httpClient;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<RegisterController> _logger;
 
     public AccessController(
@@ -36,7 +35,6 @@ public class AccessController : Controller
         ILogger<RegisterController> logger)
     {
         _httpClient = httpClient;
-        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 

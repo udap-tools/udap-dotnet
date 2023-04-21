@@ -194,7 +194,10 @@ namespace Udap.Client.Client
             var jwt = tokenHandler.ReadJsonWebToken(udapServerMetaData.SignedMetadata);
             _publicCertificate = jwt?.GetPublicCertificate();
 
-            var subjectAltNames = _publicCertificate?.GetSubjectAltNames().Select(n => new Uri(n.Item2).AbsoluteUri).ToArray();
+            var subjectAltNames = _publicCertificate?
+                .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI) //URI only, by udap.org specification
+                .Select(n => new Uri(n.Item2).AbsoluteUri)
+                .ToArray();
 
             var validatedToken = await tokenHandler.ValidateTokenAsync(
                 udapServerMetaData.SignedMetadata,

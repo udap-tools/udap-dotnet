@@ -7,19 +7,13 @@
 // */
 #endregion
 
-using System.Security.Claims;
-using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using IdentityModel;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
-using Udap.Common;
-using Udap.Common.Certificates;
-using Udap.Model;
-using Udap.Model.Registration;
-using Udap.Model.Statement;
+using Udap.Common.Extensions;
 
 namespace Udap.Metadata.Server
 {
@@ -27,105 +21,44 @@ namespace Udap.Metadata.Server
     [AllowAnonymous]
     public class UdapController : ControllerBase
     {
-        private readonly UdapMetadata _udapMetadata;
-        private readonly ICertificateStore _certificateStore;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly UdapMetaDataBuilder _metaDataBuilder;
         private readonly ILogger<UdapController> _logger;
 
         public UdapController(
-            UdapMetadata udapMetadata,
-            ICertificateStore certificateStore,
+            UdapMetaDataBuilder metaDataBuilder,
+            IHttpContextAccessor httpContextAccessor,
             ILogger<UdapController> logger)
         {
-            _udapMetadata = udapMetadata;
-            _certificateStore = certificateStore;
+            _metaDataBuilder = metaDataBuilder;
+            _httpContextAccessor = httpContextAccessor;
             _logger = logger;
         }
 
         [HttpGet]
         public async Task<IActionResult> Get([FromQuery] string? community, CancellationToken token)
         {
-            var udapMetadataConfig = _udapMetadata.GetUdapMetadataConfig(community);
-
-            _udapMetadata.AuthorizationEndpoint = udapMetadataConfig?.SignedMetadataConfig.AuthorizationEndpoint;
-            _udapMetadata.TokenEndpoint = udapMetadataConfig?.SignedMetadataConfig.TokenEndpoint;
-            _udapMetadata.RegistrationEndpoint = udapMetadataConfig?.SignedMetadataConfig.RegistrationEndpoint;
-            
-            if (udapMetadataConfig == null)
-            {
-                _logger.LogWarning($"Cannot find UdapMetadataConfig from community: {community}");
-                
-                return NotFound();
-            }
-
-            _udapMetadata.SignedMetadata = await SignMetaData(udapMetadataConfig);
-
-            return Ok(_udapMetadata);
+            return await _metaDataBuilder.SignMetaData(
+                    _httpContextAccessor.HttpContext!.Request.GetDisplayUrl().GetBaseUrlFromMetadataUrl(),
+                    community,
+                    token)
+                is { } udapMetadata
+                ? Ok(udapMetadata)
+                : NotFound();
         }
 
         [HttpGet("communities")]
-        public Task<IActionResult> GetCommunities(bool html, CancellationToken token)
+        public IActionResult GetCommunities(bool html, CancellationToken token)
         {
 
-            return Task.FromResult<IActionResult>(Ok(_udapMetadata.Communities()));
+            return Ok(_metaDataBuilder.GetCommunities());
         }
 
         [HttpGet("communities/ashtml")]
         [Produces("text/html")]
         public ActionResult GetCommunitiesAsHtml()
         {
-            return base.Content(_udapMetadata.CommunitiesAsHtml(Request.PathBase), "text/html", Encoding.UTF8);
-        }
-
-        /// <summary>
-        /// Essentials: OAuth 2.0 Authorization Server Metadata:: https://datatracker.ietf.org/doc/html/rfc8414#section-2.1
-        /// Further restrained by UDAP IG:: http://hl7.org/fhir/us/udap-security/discovery.html#signed-metadata-elements 
-        /// </summary>
-        /// <returns></returns>
-        /// <exception cref="NotImplementedException"></exception>
-        private async Task<string?> SignMetaData(UdapMetadataConfig udapMetadataConfig)
-        {
-            var cert = await Load(udapMetadataConfig);
-
-            if (cert == null)
-            {
-                return string.Empty;
-            }
-            
-            var now = DateTime.UtcNow;
-
-            var jwtPayload = new JwtPayLoadExtension(
-                new List<Claim>
-                {
-                    new Claim(JwtClaimTypes.Issuer, udapMetadataConfig.SignedMetadataConfig.Issuer),
-                    new Claim(JwtClaimTypes.Subject, udapMetadataConfig.SignedMetadataConfig.Subject),
-                    new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                    new Claim(JwtClaimTypes.Expiration, EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                    new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
-                    new Claim(UdapConstants.Discovery.AuthorizationEndpoint, udapMetadataConfig.SignedMetadataConfig.AuthorizationEndpoint),
-                    new Claim(UdapConstants.Discovery.TokenEndpoint, udapMetadataConfig.SignedMetadataConfig.TokenEndpoint),
-                    new Claim(UdapConstants.Discovery.RegistrationEndpoint, udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint)
-                });
-
-            var builder = SignedSoftwareStatementBuilder<ISoftwareStatementSerializer>.Create(cert, jwtPayload);
-
-            return builder.Build();
-        }
-
-        private async Task<X509Certificate2?> Load(UdapMetadataConfig udapMetadataConfig)
-        {
-            var store = await _certificateStore.Resolve();
-
-            var entity = store.IssuedCertificates
-                .Where(c => c.Community == udapMetadataConfig.Community && c.Certificate != null)
-                .MaxBy(c => c.Certificate!.NotBefore);
-
-            if (entity == null)
-            {
-                _logger.LogInformation($"Missing certificate for community: {udapMetadataConfig.Community}");
-                return null;
-            }
-
-            return entity.Certificate;
+            return base.Content(_metaDataBuilder.GetCommunitiesAsHtml(Request.PathBase), "text/html", Encoding.UTF8);
         }
     }
 }

@@ -695,7 +695,11 @@ namespace Udap.PKI.Generator
                 "intermediateLocalhostCert",                                                //intermediateName
                 "fhirLabsApiClientLocalhostCert",                                           //issuedName
                 "CN=localhost, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US", //issuedDistinguishedName
-                new List<string> { "http://localhost/fhir/r4" },                            //SubjAltNames
+                new List<string>
+                {
+                    "http://localhost/fhir/r4",
+                    "https://localhost:7016/fhir/r4"
+                },                                                                          //SubjAltNames
                 "FhirLabsApi"                                                               //deliveryProjectPath    
             };
 
@@ -763,7 +767,11 @@ namespace Udap.PKI.Generator
                 "intermediateWeatherApiLocalhostCert",                                      //intermediateName
                 "weatherApiClientLocalhostCert1",                                           //issuedName
                 "CN=localhost, OU=WeatherApi, O=Fhir Coding, L=Portland, S=Oregon, C=US",   //issuedDistinguishedName
-                new List<string> { "http://localhost/" },                                   //SubjAltNames
+                new List<string>
+                {
+                    "http://localhost/",
+                    "https://localhost:5021"
+                },                                                                          //SubjAltNames
                 "WeatherApi"                                                                //deliveryProjectPath                    
             };
 
@@ -774,7 +782,11 @@ namespace Udap.PKI.Generator
                 "intermediateWeatherApiLocalhostCert2",                                     //intermediateName
                 "weatherApiClientLocalhostCert2",                                           //issuedName
                 "CN=localhost2, OU=WeatherApi, O=Fhir Coding, L=Portland, S=Oregon, C=US",  //issuedDistinguishedName
-                new List<string> { "http://localhost/" },                                   //SubjAltNames
+                new List<string>
+                {
+                    "http://localhost/",
+                    "https://localhost:5021"
+                },
                 "WeatherApi"                                                                //deliveryProjectPath    
             };
         }

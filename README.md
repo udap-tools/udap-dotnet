@@ -86,8 +86,6 @@ Issuer and Subject must match the issued certificates, Subject Alternative Name 
       {
         "Community": "http://localhost",
         "SignedMetadataConfig": {
-          "Issuer": "http://localhost/",
-          "Subject": "http://localhost/",
           "AuthorizationEndPoint": "https://securedcontrols.net:5001/connect/authorize",
           "TokenEndpoint": "https://securedcontrols.net:5001/connect/token",
           "RegistrationEndpoint": "https://securedcontrols.net:5001/connect/register"

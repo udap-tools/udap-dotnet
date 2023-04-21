@@ -347,7 +347,21 @@ public static class X509Extensions
 
         return names;
     }
-    
+
+    public static string ResolveUriSubjAltName(this X509Certificate2 cert, string baseUrl)
+    {
+        var sans = cert.GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI);
+
+        foreach (var san in sans.Select(s => s.Item2))
+        {
+            if (baseUrl == new Uri(san).AbsoluteUri)
+            {
+                return baseUrl;
+            }
+        }
+
+        return sans.First().Item2;
+    }
 
     public static TEnum FromTag<TEnum>(int tagNo)
     {

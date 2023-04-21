@@ -142,6 +142,14 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://fhirlabs1/");
+
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+
+        disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
             "udap://fhirlabs2/");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");

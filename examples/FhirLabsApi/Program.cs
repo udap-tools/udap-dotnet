@@ -142,7 +142,6 @@ builder.Services.AddTransient<FhirSmartAppLaunchConfiguration>(options =>
 });
 
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

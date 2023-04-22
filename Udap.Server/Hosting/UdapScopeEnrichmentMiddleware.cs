@@ -71,8 +71,7 @@ internal class UdapScopeEnrichmentMiddleware
 
                     if (client == null)
                     {
-                        _logger.LogWarning(
-                            $"ClientId {clientId}, not found");
+                        _logger.LogWarning($"ClientId {clientId}, not found");
                     }
                     else
                     {

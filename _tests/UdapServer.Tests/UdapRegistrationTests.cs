@@ -1095,7 +1095,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.IssuedAtMissing}");
     }
 
-    //invalid_software_statement
+    //invalid_client_metadata
     [Fact]
     public async Task RegisrationInvalidSotwareStatement_clientNameMissing_Test()
     {
@@ -1158,6 +1158,76 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         errorResponse.Should().NotBeNull();
         errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.ClientNameMissing}");
+    }
+
+    //invalid_client_metadata
+    //
+    // Remember and empty grant_types is a cancel registration
+    // http://hl7.org/fhir/us/udap-security/registration.html#modifying-and-cancelling-registrations
+    // But a missing grant_types is an error
+    //
+    [Fact]
+    public async Task RegisrationInvalidSotwareStatement_grant_types_Missing_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocument();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint!);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert1.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var now = DateTime.UtcNow;
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            // GrantTypes = new HashSet<string> { "client_credentials" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
+        errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.GrantTypeMissing}");
     }
 
     //invalid_software_statement

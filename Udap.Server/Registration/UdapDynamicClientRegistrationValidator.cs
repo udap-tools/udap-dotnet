@@ -21,6 +21,7 @@ using System.Text;
 using System.Text.Json;
 using Duende.IdentityServer.Models;
 using IdentityModel;
+using IdentityModel.Client;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
@@ -32,6 +33,7 @@ using Udap.Common.Models;
 using Udap.Model.Registration;
 using Udap.Server.Configuration;
 using Udap.Util.Extensions;
+using static Udap.Model.UdapConstants;
 
 namespace Udap.Server.Registration;
 
@@ -253,8 +255,32 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         //////////////////////////////
-        // validate grant types
+        // validate grant_types
         //////////////////////////////
+        if (jsonWebToken.Claims.FirstOrDefault(c => c.Type == RegistrationDocumentValues.GrantTypes) == null)
+        {
+            //
+            // The jsonWeToken.Claims will always drop an empty array.  So we can not tell the difference
+            // between a Cancel Registration (empty array of grant_types) vs an invalid_client_metadata error.
+            // So in this path we look at the payload for the grant_types string.
+            //
+            var payload = Base64UrlEncoder.Decode(jsonWebToken.EncodedPayload);
+            
+            if (payload != null)
+            {
+                if (!payload.Contains(RegistrationDocumentValues.GrantTypes))
+                {
+                    _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidClientMetadata}::" +
+                                       UdapDynamicClientRegistrationErrorDescriptions.GrantTypeMissing);
+
+                    return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                        UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                        UdapDynamicClientRegistrationErrorDescriptions.GrantTypeMissing));
+                }
+            }
+        }
+        
+        
         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
         {
             client.AllowedGrantTypes.Add(GrantType.ClientCredentials);

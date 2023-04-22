@@ -526,7 +526,7 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                     b.ToTable("UdapCommunityCertification", (string)null);
                 });
 
-            modelBuilder.Entity("Udap.Server.Entities.IntermediateCertificate", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Intermediates", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -720,10 +720,10 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                     b.Navigation("Community");
                 });
 
-            modelBuilder.Entity("Udap.Server.Entities.IntermediateCertificate", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Intermediates", b =>
                 {
                     b.HasOne("Udap.Server.Entities.Anchor", "Anchor")
-                        .WithMany("IntermediateCertificates")
+                        .WithMany("AnchorCertificates")
                         .HasForeignKey("AnchorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("FK_IntermediateCertificate_Anchor");
@@ -756,7 +756,7 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                 {
                     b.Navigation("AnchorCertifications");
 
-                    b.Navigation("IntermediateCertificates");
+                    b.Navigation("AnchorCertificates");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.Certification", b =>

@@ -1,176 +1,230 @@
 ﻿@page "/udapRegistration"
 @using UdapEd.Shared
 
-
+<InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 <ErrorBoundary @ref="ErrorBoundary">
-  <ChildContent>
-
+<ChildContent>
     <MudGrid Justify="Justify.FlexStart">
-      <MudItem>
-        <MudText Typo="Typo.h4">Udap Registration</MudText>
-        <MudLink Href="/udapDiscovery" Color="Color.Info"> [ @RequestUrl.GetWellKnownUdap(AppState.BaseUrl, AppState.Community ) ]</MudLink>
-      </MudItem>
+        <MudItem>
+            <MudText Typo="Typo.h4">Udap Registration</MudText>
+            <MudLink Href="/udapDiscovery" Color="Color.Info"> [ @RequestUrl.GetWellKnownUdap(AppState.BaseUrl, AppState.Community) ]</MudLink>
+        </MudItem>
     </MudGrid>
-      <MudGrid Justify="Justify.FlexStart">
-          <MudItem md="4" sm="6" xs="12">
-              <MudSelect @bind-Value="Oauth2Flow"
-                         Label="Select OAuth2Flow Flow"
-                         Placeholder="Please Select"
-                         AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
-                         AdornmentColor="Color.Primary"
-                         Variant="Variant.Outlined">
-                  @foreach (Oauth2FlowEnum item in Enum.GetValues(typeof(Oauth2FlowEnum)))
-                  {
-                      <MudSelectItem Value="@item">@item</MudSelectItem>
-                  }
-              </MudSelect>
-          </MudItem>
 
-          @if (AppState.CertificateInfo?.SubjectAltNames != null)
-          {
-              <MudItem md="4" sm="6" xs="12">
-                  <MudSelect @bind-Value="_subjectAltName"
-                             Label="Select Subject Alt Name"
-                             T="string"
-                             Clearable="true"
-                             AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
-                             AdornmentColor="Color.Primary"
-                             Variant="Variant.Outlined">
 
-                      @foreach (var item in AppState.CertificateInfo.SubjectAltNames)
-                      {
-                          <MudSelectItem Value="@item">@item</MudSelectItem>
-                      }
+<MudCard Class="pa-2 ma-2" Elevation="3">
+    <MudCardHeader>
+        <MudGrid Spacing="2" Justify="Justify.FlexStart">
+            <MudSpacer/>
+            <MudItem>
+                <MudGrid Spacing="2" Justify="Justify.FlexEnd" Class="bottom:0;right:0">
+                    <MudItem xs="12">
 
-                  </MudSelect>
-              </MudItem>
-          }
+                        <MudFab Class="ma-2"
+                                style="float: right;"
+                                HtmlTag="label"
+                                Size="Size.Small"
+                                Color="@CertLoadedColor"
+                                Icon="@AppState.CertificateIcon"
+                                Label="Client Cert"
+                                Title="Upload Client Certificate"
+                                IconSize="Size.Small"
+                                for="fileInput"/>
 
-          <MudItem md="4" sm="6" xs="12">
-              <MudSelect @bind-Value="_signingAlgorithm"
-                         Label="Select Signing Algorithm"
-                         T="string"
-                         Clearable="true"
-                         AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
-                         AdornmentColor="Color.Primary"
-                         Variant="Variant.Outlined">
-                  <MudSelectItem Value="UdapConstants.SupportedAlgorithm.RS256">@UdapConstants.SupportedAlgorithm.RS256</MudSelectItem>
-                  <MudSelectItem Value="UdapConstants.SupportedAlgorithm.RS384">@UdapConstants.SupportedAlgorithm.RS384</MudSelectItem>
-                  <MudSelectItem Value="UdapConstants.SupportedAlgorithm.ES384">@UdapConstants.SupportedAlgorithm.ES384</MudSelectItem>
-              </MudSelect>
-          </MudItem>
-      </MudGrid>
+                        <MudFab HtmlTag="label"
+                                Class="ma-2"
+                                style="float: right;"
+                                Size="Size.Small"
+                                Color="@CertLoadedColor"
+                                Icon="@AppState.CertificateIcon"
+                                Label="Test Cert"
+                                Title="Use Test Client Certificate"
+                                IconSize="Size.Small"
+                                OnClick="@LoadTestCertificate"/>
 
-    <MudCard Class="pa-2 ma-2" Elevation="3">
-          <MudCardHeader Class="bold"><MudText Typo="Typo.h6">Build Raw Software Statements For Registration</MudText></MudCardHeader>
-          <MudCardActions>
-              <MudGrid Spacing="2" Justify="Justify.FlexStart">
-                  <MudItem>
-                      <MudButton
-                          Color="Color.Primary"
-                          ButtonType="ButtonType.Button"
-                          Variant="Variant.Filled"
-                          Disabled="@(!AppState.CertificateLoaded)"
-                          OnClick="BuildRawSoftwareStatement">Register</MudButton>
+                    </MudItem>
 
-                  </MudItem>
+                    @if (!string.IsNullOrEmpty(AppState.ClientCertificateInfo?.DistinguishedName) ||
+                         !string.IsNullOrEmpty(AppState.ClientCertificateInfo?.Thumbprint))
+                    {
+                        <MudItem xs="12">
+                            <MudText style="float: right;">@AppState.ClientCertificateInfo?.DistinguishedName</MudText>
+                        </MudItem>
 
-                  <MudItem >
-                      <MudButton Color="Color.Primary"
-                                 ButtonType="ButtonType.Button"
-                                 Variant="Variant.Filled"
-                                 Disabled="@(!AppState.CertificateLoaded)"
-                                 OnClick="BuildRawCancelSoftwareStatement">Cancel</MudButton>
-                  </MudItem>
+                        <MudItem xs="12">
+                            <MudText style="float: right;">@AppState.ClientCertificateInfo?.Thumbprint</MudText>
+                        </MudItem>
+                    }
 
-                  @if (!string.IsNullOrEmpty(RawSoftwareStatementError))
-                  {
-                      <MudItem >
-                          <MudAlert Severity="Severity.Error">@RawSoftwareStatementError</MudAlert>
-                      </MudItem>
-                  }
-              </MudGrid>
-          </MudCardActions>
-          <MudCardContent>
-              <MudGrid Spacing="1" Class="mt-8">
-                  <MudItem sm="6" xs="12">
-                      <MudPaper Class="udap-input" Elevation="3">
-                          <MudText Align="Align.Right" Color="Color.Tertiary">Raw Software Statement</MudText>
-                          <pre Class="@ValidRawSoftwareStatementStyle">[</pre>
-                          <InputTextArea id="StatementHeader"
-                                         Class="@ValidRawSoftwareStatementStyle"
-                                         rows="@(SoftwareStatementBeforeEncodingHeader.Count(s => s == '\n') + 5)"
-                                         @bind-Value="SoftwareStatementBeforeEncodingHeader"/>,
-                          <InputTextArea Class="@ValidRawSoftwareStatementStyle"
-                                         rows="@(SoftwareStatementBeforeEncodingSoftwareStatement.Count(s => s == '\n') + 1)"
-                                         @bind-Value="SoftwareStatementBeforeEncodingSoftwareStatement"
-                                         @onfocusout="PersistSoftwareStatement"/>
-                          <pre Class="@ValidRawSoftwareStatementStyle">]</pre>
-                      </MudPaper>
-                  </MudItem>
-                  <MudItem sm="6" xs="12">
-                      <MudPaper Class="udap-analyzed" Elevation="3">
-                          <MudText Align="Align.Right" Color="Color.Tertiary">x509 certificates from x5c</MudText>
-                          <CertificateViewer JwtHeaderWithx5c="@SoftwareStatementBeforeEncodingHeader"/>
-                      </MudPaper>
-                  </MudItem>
-              </MudGrid>
-          </MudCardContent>
-      </MudCard>
+                </MudGrid>
+            </MudItem>
+        </MudGrid>
 
-    <MudCard Class="pa-2 ma-2" Elevation="3">
-          <MudCardActions>
-              <MudButton Class="mt-3"
-                         Color="Color.Primary"
-                         ButtonType="ButtonType.Button"
-                         Variant="Variant.Filled"
-                         Disabled="@(!AppState.CertificateLoaded)"
-                         OnClick="BuildRequestBody">Build Request Body</MudButton>
-        
-          </MudCardActions>
-          <MudCardContent>
-              <MudGrid Spacing="1" Class="mt-8">
-                  <MudItem sm="6" xs="12">
-                      <MudPaper Class="udap-input" Elevation="3">
-                          <MudText Align="Align.Right" Color="Color.Tertiary">Request Body</MudText>
-                          <MudText Align="Align.Right" Color="Color.Tertiary">Actual software_statement</MudText>
-                          <pre>@RequestBody</pre>
-                      </MudPaper>
-                  </MudItem>
-                  <MudItem sm="6" xs="12">
-                      <MudPaper Class="udap-analyzed" Elevation="3">
-                          <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
-                          <SignedJwtViewer Title="<b>Decoded software_statement::</b>"
-                                           SignedSoftwareStatement="@AppState.UdapRegistrationRequest?.SoftwareStatement"/>
-                      </MudPaper>
-                  </MudItem>
+    </MudCardHeader>
 
-              </MudGrid>
-          </MudCardContent>
-      </MudCard>
-      
-      <MudCard Class="pa-2 ma-2" Elevation="3">
-          <MudCardActions>
-              <MudButton Class="mt-3"
-                         Color="Color.Primary"
-                         ButtonType="ButtonType.Button"
-                         Variant="Variant.Filled"
-                         Disabled="@(! AppState.CertificateLoaded)"
-                         OnClick="PerformRegistration">Register (DCR)</MudButton>
-               
-          </MudCardActions>
-          <MudCardContent>
-              <MudGrid Spacing="1" Class="mt-8">
-          <MudItem sm="6" xs="12">
-                      <MudPaper Class="udap-input" Elevation="3">
-                          <MudText Align="Align.Right" Color="Color.Tertiary">Registration Response</MudText>
-                          <pre>@RegistrationResult</pre>
-                      </MudPaper>
-                  </MudItem>
-                  <MudItem sm="6" xs="12">
-                      <MudPaper Class="udap-knowledge" Elevation="3">
-                          <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
-                          <pre>
+    <MudCardContent>
+        <MudGrid Justify="Justify.FlexStart">
+            <MudItem md="4" sm="6" xs="12">
+                <MudSelect @bind-Value="Oauth2Flow"
+                           Label="Select OAuth2Flow Flow"
+                           Placeholder="Please Select"
+                           AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
+                           AdornmentColor="Color.Primary"
+                           Variant="Variant.Outlined">
+                    @foreach (Oauth2FlowEnum item in Enum.GetValues(typeof(Oauth2FlowEnum)))
+                    {
+                        <MudSelectItem Value="@item">@item</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+
+            @if (AppState.ClientCertificateInfo?.SubjectAltNames != null)
+            {
+                <MudItem md="4" sm="6" xs="12">
+                    <MudSelect @bind-Value="_subjectAltName"
+                               Label="Select Subject Alt Name"
+                               T="string"
+                               Clearable="true"
+                               AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
+                               AdornmentColor="Color.Primary"
+                               Variant="Variant.Outlined">
+
+                        @foreach (var item in AppState.ClientCertificateInfo.SubjectAltNames)
+                        {
+                            <MudSelectItem Value="@item">@item</MudSelectItem>
+                        }
+
+                    </MudSelect>
+                </MudItem>
+            }
+
+            <MudItem md="4" sm="6" xs="12">
+                <MudSelect @bind-Value="_signingAlgorithm"
+                           Label="Select Signing Algorithm"
+                           T="string"
+                           Clearable="true"
+                           AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
+                           AdornmentColor="Color.Primary"
+                           Variant="Variant.Outlined">
+                    <MudSelectItem Value="UdapConstants.SupportedAlgorithm.RS256">@UdapConstants.SupportedAlgorithm.RS256</MudSelectItem>
+                    <MudSelectItem Value="UdapConstants.SupportedAlgorithm.RS384">@UdapConstants.SupportedAlgorithm.RS384</MudSelectItem>
+                    <MudSelectItem Value="UdapConstants.SupportedAlgorithm.ES384">@UdapConstants.SupportedAlgorithm.ES384</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Class="pa-2 ma-2" Elevation="3">
+    <MudCardHeader Class="bold"><MudText Typo="Typo.h6">Build Raw Software Statements For Registration</MudText></MudCardHeader>
+    <MudCardActions>
+        <MudGrid Spacing="2" Justify="Justify.FlexStart">
+            <MudItem>
+                <MudButton
+                    Color="Color.Primary"
+                    ButtonType="ButtonType.Button"
+                    Variant="Variant.Filled"
+                    Disabled="@(!AppState.CertificateLoaded)"
+                    OnClick="BuildRawSoftwareStatement">Build Register</MudButton>
+
+            </MudItem>
+
+            <MudItem >
+                <MudButton Color="Color.Primary"
+                           ButtonType="ButtonType.Button"
+                           Variant="Variant.Filled"
+                           Disabled="@(!AppState.CertificateLoaded)"
+                           OnClick="BuildRawCancelSoftwareStatement">Build Cancel</MudButton>
+            </MudItem>
+
+            @if (!string.IsNullOrEmpty(RawSoftwareStatementError))
+            {
+                <MudItem >
+                    <MudAlert Severity="Severity.Error">@RawSoftwareStatementError</MudAlert>
+                </MudItem>
+            }
+        </MudGrid>
+    </MudCardActions>
+    <MudCardContent>
+        <MudGrid Spacing="1" Class="mt-8">
+            <MudItem sm="6" xs="12">
+                <MudPaper Class="udap-input" Elevation="3">
+                    <MudText Align="Align.Right" Color="Color.Tertiary">Raw Software Statement</MudText>
+                    <pre Class="@ValidRawSoftwareStatementStyle">[</pre>
+                    <InputTextArea id="StatementHeader"
+                                   Class="@ValidRawSoftwareStatementStyle"
+                                   rows="@(SoftwareStatementBeforeEncodingHeader.Count(s => s == '\n') + 5)"
+                                   @bind-Value="SoftwareStatementBeforeEncodingHeader"/>,
+                    <InputTextArea Class="@ValidRawSoftwareStatementStyle"
+                                   rows="@(SoftwareStatementBeforeEncodingSoftwareStatement.Count(s => s == '\n') + 1)"
+                                   @bind-Value="SoftwareStatementBeforeEncodingSoftwareStatement"
+                                   @onfocusout="PersistSoftwareStatement"/>
+                    <pre Class="@ValidRawSoftwareStatementStyle">]</pre>
+                </MudPaper>
+            </MudItem>
+            <MudItem sm="6" xs="12">
+                <MudPaper Class="udap-analyzed" Elevation="3">
+                    <MudText Align="Align.Right" Color="Color.Tertiary">x509 certificates from x5c</MudText>
+                    <CertificateViewer JwtHeaderWithx5c="@SoftwareStatementBeforeEncodingHeader"/>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Class="pa-2 ma-2" Elevation="3">
+    <MudCardActions>
+        <MudButton Class="mt-3"
+                   Color="Color.Primary"
+                   ButtonType="ButtonType.Button"
+                   Variant="Variant.Filled"
+                   Disabled="@(!AppState.CertificateLoaded)"
+                   OnClick="BuildRequestBody">Build Request Body</MudButton>
+
+    </MudCardActions>
+    <MudCardContent>
+        <MudGrid Spacing="1" Class="mt-8">
+            <MudItem sm="6" xs="12">
+                <MudPaper Class="udap-input" Elevation="3">
+                    <MudText Align="Align.Right" Color="Color.Tertiary">Request Body</MudText>
+                    <MudText Align="Align.Right" Color="Color.Tertiary">Actual software_statement</MudText>
+                    <pre>@RequestBody</pre>
+                </MudPaper>
+            </MudItem>
+            <MudItem sm="6" xs="12">
+                <MudPaper Class="udap-analyzed" Elevation="3">
+                    <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
+                    <SignedJwtViewer Title="<b>Decoded software_statement::</b>"
+                                     SignedSoftwareStatement="@AppState.UdapRegistrationRequest?.SoftwareStatement"/>
+                </MudPaper>
+            </MudItem>
+
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+<MudCard Class="pa-2 ma-2" Elevation="3">
+    <MudCardActions>
+        <MudButton Class="mt-3"
+                   Color="Color.Primary"
+                   ButtonType="ButtonType.Button"
+                   Variant="Variant.Filled"
+                   Disabled="@(!AppState.CertificateLoaded)"
+                   OnClick="PerformRegistration">Register (DCR)</MudButton>
+
+    </MudCardActions>
+    <MudCardContent>
+        <MudGrid Spacing="1" Class="mt-8">
+            <MudItem sm="6" xs="12">
+                <MudPaper Class="udap-input" Elevation="3">
+                    <MudText Align="Align.Right" Color="Color.Tertiary">Registration Response</MudText>
+                    <pre>@RegistrationResult</pre>
+                </MudPaper>
+            </MudItem>
+            <MudItem sm="6" xs="12">
+                <MudPaper Class="udap-knowledge" Elevation="3">
+                    <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
+                    <pre>
 <a href="http://hl7.org/fhir/us/udap-security/registration.html#request-body">Per UDAP Security IG</a> 
 If a new registration is successful, the Authorization Server SHALL return a registration response with a 201 Created HTTP response code as per Section 5.1 of UDAP Dynamic Client Registration, including the unique client_id assigned by the Authorization Server to that client app. If a new registration is not successful, e.g. it is rejected by the server for any reason, the Authorization Server SHALL return an error response as per <a href="https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-5.1">Section 5.2</a> of UDAP Dynamic Client Registration.
 
@@ -178,18 +232,18 @@ If a new registration is successful, the Authorization Server SHALL return a reg
 
 <br />
 </pre>
-                      </MudPaper>
-                      <MudPaper Class="udap-analyzed" Elevation="3">
-                          <SignedJwtViewer Title="<b>Decoded software_statement::</b>" SignedSoftwareStatement="@AppState.RegistrationDocument?.SoftwareStatement"></SignedJwtViewer>
-                      </MudPaper>
+                </MudPaper>
+                <MudPaper Class="udap-analyzed" Elevation="3">
+                    <SignedJwtViewer Title="<b>Decoded software_statement::</b>" SignedSoftwareStatement="@AppState.RegistrationDocument?.SoftwareStatement"></SignedJwtViewer>
+                </MudPaper>
 
-                  </MudItem>
-              </MudGrid>
-          </MudCardContent>
-      </MudCard>
-      
-      
-  </ChildContent>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+
+</ChildContent>
   <ErrorContent Context="ex">
     <pre class="blazor-error-boundary">
             @ex.Message

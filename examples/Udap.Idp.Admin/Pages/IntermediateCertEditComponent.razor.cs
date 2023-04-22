@@ -120,7 +120,7 @@ public partial class IntermediateCertEditComponent
             if (((IntermediateCertificate)intermediateCertificate).Id == 0)
             {
                 _intermediateCertificates.Remove((IntermediateCertificate)intermediateCertificate);
-                AddEditionEvent($"RowEditCancel event: Editing of new IntermediateCertificate cancelled");
+                AddEditionEvent($"RowEditCancel event: Editing of new Intermediates cancelled");
             }
 
             if (_intermediateCertificateBeforeEdit != null)
@@ -134,7 +134,7 @@ public partial class IntermediateCertEditComponent
                     _intermediateCertificateBeforeEdit.Thumbprint;
             }
 
-            AddEditionEvent($"RowEditCancel event: Editing of IntermediateCertificate {((ViewModel.IntermediateCertificate)intermediateCertificate).Name} cancelled");
+            AddEditionEvent($"RowEditCancel event: Editing of Intermediates {((ViewModel.IntermediateCertificate)intermediateCertificate).Name} cancelled");
         }
         catch
         {

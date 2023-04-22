@@ -54,7 +54,7 @@ public static class HostingExtensions
         builder.Services.AddScoped<IIntermediateCertificateService, IntermediateCertificateService>();
         builder.Services.AddScoped<IUdapAdminCommunityValidator, UdapAdminCommunityValidator>();
         builder.Services.AddScoped<IUdapCertificateValidator<Anchor>, UdapAdminAnchorValidator>();
-        builder.Services.AddScoped<IUdapCertificateValidator<IntermediateCertificate>, UdapAdminRootCertificateValidator>();
+        builder.Services.AddScoped<IUdapCertificateValidator<Intermediate>, UdapAdminRootCertificateValidator>();
 
         var httpClientBuilder = builder.Services.AddHttpClient<ApiService>(client =>
         {

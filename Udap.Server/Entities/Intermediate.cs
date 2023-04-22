@@ -9,7 +9,7 @@
 
 namespace Udap.Server.Entities;
 
-public class IntermediateCertificate : ICertificateValidateMarker
+public class Intermediate : ICertificateValidateMarker
 {
     public int Id { get; set; }
     public int AnchorId { get; set; }

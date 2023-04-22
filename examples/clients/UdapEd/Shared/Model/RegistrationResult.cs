@@ -7,7 +7,6 @@
 // */
 #endregion
 
-
 namespace UdapEd.Shared.Model;
 public class RegistrationResult
 {

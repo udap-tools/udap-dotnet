@@ -34,11 +34,11 @@
 
   
   <ItemGroup>
-    <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="4.3.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-    <PackageReference Include="IdentityModel" Version="6.0.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="6.28.1" />
+    <PackageReference Include="Hl7.Fhir.Specification.R4B"  />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"  />
+    <PackageReference Include="Portable.BouncyCastle"  />
+    <PackageReference Include="IdentityModel"  />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt"  />
   </ItemGroup>
 
   <ItemGroup>

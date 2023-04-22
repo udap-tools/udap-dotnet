@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -12,11 +12,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
-using Udap.Common;
 using Udap.Common.Models;
 using Udap.Util.Extensions;
 
-namespace Udap.Metadata.Server;
+namespace Udap.Common.Certificates;
 
 public class FileCertificateStore : ICertificateStore
 {
@@ -40,6 +39,7 @@ public class FileCertificateStore : ICertificateStore
             _resolved = false;
         });
     }
+    
     public Task<ICertificateStore> Resolve()
     {
         if (_resolved == false)
@@ -50,12 +50,12 @@ public class FileCertificateStore : ICertificateStore
 
         return Task.FromResult(this as ICertificateStore);
     }
+    
+    public ICollection<Anchor> AnchorCertificates { get; set; } = new HashSet<Anchor>();
 
-    public ICollection<X509Certificate2> AnchorCertificates { get; set; } = new HashSet<X509Certificate2>();
-
-    public ICollection<Anchor> IntermediateCertificates { get; set; } = new HashSet<Anchor>();
+    
     public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new HashSet<IssuedCertificate>();
-
+    
     // TODO convert to Lazy<T> to protect from race conditions
 
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
@@ -84,11 +84,12 @@ public class FileCertificateStore : ICertificateStore
 
         foreach (var community in communities)
         {
-            if (community.RootCAFilePaths.Any())
+            var intermediates = new List<Intermediate>();
+            if (community.Intermediates.Any())
             {
-                foreach (var communityRootCaFilePath in community.RootCAFilePaths)
+                foreach (var intermediateFilePath in community.Intermediates)
                 {
-                    AnchorCertificates.Add(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, communityRootCaFilePath)));
+                    intermediates.Add(new Intermediate(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, intermediateFilePath))));
                 }
             }
 
@@ -106,9 +107,10 @@ public class FileCertificateStore : ICertificateStore
                     throw new FileNotFoundException($"Cannot find file: {path}");
                 }
 
-                IntermediateCertificates.Add(new Anchor(new X509Certificate2(path))
+                AnchorCertificates.Add(new Anchor(new X509Certificate2(path))
                 {
                     Community = community.Name,
+                    Intermediates = intermediates
                 });
             }
 
@@ -160,15 +162,28 @@ public class FileCertificateStore : ICertificateStore
                                 if (authorityIdentifierValue == null || 
                                     subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
                                 {
-                                    _logger.LogInformation($"Found root ca in {path} certificate.  Will add the root to roots if not already explicitly loaded.");
-
-                                    AnchorCertificates.Add(x509Cert);
+                                    _logger.LogInformation($"Ignore anchor in {path} certificate.  Never add the anchor to anchors if not already explicitly loaded.");
                                 }
                                 else
                                 {
-                                    _logger.LogInformation($"Found intermediate ca in {path} certificate.  Will add if not already explicitly loaded.");
+                                    _logger.LogInformation($"Found intermediate in {path} certificate.  Will add if not already explicitly loaded.");
 
-                                    IntermediateCertificates.Add(new Anchor(x509Cert) { Community = community.Name });
+                                    var anchor = AnchorCertificates.SingleOrDefault(a =>
+                                    {
+                                        var certificate = X509Certificate2.CreateFromPem(a.Certificate);
+                                        var subjectIdentifierOfAnchor =
+                                            certificate.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as 
+                                                X509SubjectKeyIdentifierExtension;
+
+                                        if (subjectIdentifierOfAnchor?.SubjectKeyIdentifier == authorityIdentifierValue)
+                                        {
+                                            return true;
+                                        }
+
+                                        return false;
+                                    });
+
+                                    anchor?.Intermediates?.Add(new Intermediate(x509Cert));
                                 }
                             }
                             else
@@ -176,20 +191,16 @@ public class FileCertificateStore : ICertificateStore
                                 IssuedCertificates.Add(new IssuedCertificate
                                 {
                                     Community = community.Name,
-                                    Certificate = x509Cert
+                                    Certificate = x509Cert,
+                                    Thumbprint = x509Cert.Thumbprint
                                 });
                             }
                         }
                     }
-
-                    IssuedCertificates.Add(new IssuedCertificate
-                    {
-                        Community = community.Name,
-                        Certificate = certificates.First()
-                    });
                 }
             }
         }
     }
+
 }
 

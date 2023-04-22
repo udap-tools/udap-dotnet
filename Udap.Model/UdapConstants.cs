@@ -138,7 +138,7 @@ public static class UdapConstants
 
     public static class Discovery
     {
-        public const string DiscoveryEndpoint = "/.well-known/udap";
+        public const string DiscoveryEndpoint = ".well-known/udap";
         public const string Issuer = "issuer";
         public const string UdapVersionsSupported = "udap_versions_supported";
         public const string UdapProfilesSupported = "udap_profiles_supported";

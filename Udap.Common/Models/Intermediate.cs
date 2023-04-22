@@ -3,10 +3,10 @@ using Udap.Util.Extensions;
 
 namespace Udap.Common.Models;
 
-public class IntermediateCertificate : IEquatable<IntermediateCertificate>
+public class Intermediate : IEquatable<Intermediate>
 {
-    public IntermediateCertificate() { }
-    public IntermediateCertificate(X509Certificate2 cert, string? name = null)
+    public Intermediate() { }
+    public Intermediate(X509Certificate2 cert, string? name = null)
     {
         Certificate = cert.ToPemFormat();
         BeginDate = cert.NotBefore;
@@ -43,7 +43,7 @@ public class IntermediateCertificate : IEquatable<IntermediateCertificate>
     /// <param name="other">An object to compare with this object.</param>
     /// <returns>
     /// <see langword="true" /> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <see langword="false" />.</returns>
-    public bool Equals(IntermediateCertificate? other)
+    public bool Equals(Intermediate? other)
     {
         if (other == null) return false;
         return other.Thumbprint == this.Thumbprint;
@@ -55,7 +55,7 @@ public class IntermediateCertificate : IEquatable<IntermediateCertificate>
     /// <see langword="true" /> if the specified object  is equal to the current object; otherwise, <see langword="false" />.</returns>
     public override bool Equals(object? obj)
     {
-        if (obj is IntermediateCertificate rootCertificate) return Equals(rootCertificate);
+        if (obj is Intermediate rootCertificate) return Equals(rootCertificate);
         return false;
     }
 }

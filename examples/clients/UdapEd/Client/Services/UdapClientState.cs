@@ -14,6 +14,7 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
 using Udap.Model.Registration;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Model.Discovery;
 
 namespace UdapEd.Client.Services;
 
@@ -30,8 +31,8 @@ public class UdapClientState : IAppState
 
     public OrderedDictionary BaseUrls { get; set; }
 
-    public UdapMetadata? UdapMetadata { get; set; }
-    
+    public MetadataVerificationModel? MetadataVerificationModel { get; set; }
+
     public RawSoftwareStatementAndHeader? SoftwareStatementBeforeEncoding { get; set; }
 
     public UdapRegisterRequest? UdapRegistrationRequest { get; set; }
@@ -44,7 +45,7 @@ public class UdapClientState : IAppState
 
     public UdapAuthorizationCodeTokenRequestModel? AuthorizationCodeTokenRequest { get; set; }
 
-    public CertificateStatusViewModel? CertificateInfo { get; set; }
+    public CertificateStatusViewModel? ClientCertificateInfo { get; set; }
 
     public AccessCodeRequestResult? AccessCodeRequestResult { get; set; }
    

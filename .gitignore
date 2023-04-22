@@ -215,3 +215,5 @@ _tests/Udap.PKI.Generator/Resources/ProjectDirectory.txt
 NuGet.Config
 *.db
 .tye/process_store
+
+_tests/UdapMetadata.Tests/DemoFileSystemService/.search-index-cache.json

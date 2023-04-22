@@ -162,7 +162,7 @@ namespace Udap.Server.Stores
 
             var intermediates = await _dbContext.IntermediateCertificates.ToListAsync(token).ConfigureAwait(false);
             
-            _logger.LogInformation($"Found {intermediates?.Count() ?? 0} anchor certificates");
+            _logger.LogInformation($"Found {intermediates?.Count() ?? 0} intermediate certificates");
 
             if (intermediates != null)
             {

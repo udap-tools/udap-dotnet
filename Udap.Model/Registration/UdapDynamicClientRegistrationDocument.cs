@@ -304,7 +304,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
             _redirectUris = value;
             if (value == null)
             {
-                this[UdapConstants.RegistrationDocumentValues.RedirectUris] = new HashSet<string>();
+                this.Remove(UdapConstants.RegistrationDocumentValues.RedirectUris);
             }
             else
             {
@@ -360,7 +360,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
             _contacts = value;
             if (value == null)
             {
-                this[UdapConstants.RegistrationDocumentValues.Contacts] = new HashSet<string>();
+                this.Remove(UdapConstants.RegistrationDocumentValues.Contacts);
             }
             else
             {
@@ -392,7 +392,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
             
             if (value == null)
             {
-                this[UdapConstants.RegistrationDocumentValues.GrantTypes] = new HashSet<string>();
+                this.Remove(UdapConstants.RegistrationDocumentValues.GrantTypes);
             }
             else
             {
@@ -422,7 +422,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
             
             if (value == null)
             {
-                this[UdapConstants.RegistrationDocumentValues.ResponseTypes] = new HashSet<string>();
+                this.Remove(UdapConstants.RegistrationDocumentValues.ResponseTypes);
             }
             else
             {

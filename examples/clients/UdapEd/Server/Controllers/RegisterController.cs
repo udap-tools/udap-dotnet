@@ -24,6 +24,7 @@ using UdapEd.Server.Extensions;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Registration;
+using static Udap.Model.UdapConstants;
 
 namespace UdapEd.Server.Controllers;
 
@@ -349,7 +350,12 @@ public class RegisterController : Controller
             .WithContacts(document.Contacts)
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope(document.Scope!) ;
-        
+
+        if (!request.SoftwareStatement.Contains(RegistrationDocumentValues.GrantTypes))
+        {
+            dcrBuilder.Document.GrantTypes = null;
+        }
+
         var signedSoftwareStatement = dcrBuilder.BuildSoftwareStatement(alg);
 
         var requestBody = new UdapRegisterRequest

@@ -43,10 +43,6 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\anchors\.gitignore">
-      <LastGenOutput>.cs</LastGenOutput>
-      <Generator>TextTemplatingFileGenerator</Generator>
-    </None>
     <None Update="CertStore\anchors\caLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -61,10 +57,6 @@
     </None>
     <None Update="CertStore\anchors\caWeatherApiLocalhostCert2.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\intermediates\.gitignore">
-      <LastGenOutput>.cs</LastGenOutput>
-      <Generator>TextTemplatingFileGenerator</Generator>
     </None>
     <None Update="CertStore\intermediates\intermediateLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

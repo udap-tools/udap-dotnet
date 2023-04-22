@@ -24,10 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="CertStore\issued\.gitignore">
-      <LastGenOutput>.cs</LastGenOutput>
-      <Generator>TextTemplatingFileGenerator</Generator>
-    </None>
     <None Update="CertStore\issued\weatherApiClientLocalhostCert1.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

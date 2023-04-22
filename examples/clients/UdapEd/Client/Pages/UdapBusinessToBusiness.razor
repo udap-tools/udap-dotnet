@@ -124,7 +124,7 @@
                                     <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Scope" @oninput="BuildAuthorizeLink" />
                                     <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.RedirectUri" @oninput="BuildAuthorizeLink" />
                                     <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Aud" @oninput="BuildAuthorizeLink" />
-                                    <pre>Host: @AppState.UdapMetadata?.AuthorizationEndpoint</pre>
+                                    <pre>Host: @AppState.MetadataVerificationModel?.UdapServerMetaData?.AuthorizationEndpoint</pre>
                                 }
                             </MudPaper>
                         </MudItem>

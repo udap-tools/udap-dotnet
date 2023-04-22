@@ -16,7 +16,7 @@ public class Community
     /// </summary>
     public string Name { get; set; } = "Default";
 
-    public ICollection<string> RootCAFilePaths { get; set; } = new List<string>();
+    public ICollection<string> Intermediates { get; set; } = new List<string>();
 
     public ICollection<AnchoFile> Anchors { get; set; } = new List<AnchoFile>();
 

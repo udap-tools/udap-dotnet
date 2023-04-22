@@ -28,12 +28,12 @@ public class RegisterService
         _httpClient = httpClientClient;
     }
 
-    public async Task UploadClientCert(string certBytes)
+    public async Task UploadClientCertificate(string certBytes)
     {
-        var result = await _httpClient.PostAsJsonAsync("Register/UploadClientCert", certBytes);
-
+        var result = await _httpClient.PostAsJsonAsync("Register/UploadClientCertificate", certBytes);
         result.EnsureSuccessStatusCode();
     }
+    
 
     public async Task<RawSoftwareStatementAndHeader?> BuildSoftwareStatementForClientCredentials(
         UdapDynamicClientRegistrationDocument request, 
@@ -137,7 +137,7 @@ public class RegisterService
 
     public async Task<CertificateStatusViewModel?> LoadTestCertificate()
     {
-        var response = await _httpClient.PutAsJsonAsync("Register/UploadTestClientCert", "fhirlabs.net.client.pfx");
+        var response = await _httpClient.PutAsJsonAsync("Register/UploadTestClientCertificate", "fhirlabs.net.client.pfx");
 
         if (!response.IsSuccessStatusCode)
         {

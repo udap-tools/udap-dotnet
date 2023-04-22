@@ -102,7 +102,8 @@ namespace Udap.Client.Client.Extensions
                 }
 
                 var disco = await ProtocolResponse
-                    .FromHttpResponseAsync<UdapDiscoveryDocumentResponse>(response, request.Policy).ConfigureAwait(false);
+                    .FromHttpResponseAsync<UdapDiscoveryDocumentResponse>(response, request.Policy)
+                    .ConfigureAwait(false);
 
                 if (disco.IsError)
                 {

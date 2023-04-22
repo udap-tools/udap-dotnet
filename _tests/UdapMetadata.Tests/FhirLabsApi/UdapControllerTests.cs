@@ -16,10 +16,18 @@ using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Moq;
 using Newtonsoft.Json;
+using Udap.Client.Client;
+using Udap.Common;
+using Udap.Common.Certificates;
 using Udap.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
@@ -30,24 +38,8 @@ namespace UdapMetadata.Tests.FhirLabsApi;
 
 public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
 {
-    private Udap.Model.UdapMetadata? _wellKnownUdap;
     public ITestOutputHelper? Output { get; set; }
-    
-    public Udap.Model.UdapMetadata WellKnownUdap
-    {
-        get
-        {
-            if (_wellKnownUdap == null)
-            {
-                var response = CreateClient().GetAsync($"fhir/r4/.well-known/udap").GetAwaiter().GetResult();
-                response.StatusCode.Should().Be(HttpStatusCode.OK);
-                var content = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                _wellKnownUdap = System.Text.Json.JsonSerializer.Deserialize<Udap.Model.UdapMetadata>(content);
-            }
-
-            return _wellKnownUdap!;
-        }
-    }
+    public const string ProgramPath = "../../../../../examples/FhirLabsApi";
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -56,7 +48,7 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
         // Still works with Windows but what a pain.  This feels fragile
         // TODO: 
         //
-        builder.UseSetting("contentRoot", "../../../../../examples/FhirLabsApi");
+        builder.UseSetting("contentRoot", ProgramPath);
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
@@ -75,15 +67,72 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
 public class UdapControllerTests : IClassFixture<ApiTestFixture>
 {
     private readonly ApiTestFixture _fixture;
+    private readonly ITestOutputHelper _testOutputHelper;
+    private readonly IServiceProvider _serviceProvider;
 
-    public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper output)
+    public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper output, ITestOutputHelper testOutputHelper)
     {
         //
-        // Tests json once
+        // Fixture is for FHIR Server configuration
         //
         if (fixture == null) throw new ArgumentNullException(nameof(fixture));
         fixture.Output = output;
         _fixture = fixture;
+        _testOutputHelper = testOutputHelper;
+
+
+        //
+        // This are is for client Dependency injection and Configuration
+        //
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", false, true)
+            // .AddUserSecrets<UdapControllerTests>()
+            .Build();
+
+        //
+        // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory
+        //
+        var services = new ServiceCollection();
+
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddXUnit(testOutputHelper);
+        });
+        
+        // UDAP CertStore
+        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
+        services.AddSingleton<ITrustAnchorStore>(sp =>
+            new TrustAnchorFileStore(
+                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                new Mock<ILogger<TrustAnchorFileStore>>().Object,
+                "FhirLabsApi"));
+
+        var problemFlags = X509ChainStatusFlags.NotTimeValid |
+                           X509ChainStatusFlags.Revoked |
+                           X509ChainStatusFlags.NotSignatureValid |
+                           X509ChainStatusFlags.InvalidBasicConstraints |
+                           X509ChainStatusFlags.CtlNotTimeValid |
+                           // X509ChainStatusFlags.OfflineRevocation |
+                           X509ChainStatusFlags.CtlNotSignatureValid;
+                       // X509ChainStatusFlags.RevocationStatusUnknown;
+
+
+        services.TryAddScoped(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+            _testOutputHelper.ToLogger<TrustChainValidator>()));
+
+        services.AddScoped<IUdapClient>(sp => 
+            new UdapClient(_fixture.CreateClient(), 
+                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<ILogger<UdapClient>>(),
+                sp.GetRequiredService<ITrustAnchorStore>()));
+
+        //
+        // Use this method in an application
+        //
+        //services.AddHttpClient<IUdapClient, UdapClient>();
+
+        _serviceProvider = services.BuildServiceProvider();
     }
 
     /// <summary>
@@ -91,30 +140,48 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     /// Well formed Json
     /// </summary>
     [Fact]
-    public void UdapWellKnownConfigIsAvailable()
+    public async Task UdapClientTest()
     {
-        _fixture.WellKnownUdap.Should().NotBeNull();
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+        
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        disco.HttpStatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.NotNull(udapClient.UdapServerMetaData);
     }
 
+    
     /// <summary>
     /// udap_versions_supported must contain a fixed array with one string
     /// </summary>
     [Fact]
-    public void udap_versions_supportedTest()
+    public async Task udap_versions_supportedTest()
     {
-        var verSupported = _fixture.WellKnownUdap.UdapVersionsSupported;
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var verSupported = disco.UdapVersionsSupported.ToList();
         verSupported.Should().NotBeNullOrEmpty();
-        verSupported!.Single().Should().Be("1");
+        verSupported.Single().Should().Be("1");
     }
 
 
     [Fact]
-    public void udap_authorization_extensions_supportedTest()
+    public async Task udap_authorization_extensions_supportedTest()
     {
-        var extensions = _fixture.WellKnownUdap.UdapAuthorizationExtensionsSupported;
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var extensions = disco.UdapAuthorizationExtensionsSupported.ToList();
         extensions.Should().NotBeNullOrEmpty();
 
-        var hl7B2B = extensions!.SingleOrDefault(c => c == "hl7-b2b");
+        var hl7B2B = extensions.SingleOrDefault(c => c == "hl7-b2b");
         hl7B2B.Should().NotBeNullOrEmpty();
     }
 
@@ -122,23 +189,33 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     /// Conditional.  Not required but setup for this test.
     /// </summary>
     [Fact]
-    public void udap_authorization_extensions_requiredTest()
+    public async Task udap_authorization_extensions_requiredTest()
     {
-        _fixture.WellKnownUdap.UdapAuthorizationExtensionsRequired.Should().Contain("hl7-b2b");
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        disco.UdapAuthorizationExtensionsRequired.Should().Contain("hl7-b2b");
     }
 
     /// <summary>
     /// udap_certifications_supported is an array of zero or more certification URIs
     /// </summary>
     [Fact]
-    public void udap_certifications_supportedTest()
+    public async Task udap_certifications_supportedTest()
     {
-        var certificationsSupported = _fixture.WellKnownUdap.UdapCertificationsSupported?.SingleOrDefault(c => c == "http://MyUdapCertification");
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var certificationsSupported = disco.UdapCertificationsSupported.SingleOrDefault(c => c == "http://MyUdapCertification");
         certificationsSupported.Should().NotBeNullOrEmpty();
         var uriCertificationsSupported = new Uri(certificationsSupported!);
         uriCertificationsSupported.Should().Be("http://MyUdapCertification");
 
-        certificationsSupported = _fixture.WellKnownUdap.UdapCertificationsSupported?.SingleOrDefault(c => c == "http://MyUdapCertification2");
+        certificationsSupported = disco.UdapCertificationsSupported.SingleOrDefault(c => c == "http://MyUdapCertification2");
         certificationsSupported.Should().NotBeNullOrEmpty();
         uriCertificationsSupported = new Uri(certificationsSupported!);
         uriCertificationsSupported.Should().Be("http://MyUdapCertification2");
@@ -148,30 +225,45 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     /// udap_certifications_required is an array of zero or more certification URIs
     /// </summary>
     [Fact]
-    public void udap_certifications_requiredTest()
+    public async Task udap_certifications_requiredTest()
     {
-        var certificationsSupported = _fixture.WellKnownUdap.UdapCertificationsRequired?.SingleOrDefault();
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var certificationsSupported = disco.UdapCertificationsRequired.SingleOrDefault();
         certificationsSupported.Should().NotBeNullOrEmpty();
         var uriCertificationsSupported = new Uri(certificationsSupported!);
         uriCertificationsSupported.Should().Be("http://MyUdapCertification");
     }
 
     [Fact]
-    public void grant_types_supportedTest()
+    public async Task grant_types_supportedTest()
     {
-        var grantTypes = _fixture.WellKnownUdap.GrantTypesSupported;
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var grantTypes = disco.GrantTypesSupported.ToList();
         grantTypes.Should().NotBeNullOrEmpty();
 
-        grantTypes.Count.Should().Be(3);
+        grantTypes.Count().Should().Be(3);
         grantTypes.Should().Contain("authorization_code");
         grantTypes.Should().Contain("refresh_token");
         grantTypes.Should().Contain("client_credentials");
     }
 
     [Fact]
-    public void scopes_supported_supportedTest()
+    public async Task scopes_supported_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.ScopesSupported;
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var scopesSupported = disco.ScopesSupported.ToList();
 
         scopesSupported.Should().Contain("openid");
         scopesSupported.Should().Contain("system/*.read");
@@ -180,58 +272,93 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     }
 
     [Fact]
-    public void authorization_endpointTest()
+    public async Task authorization_endpointTest()
     {
-        var authorizationEndpoint = _fixture.WellKnownUdap.AuthorizationEndpoint;
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var authorizationEndpoint = disco.AuthorizeEndpoint;
         authorizationEndpoint.Should().Be("https://host.docker.internal:5002/connect/authorize");
     }
 
     [Fact]
-    public void token_endpointTest()
+    public async Task token_endpointTest()
     {
-        var tokenEndpoint = _fixture.WellKnownUdap.TokenEndpoint;
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var tokenEndpoint = disco.TokenEndpoint;
         tokenEndpoint.Should().Be("https://host.docker.internal:5002/connect/token");
     }
 
     [Fact]
-    public void registration_endpointTest()
+    public async Task registration_endpointTest()
     {
-        var registrationEndpoint = _fixture.WellKnownUdap.RegistrationEndpoint;
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var registrationEndpoint = disco.RegistrationEndpoint;
         registrationEndpoint.Should().Be("https://host.docker.internal:5002/connect/register");
     }
 
     [Fact]
-    public void token_endpoint_auth_methods_supportedTest()
+    public async Task token_endpoint_auth_methods_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.TokenEndpointAuthMethodsSupported?.SingleOrDefault();
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var scopesSupported = disco.TokenEndpointAuthMethodsSupported.SingleOrDefault();
         scopesSupported.Should().NotBeNullOrEmpty();
         scopesSupported.Should().Be("private_key_jwt");
     }
 
     [Fact]
-    public void token_endpoint_auth_signing_alg_values_supportedTest()
+    public async Task token_endpoint_auth_signing_alg_values_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.RegistrationEndpointJwtSigningAlgValuesSupported;
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var scopesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported.ToList();
         scopesSupported.Should().NotBeNullOrEmpty();
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        scopesSupported.Count.Should().Be(2);
+        scopesSupported.Count().Should().Be(2);
     }
 
     [Fact]
-    public void registration_endpoint_jwt_signing_alg_values_supportedTest()
+    public async Task registration_endpoint_jwt_signing_alg_values_supportedTest()
     {
-        var scopesSupported = _fixture.WellKnownUdap.RegistrationEndpointJwtSigningAlgValuesSupported;
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var scopesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported.ToList();
         scopesSupported.Should().NotBeNullOrEmpty();
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        scopesSupported.Count.Should().Be(2);
+        scopesSupported.Count().Should().Be(2);
     }
 
     [Fact]
-    public void signed_metadataTest()
+    public async Task signed_metadataTest()
     {
-        var signedMetatData = _fixture.WellKnownUdap.SignedMetadata;
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+
+        var signedMetatData = disco.SignedMetadata;
         signedMetatData.Should().NotBeNullOrEmpty();
 
         var pattern = @"^[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+\/=]*$";
@@ -240,9 +367,14 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     }
 
     [Fact]
-    public void signed_metadataContentTest()
+    public async Task signed_metadataContentTest()
     {
-        var jwt = new JwtSecurityToken(_fixture.WellKnownUdap.SignedMetadata);
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+
+        var disco = await udapClient.ValidateResource(_fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+
+        var jwt = new JwtSecurityToken(disco.SignedMetadata);
         var tokenHeader = jwt.Header;
         
         var x5CArray = JsonConvert.DeserializeObject<string[]>(tokenHeader.X5c);
@@ -253,22 +385,21 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()));
 
         var tokenHandler = new JwtSecurityTokenHandler();
-
-
-        tokenHandler.ValidateToken(_fixture.WellKnownUdap.SignedMetadata, new TokenValidationParameters
+        
+        tokenHandler.ValidateToken(disco.SignedMetadata, new TokenValidationParameters
         {
             ValidateIssuer = false,
             ValidateLifetime = true,
             IssuerSigningKey = new X509SecurityKey(cert),
             ValidAlgorithms = new[] { tokenHeader.Alg },
             ValidateAudience = false
-        }, out SecurityToken validatedToken);
+        }, out _);
 
         var issClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.Issuer);
         issClaim.ValueType.Should().Be(ClaimValueTypes.String);
 
         // should be the same as the web base url
-        issClaim.Value.Should().Be("https://fhirlabs.net:7016/fhir/r4");
+        issClaim.Value.Should().Be("http://localhost/fhir/r4");
 
         var subjectAltNames = cert.GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI); //specification (predicate) will filter to only SANs of type uniformResourceIdentifier
 

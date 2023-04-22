@@ -30,7 +30,8 @@ using Microsoft.IdentityModel.Tokens;
 namespace Udap.Model.Registration;
 
 /// <summary>
-/// https://www.rfc-editor.org/rfc/rfc7591
+/// https://www.rfc-editor.org/rfc/rfc7591#section-2
+/// Client Metadata
 /// </summary>
 public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>, ISoftwareStatementSerializer
 {
@@ -51,7 +52,16 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     private ICollection<string>? _responseTypes = new HashSet<string>();
     private string? _tokenEndpointAuthMethod;
     private string? _scope;
-    
+
+    /// <summary>
+    /// Array of redirection URI strings for use in redirect-based flows
+    /// such as the authorization code and implicit flows.  As required by
+    /// Section 2 of OAuth 2.0 [RFC6749], clients using flows with
+    /// redirection MUST register their redirection URI values.
+    /// Authorization servers that support dynamic registration for
+    ///redirect-based flows MUST implement support for this metadata
+    /// value.
+    /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ClientId)]
     public string? ClientId
     {
@@ -421,7 +431,26 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         }
     }
 
-
+    /// <summary>
+    /// String indicator of the requested authentication method for the
+    /// token endpoint.Values defined by this specification are:
+    /// 
+    /// *  "none": The client is a public client as defined in OAuth 2.0,
+    /// Section 2.1, and does not have a client secret.
+    /// 
+    /// *  "client_secret_post": The client uses the HTTP POST parameters
+    /// as defined in OAuth 2.0, Section 2.3.1.
+    /// 
+    /// *  "client_secret_basic": The client uses HTTP Basic as defined in
+    /// OAuth 2.0, Section 2.3.1.
+    /// 
+    /// Additional values can be defined via the IANA "OAuth Token
+    /// Endpoint Authentication Methods" registry established in
+    /// Section 4.2.  Absolute URIs can also be used as values for this
+    /// parameter without being registered.If unspecified or omitted,
+    /// the default is "client_secret_basic", denoting the HTTP Basic
+    /// authentication scheme as specified in Section 2.3.1 of OAuth 2.0.
+    /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethod)]
     public string? TokenEndpointAuthMethod
     {

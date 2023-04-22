@@ -176,7 +176,7 @@ public partial class UdapBusinessToBusiness
     private void BuildAuthorizeLink()
     {
         var sb = new StringBuilder();
-        sb.Append(@AppState.UdapMetadata?.AuthorizationEndpoint);
+        sb.Append(@AppState.MetadataVerificationModel?.UdapServerMetaData?.AuthorizationEndpoint);
         if (@AppState.AuthorizationCodeRequest != null)
         {
             sb.Append("?").Append(@AppState.AuthorizationCodeRequest.ResponseType);
@@ -198,7 +198,7 @@ public partial class UdapBusinessToBusiness
 
         //UI has been changing properties so save it but don't rebind
         AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
-        var url = new RequestUrl(AppState.UdapMetadata?.AuthorizationEndpoint!);
+        var url = new RequestUrl(AppState.MetadataVerificationModel?.UdapServerMetaData?.AuthorizationEndpoint!);
 
         var accessCodeRequestUrl = url.AppendParams(
             AppState.AuthorizationCodeRequest?.ClientId,
@@ -274,7 +274,7 @@ public partial class UdapBusinessToBusiness
             return;
         }
 
-        if (string.IsNullOrEmpty(AppState.UdapMetadata?.TokenEndpoint))
+        if (string.IsNullOrEmpty(AppState.MetadataVerificationModel?.UdapServerMetaData?.TokenEndpoint))
         {
             TokenRequest1 = "Missing TokenEndpoint";
             return;
@@ -285,7 +285,7 @@ public partial class UdapBusinessToBusiness
             var tokenRequestModel = new AuthorizationCodeTokenRequestModel
             {
                 ClientId = AppState.RegistrationDocument.ClientId,
-                TokenEndpointUrl = AppState.UdapMetadata.TokenEndpoint,
+                TokenEndpointUrl = AppState.MetadataVerificationModel?.UdapServerMetaData?.TokenEndpoint,
             };
 
             if (AppState.RegistrationDocument?.RedirectUris.Count > 0)
@@ -322,7 +322,7 @@ public partial class UdapBusinessToBusiness
             var tokenRequestModel = new ClientCredentialsTokenRequestModel
             {
                 ClientId = AppState.RegistrationDocument.ClientId,
-                TokenEndpointUrl = AppState.UdapMetadata.TokenEndpoint,
+                TokenEndpointUrl = AppState.MetadataVerificationModel?.UdapServerMetaData?.TokenEndpoint,
                 LegacyMode = LegacyMode,
                 Scope = AppState.SoftwareStatementBeforeEncoding?.Scope
             };
@@ -340,7 +340,7 @@ public partial class UdapBusinessToBusiness
     {
         var sb = new StringBuilder();
         sb.AppendLine("POST /token HTTP/1.1");
-        sb.AppendLine($"Host: {AppState.UdapMetadata?.AuthorizationEndpoint}");
+        sb.AppendLine($"Host: {AppState.MetadataVerificationModel?.UdapServerMetaData?.AuthorizationEndpoint}");
         sb.AppendLine("Content-type: application/x-www-form-urlencoded");
         sb.AppendLine();
         sb.AppendLine("grant_type=client_credentials&");
@@ -375,7 +375,7 @@ public partial class UdapBusinessToBusiness
 
         var sb = new StringBuilder();
         sb.AppendLine("POST /token HTTP/1.1");
-        sb.AppendLine($"Host: {AppState.UdapMetadata?.AuthorizationEndpoint}");
+        sb.AppendLine($"Host: {AppState.MetadataVerificationModel?.UdapServerMetaData?.AuthorizationEndpoint}");
         sb.AppendLine("Content-type: application/x-www-form-urlencoded");
         sb.AppendLine();
         sb.AppendLine("grant_type=authorization_code&");

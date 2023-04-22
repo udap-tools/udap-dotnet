@@ -64,7 +64,7 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     public IEnumerable<string> UdapCertificationsRequired => TryGetStringArray(UdapConstants.Discovery.UdapCertificationsRequired);
     public IEnumerable<string> GrantTypesSupported => TryGetStringArray(UdapConstants.Discovery.GrantTypesSupported);
     public IEnumerable<string> ScopesSupported => TryGetStringArray(UdapConstants.Discovery.ScopesSupported);
-    public string? TokenEndpointAuthMethodsSupported => TryGetString(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported);
+    public IEnumerable<string> TokenEndpointAuthMethodsSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported);
     public IEnumerable<string> TokenEndpointAuthSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported);
     public IEnumerable<string> RegistrationEndpointJwtSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.RegistrationEndpointJwtSigningAlgValuesSupported);
 
@@ -107,7 +107,7 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     }
 
     /// <summary>
-    /// Validates the endoints and jwks_uri according to the security policy.
+    /// Validates the endpoints and jwks_uri according to the security policy.
     /// </summary>
     /// <param name="json">The json.</param>
     /// <param name="policy">The policy.</param>

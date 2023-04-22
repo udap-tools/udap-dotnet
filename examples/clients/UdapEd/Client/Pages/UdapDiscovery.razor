@@ -1,7 +1,7 @@
 ﻿@page "/udapDiscovery"
 @using UdapEd.Shared
 
-
+<InputFile id="anchorFileInput" OnChange="UploadFilesAsync" hidden />
 <ErrorBoundary @ref="ErrorBoundary">
   <ChildContent>
     <MudGrid Class="mt-4">
@@ -12,20 +12,54 @@
         <MudCard Class="pa-2 ma-2" Elevation="3">
             <MudCardActions>
                 
-              <MudGrid Spacing="2" Justify="Justify.FlexStart">
-              <MudItem  >
-                        <MudButton Class="mt-3"
-                                   Color="Color.Primary"
-                                   ButtonType="ButtonType.Button"
-                                   Variant="Variant.Filled"
-                                   OnClick="GetMetadata">Query</MudButton>
+                <MudGrid Spacing="2" Justify="Justify.FlexStart">
+                            <MudItem sm="3" xs="12">
+                        <MudGrid Spacing="2" Justify="Justify.FlexStart">
+                            <MudItem  >
+                                <MudButton Class="mt-3"
+                                           Color="Color.Primary"
+                                           ButtonType="ButtonType.Button"
+                                           Variant="Variant.Filled"
+                                           Disabled="@(!AppState.AnchorLoaded)"
+                                           OnClick="GetMetadata">Query</MudButton>
+                            </MudItem>
+                            <MudItem >
+                                <MudButton Class="mt-3"
+                                           Color="Color.Primary"
+                                           ButtonType="ButtonType.Button"
+                                           Variant="Variant.Filled"
+                                           OnClick="RemoveBaseUrl">Remove Base Url</MudButton>
+                            </MudItem>
+                        </MudGrid>
                     </MudItem>
-              <MudItem >
-                        <MudButton Class="mt-3"
-                                   Color="Color.Primary"
-                                   ButtonType="ButtonType.Button"
-                                   Variant="Variant.Filled"
-                                   OnClick="RemoveBaseUrl">Remove Base Url</MudButton>
+
+                    <MudSpacer/>
+
+                    <MudItem sm="8" xs="12">
+                        <MudGrid Spacing="2" Justify="Justify.FlexEnd" Class="bottom:0;right:0">
+                            <MudItem xs="12">
+
+                                <MudFab Class="ma-2 " style="float: right;"
+                                        HtmlTag="label"
+                                        Size="Size.Small"
+                                        Color="@CertLoadedColor"
+                                        Icon="@AppState.CertificateIcon"
+                                        Label="Anchor Certificate"
+                                        Title="Upload Anchor Certificate"
+                                        IconSize="Size.Small"
+                                        for="anchorFileInput"/>
+                            </MudItem>
+                            @if (!string.IsNullOrEmpty(AppState.AnchorCertificateInfo?.DistinguishedName) ||
+                                 !string.IsNullOrEmpty(AppState.AnchorCertificateInfo?.Thumbprint))
+                            {
+                                <MudItem xs="12" >
+                                    <MudText>@AppState.AnchorCertificateInfo?.DistinguishedName</MudText>
+                                    <MudText>@AppState.AnchorCertificateInfo?.Thumbprint</MudText>
+                                </MudItem>
+                            }
+
+                        </MudGrid>
+
                     </MudItem>
                 </MudGrid>
             </MudCardActions>
@@ -36,16 +70,26 @@
                                          Label="Enter BaseUrl"
                                          AutoFocus="true"
                                          HelperText=@($"UDAP Metadata URL: {RequestUrl.GetWellKnownUdap(BaseUrl, Community)}")
-                             @bind-Value="BaseUrl"
+                                         @bind-Value="BaseUrl"
                                          @bind-Text="BaseUrl"
                                          SearchFuncWithCancel="@GetMetadata"
-                                         ResetValueOnEmptyText="true" />
+                                         ResetValueOnEmptyText="true"/>
                     </MudItem>
                     <MudItem xs="4">
                         <MudTextField @bind-Value="Community" Label="Community" Variant="Variant.Text"></MudTextField>
                     </MudItem>
                 </MudGrid>
+                        @if (AppState.MetadataVerificationModel != null && AppState.MetadataVerificationModel.Notifications.Any())
+                {
+                            <MudAlert Severity="Severity.Error">
+                                @foreach (string note in AppState.MetadataVerificationModel.Notifications)
+                        {
+                                    <li>@note</li>
+                        }
+                    </MudAlert>
+                }
             </MudCardContent>
+           
         </MudCard>
 
       </MudItem>
@@ -60,7 +104,7 @@
             <MudText Align="Align.Right" Color="Color.Tertiary">Discovery | Metadata | Signed | Communities</MudText>
             <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-2">
               <MudTabPanel Text="Signed Software Statement">
-                <SignedJwtViewer Title="<b>Decoded software_statement::</b>" SignedSoftwareStatement="@AppState.UdapMetadata?.SignedMetadata" />
+                <SignedJwtViewer Title="<b>Decoded software_statement::</b>" SignedSoftwareStatement="@AppState.MetadataVerificationModel?.UdapServerMetaData?.SignedMetadata" />
               </MudTabPanel>
               <MudTabPanel Text="Certificates">
                 <CertificateViewer JwtHeaderWithx5c="@GetJwtHeader()" />

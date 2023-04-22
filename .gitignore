@@ -215,3 +215,6 @@ _tests/Udap.PKI.Generator/Resources/ProjectDirectory.txt
 NuGet.Config
 *.db
 .tye/process_store
+/_tests/Udap.PKI.Generator/certstores/localhost_community/intermediateLocalhostCert.cer
+/_tests/Udap.PKI.Generator/certstores/localhost_community/intermediateLocalhostCert.cer
+_tests/UdapMetadata.Tests/DemoFileSystemService/.search-index-cache.json

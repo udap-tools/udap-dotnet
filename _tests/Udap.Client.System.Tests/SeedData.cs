@@ -105,7 +105,7 @@
 //         if (x509Certificate2Collection != null && !x509Certificate2Collection.Any())
 //         {
 //             var rootCert = new X509Certificate2(
-//                 Path.Combine(assemblyPath!, "CertStore/roots/caLocalhostCert.cer"));
+//                 Path.Combine(assemblyPath!, "CertStore/anchors/caLocalhostCert.cer"));
 //
 //             udapContext.RootCertificates.Add(new RootCertificate
 //             {

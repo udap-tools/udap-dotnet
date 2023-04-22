@@ -98,7 +98,7 @@ public static class SeedData
         if (!clientRegistrationStore.GetAnchors("http://localhost").Result.Any())
         {
             var anchorLocalhostCert = new X509Certificate2(
-                Path.Combine(assemblyPath!, "CertStore/anchors/caLocalhostCert.cer"));
+                Path.Combine(assemblyPath!, "CertStore/anchors/caWeatherApiLocalhostCert.cer"));
 
             var community = udapContext.Communities.Single(c => c.Name == "http://localhost");
 
@@ -120,11 +120,11 @@ public static class SeedData
             //
             var x509Certificate2Collection = clientRegistrationStore.GetIntermediateCertificates().Result;
             if (x509Certificate2Collection != null && !x509Certificate2Collection.Any())
-            {
+            { 
                 var rootCert = new X509Certificate2(
-                    Path.Combine(assemblyPath!, "CertStore/intermediates/intermediateLocalhostCert.cer"));
+                    Path.Combine(assemblyPath!, "CertStore/intermediates/intermediateWeatherApiLocalhostCert.cer"));
 
-                udapContext.IntermediateCertificates.Add(new IntermediateCertificate
+                udapContext.IntermediateCertificates.Add(new Intermediate
                 {
                     BeginDate = rootCert.NotBefore,
                     EndDate = rootCert.NotAfter,
@@ -175,7 +175,7 @@ public static class SeedData
                 var rootCert = new X509Certificate2(
                     Path.Combine(assemblyPath!, "CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
 
-                udapContext.IntermediateCertificates.Add(new IntermediateCertificate
+                udapContext.IntermediateCertificates.Add(new Intermediate
                 {
                     BeginDate = rootCert.NotBefore,
                     EndDate = rootCert.NotAfter,

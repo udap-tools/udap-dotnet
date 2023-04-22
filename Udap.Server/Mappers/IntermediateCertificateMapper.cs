@@ -30,9 +30,9 @@ public static class IntermediateCertificateMapper
     /// </summary>
     /// <param name="entity">The entity.</param>
     /// <returns></returns>
-    public static Udap.Common.Models.IntermediateCertificate ToModel(this IntermediateCertificate entity)
+    public static Udap.Common.Models.Intermediate ToModel(this Intermediate entity)
     {
-        return Mapper.Map<Udap.Common.Models.IntermediateCertificate>(entity);
+        return Mapper.Map<Udap.Common.Models.Intermediate>(entity);
     }
 
     /// <summary>
@@ -40,9 +40,9 @@ public static class IntermediateCertificateMapper
     /// </summary>
     /// <param name="model">The model.</param>
     /// <returns></returns>
-    public static IntermediateCertificate ToEntity(this Udap.Common.Models.IntermediateCertificate model)
+    public static Intermediate ToEntity(this Udap.Common.Models.Intermediate model)
     {
-        return Mapper.Map<IntermediateCertificate>(model);
+        return Mapper.Map<Intermediate>(model);
     }
 }
 
@@ -50,8 +50,8 @@ public class IntermediateCertificateMapperProfile : Profile
 {
     public IntermediateCertificateMapperProfile()
     {
-        CreateMap<IntermediateCertificate, Udap.Common.Models.IntermediateCertificate>(MemberList.Destination)
-            .ConstructUsing(src => new Udap.Common.Models.IntermediateCertificate())
+        CreateMap<Intermediate, Udap.Common.Models.Intermediate>(MemberList.Destination)
+            .ConstructUsing(src => new Udap.Common.Models.Intermediate())
 
 
             .ForMember(model => model.Certificate, opts =>

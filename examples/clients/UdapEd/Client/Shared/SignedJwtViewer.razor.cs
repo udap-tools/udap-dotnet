@@ -50,6 +50,7 @@ public partial class SignedJwtViewer
     {
         if (SignedSoftwareStatement == null)
         {
+            _decodedJwt = string.Empty;
             return;
         }
 

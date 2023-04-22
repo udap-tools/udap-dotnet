@@ -24,6 +24,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Udap.Common;
+using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Metadata.Server;
 using Udap.Model;
@@ -141,7 +142,6 @@ builder.Services.AddTransient<FhirSmartAppLaunchConfiguration>(options =>
 });
 
 
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -181,7 +181,7 @@ app.Use(async (context, next) =>
     await next.Invoke();
 });
 
-// app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 
 //
 // Diagram to decide where cors middleware should be applied.

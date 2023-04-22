@@ -34,7 +34,8 @@ public static class ServiceCollectionExtensions
         var services = mvcBuilder.Services;
         services.Configure<UdapConfig>(configuration.GetSection("UdapConfig"));
         mvcBuilder.Services.TryAddSingleton<UdapMetadata>();
-        
+        mvcBuilder.Services.TryAddSingleton<UdapMetaDataBuilder>();
+
         var assembly = typeof(UdapController).Assembly;
         return mvcBuilder.AddApplicationPart(assembly);
     }
@@ -43,22 +44,23 @@ public static class ServiceCollectionExtensions
     {
         EnsureMvcControllerUnloads(app);
 
-        app.MapGet("/.well-known/udap",
+        app.MapGet($"/{UdapConstants.Discovery.DiscoveryEndpoint}", 
                 async (
                     [FromServices] UdapMetaDataEndpoint endpoint,
+                    HttpContext httpContext,
                     [FromQuery]string? community,
-                    CancellationToken token) => await endpoint.Process(community, token))
+                    CancellationToken token) => await endpoint.Process(httpContext, community, token))
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
 
-        app.MapGet("/.well-known/udap/communities",
+        app.MapGet($"/{UdapConstants.Discovery.DiscoveryEndpoint}/communities",
                 ([FromServices] UdapMetaDataEndpoint endpoint) => endpoint.GetCommunities())
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
         
-        app.MapGet("/.well-known/udap/communities/ashtml",
+        app.MapGet($"/{UdapConstants.Discovery.DiscoveryEndpoint}/communities/ashtml",
                 (
                     [FromServices] UdapMetaDataEndpoint endpoint,
                     HttpContext httpContext) => endpoint.GetCommunitiesAsHtml(httpContext))

@@ -16,7 +16,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Common;
-using Udap.Metadata.Server;
+using Udap.Common.Certificates;
 using Udap.Model;
 using WeatherApi;
 
@@ -66,7 +66,8 @@ builder.Services
     .AddControllers()
     .AddUdapMetaDataServer(builder.Configuration);
 
-    
+builder.Services.AddHttpContextAccessor();
+
 // UDAP CertStore
 builder.Services
     .Configure<UdapFileCertStoreManifest>(builder

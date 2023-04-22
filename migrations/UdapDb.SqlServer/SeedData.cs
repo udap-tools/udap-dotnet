@@ -144,7 +144,7 @@ public static class SeedData
                     .All(r => r.Thumbprint != intermediateCert.Thumbprint))
             {
 
-                udapContext.IntermediateCertificates.Add(new IntermediateCertificate
+                udapContext.IntermediateCertificates.Add(new Intermediate
                 {
                     BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                     EndDate = intermediateCert.NotAfter.ToUniversalTime(),
@@ -164,7 +164,7 @@ public static class SeedData
         // Anchor localhost_community
         //
         var anchorLocalhostCert = new X509Certificate2(
-            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/caLocalhostCert.cer"));
+            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community1/caLocalhostCert.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("http://localhost"))
             .All(a => a.Thumbprint != anchorLocalhostCert.Thumbprint))
@@ -190,13 +190,13 @@ public static class SeedData
             var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
 
             intermediateCert = new X509Certificate2(
-                Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/intermediateLocalhostCert.cer"));
+                Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community1/intermediates/intermediateLocalhostCert.cer"));
 
             if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
                     .All(r => r.Thumbprint != intermediateCert.Thumbprint))
             {
 
-                udapContext.IntermediateCertificates.Add(new IntermediateCertificate
+                udapContext.IntermediateCertificates.Add(new Intermediate
                 {
                     BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                     EndDate = intermediateCert.NotAfter.ToUniversalTime(),

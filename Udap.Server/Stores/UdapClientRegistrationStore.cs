@@ -116,7 +116,7 @@ namespace Udap.Server.Stores
             {
                 anchors = await _dbContext.Anchors
                     .Include(a => a.Community)
-                    .Include(a => a.IntermediateCertificates)
+                    .Include(a => a.Intermediates)
                     .Where(a => a.Community.Enabled && a.Enabled)
                     .Select(a => a)
                     .ToListAsync(token);
@@ -125,7 +125,7 @@ namespace Udap.Server.Stores
             {
                 anchors = await _dbContext.Anchors
                     .Include(a => a.Community)
-                    .Include(a => a.IntermediateCertificates)
+                    .Include(a => a.Intermediates)
                     .Where(a => a.Community.Enabled && a.Community.Name == community && a.Enabled)
                     .Select(a => a)
                     .ToListAsync(token);
@@ -141,32 +141,32 @@ namespace Udap.Server.Stores
 
             var encodedCerts = await _dbContext.Anchors
                 .Where(c => c.CommunityId == communityId)
-                .Include(c => c.IntermediateCertificates)
+                .Include(c => c.Intermediates)
                 .ToListAsync(token);
 
-            var certs = encodedCerts.Select(anchor =>
-                X509Certificate2.CreateFromPem(anchor.X509Certificate));
+            var certificates = encodedCerts.Select(anchor =>
+                X509Certificate2.CreateFromPem(anchor.X509Certificate))
+                .ToList();
 
-            foreach (var intCert in encodedCerts.SelectMany(anchor => anchor.IntermediateCertificates))
+            foreach (var intCert in encodedCerts.SelectMany(anchor => anchor.Intermediates))
             {
-                certs.Append(X509Certificate2.CreateFromPem(intCert.X509Certificate));
+                certificates.Append(X509Certificate2.CreateFromPem(intCert.X509Certificate));
             }
            
-            return certs;
+            return certificates;
         }
 
-        //TODO.  This is still coded with the old concept of getting root certificates.
         public async Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetRootCertificates");
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetIntermediateCertificates");
 
-            var roots = await _dbContext.IntermediateCertificates.ToListAsync(token).ConfigureAwait(false);
+            var intermediates = await _dbContext.IntermediateCertificates.ToListAsync(token).ConfigureAwait(false);
             
-            _logger.LogInformation($"Found {roots?.Count() ?? 0} anchor certificates");
+            _logger.LogInformation($"Found {intermediates?.Count() ?? 0} anchor certificates");
 
-            if (roots != null)
+            if (intermediates != null)
             {
-                return new X509Certificate2Collection(roots
+                return new X509Certificate2Collection(intermediates
                     .Select(a => X509Certificate2.CreateFromPem(a.X509Certificate)).ToArray());
 
             }

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.5" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
-    <PackageReference Include="MudBlazor" Version="6.2.1" />
+    <PackageReference Include="MudBlazor" Version="6.2.2" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,8 +21,8 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Client" Version="0.0.4-preview*" />
-    <PackageReference Include="Udap.Common" Version="0.0.4-preview*" />
+    <PackageReference Include="Udap.Client" Version="$(UdapDotNetPackageVersion)" />
+    <PackageReference Include="Udap.Common" Version="$(UdapDotNetPackageVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">

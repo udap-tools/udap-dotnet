@@ -32,11 +32,6 @@ using Udap.Util.Extensions;
 
 namespace Udap.Common.Certificates
 {
-    // TODO:
-    // Notes:   Follow up on this https://stackoverflow.com/questions/59382619/online-revocation-checking-using-custom-root-in-x509chain
-    //          .NET 6.0 should be able to avoid the UdapWindowStore package.  Only .Net Framework and .Net less than 5.0 will need UdapWindowsStore.
-    //
-
     public class TrustChainValidator
     {
         private X509ChainPolicy _validationPolicy;
@@ -76,7 +71,8 @@ namespace Udap.Common.Certificates
                    X509ChainStatusFlags.OfflineRevocation |
                    X509ChainStatusFlags.CtlNotSignatureValid |
                    X509ChainStatusFlags.RevocationStatusUnknown | // can't trust the chain to check revocation.
-                   X509ChainStatusFlags.PartialChain;
+                   X509ChainStatusFlags.PartialChain |
+                   X509ChainStatusFlags.UntrustedRoot;
         }
 
         /// <summary>
@@ -111,6 +107,20 @@ namespace Udap.Common.Certificates
             _logger = logger;
         }
 
+        public bool IsTrustedCertificate(
+            string clientName,
+            X509Certificate2 certificate,
+            X509Certificate2Collection? intermediateCertificates,
+            X509Certificate2Collection anchorCertificates)
+        {
+            return IsTrustedCertificate(
+                clientName,
+                certificate,
+                intermediateCertificates,
+                anchorCertificates,
+                out X509ChainElementCollection? _,
+                out _);
+        }
 
         public bool IsTrustedCertificate(string clientName,
             X509Certificate2 certificate,
@@ -185,9 +195,8 @@ namespace Udap.Common.Certificates
 
                     if (this.ChainElementHasProblems(chainElement))
                     {
-                        this.NotifyProblem(chainElement);
-
-                        // Whoops... problem with at least one cert in the chain. Stop immediately
+                        this.NotifyProblem(chainElement);                        
+                        this.NotifyUntrusted(chainElement.Certificate);
                         return false;
                     }
 
@@ -206,16 +215,22 @@ namespace Udap.Common.Certificates
                     if (this.ChainElementHasProblems(chainElement))
                     {
                         this.NotifyProblem(chainElement);
-
-                        // Whoops... problem with at least one cert in the chain. Stop immediately
+                        this.NotifyUntrusted(chainElement.Certificate);
                         return false;
                     }
                 }
 
                 if (foundAnchor && !result)
                 {
+                    //
+                    // Can end up here if problem flags exist that we do not care about.
+                    //
                     _logger.LogWarning($"Client:: {clientName} Problem Flags set:: {_problemFlags.ToString()} ChainStatus:: {chainElements.Summarize()}");
-                    
+                }
+
+                if (!foundAnchor)
+                {
+                    this.NotifyUntrusted(certificate);
                 }
 
                 return foundAnchor;  

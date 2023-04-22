@@ -15,10 +15,13 @@
                 <MudText Color="Color.Primary">Access Token:</MudText>
                 <MudText Color="@(AppState.Status is {IsValid: false }
                                     ? Color.Error : Color.Success)">@AppState.AccessTokens?.AccessToken.TrimForDisplay(30, "...")</MudText>
-                </MudItem>
+            </MudItem>
+
             <MudItem md="4" sm="6" xs="12">
-                <MudText Color="Color.Primary">Base FHIR URL:</MudText>
-                <MudLink Href="/udapDiscovery" Color="Color.Info">@AppState.BaseUrl</MudLink>
+                <MudGrid>
+                    <MudTextField Label="Base FHIR Url" T="string" @bind-Value="BaseUrlOverride"></MudTextField>
+                    <MudFab StartIcon="@Icons.Material.Filled.Save" Size="Size.Small" OnClick="ChangeBaseUrl"></MudFab>
+                </MudGrid>
             </MudItem>
 
         </MudGrid>
@@ -140,6 +143,30 @@
 
     [Inject] FhirService FhirService { get; set; } = null!;
     [Inject] DiscoveryService DiscoveryService { get; set; } = null!;
+
+    private string? _baseUrlOverride = string.Empty;
+
+    private string? BaseUrlOverride
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_baseUrlOverride))
+            {
+                _baseUrlOverride = AppState.BaseUrl;
+            }
+            return _baseUrlOverride;
+        }
+
+        set => _baseUrlOverride = value;
+    }
+    private async Task ChangeBaseUrl()
+    {
+        if (!string.IsNullOrEmpty(_baseUrlOverride))
+        {
+            await AppState.SetPropertyAsync(this, nameof(AppState.BaseUrl), _baseUrlOverride);
+            await DiscoveryService.SetBaseFhirUrl(_baseUrlOverride, true);
+        }
+    }
 
     //
     // Potential container for post formatting presentation.

@@ -27,7 +27,7 @@ namespace Udap.Idp.Admin.Services
 
         public async Task<ICollection<IntermediateCertificate>?> GetRootCertificates()
         {
-            var response = await HttpClient.GetFromJsonAsync<ICollection<Common.Models.IntermediateCertificate>>("api/intermediateCertificate");
+            var response = await HttpClient.GetFromJsonAsync<ICollection<Common.Models.Intermediate>>("api/intermediateCertificate");
 
             var intermediateCertificates = _mapper.Map<ICollection<IntermediateCertificate>>(response);
 
@@ -143,13 +143,13 @@ namespace Udap.Idp.Admin.Services
 
         internal async Task<IntermediateCertificate> Save(IntermediateCertificate intermediateCertificateView)
         {
-            var anchor = _mapper.Map<Common.Models.IntermediateCertificate>(intermediateCertificateView);
+            var anchor = _mapper.Map<Common.Models.Intermediate>(intermediateCertificateView);
 
             var response = await HttpClient.PostAsJsonAsync("api/intermediateCertificate", anchor).ConfigureAwait(false);
 
             if (response.IsSuccessStatusCode)
             {
-                var anchorModel = await response.Content.ReadFromJsonAsync<Common.Models.IntermediateCertificate>();
+                var anchorModel = await response.Content.ReadFromJsonAsync<Common.Models.Intermediate>();
                 return _mapper.Map<IntermediateCertificate>(anchorModel);
             }
             else
@@ -162,7 +162,7 @@ namespace Udap.Idp.Admin.Services
 
         public async Task Update(IntermediateCertificate intermediateCertificateView)
         {
-            var anchor = _mapper.Map<Common.Models.IntermediateCertificate>(intermediateCertificateView);
+            var anchor = _mapper.Map<Common.Models.Intermediate>(intermediateCertificateView);
 
             var response = await HttpClient.PutAsJsonAsync($"api/intermediateCertificate/{anchor.Id}", anchor).ConfigureAwait(false);
 

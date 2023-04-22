@@ -8,18 +8,21 @@
 @using UdapEd.Shared
 
 <MudCard Elevation="3" Style="margin-top: 10px">
-  <MudForm Model="_model" @ref="form" />
+  <MudForm Model="_model" @ref="_form" />
   <MudCardContent>
     <MudGrid Justify="Justify.FlexStart">
-      <MudItem md="4" sm="6" xs="12">
-        <MudText Color="Color.Primary">Access Token:</MudText>
-        <MudText Color="@(AppState.Status is {IsValid: false }
-                                    ? Color.Error : Color.Success)">@AppState.AccessTokens?.AccessToken.TrimForDisplay(30, "...")</MudText>
-      </MudItem>
-      <MudItem md="4" sm="6" xs="12">
-        <MudText Color="Color.Primary">Base FHIR URL:</MudText>
-        <MudLink Href="/udapDiscovery" Color="Color.Info">@AppState.BaseUrl</MudLink>
-      </MudItem>
+        <MudItem md="4" sm="6" xs="12">
+            <MudText Color="Color.Primary">Access Token:</MudText>
+            <MudText Color="@(AppState.Status is {IsValid: false }
+                                ? Color.Error : Color.Success)">@AppState.AccessTokens?.AccessToken.TrimForDisplay(30, "...")</MudText>
+        </MudItem>
+
+        <MudItem md="4" sm="6" xs="12">
+            <MudGrid>
+                <MudTextField Label="Base FHIR Url" T="string" @bind-Value="BaseUrlOverride"></MudTextField>
+                <MudFab StartIcon="@Icons.Material.Filled.Save" Size="Size.Small" OnClick="ChangeBaseUrl"></MudFab>
+            </MudGrid>
+        </MudItem>
 
     </MudGrid>
     <MudGrid>
@@ -155,7 +158,7 @@
             </MudTabPanel>
             <MudTabPanel Text="Bundle Response">
                 <InputTextArea Class="@ValidPatientResourceStyle"
-                               rows="@(_matchResultRaw.Count(s => s == '\n') + 1)"
+                               rows="@(_matchResultRaw?.Count(s => s == '\n') + 1)"
                                @bind-Value="_matchResultRaw"
                                @onfocusout="PersistSoftwareStatement" />
             </MudTabPanel>
@@ -182,7 +185,7 @@
 
 @code {
 
-    MudForm form = null!;
+    MudForm _form = null!;
     private MudTable<Bundle.EntryComponent> _table = null!;
     PatientMatchModel _model = new(); //starting point for building $match fields
     List<Bundle.EntryComponent?>? _entries;
@@ -190,8 +193,7 @@
     string? _outComeMessage;
     private string _parametersJson = string.Empty;
     private string _selectedItemText = string.Empty;
-    private AdministrativeGender? _genderValues;
-
+    
     [CascadingParameter]
     public CascadingAppState AppState { get; set; } = null!;
 
@@ -200,6 +202,32 @@
 
     private const string ValidStyle = "pre udap-indent-1";
     private const string InvalidStyle = "pre udap-indent-1 jwt-invalid";
+    
+
+    private string? _baseUrlOverride = string.Empty;
+
+    private string? BaseUrlOverride
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_baseUrlOverride))
+            {
+                _baseUrlOverride = AppState.BaseUrl;
+            }
+            return _baseUrlOverride;
+        }
+
+        set => _baseUrlOverride = value;
+    }
+    private async Task ChangeBaseUrl()
+    {
+        if (!string.IsNullOrEmpty(_baseUrlOverride))
+        {
+            await AppState.SetPropertyAsync(this, nameof(AppState.BaseUrl), _baseUrlOverride);
+            await DiscoveryService.SetBaseFhirUrl(_baseUrlOverride, true);
+        }
+    }
+
     public string ValidPatientResourceStyle { get; set; } = ValidStyle;
 
     private void PersistSoftwareStatement()
@@ -302,7 +330,7 @@
             }
             else if (result.HttpStatusCode == HttpStatusCode.PreconditionFailed)
             {
-                var setResult = await DiscoveryService.SetBaseFhirUrl(AppState.BaseUrl);
+                await DiscoveryService.SetBaseFhirUrl(AppState.BaseUrl);
                 _outComeMessage = "BaseUrl was reset.  Try again";
             }
 
@@ -347,15 +375,11 @@
 
     private string FormatScoreAndGrade(Bundle.EntryComponent entry)
     {
-        var resource = entry.Resource as Patient;
         var searchResult = entry.Search;
-        var score = searchResult.Score.Value;
+        var score = searchResult.Score ?? 0;
         var code = searchResult.Extension.SingleOrDefault(e => e.Url == "http://hl7.org/fhir/StructureDefinition/match-grade")?.Value as Code;
         var grade = code?.Value;
 
         return $"{score} / {grade}";
     }
-
-   
-
 }

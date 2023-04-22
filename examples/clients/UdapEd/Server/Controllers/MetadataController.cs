@@ -1,17 +1,28 @@
-﻿using System.Security.Cryptography.X509Certificates;
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
-using Udap.Client.Internal;
-using Udap.Model;
+using Udap.Client.Client;
+using Udap.Common.Certificates;
+using Udap.Common.Extensions;
+using Udap.Common.Models;
 using Udap.Util.Extensions;
 using UdapEd.Server.Extensions;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Model.Discovery;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
 namespace UdapEd.Server.Controllers;
@@ -20,12 +31,12 @@ namespace UdapEd.Server.Controllers;
 [EnableRateLimiting(RateLimitExtensions.Policy)]
 public class MetadataController : Controller
 {
-    private readonly HttpClient _httpClient;
+    private readonly IUdapClient _udapClient;
     private readonly ILogger<MetadataController> _logger;
 
-    public MetadataController(HttpClient httpClient, ILogger<MetadataController> logger)
+    public MetadataController(IUdapClient udapClient, ILogger<MetadataController> logger)
     {
-        _httpClient = httpClient;
+        _udapClient = udapClient;
         _logger = logger;
     }
 
@@ -34,18 +45,108 @@ public class MetadataController : Controller
     public async Task<IActionResult> Get([FromQuery] string metadataUrl)
     {
         var baseUrl = Base64UrlEncoder.Decode(metadataUrl);
-        _logger.LogDebug(baseUrl);
-        var response = await _httpClient.GetStringAsync(baseUrl);
-        var result = JsonSerializer.Deserialize<UdapMetadata>(response);
-        HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseUrl.GetBaseUrlFromMetadataUrl());
+        var anchorString = HttpContext.Session.GetString(UdapEdConstants.ANCHOR_CERTIFICATE);
 
-        return Ok(result);
+        if (anchorString != null)
+        {
+            var result = new MetadataVerificationModel();
+
+            var certBytes = Convert.FromBase64String(anchorString);
+            var anchorCert = new X509Certificate2(certBytes);
+            var trustAnchorStore = new TrustAnchorMemoryStore()
+            {
+                AnchorCertificates = new HashSet<Anchor>
+                {
+                    new Anchor(anchorCert)
+                }
+            };
+
+            
+            _udapClient.Problem += element =>
+                result.Notifications.Add(element.ChainElementStatus.Summarize(TrustChainValidator.DefaultProblemFlags));
+            _udapClient.Untrusted += certificate2 => result.Notifications.Add("Untrusted: " + certificate2.Subject);
+            _udapClient.TokenError += message => result.Notifications.Add("TokenError: " + message);
+
+            var response = await _udapClient.ValidateResource(baseUrl.GetBaseUrlFromMetadataUrl(), trustAnchorStore);
+            // var result = JsonSerializer.Deserialize<MetadataVerificationModel>(response);
+            result.UdapServerMetaData = _udapClient.UdapServerMetaData;
+            HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseUrl.GetBaseUrlFromMetadataUrl());
+
+            return Ok(result);
+        }
+
+        return BadRequest("Missing anchor");
+    }
+
+    [HttpPost("UploadAnchorCertificate")]
+    public IActionResult UploadAnchorCertificate([FromBody] string base64String)
+    {
+        var result =  new CertificateStatusViewModel { CertLoaded = CertLoadedEnum.Negative };
+
+        try
+        {
+            var certBytes = Convert.FromBase64String(base64String);
+            var certificate = new X509Certificate2(certBytes);
+            result.DistinguishedName = certificate.SubjectName.Name;
+            result.Thumbprint = certificate.Thumbprint;
+            result.CertLoaded = CertLoadedEnum.Positive;
+            HttpContext.Session.SetString(UdapEdConstants.ANCHOR_CERTIFICATE, base64String);
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                $"Failed loading certificate from {nameof(base64String)} {base64String}");
+
+            return BadRequest(result);
+        }
+    }
+
+    [HttpGet("IsAnchorCertificateLoaded")]
+    public IActionResult IsAnchorCertificateLoaded()
+    {
+        var result = new CertificateStatusViewModel
+        {
+            CertLoaded = CertLoadedEnum.Negative
+        };
+
+        try
+        {
+            var base64String = HttpContext.Session.GetString(UdapEdConstants.ANCHOR_CERTIFICATE);
+
+            if (base64String != null)
+            {
+                var certBytes = Convert.FromBase64String(base64String);
+                var certificate = new X509Certificate2(certBytes);
+                result.DistinguishedName = certificate.SubjectName.Name;
+                result.Thumbprint = certificate.Thumbprint;
+                result.CertLoaded = CertLoadedEnum.Positive;
+            }
+            else
+            {
+                result.CertLoaded = CertLoadedEnum.Negative;
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex.Message);
+
+            return Ok(result);
+        }
     }
 
     [HttpPut]
-    public IActionResult SetBaseFhirUrl([FromBody] string baseFhirUrl)
+    public IActionResult SetBaseFhirUrl([FromBody] string baseFhirUrl, [FromQuery] bool resetToken)
     {
         HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseFhirUrl);
+
+        if (resetToken)
+        {
+            HttpContext.Session.Remove(UdapEdConstants.TOKEN);
+        }
 
         return Ok();
     }
@@ -182,7 +283,7 @@ public class MetadataController : Controller
             return string.Empty;
         }
 
-        var bytes = extensions.First().KeyIdentifier.Value.ToArray();
+        var bytes = extensions.First().KeyIdentifier?.ToArray();
 
         if (bytes == null)
         {

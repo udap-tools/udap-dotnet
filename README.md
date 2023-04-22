@@ -86,8 +86,6 @@ Issuer and Subject must match the issued certificates, Subject Alternative Name 
       {
         "Community": "http://localhost",
         "SignedMetadataConfig": {
-          "Issuer": "http://localhost/",
-          "Subject": "http://localhost/",
           "AuthorizationEndPoint": "https://securedcontrols.net:5001/connect/authorize",
           "TokenEndpoint": "https://securedcontrols.net:5001/connect/token",
           "RegistrationEndpoint": "https://securedcontrols.net:5001/connect/register"
@@ -112,7 +110,7 @@ To continue this example, copy the following files from the Udap.PKI.Generator t
     - anchorLocalhostCert.cer
   - issued
     - weatherApiClientLocalhostCert.pfx
-  - roots
+  - anchors
     - caLocalhostCert.cer
 
 Add configuration to AppSettings to point to the certificates.
@@ -135,11 +133,11 @@ UdapConfig:UdapMetadataConfigs:Community value is the link to UdapFileCertStoreM
             "Name": "http://localhost",
             "Anchors": [
               {
-                "FilePath": "CertStore/intermediates/anchorLocalhostCert.cer"
+                "FilePath": "CertStore/anchors/caLocalhostCert.cer"
               }
             ],
-            "RootCAFilePaths": [
-              "CertStore/roots/caLocalhostCert.cer"
+            "Intermediates": [
+              "CertStore/intermediates/anchorLocalhostCert.cer"
             ],
             "IssuedCerts": [
               {

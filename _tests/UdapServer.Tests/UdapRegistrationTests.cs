@@ -189,7 +189,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine("CertStore/issued",
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         _testOutputHelper.WriteLine($"Path to Cert: {cert}");
         var clientCert = new X509Certificate2(cert, "udap-test");
@@ -281,7 +281,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
     
     [Fact]
-    public async Task RegisrationSuccessTest()
+    public async Task RegistrationSuccessTest()
     {
         using var client = _fixture.CreateClient();
         await ResetClientInDatabase();
@@ -296,7 +296,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint!);
 
-        var cert = Path.Combine("CertStore/issued", "weatherApiClientLocalhostCert.pfx");
+        var cert = Path.Combine("CertStore/issued", "weatherApiClientLocalhostCert1.pfx");
 
         _testOutputHelper.WriteLine($"Path to Cert: {cert}");
         var clientCert = new X509Certificate2(cert, "udap-test");
@@ -396,7 +396,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -460,7 +460,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -524,7 +524,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -589,7 +589,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -653,7 +653,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -719,7 +719,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -784,7 +784,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -849,7 +849,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -914,7 +914,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -979,7 +979,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -1044,7 +1044,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -1109,7 +1109,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -1174,7 +1174,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;
@@ -1240,7 +1240,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         var reg = new Uri(regEndpoint!);
 
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
-            "weatherApiClientLocalhostCert.pfx");
+            "weatherApiClientLocalhostCert1.pfx");
 
         var clientCert = new X509Certificate2(cert, "udap-test");
         var now = DateTime.UtcNow;

@@ -15,7 +15,6 @@
     <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
     <PackageTags>UDAP;FHIR;HL7</PackageTags>
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
-
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,10 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.28.1" />
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="6.28.1" />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-    <PackageReference Include="System.Text.Json" Version="7.0.2" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens"  />
+    <!-- <PackageReference Include="Microsoft.IdentityModel.Tokens"  /> -->
+    <PackageReference Include="Portable.BouncyCastle"  />
+    <PackageReference Include="System.Text.Json"/>
   </ItemGroup>
 
   <ItemGroup>

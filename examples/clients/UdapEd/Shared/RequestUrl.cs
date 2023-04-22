@@ -46,7 +46,7 @@ public  class RequestUrl
 
         if (!string.IsNullOrEmpty(baseUrl) && !baseUrl.EndsWith(UdapConstants.Discovery.DiscoveryEndpoint, StringComparison.OrdinalIgnoreCase))
         {
-            return $"{baseUrl!.RemoveTrailingSlash()}{UdapConstants.Discovery.DiscoveryEndpoint}{community}" ;
+            return $"{baseUrl!.EnsureTrailingSlash()}{UdapConstants.Discovery.DiscoveryEndpoint}{community}" ;
         }
 
         return baseUrl ?? string.Empty ;

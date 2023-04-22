@@ -60,6 +60,10 @@
     {
         if (Certificate == null)
         {
+            if (string.IsNullOrEmpty(JwtHeaderWithx5c))
+            {
+                _certificateView = default;
+            }
             if (!string.IsNullOrEmpty(JwtHeaderWithx5c) && !JwtHeaderWithx5c.Equals("Loading ..."))
             {
                 var document = JsonDocument.Parse(JwtHeaderWithx5c);

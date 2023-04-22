@@ -4,6 +4,7 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 
 using IdentityModel.Client;
+using Udap.Model;
 
 namespace Udap.Client.Client;
 
@@ -12,6 +13,15 @@ namespace Udap.Client.Client;
 /// </summary>
 public class DiscoveryPolicy
 {
+    public static DiscoveryPolicy DefaultMetadataServerPolicy()
+    {
+        return new DiscoveryPolicy
+        {
+            ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
+            ValidateEndpoints = false // Authority endpoints are not hosted on same domain as resource server.
+        };
+    }
+
     internal static readonly IAuthorityValidationStrategy DefaultAuthorityValidationStrategy = new StringComparisonAuthorityValidationStrategy();
 
     /// <summary>
@@ -22,7 +32,7 @@ public class DiscoveryPolicy
     /// <summary>
     /// The path of the discovery document. Defaults to /.well-known/openid-configuration.
     /// </summary>
-    public string DiscoveryDocumentPath { get; set; } = string.Empty;
+    public string DiscoveryDocumentPath { get; set; } = UdapConstants.Discovery.DiscoveryEndpoint;
 
     /// <summary>
     /// Strategy used to validate issuer name and endpoints based on expected authority.

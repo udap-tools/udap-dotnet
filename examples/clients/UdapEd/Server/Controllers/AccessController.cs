@@ -8,10 +8,8 @@
 #endregion
 
 using System.Net;
-using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
-using IdentityModel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
@@ -29,7 +27,6 @@ namespace UdapEd.Server.Controllers;
 public class AccessController : Controller
 {
     private readonly HttpClient _httpClient;
-    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<RegisterController> _logger;
 
     public AccessController(
@@ -38,7 +35,6 @@ public class AccessController : Controller
         ILogger<RegisterController> logger)
     {
         _httpClient = httpClient;
-        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
@@ -80,7 +76,7 @@ public class AccessController : Controller
         [FromBody] AuthorizationCodeTokenRequestModel tokenRequestModel,
         [FromQuery] string alg)
     {
-        var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
+        var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERTIFICATE_WITH_KEY);
 
         if (clientCertWithKey == null)
         {
@@ -107,7 +103,7 @@ public class AccessController : Controller
         [FromBody] ClientCredentialsTokenRequestModel tokenRequestModel,
         [FromQuery] string alg)
     {
-        var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERT_WITH_KEY);
+        var clientCertWithKey = HttpContext.Session.GetString(UdapEdConstants.CLIENT_CERTIFICATE_WITH_KEY);
 
         if (clientCertWithKey == null)
         {

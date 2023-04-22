@@ -28,10 +28,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\intermediateLocalhostCert.cer" Link="CertStore\intermediates\intermediateLocalhostCert.cer">
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_weatherapi_community1\intermediates\intermediateWeatherApiLocalhostCert.cer" Link="CertStore\intermediates\intermediateWeatherApiLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\weatherApiClientLocalhostCert.pfx" Link="CertStore\issued\weatherApiClientLocalhostCert.pfx">
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_weatherapi_community1\issued\weatherApiClientLocalhostCert1.pfx" Link="CertStore\issued\weatherApiClientLocalhostCert1.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_weatherapi_community1\caWeatherApiLocalhostCert.cer" Link="CertStore\anchors\caWeatherApiLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="../Udap.PKI.Generator/certstores/surefhirlabs_community/issued/WeatherApiClient.pfx" Link="CertStore\issued\WeatherApiClient.pfx">
@@ -46,34 +49,31 @@
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\anchors\SureFhirLabs_CA.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="..\Udap.PKI.Generator\certstores\localhost_community\caLocalhostCert.cer" Link="CertStore\anchors\caLocalhostCert.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
   <ItemGroup>
     <!-- <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="6.1.7" /> -->
-    <PackageReference Include="FluentAssertions" Version="6.10.0" />
-    <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="5.0.0" />
-    <PackageReference Include="IdentityModel" Version="6.0.0" />
-    <PackageReference Include="JetBrains.DotMemoryUnit" Version="3.2.20220510" />
-    <PackageReference Include="MartinCostello.Logging.XUnit" Version="0.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.5">
+    <PackageReference Include="FluentAssertions"  />
+    <PackageReference Include="Hl7.Fhir.Specification.R4B" />
+    <PackageReference Include="IdentityModel" />
+    <!-- <PackageReference Include="JetBrains.DotMemoryUnit" Version="3.2.20220510" /> -->
+    <PackageReference Include="MartinCostello.Logging.XUnit"  />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore"  />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="7.0.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.5" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
-    <PackageReference Include="Moq" Version="4.18.4" />
-    <PackageReference Include="xunit" Version="2.4.2" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"  />
+    <PackageReference Include="Microsoft.NET.Test.Sdk"  />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit"/>
+    <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="3.2.0">
+    <PackageReference Include="coverlet.collector">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>

@@ -14,7 +14,8 @@
     <!-- <DockerfileRunArguments>-p "5016:8080" -p "7016:443" -e ASPNETCORE_HTTPS_PORT=7016 -e ASPNETCORE_Kestrel__Certificates__Default__Password="udap-test" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp_exported.pfx -v $(UserProfile)\.aspnet\https:/https/</DockerfileRunArguments> -->
     <!-- I am going to just go ahead and use the host.docker.internal certificate I created and am also using in Udap.Idp for testing. -->
     <DockerfileRunArguments>-p "5016:8080" -p "7016:443" -e ASPNETCORE_HTTPS_PORT=7016</DockerfileRunArguments>
-    <UserSecretsId>fb85f21c-ff56-47a2-aa2d-7cdced81f519</UserSecretsId> <!--I do need this because I am using an EmrDirect issued UDAP client certificate and it stores the password so I can do system testing from my desktop.  You can do the same.-->
+    <UserSecretsId>fb85f21c-ff56-47a2-aa2d-7cdced81f519</UserSecretsId>
+    <!--I do need this because I am using an EmrDirect issued UDAP client certificate and it stores the password so I can do system testing from my desktop.  You can do the same.-->
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +24,8 @@
     <EmbeddedResource Remove="Controllers\**" />
     <None Remove="Controllers\**" />
   </ItemGroup>
+
+ 
 
   <ItemGroup>
     <PackageReference Include="brianpos.Fhir.R4B.DemoFileSystemFhirServer" Version="4.3.0-beta4" />
@@ -39,21 +42,27 @@
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
   </ItemGroup>
- 
 
   <ItemGroup>
-    <!-- stage.healthtogo.me Community:: If it exists. -->
-    <None Update="CertStore/issued/udap-sandbox-surescripts.p12">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\issued\.gitignore">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>.cs</LastGenOutput>
-    </None>
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert2.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert3.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert4.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert5.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\udap-sandbox-surescripts.p12">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="host.docker.internal.pfx">
@@ -64,9 +73,8 @@
     </None>
   </ItemGroup>
 
-
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Metadata.Server" Version="0.0.4-preview*" />
+    <PackageReference Include="Udap.Metadata.Server" Version="$(UdapDotNetPackageVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">

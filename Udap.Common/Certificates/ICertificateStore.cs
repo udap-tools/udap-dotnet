@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,18 +7,13 @@
 // */
 #endregion
 
-using System.Security.Cryptography.X509Certificates;
 using Udap.Common.Models;
 
-namespace Udap.Common;
+namespace Udap.Common.Certificates;
 
 public interface ICertificateStore
 {
-    ICollection<X509Certificate2> AnchorCertificates { get; set; }
-
-    ICollection<Anchor> IntermediateCertificates { get; set; }
-
+    ICollection<Anchor> AnchorCertificates { get; set; }
     ICollection<IssuedCertificate> IssuedCertificates { get; set; }
-
     Task<ICertificateStore> Resolve();
 }

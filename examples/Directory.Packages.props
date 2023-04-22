@@ -1,0 +1,9 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.5.0" />
+    <PackageVersion Include="Udap.Metadata.Server" Version="$(UdapDotNetPackageVersion)" />
+  </ItemGroup>
+</Project>

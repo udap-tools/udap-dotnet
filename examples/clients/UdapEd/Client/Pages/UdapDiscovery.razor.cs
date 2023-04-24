@@ -294,6 +294,13 @@ public partial class UdapDiscovery: IDisposable
         await SetCertLoadedColor(certViewModel?.CertLoaded);
     }
 
+    private async Task LoadUdapOrgAnchor()
+    {
+        var certViewModel = await DiscoveryService.LoadUdapOrgAnchor();
+        await SetCertLoadedColor(certViewModel?.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.AnchorCertificateInfo), certViewModel);
+    }
+
     private async Task SetCertLoadedColor(CertLoadedEnum? isCertLoaded)
     {
         switch (isCertLoaded)
@@ -336,4 +343,6 @@ public partial class UdapDiscovery: IDisposable
     {
         _periodicTimer.Dispose();
     }
+
+    
 }

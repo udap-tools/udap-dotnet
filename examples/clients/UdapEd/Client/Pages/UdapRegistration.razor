@@ -52,7 +52,8 @@
                         </MudItem>
 
                         <MudItem xs="12">
-                            <MudText style="float: right;">@AppState.ClientCertificateInfo?.Thumbprint</MudText>
+                            <MudText style="float: right;" Typo="Typo.caption"> Thumbprint (sha1) </MudText>
+                            <MudText style="float: right;">Thumbprint (sha1) @AppState.ClientCertificateInfo?.Thumbprint </MudText>
                         </MudItem>
                     }
 

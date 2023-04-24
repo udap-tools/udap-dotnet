@@ -91,13 +91,13 @@ public class RegisterService
 
         if (!result.IsSuccessStatusCode)
         {
-            var joe = await result.Content.ReadAsStringAsync();
-            Console.WriteLine(joe);
+            var error = await result.Content.ReadAsStringAsync();
+            Console.WriteLine(error);
 
             return new RegistrationResult
             {
                 Success = false,
-                ErrorMessage = joe
+                ErrorMessage = error
             };
         }
 

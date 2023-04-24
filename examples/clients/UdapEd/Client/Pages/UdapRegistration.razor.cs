@@ -541,7 +541,7 @@ public partial class UdapRegistration
     private async Task LoadTestCertificate()
     {
         var certViewModel = await RegisterService.LoadTestCertificate();
-        await SetCertLoadedColor(certViewModel.CertLoaded);
+        await SetCertLoadedColor(certViewModel?.CertLoaded);
         await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
     }
 

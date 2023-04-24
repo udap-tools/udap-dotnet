@@ -46,6 +46,18 @@ public class DiscoveryService
         return await result.Content.ReadFromJsonAsync<CertificateStatusViewModel>();
     }
 
+    public async Task<CertificateStatusViewModel?> LoadUdapOrgAnchor()
+    {
+        var response = await _httpClient.PutAsJsonAsync("Metadata/LoadUdapOrgAnchor", "http://certs.emrdirect.com/certs/EMRDirectTestCA.crt");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        return await response.Content.ReadFromJsonAsync<CertificateStatusViewModel>();
+    }
+
     public async Task<CertificateStatusViewModel?> AnchorCertificateLoadStatus()
     {
         var response = await _httpClient.GetFromJsonAsync<CertificateStatusViewModel>("Metadata/IsAnchorCertificateLoaded");

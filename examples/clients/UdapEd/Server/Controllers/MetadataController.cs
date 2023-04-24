@@ -33,10 +33,12 @@ public class MetadataController : Controller
 {
     private readonly IUdapClient _udapClient;
     private readonly ILogger<MetadataController> _logger;
+    private readonly HttpClient _httpClient;
 
-    public MetadataController(IUdapClient udapClient, ILogger<MetadataController> logger)
+    public MetadataController(IUdapClient udapClient, HttpClient httpClient, ILogger<MetadataController> logger)
     {
         _udapClient = udapClient;
+        _httpClient = httpClient;
         _logger = logger;
     }
 
@@ -98,6 +100,33 @@ public class MetadataController : Controller
         {
             _logger.LogError(ex,
                 $"Failed loading certificate from {nameof(base64String)} {base64String}");
+
+            return BadRequest(result);
+        }
+    }
+
+    [HttpPut("LoadUdapOrgAnchor")]
+    public async Task<IActionResult> LoadUdapOrgAnchor([FromBody] string anchorCertificate)
+    {
+        var result = new CertificateStatusViewModel { CertLoaded = CertLoadedEnum.Negative };
+
+        try
+        {
+            var response = await _httpClient.GetAsync(new Uri(anchorCertificate));
+            response.EnsureSuccessStatusCode();
+            var certBytes = await response.Content.ReadAsByteArrayAsync();
+            var certificate = new X509Certificate2(certBytes);
+            result.DistinguishedName = certificate.SubjectName.Name;
+            result.Thumbprint = certificate.Thumbprint;
+            result.CertLoaded = CertLoadedEnum.Positive;
+            HttpContext.Session.SetString(UdapEdConstants.ANCHOR_CERTIFICATE, Convert.ToBase64String(certBytes));
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                $"Failed loading certificate from {nameof(anchorCertificate)} {anchorCertificate}");
 
             return BadRequest(result);
         }

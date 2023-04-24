@@ -20,7 +20,6 @@
                                            Color="Color.Primary"
                                            ButtonType="ButtonType.Button"
                                            Variant="Variant.Filled"
-                                           Disabled="@(!AppState.AnchorLoaded)"
                                            OnClick="GetMetadata">Query</MudButton>
                             </MudItem>
                             <MudItem >
@@ -38,23 +37,42 @@
                     <MudItem sm="8" xs="12">
                         <MudGrid Spacing="2" Justify="Justify.FlexEnd" Class="bottom:0;right:0">
                             <MudItem xs="12">
+                                <MudText style="float: right">Choose Trust Anchor Certificate.</MudText>
+                            </MudItem>
+
+                            <MudItem xs="12">
 
                                 <MudFab Class="ma-2 " style="float: right;"
                                         HtmlTag="label"
                                         Size="Size.Small"
                                         Color="@CertLoadedColor"
                                         Icon="@AppState.CertificateIcon"
-                                        Label="Anchor Certificate"
+                                        Label="Upload"
                                         Title="Upload Anchor Certificate"
                                         IconSize="Size.Small"
                                         for="anchorFileInput"/>
+
+                                <MudFab Class="ma-2 " style="float: right;"
+                                        HtmlTag="label"
+                                        Size="Size.Small"
+                                        Color="@CertLoadedColor"
+                                        Icon="@AppState.CertificateIcon"
+                                        Label="Load udap.org"
+                                        Title="Use UDAP Test Tool Anchor Certificate"
+                                        IconSize="Size.Small"
+                                        OnClick="@LoadUdapOrgAnchor" />
+
                             </MudItem>
                             @if (!string.IsNullOrEmpty(AppState.AnchorCertificateInfo?.DistinguishedName) ||
                                  !string.IsNullOrEmpty(AppState.AnchorCertificateInfo?.Thumbprint))
                             {
-                                <MudItem xs="12" >
-                                    <MudText>@AppState.AnchorCertificateInfo?.DistinguishedName</MudText>
-                                    <MudText>@AppState.AnchorCertificateInfo?.Thumbprint</MudText>
+                                <MudItem xs="12">
+                                    <MudText style="float: right;">@AppState.AnchorCertificateInfo?.DistinguishedName</MudText>
+                                </MudItem>
+
+                                <MudItem xs="12">
+                                    <MudText style="float: right;" Typo="Typo.caption"> Thumbprint (sha1) </MudText>
+                                    <MudText style="float: right;">@AppState.AnchorCertificateInfo?.Thumbprint </MudText>
                                 </MudItem>
                             }
 

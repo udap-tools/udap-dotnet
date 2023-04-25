@@ -28,12 +28,12 @@ public static class UdapServerApplicationBuilderExtensions
                     [FromServices] UdapDynamicClientRegistrationEndpoint endpoint,
                     CancellationToken token) =>
                 {
-                    //TODO:  Tests and response codes needed...    httpContext.Response
                     await endpoint.Process(httpContext, token);
                 })
             .AllowAnonymous()
-            .Produces(StatusCodes.Status201Created)
-            .Produces(StatusCodes.Status401Unauthorized);
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status400BadRequest);
 
         return app;
     }

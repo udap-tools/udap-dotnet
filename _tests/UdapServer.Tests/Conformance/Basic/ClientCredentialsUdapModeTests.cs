@@ -337,9 +337,8 @@ public class ClientCredentialsUdapModeTests
         clientIdWithSelectedSubAltName.Should().NotBe(clientIdWithDefaultSubAltName);
 
         //
-        // Fourth Registration with different Uri Subject Alt Name from same client certificate
-        // expect 200 created because I changed the SAN selected by calling WithIssuer and 
-        // registered for a second time.
+        // Fourth Registration with Uri Subject Alt Name from third registration
+        // expect 200 OK because I changed scope
         //
         document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -672,14 +671,13 @@ public class ClientCredentialsUdapModeTests
             UdapConstants.UdapVersionsSupportedValue,
             new string[] { }
         );
-
-
+        
 
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 200 status code according to udap.org specifications
         
         //
         // Even during a cancel registration it is expected that he SoftwareStatement returned is the same.
@@ -689,13 +687,14 @@ public class ClientCredentialsUdapModeTests
         // regDocumentResult.ClientId.Should().Be(clientIdWithDefaultSubAltName);  //with a cancel it is possible to delete multiple client ids.
 
         //
-        // Repeated un-register should be 404 now found
+        // Repeated un-register should be 400 rather than not found (404).
+        // This is following section 5.2 of https://www.udap.org/udap-dynamic-client-registration.html
         //
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.NotFound); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); 
 
         //
         // Registration with different Uri Subject Alt Name from same client certificate
@@ -775,7 +774,7 @@ public class ClientCredentialsUdapModeTests
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 200 status code according to udap.org specifications
         //
         // Even during a cancel registration it is expected that he SoftwareStatement returned is the same.
         //
@@ -783,13 +782,14 @@ public class ClientCredentialsUdapModeTests
         regDocumentResult!.SoftwareStatement.Should().Be(signedSoftwareStatement);
         // regDocumentResult.ClientId.Should().Be(clientIdWithSelectedSubAltName);  //with a cancel it is possible to delete multiple client ids.
         //
-        // Repeated un-register should be 404 now found
+        // Repeated un-register should be 400 rather than not found (404).
+        // This is following section 5.2 of https://www.udap.org/udap-dynamic-client-registration.html
         //
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.NotFound); // Deleted finished so returns a 404 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Deleted finished so returns a 404 status code
     }
 
     [Fact]
@@ -872,7 +872,7 @@ public class ClientCredentialsUdapModeTests
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 200 status code according to udap.org specifications
 
         //
         // Even during a cancel registration it is expected that he SoftwareStatement returned is the same.
@@ -882,17 +882,19 @@ public class ClientCredentialsUdapModeTests
         // regDocumentResult.ClientId.Should().Be(clientIdWithDefaultSubAltName);  //with a cancel it is possible to delete multiple client ids.
 
         //
-        // Repeated un-register should be 404 now found
+        // Repeated un-register should be 400 rather than not found (404).
+        // This is following section 5.2 of https://www.udap.org/udap-dynamic-client-registration.html
         //
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.NotFound); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Deleted finished so returns a 204 status code
 
         //
         // Registration with different Uri Subject Alt Name from same client certificate
-        // expect 201 created because I changed the SAN selected by calling WithIssuer
+        // expect 201 created because I changed the SAN selected by calling WithIssuer.
+        // I can have a new registration if identifying a different SAN
         //
 
         document = UdapDcrBuilderForClientCredentials
@@ -968,7 +970,7 @@ public class ClientCredentialsUdapModeTests
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 200 status code according to udap.org specifications
         //
         // Even during a cancel registration it is expected that he SoftwareStatement returned is the same.
         //
@@ -976,12 +978,13 @@ public class ClientCredentialsUdapModeTests
         regDocumentResult!.SoftwareStatement.Should().Be(signedSoftwareStatement);
         // regDocumentResult.ClientId.Should().Be(clientIdWithSelectedSubAltName);  //with a cancel it is possible to delete multiple client ids.
         //
-        // Repeated un-register should be 404 now found
+        // Repeated un-register should be 400 rather than not found (404).
+        // This is following section 5.2 of https://www.udap.org/udap-dynamic-client-registration.html
         //
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.NotFound); // Deleted finished so returns a 404 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Deleted finished so returns a 404 status code
     }
 }

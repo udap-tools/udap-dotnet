@@ -276,10 +276,8 @@
                   <MudText Align="Align.Right" Color="Color.Tertiary">Client Assertion Decoded</MudText>
                   <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
                     <MudTabPanel Text="Client Assertion">
-                      <pre>@if (ClientAssertionDecoded != null)
-                                            {
-                                                @((MarkupString)ClientAssertionDecoded)
-                                            }</pre>
+                        <SignedJwtViewer Title="<b>Decoded client_assertion::</b>"
+                        SignedSoftwareStatement="@AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value"/>
                     </MudTabPanel>
                     <MudTabPanel Text="Certificates">
                       <CertificateViewer JwtHeaderWithx5c="@GetJwtHeader(AppState.AuthorizationCodeTokenRequest?.ClientAssertion?.Value)" />
@@ -300,7 +298,7 @@
                  OnClick="GetAccessToken">Get Access Token</MudButton>
 
       <MudGrid Spacing="1" Class="mt-8">
-        <MudItem xs="7">
+        <MudItem xl="6" xs="12">
           <MudPaper Class="pa-4 ma-2" Elevation="3">
             <MudText Align="Align.Right" Color="Color.Tertiary">7.1 Success</MudText>
             <pre>@AccessToken</pre>

@@ -439,20 +439,21 @@ public class RegisterController : Controller
 
         var response = await _httpClient.PostAsync(request.RegistrationEndpoint, content);
 
-        if (response.StatusCode == HttpStatusCode.NotFound)
-        {
-            return BadRequest("Registration not found.");
-        }
-
         if (!response.IsSuccessStatusCode)
         {
-            return BadRequest(await response.Content.ReadAsStringAsync());
+           var failResult = new ResultModel<RegistrationDocument?>(
+                await response.Content.ReadAsStringAsync(),
+                response.StatusCode,
+                response.Version);
+
+            return Ok(failResult);
         }
+        
+        var result = new ResultModel<RegistrationDocument?>(
+            await response.Content.ReadFromJsonAsync<RegistrationDocument>(),
+            response.StatusCode,
+            response.Version);
 
-       
-        var result = await response.Content
-            .ReadFromJsonAsync<RegistrationDocument>();
-
-        return Ok(JsonSerializer.Serialize(result));
+        return Ok(result);
     }
 }

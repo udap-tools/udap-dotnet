@@ -633,7 +633,7 @@ public class UdapResponseTypeResponseModeTests
 
 
         //
-        // Re-Register
+        // Re-Register with different redirect url
         //
 
         _httpsCodeClientCallback = "https://code_client/different_callback";

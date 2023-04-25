@@ -10,6 +10,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using BQuery;
+using Hl7.Fhir.Rest;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
@@ -425,20 +426,31 @@ public partial class UdapRegistration
             UdapRegisterRequest = AppState.UdapRegistrationRequest
         };
 
-        var result = await RegisterService.Register(registrationRequest);
-        
-        if (result is { Success: true })
+        var resultModel = await RegisterService.Register(registrationRequest);
+
+        if (resultModel == null)
         {
-            RegistrationResult = JsonSerializer.Serialize(
-                result,
+            RegistrationResult = "Internal failure. Check the logs.";
+            return;
+        }
+
+        if (resultModel.HttpStatusCode.IsSuccessful())
+        {
+            RegistrationResult = $"HTTP/{resultModel.Version} {(int)resultModel.HttpStatusCode} {resultModel.HttpStatusCode}" +
+                                 $"{Environment.NewLine}{Environment.NewLine}"; 
+            RegistrationResult += JsonSerializer.Serialize(
+                resultModel.Result,
                 new JsonSerializerOptions { WriteIndented = true });
             
-            AppState.SetProperty(this, nameof(AppState.RegistrationDocument), result.Document);
+            await AppState.SetPropertyAsync(this, nameof(AppState.RegistrationDocument), resultModel.Result);
         }
         else
         {
-            RegistrationResult = result?.ErrorMessage ?? string .Empty;
-            AppState.SetProperty(this, nameof(AppState.RegistrationDocument), null);
+            RegistrationResult = $"HTTP/{resultModel.Version} {(int)resultModel.HttpStatusCode} {resultModel.HttpStatusCode}" +
+                                 $"{Environment.NewLine}{Environment.NewLine}";
+            RegistrationResult += resultModel.ErrorMessage ?? string .Empty;
+            
+            await AppState.SetPropertyAsync(this, nameof(AppState.RegistrationDocument), null);
         }
     }
     

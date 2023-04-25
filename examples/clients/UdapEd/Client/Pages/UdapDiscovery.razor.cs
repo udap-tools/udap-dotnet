@@ -172,8 +172,11 @@ public partial class UdapDiscovery: IDisposable
 
         try
         {
-            var model = await MetadataService.GetMetadataVerificationModel(RequestUrl.GetWellKnownUdap(BaseUrl, Community), default);
-            await AppState.SetPropertyAsync(this, nameof(AppState.MetadataVerificationModel), model);
+            if (BaseUrl != null)
+            {
+                var model = await MetadataService.GetMetadataVerificationModel(BaseUrl, Community, default);
+                await AppState.SetPropertyAsync(this, nameof(AppState.MetadataVerificationModel), model);
+            }
 
             Result = AppState.MetadataVerificationModel?.UdapServerMetaData != null
                 ? JsonSerializer.Serialize(AppState.MetadataVerificationModel.UdapServerMetaData, new JsonSerializerOptions { WriteIndented = true })
@@ -184,7 +187,7 @@ public partial class UdapDiscovery: IDisposable
             {
                 AppendOrMoveBaseUrl(BaseUrl);
             }
-            else
+            else if(Community == null)
             {
                 await RemoveBaseUrl();
             }
@@ -215,11 +218,14 @@ public partial class UdapDiscovery: IDisposable
 
         if (Uri.TryCreate(value, UriKind.Absolute, out var baseUri))
         {
-            var result = await MetadataService.GetMetadataVerificationModel(RequestUrl.GetWellKnownUdap(BaseUrl, Community), token);
-
-            if (result != null && result.UdapServerMetaData != null)
+            if (BaseUrl != null)
             {
-                AppendOrMoveBaseUrl(baseUri.AbsoluteUri);
+                var result = await MetadataService.GetMetadataVerificationModel(BaseUrl, Community, token);
+
+                if (result != null && result.UdapServerMetaData != null)
+                {
+                    AppendOrMoveBaseUrl(baseUri.AbsoluteUri);
+                }
             }
         }
 

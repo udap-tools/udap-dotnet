@@ -9,15 +9,18 @@
 
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Udap.Client.Client;
+using Udap.Client.Internal;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Common.Models;
+using Udap.Model;
 using Udap.Util.Extensions;
 using UdapEd.Server.Extensions;
 using UdapEd.Shared;
@@ -44,9 +47,9 @@ public class MetadataController : Controller
 
     // get metadata from .well-known/udap  
     [HttpGet]
-    public async Task<IActionResult> Get([FromQuery] string metadataUrl)
+    public async Task<IActionResult> Get([FromQuery] string metadataUrl, [FromQuery] string community)
     {
-        var baseUrl = Base64UrlEncoder.Decode(metadataUrl);
+        var baseUrl = metadataUrl.EnsureTrailingSlash() + UdapConstants.Discovery.DiscoveryEndpoint;
         var anchorString = HttpContext.Session.GetString(UdapEdConstants.ANCHOR_CERTIFICATE);
 
         if (anchorString != null)
@@ -69,8 +72,11 @@ public class MetadataController : Controller
             _udapClient.Untrusted += certificate2 => result.Notifications.Add("Untrusted: " + certificate2.Subject);
             _udapClient.TokenError += message => result.Notifications.Add("TokenError: " + message);
 
-            var response = await _udapClient.ValidateResource(baseUrl.GetBaseUrlFromMetadataUrl(), trustAnchorStore);
-            // var result = JsonSerializer.Deserialize<MetadataVerificationModel>(response);
+            await _udapClient.ValidateResource(
+                baseUrl.GetBaseUrlFromMetadataUrl(), 
+                trustAnchorStore,
+                community);
+            
             result.UdapServerMetaData = _udapClient.UdapServerMetaData;
             HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseUrl.GetBaseUrlFromMetadataUrl());
 
@@ -78,6 +84,28 @@ public class MetadataController : Controller
         }
 
         return BadRequest("Missing anchor");
+    }
+
+    // get metadata from .well-known/udap  
+    [HttpGet("UnValidated")]
+    public async Task<IActionResult> GetUnValidated([FromQuery] string metadataUrl, [FromQuery] string community)
+    {
+        var baseUrl = metadataUrl.EnsureTrailingSlash() + UdapConstants.Discovery.DiscoveryEndpoint;
+        _logger.LogDebug(baseUrl);
+        var response = await _httpClient.GetStringAsync(baseUrl);
+        var result = JsonSerializer.Deserialize<UdapMetadata>(response);
+        HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseUrl.GetBaseUrlFromMetadataUrl());
+
+        var model = new MetadataVerificationModel
+        {
+            UdapServerMetaData = result,
+            Notifications = new List<string>
+            {
+                "No Anchor:: Unvalidated server."
+            }
+        };
+
+        return Ok(model);
     }
 
     [HttpPost("UploadAnchorCertificate")]

@@ -176,6 +176,10 @@ namespace Udap.Client.Client
                         throw new UnauthorizedAccessException("Failed Trust Chain Validation");
                     }
                 }
+                else
+                {
+                    NotifyTokenError(disco.Error);    
+                }
 
                 return disco;
             }

@@ -24,7 +24,7 @@ jobs:
         NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
 
     - name: Generate PKI
-      run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj 
+      run: dotnet test -c Release --filter FullyQualifiedName=Udap.PKI.Generator.MakeCa.MakeCaWithIntermediateUdapForLocalhostCommunity  _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj 
     - name: Build and Restore dependencies
       run: dotnet build -c Release Udap.sln 
     - name: Test Udap.Common.Tests

@@ -45,7 +45,7 @@ public class UdapMetaDataEndpoint
     
     public IResult GetCommunitiesAsHtml(HttpContext httpContext)
     {
-        var html = _metaDataBuilder.GetCommunitiesAsHtml(httpContext.Request.PathBase);
+        var html = _metaDataBuilder.GetCommunitiesAsHtml(httpContext.Request.GetDisplayUrl().GetBaseUrlFromMetadataUrl());
         httpContext.Response.ContentType = "text/html";
         
         return Results.Content(html);

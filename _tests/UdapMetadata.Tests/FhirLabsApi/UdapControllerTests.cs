@@ -54,6 +54,7 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();

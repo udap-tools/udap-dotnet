@@ -222,6 +222,11 @@ public partial class UdapDiscovery: IDisposable
             {
                 var result = await MetadataService.GetMetadataVerificationModel(BaseUrl, Community, token);
 
+                if (result != null)
+                {
+                    await AppState.SetPropertyAsync(this, nameof(AppState.MetadataVerificationModel), result);
+                }
+
                 if (result != null && result.UdapServerMetaData != null)
                 {
                     AppendOrMoveBaseUrl(baseUri.AbsoluteUri);

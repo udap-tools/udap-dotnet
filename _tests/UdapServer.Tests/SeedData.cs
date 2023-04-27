@@ -81,9 +81,9 @@ public static class SeedData
             await udapContext.SaveChangesAsync();
         }
 
-        if (!udapContext.Communities.Any(c => c.Name == "udap://surefhir.labs"))
+        if (!udapContext.Communities.Any(c => c.Name == "udap://fhirlabs.net"))
         {
-            var community = new Community { Name = "udap://surefhir.labs" };
+            var community = new Community { Name = "udap://fhirlabs.net" };
             community.Enabled = true;
             udapContext.Communities.Add(community);
             await udapContext.SaveChangesAsync();
@@ -145,12 +145,12 @@ public static class SeedData
         //
         // Anchors
         //
-        if (!clientRegistrationStore.GetAnchors("udap://surefhir.labs").Result.Any())
+        if (!clientRegistrationStore.GetAnchors("udap://fhirlabs.net").Result.Any())
         {
             var sureFhirLabsAnchor = new X509Certificate2(
                 Path.Combine(assemblyPath!, "CertStore/anchors/SureFhirLabs_CA.cer"));
 
-            var community = udapContext.Communities.Single(c => c.Name == "udap://surefhir.labs");
+            var community = udapContext.Communities.Single(c => c.Name == "udap://fhirlabs.net");
 
             var anchor = new Anchor
             {

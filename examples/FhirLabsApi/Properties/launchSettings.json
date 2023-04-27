@@ -14,9 +14,6 @@
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "fhir/r4/.well-known/udap/communities/ashtml",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
       "dotnetRunMessages": true,
       "applicationUrl": "https://fhirlabs.net:7016;http://fhirlabs.net:5016"
     },

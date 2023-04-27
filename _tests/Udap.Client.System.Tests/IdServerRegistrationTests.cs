@@ -731,7 +731,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var clientCert = new X509Certificate2(
             cert, 
             _fixture.Manifest.ResourceServers.First().Communities
-                .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
         
         var signedSoftwareStatement = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -952,7 +952,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.ResourceServers.First().Communities
-                .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var signedSoftwareStatement = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -1175,7 +1175,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.ResourceServers.First().Communities
-                .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -1417,7 +1417,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.ResourceServers.First().Communities
-                .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -1548,7 +1548,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             },
-            Community = "udap://surefhir.labs"
+            Community = "udap://fhirlabs.net"
         });
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -1592,7 +1592,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.ResourceServers.First().Communities
-                .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -1802,7 +1802,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.ResourceServers.First().Communities
-                .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var redirectUrls = new List<string?>
             { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri };
@@ -1962,7 +1962,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             },
-            Community = "udap://surefhir.labs"
+            Community = "udap://fhirlabs.net"
         });
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -2019,7 +2019,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.ResourceServers.First().Communities
-                .Where(c => c.Name == "udap://surefhir.labs").Single().IssuedCerts.First().Password);
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)

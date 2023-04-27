@@ -173,7 +173,7 @@ namespace Udap.Client.System.Tests
             var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
             {
                 Address = "https://fhirlabs.net/fhir/r4", 
-                Community = "udap://surefhir.labs",
+                Community = "udap://fhirlabs.net",
                 Policy = new DiscoveryPolicy { 
                     ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                     ValidateEndpoints = false   // Authority endpoints are not hosted on same domain as Identity Provider.
@@ -213,7 +213,7 @@ namespace Udap.Client.System.Tests
                                X509ChainStatusFlags.OfflineRevocation |
                                X509ChainStatusFlags.CtlNotSignatureValid;
 
-            (await ValidateCertificateChain(cert, problemFlags, "udap://surefhir.labs")).Should().BeTrue();
+            (await ValidateCertificateChain(cert, problemFlags, "udap://fhirlabs.net")).Should().BeTrue();
             _diagnosticsChainValidator.Called.Should().BeFalse();
         }
 

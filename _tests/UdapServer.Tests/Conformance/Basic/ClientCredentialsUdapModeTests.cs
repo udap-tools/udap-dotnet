@@ -68,7 +68,7 @@ public class ClientCredentialsUdapModeTests
 
         _mockPipeline.Communities.Add(new Community
         {
-            Name = "udap://surefhir.labs",
+            Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
             Anchors = new[]
@@ -78,7 +78,7 @@ public class ClientCredentialsUdapModeTests
                     BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                     EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
                     Name = sureFhirLabsAnchor.Subject,
-                    Community = "udap://surefhir.labs",
+                    Community = "udap://fhirlabs.net",
                     Certificate = sureFhirLabsAnchor.ToPemFormat(),
                     Thumbprint = sureFhirLabsAnchor.Thumbprint,
                     Enabled = true,

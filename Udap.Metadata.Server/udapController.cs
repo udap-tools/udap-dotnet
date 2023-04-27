@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Net.Http;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -58,7 +59,7 @@ namespace Udap.Metadata.Server
         [Produces("text/html")]
         public ActionResult GetCommunitiesAsHtml()
         {
-            return base.Content(_metaDataBuilder.GetCommunitiesAsHtml(Request.PathBase), "text/html", Encoding.UTF8);
+            return base.Content(_metaDataBuilder.GetCommunitiesAsHtml(Request.GetDisplayUrl().GetBaseUrlFromMetadataUrl()), "text/html", Encoding.UTF8);
         }
     }
 }

@@ -12,7 +12,6 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.IdentityModel.Tokens;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Udap.Client.Client;
@@ -101,7 +100,7 @@ public class MetadataController : Controller
             UdapServerMetaData = result,
             Notifications = new List<string>
             {
-                "No Anchor:: Unvalidated server."
+                "No anchor loaded.  Un-Validated resource server."
             }
         };
 
@@ -212,6 +211,14 @@ public class MetadataController : Controller
     public IActionResult Get()
     {
         return Ok(Environment.GetEnvironmentVariable("MyIp"));
+    }
+
+    [HttpGet("FhirLabsCommunityList")]
+    public async Task<IActionResult> GetFhirLabsCommunityList()
+    {
+        var response = await _httpClient.GetStringAsync("https://fhirlabs.net/fhir/r4/.well-known/udap/communities/ashtml");
+        
+        return Ok(response);
     }
 
     [HttpPost("CertificateDisplayFromJwtHeader")]

@@ -22,7 +22,6 @@ using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Metadata.Server;
 using Udap.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;

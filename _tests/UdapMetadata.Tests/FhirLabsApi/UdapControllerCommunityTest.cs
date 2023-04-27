@@ -158,6 +158,30 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
     [Fact]
+    public async Task ValidateChainECDSATest()
+    {
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://ECDSA/");
+
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+
+        disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://ECDSA/");
+
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+    }
+
+
+    [Fact]
     public async Task InvalidJwtTokentBadIssMatchToSubjectAltNameTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();

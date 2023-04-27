@@ -90,7 +90,16 @@ public class UdapMetaDataBuilder
 
             var builder = SignedSoftwareStatementBuilder<ISoftwareStatementSerializer>.Create(certificate, jwtPayload);
 
-            _udapMetadata.SignedMetadata = builder.Build();
+            if (!string.IsNullOrEmpty(udapMetadataConfig.SignedMetadataConfig.SigningAlgorithm))
+            {
+#if NET5_0_OR_GREATER
+                _udapMetadata.SignedMetadata = builder.BuildECDSA(udapMetadataConfig.SignedMetadataConfig.SigningAlgorithm);
+#endif
+            }
+            else
+            {
+                _udapMetadata.SignedMetadata = builder.Build();
+            }
 
             return _udapMetadata;
         }

@@ -132,7 +132,7 @@ public class FileCertificateStore : ICertificateStore
                     }
                 
                     var certificates = new X509Certificate2Collection();
-                    certificates.Import(path, communityIssuer.Password);
+                    certificates.Import(path, communityIssuer.Password, X509KeyStorageFlags.Exportable);
                 
                     foreach (var x509Cert in certificates)
                     {

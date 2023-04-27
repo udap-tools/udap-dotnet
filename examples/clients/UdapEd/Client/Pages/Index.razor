@@ -44,8 +44,26 @@
     
     <MudItem>
         <MudCard>
+            <MudCardHeader>
+                <MudText Typo="Typo.subtitle2">
+                    Use the following UDAP communities at https://fhirlabs.net/fhir/r4 to experiment with various success and failure scenarios.
+                </MudText>
+            </MudCardHeader>
             <MudCardContent>
-                @((MarkupString)_fhirLabsCommunityList)
+                <MudText Typo="Typo.subtitle2">
+                    The udap://stage.healthtogo.me/ community name is also the default community. For this community click the "Load UDAP.ORG" button in the Discovery tab. Or load it from the <a href="https://www.udap.org/UDAPTestTool/" target="_blank">udap.org Test Tool</a>.
+                </MudText>
+
+            <MudText Typo="Typo.subtitle2">
+                    For all the other communities load the UDAP .NET Reference Implementation <a href="https://storage.googleapis.com/crl.fhircerts.net/certs/SureFhirLabs_CA.cer">Trust Anchor</a>.
+            </MudText>
+
+                <MudCard>
+                    <MudCardContent>
+                        @((MarkupString)_fhirLabsCommunityList)
+                    </MudCardContent>
+                </MudCard>
+
             </MudCardContent>
         </MudCard>
     </MudItem>

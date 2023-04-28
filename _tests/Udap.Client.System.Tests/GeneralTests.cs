@@ -283,15 +283,15 @@ namespace Udap.Client.System.Tests
             
             // UDAP CertStore
             services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
-            services.AddSingleton<ICertificateStore>(sp =>
-                new FileCertificateStore(
-                    sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
-                    new Mock<ILogger<FileCertificateStore>>().Object,
+            services.AddSingleton<ITrustAnchorStore>(sp =>
+                new TrustAnchorFileStore(
+                    sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                    new Mock<ILogger<TrustAnchorFileStore>>().Object,
                     "FhirLabsApi"));
-            
+
 
             var sp = services.BuildServiceProvider();
-            var certStore = sp.GetRequiredService<ICertificateStore>();
+            var certStore = sp.GetRequiredService<ITrustAnchorStore>();
             var certificateStore = await certStore.Resolve();
             var anchors = certificateStore.AnchorCertificates
                 .Where(c => c.Community == communityName);

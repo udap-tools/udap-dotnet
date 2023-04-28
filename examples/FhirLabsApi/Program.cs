@@ -18,6 +18,7 @@ using Hl7.Fhir.Utility;
 using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -113,10 +114,10 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
 
 // UDAP CertStore
 builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
-builder.Services.AddSingleton<ICertificateStore>(sp =>
-    new FileCertificateStore(
+builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
+    new IssuedCertificateStore(
         sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
-        sp.GetRequiredService<ILogger<FileCertificateStore>>(),
+        sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
         "FhirLabsApi"));
 
 

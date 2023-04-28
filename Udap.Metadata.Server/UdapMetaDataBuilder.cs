@@ -23,13 +23,13 @@ namespace Udap.Metadata.Server;
 public class UdapMetaDataBuilder
 {
     private readonly UdapMetadata _udapMetadata;
-    private readonly ICertificateStore _certificateStore;
+    private readonly IPrivateCertificateStore _certificateStore;
     private readonly ILogger<UdapMetaDataBuilder> _logger;
 
 
     public UdapMetaDataBuilder(
         UdapMetadata udapMetadata,
-        ICertificateStore certificateStore,
+        IPrivateCertificateStore certificateStore,
         ILogger<UdapMetaDataBuilder> logger)
     {
         _udapMetadata = udapMetadata;

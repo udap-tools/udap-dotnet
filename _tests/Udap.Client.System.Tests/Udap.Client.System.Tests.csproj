@@ -12,14 +12,14 @@
 
   <ItemGroup>
     <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="IdentityModel"  />
+    <PackageReference Include="IdentityModel" />
     <PackageReference Include="MartinCostello.Logging.XUnit" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk"  />
-    <PackageReference Include="Moq"  />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
-    <PackageReference Include="xunit"  />
-    <PackageReference Include="xunit.runner.visualstudio" >
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
@@ -59,6 +59,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
+    <ProjectReference Include="..\..\Udap.Common\Udap.Common.csproj" />
     <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
     
   </ItemGroup>

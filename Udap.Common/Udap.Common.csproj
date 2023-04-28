@@ -34,11 +34,12 @@
 
   
   <ItemGroup>
-    <PackageReference Include="Hl7.Fhir.Specification.R4B"  />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"  />
-    <PackageReference Include="Portable.BouncyCastle"  />
-    <PackageReference Include="IdentityModel"  />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt"  />
+    <PackageReference Include="Hl7.Fhir.Specification.R4B" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Portable.BouncyCastle" />
+    <PackageReference Include="IdentityModel" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,7 +52,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
     <ProjectReference Include="..\Udap.Util\Udap.Util.csproj" />
   </ItemGroup>
 

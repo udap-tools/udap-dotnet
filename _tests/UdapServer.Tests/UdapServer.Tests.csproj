@@ -53,22 +53,22 @@
 
   <ItemGroup>
     <!-- <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="6.1.7" /> -->
-    <PackageReference Include="FluentAssertions"  />
+    <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Hl7.Fhir.Specification.R4B" />
     <PackageReference Include="IdentityModel" />
     <!-- <PackageReference Include="JetBrains.DotMemoryUnit" Version="3.2.20220510" /> -->
-    <PackageReference Include="MartinCostello.Logging.XUnit"  />
+    <PackageReference Include="MartinCostello.Logging.XUnit" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore"  />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite"  />
-    <PackageReference Include="Microsoft.NET.Test.Sdk"  />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Moq" />
-    <PackageReference Include="xunit"/>
+    <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -81,6 +81,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\examples\Udap.Idp\Udap.Idp.csproj" />
+    <ProjectReference Include="..\..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
     <ProjectReference Include="..\..\Udap.Server\Udap.Server.csproj" />
     <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />

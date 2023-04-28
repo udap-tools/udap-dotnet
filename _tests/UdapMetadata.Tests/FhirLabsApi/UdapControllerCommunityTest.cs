@@ -171,11 +171,13 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         Assert.NotNull(udapClient.UdapServerMetaData);
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
 
-        disco = await udapClient.ValidateResource(
+        var disco2 = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
             "udap://ECDSA/");
 
-        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        disco.Raw.Should().NotBe(disco2.Raw);
+
+        disco2.IsError.Should().BeFalse($"\nError: {disco2.Error} \nError Type: {disco2.ErrorType}\n{disco2.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     }

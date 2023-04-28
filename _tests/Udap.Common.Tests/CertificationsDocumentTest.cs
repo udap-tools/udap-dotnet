@@ -63,7 +63,7 @@ namespace Udap.Common.Tests
         }
 
 
-        [Fact]
+        [Fact(Skip = "Experimental")]
         public void TestJOeWindows()
         {
             // The secret key used to sign the JWT
@@ -75,6 +75,8 @@ namespace Udap.Common.Tests
             // Load the private key from a file or other source
             var cert = new X509Certificate2(@"C:\Source\GitHub\JoeShook\udap-tools\udap-dotnet\_tests\Udap.PKI.Generator\certstores\localhost_fhirlabs_community6\issued\fhirLabsApiClientLocalhostCert6_ECDSA.pfx", "udap-test", X509KeyStorageFlags.Exportable);
             
+            
+
             AsymmetricAlgorithm key = cert.GetECDsaPrivateKey();
 
             byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
@@ -123,7 +125,7 @@ namespace Udap.Common.Tests
             _testOutputHelper.WriteLine(jwt);
         }
 
-        [Fact]
+        [Fact (Skip = "Experimental")]
         public void TestJOe()
         {
             // The secret key used to sign the JWT

@@ -755,7 +755,7 @@ namespace Udap.PKI.Generator
         // https://stackoverflow.com/a/57330499/6115838
         // Also see this Github issue comment: https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
         //
-        [Fact (Skip = "Enabled on desktop when needed.")]
+        [Fact (Skip = "Enabled on desktop when needed.  Actually I performed the work around in SignedSoftwareStatementBuilder<T>.BuildECDSA")]
         public void GenerateCrlForFailTests()
         {
             var subCA = new X509Certificate2($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test", X509KeyStorageFlags.Exportable);

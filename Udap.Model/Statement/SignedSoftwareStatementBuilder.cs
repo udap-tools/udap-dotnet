@@ -66,23 +66,42 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
     }
 
 #if NET5_0_OR_GREATER
+
     public string BuildECDSA(string? algorithm = UdapConstants.SupportedAlgorithm.ES384)
     {
+
         algorithm ??= UdapConstants.SupportedAlgorithm.ES384;
 
         var key = _certificate.GetECDsaPrivateKey();
+        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP384);
 
+#if Windows
+        //
+        // Windows work around.  Otherwise works on Linux
+        // Short answer: Windows behaves in such a way when importing the pfx
+        // it creates the CNG key so it can only be exported encrypted
+        // https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
+        // https://stackoverflow.com/a/57330499/6115838
+        //
         byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
-            "udap-test",
+            "ILikePasswords",
             new PbeParameters(
                 PbeEncryptionAlgorithm.Aes256Cbc,
                 HashAlgorithmName.SHA256,
                 iterationCount: 100_000));
 
-        using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP384);
-        ecdsa.ImportEncryptedPkcs8PrivateKey("udap-test".AsSpan(), encryptedPrivKeyBytes.AsSpan(), out int bytesRead);
-        var signingCredentials = new SigningCredentials(new ECDsaSecurityKey(ecdsa), algorithm);
+        ecdsa.ImportEncryptedPkcs8PrivateKey("ILikePasswords".AsSpan(), encryptedPrivKeyBytes.AsSpan(), out int bytesRead);
+#else
+        ecdsa.ImportECPrivateKey(key?.ExportECPrivateKey(), out _);
+#endif
 
+        var signingCredentials = new SigningCredentials(new ECDsaSecurityKey(ecdsa), algorithm)
+        {
+            // If this routine is called multiple times then you must supply the CryptoProvider factory without caching.
+            // See: https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/1302#issuecomment-606776893
+            CryptoProviderFactory = new CryptoProviderFactory{ CacheSignatureProviders = false}
+        };
+      
         var pem = Convert.ToBase64String(_certificate.Export(X509ContentType.Cert));
         var jwtHeader = new JwtHeader
         {
@@ -94,16 +113,10 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
         var encodedPayload = _document.Base64UrlEncode();
         var input = string.Concat(encodedHeader, ".", encodedPayload);
         var encodedSignature = JwtTokenUtilities.CreateEncodedSignature(input, signingCredentials);
-
-        // var encodedSignature =
-        //     JwtTokenUtilities.CreateEncodedSignature(string.Concat(encodedHeader, ".", encodedPayload),
-        //         signingCredentials);
-
-
-
         var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
 
         return signedSoftwareStatement;
-    }
+}
+
 #endif
 }

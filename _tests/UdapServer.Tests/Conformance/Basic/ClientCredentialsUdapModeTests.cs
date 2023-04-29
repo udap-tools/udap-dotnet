@@ -188,7 +188,93 @@ public class ClientCredentialsUdapModeTests
         var clientAssertion =
             SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(clientCert, jwtPayload)
-                .Build();
+                .Build("RS384");
+        
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = IdentityServerPipeline.TokenEndpoint,
+            //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.rs"
+        };
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        tokenResponse.Scope.Should().Be("system/Patient.rs", tokenResponse.Raw);
+
+    }
+
+    [Fact]
+    [Trait("Category", Category)]
+    public async Task GetAccessTokenECDSA()
+    {
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test", 
+            X509KeyStorageFlags.Exportable);
+
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.rs")
+            .Build();
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .BuildECDSA();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        var regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+
+
+
+
+        //
+        // Get Access Token
+        //
+        var now = DateTime.UtcNow;
+        var jwtPayload = new JwtPayLoadExtension(
+            regDocumentResult!.ClientId,
+            IdentityServerPipeline.TokenEndpoint,
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, regDocumentResult.ClientId!),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(),
+                    ClaimValueTypes.Integer),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+            },
+            now.ToUniversalTime(),
+            now.AddMinutes(5).ToUniversalTime()
+        );
+
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .BuildECDSA();
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {

@@ -70,7 +70,15 @@ public static class ClientExtensions
 
         var certificates = x5cArray
             .Select(s => new X509Certificate2(Convert.FromBase64String(s.ToString())))
-            .Select(c => (SecurityKey)new X509SecurityKey(c))
+            .Select(c =>
+            {
+                if (c.PublicKey.GetRSAPublicKey() != null)
+                {
+                    return (SecurityKey)new X509SecurityKey(c);
+                }
+
+                return (SecurityKey)new ECDsaSecurityKey(c.PublicKey.GetECDsaPublicKey());
+            })
             .ToList();
         
         return Task.FromResult(certificates);

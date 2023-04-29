@@ -44,7 +44,7 @@ public class MetadataController : Controller
         _logger = logger;
     }
 
-    // get metadata from .well-known/udap  
+    // get fully validated metadata from .well-known/udap  
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] string metadataUrl, [FromQuery] string community)
     {
@@ -85,7 +85,7 @@ public class MetadataController : Controller
         return BadRequest("Missing anchor");
     }
 
-    // get metadata from .well-known/udap  
+    // get metadata from .well-known/udap  that is not validated and trust is not validated
     [HttpGet("UnValidated")]
     public async Task<IActionResult> GetUnValidated([FromQuery] string metadataUrl, [FromQuery] string community)
     {

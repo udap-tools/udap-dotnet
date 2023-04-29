@@ -60,7 +60,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     }
 
     /// <inheritdoc />
-    public Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
+    public async Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request,
         X509Certificate2Collection? intermediateCertificates,
         X509Certificate2Collection anchorCertificates,
@@ -80,7 +80,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (x5cArray == null)
         {
-            return Task.FromResult(
+            return await Task.FromResult(
                 new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
                     UdapDynamicClientRegistrationErrorDescriptions.CannotFindorParseX5c));
@@ -88,42 +88,65 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
         var subAltNames = publicCert.GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI);
-
-        var validatedToken = tokenHandler.ValidateToken(request.SoftwareStatement, new TokenValidationParameters
-            {
-                RequireSignedTokens = true,
-                ValidateIssuer = true,
-                // Udap section 4.3 is strict concerning the SANs being of type uniformResourceIdentifier. https://www.udap.org/udap-dynamic-client-registration.html
-                // See RFC 2459 for SAN choice semantics https://www.rfc-editor.org/rfc/rfc2459#section-4.2.1.7
-                ValidIssuers = subAltNames.Select(san => san.Item2).ToArray(),
-                //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-                ValidateAudience = false, // No aud for UDAP metadata
-                ValidateLifetime = true,
-                IssuerSigningKey = new X509SecurityKey(publicCert),
-                ValidAlgorithms = new[] { jsonWebToken.Alg }, //must match signing algorithm
-                // AudienceValidator = (audiences, token, parameters) =>  Potential enhanced validation.  or replace inline validation code below
-            }
-        );
+        TokenValidationResult? validatedToken = null;
+        var publicKey = publicCert?.PublicKey.GetRSAPublicKey();
         
+        if (publicKey != null)
+        {
+            validatedToken = await tokenHandler.ValidateTokenAsync(request.SoftwareStatement,
+                new TokenValidationParameters
+                {
+                    RequireSignedTokens = true,
+                    ValidateIssuer = true,
+                    // Udap section 4.3 is strict concerning the SANs being of type uniformResourceIdentifier. https://www.udap.org/udap-dynamic-client-registration.html
+                    // See RFC 2459 for SAN choice semantics https://www.rfc-editor.org/rfc/rfc2459#section-4.2.1.7
+                    ValidIssuers = subAltNames.Select(san => san.Item2).ToArray(),
+                    //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                    ValidateAudience = false, // No aud for UDAP metadata
+                    ValidateLifetime = true,
+                    IssuerSigningKey = new X509SecurityKey(publicCert),
+                    ValidAlgorithms = new[] { jsonWebToken.Alg }, //must match signing algorithm
+                    // AudienceValidator = (audiences, token, parameters) =>  Potential enhanced validation.  or replace inline validation code below
+                }
+            );
+        }
+        else
+        {
+            var ecdsaPublicKey = publicCert?.PublicKey.GetECDsaPublicKey();
+
+            validatedToken = await tokenHandler.ValidateTokenAsync(request.SoftwareStatement,
+                new TokenValidationParameters
+                {
+                    RequireSignedTokens = true,
+                    ValidateIssuer = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuers = subAltNames.Select(san => san.Item2).ToArray(),
+                    ValidateAudience = false, // No aud for UDAP metadata
+                    ValidateLifetime = true,
+                    IssuerSigningKey = new ECDsaSecurityKey(ecdsaPublicKey),
+                    ValidAlgorithms = new[] { jsonWebToken.Alg }, //must match signing algorithm
+                });
+        }
+
         if (!validatedToken.IsValid)
         {
             if (validatedToken.Exception.GetType() == typeof(SecurityTokenNoExpirationException))
             {
-                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
                     UdapDynamicClientRegistrationErrorDescriptions.ExpMissing));
             }
 
             if (validatedToken.Exception.GetType() == typeof(SecurityTokenExpiredException))
             {
-                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
                     $"{UdapDynamicClientRegistrationErrorDescriptions.ExpExpired}: {validatedToken.Exception.Message}"));
             }
             
             _logger.LogWarning(validatedToken.Exception, UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
 
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
                 UdapDynamicClientRegistrationErrorDescriptions.FailedTokenValidation));
         }
@@ -136,7 +159,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.SubIsMissing);
 
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
                 UdapDynamicClientRegistrationErrorDescriptions.SubIsMissing));
         }
@@ -146,7 +169,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.SubNotEqualToIss);
             
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
                 UdapDynamicClientRegistrationErrorDescriptions.SubNotEqualToIss));
         }
@@ -156,7 +179,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
                                $"{UdapDynamicClientRegistrationErrorDescriptions.InvalidAud}: {aud}");
 
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
                 $"{UdapDynamicClientRegistrationErrorDescriptions.InvalidAud}: {aud}"));
         }
@@ -172,7 +195,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
                                $"{UdapDynamicClientRegistrationErrorDescriptions.InvalidMatchAud}");
 
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
                 $"{UdapDynamicClientRegistrationErrorDescriptions.InvalidMatchAud}"));
         }
@@ -185,7 +208,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.IssuedAtMissing);
 
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
                 UdapDynamicClientRegistrationErrorDescriptions.IssuedAtMissing));
         }
@@ -198,7 +221,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.IssuedAtInFuture);
 
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
                 UdapDynamicClientRegistrationErrorDescriptions.IssuedAtInFuture));
         }
@@ -208,7 +231,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidClientMetadata}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.ClientNameMissing);
 
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 UdapDynamicClientRegistrationErrorDescriptions.ClientNameMissing));
         }
@@ -218,7 +241,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidClientMetadata}::" +
                                UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing);
 
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing));
         }
@@ -249,7 +272,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             sb.AppendLine($"Anchor Certificate Thumbprints: {string.Join(" | ", anchorCertificates.Select(a => a.Thumbprint))}");
             _logger.LogWarning(sb.ToString());
 
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement,
                 UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate));
         }
@@ -273,7 +296,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidClientMetadata}::" +
                                        UdapDynamicClientRegistrationErrorDescriptions.GrantTypeMissing);
 
-                    return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                    return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                         UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                         UdapDynamicClientRegistrationErrorDescriptions.GrantTypeMissing));
                 }
@@ -296,7 +319,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             document.GrantTypes != null && 
             document.GrantTypes.Any())
         {
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 "unsupported grant type"));
         }
@@ -307,7 +330,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             if (client.AllowedGrantTypes.Count == 1 &&
                 client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
             {
-                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                     "client credentials does not support refresh tokens"));
             }
@@ -337,7 +360,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     }
                     else
                     {
-                        return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                        return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                             UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                             "malformed redirect URI"));
                     }
@@ -345,7 +368,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             }
             else
             {
-                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                     "redirect URI required for authorization_code grant type"));
             }
@@ -355,7 +378,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidClientMetadata}::" +
                                    UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing);
 
-                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                     UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing));
             }
@@ -367,7 +390,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             //TODO: find the RFC reference for this rule and add a Test
             if (document.RedirectUris != null && document.RedirectUris.Any())
             {
-                return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+                return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                     "redirect URI not compatible with client_credentials grant type"));
             }
@@ -379,7 +402,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         
         if (_serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG && (document.Scope == null || !document.Scope.Any()))
         {
-            return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
+            return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 "scope is required"));
         }
@@ -443,7 +466,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         // validation successful - return client
-        return Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
+        return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
     }
 
     private bool ValidateChain(

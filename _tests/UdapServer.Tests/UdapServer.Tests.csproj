@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    
     <None Include="..\Udap.PKI.Generator\certstores\localhost_weatherapi_community1\intermediates\intermediateWeatherApiLocalhostCert.cer" Link="CertStore\intermediates\intermediateWeatherApiLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -49,6 +50,8 @@
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\anchors\SureFhirLabs_CA.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+
+
   </ItemGroup>
 
   <ItemGroup>
@@ -96,6 +99,9 @@
     </None>
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.ecdsa.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

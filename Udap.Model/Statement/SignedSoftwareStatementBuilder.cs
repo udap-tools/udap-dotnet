@@ -45,6 +45,15 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
     {
         algorithm ??= UdapConstants.SupportedAlgorithm.RS256;
 
+#if NET5_0_OR_GREATER
+        //
+        // Short circuit to ECDSA
+        //
+        if (_certificate.GetECDsaPublicKey() != null)
+        {
+            return BuildECDSA();
+        }
+#endif
         var securityKey = new X509SecurityKey(_certificate);
         var signingCredentials = new SigningCredentials(securityKey, algorithm);
 

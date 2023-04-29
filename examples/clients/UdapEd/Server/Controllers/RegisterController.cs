@@ -103,7 +103,7 @@ public class RegisterController : Controller
         {
             var certificate = new X509Certificate2(certBytes, password, X509KeyStorageFlags.Exportable);
 
-            var clientCertWithKeyBytes = certificate.Export(X509ContentType.Pkcs12);
+            var clientCertWithKeyBytes = certificate.Export(X509ContentType.Pkcs12, "ILikePasswords");
             HttpContext.Session.SetString(UdapEdConstants.CLIENT_CERTIFICATE_WITH_KEY, Convert.ToBase64String(clientCertWithKeyBytes));
             result.DistinguishedName = certificate.SubjectName.Name;
             result.Thumbprint = certificate.Thumbprint;
@@ -149,12 +149,12 @@ public class RegisterController : Controller
             if (certBytesWithKey != null)
             {
                 var certBytes = Convert.FromBase64String(certBytesWithKey);
-                var certificate = new X509Certificate2(certBytes);
-                result.DistinguishedName = certificate.SubjectName.Name;
-                result.Thumbprint = certificate.Thumbprint;
+                var clientCert = new X509Certificate2(certBytes, "ILikePasswords", X509KeyStorageFlags.Exportable);
+                result.DistinguishedName = clientCert.SubjectName.Name;
+                result.Thumbprint = clientCert.Thumbprint;
                 result.CertLoaded = CertLoadedEnum.Positive;
 
-                result.SubjectAltNames = certificate
+                result.SubjectAltNames = clientCert
                     .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI)
                     .Select(tuple => tuple.Item2)
                     .ToList();
@@ -183,7 +183,7 @@ public class RegisterController : Controller
         }
 
         var certBytes = Convert.FromBase64String(clientCertWithKey);
-        var clientCert = new X509Certificate2(certBytes);
+        var clientCert = new X509Certificate2(certBytes, "ILikePasswords", X509KeyStorageFlags.Exportable);
 
         UdapDcrBuilderForClientCredentialsUnchecked dcrBuilder;
 
@@ -212,7 +212,7 @@ public class RegisterController : Controller
             .WithScope(request.Scope ?? string.Empty)
             .Build();
     
-
+        
         var signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
                 .Create(clientCert, document)
@@ -252,7 +252,7 @@ public class RegisterController : Controller
         }
 
         var certBytes = Convert.FromBase64String(clientCertWithKey);
-        var clientCert = new X509Certificate2(certBytes);
+        var clientCert = new X509Certificate2(certBytes, "ILikePasswords", X509KeyStorageFlags.Exportable);
 
         UdapDcrBuilderForAuthorizationCodeUnchecked dcrBuilder;
         
@@ -320,7 +320,7 @@ public class RegisterController : Controller
         }
 
         var certBytes = Convert.FromBase64String(clientCertWithKey);
-        var clientCert = new X509Certificate2(certBytes);
+        var clientCert = new X509Certificate2(certBytes, "ILikePasswords", X509KeyStorageFlags.Exportable);
         
         var document = JsonSerializer
             .Deserialize<UdapDynamicClientRegistrationDocument>(request.SoftwareStatement)!;
@@ -380,7 +380,7 @@ public class RegisterController : Controller
         }
     
         var certBytes = Convert.FromBase64String(clientCertWithKey);
-        var clientCert = new X509Certificate2(certBytes);
+        var clientCert = new X509Certificate2(certBytes, "ILikePasswords", X509KeyStorageFlags.Exportable);
 
         var document = JsonSerializer
             .Deserialize<UdapDynamicClientRegistrationDocument>(request.SoftwareStatement)!;

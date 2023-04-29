@@ -63,6 +63,9 @@
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="CertStore\issued\fhirlabs.net.ecdsa.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="CertStore\issued\fhirlabs.net.expired.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -61,9 +61,14 @@ public class UdapMetaDataBuilder
         _udapMetadata.TokenEndpoint = udapMetadataConfig?.SignedMetadataConfig.TokenEndpoint;
         _udapMetadata.RegistrationEndpoint = udapMetadataConfig?.SignedMetadataConfig.RegistrationEndpoint;
 
+        if (!string.IsNullOrEmpty(udapMetadataConfig?.SignedMetadataConfig.RegistrationSigningAlgorithm))
+        {
+            _udapMetadata.RegistrationEndpointJwtSigningAlgValuesSupported.Add(udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithm);
+        }
+
         if (udapMetadataConfig != null)
         {
-            var certificate = await Load(udapMetadataConfig, token);
+            var certificate = await Load(udapMetadataConfig);
 
             if (certificate == null)
             {
@@ -90,10 +95,10 @@ public class UdapMetaDataBuilder
 
             var builder = SignedSoftwareStatementBuilder<ISoftwareStatementSerializer>.Create(certificate, jwtPayload);
 
-            if (!string.IsNullOrEmpty(udapMetadataConfig.SignedMetadataConfig.SigningAlgorithm))
+            if (!string.IsNullOrEmpty(udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithm))
             {
 #if NET5_0_OR_GREATER
-                _udapMetadata.SignedMetadata = builder.BuildECDSA(udapMetadataConfig.SignedMetadataConfig.SigningAlgorithm);
+                _udapMetadata.SignedMetadata = builder.BuildECDSA(udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithm);
 #endif
             }
             else
@@ -127,12 +132,12 @@ public class UdapMetaDataBuilder
         return (issuer, subject);
     }
 
-    private async Task<X509Certificate2?> Load(UdapMetadataConfig udapMetadataConfig, CancellationToken token)
+    private async Task<X509Certificate2?> Load(UdapMetadataConfig udapMetadataConfig)
     {
         var store = await _certificateStore.Resolve();
 
         var entity = store.IssuedCertificates
-            .Where(c => c.Community == udapMetadataConfig.Community && c.Certificate != null)
+            .Where(c => c.Community == udapMetadataConfig.Community)
             .MaxBy(c => c.Certificate!.NotBefore);
 
         if (entity == null)

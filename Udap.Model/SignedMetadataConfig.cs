@@ -10,7 +10,7 @@ public class SignedMetadataConfig
 {
     private TimeSpan _expirationTimeSpan = new TimeSpan(0, 5, 0);
 
-    public string? SigningAlgorithm { get; set; } = string.Empty;
+    public string? RegistrationSigningAlgorithm { get; set; } = string.Empty;
     public string Issuer { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
 

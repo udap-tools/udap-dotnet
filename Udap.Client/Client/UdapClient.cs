@@ -223,6 +223,14 @@ namespace Udap.Client.Client
                 return false;
             }
 
+            if (!udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported
+               .Contains(jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)))
+            {
+                NotifyTokenError($"The x5c header does not match one of the algorithms listed in {UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported}:" +
+                                 $"{string.Join(", ", udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported)} ");
+                return false;
+            }
+
             return true;
 
         }

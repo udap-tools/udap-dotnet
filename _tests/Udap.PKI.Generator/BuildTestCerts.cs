@@ -300,6 +300,21 @@ namespace Udap.PKI.Generator
 
                     #endregion
 
+                    #region fhirlabs.net ECDSA
+                    //
+                    // Create ECDSA certificate
+                    //
+                    BuildClientCertificateECDSA(
+                        intermediateCertWithoutKey,
+                        caCert,
+                        intermediateRSAKey,
+                        "CN=fhirlabs.net ECDSA, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                        new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
+                        $"{SurefhirlabsUdapIssued}/fhirlabs.net.ecdsa.client",
+                        SureFhirLabsIntermediateCrl,
+                        true
+                    );
+                    #endregion
 
                     #region weatherapi.lab SSL
 
@@ -726,20 +741,6 @@ namespace Udap.PKI.Generator
                 new List<string> { "https://fhirlabs.net/fhir/r4" },
                 $"{SurefhirlabsUdapIssued}/fhirlabs.net.untrusted.client",
                 "http://localhost/crl/localhost.crl"
-            );
-
-            //
-            // Create ECDSA certificate
-            //
-            BuildClientCertificateECDSA(
-                subCA,
-                rootCA,
-                subCA.GetRSAPrivateKey()!,
-                "CN=fhirlabs.net ECDSA, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
-                $"{SurefhirlabsUdapIssued}/fhirlabs.net.ecdsa.client",
-                SureFhirLabsIntermediateCrl,
-                true
             );
         }
 

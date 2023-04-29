@@ -112,7 +112,6 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
     {
         _serviceScope.Dispose();
         await _serviceProvider.DisposeAsync();
-        await base.DisposeAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)

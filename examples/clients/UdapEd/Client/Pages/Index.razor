@@ -1,14 +1,17 @@
 ﻿@page "/"
+@using System.Xml.Serialization
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
 
 <MudGrid Class="mt-2">
     
-    <MudItem x2="12">
-        <MudItem >
-        <MudText Typo="Typo.h4">This is not a confidential client.  Access tokens will be returned and displayed to the user. </MudText>
+    <MudItem xs="12">
+        <MudText Typo="Typo.h4">This is not a confidential client.  </MudText>
     </MudItem>
+    <MudItem xs="12">
+        <MudText Typo="Typo.h5">Access tokens will be returned and displayed to the user. </MudText>
     </MudItem>
+
     <MudItem xs="12" sm="6" md="6">
         <MudCard>
             <MudCardHeader><MudText Typo="Typo.subtitle1">Experiment with:</MudText></MudCardHeader>
@@ -53,44 +56,103 @@
     <MudItem>
         <MudCard>
             <MudCardHeader>
+                <CardHeaderAvatar>
+                    <MudNavLink Icon="@Icons.Material.Filled.Dataset" IconColor="Color.Inherit">Discovery</MudNavLink>
+                </CardHeaderAvatar>
                 <CardHeaderContent>
                     <MudText Typo="Typo.body1" Color="Color.Primary">Test communities from the FHIR Server at https://fhirlabs.net/fhir/r4 </MudText>
-                    <MudText Typo="Typo.body2">Use these communities to experiment with various success and failure scenarios.</MudText>
+
                 </CardHeaderContent>
-                
+
                 <CardHeaderActions>
-                    <MudIconButton Icon="@Icons.Material.Filled.RocketLaunch" Color="Color.Primary" Href="/udapDiscovery" />
+                    <MudIconButton Icon="@Icons.Material.Filled.RocketLaunch" Color="Color.Primary" Href="/udapDiscovery"/>
                 </CardHeaderActions>
             </MudCardHeader>
             <MudCardContent>
-               
-                
                 <MudGrid>
                     <MudItem xs="12" sm="4" md="4">
-                    <MudCard Class="mb-4">
-                        <MudCardContent>
-                            @((MarkupString)_fhirLabsCommunityList)
-                        </MudCardContent>
-                    </MudCard>
+                        <MudCard Class="mb-4">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.body2">Use these communities to experiment with various success and failure scenarios.</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                @((MarkupString)_fhirLabsCommunityList)
+                            </MudCardContent>
+                        </MudCard>
                     </MudItem>
                     <MudItem xs="12" sm="8" md="8">
-                        <MudCard Class="mb-4">
+                        <MudCard >
                             <MudCardContent>
-                                <MudText Typo="Typo.subtitle2">
-                                    The udap://stage.healthtogo.me/ community name is also the default community. For this community click the "Load UDAP.ORG" button in the Discovery tab. Or load it from the <a href="https://www.udap.org/UDAPTestTool/" target="_blank">udap.org Test Tool</a>.
+                                <MudImage Src="Images/Discovery_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain"  Alt="Swedish Farm House" Elevation="25" Class="rounded-lg ma-4" />
+
+                                <MudText Typo="Typo.subtitle2" >
+                                    The udap://stage.healthtogo.me/ community name is the default community at https://fhirlabs.net/fhir/r4. 
+                                    To trust this community click the "button in the Discovery tab. Or load it from the <a href="https://www.udap.org/UDAPTestTool/" target="_blank">udap.org Test Tool</a>.
                                 </MudText>
 
                                 <MudText Typo="Typo.subtitle2">
-                                    For all the other communities load the UDAP .NET Reference Implementation <a href="https://storage.googleapis.com/crl.fhircerts.net/certs/SureFhirLabs_CA.cer">Trust Anchor</a>.
+                                    For all other communities load the UDAP .NET Reference Implementation <a href="https://storage.googleapis.com/crl.fhircerts.net/certs/SureFhirLabs_CA.cer">Trust Anchor</a>
+                                    through the .
                                 </MudText>
                             </MudCardContent>
                         </MudCard>
                     </MudItem>
-
                 </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem>
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderAvatar>
+                    <MudNavLink Icon="@Icons.Material.Filled.Dataset" IconColor="Color.Inherit">Registration</MudNavLink>
+                </CardHeaderAvatar>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.body1" Color="Color.Primary">Test client certificates.</MudText>
+                </CardHeaderContent>
 
-               
-                
+                <CardHeaderActions>
+                    <MudIconButton Icon="@Icons.Material.Filled.RocketLaunch" Color="Color.Primary" Href="/udapRegistration" />
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12" sm="4" md="4">
+                        <MudCard Class="mb-4">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.body2">Use these client certificates to experiment with various success and failure scenarios.  The p12 files all use the same password of, "udap-test".</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.client.pfx">fhirlabs.net.client.pfx</a><br />
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.ecdsa.client.pfx">fhirlabs.net.ecdsa.client.pfx</a><br/>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.expired.client.pfx">fhirlabs.net.expired.client.pfx</a><br/>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.mismatchBaseUrl.client.pfx">fhirlabs.net.mismatchBaseUrl.client.pfx</a><br/>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.mismatchSan.client.pfx">fhirlabs.net.mismatchSan.client.pfx</a><br/>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.revoked.client.pfx">fhirlabs.net.revoked.client.pfx</a><br/>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.untrusted.client.pfx">fhirlabs.net.untrusted.client.pfx</a><br/>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="8" md="8">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudImage Src="Images/UdapRegCertLoad_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain"  Alt="Swedish Farm House" Elevation="25" Class="rounded-lg ma-4" />
+
+                                <MudText Typo="Typo.subtitle2">
+                                    Use the "Test Cert"" button to load a valid certificate that will work with the "udap://fhirlabs.net/" community.  Note that others could also be using this certificate
+                                    and each those interactions could affect your experience.  Each repeated registration can change registered grant types and scopes.  If you would 
+                                    like a personal test certificate for the "udap://fhirlabs.net/" community, send me a request.  The load your own cert with the "Client Cert" button.  If you have a
+                                    test certificate from EMR Direct for UDAP then you can also use that certificate.  
+                                </MudText>
+                                
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
             </MudCardContent>
         </MudCard>
     </MudItem>
@@ -111,6 +173,9 @@
 
 @code
 {
+    [CascadingParameter]
+    public CascadingAppState AppState { get; set; } = null!;
+
     private string _myIp = string.Empty;
     private string _fhirLabsCommunityList = string.Empty;
 
@@ -123,6 +188,12 @@
             _myIp = await response.Content.ReadAsStringAsync();
         }
 
+        await GetCommunities();
+        // await GetClientCertificates();
+    }
+
+    private async Task GetCommunities()
+    {
         var communityResponse = await HttpClient.GetAsync("Metadata/FhirLabsCommunityList");
 
         if (communityResponse.IsSuccessStatusCode)
@@ -131,8 +202,26 @@
         }
         else
         {
-            _fhirLabsCommunityList = "Failed to load https://fhirlabs.net/fhir/r4/.well-known/udap/communities/ashtml";    
+            _fhirLabsCommunityList = "Failed to load https://fhirlabs.net/fhir/r4/.well-known/udap/communities/ashtml";
         }
     }
-    
+
+    // private async Task GetClientCertificates()
+    // {
+    //     var response = await HttpClient.GetAsync("https://storage.googleapis.com/cert_client_downloads");
+    //     var serializer = new XmlSerializer(typeof(ListBucketResult));
+    //     var listBucketResult = serializer.Deserialize(await response.Content.ReadAsStreamAsync());
+    // }
+    //
+    // [Serializable]
+    // public class ListBucketResult
+    // {
+    //     List<Contents> Items { get; set; }
+    // }
+    //
+    // [Serializable]
+    // public class Contents
+    // {
+    //     public string Key { get; set; }
+    // }
 }

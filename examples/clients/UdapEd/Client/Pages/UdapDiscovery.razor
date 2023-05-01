@@ -67,13 +67,14 @@
                                  !string.IsNullOrEmpty(AppState.AnchorCertificateInfo?.Thumbprint))
                             {
                                 <MudItem xs="12">
-                                    <MudText style="float: right;">@AppState.AnchorCertificateInfo?.DistinguishedName</MudText>
+                                    <MudText Typo="Typo.body2" style="float: right;">@AppState.AnchorCertificateInfo?.DistinguishedName</MudText>
                                 </MudItem>
 
                                 <MudItem xs="12">
                                     <MudText style="float: right;" Typo="Typo.caption"> Thumbprint (sha1) </MudText>
-                                    <MudText style="float: right;">@AppState.AnchorCertificateInfo?.Thumbprint </MudText>
+                                    <MudText style="float: right;" Typo="Typo.body2">@AppState.AnchorCertificateInfo?.Thumbprint </MudText>
                                 </MudItem>
+
                             }
 
                         </MudGrid>

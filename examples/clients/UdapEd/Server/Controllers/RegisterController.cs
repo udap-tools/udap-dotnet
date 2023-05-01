@@ -52,9 +52,8 @@ public class RegisterController : Controller
 
         try
         {
-            //todo secretManager
             var certificate = new X509Certificate2(testClientCert, "udap-test", X509KeyStorageFlags.Exportable);
-            var clientCertWithKeyBytes = certificate.Export(X509ContentType.Pkcs12);
+            var clientCertWithKeyBytes = certificate.Export(X509ContentType.Pkcs12, "ILikePasswords");
             HttpContext.Session.SetString(UdapEdConstants.CLIENT_CERTIFICATE_WITH_KEY, Convert.ToBase64String(clientCertWithKeyBytes));
             result.DistinguishedName = certificate.SubjectName.Name;
             result.Thumbprint = certificate.Thumbprint;

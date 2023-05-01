@@ -58,6 +58,8 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
         
         builder.ConfigureServices(services =>
         {
+            services.AddSingleton<IHostLifetime, NoopHostLifetime>();
+
             //
             // Fix-up TrustChainValidator to ignore certificate revocation
             //

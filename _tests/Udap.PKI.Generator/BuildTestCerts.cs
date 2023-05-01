@@ -660,7 +660,7 @@ namespace Udap.PKI.Generator
                 true);
         }
 
-        [Fact]// (Skip = "Enabled on desktop when needed.")]
+        [Fact (Skip = "Enabled on desktop when needed.")]
         public void MakeNegativeTestCertsForFhirLabsReferenceImplementationServer()
         {
             using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");

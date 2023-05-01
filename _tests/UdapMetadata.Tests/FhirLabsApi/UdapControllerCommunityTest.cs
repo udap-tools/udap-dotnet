@@ -191,7 +191,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         udapClient.TokenError += _diagnosticsValidator.OnTokenError;
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            "udap://IssMissMatchToSubjAltName/");
+            "udap://IssMismatchToSubjAltName/");
 
         disco.IsError.Should().BeTrue(disco.Raw);
         Assert.NotNull(udapClient.UdapServerMetaData);
@@ -209,7 +209,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         udapClient.TokenError += _diagnosticsValidator.OnTokenError;
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            "udap://IssMissMatchToBaseUrl/");
+            "udap://IssMismatchToBaseUrl/");
 
         disco.IsError.Should().BeTrue(disco.Raw);
         Assert.NotNull(udapClient.UdapServerMetaData);

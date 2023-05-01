@@ -22,7 +22,7 @@ namespace Udap.Metadata.Server;
 
 public class UdapMetaDataBuilder
 {
-    private readonly UdapMetadata _udapMetadata;
+    private UdapMetadata _udapMetadata;
     private readonly IPrivateCertificateStore _certificateStore;
     private readonly ILogger<UdapMetaDataBuilder> _logger;
 
@@ -55,62 +55,68 @@ public class UdapMetaDataBuilder
     /// <exception cref="NotImplementedException"></exception>
     public async Task<UdapMetadata?> SignMetaData(string baseUrl, string? community, CancellationToken token = default)
     {
-        var udapMetadataConfig = _udapMetadata.GetUdapMetadataConfig(community);
+        var udapMetaData = _udapMetadata.Clone();
+        var udapMetadataConfig = udapMetaData.GetUdapMetadataConfig(community);
 
-        _udapMetadata.AuthorizationEndpoint = udapMetadataConfig?.SignedMetadataConfig.AuthorizationEndpoint;
-        _udapMetadata.TokenEndpoint = udapMetadataConfig?.SignedMetadataConfig.TokenEndpoint;
-        _udapMetadata.RegistrationEndpoint = udapMetadataConfig?.SignedMetadataConfig.RegistrationEndpoint;
-
-        if (!string.IsNullOrEmpty(udapMetadataConfig?.SignedMetadataConfig.RegistrationSigningAlgorithm))
+        if (udapMetadataConfig == null)
         {
-            _udapMetadata.RegistrationEndpointJwtSigningAlgValuesSupported.Add(udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithm);
+            _logger.LogWarning($"Missing metadata for community: {community}");
+            return null;
         }
 
-        if (udapMetadataConfig != null)
+        udapMetaData.AuthorizationEndpoint = udapMetadataConfig.SignedMetadataConfig.AuthorizationEndpoint;
+        udapMetaData.TokenEndpoint = udapMetadataConfig.SignedMetadataConfig.TokenEndpoint;
+        udapMetaData.RegistrationEndpoint = udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint;
+
+        if (udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms.Any())
         {
-            var certificate = await Load(udapMetadataConfig);
-
-            if (certificate == null)
-            {
-                _logger.LogWarning($"Missing default community certificate: {community}");
-                return null;
-            }
-
-            var now = DateTime.UtcNow;
-
-            var (iss, sub) = ResolveIssuer(baseUrl, udapMetadataConfig, certificate);
-
-            var jwtPayload = new JwtPayLoadExtension(
-                new List<Claim>
-                {
-                    new Claim(JwtClaimTypes.Issuer, iss),
-                    new Claim(JwtClaimTypes.Subject, sub),
-                    new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                    new Claim(JwtClaimTypes.Expiration, EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                    new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
-                    new Claim(UdapConstants.Discovery.AuthorizationEndpoint, udapMetadataConfig.SignedMetadataConfig.AuthorizationEndpoint),
-                    new Claim(UdapConstants.Discovery.TokenEndpoint, udapMetadataConfig.SignedMetadataConfig.TokenEndpoint),
-                    new Claim(UdapConstants.Discovery.RegistrationEndpoint, udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint)
-                });
-
-            var builder = SignedSoftwareStatementBuilder<ISoftwareStatementSerializer>.Create(certificate, jwtPayload);
-
-            if (!string.IsNullOrEmpty(udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithm))
-            {
-#if NET5_0_OR_GREATER
-                _udapMetadata.SignedMetadata = builder.BuildECDSA(udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithm);
-#endif
-            }
-            else
-            {
-                _udapMetadata.SignedMetadata = builder.Build();
-            }
-
-            return _udapMetadata;
+            udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms;
         }
 
-        _logger.LogWarning($"Missing metadata for community: {community}");
-        return null;
+        if (udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms.Any())
+        {
+            udapMetaData.TokenEndpointAuthSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms;
+        }
+
+        var certificate = await Load(udapMetadataConfig);
+
+        if (certificate == null)
+        {
+            _logger.LogWarning($"Missing default community certificate: {community}");
+            return null;
+        }
+
+        var now = DateTime.UtcNow;
+
+        var (iss, sub) = ResolveIssuer(baseUrl, udapMetadataConfig, certificate);
+
+        var jwtPayload = new JwtPayLoadExtension(
+            new List<Claim>
+            {
+                new Claim(JwtClaimTypes.Issuer, iss),
+                new Claim(JwtClaimTypes.Subject, sub),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                new Claim(JwtClaimTypes.Expiration, EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new Claim(UdapConstants.Discovery.AuthorizationEndpoint, udapMetadataConfig.SignedMetadataConfig.AuthorizationEndpoint),
+                new Claim(UdapConstants.Discovery.TokenEndpoint, udapMetadataConfig.SignedMetadataConfig.TokenEndpoint),
+                new Claim(UdapConstants.Discovery.RegistrationEndpoint, udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint)
+            });
+
+        var builder = SignedSoftwareStatementBuilder<ISoftwareStatementSerializer>.Create(certificate, jwtPayload);
+
+        if (udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.First().IsECDSA())
+        {
+            udapMetaData.SignedMetadata = builder.BuildECDSA(udapMetaData.
+                RegistrationEndpointJwtSigningAlgValuesSupported.First());
+        }
+        else
+        {
+            udapMetaData.SignedMetadata = builder.Build(udapMetaData.
+                RegistrationEndpointJwtSigningAlgValuesSupported.First());
+        }
+
+        return udapMetaData;
     }
 
     private (string issuer, string subject) ResolveIssuer(string baseUrl, UdapMetadataConfig udapMetadataConfig, X509Certificate2 certificate)

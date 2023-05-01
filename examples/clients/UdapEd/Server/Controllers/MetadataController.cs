@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
@@ -90,6 +91,11 @@ public class MetadataController : Controller
     public async Task<IActionResult> GetUnValidated([FromQuery] string metadataUrl, [FromQuery] string community)
     {
         var baseUrl = metadataUrl.EnsureTrailingSlash() + UdapConstants.Discovery.DiscoveryEndpoint;
+        if (!string.IsNullOrEmpty(community))
+        {
+            baseUrl += $"?{UdapConstants.Community}={community}";
+        }
+
         _logger.LogDebug(baseUrl);
         var response = await _httpClient.GetStringAsync(baseUrl);
         var result = JsonSerializer.Deserialize<UdapMetadata>(response);
@@ -249,6 +255,7 @@ public class MetadataController : Controller
         data.Add("Serial Number", cert.SerialNumber);
         data.Add("Subject", cert.Subject);
         data.Add("Subject Alternative Names", GetSANs(cert));
+        data.Add("Public Key Alogorithm", GetPublicKeyAlgorithm(cert));
         data.Add("Certificate Policy", BuildPolicyInfo(cert));
         data.Add("Start Date", cert.GetEffectiveDateString());
         data.Add("End Date", cert.GetExpirationDateString());
@@ -257,6 +264,7 @@ public class MetadataController : Controller
         data.Add("Issuer", cert.Issuer);
         data.Add("Subject Key Identifier", GetSubjectKeyIdentifier(cert));
         data.Add("Authority Key Identifier", GetAuthorityKeyIdentifier(cert));
+        data.Add("Authority Information Access", GetAIAUrls(cert));
         data.Add("CRL Distribution", GetCrlDistributionPoint(cert));
         data.Add("Thumbprint SHA1", cert.Thumbprint);
 
@@ -266,13 +274,40 @@ public class MetadataController : Controller
         return result;
     }
 
+    private string GetAIAUrls(X509Certificate2 cert)
+    {
+        var aiaExtensions =
+            cert.Extensions["1.3.6.1.5.5.7.1.1"] as X509AuthorityInformationAccessExtension;
+
+        if (aiaExtensions == null)
+        {
+            return string.Empty;
+        }
+        var sb = new StringBuilder();
+        foreach (var url in aiaExtensions!.EnumerateCAIssuersUris())
+        {
+            sb.AppendLine(url);
+        }
+
+        return sb.ToString();
+    }
+
+    private string GetPublicKeyAlgorithm(X509Certificate2 cert)
+    {
+        string keyAlgOid = cert.GetKeyAlgorithm(); 
+        var oid = new Oid(keyAlgOid);
+
+        var key = cert.GetRSAPublicKey() as AsymmetricAlgorithm ?? cert.GetECDsaPublicKey();
+        return $"{oid.FriendlyName} ({key?.KeySize})";
+    }
+
     private string GetSANs(X509Certificate2 cert)
     {
         var sans = cert.GetSubjectAltNames();
 
         if (!sans.Any())
         {
-            return String.Empty;
+            return string.Empty;
         }
 
         var sb = new StringBuilder();

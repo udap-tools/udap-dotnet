@@ -48,7 +48,7 @@ public class DiscoveryService
 
                 if (community != null)
                 {
-                    udapMetadataUrl += $"&{UdapConstants.Community}";
+                    udapMetadataUrl += $"&{UdapConstants.Community}={community}";
                 }
 
                 return await _httpClient.GetFromJsonAsync<MetadataVerificationModel>(udapMetadataUrl, token);

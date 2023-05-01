@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Udap.Model;
 
@@ -10,7 +11,9 @@ public class SignedMetadataConfig
 {
     private TimeSpan _expirationTimeSpan = new TimeSpan(0, 5, 0);
 
-    public string? RegistrationSigningAlgorithm { get; set; } = string.Empty;
+    public List<string> RegistrationSigningAlgorithms { get; set; } = new List<string>();
+    public List<string> TokenSigningAlgorithms { get; set; } = new List<string>();
+
     public string Issuer { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
 

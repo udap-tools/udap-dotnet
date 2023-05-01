@@ -34,7 +34,7 @@ public static class ServiceCollectionExtensions
         var services = mvcBuilder.Services;
         services.Configure<UdapConfig>(configuration.GetSection("UdapConfig"));
         mvcBuilder.Services.TryAddSingleton<UdapMetadata>();
-        mvcBuilder.Services.TryAddSingleton<UdapMetaDataBuilder>();
+        mvcBuilder.Services.TryAddScoped<UdapMetaDataBuilder>();
 
         var assembly = typeof(UdapController).Assembly;
         return mvcBuilder.AddApplicationPart(assembly);

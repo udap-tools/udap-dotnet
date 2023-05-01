@@ -660,7 +660,7 @@ namespace Udap.PKI.Generator
                 true);
         }
 
-        [Fact (Skip = "Enabled on desktop when needed.")]
+        [Fact]// (Skip = "Enabled on desktop when needed.")]
         public void MakeNegativeTestCertsForFhirLabsReferenceImplementationServer()
         {
             using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
@@ -698,15 +698,15 @@ namespace Udap.PKI.Generator
             // );
 
             //
-            // Iss miss match To SubjAltName
+            // Iss mismatch To SubjAltName
             //
             BuildClientCertificate(
                 subCA,
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
-                "CN=fhirlabs.net miss-match SAN, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                new List<string> { "https://san.miss.match.fhirlabs.net/fhir/r4" },
-                $"{SurefhirlabsUdapIssued}/fhirlabs.net.missMatchSan.client",
+                "CN=fhirlabs.net mismatch SAN, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                new List<string> { "https://san.mismatch.fhirlabs.net/fhir/r4" },
+                $"{SurefhirlabsUdapIssued}/fhirlabs.net.mismatchSan.client",
                 SureFhirLabsIntermediateCrl,
                 true
             );
@@ -719,9 +719,9 @@ namespace Udap.PKI.Generator
                 subCA,
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
-                "CN=fhirlabs.net miss-match SAN, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                "CN=fhirlabs.net mismatch SAN, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
-                $"{SurefhirlabsUdapIssued}/fhirlabs.net.missMatchBaseUrl.client",
+                $"{SurefhirlabsUdapIssued}/fhirlabs.net.mismatchBaseUrl.client",
                 SureFhirLabsIntermediateCrl,
                 true
             );
@@ -938,7 +938,7 @@ namespace Udap.PKI.Generator
                 "CN=IssNoMatchBaseUrl, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",//issuedDistinguishedName
                 new List<string>
                 {
-                    "http://localhost/IssMissMatchToBaseUrl/r4"
+                    "http://localhost/IssMismatchToBaseUrl/r4"
                 },                                                                          //SubjAltNames
                 "FhirLabsApi",                                                              //deliveryProjectPath    
                 "RSA"
@@ -953,7 +953,7 @@ namespace Udap.PKI.Generator
                 "CN=ECDSA, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",     //issuedDistinguishedName
                 new List<string>
                 {
-                    "http://localhost/fhir/r4"
+                    "http://localhost/fhir/r4", "https://localhost:7016/fhir/r4"
                 },                                                                          //SubjAltNames
                 "FhirLabsApi",                                                              //deliveryProjectPath    
                 "ECDSA"

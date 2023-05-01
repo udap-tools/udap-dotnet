@@ -55,4 +55,10 @@ public static class StringExtensions
 
         return list.Any() ? string.Join(" ", list): string.Empty;
     }
+
+    [DebuggerStepThrough]
+    public static bool IsECDSA(this string input)
+    {
+        return input.StartsWith("ES");
+    }
 }

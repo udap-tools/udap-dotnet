@@ -69,10 +69,10 @@
     <None Update="CertStore\issued\fhirlabs.net.expired.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\issued\fhirlabs.net.missMatchBaseUrl.client.pfx">
+    <None Update="CertStore\issued\fhirlabs.net.mismatchBaseUrl.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\issued\fhirlabs.net.missMatchSan.client.pfx">
+    <None Update="CertStore\issued\fhirlabs.net.mismatchSan.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\fhirlabs.net.revoked.client.pfx">

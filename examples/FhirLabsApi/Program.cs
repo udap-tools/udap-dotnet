@@ -19,6 +19,7 @@ using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -73,7 +74,7 @@ var udapMetadata = new UdapMetadata(
     );
 
 builder.Services.AddSingleton(udapMetadata);
-builder.Services.AddSingleton<UdapMetaDataBuilder>();
+builder.Services.TryAddScoped<UdapMetaDataBuilder>();
 builder.Services.AddScoped<UdapMetaDataEndpoint>();
 
 builder.Services

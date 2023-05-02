@@ -23,10 +23,10 @@ using FluentAssertions;
 using UdapServer.Tests.Common;
 
 namespace UdapServer.Tests.Conformance.Basic;
+
+[Collection("Udap.Idp")]
 public class ResponseTypeResponseModeTests
 {
-    private const string Category = "Conformance.Basic.ResponseTypeResponseModeTests";
-
     private IdentityServerPipeline _mockPipeline = new IdentityServerPipeline();
 
     public ResponseTypeResponseModeTests()
@@ -81,7 +81,6 @@ public class ResponseTypeResponseModeTests
     // since we dead-end on the error page due to changes 
     // to follow the RFC to address open redirect in original OAuth RFC
     [Fact]
-    [Trait("Category", Category)]
     public async Task Request_missing_response_type_rejected()
     {
         await _mockPipeline.LoginAsync("bob");

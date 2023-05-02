@@ -32,10 +32,10 @@ using Xunit.Abstractions;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
+[Collection("Udap.Idp")]
 public class ClientCredentialsUdapModeTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private const string Category = "Conformance.Basic.UdapClientCredentialsTests";
     private UdapIdentityServerPipeline _mockPipeline = new UdapIdentityServerPipeline();
 
     public ClientCredentialsUdapModeTests(ITestOutputHelper testOutputHelper)
@@ -115,7 +115,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task Todo()
     {
         //Need tests here:
@@ -125,7 +124,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task GetAccessToken()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -210,7 +208,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task GetAccessTokenECDSA()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test", 
@@ -296,7 +293,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task UpdateRegistration()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -467,7 +463,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task RegisterClientCredentialsThenRegisterAuthorizationCode()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -599,7 +594,6 @@ public class ClientCredentialsUdapModeTests
     /// </summary>
     /// <returns></returns>
     [Fact]
-    [Trait("Category", Category)]
     public async Task ChangeRegistrationBetweenCommunitiesWhereSubAltNamesTheSame()
     {
         var clientCertCommunity1 = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -685,7 +679,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task CancelRegistration()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -879,7 +872,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task Missing_grant_types_RegistrationResultsIn_invalid_client()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");

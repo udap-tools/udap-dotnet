@@ -37,11 +37,12 @@ using UdapServer.Tests.Common;
 using Xunit.Abstractions;
 
 namespace UdapServer.Tests.Conformance.Basic;
+
+[Collection("Udap.Idp")]
 public class UdapForceStateParamFalseTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private const string Category = "Conformance.Basic.UdapResponseTypeResponseModeTests";
-
+    
     private UdapIdentityServerPipeline _mockPipeline = new UdapIdentityServerPipeline();
 
     public UdapForceStateParamFalseTests(ITestOutputHelper testOutputHelper)
@@ -142,7 +143,6 @@ public class UdapForceStateParamFalseTests
     /// authorize will succeed.
     /// </summary>
     [Fact]
-    [Trait("Category", Category)]
     public async Task Request_state_missing_results_in_success()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");

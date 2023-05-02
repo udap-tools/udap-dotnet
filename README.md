@@ -6,17 +6,21 @@ In short UDAP is a PKI extension profile to OAuth2.  One or more PKIs can be hos
 
 Note: This is a new project.  It will take me some time to document.  It should be very active in code changes and document additions.  But feel free to try it out and add issues and/or pull requests.
 
-I example apps are in the examples folder.
+Many example apps are in the examples folder.
+
+- FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of the contents of this repository by HL7.
+- UDAP® and the UDAP gear logo, ecosystem gears, and green lock designs are trademarks of UDAP.org. UDAP Draft Specifications are referenced and displayed in parts of this source code to document specification implementation.
 
 ## What does it support
 
 The repository contains components and example uses to support the following items from [Security for Scalable Registration, Authentication, and Authorization](http://hl7.org/fhir/us/udap-security/).  The intent is to also support generic UDAP, but the driving force currently is supporting auto registration to FHIR® servers.  
-FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of the contents of this repository by HL7.
-UDAP® and the UDAP gear logo, ecosystem gears, and green lock designs are trademarks of UDAP.org. UDAP Draft Specifications are referenced and displayed in parts of this source code to document specification implementation.
 
 | Feature   | Sub Feature             | Supported           | Comments                                               |
 |-------------------------|---|---------------------|--------------------------------------------------------|
-| Client                  | |Not Started         | Seems I ignored this in favor of server features.  I will get back to it soon. After all we need a client that can easily validated trust |
+| Udap.Client |UDAP Metadata Validation|✔️| Validates JWT and Certificates.  See [Udap.Client](Udap.Client/docs/README.md) for usage. |
+||Dynamic Client Registration|In process| Functionally DCR exists but it has not been packaged and documented in Udap.Client package.|
+||Access Token |In process| Functionally exists and needs to be packaged and documented in Udap.Client packages |
+||[hl7-b2b extension](http://hl7.org/fhir/us/udap-security/b2b.html#b2b-authorization-extension-object)|In process|This is hard coded in the UdapEd tool for illustration and to pass registration against Authorization Servers that require it.  It is a required claim when requesting an access token in the client_credentials grant type flow profiles by UDAP Security under HL7 FHIR.  I don't know if it stays here as a feature yet.  I do want to call it out because it is a very meaningful feature of UDAP in the HL7 FHIR use case. |  
 | [Discovery](http://hl7.org/fhir/us/udap-security/discovery.html) || ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) |  Client certificate storage is a file strategy.  User can implement their own ICertificateStore.  May add a Entity Framework example in future. |
 | [Registration](http://hl7.org/fhir/us/udap-security/registration.html)|| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)  |  Highly Functional.  The Deployed example FHIR® Server, "FhirLabsApi" is passing all udap.org Server Tests.  I am going to revisit the Client Secrets persistence layer.  Packages are dependent on Duende's Identity Server Nuget Packages. <ul><li>✔️ Registration with 201 created</li><li>✔️ Registration with 200 updated</li><li>✔️ Cancel registration with 200</li><li>✔️ Cancel registration with 404 not found</li></ul> |
 ||Inclusion of Certifications and Endorsements|Started|Some example certification integration tests included from the client side |

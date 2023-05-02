@@ -113,7 +113,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                            X509ChainStatusFlags.UntrustedRoot |
                            // X509ChainStatusFlags.OfflineRevocation |
                            X509ChainStatusFlags.CtlNotSignatureValid;
-        // X509ChainStatusFlags.RevocationStatusUnknown;
+                           // X509ChainStatusFlags.RevocationStatusUnknown;
 
 
         services.TryAddScoped(_ =>
@@ -133,7 +133,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         _serviceProvider = services.BuildServiceProvider();
     }
-
+    
     [Fact]
     public async Task ValidateChainTest()
     {

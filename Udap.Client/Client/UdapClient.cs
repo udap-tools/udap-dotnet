@@ -35,7 +35,7 @@ namespace Udap.Client.Client
 
         Task<UdapDiscoveryDocumentResponse> ValidateResource(
             string baseUrl,
-            ITrustAnchorStore trustAnchorStore,
+            ITrustAnchorStore? trustAnchorStore,
             string? community = null,
             DiscoveryPolicy? discoveryPolicy = null);
 

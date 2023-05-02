@@ -12,7 +12,9 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
     <PackageTags>UDAP;FHIR;HL7;X509;</PackageTags>
-    <Description>Udap.Client Sample</Description>
+    <Description>UDAP Learning tool is a part of the UDAP reference implementation for .NET.</Description>
+    <TAG_NAME_ENV Condition="'$(TAG_NAME_ENV)' == ''">0.1.14.2</TAG_NAME_ENV>
+    <VersionPrefix>$(TAG_NAME_ENV)</VersionPrefix>
     
 
     <UdapDotNetPackageVersion>0.1.*</UdapDotNetPackageVersion>

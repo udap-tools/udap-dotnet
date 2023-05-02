@@ -59,11 +59,6 @@
                 <CardHeaderAvatar>
                     <MudNavLink Icon="@Icons.Material.Filled.Dataset" IconColor="Color.Inherit">Discovery</MudNavLink>
                 </CardHeaderAvatar>
-                <CardHeaderContent>
-                    <MudText Typo="Typo.body1" Color="Color.Primary">Test communities from the FHIR Server at https://fhirlabs.net/fhir/r4 </MudText>
-
-                </CardHeaderContent>
-
                 <CardHeaderActions>
                     <MudIconButton Icon="@Icons.Material.Filled.RocketLaunch" Color="Color.Primary" Href="/udapDiscovery"/>
                 </CardHeaderActions>
@@ -74,6 +69,7 @@
                         <MudCard Class="mb-4">
                             <MudCardHeader>
                                 <CardHeaderContent>
+                                    <MudText Typo="Typo.body1" Color="Color.Primary">Test communities from the FHIR Server at https://fhirlabs.net/fhir/r4 </MudText>
                                     <MudText Typo="Typo.body2">Use these communities to experiment with various success and failure scenarios.</MudText>
                                 </CardHeaderContent>
                             </MudCardHeader>
@@ -85,7 +81,7 @@
                     <MudItem xs="12" sm="8" md="8">
                         <MudCard >
                             <MudCardContent>
-                                <MudImage Src="Images/Discovery_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain"  Alt="Swedish Farm House" Elevation="25" Class="rounded-lg ma-4" />
+                                <MudImage Src="images/Discovery_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain"  Alt="Screenshot of discovery page." Elevation="25" Class="rounded-lg ma-4" />
 
                                 <MudText Typo="Typo.subtitle2" >
                                     The udap://stage.healthtogo.me/ community name is the default community at https://fhirlabs.net/fhir/r4. 
@@ -109,10 +105,6 @@
                 <CardHeaderAvatar>
                     <MudNavLink Icon="@Icons.Material.Filled.Dataset" IconColor="Color.Inherit">Registration</MudNavLink>
                 </CardHeaderAvatar>
-                <CardHeaderContent>
-                    <MudText Typo="Typo.body1" Color="Color.Primary">Test client certificates.</MudText>
-                </CardHeaderContent>
-
                 <CardHeaderActions>
                     <MudIconButton Icon="@Icons.Material.Filled.RocketLaunch" Color="Color.Primary" Href="/udapRegistration" />
                 </CardHeaderActions>
@@ -123,7 +115,8 @@
                         <MudCard Class="mb-4">
                             <MudCardHeader>
                                 <CardHeaderContent>
-                                    <MudText Typo="Typo.body2">Use these client certificates to experiment with various success and failure scenarios.  The p12 files all use the same password of, "udap-test".</MudText>
+                                    <MudText Typo="Typo.body1" Color="Color.Primary">Test client certificates.</MudText>
+                                    <MudText Typo="Typo.body2">Use these client certificates to experiment with various success and failure scenarios. The p12 files all use the same password of, "udap-test".</MudText>
                                 </CardHeaderContent>
                             </MudCardHeader>
                             <MudCardContent>
@@ -140,7 +133,7 @@
                     <MudItem xs="12" sm="8" md="8">
                         <MudCard>
                             <MudCardContent>
-                                <MudImage Src="Images/UdapRegCertLoad_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain"  Alt="Swedish Farm House" Elevation="25" Class="rounded-lg ma-4" />
+                                <MudImage Src="images/UdapRegCertLoad_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain"  Alt="Screenshot of registration screen" Elevation="25" Class="rounded-lg ma-4" />
 
                                 <MudText Typo="Typo.subtitle2">
                                     Use the "Test Cert"" button to load a valid certificate that will work with the "udap://fhirlabs.net/" community.  Note that others could also be using this certificate

@@ -80,8 +80,17 @@
         }
     }
 
-    private const string CERT_DEFAULT_BASE_URL = "https://fhirlabs.net/fhir/r4";
-    private string? _baseUrl = CERT_DEFAULT_BASE_URL;
+    private static List<string> _certDefaultBaseUrLs = new List<string>
+    {
+        "https://fhirlabs.net/fhir/r4",
+        "https://stage.healthtogo.me:8181/fhir/r4/stage",
+        "https://mktac-restapis-stable.meditech.com/.well-known/udap",
+        "https://securefhir.zimt.work/udap-public",
+        "https://identity-matching.fast.hl7.org/fhir",
+        "https://national-directory.meteorapp.com/",
+        "https://udap.poolnook.me/"
+    };
+    private string? _baseUrl = _certDefaultBaseUrLs.First();
 
     public string? BaseUrl
     {
@@ -107,8 +116,12 @@
             if (_baseUrls == null || !(_baseUrls.Count > 0))
             {
                 _baseUrls = new OrderedDictionary();
-                _baseUrls.Add(CERT_DEFAULT_BASE_URL, null);
+                foreach (var certDefaultBaseUrL in _certDefaultBaseUrLs)
+                {
+                    _baseUrls.Add(certDefaultBaseUrL, null);
+                }
             }
+
             return _baseUrls;
         }
         set => _baseUrls = value;

@@ -1,7 +1,6 @@
 ﻿@page "/udapRegistration"
 @using UdapEd.Shared
 
-<InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 <ErrorBoundary @ref="ErrorBoundary">
 <ChildContent>
     <MudGrid Justify="Justify.FlexStart">
@@ -17,47 +16,7 @@
         <MudGrid Spacing="2" Justify="Justify.FlexStart">
             <MudSpacer/>
             <MudItem>
-                <MudGrid Spacing="2" Justify="Justify.FlexEnd" Class="bottom:0;right:0">
-                    <MudItem xs="12">
-
-                        <MudFab Class="ma-2"
-                                style="float: right;"
-                                HtmlTag="label"
-                                Size="Size.Small"
-                                Color="@CertLoadedColor"
-                                Icon="@AppState.CertificateIcon"
-                                Label="Client Cert"
-                                Title="Upload Client Certificate"
-                                IconSize="Size.Small"
-                                for="fileInput"/>
-
-                        <MudFab HtmlTag="label"
-                                Class="ma-2"
-                                style="float: right;"
-                                Size="Size.Small"
-                                Color="@CertLoadedColor"
-                                Icon="@AppState.CertificateIcon"
-                                Label="Test Cert"
-                                Title="Use Test Client Certificate"
-                                IconSize="Size.Small"
-                                OnClick="@LoadTestCertificate"/>
-
-                    </MudItem>
-
-                    @if (!string.IsNullOrEmpty(AppState.ClientCertificateInfo?.DistinguishedName) ||
-                         !string.IsNullOrEmpty(AppState.ClientCertificateInfo?.Thumbprint))
-                    {
-                        <MudItem xs="12">
-                                    <MudText style="float: right;" Typo="Typo.body2">@AppState.ClientCertificateInfo?.DistinguishedName</MudText>
-                        </MudItem>
-
-                        <MudItem xs="12">
-                            <MudText style="float: right;" Typo="Typo.caption"> Thumbprint (sha1) </MudText>
-                                    <MudText style="float: right;" Typo="Typo.body2">@AppState.ClientCertificateInfo?.Thumbprint </MudText>
-                        </MudItem>
-                    }
-
-                </MudGrid>
+                <ClientCertLoader />
             </MudItem>
         </MudGrid>
 

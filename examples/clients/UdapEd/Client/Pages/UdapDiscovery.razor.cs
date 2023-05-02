@@ -10,17 +10,16 @@
 using System.Collections;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net.NetworkInformation;
 using System.Text.Json;
 using BQuery;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.JSInterop;
 using MudBlazor;
 using UdapEd.Client.Services;
 using UdapEd.Client.Shared;
-using UdapEd.Shared;
 using UdapEd.Shared.Model;
 
 namespace UdapEd.Client.Pages;
@@ -37,6 +36,8 @@ public partial class UdapDiscovery: IDisposable
     [Inject] NavigationManager NavigationManager { get; set; } = null!;
 
     [Inject] private DiscoveryService DiscoveryService { get; set; } = null!;
+
+    [Inject] private IJSRuntime JsRuntime { get; set; } = null!;
 
     readonly PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
     
@@ -257,6 +258,12 @@ public partial class UdapDiscovery: IDisposable
     
     private async Task RemoveBaseUrl()
     {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Metadata doesn't exist.  Would you like to delete this url?");
+        if (!confirmed)
+        {
+            return;
+        }
+
         Result = "Saving ...";
         await Task.Delay(50);
         var baseUrls = AppState.BaseUrls;

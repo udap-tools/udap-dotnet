@@ -8,6 +8,7 @@
 #endregion
 
 using System.Net;
+using System.Text.Json;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Rest;
 using Hl7.Fhir.Serialization;
@@ -82,9 +83,15 @@ public class FhirController : ControllerBase
                 return Unauthorized();
             }
 
-            var outcomeJson = await new FhirJsonSerializer().SerializeToStringAsync(ex.Outcome);
-            
-            return NotFound(outcomeJson);
+            if (ex.Outcome != null)
+            {
+                var outcomeJson = await new FhirJsonSerializer().SerializeToStringAsync(ex.Outcome);
+                return NotFound(outcomeJson);
+            }
+            else
+            {
+                return NotFound("Resource Server Error: " + ex.Message);
+            }
         }
         catch (Exception ex)
         {
@@ -113,9 +120,15 @@ public class FhirController : ControllerBase
                 return Unauthorized();
             }
 
-            var outcomeJson = await new FhirJsonSerializer().SerializeToStringAsync(ex.Outcome);
-
-            return NotFound(outcomeJson);
+            if(ex.Outcome != null)
+            {
+                var outcomeJson = await new FhirJsonSerializer().SerializeToStringAsync(ex.Outcome);
+                return NotFound(outcomeJson);
+            }
+            else
+            {
+                return NotFound("Resource Server Error: " + ex.Message);
+            }
         }
         catch (Exception ex)
         {

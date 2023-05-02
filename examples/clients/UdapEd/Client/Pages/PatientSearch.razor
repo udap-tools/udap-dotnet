@@ -112,7 +112,7 @@
 
             @if (_outComeMessage != null)
             {
-                <MudAlert Severity="Severity.Error">@(new MarkupString(_outComeMessage))</MudAlert>
+                <MudAlert Severity="Severity.Error"><pre>@(new MarkupString(_outComeMessage))</pre></MudAlert>
             }
         </MudCardContent>
     </MudCard>

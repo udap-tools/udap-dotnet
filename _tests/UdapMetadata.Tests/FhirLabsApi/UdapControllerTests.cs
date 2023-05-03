@@ -54,6 +54,7 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
     protected override IHost CreateHost(IHostBuilder builder)
     {
         builder.UseEnvironment("Development");
+
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();
@@ -324,15 +325,15 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     public async Task token_endpoint_auth_signing_alg_values_supportedTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-
+        
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
-
-        var scopesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported.ToList();
-        scopesSupported.Should().NotBeNullOrEmpty();
-        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
-        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        scopesSupported.Count().Should().Be(2);
+        
+        var signingAlgValuesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported.ToList();
+        signingAlgValuesSupported.Should().NotBeNullOrEmpty();
+        signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
+        signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
+        signingAlgValuesSupported.Count().Should().Be(2);
     }
 
     [Fact]

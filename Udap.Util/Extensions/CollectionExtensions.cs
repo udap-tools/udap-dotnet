@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 
 namespace Udap.Util.Extensions
 {
@@ -41,6 +42,12 @@ namespace Udap.Util.Extensions
             }
             return new string(c);
 
+        }
+
+
+        public static ICollection<string> Clone(this ICollection<string> source)
+        {
+            return new List<string>(source);
         }
     }
 }

@@ -144,9 +144,12 @@ public class UdapDynamicClientRegistrationEndpoint
 
                     if (numberOfClientsRemoved == 0)
                     {
-                        context.Response.StatusCode = StatusCodes.Status404NotFound;
+                        context.Response.StatusCode = StatusCodes.Status400BadRequest;
                         return;
                     }
+                    // From section 6 of https://www.udap.org/udap-dynamic-client-registration.html
+                    // The Authorization Server SHOULD return an HTTP 200 response code (instead of a 201 response code)
+                    // for successful registration modification and cancellation requests.
                     context.Response.StatusCode = StatusCodes.Status200OK;
                 }
                 else
@@ -155,6 +158,9 @@ public class UdapDynamicClientRegistrationEndpoint
 
                     if (upsertFlag)
                     {
+                        // From section 6 of https://www.udap.org/udap-dynamic-client-registration.html
+                        // The Authorization Server SHOULD return an HTTP 200 response code (instead of a 201 response code)
+                        // for successful registration modification and cancellation requests.
                         context.Response.StatusCode = StatusCodes.Status200OK;
                     }
                     else

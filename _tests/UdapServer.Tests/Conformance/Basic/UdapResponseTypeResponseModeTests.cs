@@ -37,11 +37,11 @@ using UdapServer.Tests.Common;
 using Xunit.Abstractions;
 
 namespace UdapServer.Tests.Conformance.Basic;
+
+[Collection("Udap.Idp")]
 public class UdapResponseTypeResponseModeTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private const string Category = "Conformance.Basic.UdapResponseTypeResponseModeTests";
-
     private UdapIdentityServerPipeline _mockPipeline = new UdapIdentityServerPipeline();
     
 
@@ -75,7 +75,7 @@ public class UdapResponseTypeResponseModeTests
         
         _mockPipeline.Communities.Add(new Community
         {
-            Name = "udap://surefhir.labs",
+            Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
             Anchors = new[] {new Anchor
@@ -83,7 +83,7 @@ public class UdapResponseTypeResponseModeTests
                 BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                 EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
                 Name = sureFhirLabsAnchor.Subject,
-                Community = "udap://surefhir.labs",
+                Community = "udap://fhirlabs.net",
                 Certificate = sureFhirLabsAnchor.ToPemFormat(),
                 Thumbprint = sureFhirLabsAnchor.Thumbprint,
                 Enabled = true
@@ -121,7 +121,6 @@ public class UdapResponseTypeResponseModeTests
 
     
     [Fact]
-    [Trait("Category", Category)]
     public async Task Request_response_type_missing_results_in_unsupported_response_type()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -200,7 +199,6 @@ public class UdapResponseTypeResponseModeTests
     /// </summary>
     /// <returns></returns>
     [Fact]
-    [Trait("Category", Category)]
     public async Task Request_state_missing_results_in_unsupported_response_type()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -273,7 +271,6 @@ public class UdapResponseTypeResponseModeTests
 
     
     [Fact]
-    [Trait("Category", Category)]
     public async Task Request_response_type_invalid_results_in_unsupported_response_type()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -347,7 +344,6 @@ public class UdapResponseTypeResponseModeTests
 
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task Request_client_id_missing_results_in_invalid_request()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -416,7 +412,6 @@ public class UdapResponseTypeResponseModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task Request_client_id_invalid_results_in_unauthorized_client()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -484,7 +479,6 @@ public class UdapResponseTypeResponseModeTests
 
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task Request_accepted()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -558,7 +552,6 @@ public class UdapResponseTypeResponseModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task Request_accepted_RegisterWithDifferentRedirectUrl()
     {
         string _httpsCodeClientCallback = "https://code_client/callback";
@@ -633,7 +626,7 @@ public class UdapResponseTypeResponseModeTests
 
 
         //
-        // Re-Register
+        // Re-Register with different redirect url
         //
 
         _httpsCodeClientCallback = "https://code_client/different_callback";

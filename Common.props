@@ -5,7 +5,11 @@
     <LangVersion>latest</LangVersion>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
-    <UdapDotNetPackageVersion>0.1.0.1</UdapDotNetPackageVersion>
+    <!--This doesn't work for pushing to gcloud run.  My Dockerile scope doesn't go up to here. Uhg!-->
+    <UdapDotNetPackageVersion>0.1.*</UdapDotNetPackageVersion>
   </PropertyGroup>
-  
+
+  <PropertyGroup>
+    <NoWarn>$(NoWarn);NU1507</NoWarn>
+  </PropertyGroup>
 </Project>

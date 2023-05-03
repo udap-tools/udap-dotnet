@@ -35,7 +35,7 @@ namespace Udap.Client.Client
 
         Task<UdapDiscoveryDocumentResponse> ValidateResource(
             string baseUrl,
-            ITrustAnchorStore trustAnchorStore,
+            ITrustAnchorStore? trustAnchorStore,
             string? community = null,
             DiscoveryPolicy? discoveryPolicy = null);
 
@@ -168,13 +168,17 @@ namespace Udap.Client.Client
 
                     if (! await ValidateJwtToken(UdapServerMetaData!, baseUrl))
                     {
-                        throw new UnauthorizedAccessException("Failed JWT Token Validation");
+                        throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
                     }
 
                     if (_publicCertificate != null && !await ValidateTrustChain(_publicCertificate, community))
                     {
                         throw new UnauthorizedAccessException("Failed Trust Chain Validation");
                     }
+                }
+                else
+                {
+                    NotifyTokenError(disco.Error);    
                 }
 
                 return disco;
@@ -197,21 +201,9 @@ namespace Udap.Client.Client
             var subjectAltNames = _publicCertificate?
                 .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI) //URI only, by udap.org specification
                 .Select(n => new Uri(n.Item2).AbsoluteUri)
-                .ToArray();
+            .ToArray();
 
-            var validatedToken = await tokenHandler.ValidateTokenAsync(
-                udapServerMetaData.SignedMetadata,
-                new TokenValidationParameters
-                {
-                    RequireSignedTokens = true,
-                    ValidateIssuer = true, 
-                    ValidateIssuerSigningKey = true,
-                    ValidIssuers = subjectAltNames, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-                    ValidateAudience = false, // No aud for UDAP metadata
-                    ValidateLifetime = true,
-                    IssuerSigningKey = new X509SecurityKey(_publicCertificate),
-                    ValidAlgorithms = new[] { jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) }, //must match signing algorithm
-                });
+            var validatedToken = await ValidateToken(udapServerMetaData, tokenHandler, subjectAltNames, jwt);
 
             if (_publicCertificate == null)
             {
@@ -225,13 +217,74 @@ namespace Udap.Client.Client
                 return false;
             }
 
-            if (!baseUrl.Equals(jwt.Issuer, StringComparison.OrdinalIgnoreCase))
+            if (!baseUrl.Equals(jwt?.Issuer, StringComparison.OrdinalIgnoreCase))
             {
                 NotifyTokenError("JWT iss does not match baseUrl.");
                 return false;
             }
 
+            if (!udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported
+               .Contains(jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)))
+            {
+                NotifyTokenError($"The x5c header does not match one of the algorithms listed in {UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported}:" +
+                                 $"{string.Join(", ", udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported)} ");
+                return false;
+            }
+
             return true;
+
+        }
+
+        private async Task<TokenValidationResult> ValidateToken(
+            UdapMetadata udapServerMetaData, 
+            JsonWebTokenHandler tokenHandler,
+            string[]? subjectAltNames,
+            JsonWebToken? jwt)
+        {
+            var publicKey = _publicCertificate?.PublicKey.GetRSAPublicKey();
+
+            if (publicKey != null)
+            {
+                var validatedToken = await tokenHandler.ValidateTokenAsync(
+                    udapServerMetaData.SignedMetadata,
+                    new TokenValidationParameters
+                    {
+                        RequireSignedTokens = true,
+                        ValidateIssuer = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuers =
+                            subjectAltNames, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                        ValidateAudience = false, // No aud for UDAP metadata
+                        ValidateLifetime = true,
+                        IssuerSigningKey = new RsaSecurityKey(publicKey),
+                        ValidAlgorithms = new[]
+                            { jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+                    });
+
+                return validatedToken;
+            }
+            else
+            {
+                var ecdsaPublicKey = _publicCertificate?.PublicKey.GetECDsaPublicKey();
+
+                var validatedToken = await tokenHandler.ValidateTokenAsync(
+                    udapServerMetaData.SignedMetadata,
+                    new TokenValidationParameters
+                    {
+                        RequireSignedTokens = true,
+                        ValidateIssuer = true,
+                        ValidateIssuerSigningKey = true,
+                        ValidIssuers =
+                            subjectAltNames, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                        ValidateAudience = false, // No aud for UDAP metadata
+                        ValidateLifetime = true,
+                        IssuerSigningKey = new ECDsaSecurityKey(ecdsaPublicKey),
+                        ValidAlgorithms = new[]
+                            { jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+                    });
+
+                return validatedToken;
+            }
         }
 
         private async Task<bool> ValidateTrustChain(X509Certificate2 certificate, string? community)

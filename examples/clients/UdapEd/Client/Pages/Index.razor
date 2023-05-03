@@ -1,63 +1,220 @@
 ﻿@page "/"
+@using System.Xml.Serialization
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
 
-<MudGrid Class="mt-4">
-  <MudItem xs="12" sm="12" md="12">
-    <MudSpacer />
-    <MudText Typo="Typo.subtitle1">Experiment with:</MudText>
-    <MudSpacer />
-    <ul style="list-style:disc">
-      <li>Metadata discovery</li>
-      <li>Software statement</li>
-      <li>Registration request for client_credential and authorization_code flow</li>
-      <li>Certificate trust validation (metadata todo)</li>
-    </ul>
-  </MudItem>
+<MudGrid Class="mt-2">
+    
+    <MudItem xs="12">
+        <MudText Typo="Typo.h4">This is not a confidential client.  </MudText>
+    </MudItem>
+    <MudItem xs="12">
+        <MudText Typo="Typo.h5">Access tokens will be returned and displayed to the user. </MudText>
+    </MudItem>
 
-    <MudGrid Spacing="1" Class="mt-8">
-        <MudItem xs="3">
-            <MudCard>
-                <MudCardContent>
-                    <MudText>Client IP: </MudText>
-                    <MudText Typo="Typo.body2" Color="Color.Primary">@_myIp</MudText>
-                    <MudText Typo="Typo.body2">Same as the User IP you may be asked for.  This is because all redirects are redirected through the backend for this tool.</MudText>
-                    <MudText Typo="Typo.body2">You will need these IP Addresses if you are testing with an external test tool that must identify you.</MudText>
-                </MudCardContent>
-            </MudCard>
-        </MudItem>
-        <MudItem xs="5"></MudItem>
-    </MudGrid>
+    <MudItem xs="12" sm="6" md="6">
+        <MudCard>
+            <MudCardHeader><MudText Typo="Typo.subtitle1">Experiment with:</MudText></MudCardHeader>
+            <MudCardContent>
+                <div class="ml-4">
+                <ul style="list-style:disc;">
+                    <li>Metadata discovery</li>
+                    <li>Software statement</li>
+                    <li>Registration request for client_credential and authorization_code flow</li>
+                    <li>Certificate trust validation (metadata todo)</li>
+                    <li>Business-to-Business using client credentials or authorization code grant types</li>
+                </ul>
+                </div>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
 
-  <MudItem xs="12" sm="12" md="12">
-    <MudText Typo="Typo.subtitle2">This is not a confidential client.  Access tokens will be returned and displayed to the user. </MudText>
-  </MudItem>
+    <MudItem xs="12" sm="6" md="6">
+        <MudCard>
+            <MudCardHeader ><MudText>Client IP: </MudText></MudCardHeader>
+            <MudCardContent>
+                
+                <MudText Typo="Typo.body2" Color="Color.Primary">@_myIp</MudText>
+                <MudText Typo="Typo.body2">Same as the User IP you may be asked for. This is because all redirects are redirected through the backend for this tool.</MudText>
+                <MudText Typo="Typo.body2">You will need thip IP Addresses if you are testing with an external test tool that must identify you.</MudText>
+            </MudCardContent>
+        </MudCard>
 
-  <MudItem xs="12" sm="12" md="12">
-    <MudText Typo="Typo.subtitle2">This is a tool to experiment with the Security IG constrained on the UDAP profiles.  See FHIR link in top right corner. Notice if you upload a client certificate (P12 format) it will be stored in the server’s session service.  The session lifetime is set for one hour.  The tool will ask for a password to access the private key, allowing it to generate a software statement used for registration and authorization requests.  <b>Do not use your production client certificates.</b>  But if you are using a cert from EMR Direct for testing only you might consider Using this tool.  If you are not comfortable with loading your certificate, then you can use the test client certificate button above which will load a test client already hosted in the back end.  I will add more test certs for other scenarios including failure conditions as this tool evolves.  Another idea may be to load one of my EMR Direct issued client certificates that one can use to test registration.  </MudText>
-  </MudItem>
+    </MudItem>
 
-  <MudItem>
-    <MudText Typo="Typo.subtitle2">The plan is to allow the user to control some of the inputs as they go through registration and token requests. One place where this feature has begun to show up is in the B2B page during authorization_code flow.  Notice the first card labeled 3.1 Authorization Code Flow can be edited.  One can work through all the expected failure condition behaviors by invalidating parameters or deleting them. </MudText>
-  </MudItem>
+
+
+
+    <MudItem >
+        <MudText Typo="Typo.subtitle2">This is a tool to experiment with the Security IG constrained on the UDAP profiles. See FHIR link in top right corner. Notice if you upload a client certificate (P12 format) it will be stored in the server’s session service. The session lifetime is set for one hour. The tool will ask for a password to access the private key, allowing it to generate a software statement used for registration and authorization requests. <MudText Typo="Typo.button" Color="Color.Primary">Do not use your production client certificates.</MudText> But if you are using a cert from EMR Direct for testing only you might consider Using this tool. If you are not comfortable with loading your certificate, then you can use the test client certificate button above which will load a test client already hosted in the back end. I will add more test certs for other scenarios including failure conditions as this tool evolves. Another idea may be to load one of my EMR Direct issued client certificates that one can use to test registration. </MudText>
+    </MudItem>
+
+    <MudItem>
+        <MudText Typo="Typo.subtitle2">The plan is to allow the user to control some of the inputs as they go through registration and token requests. One place where this feature has begun to show up is in the B2B page during authorization_code flow. Notice the first card labeled 3.1 Authorization Code Flow can be edited. One can work through all the expected failure condition behaviors by invalidating parameters or deleting them. </MudText>
+    </MudItem>
+
+    <MudItem>
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderAvatar>
+                    <MudNavLink Icon="@Icons.Material.Filled.Dataset" IconColor="Color.Inherit">Discovery</MudNavLink>
+                </CardHeaderAvatar>
+                <CardHeaderActions>
+                    <MudIconButton Icon="@Icons.Material.Filled.RocketLaunch" Color="Color.Primary" Href="/udapDiscovery"/>
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12" sm="4" md="4">
+                        <MudCard Class="mb-4">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.body1" Color="Color.Primary">Test communities from the FHIR Server at https://fhirlabs.net/fhir/r4 </MudText>
+                                    <MudText Typo="Typo.body2">Use these communities to experiment with various success and failure scenarios.</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                @((MarkupString)_fhirLabsCommunityList)
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="8" md="8">
+                        <MudCard >
+                            <MudCardContent>
+                                <MudImage Src="images/Discovery_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain"  Alt="Screenshot of discovery page." Elevation="25" Class="rounded-lg ma-4" />
+
+                                <MudText Typo="Typo.subtitle2" >
+                                    The udap://stage.healthtogo.me/ community name is the default community at https://fhirlabs.net/fhir/r4. 
+                                    To trust this community click the "button in the Discovery tab. Or load it from the <a href="https://www.udap.org/UDAPTestTool/" target="_blank">udap.org Test Tool</a>.
+                                </MudText>
+
+                                <MudText Typo="Typo.subtitle2">
+                                    For all other communities load the UDAP .NET Reference Implementation <a href="https://storage.googleapis.com/crl.fhircerts.net/certs/SureFhirLabs_CA.cer">Trust Anchor</a>
+                                    through the .
+                                </MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem>
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderAvatar>
+                    <MudNavLink Icon="@Icons.Material.Filled.Dataset" IconColor="Color.Inherit">Registration</MudNavLink>
+                </CardHeaderAvatar>
+                <CardHeaderActions>
+                    <MudIconButton Icon="@Icons.Material.Filled.RocketLaunch" Color="Color.Primary" Href="/udapRegistration" />
+                </CardHeaderActions>
+            </MudCardHeader>
+            <MudCardContent>
+                <MudGrid>
+                    <MudItem xs="12" sm="4" md="4">
+                        <MudCard Class="mb-4">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.body1" Color="Color.Primary">Test client certificates.</MudText>
+                                    <MudText Typo="Typo.body2">Use these client certificates to experiment with various success and failure scenarios. The p12 files all use the same password of, "udap-test".</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.client.pfx">fhirlabs.net.client.pfx</a><br />
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.ecdsa.client.pfx">fhirlabs.net.ecdsa.client.pfx</a><br/>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.expired.client.pfx">fhirlabs.net.expired.client.pfx</a><br/>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.mismatchBaseUrl.client.pfx">fhirlabs.net.mismatchBaseUrl.client.pfx</a><br/>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.mismatchSan.client.pfx">fhirlabs.net.mismatchSan.client.pfx</a><br/>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.revoked.client.pfx">fhirlabs.net.revoked.client.pfx</a><br/>
+                                <a href="https://storage.googleapis.com/cert_client_downloads/fhirlabs.net.untrusted.client.pfx">fhirlabs.net.untrusted.client.pfx</a><br/>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                    <MudItem xs="12" sm="8" md="8">
+                        <MudCard>
+                            <MudCardContent>
+                                <MudImage Src="images/UdapRegCertLoad_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain"  Alt="Screenshot of registration screen" Elevation="25" Class="rounded-lg ma-4" />
+
+                                <MudText Typo="Typo.subtitle2">
+                                    Use the "Test Cert"" button to load a valid certificate that will work with the "udap://fhirlabs.net/" community.  Note that others could also be using this certificate
+                                    and each those interactions could affect your experience.  Each repeated registration can change registered grant types and scopes.  If you would 
+                                    like a personal test certificate for the "udap://fhirlabs.net/" community, send me a request.  The load your own cert with the "Client Cert" button.  If you have a
+                                    test certificate from EMR Direct for UDAP then you can also use that certificate.  
+                                </MudText>
+                                
+                            </MudCardContent>
+                        </MudCard>
+                    </MudItem>
+                </MudGrid>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem>
+        <MudCard>
+            <MudCardContent>
+                <MudText Typo="Typo.caption">
+                    FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of the contents of this tool by HL7.
+                </MudText>
+                <MudText Typo="Typo.caption">
+                    UDAP® and the UDAP gear logo, ecosystem gears, and green lock designs are trademarks of UDAP.org. UDAP Draft Specifications are referenced and displayed in parts of this tool to help the user connect an action to the specification.
+                </MudText>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
 </MudGrid>
+
 
 @code
 {
+    [CascadingParameter]
+    public CascadingAppState AppState { get; set; } = null!;
+
     private string _myIp = string.Empty;
+    private string _fhirLabsCommunityList = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
-        var result = await HttpClient.GetAsync("Metadata/MyIp");
+        var response = await HttpClient.GetAsync("Metadata/MyIp");
 
-        if (result.IsSuccessStatusCode)
+        if (response.IsSuccessStatusCode)
         {
-            _myIp = await result.Content.ReadAsStringAsync();
+            _myIp = await response.Content.ReadAsStringAsync();
+        }
+
+        await GetCommunities();
+        // await GetClientCertificates();
+    }
+
+    private async Task GetCommunities()
+    {
+        var communityResponse = await HttpClient.GetAsync("Metadata/FhirLabsCommunityList");
+
+        if (communityResponse.IsSuccessStatusCode)
+        {
+            _fhirLabsCommunityList = await communityResponse.Content.ReadAsStringAsync();
+        }
+        else
+        {
+            _fhirLabsCommunityList = "Failed to load https://fhirlabs.net/fhir/r4/.well-known/udap/communities/ashtml";
         }
     }
 
-    async Task WhatIsMyIp()
-    {
-        await JSRuntime.InvokeVoidAsync("open", "https://www.whatismyip.com/", "_blank");
-    }
+    // private async Task GetClientCertificates()
+    // {
+    //     var response = await HttpClient.GetAsync("https://storage.googleapis.com/cert_client_downloads");
+    //     var serializer = new XmlSerializer(typeof(ListBucketResult));
+    //     var listBucketResult = serializer.Deserialize(await response.Content.ReadAsStreamAsync());
+    // }
+    //
+    // [Serializable]
+    // public class ListBucketResult
+    // {
+    //     List<Contents> Items { get; set; }
+    // }
+    //
+    // [Serializable]
+    // public class Contents
+    // {
+    //     public string Key { get; set; }
+    // }
 }

@@ -7,7 +7,7 @@
     <PackageVersion Include="Hl7.Fhir.Specification.R4B" Version="4.3.0" />
     <PackageVersion Include="FluentAssertions" Version="6.11.0" />
     <PackageVersion Include="FluentAssertions.Analyzers" Version="0.17.2" />
-    <PackageVersion Include="IdentityModel" Version="6.0.0" />
+    <PackageVersion Include="IdentityModel" Version="6.1.0" />
     <PackageVersion Include="MartinCostello.Logging.XUnit" Version="0.3.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="7.0.5" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.1.1" />
@@ -20,7 +20,7 @@
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.5.0" />
     <PackageVersion Include="Moq" Version="4.18.4" />
     <PackageVersion Include="Portable.BouncyCastle" Version="1.9.0" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="6.29.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="6.30.0" />
     <PackageVersion Include="xunit" Version="2.4.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.5" />
     <PackageVersion Include="coverlet.collector" Version="3.2.0" />

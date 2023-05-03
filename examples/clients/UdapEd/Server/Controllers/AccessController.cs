@@ -84,8 +84,8 @@ public class AccessController : Controller
         }
 
         var certBytes = Convert.FromBase64String(clientCertWithKey);
-        var clientCert = new X509Certificate2(certBytes);
-        
+        var clientCert = new X509Certificate2(certBytes, "ILikePasswords", X509KeyStorageFlags.Exportable);
+
         var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
             tokenRequestModel.ClientId,
             tokenRequestModel.TokenEndpointUrl,
@@ -111,7 +111,7 @@ public class AccessController : Controller
         }
 
         var certBytes = Convert.FromBase64String(clientCertWithKey);
-        var clientCert = new X509Certificate2(certBytes);
+        var clientCert = new X509Certificate2(certBytes, "ILikePasswords", X509KeyStorageFlags.Exportable);
 
         var tokenRequestBuilder = AccessTokenRequestForClientCredentialsBuilder.Create(
             tokenRequestModel.ClientId,

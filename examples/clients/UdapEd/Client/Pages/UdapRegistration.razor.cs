@@ -9,9 +9,8 @@
 
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using BQuery;
+using Hl7.Fhir.Rest;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
 using Udap.Model;
@@ -36,8 +35,6 @@ public partial class UdapRegistration
     [Inject] RegisterService RegisterService { get; set; } = null!;
 
     [Inject] NavigationManager NavigationManager { get; set; } = null!;
-
-    [Inject] IDialogService DialogService { get; set; } = null!;
 
     private string RawSoftwareStatementError { get; set; } = string.Empty;
 
@@ -288,11 +285,11 @@ public partial class UdapRegistration
 
             if (cancelRegistration)
             {
-                dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Cancel() as UdapDcrBuilderForAuthorizationCodeUnchecked;
+                dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Cancel();
             }
             else
             {
-                dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Create() as UdapDcrBuilderForAuthorizationCodeUnchecked;
+                dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Create();
             }
 
 
@@ -425,20 +422,31 @@ public partial class UdapRegistration
             UdapRegisterRequest = AppState.UdapRegistrationRequest
         };
 
-        var result = await RegisterService.Register(registrationRequest);
-        
-        if (result is { Success: true })
+        var resultModel = await RegisterService.Register(registrationRequest);
+
+        if (resultModel == null)
         {
-            RegistrationResult = JsonSerializer.Serialize(
-                result,
+            RegistrationResult = "Internal failure. Check the logs.";
+            return;
+        }
+
+        if (resultModel.HttpStatusCode.IsSuccessful())
+        {
+            RegistrationResult = $"HTTP/{resultModel.Version} {(int)resultModel.HttpStatusCode} {resultModel.HttpStatusCode}" +
+                                 $"{Environment.NewLine}{Environment.NewLine}"; 
+            RegistrationResult += JsonSerializer.Serialize(
+                resultModel.Result,
                 new JsonSerializerOptions { WriteIndented = true });
             
-            AppState.SetProperty(this, nameof(AppState.RegistrationDocument), result.Document);
+            await AppState.SetPropertyAsync(this, nameof(AppState.RegistrationDocument), resultModel.Result);
         }
         else
         {
-            RegistrationResult = result?.ErrorMessage ?? string .Empty;
-            AppState.SetProperty(this, nameof(AppState.RegistrationDocument), null);
+            RegistrationResult = $"HTTP/{resultModel.Version} {(int)resultModel.HttpStatusCode} {resultModel.HttpStatusCode}" +
+                                 $"{Environment.NewLine}{Environment.NewLine}";
+            RegistrationResult += resultModel.ErrorMessage ?? string .Empty;
+            
+            await AppState.SetPropertyAsync(this, nameof(AppState.RegistrationDocument), null);
         }
     }
     
@@ -451,116 +459,5 @@ public partial class UdapRegistration
             StateHasChanged();
             Task.Delay(50);
         }
-    }
-
-
-
-    readonly PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
-    private bool _checkServerSession = false;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
-        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
-        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
-        RunTimer();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            Bq.Events.OnBlur += Events_OnBlur;
-            Bq.Events.OnFocusAsync += Events_OnFocus;
-        }
-        await base.OnAfterRenderAsync(firstRender);
-    }
-
-    private async Task Events_OnFocus(FocusEventArgs obj)
-    {
-        var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
-        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
-        await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
-        _checkServerSession = true;
-    }
-
-    private void Events_OnBlur(FocusEventArgs obj)
-    {
-        _checkServerSession = false;
-    }
-
-    private async Task SetCertLoadedColor(CertLoadedEnum? isCertLoaded)
-    {
-        switch (isCertLoaded)
-        {
-            case CertLoadedEnum.Negative:
-                CertLoadedColor = Color.Error;
-                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
-                break;
-            case CertLoadedEnum.Positive:
-                CertLoadedColor = Color.Success;
-                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), true);
-                break;
-            case CertLoadedEnum.InvalidPassword:
-                CertLoadedColor = Color.Warning;
-                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
-                break;
-            default:
-                CertLoadedColor = Color.Error;
-                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
-                break;
-        }
-
-        this.StateHasChanged();
-    }
-
-
-    public Color CertLoadedColor { get; set; } = Color.Error;
-
-
-    private async Task UploadFilesAsync(InputFileChangeEventArgs e)
-    {
-        long maxFileSize = 1024 * 10;
-
-        var uploadStream = await new StreamContent(e.File.OpenReadStream(maxFileSize)).ReadAsStreamAsync();
-        var ms = new MemoryStream();
-        await uploadStream.CopyToAsync(ms);
-        var certBytes = ms.ToArray();
-
-        await RegisterService.UploadClientCertificate(Convert.ToBase64String(certBytes));
-
-        //dialog
-        var options = new DialogOptions { CloseOnEscapeKey = true };
-        var dialog = await DialogService.ShowAsync<Password_Dialog>("Certificate Password", options);
-        var result = await dialog.Result;
-        var certViewModel = await RegisterService.ValidateCertificate(result.Data.ToString() ?? "");
-        await SetCertLoadedColor(certViewModel?.CertLoaded);
-        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
-    }
-
-    private async Task LoadTestCertificate()
-    {
-        var certViewModel = await RegisterService.LoadTestCertificate();
-        await SetCertLoadedColor(certViewModel.CertLoaded);
-        await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
-    }
-
-    async void RunTimer()
-    {
-        while (await _periodicTimer.WaitForNextTickAsync())
-        {
-            if (_checkServerSession)
-            {
-                var certViewModel = await RegisterService.ClientCertificateLoadStatus();
-                await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
-                await SetCertLoadedColor(certViewModel?.CertLoaded);
-            }
-        }
-    }
-
-
-    public void Dispose()
-    {
-        _periodicTimer.Dispose();
     }
 }

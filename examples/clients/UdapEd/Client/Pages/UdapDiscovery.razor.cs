@@ -10,17 +10,16 @@
 using System.Collections;
 using System.Collections.Specialized;
 using System.IdentityModel.Tokens.Jwt;
-using System.Net.NetworkInformation;
 using System.Text.Json;
 using BQuery;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.JSInterop;
 using MudBlazor;
 using UdapEd.Client.Services;
 using UdapEd.Client.Shared;
-using UdapEd.Shared;
 using UdapEd.Shared.Model;
 
 namespace UdapEd.Client.Pages;
@@ -37,6 +36,8 @@ public partial class UdapDiscovery: IDisposable
     [Inject] NavigationManager NavigationManager { get; set; } = null!;
 
     [Inject] private DiscoveryService DiscoveryService { get; set; } = null!;
+
+    [Inject] private IJSRuntime JsRuntime { get; set; } = null!;
 
     readonly PeriodicTimer _periodicTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
     
@@ -172,8 +173,11 @@ public partial class UdapDiscovery: IDisposable
 
         try
         {
-            var model = await MetadataService.GetMetadataVerificationModel(RequestUrl.GetWellKnownUdap(BaseUrl, Community), default);
-            await AppState.SetPropertyAsync(this, nameof(AppState.MetadataVerificationModel), model);
+            if (BaseUrl != null)
+            {
+                var model = await MetadataService.GetMetadataVerificationModel(BaseUrl, Community, default);
+                await AppState.SetPropertyAsync(this, nameof(AppState.MetadataVerificationModel), model);
+            }
 
             Result = AppState.MetadataVerificationModel?.UdapServerMetaData != null
                 ? JsonSerializer.Serialize(AppState.MetadataVerificationModel.UdapServerMetaData, new JsonSerializerOptions { WriteIndented = true })
@@ -184,7 +188,7 @@ public partial class UdapDiscovery: IDisposable
             {
                 AppendOrMoveBaseUrl(BaseUrl);
             }
-            else
+            else if(Community == null)
             {
                 await RemoveBaseUrl();
             }
@@ -215,11 +219,19 @@ public partial class UdapDiscovery: IDisposable
 
         if (Uri.TryCreate(value, UriKind.Absolute, out var baseUri))
         {
-            var result = await MetadataService.GetMetadataVerificationModel(RequestUrl.GetWellKnownUdap(BaseUrl, Community), token);
-
-            if (result != null && result.UdapServerMetaData != null)
+            if (BaseUrl != null)
             {
-                AppendOrMoveBaseUrl(baseUri.AbsoluteUri);
+                var result = await MetadataService.GetMetadataVerificationModel(BaseUrl, Community, token);
+
+                if (result != null)
+                {
+                    await AppState.SetPropertyAsync(this, nameof(AppState.MetadataVerificationModel), result);
+                }
+
+                if (result != null && result.UdapServerMetaData != null)
+                {
+                    AppendOrMoveBaseUrl(baseUri.AbsoluteUri);
+                }
             }
         }
 
@@ -246,6 +258,12 @@ public partial class UdapDiscovery: IDisposable
     
     private async Task RemoveBaseUrl()
     {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Metadata doesn't exist.  Would you like to delete this url?");
+        if (!confirmed)
+        {
+            return;
+        }
+
         Result = "Saving ...";
         await Task.Delay(50);
         var baseUrls = AppState.BaseUrls;
@@ -294,6 +312,13 @@ public partial class UdapDiscovery: IDisposable
         await SetCertLoadedColor(certViewModel?.CertLoaded);
     }
 
+    private async Task LoadUdapOrgAnchor()
+    {
+        var certViewModel = await DiscoveryService.LoadUdapOrgAnchor();
+        await SetCertLoadedColor(certViewModel?.CertLoaded);
+        await AppState.SetPropertyAsync(this, nameof(AppState.AnchorCertificateInfo), certViewModel);
+    }
+
     private async Task SetCertLoadedColor(CertLoadedEnum? isCertLoaded)
     {
         switch (isCertLoaded)
@@ -336,4 +361,6 @@ public partial class UdapDiscovery: IDisposable
     {
         _periodicTimer.Dispose();
     }
+
+    
 }

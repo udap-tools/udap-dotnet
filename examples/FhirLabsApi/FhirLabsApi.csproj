@@ -20,9 +20,19 @@
     <!-- I am going to just go ahead and use the host.docker.internal certificate I created and am
     also using in Udap.Idp for testing. -->
     <DockerfileRunArguments>-p "5016:8080" -p "7016:443" -e ASPNETCORE_HTTPS_PORT=7016</DockerfileRunArguments>
-    <UserSecretsId>fb85f21c-ff56-47a2-aa2d-7cdced81f519</UserSecretsId>
-    <!--I do need this because I am using an EmrDirect issued UDAP client certificate and it stores the password so I can do system testing from my desktop.  You can do the same.-->
-  </PropertyGroup>
+
+
+
+    <!--I do need this because I am using an EmrDirect issued UDAP client certificate and it stores the password
+    so I can do system testing from my desktop.  You can do the same.
+    
+    Uncomment to test appsettings.Production.json.      
+    -->
+
+    <!-- <UserSecretsId>fb85f21c-ff56-47a2-aa2d-7cdced81f519</UserSecretsId> -->
+
+
+      </PropertyGroup>
 
   <ItemGroup>
     <Compile Remove="Controllers\**" />
@@ -45,13 +55,30 @@
     <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="4.3.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="7.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json" Version="2.2.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets"
-      Version="1.18.1" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="6.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.ecdsa.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.expired.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.mismatchBaseUrl.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.mismatchSan.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.revoked.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.untrusted.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert.pfx">
@@ -69,7 +96,13 @@
     <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert5.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert6_ECDSA.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="CertStore\issued\udap-sandbox-surescripts.p12">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="fhirlabs.net.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="host.docker.internal.pfx">
@@ -81,7 +114,7 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Metadata.Server" Version="$(UdapDotNetPackageVersion)" />
+    <PackageReference Include="Udap.Metadata.Server" Version="0.1.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">

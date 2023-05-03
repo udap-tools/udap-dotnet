@@ -29,19 +29,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="AutoMapper"  />
+    <PackageReference Include="AutoMapper" />
     <PackageReference Include="Duende.IdentityServer" />
     <PackageReference Include="Duende.IdentityServer.AspNetIdentity" />
-    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage"  />
+    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" />
     <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore"  />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt"  />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />
+    <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
     <None Include="docs\README.md" Pack="true" PackagePath="\" />
     <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
   </ItemGroup>

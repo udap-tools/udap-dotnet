@@ -1,7 +1,6 @@
 ﻿@page "/udapRegistration"
 @using UdapEd.Shared
 
-<InputFile id="fileInput" OnChange="UploadFilesAsync" hidden />
 <ErrorBoundary @ref="ErrorBoundary">
 <ChildContent>
     <MudGrid Justify="Justify.FlexStart">
@@ -17,46 +16,7 @@
         <MudGrid Spacing="2" Justify="Justify.FlexStart">
             <MudSpacer/>
             <MudItem>
-                <MudGrid Spacing="2" Justify="Justify.FlexEnd" Class="bottom:0;right:0">
-                    <MudItem xs="12">
-
-                        <MudFab Class="ma-2"
-                                style="float: right;"
-                                HtmlTag="label"
-                                Size="Size.Small"
-                                Color="@CertLoadedColor"
-                                Icon="@AppState.CertificateIcon"
-                                Label="Client Cert"
-                                Title="Upload Client Certificate"
-                                IconSize="Size.Small"
-                                for="fileInput"/>
-
-                        <MudFab HtmlTag="label"
-                                Class="ma-2"
-                                style="float: right;"
-                                Size="Size.Small"
-                                Color="@CertLoadedColor"
-                                Icon="@AppState.CertificateIcon"
-                                Label="Test Cert"
-                                Title="Use Test Client Certificate"
-                                IconSize="Size.Small"
-                                OnClick="@LoadTestCertificate"/>
-
-                    </MudItem>
-
-                    @if (!string.IsNullOrEmpty(AppState.ClientCertificateInfo?.DistinguishedName) ||
-                         !string.IsNullOrEmpty(AppState.ClientCertificateInfo?.Thumbprint))
-                    {
-                        <MudItem xs="12">
-                            <MudText style="float: right;">@AppState.ClientCertificateInfo?.DistinguishedName</MudText>
-                        </MudItem>
-
-                        <MudItem xs="12">
-                            <MudText style="float: right;">@AppState.ClientCertificateInfo?.Thumbprint</MudText>
-                        </MudItem>
-                    }
-
-                </MudGrid>
+                <ClientCertLoader />
             </MudItem>
         </MudGrid>
 
@@ -225,10 +185,10 @@
                 <MudPaper Class="udap-knowledge" Elevation="3">
                     <MudText Align="Align.Right" Color="Color.Tertiary">Explanation Todo</MudText>
                     <pre>
-<a href="http://hl7.org/fhir/us/udap-security/registration.html#request-body">Per UDAP Security IG</a> 
-If a new registration is successful, the Authorization Server SHALL return a registration response with a 201 Created HTTP response code as per Section 5.1 of UDAP Dynamic Client Registration, including the unique client_id assigned by the Authorization Server to that client app. If a new registration is not successful, e.g. it is rejected by the server for any reason, the Authorization Server SHALL return an error response as per <a href="https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-5.1">Section 5.2</a> of UDAP Dynamic Client Registration.
+<a href="http://hl7.org/fhir/us/udap-security/registration.html#request-body" target="_blank">Per UDAP Security IG</a> 
+If a new registration is successful, the Authorization Server SHALL return a registration response with a 201 Created HTTP response code as per Section 5.1 of UDAP Dynamic Client Registration, including the unique client_id assigned by the Authorization Server to that client app. If a new registration is not successful, e.g. it is rejected by the server for any reason, the Authorization Server SHALL return an error response as per <a href="https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-5.1" target="_blank">Section 5.2</a> of UDAP Dynamic Client Registration.
 
-<a href="https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-6">For Modifying or Cancelling previous registration see section 6</a>
+<a href="https://www.udap.org/udap-dynamic-client-registration-stu1.html#section-6" target="_blank">For Modifying or Cancelling previous registration see section 6</a>
 
 <br />
 </pre>

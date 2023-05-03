@@ -8,7 +8,7 @@
 #endregion
 
 using System.Net.Http.Json;
-using Microsoft.IdentityModel.Tokens;
+using Udap.Model;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Discovery;
 
@@ -17,23 +17,47 @@ namespace UdapEd.Client.Services;
 public class DiscoveryService
 {
     readonly HttpClient _httpClient;
+    private readonly ILogger<DiscoveryService> _logger;
 
-    public DiscoveryService(HttpClient httpClient)
+    public DiscoveryService(HttpClient httpClient, ILogger<DiscoveryService> logger)
     {
         _httpClient = httpClient;
+        _logger = logger;
     }
 
-    public async Task<MetadataVerificationModel?> GetMetadataVerificationModel(string metadataUrl, CancellationToken token)
+    public async Task<MetadataVerificationModel?> GetMetadataVerificationModel(string metadataUrl, string? community, CancellationToken token)
     {
         try
         {
-            var udapMetadataUrl = $"Metadata?metadataUrl={Base64UrlEncoder.Encode(metadataUrl) }";
-            var result = await _httpClient.GetFromJsonAsync<MetadataVerificationModel>(udapMetadataUrl, token);
+            var loadedStatus = await AnchorCertificateLoadStatus();
 
-            return result;
+            if (loadedStatus != null && (loadedStatus.CertLoaded == CertLoadedEnum.Positive))
+            {
+                var udapMetadataUrl = $"Metadata?metadataUrl={metadataUrl}";
+
+                if (community != null)
+                {
+                    udapMetadataUrl += $"&{UdapConstants.Community}={community}";
+                }
+
+                return await _httpClient.GetFromJsonAsync<MetadataVerificationModel>(udapMetadataUrl, token);
+            }
+            else
+            {
+                var udapMetadataUrl = $"Metadata/UnValidated?metadataUrl={metadataUrl}";
+
+                if (community != null)
+                {
+                    udapMetadataUrl += $"&{UdapConstants.Community}={community}";
+                }
+
+                return await _httpClient.GetFromJsonAsync<MetadataVerificationModel>(udapMetadataUrl, token);
+            }
+            
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed {GET /Metadata?");
             return null;
         }
     }
@@ -44,6 +68,18 @@ public class DiscoveryService
         result.EnsureSuccessStatusCode();
 
         return await result.Content.ReadFromJsonAsync<CertificateStatusViewModel>();
+    }
+
+    public async Task<CertificateStatusViewModel?> LoadUdapOrgAnchor()
+    {
+        var response = await _httpClient.PutAsJsonAsync("Metadata/LoadUdapOrgAnchor", "http://certs.emrdirect.com/certs/EMRDirectTestCA.crt");
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogInformation(await response.Content.ReadAsStringAsync());
+        }
+
+        return await response.Content.ReadFromJsonAsync<CertificateStatusViewModel>();
     }
 
     public async Task<CertificateStatusViewModel?> AnchorCertificateLoadStatus()
@@ -79,6 +115,7 @@ public class DiscoveryService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed GetCertificateData from list");
             return null;
         }
     }
@@ -97,6 +134,7 @@ public class DiscoveryService
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Failed GetCertificateData");
             return null;
         }
     }

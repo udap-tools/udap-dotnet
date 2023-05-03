@@ -4,15 +4,23 @@
         Home
     </MudNavLink>
     <MudNavGroup Title="UDAP Area" Expanded="true">
-        <MudNavLink Href="udapDiscovery" Icon="@Icons.Material.Filled.Dataset" IconColor="Color.Inherit">Discovery</MudNavLink>
-        <MudNavLink Href="udapRegistration" Icon="@Icons.Material.Filled.Dataset" IconColor="Color.Inherit">Registration</MudNavLink>
-        <MudNavLink Href="udapBusinessToBusiness" Icon="@Icons.Material.Filled.Dataset" IconColor="Color.Inherit">B2B</MudNavLink>
+        <MudNavLink Href="udapDiscovery" Icon="@Icons.Material.Filled.Explore" IconColor="Color.Inherit">Discovery</MudNavLink>
+        <MudNavLink Href="udapRegistration" Icon="@Icons.Material.Filled.Explore" IconColor="Color.Inherit">Registration</MudNavLink>
+        <MudNavLink Href="udapBusinessToBusiness" Icon="@Icons.Material.Filled.Explore" IconColor="Color.Inherit">B2B</MudNavLink>
+            <MudNavLink Href="/udapConsumer" Icon="@Icons.Material.Filled.HourglassEmpty" IconColor="Color.Inherit">Consumer</MudNavLink>
+            <MudNavLink Href="/udapTieredOAuth" Icon="@Icons.Material.Filled.HourglassEmpty" IconColor="Color.Inherit">Tiered OAuth</MudNavLink>
     </MudNavGroup>
+
 
     <MudDivider Class="my-2" />
     <MudNavGroup Title="Patient" Expanded="true">
-        <MudNavLink Href="/patientSearch">Search</MudNavLink>
-        <MudNavLink Href="/patientMatch">Match</MudNavLink>
+            <MudNavLink Href="/patientSearch" Icon="@Icons.Material.Filled.Search" IconColor="Color.Inherit">Search</MudNavLink>
+            <MudNavLink Href="/patientMatch" Icon="@Icons.Material.Filled.Pattern" IconColor="Color.Inherit">Match</MudNavLink>
+    </MudNavGroup>
+    
+    <MudDivider Class="my-2" />
+    <MudNavGroup Title="Directory" Expanded="true">
+        <MudNavLink Href="/directory">Todo</MudNavLink>
     </MudNavGroup>
 
 </MudNavMenu>

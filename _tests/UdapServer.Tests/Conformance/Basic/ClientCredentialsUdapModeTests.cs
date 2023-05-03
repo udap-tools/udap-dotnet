@@ -32,10 +32,10 @@ using Xunit.Abstractions;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
+[Collection("Udap.Idp")]
 public class ClientCredentialsUdapModeTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private const string Category = "Conformance.Basic.UdapClientCredentialsTests";
     private UdapIdentityServerPipeline _mockPipeline = new UdapIdentityServerPipeline();
 
     public ClientCredentialsUdapModeTests(ITestOutputHelper testOutputHelper)
@@ -68,7 +68,7 @@ public class ClientCredentialsUdapModeTests
 
         _mockPipeline.Communities.Add(new Community
         {
-            Name = "udap://surefhir.labs",
+            Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
             Anchors = new[]
@@ -78,7 +78,7 @@ public class ClientCredentialsUdapModeTests
                     BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                     EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
                     Name = sureFhirLabsAnchor.Subject,
-                    Community = "udap://surefhir.labs",
+                    Community = "udap://fhirlabs.net",
                     Certificate = sureFhirLabsAnchor.ToPemFormat(),
                     Thumbprint = sureFhirLabsAnchor.Thumbprint,
                     Enabled = true,
@@ -115,7 +115,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task Todo()
     {
         //Need tests here:
@@ -125,7 +124,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task GetAccessToken()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -188,7 +186,92 @@ public class ClientCredentialsUdapModeTests
         var clientAssertion =
             SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(clientCert, jwtPayload)
-                .Build();
+                .Build("RS384");
+        
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = IdentityServerPipeline.TokenEndpoint,
+            //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.rs"
+        };
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        tokenResponse.Scope.Should().Be("system/Patient.rs", tokenResponse.Raw);
+
+    }
+
+    [Fact]
+    public async Task GetAccessTokenECDSA()
+    {
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test", 
+            X509KeyStorageFlags.Exportable);
+
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.rs")
+            .Build();
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .BuildECDSA();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        var regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+
+
+
+
+        //
+        // Get Access Token
+        //
+        var now = DateTime.UtcNow;
+        var jwtPayload = new JwtPayLoadExtension(
+            regDocumentResult!.ClientId,
+            IdentityServerPipeline.TokenEndpoint,
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, regDocumentResult.ClientId!),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(),
+                    ClaimValueTypes.Integer),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+            },
+            now.ToUniversalTime(),
+            now.AddMinutes(5).ToUniversalTime()
+        );
+
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .BuildECDSA();
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {
@@ -210,7 +293,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task UpdateRegistration()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -337,9 +419,8 @@ public class ClientCredentialsUdapModeTests
         clientIdWithSelectedSubAltName.Should().NotBe(clientIdWithDefaultSubAltName);
 
         //
-        // Fourth Registration with different Uri Subject Alt Name from same client certificate
-        // expect 200 created because I changed the SAN selected by calling WithIssuer and 
-        // registered for a second time.
+        // Fourth Registration with Uri Subject Alt Name from third registration
+        // expect 200 OK because I changed scope
         //
         document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -382,7 +463,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task RegisterClientCredentialsThenRegisterAuthorizationCode()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -514,7 +594,6 @@ public class ClientCredentialsUdapModeTests
     /// </summary>
     /// <returns></returns>
     [Fact]
-    [Trait("Category", Category)]
     public async Task ChangeRegistrationBetweenCommunitiesWhereSubAltNamesTheSame()
     {
         var clientCertCommunity1 = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -600,7 +679,6 @@ public class ClientCredentialsUdapModeTests
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task CancelRegistration()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -672,14 +750,13 @@ public class ClientCredentialsUdapModeTests
             UdapConstants.UdapVersionsSupportedValue,
             new string[] { }
         );
-
-
+        
 
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 200 status code according to udap.org specifications
         
         //
         // Even during a cancel registration it is expected that he SoftwareStatement returned is the same.
@@ -689,13 +766,14 @@ public class ClientCredentialsUdapModeTests
         // regDocumentResult.ClientId.Should().Be(clientIdWithDefaultSubAltName);  //with a cancel it is possible to delete multiple client ids.
 
         //
-        // Repeated un-register should be 404 now found
+        // Repeated un-register should be 400 rather than not found (404).
+        // This is following section 5.2 of https://www.udap.org/udap-dynamic-client-registration.html
         //
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.NotFound); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); 
 
         //
         // Registration with different Uri Subject Alt Name from same client certificate
@@ -775,7 +853,7 @@ public class ClientCredentialsUdapModeTests
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 200 status code according to udap.org specifications
         //
         // Even during a cancel registration it is expected that he SoftwareStatement returned is the same.
         //
@@ -783,17 +861,17 @@ public class ClientCredentialsUdapModeTests
         regDocumentResult!.SoftwareStatement.Should().Be(signedSoftwareStatement);
         // regDocumentResult.ClientId.Should().Be(clientIdWithSelectedSubAltName);  //with a cancel it is possible to delete multiple client ids.
         //
-        // Repeated un-register should be 404 now found
+        // Repeated un-register should be 400 rather than not found (404).
+        // This is following section 5.2 of https://www.udap.org/udap-dynamic-client-registration.html
         //
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.NotFound); // Deleted finished so returns a 404 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Deleted finished so returns a 404 status code
     }
 
     [Fact]
-    [Trait("Category", Category)]
     public async Task Missing_grant_types_RegistrationResultsIn_invalid_client()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -872,7 +950,7 @@ public class ClientCredentialsUdapModeTests
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 200 status code according to udap.org specifications
 
         //
         // Even during a cancel registration it is expected that he SoftwareStatement returned is the same.
@@ -882,17 +960,19 @@ public class ClientCredentialsUdapModeTests
         // regDocumentResult.ClientId.Should().Be(clientIdWithDefaultSubAltName);  //with a cancel it is possible to delete multiple client ids.
 
         //
-        // Repeated un-register should be 404 now found
+        // Repeated un-register should be 400 rather than not found (404).
+        // This is following section 5.2 of https://www.udap.org/udap-dynamic-client-registration.html
         //
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.NotFound); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Deleted finished so returns a 204 status code
 
         //
         // Registration with different Uri Subject Alt Name from same client certificate
-        // expect 201 created because I changed the SAN selected by calling WithIssuer
+        // expect 201 created because I changed the SAN selected by calling WithIssuer.
+        // I can have a new registration if identifying a different SAN
         //
 
         document = UdapDcrBuilderForClientCredentials
@@ -968,7 +1048,7 @@ public class ClientCredentialsUdapModeTests
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 204 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 200 status code according to udap.org specifications
         //
         // Even during a cancel registration it is expected that he SoftwareStatement returned is the same.
         //
@@ -976,12 +1056,13 @@ public class ClientCredentialsUdapModeTests
         regDocumentResult!.SoftwareStatement.Should().Be(signedSoftwareStatement);
         // regDocumentResult.ClientId.Should().Be(clientIdWithSelectedSubAltName);  //with a cancel it is possible to delete multiple client ids.
         //
-        // Repeated un-register should be 404 now found
+        // Repeated un-register should be 400 rather than not found (404).
+        // This is following section 5.2 of https://www.udap.org/udap-dynamic-client-registration.html
         //
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
             UdapIdentityServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
-        regResponse.StatusCode.Should().Be(HttpStatusCode.NotFound); // Deleted finished so returns a 404 status code
+        regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Deleted finished so returns a 404 status code
     }
 }

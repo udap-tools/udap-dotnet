@@ -22,7 +22,6 @@ using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Metadata.Server;
 using Udap.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
@@ -173,7 +172,7 @@ namespace Udap.Client.System.Tests
             var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
             {
                 Address = "https://fhirlabs.net/fhir/r4", 
-                Community = "udap://surefhir.labs",
+                Community = "udap://fhirlabs.net",
                 Policy = new DiscoveryPolicy { 
                     ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                     ValidateEndpoints = false   // Authority endpoints are not hosted on same domain as Identity Provider.
@@ -213,7 +212,7 @@ namespace Udap.Client.System.Tests
                                X509ChainStatusFlags.OfflineRevocation |
                                X509ChainStatusFlags.CtlNotSignatureValid;
 
-            (await ValidateCertificateChain(cert, problemFlags, "udap://surefhir.labs")).Should().BeTrue();
+            (await ValidateCertificateChain(cert, problemFlags, "udap://fhirlabs.net")).Should().BeTrue();
             _diagnosticsChainValidator.Called.Should().BeFalse();
         }
 
@@ -284,15 +283,15 @@ namespace Udap.Client.System.Tests
             
             // UDAP CertStore
             services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
-            services.AddSingleton<ICertificateStore>(sp =>
-                new FileCertificateStore(
-                    sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
-                    new Mock<ILogger<FileCertificateStore>>().Object,
+            services.AddSingleton<ITrustAnchorStore>(sp =>
+                new TrustAnchorFileStore(
+                    sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                    new Mock<ILogger<TrustAnchorFileStore>>().Object,
                     "FhirLabsApi"));
-            
+
 
             var sp = services.BuildServiceProvider();
-            var certStore = sp.GetRequiredService<ICertificateStore>();
+            var certStore = sp.GetRequiredService<ITrustAnchorStore>();
             var certificateStore = await certStore.Resolve();
             var anchors = certificateStore.AnchorCertificates
                 .Where(c => c.Community == communityName);

@@ -8,14 +8,6 @@
 #endregion
 
 namespace UdapEd.Shared.Model;
-public class RegistrationResult
-{
-    public bool Success { get; set; }
-
-    public string? ErrorMessage { get; set; }
-
-    public RegistrationDocument? Document { get; set; }
-}
 
 public class AccessCodeRequestResult
 {

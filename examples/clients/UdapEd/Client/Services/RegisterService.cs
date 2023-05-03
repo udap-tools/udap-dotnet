@@ -7,14 +7,14 @@
 // */
 #endregion
 
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Hl7.Fhir.Rest;
 using Udap.Model.Registration;
 using Udap.Util.Extensions;
 using UdapEd.Shared.Model;
-using static System.Net.WebRequestMethods;
 using Task = System.Threading.Tasks.Task;
 
 namespace UdapEd.Client.Services;
@@ -82,30 +82,33 @@ public class RegisterService
         return await result.Content.ReadFromJsonAsync<UdapRegisterRequest>();
     }
 
-    public async Task<RegistrationResult?> Register(RegistrationRequest registrationRequest)
+    public async Task<ResultModel<RegistrationDocument>?> Register(RegistrationRequest registrationRequest)
     {
-        var result = await _httpClient.PostAsJsonAsync(
+        var innerResponse = await _httpClient.PostAsJsonAsync(
             "Register/Register",
             registrationRequest,
             new JsonSerializerOptions { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
 
-        if (!result.IsSuccessStatusCode)
+        if (!innerResponse.IsSuccessStatusCode)
         {
-            var joe = await result.Content.ReadAsStringAsync();
-            Console.WriteLine(joe);
+            var error = await innerResponse.Content.ReadAsStringAsync();
+            Console.WriteLine(error);
 
-            return new RegistrationResult
-            {
-                Success = false,
-                ErrorMessage = joe
-            };
+            return new ResultModel<RegistrationDocument>(error, innerResponse.StatusCode, innerResponse.Version);
         }
 
-        return new RegistrationResult
+        var resultModel = await innerResponse.Content.ReadFromJsonAsync<ResultModel<RegistrationDocument>>();
+
+        if (resultModel != null && resultModel.ErrorMessage != null)
         {
-            Success = true,
-            Document = await result.Content.ReadFromJsonAsync<RegistrationDocument>()
-        };
+            var dcrResponseError =
+                JsonSerializer.Deserialize<UdapDynamicClientRegistrationErrorResponse>(resultModel.ErrorMessage);
+
+            resultModel.ErrorMessage =
+                JsonSerializer.Serialize(dcrResponseError, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping});
+        }
+
+        return resultModel;
     }
 
     public async Task<CertificateStatusViewModel?> ValidateCertificate(string password)
@@ -175,7 +178,7 @@ public class RegisterService
         return null;
     }
 
-    public string? GetScopesForAuthorizationCode(ICollection<string>? scopes)
+    public string GetScopesForAuthorizationCode(ICollection<string>? scopes)
     {
         if (scopes != null)
         {

@@ -13,6 +13,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Hl7.Fhir.Model;
+using Hl7.Fhir.Rest;
 using Hl7.Fhir.Serialization;
 using UdapEd.Shared.Model;
 
@@ -57,6 +58,29 @@ public class FhirService
                 };
 
                 return new FhirResultModel<List<Patient>>(operationOutCome, HttpStatusCode.PreconditionFailed, response.Version);
+            }
+        }
+        //todo constant :: and this whole routine is ugly.  Should move logic upstream to controller
+        //This code exists from testing various FHIR servers like MEDITECH.
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            var result = await response.Content.ReadAsStringAsync();
+            if (result.Contains("Resource Server Error:"))
+            {
+                var operationOutCome = new OperationOutcome()
+                {
+                    ResourceBase = null,
+                    Issue = new List<OperationOutcome.IssueComponent>
+                    {
+                        new OperationOutcome.IssueComponent
+                        {
+                            Diagnostics = result
+                        }
+                    }
+                };
+
+                return new FhirResultModel<List<Patient>>(operationOutCome, HttpStatusCode.InternalServerError,
+                    response.Version);
             }
         }
 
@@ -104,6 +128,30 @@ public class FhirService
                 };
 
                 return new FhirResultModel<Bundle>(operationOutCome, HttpStatusCode.PreconditionFailed, response.Version);
+            }
+        }
+
+        //todo constant :: and this whole routine is ugly.  Should move logic upstream to controller
+        //This code exists from testing various FHIR servers like MEDITECH.
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            var result = await response.Content.ReadAsStringAsync();
+            if (result.Contains("Resource Server Error:"))
+            {
+                var operationOutCome = new OperationOutcome()
+                {
+                    ResourceBase = null,
+                    Issue = new List<OperationOutcome.IssueComponent>
+                    {
+                        new OperationOutcome.IssueComponent
+                        {
+                            Diagnostics = result
+                        }
+                    }
+                };
+
+                return new FhirResultModel<Bundle>(operationOutCome, HttpStatusCode.InternalServerError,
+                    response.Version);
             }
         }
 

@@ -1,9 +1,5 @@
-﻿@using UdapEd.Client.Services
-@using UdapEd.Shared.Model
-@inject IJSRuntime JSRuntime
+﻿@inject IJSRuntime JSRuntime
 @inject RegisterService RegisterService
-
-
 
 
 <MudAppBar Elevation="3" Style="background-image: linear-gradient( 109.6deg,  rgba(240,240,240,1) 11.2%, rgba(240,240,240,1) 91.1% );">
@@ -18,18 +14,19 @@
              @onclick="@GoToUdapOrg" />
   <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Dark"
                  Link="https://github.com/udap-tools/udap-dotnet/" Target="_blank" />
-  <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Dark" Edge="Edge.End" />
+  @* <MudIconButton Icon="@Icons.Material.Filled.MoreVert" Color="Color.Dark" Edge="Edge.End" /> *@
 </MudAppBar>
 
 <MudDrawer @bind-Open="_drawerOpen" Elevation="2">
   <MudDrawerHeader>
     <MudTooltip Placement="Placement.End" Style="padding-top: 30px">
       <ChildContent>
-        <MudText Typo="Typo.h5">FhirLabs UdapEd</MudText>
+          <MudText Typo="Typo.h5">FhirLabs UdapEd</MudText>
+                <MudText Typo="Typo.body2">version @Assembly.GetExecutingAssembly().GetName().Version.ToString()</MudText>
       </ChildContent>
       <TooltipContent>
         <MudText Typo="Typo.h6">UDAP Education Tool</MudText>
-        <MudText Typo="Typo.body2">Security for Scalable Registration, Authentication, and Authorization</MudText>
+        <MudText Typo="Typo.caption">Security for Scalable Registration, Authentication, and Authorization</MudText>
         <MudIcon Icon="@Icons.Material.Filled.CastForEducation" />
       </TooltipContent>
     </MudTooltip>

@@ -61,11 +61,7 @@ public partial class SignedJwtViewer
             new JsonSerializerOptions { WriteIndented = true }
             );
         
-        using var jsonHeader = JsonDocument.Parse(jwt.Header.SerializeToJson());
-        var formattedHeader = JsonSerializer.Serialize(
-            jsonHeader,
-            new JsonSerializerOptions { WriteIndented = true }
-        );
+        var formattedHeader = UdapEd.Shared.JsonExtensions.FormatJson(Base64UrlEncoder.Decode(jwt.EncodedHeader));
 
         var sb = new StringBuilder();
         sb.AppendLine("<p class=\"text-line\">HEADER: <span>Algorithm & TOKEN TYPE</span></p>");

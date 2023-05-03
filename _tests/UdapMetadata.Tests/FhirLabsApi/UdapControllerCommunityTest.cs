@@ -113,7 +113,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                            X509ChainStatusFlags.UntrustedRoot |
                            // X509ChainStatusFlags.OfflineRevocation |
                            X509ChainStatusFlags.CtlNotSignatureValid;
-        // X509ChainStatusFlags.RevocationStatusUnknown;
+                           // X509ChainStatusFlags.RevocationStatusUnknown;
 
 
         services.TryAddScoped(_ =>
@@ -133,7 +133,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         _serviceProvider = services.BuildServiceProvider();
     }
-
+    
     [Fact]
     public async Task ValidateChainTest()
     {
@@ -158,6 +158,32 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
     [Fact]
+    public async Task ValidateChainECDSATest()
+    {
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://ECDSA/");
+
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+
+        var disco2 = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://ECDSA/");
+
+        disco.Raw.Should().NotBe(disco2.Raw);
+
+        disco2.IsError.Should().BeFalse($"\nError: {disco2.Error} \nError Type: {disco2.ErrorType}\n{disco2.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+    }
+
+
+    [Fact]
     public async Task InvalidJwtTokentBadIssMatchToSubjectAltNameTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -165,7 +191,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         udapClient.TokenError += _diagnosticsValidator.OnTokenError;
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            "udap://IssMissMatchToSubjAltName/");
+            "udap://IssMismatchToSubjAltName/");
 
         disco.IsError.Should().BeTrue(disco.Raw);
         Assert.NotNull(udapClient.UdapServerMetaData);
@@ -183,7 +209,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         udapClient.TokenError += _diagnosticsValidator.OnTokenError;
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            "udap://IssMissMatchToBaseUrl/");
+            "udap://IssMismatchToBaseUrl/");
 
         disco.IsError.Should().BeTrue(disco.Raw);
         Assert.NotNull(udapClient.UdapServerMetaData);

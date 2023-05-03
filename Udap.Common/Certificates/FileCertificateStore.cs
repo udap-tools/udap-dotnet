@@ -1,4 +1,4 @@
-﻿#region (c) 2023 Joseph Shook. All rights reserved.
+﻿﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -23,7 +23,7 @@ public class FileCertificateStore : ICertificateStore
     private readonly ILogger<FileCertificateStore> _logger;
     private string? _resourceServerName;
     private bool _resolved;
-    
+
 
     public FileCertificateStore(
         IOptionsMonitor<UdapFileCertStoreManifest> manifest,
@@ -33,13 +33,13 @@ public class FileCertificateStore : ICertificateStore
         _manifest = manifest;
         _resourceServerName = resourceServerName;
         _logger = logger;
-        
+
         _manifest.OnChange(_ =>
         {
             _resolved = false;
         });
     }
-    
+
     public Task<ICertificateStore> Resolve()
     {
         if (_resolved == false)
@@ -50,12 +50,12 @@ public class FileCertificateStore : ICertificateStore
 
         return Task.FromResult(this as ICertificateStore);
     }
-    
+
     public ICollection<Anchor> AnchorCertificates { get; set; } = new HashSet<Anchor>();
 
-    
+
     public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new HashSet<IssuedCertificate>();
-    
+
     // TODO convert to Lazy<T> to protect from race conditions
 
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
@@ -65,7 +65,7 @@ public class FileCertificateStore : ICertificateStore
         if (_resourceServerName == null)
         {
             _logger.LogInformation($"Loading first ResourceServers from UdapFileCertStoreManifest:ResourceServers.");
-            
+
             communities = manifestCurrentValue.ResourceServers.FirstOrDefault()?.Communities;
         }
         else
@@ -77,7 +77,7 @@ public class FileCertificateStore : ICertificateStore
                 .SingleOrDefault(r => r.Name == _resourceServerName)
                 ?.Communities;
         }
-        
+
         _logger.LogInformation($"{communities?.Count ?? 0} communities loaded");
 
         if (communities == null) return;
@@ -130,10 +130,10 @@ public class FileCertificateStore : ICertificateStore
                         _logger.LogWarning($"Cannot find file: {path}");
                         continue;
                     }
-                
+
                     var certificates = new X509Certificate2Collection();
-                    certificates.Import(path, communityIssuer.Password);
-                
+                    certificates.Import(path, communityIssuer.Password, X509KeyStorageFlags.Exportable);
+
                     foreach (var x509Cert in certificates)
                     {
                         var extension = x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") as X509BasicConstraintsExtension;
@@ -143,7 +143,7 @@ public class FileCertificateStore : ICertificateStore
                         // dotnet 7.0
                         //
                         // var authorityIdentifier = cert.Extensions.FirstOrDefault(e => e.Oid.Value == "2.5.29.35") as X509AuthorityKeyIdentifierExtension;
-                    
+
                         string? authorityIdentifierValue = null;
 
                         Asn1Object? exValue = x509Cert.GetExtensionValue("2.5.29.35");
@@ -153,13 +153,13 @@ public class FileCertificateStore : ICertificateStore
                             byte[] keyId = aki.GetKeyIdentifier();
                             authorityIdentifierValue = keyId.CreateByteStringRep();
                         }
-                    
+
 
                         if (extension != null)
                         {
                             if (extension.CertificateAuthority)
                             {
-                                if (authorityIdentifierValue == null || 
+                                if (authorityIdentifierValue == null ||
                                     subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
                                 {
                                     _logger.LogInformation($"Ignore anchor in {path} certificate.  Never add the anchor to anchors if not already explicitly loaded.");
@@ -172,7 +172,7 @@ public class FileCertificateStore : ICertificateStore
                                     {
                                         var certificate = X509Certificate2.CreateFromPem(a.Certificate);
                                         var subjectIdentifierOfAnchor =
-                                            certificate.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as 
+                                            certificate.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.14") as
                                                 X509SubjectKeyIdentifierExtension;
 
                                         if (subjectIdentifierOfAnchor?.SubjectKeyIdentifier == authorityIdentifierValue)
@@ -203,4 +203,3 @@ public class FileCertificateStore : ICertificateStore
     }
 
 }
-

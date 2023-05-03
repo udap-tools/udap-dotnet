@@ -7,4 +7,4 @@ obj\**
 app.yaml
 README.md
 launchSettings.json
-fhirLabsApiClientLocalhostCert.pfx
+fhirLabsApiClientLocalhostCert.*

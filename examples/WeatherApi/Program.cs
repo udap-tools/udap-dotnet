@@ -73,10 +73,10 @@ builder.Services
     .Configure<UdapFileCertStoreManifest>(builder
         .Configuration.GetSection("UdapFileCertStoreManifest"));
 
-builder.Services.AddSingleton<ICertificateStore>(sp => 
-    new FileCertificateStore(
-        sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
-        sp.GetRequiredService<ILogger<FileCertificateStore>>(),
+builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
+    new IssuedCertificateStore(
+        sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+        sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
         "WeatherApi"));
 
 //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -14,6 +14,8 @@ using System.Text;
 using System.Text.Json.Serialization;
 using IdentityModel;
 using Microsoft.Extensions.Options;
+using Udap.Util.Extensions;
+
 
 namespace Udap.Model;
 
@@ -40,7 +42,6 @@ public class UdapMetadata
     /// </summary>
     [JsonConstructor]
     public UdapMetadata(
-        // List<UdapMetadataConfig> udapMetadataConfigs,
         ICollection<string> udapVersionsSupported,
         ICollection<string> udapProfilesSupported,
         ICollection<string> udapAuthorizationExtensionsSupported,
@@ -54,6 +55,34 @@ public class UdapMetadata
         ICollection<string> registrationEndpointJwtSigningAlgValuesSupported)
     {
         _udapMetadataConfigs = null;
+        UdapVersionsSupported = udapVersionsSupported;
+        UdapProfilesSupported = udapProfilesSupported;
+        UdapAuthorizationExtensionsSupported = udapAuthorizationExtensionsSupported;
+        UdapAuthorizationExtensionsRequired = udapAuthorizationExtensionsRequired;
+        UdapCertificationsSupported = udapCertificationsSupported;
+        UdapCertificationsRequired = udapCertificationsRequired;
+        GrantTypesSupported = grantTypesSupported;
+        ScopesSupported = scopesSupported;
+        TokenEndpointAuthMethodsSupported = tokenEndpointAuthMethodsSupported;
+        TokenEndpointAuthSigningAlgValuesSupported = tokenEndpointAuthSigningAlgValuesSupported;
+        RegistrationEndpointJwtSigningAlgValuesSupported = registrationEndpointJwtSigningAlgValuesSupported;
+    }
+
+    private UdapMetadata(
+        ICollection<string> udapVersionsSupported,
+        ICollection<string> udapProfilesSupported,
+        ICollection<string> udapAuthorizationExtensionsSupported,
+        ICollection<string> udapAuthorizationExtensionsRequired,
+        ICollection<string> udapCertificationsSupported,
+        ICollection<string> udapCertificationsRequired,
+        ICollection<string> grantTypesSupported,
+        ICollection<string> scopesSupported,
+        ICollection<string> tokenEndpointAuthMethodsSupported,
+        ICollection<string> tokenEndpointAuthSigningAlgValuesSupported,
+        ICollection<string> registrationEndpointJwtSigningAlgValuesSupported,
+        List<UdapMetadataConfig>? udapMetadataConfigs = null)
+    {
+        _udapMetadataConfigs = udapMetadataConfigs;
         UdapVersionsSupported = udapVersionsSupported;
         UdapProfilesSupported = udapProfilesSupported;
         UdapAuthorizationExtensionsSupported = udapAuthorizationExtensionsSupported;
@@ -315,5 +344,24 @@ public class UdapMetadata
     public virtual string SerializeToJson()
     {
         return JsonExtensions.SerializeToJson(this);
+    }
+
+    public UdapMetadata Clone()
+    {
+        var metaData = new UdapMetadata(
+            UdapVersionsSupported,
+            UdapProfilesSupported,
+            UdapAuthorizationExtensionsSupported,
+            UdapAuthorizationExtensionsRequired,
+            UdapCertificationsSupported,
+            UdapCertificationsRequired,
+            GrantTypesSupported,
+            ScopesSupported,
+            TokenEndpointAuthMethodsSupported,
+            TokenEndpointAuthSigningAlgValuesSupported.Clone(),
+            RegistrationEndpointJwtSigningAlgValuesSupported.Clone(),
+            _udapMetadataConfigs);
+        
+        return metaData;
     }
 }

@@ -1,0 +1,29 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    
+    <Nullable>enable</Nullable>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
+    
+    <Authors>Joseph Shook</Authors>
+    <Copyright>Copyright © Joseph.Shook@Surescripts.com 2022</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
+    <PackageTags>UDAP;FHIR;HL7;X509;</PackageTags>
+    <Description>UDAP Learning tool is a part of the UDAP reference implementation for .NET.</Description>
+    <TAG_NAME_ENV Condition="'$(TAG_NAME_ENV)' == ''">0.1.14.3</TAG_NAME_ENV>
+    <VersionPrefix>$(TAG_NAME_ENV)</VersionPrefix>
+    
+
+    <UdapDotNetPackageVersion>0.1.*</UdapDotNetPackageVersion>
+
+  </PropertyGroup>
+
+  
+  <ItemGroup>
+    
+  </ItemGroup>
+
+</Project>

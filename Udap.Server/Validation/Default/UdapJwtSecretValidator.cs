@@ -119,17 +119,8 @@ public class UdapJwtSecretValidator : ISecretValidator
                 string.Concat((await _issuerNameService.GetCurrentAsync()).EnsureTrailingSlash(), Constants.ProtocolRoutePaths.Token)
         }.Distinct();
 
-        string iss;
-
-        // if (_serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG)
-        // {
-        //     iss = parsedSecret.Id;
-        // }
-        // else
-        // {
-        //     iss = jwtTokenString
-        // }
-        
+        var tokenHandler = new JsonWebTokenHandler() { MaximumTokenSizeInBytes = _options.InputLengthRestrictions.Jwt };
+        var jsonWebToken = tokenHandler.ReadJsonWebToken(jwtTokenString);
 
         var tokenValidationParameters = new TokenValidationParameters
         {
@@ -145,19 +136,17 @@ public class UdapJwtSecretValidator : ISecretValidator
             RequireSignedTokens = true,
             RequireExpirationTime = true,
 
+            ValidAlgorithms = new[] { jsonWebToken!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) },
+
             ClockSkew = TimeSpan.FromMinutes(5),
 
             // ValidateSignatureLast = true
         };
 
-
         
-
-        var handler = new JsonWebTokenHandler() { MaximumTokenSizeInBytes = _options.InputLengthRestrictions.Jwt };
-
         if (_serverSettings.ServerSupport == ServerSupport.UDAP)
         {
-            var jsonWebToken = handler.ReadJsonWebToken(jwtTokenString);
+            
             tokenValidationParameters.IssuerValidator = (issuer, token, parameters) =>
             {
                 if (issuer != null && jsonWebToken.Claims.FirstOrDefault(c => c.Issuer == issuer) != null)
@@ -168,11 +157,9 @@ public class UdapJwtSecretValidator : ISecretValidator
                 return null;
             };
         }
-
         
-
-        //TODO: experiment with ways to test invalid tokens.  TESTING...
-        var result = handler.ValidateToken(jwtTokenString, tokenValidationParameters);
+        
+        var result = tokenHandler.ValidateToken(jwtTokenString, tokenValidationParameters);
         
         if (!result.IsValid)
         {

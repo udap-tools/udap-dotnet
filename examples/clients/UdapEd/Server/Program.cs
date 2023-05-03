@@ -7,14 +7,12 @@
 // */
 #endregion
 
-using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using Udap.Client.Authentication;
 using Udap.Client.Client;
 using Udap.Client.Rest;
-using Udap.Common;
 using Udap.Common.Certificates;
 using UdapEd.Server.Authentication;
 using UdapEd.Server.Extensions;

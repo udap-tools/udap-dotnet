@@ -18,7 +18,6 @@ using Hl7.Fhir.Utility;
 using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -122,7 +121,7 @@ builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
         "FhirLabsApi"));
 
 
-builder.AddRateLimiting();
+// builder.AddRateLimiting();
 
 
 builder.Services.AddTransient<FhirSmartAppLaunchConfiguration>(options =>
@@ -149,7 +148,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 
 app.UseSerilogRequestLogging();
-app.UseRateLimiter();
+// app.UseRateLimiter();
 
 app.UsePathBase(new PathString("/fhir/r4"));
 
@@ -195,8 +194,8 @@ app.UseUdapMetadataServer();
 
 app.MapFhirSmartAppLaunchController();
 app.MapControllers()
-    .RequireAuthorization()
-    .RequireRateLimiting(RateLimitExtensions.GetPolicy);
+    .RequireAuthorization();
+    // .RequireRateLimiting(RateLimitExtensions.GetPolicy);
 
 
 app.Run();

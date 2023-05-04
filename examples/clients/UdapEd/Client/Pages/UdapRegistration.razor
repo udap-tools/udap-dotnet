@@ -121,6 +121,11 @@
                                    @onfocusout="PersistSoftwareStatement"/>
                     <pre Class="@ValidRawSoftwareStatementStyle">]</pre>
                 </MudPaper>
+                    @if (_missingScope)
+                    {
+                        <MudAlert Severity="Severity.Warning">Don't forget a scope</MudAlert>
+                    }
+
             </MudItem>
             <MudItem sm="6" xs="12">
                 <MudPaper Class="udap-analyzed" Elevation="3">

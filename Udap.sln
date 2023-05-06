@@ -51,6 +51,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UdapEd", "UdapEd", "{B84896
 		examples\clients\UdapEd\.gcloudignore = examples\clients\UdapEd\.gcloudignore
 		examples\clients\UdapEd\cloudbuild.yaml = examples\clients\UdapEd\cloudbuild.yaml
 		examples\clients\UdapEd\Directory.Packages.props = examples\clients\UdapEd\Directory.Packages.props
+		examples\clients\UdapEd\Server\EMRDirectTestCA.crt = examples\clients\UdapEd\Server\EMRDirectTestCA.crt
+		examples\clients\UdapEd\Server\EMRDirectTestClientSubCA.crt = examples\clients\UdapEd\Server\EMRDirectTestClientSubCA.crt
 		examples\clients\UdapEd\nuget.config = examples\clients\UdapEd\nuget.config
 	EndProjectSection
 EndProject

@@ -20,6 +20,7 @@
     <!-- I am going to just go ahead and use the host.docker.internal certificate I created and am
     also using in Udap.Idp for testing. -->
     <DockerfileRunArguments>-p "5016:8080" -p "7016:443" -e ASPNETCORE_HTTPS_PORT=7016</DockerfileRunArguments>
+    <UserSecretsId>760b2cec-9a64-4067-92b5-4d378e5f7a5a</UserSecretsId>
 
 
 

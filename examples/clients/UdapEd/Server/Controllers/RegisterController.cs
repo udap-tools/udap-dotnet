@@ -448,11 +448,26 @@ public class RegisterController : Controller
             return Ok(failResult);
         }
         
-        var result = new ResultModel<RegistrationDocument?>(
-            await response.Content.ReadFromJsonAsync<RegistrationDocument>(),
-            response.StatusCode,
-            response.Version);
+        var resultRaw = await response.Content.ReadAsStringAsync();
 
-        return Ok(result);
+        try
+        {
+            var result = new ResultModel<RegistrationDocument?>(
+                JsonSerializer.Deserialize<RegistrationDocument>(resultRaw),
+                response.StatusCode,
+                response.Version);
+
+            return Ok(result);
+        }
+
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed Registration");
+            _logger.LogError(resultRaw);
+
+            return BadRequest(ex);
+        }
+
+        return NotFound();
     }
 }

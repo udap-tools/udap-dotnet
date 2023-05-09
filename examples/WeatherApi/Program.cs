@@ -13,10 +13,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Udap.Common;
-using Udap.Common.Certificates;
 using Udap.Model;
 using WeatherApi;
 
@@ -56,7 +52,6 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 // Add services to the container.
-
 var udapMetaData = MyCustomUdapMetadata.Build(builder.
     Configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>());
 
@@ -68,16 +63,6 @@ builder.Services
 
 builder.Services.AddHttpContextAccessor();
 
-// UDAP CertStore
-builder.Services
-    .Configure<UdapFileCertStoreManifest>(builder
-        .Configuration.GetSection("UdapFileCertStoreManifest"));
-
-builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
-    new IssuedCertificateStore(
-        sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-        sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
-        "WeatherApi"));
 
 //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //    .AddJwtBearer(options =>

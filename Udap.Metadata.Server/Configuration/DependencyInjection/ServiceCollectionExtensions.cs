@@ -80,11 +80,18 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddUdapMetadataServer(
         this IServiceCollection services,
-        ConfigurationManager configuration,
+        IConfiguration configuration,
         string? applicationName = null)
     {
-        var udapConfig = configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>();
+        var udapConfig = new UdapConfig();
+        configuration.GetSection("UdapConfig").Bind(udapConfig);
 
+        if (!udapConfig.Enabled)
+            return services;
+        
+        services.Configure<UdapConfig>(configuration.GetSection("UdapConfig"));
+        
+        //TODO: this could use some DI work...
         var udapMetadata = new UdapMetadata(
             udapConfig!,
             Hl7ModelInfoExtensions

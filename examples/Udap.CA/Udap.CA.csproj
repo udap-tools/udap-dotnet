@@ -7,7 +7,7 @@
     <DockerfileContext>.</DockerfileContext>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <UserSecretsId>91b73d76-16d8-4890-a7b4-1956983ccdd4</UserSecretsId>
-   
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
   <ItemGroup>

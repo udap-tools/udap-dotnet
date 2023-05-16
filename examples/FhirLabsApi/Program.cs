@@ -10,7 +10,6 @@
 using System.Net;
 using System.Text.Json;
 using FhirLabsApi;
-using FhirLabsApi.Extensions;
 using Google.Cloud.SecretManager.V1;
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
@@ -18,7 +17,6 @@ using Hl7.Fhir.Utility;
 using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -26,9 +24,7 @@ using Newtonsoft.Json.Serialization;
 using Serilog;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Common.Extensions;
 using Udap.Metadata.Server;
-using Udap.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddUserSecrets<Program>(optional:true);  // I want user secrets even in release mode.

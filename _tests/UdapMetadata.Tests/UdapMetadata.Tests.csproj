@@ -27,12 +27,15 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\examples\FhirLabsApi\FhirLabsApi.csproj" />
     <ProjectReference Include="..\..\examples\WeatherApi\WeatherApi.csproj" />
     <ProjectReference Include="..\..\Udap.Client\Udap.Client.csproj" />
+    <!-- <ProjectReference Include="..\UdapServer.Tests\UdapServer.Tests.csproj" /> -->
   </ItemGroup>
 
   <ItemGroup>

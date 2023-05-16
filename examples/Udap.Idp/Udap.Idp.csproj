@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -8,6 +8,7 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <!-- <DockerfileRunArguments>-p "5002:443" -e ASPNETCORE_HTTPS_PORT=7016 -e ASPNETCORE_Kestrel__Certificates__Default__Password="udap-test" -e ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp_exported.pfx -v $(UserProfile)\.aspnet\https:/https/</DockerfileRunArguments> -->
     <DockerfileRunArguments>-p "5002:443" -e ASPNETCORE_HTTPS_PORT=7016 </DockerfileRunArguments>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
   
   <ItemGroup>

@@ -328,7 +328,7 @@ public class UdapMetadata
 
         foreach (var community in Communities())
         {
-            sb.AppendLine($"<a href=\"{path}/.well-known/udap?community={community}\" target=\"_blank\">{community}</a><br/>");
+            sb.AppendLine($"<a href=\"{path.TrimEnd('/')}/.well-known/udap?community={community}\" target=\"_blank\">{community}</a><br/>");
         }
 
         sb.AppendLine("</Body>");

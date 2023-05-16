@@ -16,6 +16,8 @@ namespace Udap.Model
     /// </summary>
     public class UdapConfig
     {
+        public bool Enabled { get; set; }
+
         public List<UdapMetadataConfig> UdapMetadataConfigs { get; set; } = new();
     }
 }

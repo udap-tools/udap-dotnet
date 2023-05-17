@@ -47,11 +47,11 @@ public static class ServiceCollectionExtensions
         ConfigurationManager configuration,
         string? applicationName = null)
     {
-        var udapConfig = configuration.GetRequiredSection("UdapConfig")
-            .Get<UdapConfig>();
+        var udapMetadataOptions = configuration.GetRequiredSection("UdapMetadataOptions")
+            .Get<UdapMetadataOptions>();
 
         var udapMetadata = new UdapMetadata(
-            udapConfig!,
+            udapMetadataOptions!,
             Hl7ModelInfoExtensions
                 .BuildHl7FhirV1AndV2Scopes(new List<string> { "patient", "user", "system" })
                 .Where(s => s.Contains("/*")) //Just show the wild card
@@ -83,17 +83,17 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration,
         string? applicationName = null)
     {
-        var udapConfig = new UdapConfig();
-        configuration.GetSection("UdapConfig").Bind(udapConfig);
+        var udapMetadataOptions = new UdapMetadataOptions();
+        configuration.GetSection("UdapMetadataOptions").Bind(udapMetadataOptions);
 
-        if (!udapConfig.Enabled)
+        if (!udapMetadataOptions.Enabled)
             return services;
         
-        services.Configure<UdapConfig>(configuration.GetSection("UdapConfig"));
+        services.Configure<UdapMetadataOptions>(configuration.GetSection("UdapMetadataOptions"));
         
         //TODO: this could use some DI work...
         var udapMetadata = new UdapMetadata(
-            udapConfig!,
+            udapMetadataOptions!,
             Hl7ModelInfoExtensions
                 .BuildHl7FhirV1AndV2Scopes(new List<string> { "patient", "user", "system" })
                 .Where(s => s.Contains("/*")) //Just show the wild card

@@ -80,14 +80,14 @@ Add UseUdapMetaData to program.cs
     .AddUdapMetaDataServer(builder.Configuration);
 ```
 
-```AddUdapMetaDataServer``` extension will find the UdapConfig in AppSettings.  These settings will match the issued certificate.  
+```AddUdapMetaDataServer``` extension will find the UdapMetadataOptions in AppSettings.  These settings will match the issued certificate.  
 
 Reference [Required UDAP Metadata](http://hl7.org/fhir/us/udap-security/discovery.html#signed-metadata-elements).
 
 Issuer and Subject must match the issued certificates, Subject Alternative Name extension.  The issued certificate is the first certificate present in the `x5c` JWT header.
 
 ```json
-"UdapConfig": {
+"UdapMetadataOptions": {
     "UdapMetadataConfigs": [
       {
         "Community": "http://localhost",
@@ -123,7 +123,7 @@ Add configuration to AppSettings to point to the certificates.
 
 **Note From AppSettings**
 
-UdapConfig:UdapMetadataConfigs:Community value is the link to UdapFileCertStoreManifest:ResourceServers:Communities.Name.  So in this example the community is identified by the name `http://localhost`.  Community names are [constrained as a URI](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)
+UdapMetadataOptions:UdapMetadataConfigs:Community value is the link to UdapFileCertStoreManifest:ResourceServers:Communities.Name.  So in this example the community is identified by the name `http://localhost`.  Community names are [constrained as a URI](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities)
 
 ```json
 /*   

@@ -14,7 +14,7 @@ namespace Udap.Model
     /// <summary>
     /// Configurable data typically loaded from AppSettings.
     /// </summary>
-    public class UdapConfig
+    public class UdapMetadataOptions
     {
         public bool Enabled { get; set; }
 

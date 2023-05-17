@@ -53,7 +53,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 var udapMetaData = MyCustomUdapMetadata.Build(builder.
-    Configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>());
+    Configuration.GetRequiredSection("UdapMetadataOptions").Get<UdapMetadataOptions>());
 
 builder.Services.AddSingleton(udapMetaData);
 

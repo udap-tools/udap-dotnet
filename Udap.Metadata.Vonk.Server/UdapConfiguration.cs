@@ -42,7 +42,7 @@ public static class UdapConfiguration
 
     public static IApplicationBuilder UseUdaptWellKnownEndpoints(this IApplicationBuilder app)
     {
-        var enabled = app.ApplicationServices.GetRequiredService<IOptions<UdapConfig>>()?.Value.Enabled ?? false;
+        var enabled = app.ApplicationServices.GetRequiredService<IOptions<UdapMetadataOptions>>()?.Value.Enabled ?? false;
         if (!enabled)
             return app;
 

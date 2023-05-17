@@ -86,7 +86,7 @@ builder.Services.AddHttpClient<IUdapClient, UdapClient>();
 
 builder.Services.AddScoped<IBaseUrlProvider, BaseUrlProvider>();
 builder.Services.AddScoped<IAccessTokenProvider, AccessTokenProvider>();
-builder.Services.AddHttpClient<FhirClientForDI>((sp, httpClient) =>
+builder.Services.AddHttpClient<FhirClientWithUrlProvider>((sp, httpClient) =>
 { })
     .AddHttpMessageHandler(x => new AuthTokenHttpMessageHandler(x.GetRequiredService<IAccessTokenProvider>()));
 

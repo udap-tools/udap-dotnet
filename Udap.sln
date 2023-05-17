@@ -85,6 +85,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "2_UdapClientMetadata", "examples\clients\2_UdapClientMetadata\2_UdapClientMetadata.csproj", "{8DEB8BA8-68C6-43AB-9687-716009DCF17E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Metadata.Vonk.Server", "Udap.Metadata.Vonk.Server\Udap.Metadata.Vonk.Server.csproj", "{4816C7F9-68DF-4A26-9BD6-C01585041332}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0B925B7B-4E10-41CB-B6F9-708E134674CE} = {0B925B7B-4E10-41CB-B6F9-708E134674CE}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

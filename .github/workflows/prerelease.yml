@@ -28,14 +28,16 @@ jobs:
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Util/Udap.Util.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Common/Udap.Common.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Metadata.Server/Udap.Metadata.Server.csproj 
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0${VERSION} ./Udap.Metadata.Vonk.Server/Udap.Metadata.Vonk.Server.csproj
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Server/Udap.Server.csproj 
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0${VERSION} ./Udap.Client/Udap.Client.csproj
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0${VERSION} ./Udap.Client/Udap.Client.csproj        
     - name: Push
       run: |
         dotnet nuget push ./Udap.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
         dotnet nuget push ./Udap.Util/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
         dotnet nuget push ./Udap.Common/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
         dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+        dotnet nuget push ./Udap.Metadata.Vonk.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
         dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
         dotnet nuget push ./Udap.Client/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
       

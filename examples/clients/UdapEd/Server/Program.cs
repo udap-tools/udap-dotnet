@@ -92,7 +92,7 @@ builder.Services.AddHttpClient<FhirClientWithUrlProvider>((sp, httpClient) =>
 
 builder.Services.AddHttpContextAccessor();
 
-// builder.AddRateLimiting();
+builder.AddRateLimiting();
 
 // Configure OpenTelemetry
 builder.AddOpenTelemetry();
@@ -120,12 +120,12 @@ app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 
 app.UseRouting();
-// app.UseRateLimiter(); //after routing
+app.UseRateLimiter(); //after routing
 
 app.UseSession();
 app.MapRazorPages();
 app.MapControllers()
-    // .RequireRateLimiting(RateLimitExtensions.Policy)
+    .RequireRateLimiting(RateLimitExtensions.Policy)
     ;
 
 app.MapFallbackToFile("index.html");

@@ -10,6 +10,7 @@
 using System.Net;
 using System.Text.Json;
 using FhirLabsApi;
+using FhirLabsApi.Extensions;
 using Google.Cloud.SecretManager.V1;
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
@@ -112,7 +113,7 @@ builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
 builder.Services.AddUdapMetadataServer(builder.Configuration);
 
 
-// builder.AddRateLimiting();
+builder.AddRateLimiting();
 
 
 builder.Services.AddTransient<FhirSmartAppLaunchConfiguration>(options =>
@@ -139,7 +140,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 
 app.UseSerilogRequestLogging();
-// app.UseRateLimiter();
+app.UseRateLimiter();
 
 app.UsePathBase(new PathString("/fhir/r4"));
 
@@ -185,8 +186,8 @@ app.UseUdapMetadataServer();
 
 app.MapFhirSmartAppLaunchController();
 app.MapControllers()
-    .RequireAuthorization();
-    // .RequireRateLimiting(RateLimitExtensions.GetPolicy);
+    .RequireAuthorization()
+    .RequireRateLimiting(RateLimitExtensions.GetPolicy);
 
 
 app.Run();

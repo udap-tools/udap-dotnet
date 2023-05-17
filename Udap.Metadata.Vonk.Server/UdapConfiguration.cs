@@ -9,6 +9,7 @@
 
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -49,6 +50,10 @@ public static class UdapConfiguration
         var routeBuilder = new RouteBuilder(app);
         routeBuilder.MapMiddlewareGet(".well-known/udap",
             appBuilder => appBuilder.UseMiddleware<UdapPluginMiddleware>());
+        routeBuilder.MapMiddlewareGet(".well-known/udap/communities",
+            appBuilder => appBuilder.UseMiddleware<UdapPluginMiddlewareCommunities>());
+        routeBuilder.MapMiddlewareGet(".well-known/udap/communities/ashtml",
+            appBuilder => appBuilder.UseMiddleware<UdapPluginMiddlewareCommunitiesAsHtml>());
         var routes = routeBuilder.Build();
         return app.UseRouter(routes);
     }
@@ -57,22 +62,20 @@ public static class UdapConfiguration
 public class UdapPluginMiddleware
 {
     private readonly RequestDelegate _next;
-    private readonly UdapMetaDataBuilder _udapMetaDataBuilder;
+    private readonly UdapMetaDataBuilder _udapMetadataBuilder;
 
-    public UdapPluginMiddleware(RequestDelegate next, UdapMetaDataBuilder udapMetaDataBuilder)
+    public UdapPluginMiddleware(RequestDelegate next, UdapMetaDataBuilder udapMetadataBuilder)
     {
         _next = next;
-        _udapMetaDataBuilder = udapMetaDataBuilder;
+        _udapMetadataBuilder = udapMetadataBuilder;
     }
 
     public async Task Invoke(HttpContext httpContext)
     {
         var vonkContext = httpContext.Vonk();
         var (request, args, _) = vonkContext.Parts();
-        
-        //write something directly to the HttpContext.Response.
-        //Now you also have to set the Content-Type header and the Content-Length yourself.
-        if (await _udapMetaDataBuilder.SignMetaData(
+
+        if (await _udapMetadataBuilder.SignMetaData(
                 httpContext.Request.GetDisplayUrl().GetBaseUrlFromMetadataUrl(),
                 null,
                 default)
@@ -90,5 +93,51 @@ public class UdapPluginMiddleware
 
         httpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
         
+    }
+}
+
+public class UdapPluginMiddlewareCommunities
+{
+    private readonly RequestDelegate _next;
+    private readonly UdapMetaDataBuilder _udapMetadataBuilder;
+
+    public UdapPluginMiddlewareCommunities(RequestDelegate next, UdapMetaDataBuilder udapMetadataBuilder)
+    {
+        _next = next;
+        _udapMetadataBuilder = udapMetadataBuilder;
+    }
+
+    public async Task Invoke(HttpContext httpContext)
+    {
+        var response = JsonSerializer.Serialize(_udapMetadataBuilder.GetCommunities());
+        var contentLength = Encoding.UTF8.GetByteCount(response).ToString();
+
+        httpContext.Response.Headers.Add("Content-Type", "application/json; charset=utf-8");
+        httpContext.Response.Headers.Add("Content-Length", contentLength);
+        httpContext.Response.StatusCode = 200;
+        await httpContext.Response.WriteAsync(response);
+    }
+}
+
+public class UdapPluginMiddlewareCommunitiesAsHtml
+{
+    private readonly RequestDelegate _next;
+    private readonly UdapMetaDataBuilder _udapMetadataBuilder;
+
+    public UdapPluginMiddlewareCommunitiesAsHtml(RequestDelegate next, UdapMetaDataBuilder udapMetadataBuilder)
+    {
+        _next = next;
+        _udapMetadataBuilder = udapMetadataBuilder;
+    }
+
+    public async Task Invoke(HttpContext httpContext)
+    {
+        var response = _udapMetadataBuilder.GetCommunitiesAsHtml(httpContext.Request.GetDisplayUrl().GetBaseUrlFromMetadataUrl());
+        var contentLength = Encoding.UTF8.GetByteCount(response).ToString();
+
+        httpContext.Response.Headers.Add("Content-Type", "text/html; charset=utf-8");
+        httpContext.Response.Headers.Add("Content-Length", contentLength);
+        httpContext.Response.StatusCode = 200;
+        await httpContext.Response.WriteAsync(response);
     }
 }

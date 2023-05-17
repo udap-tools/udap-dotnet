@@ -13,11 +13,45 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Udap.Metadata.Server\Udap.Metadata.Server.csproj"  />
+    <ProjectReference Include="..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <Folder Include="Properties\" />
   </ItemGroup>
+
+  <Target Name="CopySupportDLLs" AfterTargets="Build">
+    <Message Text="Executing CopySupportDLLs task" Importance="High" />
+
+    <Copy
+      SourceFiles="..\migrations\UdapDb.SqlServer\bin\$(Configuration)\net6.0\BouncyCastle.Crypto.dll"
+      DestinationFolder="$(TargetDir)" />
+
+    <Copy
+      SourceFiles="..\migrations\UdapDb.SqlServer\bin\$(Configuration)\net6.0\Hl7.Fhir.ElementModel.dll"
+      DestinationFolder="$(TargetDir)" />
+
+    <Copy
+      SourceFiles="..\migrations\UdapDb.SqlServer\bin\$(Configuration)\net6.0\Hl7.Fhir.R4B.Core.dll"
+      DestinationFolder="$(TargetDir)" />
+
+    <Copy
+      SourceFiles="..\migrations\UdapDb.SqlServer\bin\$(Configuration)\net6.0\Hl7.Fhir.R4B.Specification.dll"
+      DestinationFolder="$(TargetDir)" />
+
+    <Copy
+      SourceFiles="..\migrations\UdapDb.SqlServer\bin\$(Configuration)\net6.0\Hl7.Fhir.Support.dll"
+      DestinationFolder="$(TargetDir)" />
+
+    <Copy
+      SourceFiles="..\migrations\UdapDb.SqlServer\bin\$(Configuration)\net6.0\Hl7.Fhir.Support.Poco.dll"
+      DestinationFolder="$(TargetDir)" />
+
+    <Copy
+      SourceFiles="..\migrations\UdapDb.SqlServer\bin\$(Configuration)\net6.0\Hl7.FhirPath.dll"
+      DestinationFolder="$(TargetDir)" />
+
+    <Message Text="Copied support DLLs" Importance="High" />
+  </Target>
 
 </Project>

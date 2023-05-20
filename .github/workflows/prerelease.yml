@@ -23,7 +23,7 @@ jobs:
       run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
 
     - name: Build and Restore dependencies
-      run: dotnet build -c Release Udap.sln 
+      run: dotnet build -c Release ./migrations/UdapDb.SqlServer
 
     - name: Pack
       run: |

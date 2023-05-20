@@ -66,16 +66,16 @@ public static class SeedData
         });
 
         await using var serviceProvider = services.BuildServiceProvider();
-        using var scope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
+        using var serviceScope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
 
-        await scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.MigrateAsync();
-        var configDbContext = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+        await serviceScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.MigrateAsync();
+        var configDbContext = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
         await configDbContext.Database.MigrateAsync();
 
-        var udapContext = scope.ServiceProvider.GetRequiredService<UdapDbContext>();
+        var udapContext = serviceScope.ServiceProvider.GetRequiredService<UdapDbContext>();
         await udapContext.Database.MigrateAsync();
 
-        var clientRegistrationStore = scope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
+        var clientRegistrationStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
 
 
         if (!udapContext.Communities.Any(c => c.Name == "http://localhost"))

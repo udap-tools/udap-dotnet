@@ -10,6 +10,7 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Runtime.ConstrainedExecution;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -84,25 +85,30 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
         var key = _certificate.GetECDsaPrivateKey();
         using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP384);
 
-#if Windows
-        //
-        // Windows work around.  Otherwise works on Linux
-        // Short answer: Windows behaves in such a way when importing the pfx
-        // it creates the CNG key so it can only be exported encrypted
-        // https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
-        // https://stackoverflow.com/a/57330499/6115838
-        //
-        byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
-            "ILikePasswords",
-            new PbeParameters(
-                PbeEncryptionAlgorithm.Aes256Cbc,
-                HashAlgorithmName.SHA256,
-                iterationCount: 100_000));
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            //
+            // Windows work around.  Otherwise works on Linux
+            // Short answer: Windows behaves in such a way when importing the pfx
+            // it creates the CNG key so it can only be exported encrypted
+            // https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
+            // https://stackoverflow.com/a/57330499/6115838
+            //
+            byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
+                "ILikePasswords",
+                new PbeParameters(
+                    PbeEncryptionAlgorithm.Aes256Cbc,
+                    HashAlgorithmName.SHA256,
+                    iterationCount: 100_000));
 
-        ecdsa.ImportEncryptedPkcs8PrivateKey("ILikePasswords".AsSpan(), encryptedPrivKeyBytes.AsSpan(), out int bytesRead);
-#else
-        ecdsa.ImportECPrivateKey(key?.ExportECPrivateKey(), out _);
-#endif
+            ecdsa.ImportEncryptedPkcs8PrivateKey("ILikePasswords".AsSpan(), encryptedPrivKeyBytes.AsSpan(),
+                out int bytesRead);
+        }
+        else
+        {
+            ecdsa.ImportECPrivateKey(key?.ExportECPrivateKey(), out _);
+        }
+
 
         var signingCredentials = new SigningCredentials(new ECDsaSecurityKey(ecdsa), algorithm)
         {

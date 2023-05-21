@@ -13,8 +13,8 @@
   
   <ItemGroup>
     <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
-    <PackageReference Include="Duende.IdentityServer" Version="6.3.0" />
-    <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="6.3.0" />
+    <PackageReference Include="Duende.IdentityServer" Version="6.2.3" />
+    <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="6.2.3" />
     <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.1.0" />
     <PackageReference Include="Google.Cloud.Storage.V1" Version="4.5.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.5">

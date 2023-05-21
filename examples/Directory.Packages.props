@@ -3,9 +3,9 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup Condition="'$(TargetFramework)'=='net7.0'">
-    <PackageVersion Include="Duende.IdentityServer" Version="6.3.0" />
+    <PackageVersion Include="Duende.IdentityServer" Version="6.2.3" />
     <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="6.2.3" />
-    <PackageVersion Include="Duende.IdentityServer.EntityFramework" Version="6.3.0" />
+    <PackageVersion Include="Duende.IdentityServer.EntityFramework" Version="6.2.3" />
     <PackageVersion Include="Google.Cloud.SecretManager.V1" Version="2.1.0" />
     <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.5.0" />
     <PackageVersion Include="Hl7.Fhir.Specification.R4B" Version="4.3.0" />

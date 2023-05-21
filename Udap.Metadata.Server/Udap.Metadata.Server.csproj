@@ -14,15 +14,19 @@
     <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
     <PackageTags>UDAP;FHIR;HL7</PackageTags>
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
-    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+
   </PropertyGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0"/>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="6.0.0"/>
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="6.0.0"/>
-    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
+
+    <PackageReference Include="IdentityModel" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Portable.BouncyCastle" />
   </ItemGroup>
   
   <ItemGroup>

@@ -30,8 +30,7 @@ internal static class HostingExtensions
         // }
 
         var provider = builder.Configuration.GetValue("provider", "SqlServer");
-        var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
-
+        
         string connectionString;
 
         var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
@@ -120,6 +119,7 @@ internal static class HostingExtensions
             .AddUdapServer(
                 options =>
                     {
+                        var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
                         options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
                         options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
                         options.ServerSupport = udapServerOptions.ServerSupport;

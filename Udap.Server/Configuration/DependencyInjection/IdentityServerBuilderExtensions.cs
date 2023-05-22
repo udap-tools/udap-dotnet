@@ -23,23 +23,39 @@ using static Udap.Server.Constants;
 //
 namespace Microsoft.Extensions.DependencyInjection;
 
-
+/// <summary>
+/// Extensions to enable UDAP Server.
+/// </summary>
 public static class IdentityServerBuilderExtensions
 {
+    /// <summary>
+    /// Extend Identity Server with <see cref="Udap.Server"/>.
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <param name="setupAction">Apply <see cref="ServerSettings"/></param>
+    /// <param name="storeOptionAction">Apply <see cref="UdapConfigurationStoreOptions"/></param>
+    /// <param name="registrationUrl">Optionally override default registration URL of "connect/register"</param>
+    /// <returns></returns>
     public static IIdentityServerBuilder AddUdapServer(
         this IIdentityServerBuilder builder,
         Action<ServerSettings> setupAction,
         Action<UdapConfigurationStoreOptions>? storeOptionAction = null,
-        string? baseUrl = null)
+        string? registrationUrl = null)
     {
         builder.Services.Configure(setupAction);
         builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
-        builder.AddUdapServer(baseUrl);
+        builder.AddUdapServer(registrationUrl);
         builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
 
         return builder;
     }
 
+    /// <summary>
+    /// Not used for a typical server.  Exposed for testing.
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <param name="baseUrl"></param>
+    /// <returns></returns>
     public static IIdentityServerBuilder AddUdapServer(
         this IIdentityServerBuilder builder,
         string? baseUrl = null)
@@ -77,8 +93,7 @@ public static class IdentityServerBuilderExtensions
                     "Missing ASPNETCORE_URLS environment variable.  Or missing registrationEndpoint parameter");
             }
 
-            baseUrl = $"{baseUrl}" +
-                          $"{ProtocolRoutePaths.Register.EnsureLeadingSlash()}";
+            baseUrl = $"{baseUrl.EnsureTrailingSlash()}{ProtocolRoutePaths.Register}";
         }
 
 

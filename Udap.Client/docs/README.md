@@ -181,4 +181,7 @@ TODO: Cover X509ChainPolicy
 
 ## Udap.Client Dynamic Client Registration with a ICertificateStore implementation
 
-TODO: Cover and refactor registration code into Udap.Client.
+### Example projects
+
+- [Udap.Config simple dependency injection](./examples/clients/1_UdapClientMetadata/README.md)
+- [Udap.Client configuration with a ITrustAnchorStore implementation](./examples/clients/2_UdapClientMetadata/README.md)

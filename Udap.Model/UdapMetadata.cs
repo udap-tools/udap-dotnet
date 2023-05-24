@@ -99,13 +99,13 @@ public class UdapMetadata
     /// <summary>
     /// <a href="http://hl7.org/fhir/us/udap-security/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
     /// </summary>
-    public UdapMetadata(IOptionsMonitor<UdapConfig> udapConfig, HashSet<string>? scopes) : this(udapConfig.CurrentValue, scopes)
+    public UdapMetadata(IOptionsMonitor<UdapMetadataOptions> udapMetadataOptions, HashSet<string>? scopes) : this(udapMetadataOptions.CurrentValue, scopes)
     {
     }
 
-    public UdapMetadata(UdapConfig udapConfig, IEnumerable<string>? scopes)
+    public UdapMetadata(UdapMetadataOptions udapMetadataOptions, IEnumerable<string>? scopes)
     {
-        _udapMetadataConfigs = udapConfig.UdapMetadataConfigs;
+        _udapMetadataConfigs = udapMetadataOptions.UdapMetadataConfigs;
         UdapVersionsSupported = new HashSet<string> { UdapConstants.UdapVersionsSupportedValue };
 
         UdapProfilesSupported = new HashSet<string>
@@ -328,7 +328,7 @@ public class UdapMetadata
 
         foreach (var community in Communities())
         {
-            sb.AppendLine($"<a href=\"{path}/.well-known/udap?community={community}\" target=\"_blank\">{community}</a><br/>");
+            sb.AppendLine($"<a href=\"{path.TrimEnd('/')}/.well-known/udap?community={community}\" target=\"_blank\">{community}</a><br/>");
         }
 
         sb.AppendLine("</Body>");

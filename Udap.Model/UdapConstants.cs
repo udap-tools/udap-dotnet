@@ -117,6 +117,7 @@ public static class UdapConstants
     {
         public const string RS256 = "RS256";
         public const string RS384 = "RS384";
+        public const string ES256 = "ES256";
         public const string ES384 = "ES384";
     }
 

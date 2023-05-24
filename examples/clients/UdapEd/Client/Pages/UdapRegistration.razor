@@ -68,8 +68,10 @@
                            Variant="Variant.Outlined">
                     <MudSelectItem Value="UdapConstants.SupportedAlgorithm.RS256">@UdapConstants.SupportedAlgorithm.RS256</MudSelectItem>
                     <MudSelectItem Value="UdapConstants.SupportedAlgorithm.RS384">@UdapConstants.SupportedAlgorithm.RS384</MudSelectItem>
+                    <MudSelectItem Value="UdapConstants.SupportedAlgorithm.ES256">@UdapConstants.SupportedAlgorithm.ES256</MudSelectItem>
                     <MudSelectItem Value="UdapConstants.SupportedAlgorithm.ES384">@UdapConstants.SupportedAlgorithm.ES384</MudSelectItem>
                 </MudSelect>
+
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -121,6 +123,11 @@
                                    @onfocusout="PersistSoftwareStatement"/>
                     <pre Class="@ValidRawSoftwareStatementStyle">]</pre>
                 </MudPaper>
+                    @if (_missingScope)
+                    {
+                        <MudAlert Severity="Severity.Warning">Don't forget a scope</MudAlert>
+                    }
+
             </MudItem>
             <MudItem sm="6" xs="12">
                 <MudPaper Class="udap-analyzed" Elevation="3">

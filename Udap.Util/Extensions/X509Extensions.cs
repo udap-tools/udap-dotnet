@@ -22,10 +22,11 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+#if NET6_0_OR_GREATER
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using X509Extension = System.Security.Cryptography.X509Certificates.X509Extension;
-
+#endif
 namespace Udap.Util.Extensions;
 
 public static class X509Extensions
@@ -240,6 +241,8 @@ public static class X509Extensions
         return pem.ToString();
     }
 
+#if NET6_0_OR_GREATER
+
     /// <summary>
     /// Gets the specified certificate extension field from the certificate as a <see cref="DerObjectIdentifier"/>.  
     /// The extension field is determined by the oid parameter />
@@ -259,7 +262,6 @@ public static class X509Extensions
         return null;
     }
 
-#if NET6_0_OR_GREATER
     public static X509Certificate2[] ToRootCertArray(this IList<X509Certificate2> certificates)
     {
         X509Certificate2Collection caCerts = new X509Certificate2Collection();
@@ -296,7 +298,6 @@ public static class X509Extensions
 
         return caCerts.ToArray();
     }
-#endif
 
     /// <summary>
     /// Converts an encoded internal octet string object to a DERObject
@@ -316,19 +317,6 @@ public static class X509Extensions
                 return aInDerEncoded.ReadObject();
             }
         }
-    }
-
-    public static IEnumerable<string> ToKeyUsageToString(this X509KeyUsageFlags flags)
-    {
-        if (flags.HasFlag(X509KeyUsageFlags.KeyAgreement)) { yield return X509KeyUsageFlags.KeyAgreement.ToString(); }
-        if (flags.HasFlag(X509KeyUsageFlags.CrlSign)) { yield return X509KeyUsageFlags.CrlSign.ToString(); }
-        if (flags.HasFlag(X509KeyUsageFlags.DataEncipherment)) { yield return X509KeyUsageFlags.DataEncipherment.ToString(); }
-        if (flags.HasFlag(X509KeyUsageFlags.DecipherOnly)) { yield return X509KeyUsageFlags.DecipherOnly.ToString(); }
-        if (flags.HasFlag(X509KeyUsageFlags.DigitalSignature)) { yield return X509KeyUsageFlags.DigitalSignature.ToString(); }
-        if (flags.HasFlag(X509KeyUsageFlags.EncipherOnly)) { yield return X509KeyUsageFlags.EncipherOnly.ToString(); }
-        if (flags.HasFlag(X509KeyUsageFlags.KeyCertSign)) { yield return X509KeyUsageFlags.KeyCertSign.ToString(); }
-        if (flags.HasFlag(X509KeyUsageFlags.KeyEncipherment)) { yield return X509KeyUsageFlags.KeyEncipherment.ToString(); }
-        if (flags.HasFlag(X509KeyUsageFlags.NonRepudiation)) { yield return X509KeyUsageFlags.NonRepudiation.ToString(); }
     }
 
     public static List<Tuple<string, string>> GetSubjectAltNames(this X509Certificate2 cert, Func<GeneralName, bool>? sanFilter = null)
@@ -363,6 +351,26 @@ public static class X509Extensions
         return sans.First().Item2;
     }
 
+
+#endif
+
+
+
+    public static IEnumerable<string> ToKeyUsageToString(this X509KeyUsageFlags flags)
+    {
+        if (flags.HasFlag(X509KeyUsageFlags.KeyAgreement)) { yield return X509KeyUsageFlags.KeyAgreement.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.CrlSign)) { yield return X509KeyUsageFlags.CrlSign.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.DataEncipherment)) { yield return X509KeyUsageFlags.DataEncipherment.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.DecipherOnly)) { yield return X509KeyUsageFlags.DecipherOnly.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.DigitalSignature)) { yield return X509KeyUsageFlags.DigitalSignature.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.EncipherOnly)) { yield return X509KeyUsageFlags.EncipherOnly.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.KeyCertSign)) { yield return X509KeyUsageFlags.KeyCertSign.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.KeyEncipherment)) { yield return X509KeyUsageFlags.KeyEncipherment.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.NonRepudiation)) { yield return X509KeyUsageFlags.NonRepudiation.ToString(); }
+    }
+
+    
+    
     public static TEnum FromTag<TEnum>(int tagNo)
     {
         return (TEnum)Enum.ToObject(typeof(TEnum), tagNo);

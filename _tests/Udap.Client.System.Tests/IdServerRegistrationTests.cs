@@ -27,6 +27,7 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
+using Udap.Metadata.Server;
 using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
@@ -52,7 +53,7 @@ public class TestFixture
             .AddUserSecrets<IdServerRegistrationTests>()
             .Build();
 
-        Manifest = TestConfig.GetSection("UdapFileCertStoreManifest").Get<UdapFileCertStoreManifest>()!;
+        Manifest = TestConfig.GetSection(Constants.UDAP_FILE_STORE_MANIFEST).Get<UdapFileCertStoreManifest>()!;
     }
 }
 

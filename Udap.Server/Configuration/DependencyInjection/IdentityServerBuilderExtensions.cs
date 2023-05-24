@@ -23,9 +23,24 @@ using static Udap.Server.Constants;
 //
 namespace Microsoft.Extensions.DependencyInjection;
 
-
+/// <summary>
+/// Extensions to enable UDAP Server.
+/// </summary>
 public static class IdentityServerBuilderExtensions
 {
+    /// <summary>
+    /// Extend Identity Server with <see cref="Udap.Server"/>.
+    ///
+    /// /// Include "registration_endpoint" in the Identity Server, discovery document
+    /// (.well-known/openid-configuration)
+    /// 
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <param name="setupAction">Apply <see cref="ServerSettings"/></param>
+    /// <param name="storeOptionAction">Apply <see cref="UdapConfigurationStoreOptions"/></param>
+    /// <param name="baseUrl">Supply the baseUrl or set UdapIdpBaseUrl environment variable.</param>
+    /// <returns></returns>
+    /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
     public static IIdentityServerBuilder AddUdapServer(
         this IIdentityServerBuilder builder,
         Action<ServerSettings> setupAction,
@@ -40,6 +55,17 @@ public static class IdentityServerBuilderExtensions
         return builder;
     }
 
+    /// <summary>
+    /// Not used for a typical server.  Exposed for testing.
+    ///
+    /// /// Include "registration_endpoint" in the Identity Server, discovery document
+    /// (.well-known/openid-configuration)
+    /// 
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <param name="baseUrl">Supply the baseUrl or set UdapIdpBaseUrl environment variable.</param>
+    /// <returns></returns>
+    /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
     public static IIdentityServerBuilder AddUdapServer(
         this IIdentityServerBuilder builder,
         string? baseUrl = null)
@@ -53,15 +79,6 @@ public static class IdentityServerBuilderExtensions
     }
 
 
-    /// <summary>
-    /// Include "registration_endpoint" in the Identity Server, discovery document
-    /// (.well-known/openid-configuration)
-    /// 
-    /// </summary>
-    /// <param name="builder"></param>
-    /// <param name="baseUrl"></param>
-    /// <returns></returns>
-    /// <exception cref="Exception"></exception>
     private static IIdentityServerBuilder AddUdapDiscovery(
         this IIdentityServerBuilder builder,
        string? baseUrl = null)
@@ -76,11 +93,9 @@ public static class IdentityServerBuilderExtensions
                 throw new Exception(
                     "Missing ASPNETCORE_URLS environment variable.  Or missing registrationEndpoint parameter");
             }
-
-            baseUrl = $"{baseUrl}" +
-                          $"{ProtocolRoutePaths.Register.EnsureLeadingSlash()}";
         }
 
+        baseUrl = $"{baseUrl.EnsureTrailingSlash()}{ProtocolRoutePaths.Register}";
 
         builder.Services.Configure<IdentityServerOptions>(options =>
             options.Discovery.CustomEntries.Add(

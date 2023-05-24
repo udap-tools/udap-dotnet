@@ -337,6 +337,7 @@ public partial class UdapBusinessToBusiness
     {
         var sb = new StringBuilder();
         sb.AppendLine("POST /token HTTP/1.1");
+        sb.AppendLine("Content-Type: application/x-www-form-urlencoded");
         sb.AppendLine($"Host: {AppState.MetadataVerificationModel?.UdapServerMetaData?.AuthorizationEndpoint}");
         sb.AppendLine("Content-type: application/x-www-form-urlencoded");
         sb.AppendLine();

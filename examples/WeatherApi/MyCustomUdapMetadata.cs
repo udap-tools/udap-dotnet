@@ -5,9 +5,9 @@ namespace WeatherApi;
 
 public static class MyCustomUdapMetadata
 {
-    public static UdapMetadata Build(UdapConfig udapConfig, HashSet<string>? scopes = null)
+    public static UdapMetadata Build(UdapMetadataOptions udapMetadataOptions, HashSet<string>? scopes = null)
     {
-        var udapMetadata = new UdapMetadata(udapConfig, scopes);
+        var udapMetadata = new UdapMetadata(udapMetadataOptions, scopes);
         
         udapMetadata.ScopesSupported.Add("system/Patient.cruds");
         udapMetadata.ScopesSupported.Add("user/AllergyIntolerance.cruds");

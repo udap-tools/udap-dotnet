@@ -4,6 +4,11 @@ FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 443
+COPY Server/EMRDirectTestCA.crt /etc/ssl/certs
+COPY Server/EMRDirectTestClientSubCA.crt /etc/ssl/certs
+
+RUN update-ca-certificates
+
 
 FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src

@@ -217,3 +217,5 @@ NuGet.Config
 .tye/process_store
 
 _tests/UdapMetadata.Tests/DemoFileSystemService/.search-index-cache.json
+/_tests/Udap.PKI.Generator/TefcaRce.cs
+_tests/Udap.PKI.Generator/certstores/TEFCA_RCE

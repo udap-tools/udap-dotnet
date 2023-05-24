@@ -352,7 +352,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
                     if (uri.IsAbsoluteUri)
                     {
-                        client.RedirectUris.Add(uri.AbsoluteUri);
+                        client.RedirectUris.Add(uri.OriginalString);
                         //TODO: I need to create a policy engine or dig into the Duende policy stuff and see it if makes sense
                         //Threat analysis?
                         client.RequirePkce = false;

@@ -16,21 +16,10 @@
     <PackageTags>UDAP;FHIR;HL7</PackageTags>
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
 
-    <IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
-    <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
-    <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(IsWindows)'=='true'">
-    <DefineConstants>Windows</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(IsOSX)'=='true'">
-    <DefineConstants>OSX</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(IsLinux)'=='true'">
-    <DefineConstants>Linux</DefineConstants>
-  </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\artwork\udap.logo.48x48.jpg" Link="udap.logo.48x48.jpg">
@@ -39,16 +28,19 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="IdentityModel" />
-    <PackageReference Include="Microsoft.Extensions.Options" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+  <ItemGroup >
+    <PackageReference Include="IdentityModel"  />
+    <PackageReference Include="Microsoft.Extensions.Options"  />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt"  />
   </ItemGroup>
+
+
 
   <ItemGroup>
     <None Include="docs\README.md" Pack="true" PackagePath="\" />
     <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
   </ItemGroup>
+
 
   <ItemGroup>
     <ProjectReference Include="..\Udap.Util\Udap.Util.csproj" />

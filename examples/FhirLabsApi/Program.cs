@@ -18,8 +18,6 @@ using Hl7.Fhir.Utility;
 using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
@@ -27,9 +25,7 @@ using Newtonsoft.Json.Serialization;
 using Serilog;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Common.Extensions;
 using Udap.Metadata.Server;
-using Udap.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddUserSecrets<Program>(optional:true);  // I want user secrets even in release mode.
@@ -63,19 +59,6 @@ builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(s => {
     systemService.InitializeIndexes();
     return systemService;
 });
-
-var udapConfig = builder.Configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>();
-
-var udapMetadata = new UdapMetadata(
-    udapConfig!, 
-    Hl7ModelInfoExtensions
-        .BuildHl7FhirV1AndV2Scopes(new List<string>{"patient", "user", "system"} )
-        .Where(s => s.Contains("/*")) //Just show the wild card
-    );
-
-builder.Services.AddSingleton(udapMetadata);
-builder.Services.TryAddScoped<UdapMetaDataBuilder>();
-builder.Services.AddScoped<UdapMetaDataEndpoint>();
 
 builder.Services
     .UseFhirServerController( /*systemService,*/ options =>
@@ -111,15 +94,23 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
             ValidateAudience = false
         };
     });
-    
+
 
 // UDAP CertStore
+//
+
+//
+// Special IPrivateCertificateStore for Google Cloud Deploy
+// 
+//
 builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
 builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
     new IssuedCertificateStore(
         sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
         sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
         "FhirLabsApi"));
+
+builder.Services.AddUdapMetadataServer(builder.Configuration);
 
 
 builder.AddRateLimiting();
@@ -226,7 +217,7 @@ IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webAppl
         webApplicationBuilder.Configuration.AddJsonStream(stream);
     }
 
-    return webApplicationBuilder.Configuration.GetSection("UdapFileCertStoreManifest");
+    return webApplicationBuilder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST);
 }
 
 

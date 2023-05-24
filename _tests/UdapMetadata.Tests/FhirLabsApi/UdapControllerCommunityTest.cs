@@ -28,6 +28,7 @@ using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
+using Udap.Metadata.Server;
 using Xunit.Abstractions;
 using fhirLabsProgram = FhirLabsApi.Program;
 
@@ -98,7 +99,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         });
 
         // UDAP CertStore
-        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
+        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
@@ -400,7 +401,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         });
 
         // UDAP CertStore
-        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
+        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),

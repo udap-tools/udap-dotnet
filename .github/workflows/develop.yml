@@ -40,6 +40,7 @@ jobs:
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Util/Udap.Util.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Common/Udap.Common.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Metadata.Server/Udap.Metadata.Server.csproj 
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Metadata.Vonk.Server/Udap.Metadata.Vonk.Server.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Server/Udap.Server.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0.0.1-develop.${{ github.run_number }} ./Udap.Client/Udap.Client.csproj
     # - name: Publish the package to GPR
@@ -52,5 +53,6 @@ jobs:
         dotnet nuget push ./Udap.Util/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
         dotnet nuget push ./Udap.Common/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
         dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
+        dotnet nuget push ./Udap.Metadata.Vonk.Server/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
         dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}
         dotnet nuget push ./Udap.Client/bin/Release/*.symbols.nupkg -k ${{secrets.GITHUB_TOKEN}}\

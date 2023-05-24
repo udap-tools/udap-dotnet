@@ -50,25 +50,33 @@ public class AccessController : Controller
 
         var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
 
-        if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.Found)
+        try
         {
-            var message = await response.Content.ReadAsStringAsync(token);
-            _logger.LogWarning(message);
-
-            return Ok(new AccessCodeRequestResult
+            if (!response.IsSuccessStatusCode && response.StatusCode != HttpStatusCode.Found)
             {
-                Message = $"{response.StatusCode}:: {message}" ,
-                IsError = true
-            });
+                var message = await response.Content.ReadAsStringAsync(token);
+                _logger.LogWarning(message);
+
+                return Ok(new AccessCodeRequestResult
+                {
+                    Message = $"{response.StatusCode}:: {message}",
+                    IsError = true
+                });
+            }
+
+            var result = new AccessCodeRequestResult
+            {
+                RedirectUrl = response.Headers.Location?.AbsoluteUri,
+                Cookies = cookies
+            };
+
+            return Ok(result);
         }
-
-        var result = new AccessCodeRequestResult
+        catch (Exception ex)
         {
-            RedirectUrl = response.Headers.Location?.AbsoluteUri,
-            Cookies = cookies
-        };
-
-        return Ok(result);
+            _logger.LogError(ex.Message);
+            return Problem(ex.Message);
+        }
     }
 
     [HttpPost("BuildRequestToken/authorization_code")]

@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Udap.Metadata.Vonk.Server": {
+      "commandName": "Executable",
+      "executablePath": "C:\\FirelyServer_Community\\Firely.Server.exe",
+      "workingDirectory": "C:\\FirelyServer_Community"
+    }
+  }
+}

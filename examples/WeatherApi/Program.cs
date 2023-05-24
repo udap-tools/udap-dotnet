@@ -13,10 +13,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Udap.Common;
-using Udap.Common.Certificates;
 using Udap.Model;
 using WeatherApi;
 
@@ -38,10 +34,9 @@ var builder = WebApplication.CreateBuilder(args);
 //     so.ListenAnyIP(5020);
 // });
 
+//Better technique
 // But I am choosing to just use my host.docker.internal.pfx ssl cert generated from the Udap.PKI.Generator test project
-// It allows docker services to discover local running desktop services.  Obviously this comment is most appropriate for 
-// something like finding Udap.Idp project running on the desktop from something like hte FhirLabsApi running in docker.
-// This is a Windows thing for sure.  Not sure if what happens on a Mac.  
+// It allows docker services to discover local running desktop services. 
 /*
   "Kestrel": {
     "Certificates": {
@@ -56,9 +51,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 
 // Add services to the container.
-
 var udapMetaData = MyCustomUdapMetadata.Build(builder.
-    Configuration.GetRequiredSection("UdapConfig").Get<UdapConfig>());
+    Configuration.GetRequiredSection("UdapMetadataOptions").Get<UdapMetadataOptions>());
 
 builder.Services.AddSingleton(udapMetaData);
 
@@ -68,16 +62,6 @@ builder.Services
 
 builder.Services.AddHttpContextAccessor();
 
-// UDAP CertStore
-builder.Services
-    .Configure<UdapFileCertStoreManifest>(builder
-        .Configuration.GetSection("UdapFileCertStoreManifest"));
-
-builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
-    new IssuedCertificateStore(
-        sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-        sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
-        "WeatherApi"));
 
 //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //    .AddJwtBearer(options =>

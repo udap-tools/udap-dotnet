@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="IdentityModel" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
   </ItemGroup>
 
   <ItemGroup>

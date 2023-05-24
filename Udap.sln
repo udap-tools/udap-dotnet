@@ -4,10 +4,16 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.4.33015.44
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "_tests", "_tests", "{640C178B-FA29-49AD-8245-FA7EE934D522}"
+	ProjectSection(SolutionItems) = preProject
+		_tests\Directory.Packages.props = _tests\Directory.Packages.props
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", "{B73A108B-9163-4463-B755-A0F84344D088}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{4B854644-1F54-4ECA-9290-A89B91A19FF9}"
+	ProjectSection(SolutionItems) = preProject
+		examples\Directory.Packages.props = examples\Directory.Packages.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherApi", "examples\WeatherApi\WeatherApi.csproj", "{C66AB685-32FF-4D48-8FC7-80FD14E66980}"
 EndProject
@@ -21,6 +27,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Build.props = Directory.Build.props
 		Directory.Packages.props = Directory.Packages.props
 		LICENSE = LICENSE
+		nuget.config = nuget.config
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -51,6 +58,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UdapEd", "UdapEd", "{B84896
 		examples\clients\UdapEd\.gcloudignore = examples\clients\UdapEd\.gcloudignore
 		examples\clients\UdapEd\cloudbuild.yaml = examples\clients\UdapEd\cloudbuild.yaml
 		examples\clients\UdapEd\Directory.Packages.props = examples\clients\UdapEd\Directory.Packages.props
+		examples\clients\UdapEd\Server\EMRDirectTestCA.crt = examples\clients\UdapEd\Server\EMRDirectTestCA.crt
+		examples\clients\UdapEd\Server\EMRDirectTestClientSubCA.crt = examples\clients\UdapEd\Server\EMRDirectTestClientSubCA.crt
 		examples\clients\UdapEd\nuget.config = examples\clients\UdapEd\nuget.config
 	EndProjectSection
 EndProject
@@ -75,6 +84,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "1_UdapClientMetadata", "examples\clients\1_UdapClientMetadata\1_UdapClientMetadata.csproj", "{A933AA5E-A9EE-4FED-8046-3663C4FF6C61}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "2_UdapClientMetadata", "examples\clients\2_UdapClientMetadata\2_UdapClientMetadata.csproj", "{8DEB8BA8-68C6-43AB-9687-716009DCF17E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Metadata.Vonk.Server", "Udap.Metadata.Vonk.Server\Udap.Metadata.Vonk.Server.csproj", "{4816C7F9-68DF-4A26-9BD6-C01585041332}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0B925B7B-4E10-41CB-B6F9-708E134674CE} = {0B925B7B-4E10-41CB-B6F9-708E134674CE}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -178,6 +192,10 @@ Global
 		{8DEB8BA8-68C6-43AB-9687-716009DCF17E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8DEB8BA8-68C6-43AB-9687-716009DCF17E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8DEB8BA8-68C6-43AB-9687-716009DCF17E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4816C7F9-68DF-4A26-9BD6-C01585041332}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4816C7F9-68DF-4A26-9BD6-C01585041332}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4816C7F9-68DF-4A26-9BD6-C01585041332}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4816C7F9-68DF-4A26-9BD6-C01585041332}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

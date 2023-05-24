@@ -6,9 +6,6 @@
     <LangVersion>latest</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <IsWindows Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">true</IsWindows>
-    <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
-    <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -19,27 +16,15 @@
     <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
     <PackageTags>UDAP;FHIR;HL7</PackageTags>
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(IsWindows)'=='true'">
-    <DefineConstants>Windows</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(IsOSX)'=='true'">
-    <DefineConstants>OSX</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(IsLinux)'=='true'">
-    <DefineConstants>Linux</DefineConstants>
-  </PropertyGroup>
- 
 
-  
   <ItemGroup>
     <PackageReference Include="Hl7.Fhir.Specification.R4B" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Options" />
-    <PackageReference Include="Portable.BouncyCastle" />
-    <PackageReference Include="IdentityModel" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"  />
+    <PackageReference Include="Microsoft.Extensions.Options"  />
+    <PackageReference Include="Portable.BouncyCastle"/>
   </ItemGroup>
 
   <ItemGroup>

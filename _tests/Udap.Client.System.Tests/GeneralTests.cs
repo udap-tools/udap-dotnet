@@ -22,6 +22,7 @@ using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
 using Udap.Common.Certificates;
+using Udap.Metadata.Server;
 using Udap.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
@@ -282,7 +283,7 @@ namespace Udap.Client.System.Tests
             var services = new ServiceCollection();
             
             // UDAP CertStore
-            services.Configure<UdapFileCertStoreManifest>(configuration.GetSection("UdapFileCertStoreManifest"));
+            services.Configure<UdapFileCertStoreManifest>(configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
             services.AddSingleton<ITrustAnchorStore>(sp =>
                 new TrustAnchorFileStore(
                     sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),

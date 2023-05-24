@@ -24,10 +24,10 @@ namespace UdapEd.Server.Controllers;
 [EnableRateLimiting(RateLimitExtensions.Policy)]
 public class FhirController : ControllerBase
 {
-    private readonly FhirClientForDI _fhirClient;
+    private readonly FhirClientWithUrlProvider _fhirClient;
     private readonly ILogger<RegisterController> _logger;
 
-    public FhirController(FhirClientForDI fhirClient, ILogger<RegisterController> logger)
+    public FhirController(FhirClientWithUrlProvider fhirClient, ILogger<RegisterController> logger)
     {
         _fhirClient = fhirClient;
         _logger = logger;

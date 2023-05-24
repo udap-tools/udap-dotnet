@@ -175,6 +175,7 @@ public partial class UdapRegistration
     private string? _subjectAltName;
     private string _signingAlgorithm = UdapConstants.SupportedAlgorithm.RS256;
     private string? _requestBody;
+    private bool _missingScope;
 
     private string RequestBody
     {
@@ -259,6 +260,11 @@ public partial class UdapRegistration
             
             var request = dcrBuilder.Build();
 
+            if (request.Scope == null)
+            {
+                _missingScope = true;
+            }
+
             var statement = await RegisterService
                 .BuildSoftwareStatementForClientCredentials(request, _signingAlgorithm);
             if (statement != null)
@@ -310,6 +316,11 @@ public partial class UdapRegistration
             dcrBuilder.Document.Issuer = _subjectAltName;
 
             var request = dcrBuilder.Build();
+
+            if (request.Scope == null)
+            {
+                _missingScope = true;
+            }
 
             var statement = await RegisterService.BuildSoftwareStatementForAuthorizationCode(request, _signingAlgorithm);
             if (statement?.Header != null)

@@ -138,6 +138,7 @@ public class UdapDcrBuilderForClientCredentials
         }
     }
 
+#if NET6_0_OR_GREATER
     /// <summary>
     /// If the certificate has more than one uniformResourceIdentifier in the Subject Alternative Name
     /// extension of the client certificate then this will allow one to be picked.
@@ -156,7 +157,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
     
-
+#endif
 
     public UdapDcrBuilderForClientCredentials WithAudience(string? audience)
     {

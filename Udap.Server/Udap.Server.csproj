@@ -16,26 +16,19 @@
     <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
     <PackageTags>UDAP;FHIR;HL7</PackageTags>
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
+
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Services\**" />
-    <EmbeddedResource Remove="Services\**" />
-    <None Remove="Services\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Registration\UdapDynamicClientRegistrationValidator.cs~RF38b682b5.TMP" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="AutoMapper" />
-    <PackageReference Include="Duende.IdentityServer" />
-    <PackageReference Include="Duende.IdentityServer.AspNetIdentity" />
+    <PackageReference Include="Duende.IdentityServer"  />
+    <PackageReference Include="Duende.IdentityServer.AspNetIdentity"   />
     <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" />
-    <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection"  />
+    <!-- <PackageReference Include="Microsoft.AspNetCore.Mvc" /> -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore"  />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
 

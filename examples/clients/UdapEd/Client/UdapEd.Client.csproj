@@ -6,16 +6,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Content Remove="wwwroot\Images\Discovery_HomePage.png" />
-  </ItemGroup>
 
   <ItemGroup>
     <None Include="..\..\..\..\artwork\udap.logo.48x48.jpg" Link="udap.logo.48x48.jpg">
       <PackagePath>\</PackagePath>
       <Pack>true</Pack>
     </None>
-    <None Include="wwwroot\Images\Discovery_HomePage.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,7 +21,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.5" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
-    <PackageReference Include="MudBlazor" Version="6.2.2" />
+    <PackageReference Include="MudBlazor" Version="6.2.5" />
   </ItemGroup>
 
   <ItemGroup>

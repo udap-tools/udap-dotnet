@@ -16,8 +16,6 @@
     <PackageTags>UDAP;FHIR;HL7</PackageTags>
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
 
-    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,23 +25,10 @@
     </None>
   </ItemGroup>
 
-
-  
-  <ItemGroup Condition="'$(TargetFramework)'=='netstandard2.0' ">
-    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.30.1"  />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
+  <ItemGroup >
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+    <PackageReference Include="Portable.BouncyCastle"  />
   </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)'=='net6.0' ">
-    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.30.1"  />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)'=='net7.0'">
-    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.30.1"  />
-    <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-  </ItemGroup>
-
 
   <ItemGroup>
     <None Include="docs\README.md" Pack="true" PackagePath="\" />

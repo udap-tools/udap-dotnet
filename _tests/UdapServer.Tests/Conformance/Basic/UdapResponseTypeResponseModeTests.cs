@@ -86,18 +86,20 @@ public class UdapResponseTypeResponseModeTests
                 Community = "udap://fhirlabs.net",
                 Certificate = sureFhirLabsAnchor.ToPemFormat(),
                 Thumbprint = sureFhirLabsAnchor.Thumbprint,
-                Enabled = true
+                Enabled = true,
+                Intermediates = new List<Intermediate>()
+                {
+                    new Intermediate
+                    {
+                        BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
+                        EndDate = intermediateCert.NotAfter.ToUniversalTime(),
+                        Name = intermediateCert.Subject,
+                        Certificate = intermediateCert.ToPemFormat(),
+                        Thumbprint = intermediateCert.Thumbprint,
+                        Enabled = true
+                    }
+                }
             }}
-        });
-
-        _mockPipeline.IntermediateCertificates.Add(new Intermediate
-        {
-            BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
-            EndDate = intermediateCert.NotAfter.ToUniversalTime(),
-            Name = intermediateCert.Subject,
-            Certificate = intermediateCert.ToPemFormat(),
-            Thumbprint = intermediateCert.Thumbprint,
-            Enabled = true
         });
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());

@@ -41,8 +41,12 @@ public class ClientCredentialsUdapModeTests
     public ClientCredentialsUdapModeTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
+
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+
+        var anchorCommunity2 = new X509Certificate2("CertStore/anchors/caLocalhostCert2.cer");
+        var intermediateCommunity2 = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert2.cer");
 
         _mockPipeline.OnPostConfigureServices += s =>
         {
@@ -98,15 +102,38 @@ public class ClientCredentialsUdapModeTests
             }
         });
 
-        _mockPipeline.IntermediateCertificates.Add(new Intermediate
+        _mockPipeline.Communities.Add(new Community
         {
-            BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
-            EndDate = intermediateCert.NotAfter.ToUniversalTime(),
-            Name = intermediateCert.Subject,
-            Certificate = intermediateCert.ToPemFormat(),
-            Thumbprint = intermediateCert.Thumbprint,
-            Enabled = true
+            Name = "localhost_fhirlabs_community2",
+            Enabled = true,
+            Default = false,
+            Anchors = new[]
+            {
+                new Anchor
+                {
+                    BeginDate = anchorCommunity2.NotBefore.ToUniversalTime(),
+                    EndDate = anchorCommunity2.NotAfter.ToUniversalTime(),
+                    Name = anchorCommunity2.Subject,
+                    Community = "localhost_fhirlabs_community2",
+                    Certificate = anchorCommunity2.ToPemFormat(),
+                    Thumbprint = anchorCommunity2.Thumbprint,
+                    Enabled = true,
+                    Intermediates = new List<Intermediate>()
+                    {
+                        new Intermediate
+                        {
+                            BeginDate = intermediateCommunity2.NotBefore.ToUniversalTime(),
+                            EndDate = intermediateCommunity2.NotAfter.ToUniversalTime(),
+                            Name = intermediateCommunity2.Subject,
+                            Certificate = intermediateCommunity2.ToPemFormat(),
+                            Thumbprint = intermediateCommunity2.Thumbprint,
+                            Enabled = true
+                        }
+                    }
+                }
+            }
         });
+        
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockPipeline.IdentityScopes.Add(new IdentityResources.Profile());
@@ -869,6 +896,125 @@ public class ClientCredentialsUdapModeTests
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Deleted finished so returns a 404 status code
+    }
+
+    [Fact]
+    public async Task RegisterTwoCommunitiesWithSameISS_AndCancelOne()
+    {
+        var clientCert_1 = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+        var clientCert_2 = new X509Certificate2("CertStore/issued/fhirLabsApiClientLocalhostCert2.pfx", "udap-test");
+
+        //
+        // Register Client 1
+        //
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert_1)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.rs")
+            .Build();
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert_1, document)
+                .Build();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        var regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        regDocumentResult!.Scope.Should().Be("system/Patient.rs");
+
+
+        //
+        // Register Client 2
+        //
+        document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert_2)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test 2")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.rs")
+            .Build();
+
+        signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert_2, document)
+                .Build();
+
+        requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        regDocumentResult!.Scope.Should().Be("system/Patient.rs");
+
+        //
+        // Cancel Registration
+        //
+        document = UdapDcrBuilderForClientCredentials
+            .Cancel(clientCert_1)
+            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.rs system/Appointment.rs")
+            .Build();
+
+        signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert_1, document)
+                .Build();
+
+        requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+
+        regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapIdentityServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.OK); // Deleted finished so returns a 200 status code according to udap.org specifications
+        
     }
 
     [Fact]

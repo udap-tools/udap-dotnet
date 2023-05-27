@@ -24,7 +24,7 @@
     <None Remove="Models\**" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup >
     <PackageReference Include="IdentityModel" />
     <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
   </ItemGroup>

@@ -51,14 +51,23 @@ namespace Udap.Server.Stores
                 .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
                 ?.Value;
 
+            var community = client.ClientSecrets
+                .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY)
+                ?.Value;
+
             var existingClient = _dbContext.Clients
                 .Include(c => c.AllowedScopes)
                 .Include(c => c.RedirectUris)
                 .SingleOrDefault(c =>
                 c.AllowedGrantTypes.Any(grant => client.AllowedGrantTypes.Contains(grant.GrantType)) &&
+                // ISS
                 c.ClientSecrets.Any(cs =>
                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
-                cs.Value == iss));
+                cs.Value == iss) &&
+                // Community
+                c.ClientSecrets.Any(cs =>
+                cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY &&
+                cs.Value == community));
 
             if (existingClient != null)
             {
@@ -83,11 +92,20 @@ namespace Udap.Server.Stores
                 .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
                 ?.Value;
 
+            var community = client.ClientSecrets
+                .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY)
+                ?.Value;
+
             var clientsFound = _dbContext.Clients
+                // ISS
                 .Where(c =>
                     c.ClientSecrets.Any(cs =>
                         cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
-                        cs.Value == iss))
+                        cs.Value == iss) &&
+                // Community
+                    c.ClientSecrets.Any(cs =>
+                        cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY &&
+                        cs.Value == community))
                 .Select(c => c)
                 .ToList();
 

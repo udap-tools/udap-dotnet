@@ -49,7 +49,7 @@ public class UdapForceStateParamFalseTests
     {
         _testOutputHelper = testOutputHelper;
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
-        var intermediateCertificate = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+        var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
 
         _mockPipeline.OnPostConfigureServices += s =>
         {
@@ -106,20 +106,22 @@ public class UdapForceStateParamFalseTests
                 Community = "udap://fhirlabs.net",
                 Certificate = sureFhirLabsAnchor.ToPemFormat(),
                 Thumbprint = sureFhirLabsAnchor.Thumbprint,
-                Enabled = true
+                Enabled = true,
+                Intermediates = new List<Intermediate>()
+                {
+                    new Intermediate
+                    {
+                        BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
+                        EndDate = intermediateCert.NotAfter.ToUniversalTime(),
+                        Name = intermediateCert.Subject,
+                        Certificate = intermediateCert.ToPemFormat(),
+                        Thumbprint = intermediateCert.Thumbprint,
+                        Enabled = true
+                    }
+                }
             }}
         });
-
-        _mockPipeline.IntermediateCertificates.Add(new Intermediate
-        {
-            BeginDate = intermediateCertificate.NotBefore.ToUniversalTime(),
-            EndDate = intermediateCertificate.NotAfter.ToUniversalTime(),
-            Name = intermediateCertificate.Subject,
-            Certificate = intermediateCertificate.ToPemFormat(),
-            Thumbprint = intermediateCertificate.Thumbprint,
-            Enabled = true
-        });
-
+        
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockPipeline.IdentityScopes.Add(new IdentityResources.Profile());
         _mockPipeline.ApiScopes.Add(new ApiScope("udap"));

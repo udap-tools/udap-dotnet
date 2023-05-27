@@ -28,12 +28,29 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
     /// <param name="intermediateCertificates"></param>
     public InMemoryUdapClientRegistrationStore(
         List<Duende.IdentityServer.Models.Client> clients,
-        IEnumerable<Community> communities,
-        IEnumerable<Intermediate> intermediateCertificates)
+        IEnumerable<Community> communities)
     {
         _clients = clients;
         _communities = communities;
-        _intermediateCertificates = intermediateCertificates;
+        _intermediateCertificates = _communities
+            .Where(c => c.Enabled && c.Anchors != null)
+            .SelectMany(c =>
+            {
+                if (c.Anchors != null)
+                {
+                    return c.Anchors
+                        .SelectMany(a =>
+                        {
+                            if (a.Intermediates != null)
+                            {
+                                return a.Intermediates;
+                            }
+                            return new List<Intermediate>();
+                        });
+                }
+                return new List<Intermediate>();
+            })
+            .ToList();
     }
 
 
@@ -47,14 +64,25 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
     {
         using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.AddClient");
         activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
-        
+
+        var iss = client.ClientSecrets.SingleOrDefault(i =>
+            i.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+            ?.Value;
+
+        var community = client.ClientSecrets
+            .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY)
+            ?.Value;
+
         var existingClient = _clients.SingleOrDefault(c => 
             c.AllowedGrantTypes.Any(grant => client.AllowedGrantTypes.Contains(grant)) &&
+            // ISS
             c.ClientSecrets.Any(cs =>
-            cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME
-            && cs.Value == client.ClientSecrets.SingleOrDefault(i =>
-                i.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
-                ?.Value));
+                cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME && 
+                cs.Value == iss) &&
+            // Community
+            c.ClientSecrets.Any(cs =>
+                cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY &&
+                cs.Value == community));
 
         if (existingClient != null)
         {
@@ -74,12 +102,24 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
     {
-        var clientsFound = _clients.Where(c =>
+
+        var iss = client.ClientSecrets
+            .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+            ?.Value;
+
+        var community = client.ClientSecrets
+            .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY)
+            ?.Value;
+
+        var clientsFound = _clients.Where(c => 
+            // ISS
             c.ClientSecrets.Any(cs =>
-                cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME
-                && cs.Value == client.ClientSecrets.SingleOrDefault(i =>
-                        i.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
-                    ?.Value))
+                cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME && 
+                cs.Value == iss) &&
+            // Community
+            c.ClientSecrets.Any(cs =>
+                cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY &&
+                cs.Value == community))
             .Select(c => c)
             .ToList();
 

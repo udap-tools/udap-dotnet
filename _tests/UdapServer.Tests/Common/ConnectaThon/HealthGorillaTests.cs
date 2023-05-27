@@ -33,8 +33,8 @@ public class HealthGorillaTests
     public HealthGorillaTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        var rootCert = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
-        var sureFhirLabsAnchor = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+        var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
+        var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
 
         _mockPipeline.OnPostConfigureServices += s =>
         {
@@ -85,24 +85,26 @@ public class HealthGorillaTests
             Default = true,
             Anchors = new[] {new Anchor
             {
-                BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
-                EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
-                Name = sureFhirLabsAnchor.Subject,
+                BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
+                EndDate = intermediateCert.NotAfter.ToUniversalTime(),
+                Name = intermediateCert.Subject,
                 Community = "udap://fhirlabs.net",
-                Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                Thumbprint = sureFhirLabsAnchor.Thumbprint,
-                Enabled = true
+                Certificate = intermediateCert.ToPemFormat(),
+                Thumbprint = intermediateCert.Thumbprint,
+                Enabled = true,
+                Intermediates = new List<Intermediate>()
+                {
+                    new Intermediate
+                    {
+                        BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
+                        EndDate = intermediateCert.NotAfter.ToUniversalTime(),
+                        Name = intermediateCert.Subject,
+                        Certificate = intermediateCert.ToPemFormat(),
+                        Thumbprint = intermediateCert.Thumbprint,
+                        Enabled = true
+                    }
+                }
             }}
-        });
-
-        _mockPipeline.IntermediateCertificates.Add(new Intermediate
-        {
-            BeginDate = rootCert.NotBefore.ToUniversalTime(),
-            EndDate = rootCert.NotAfter.ToUniversalTime(),
-            Name = rootCert.Subject,
-            Certificate = rootCert.ToPemFormat(),
-            Thumbprint = rootCert.Thumbprint,
-            Enabled = true
         });
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());

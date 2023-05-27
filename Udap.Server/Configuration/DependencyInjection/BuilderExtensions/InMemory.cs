@@ -21,11 +21,9 @@ public static class InMemory
 {
     public static IIdentityServerBuilder AddInMemoryUdapCertificates(
         this IIdentityServerBuilder builder,
-        IEnumerable<Community> communities,
-        IEnumerable<Intermediate> intermediateCertificates)
+        IEnumerable<Community> communities)
     {
         builder.Services.AddSingleton(communities);
-        builder.Services.AddSingleton(intermediateCertificates);
         builder.AddUdapClientRegistrationStore<InMemoryUdapClientRegistrationStore>();
         
 

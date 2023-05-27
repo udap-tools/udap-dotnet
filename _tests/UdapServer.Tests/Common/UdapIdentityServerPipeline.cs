@@ -65,7 +65,6 @@ public class UdapIdentityServerPipeline
     public List<ApiScope> ApiScopes { get; set; } = new List<ApiScope>();
     public List<TestUser> Users { get; set; } = new List<TestUser>();
     public List<Community> Communities { get; set; } = new List<Community>();
-    public List<Intermediate> IntermediateCertificates { get; set; } = new List<Intermediate>();
 
     public TestServer Server { get; set; }
     public HttpMessageHandler Handler { get; set; }
@@ -159,7 +158,7 @@ public class UdapIdentityServerPipeline
             .AddTestUsers(Users)
             .AddDeveloperSigningCredential(persistKey: false)
             .AddUdapServer(BaseUrl)
-            .AddInMemoryUdapCertificates(Communities, IntermediateCertificates);
+            .AddInMemoryUdapCertificates(Communities);
 
         services.AddHttpClient(IdentityServerConstants.HttpClients.BackChannelLogoutHttpClient)
             .AddHttpMessageHandler(() => BackChannelMessageHandler);

@@ -47,6 +47,7 @@
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.client.pfx" Link="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\issued\fhirlabs.net.ecdsa.client.pfx" Link="CertStore\issued\fhirlabs.net.ecdsa.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -54,6 +55,16 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
 
+
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_fhirlabs_community2\issued\fhirLabsApiClientLocalhostCert2.pfx" Link="CertStore\issued\fhirLabsApiClientLocalhostCert2.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_fhirlabs_community2\intermediates\intermediateLocalhostCert2.cer" Link="CertStore\intermediates\intermediateLocalhostCert2.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Udap.PKI.Generator\certstores\localhost_fhirlabs_community2\caLocalhostCert2.cer" Link="CertStore\anchors\caLocalhostCert2.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
 
   </ItemGroup>
 

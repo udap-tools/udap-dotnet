@@ -33,7 +33,7 @@
     <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="7.0.0" />
     <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="6.30.1" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="[6.10.0,6.30.0]" />
-    <PackageVersion Include="OpenTelemetry" Version="1.4.0" />
+    <PackageVersion Include="OpenTelemetry" Version="1.5.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.4.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.4.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.4.0" />

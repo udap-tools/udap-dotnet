@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using IdentityModel;
 using Microsoft.Extensions.Options;
@@ -343,7 +344,8 @@ public class UdapMetadata
     /// <remarks>Use <see cref="System.IdentityModel.Tokens.Jwt.JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
     public virtual string SerializeToJson()
     {
-        return JsonExtensions.SerializeToJson(this);
+        return JsonSerializer.Serialize(this);
+        // return JsonExtensions.SerializeToJson(this);
     }
 
     public UdapMetadata Clone()

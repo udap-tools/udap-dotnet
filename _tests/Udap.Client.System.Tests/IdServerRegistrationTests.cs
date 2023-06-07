@@ -670,7 +670,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
-            Address = "https://localhost:7016/fhir/r4",
+            Address = "https://localhost:4081/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
                 ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
@@ -680,9 +680,9 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
-        // var discoJsonFormatted =
-        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
-        // _testOutputHelper.WriteLine(discoJsonFormatted);
+        var discoJsonFormatted =
+            JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint!);
 

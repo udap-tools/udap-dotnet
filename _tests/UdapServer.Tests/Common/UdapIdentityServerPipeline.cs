@@ -116,6 +116,7 @@ public class UdapIdentityServerPipeline
         BrowserClient = new BrowserClient(new BrowserHandler(Handler));
         BackChannelClient = new HttpClient(Handler);
 
+
     }
 
     public void ConfigureServices(IServiceCollection services)
@@ -195,7 +196,7 @@ public class UdapIdentityServerPipeline
 
         app.UseUdapServer();
         app.UseIdentityServer();
-
+        
         // UI endpoints
         app.Map(Constants.UIConstants.DefaultRoutePaths.Login.EnsureLeadingSlash(), path =>
         {
@@ -223,7 +224,6 @@ public class UdapIdentityServerPipeline
             path.Run(ctx => OnRegister(ctx));
         });
         
-
         OnPostConfigure(app);
     }
 
@@ -379,7 +379,7 @@ public class UdapIdentityServerPipeline
     {
         BrowserClient.RemoveCookie(BaseUrl, IdentityServerConstants.DefaultCheckSessionCookieName);
     }
-    public Cookie GetSessionCookie()
+    public Cookie? GetSessionCookie()
     {
         return BrowserClient.GetCookie(BaseUrl, IdentityServerConstants.DefaultCheckSessionCookieName);
     }

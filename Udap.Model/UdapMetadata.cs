@@ -109,14 +109,7 @@ public class UdapMetadata
         _udapMetadataConfigs = udapMetadataOptions.UdapMetadataConfigs;
         UdapVersionsSupported = new HashSet<string> { UdapConstants.UdapVersionsSupportedValue };
 
-        UdapProfilesSupported = new HashSet<string>
-        {
-                UdapConstants.UdapProfilesSupportedValues.UdapDcr,
-                UdapConstants.UdapProfilesSupportedValues.UdapAuthn,
-                UdapConstants.UdapProfilesSupportedValues.UdapAuthz,
-                //TODO: Code doesn't support this yet.  Also all of this needs to be coded up as a configuration feature
-                // UdapConstants.UdapProfilesSupportedValues.UdapTo
-        };
+        BuildSupportedProfiles(udapMetadataOptions);
 
         UdapAuthorizationExtensionsSupported = new HashSet<string>
         {
@@ -160,6 +153,22 @@ public class UdapMetadata
         //TODO: All of this should be configurable, via config string and builder pattern.
         TokenEndpointAuthSigningAlgValuesSupported = new HashSet<string> { UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384 };
         RegistrationEndpointJwtSigningAlgValuesSupported = new HashSet<string> { UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384 };
+    }
+
+    private void BuildSupportedProfiles(UdapMetadataOptions udapMetadataOptions)
+    {
+        if (udapMetadataOptions.UdapProfilesSupported.Any())
+        {
+            UdapProfilesSupported = udapMetadataOptions.UdapProfilesSupported;
+            return;
+        }
+
+        UdapProfilesSupported = new HashSet<string>
+        {
+            UdapConstants.UdapProfilesSupportedValues.UdapDcr,
+            UdapConstants.UdapProfilesSupportedValues.UdapAuthn,
+            UdapConstants.UdapProfilesSupportedValues.UdapAuthz,
+        };
     }
 
     /// <summary>

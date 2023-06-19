@@ -1,17 +1,28 @@
 {
   "profiles": {
-    "Local_Migrate": {
+    "Local_Udap.Idp_Migrate": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true
     },
+
+    "Local_Idenitity.Provider_Migrate": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "db_identity_provider",
+        "IdentityProvider": "true"
+      },
+      "dotnetRunMessages": true
+    },
+
     "GCPMigrate": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "GCPDeploy": "true"
+        "ConnStrName": "gcp_db"
       },
       "dotnetRunMessages": true
     }

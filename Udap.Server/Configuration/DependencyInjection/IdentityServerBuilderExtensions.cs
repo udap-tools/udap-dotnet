@@ -56,6 +56,33 @@ public static class IdentityServerBuilderExtensions
     }
 
     /// <summary>
+    /// Extend Identity Server with <see cref="Udap.Server"/>.
+    ///
+    /// /// Include "registration_endpoint" in the Identity Server, discovery document
+    /// (.well-known/openid-configuration)
+    /// 
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <param name="setupAction">Apply <see cref="ServerSettings"/></param>
+    /// <param name="storeOptionAction">Apply <see cref="UdapConfigurationStoreOptions"/></param>
+    /// <param name="baseUrl">Supply the baseUrl or set UdapIdpBaseUrl environment variable.</param>
+    /// <returns></returns>
+    /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
+    public static IIdentityServerBuilder AddUdapServerAsIdentityProvider(
+        this IIdentityServerBuilder builder,
+        Action<ServerSettings> setupAction,
+        Action<UdapConfigurationStoreOptions>? storeOptionAction = null,
+        string? baseUrl = null)
+    {
+        builder.Services.Configure(setupAction);
+        builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
+        builder.AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl);
+        builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
+
+        return builder;
+    }
+
+    /// <summary>
     /// Not used for a typical server.  Exposed for testing.
     ///
     /// /// Include "registration_endpoint" in the Identity Server, discovery document
@@ -72,14 +99,15 @@ public static class IdentityServerBuilderExtensions
     {
 
         builder.AddUdapJwtBearerClientAuthentication()
-            .AddUdapDiscovery(baseUrl)
+            .AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl)
+            .AddUdapDiscovery()
             .AddUdapServerConfiguration();
 
         return builder;
     }
+    
 
-
-    private static IIdentityServerBuilder AddUdapDiscovery(
+    private static IIdentityServerBuilder AddRegistrationEndpointToOpenIdConnectMetadata(
         this IIdentityServerBuilder builder,
        string? baseUrl = null)
     {
@@ -91,7 +119,7 @@ public static class IdentityServerBuilderExtensions
             if (string.IsNullOrEmpty(baseUrl))
             {
                 throw new Exception(
-                    "Missing ASPNETCORE_URLS environment variable.  Or missing registrationEndpoint parameter");
+                    "Missing ASPNETCORE_URLS environment variable.  Or missing baseUrl parameter in AddUdapServer extension method.");
             }
         }
 
@@ -102,6 +130,12 @@ public static class IdentityServerBuilderExtensions
                 OidcConstants.Discovery.RegistrationEndpoint,
                 baseUrl));
 
+        return builder;
+    }
+
+    private static IIdentityServerBuilder AddUdapDiscovery(
+        this IIdentityServerBuilder builder)
+    {
         return builder.AddEndpoint<UdapDiscoveryEndpoint>(
             EndpointNames.Discovery,
             ProtocolRoutePaths.DiscoveryConfiguration.EnsureLeadingSlash());

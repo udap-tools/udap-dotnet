@@ -24,7 +24,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 string dbChoice;
 
-dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "db";
+dbChoice = Environment.GetEnvironmentVariable("ConnStrName") ?? "db";
+string identityProvider = Environment.GetEnvironmentVariable("IdentityProvider") ?? "false";
 
 var connectionString = builder.Configuration.GetConnectionString(dbChoice);
 
@@ -38,10 +39,20 @@ builder.Services.AddUdapDbContext(options =>
 
 var app = builder.Build();
 
-await SeedData.EnsureSeedData(
-    connectionString,
-    "../../../../../_tests/Udap.PKI.Generator/certstores",
-    Log.Logger);
+if (identityProvider.Equals("true", StringComparison.OrdinalIgnoreCase))
+{
+    await SeedDataIdentityProvider.EnsureSeedData(
+        connectionString,
+        "../../../../../_tests/Udap.PKI.Generator/certstores",
+        Log.Logger);
+}
+else
+{
+    await SeedData.EnsureSeedData(
+        connectionString,
+        "../../../../../_tests/Udap.PKI.Generator/certstores",
+        Log.Logger);
+}
 
 // Configure the HTTP request pipeline.
 

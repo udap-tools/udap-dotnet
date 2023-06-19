@@ -485,8 +485,6 @@ public class UdapResponseTypeResponseModeTests
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
-        await _mockPipeline.LoginAsync("bob");
-        
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
@@ -529,6 +527,8 @@ public class UdapResponseTypeResponseModeTests
 
         var state = Guid.NewGuid().ToString();
         var nonce = Guid.NewGuid().ToString();
+
+        await _mockPipeline.LoginAsync("bob");
 
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,

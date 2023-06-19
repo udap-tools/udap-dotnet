@@ -56,8 +56,8 @@ public class UdapForceStateParamFalseTests
             s.AddSingleton<ServerSettings>(new ServerSettings
             {
                 ServerSupport = ServerSupport.UDAP,
-                DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap"
+                DefaultUserScopes = "user/*.read",
+                DefaultSystemScopes = "system/*.read"
                 // ForceStateParamOnAuthorizationCode = false (default)
             });
         };
@@ -65,34 +65,14 @@ public class UdapForceStateParamFalseTests
         _mockPipeline.OnPreConfigureServices += s =>
         {
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
-            // TODO: PR Deunde for this issue.
-            // They register Clients as IEnumerable<Client> in AddInMemoryClients extension
+            // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
+            // It was not intended to work with the concept of a dynamic client registration.
             s.AddSingleton(_mockPipeline.Clients);
         };
 
         _mockPipeline.Initialize(enableLogging: true);
         _mockPipeline.BrowserClient.AllowAutoRedirect = false;
 
-        _mockPipeline.Clients.Add(new Client
-        {
-            Enabled = true,
-            ClientId = "code_client",
-            ClientSecrets = new List<Secret>
-            {
-                new Secret("secret".Sha512())
-            },
-
-            AllowedGrantTypes = GrantTypes.Code,
-            AllowedScopes = { "openid" },
-
-            RequireConsent = false,
-            RequirePkce = false,
-            RedirectUris = new List<string>
-            {
-                "https://code_client/callback"
-            }
-        });
-        
         _mockPipeline.Communities.Add(new Community
         {
             Name = "udap://fhirlabs.net",

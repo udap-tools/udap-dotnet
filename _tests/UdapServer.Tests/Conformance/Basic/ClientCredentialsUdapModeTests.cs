@@ -62,8 +62,8 @@ public class ClientCredentialsUdapModeTests
         _mockPipeline.OnPreConfigureServices += s =>
         {
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
-            // TODO: PR Deunde for this issue.
-            // They register Clients as IEnumerable<Client> in AddInMemoryClients extension
+            // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
+            // It was not intended to work with the concept of a dynamic client registration.
             s.AddSingleton(_mockPipeline.Clients);
         };
 

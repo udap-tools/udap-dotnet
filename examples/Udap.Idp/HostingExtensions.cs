@@ -83,6 +83,7 @@ internal static class HostingExtensions
                 options.EmitStaticAudienceClaim = true;
                 options.InputLengthRestrictions.Scope =
                     7000; //TODO: Very large!  Again I need to solve the policy/community/certification concept
+                // options.UserInteraction.LoginUrl = "/joe";
             })
             .AddServerSideSessions()
             .AddConfigurationStore(options =>

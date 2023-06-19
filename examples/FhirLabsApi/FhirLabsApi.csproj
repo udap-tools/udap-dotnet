@@ -52,6 +52,21 @@
     <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
+    <PackageReference Include="Udap.Metadata.Server" Version="0.1.*" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
+    <ProjectReference Include="..\..\Udap.Common/Udap.Common.csproj" />
+    <ProjectReference Include="..\..\Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="nuget.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 
   <ItemGroup>
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">
@@ -107,23 +122,5 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Metadata.Server" Version="0.1.*" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
-    <ProjectReference Include="..\..\Udap.Common/Udap.Common.csproj" />
-    <ProjectReference Include="..\..\Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="nuget.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-  </ItemGroup>
 
 </Project>

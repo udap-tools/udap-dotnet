@@ -19,6 +19,15 @@ public static class UdapConstants
     public const string UdapVersionsSupportedValue = "1";
     public const string Community = "community";
 
+
+    public static class AuthorizeRequestExtra
+    {
+        /// <summary>
+        /// Used to add the extension query parameter "idp" (hint) with a value equal to the base URL of the preferred OIDC IdP.
+        /// </summary>
+        public const string Idp = "idp";
+    }
+
     public static class UdapProfilesSupportedValues
     {
         /// <summary>
@@ -121,22 +130,6 @@ public static class UdapConstants
         public const string ES384 = "ES384";
     }
 
-    public static class UdapAuthorizationExtensions
-    {
-        public const string Hl7B2B = "hl7-b2b";
-    }
-
-
-    /// <summary>
-    /// Huge list.  Would be nice to find this coded somewhere.
-    /// </summary>
-    public static class FhirScopes
-    {
-        public const string SystemPatientRead = "system/Patient.read";
-        public const string SystemAllergyIntoleranceRead = "system/AllergyIntolerance.read";
-        public const string SystemProcedureRead = "system/Procedures.read";
-    }
-
     public static class Discovery
     {
         public const string DiscoveryEndpoint = ".well-known/udap";
@@ -162,13 +155,29 @@ public static class UdapConstants
         public const string JwksUri = "jwks_uri";
     }
 
+
+    public static class UdapAuthorizationExtensions
+    {
+        /// <summary>
+        /// B2B Authorization Extension Object
+        /// Key Name: "hl7-b2b"
+        /// See <a href="http://hl7.org/fhir/us/udap-security/b2b.html#b2b-authorization-extension-object">B2B Authorization Extension Object</a>
+        /// </summary>
+        public const string Hl7B2B = "hl7-b2b";
+    }
+
+    /// <summary>
+    /// B2B Authorization Extension Object
+    /// Key Name: "hl7-b2b"
+    /// See <a href="http://hl7.org/fhir/us/udap-security/b2b.html#b2b-authorization-extension-object">B2B Authorization Extension Object</a>
+    /// </summary>
     public static class B2BAuthorizationExtension
     {
         public const string Version = "version";
         public const string SubjectName = "subject_name";
         public const string SubjectId = "subject_id";
         public const string SubjectRole = "subject_role";
-        public const string OraganizationName = "organization_name";
+        public const string OrganizationName = "organization_name";
         public const string OrganizationId = "organization_id";
         public const string PurposeOfUse = "purpose_of_use";
         public const string ConsentPolicy = "consent_policy";
@@ -198,6 +207,13 @@ public static class UdapConstants
     {
         /// <summary>Permission to retrieve information about the current logged-in user.</summary>
         public const string FhirUser = "fhiruser";
+
+        /// <summary>
+        /// The Client App includes the scope “udap” in the authorize request to signal to the Resource Holder
+        /// that UDAP Tiered OAuth for User Authentication is being requested.
+        /// <see cref="http://hl7.org/fhir/us/udap-security/user.html#client-authorization-request-to-data-holder"/>
+        /// </summary>
+        public const string Udap = "udap";
     }
 }
 

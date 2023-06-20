@@ -25,4 +25,16 @@ public static class StringExtensions
 
         return uri.AbsoluteUri;
     }
+
+
+    [DebuggerStepThrough]
+    public static string? GetCommunityFromQueryParams(this string queryPath)
+    {
+        var parameters = queryPath.Split('&');
+
+        var community = parameters.FirstOrDefault(x => 
+            x.StartsWith("community=", StringComparison.OrdinalIgnoreCase));
+
+        return community!.Split("=").LastOrDefault();
+    }
 }

@@ -58,7 +58,7 @@ public static class IdentityServerBuilderExtensions
     /// <summary>
     /// Extend Identity Server with <see cref="Udap.Server"/>.
     ///
-    /// /// Include "registration_endpoint" in the Identity Server, discovery document
+    /// Include "registration_endpoint" in the Identity Server, discovery document
     /// (.well-known/openid-configuration)
     /// 
     /// </summary>
@@ -85,7 +85,7 @@ public static class IdentityServerBuilderExtensions
     /// <summary>
     /// Not used for a typical server.  Exposed for testing.
     ///
-    /// /// Include "registration_endpoint" in the Identity Server, discovery document
+    /// Include "registration_endpoint" in the Identity Server, discovery document
     /// (.well-known/openid-configuration)
     /// 
     /// </summary>

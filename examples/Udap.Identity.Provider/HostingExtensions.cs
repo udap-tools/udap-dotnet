@@ -218,10 +218,10 @@ internal static class HostingExtensions
         app.UseRouting();
 
         app.UseUdapMetadataServer();
-        app.UseUdapServer();
+        app.UseUdapIdPServer();
         app.UseIdentityServer();
         
-
+        
         // uncomment if you want to add a UI
         app.UseAuthorization();
         app.MapRazorPages().RequireAuthorization();

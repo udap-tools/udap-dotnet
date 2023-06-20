@@ -11,12 +11,18 @@ using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Google.Cloud.SecretManager.V1;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
+using Udap.Client.Client;
+using Udap.Common;
+using Udap.Common.Certificates;
 using Udap.Server.Configuration;
+using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace Udap.Idp;
 
@@ -170,16 +176,51 @@ internal static class HostingExtensions
                     });
             });
 
+
+        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection("UdapFileCertStoreManifest"));
+        builder.Services.AddSingleton<ITrustAnchorStore, TrustAnchorFileStore>();
+        builder.Services.AddScoped<TrustChainValidator>();
+        builder.Services.AddHttpClient<IUdapClient, UdapClient>();
+
+
+        builder.Services.AddAuthentication()
+            .AddTieredOAuth(options =>
+            {
+                // options.Events.OnRedirectToAuthorizationEndpoint
+                // {
+                //     
+                // };
+            });
+
         // builder.Services.AddHttpLogging(options =>
         // {
         //     options.LoggingFields = HttpLoggingFields.All;
         // });
+
 
         return builder.Build();
     }
 
     public static WebApplication ConfigurePipeline(this WebApplication app, string[] args)
     {
+        // app.Use(async (context, next) =>
+        // {
+        //     if (context.Request.Path.Value != null &&
+        //         context.Request.Path.Value.Contains("connect/authorize"))
+        //     {
+        //         var requestParams = context.Request.Query;
+        //
+        //         if (requestParams.Any())
+        //         {
+        //             if (requestParams.TryGetValue("idp", out var idp))
+        //             {
+        //                 context.Request.Path = "/Account/Login";
+        //             }
+        //         }
+        //     }
+        //     await next();
+        // });
+
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
         {
             app.Use(async (ctx, next) =>

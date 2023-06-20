@@ -23,15 +23,16 @@
 
   <ItemGroup>
     <PackageReference Include="AutoMapper" />
-    <PackageReference Include="Duende.IdentityServer"  />
-    <PackageReference Include="Duende.IdentityServer.AspNetIdentity"   />
+    <PackageReference Include="Duende.IdentityServer" />
+    <PackageReference Include="Duende.IdentityServer.AspNetIdentity" />
     <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" />
-    <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection"  />
-    <PackageReference Include="Microsoft.EntityFrameworkCore"  />
+    <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" VersionOverride="6.30.1" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />
     <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
     <None Include="docs\README.md" Pack="true" PackagePath="\" />

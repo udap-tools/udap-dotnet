@@ -35,6 +35,11 @@ public static class StringExtensions
         var community = parameters.FirstOrDefault(x => 
             x.StartsWith("community=", StringComparison.OrdinalIgnoreCase));
 
+        if (community == null)
+        {
+            return null;
+        }
+
         return community!.Split("=").LastOrDefault();
     }
 }

@@ -10,6 +10,7 @@ using Duende.IdentityServer.Test;
 using FluentAssertions;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Registration;
@@ -45,6 +46,13 @@ public class HealthGorillaTests
                 DefaultSystemScopes = "udap",
                 ForceStateParamOnAuthorizationCode = true
             });
+
+            s.AddSingleton<UdapClientOptions>(new UdapClientOptions
+            {
+                ClientName = "Mock Client",
+                Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
+            });
+
         };
 
         _mockPipeline.OnPreConfigureServices += s =>

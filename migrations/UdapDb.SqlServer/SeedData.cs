@@ -87,9 +87,9 @@ public static class SeedData
             await udapContext.SaveChangesAsync();
         }
 
-        if (!udapContext.Communities.Any(c => c.Name == "udap://fhirlabs.net"))
+        if (!udapContext.Communities.Any(c => c.Name == "udap://fhirlabs.net/"))
         {
-            var community = new Community { Name = "udap://fhirlabs.net" };
+            var community = new Community { Name = "udap://fhirlabs.net/" };
             community.Enabled = true;
             community.Default = true;
             udapContext.Communities.Add(community);
@@ -106,10 +106,10 @@ public static class SeedData
         var sureFhirLabsAnchor = new X509Certificate2(
             Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
 
-        if ((await clientRegistrationStore.GetAnchors("udap://fhirlabs.net"))
+        if ((await clientRegistrationStore.GetAnchors("udap://fhirlabs.net/"))
             .All(a => a.Thumbprint != sureFhirLabsAnchor.Thumbprint))
         {
-            var community = udapContext.Communities.Single(c => c.Name == "udap://fhirlabs.net");
+            var community = udapContext.Communities.Single(c => c.Name == "udap://fhirlabs.net/");
 
             anchor = new Anchor
             {
@@ -234,7 +234,18 @@ public static class SeedData
 
             await configDbContext.SaveChangesAsync();
         }
-        
+
+        //
+        // udap
+        //
+        if (configDbContext.IdentityResources.All(i => i.Name != UdapConstants.StandardScopes.Udap))
+        {
+            var fhirUserIdentity = new UdapIdentityResources.Udap();
+            configDbContext.IdentityResources.Add(fhirUserIdentity.ToEntity());
+
+            await configDbContext.SaveChangesAsync();
+        }
+
         //
         // profile
         //
@@ -246,6 +257,16 @@ public static class SeedData
             await configDbContext.SaveChangesAsync();
         }
 
+        //
+        // email
+        //
+        if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.Email))
+        {
+            var identityResource = new IdentityResources.Email();
+            configDbContext.IdentityResources.Add(identityResource.ToEntity());
+
+            await configDbContext.SaveChangesAsync();
+        }
 
         var sb = new StringBuilder();
         sb.AppendLine("Use [Udap.Idp.db];");

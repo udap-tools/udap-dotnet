@@ -167,7 +167,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithClientName(string clientName)
+    public UdapDcrBuilderForAuthorizationCode WithClientName(string? clientName)
     {
         _document.ClientName = clientName;
         return this;

@@ -53,7 +53,7 @@ public class TestFixture
             .AddUserSecrets<IdServerRegistrationTests>()
             .Build();
 
-        Manifest = TestConfig.GetSection(Constants.UDAP_FILE_STORE_MANIFEST).Get<UdapFileCertStoreManifest>()!;
+        Manifest = TestConfig.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST).Get<UdapFileCertStoreManifest>()!;
     }
 }
 
@@ -1004,7 +1004,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // by the caller.  
         // Good historical conversations.  
         // https://github.com/dotnet/runtime/pull/63231
-        // https://github.com/dotnet/runtime/issues/17036
         // https://github.com/dotnet/runtime/issues/17036
         //
 #if NET7_0_OR_GREATER

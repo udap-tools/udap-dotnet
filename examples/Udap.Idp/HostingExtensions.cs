@@ -12,8 +12,10 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -123,6 +125,7 @@ internal static class HostingExtensions
             .AddClientStore<ClientStore>()
             //TODO remove
             .AddTestUsers(TestUsers.Users)
+            
             .AddUdapServer(
                 options =>
                     {
@@ -132,6 +135,12 @@ internal static class HostingExtensions
                         options.ServerSupport = udapServerOptions.ServerSupport;
                         options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
                     },
+                udapClientOptions =>
+                {
+                    udapClientOptions.ClientName = "Udap.Auth.SecuredControls";
+                    udapClientOptions.Contacts = new HashSet<string>
+                        { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" };
+                },
                 options =>
                     _ = provider switch
                     {
@@ -145,7 +154,28 @@ internal static class HostingExtensions
 
                         _ => throw new Exception($"Unsupported provider: {provider}")
                     });
+
+
+        //
+        // Special IPrivateCertificateStore for Google Cloud Deploy
+        // 
+        //
+        // TODO: UdapFileCertStoreManifest doesn't have a good abstratction story for transitioning to other storage 
+        builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
         
+
+
+        builder.Services.AddAuthentication()
+            .AddTieredOAuth(options =>
+            {
+                options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                // options.Events.OnRedirectToAuthorizationEndpoint
+                // {
+                //     
+                // };
+            });
+
+
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
         //
@@ -177,20 +207,7 @@ internal static class HostingExtensions
             });
 
 
-        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection("UdapFileCertStoreManifest"));
-        builder.Services.AddSingleton<ITrustAnchorStore, TrustAnchorFileStore>();
-        builder.Services.AddScoped<TrustChainValidator>();
-        builder.Services.AddHttpClient<IUdapClient, UdapClient>();
-
-
-        builder.Services.AddAuthentication()
-            .AddTieredOAuth(options =>
-            {
-                // options.Events.OnRedirectToAuthorizationEndpoint
-                // {
-                //     
-                // };
-            });
+        
 
         // builder.Services.AddHttpLogging(options =>
         // {
@@ -263,5 +280,33 @@ internal static class HostingExtensions
         app.MapRazorPages().RequireAuthorization();
         
         return app;
+    }
+
+    static IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webApplicationBuilder)
+    {
+        //Ugly but works so far.
+        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
+        {
+            // Log.Logger.Information("Loading connection string from gcp_db");
+            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
+            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
+
+            Log.Logger.Information("Creating client");
+            var client = SecretManagerServiceClient.Create();
+
+            var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest/versions/latest";
+
+            Log.Logger.Information("Requesting {secretResource");
+            // Call the API.
+            var result = client.AccessSecretVersion(secretResource);
+
+            // Convert the payload to a string. Payloads are bytes by default.
+            var stream = new MemoryStream(result.Payload.Data.ToByteArray());
+
+
+            webApplicationBuilder.Configuration.AddJsonStream(stream);
+        }
+
+        return webApplicationBuilder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST);
     }
 }

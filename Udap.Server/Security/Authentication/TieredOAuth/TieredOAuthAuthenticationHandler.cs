@@ -1,10 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using System.Text.Encodings.Web;
-using System.Threading.Tasks;
-using Duende.IdentityServer;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.Logging;
@@ -31,36 +34,4 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     {
         return base.BuildChallengeUrl(properties, redirectUri);
     }
-}
-
-public class TieredOAuthAuthenticationOptions : OAuthOptions{
-
-    public TieredOAuthAuthenticationOptions()
-    {
-        CallbackPath = TieredOAuthAuthenticationDefaults.CallbackPath;
-        ClientId = "dynamic";
-        ClientSecret = "signed metadata";
-        AuthorizationEndpoint = TieredOAuthAuthenticationDefaults.AuthorizationEndpoint;
-        TokenEndpoint = TieredOAuthAuthenticationDefaults.TokenEndpoint;
-        SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-    }
-}
-
-public static class TieredOAuthAuthenticationDefaults
-{
-    /// <summary>
-    /// Default value for <see cref="AuthenticationScheme.Name"/>.
-    /// </summary>
-    public const string AuthenticationScheme = "TieredOAuth";
-
-    /// <summary>
-    /// Default value for <see cref="AuthenticationScheme.DisplayName"/>.
-    /// </summary>
-    public static readonly string DisplayName = "UDAP Tiered OAuth";
-
-    public static readonly string CallbackPath = "/signin-tieredoauth";
-
-    public static readonly string AuthorizationEndpoint = "https://localhost:5001/connect/authorize";
-
-    public static readonly string TokenEndpoint = "https://localhost:5001/connect/token";
 }

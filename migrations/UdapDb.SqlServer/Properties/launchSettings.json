@@ -3,7 +3,8 @@
     "Local_Udap.Idp_Migrate": {
       "commandName": "Project",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "AuthProviderLocal": "true"
       },
       "dotnetRunMessages": true
     },

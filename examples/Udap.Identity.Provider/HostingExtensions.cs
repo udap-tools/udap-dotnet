@@ -135,7 +135,6 @@ internal static class HostingExtensions
                         _ => throw new Exception($"Unsupported provider: {provider}")
                     });
 
-
         //
         // Add Metadata Server
         // Special IPrivateCertificateStore for Google Cloud Deploy
@@ -255,6 +254,6 @@ internal static class HostingExtensions
             webApplicationBuilder.Configuration.AddJsonStream(stream);
         }
 
-        return webApplicationBuilder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST);
+        return webApplicationBuilder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST);
     }
 }

@@ -25,11 +25,13 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client;
+using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Metadata.Server;
 using Xunit.Abstractions;
+using Constants = Udap.Common.Constants;
 using fhirLabsProgram = FhirLabsApi.Program;
 
 
@@ -124,6 +126,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
                 sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
                 sp.GetRequiredService<ILogger<UdapClient>>(),
                 sp.GetRequiredService<ITrustAnchorStore>()));
 
@@ -261,6 +264,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                 {
                     new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert2.cer"))
                     // No intermediate and no way to load it because this test cert has not AIA extension to follow.
+                    // ************* DRAGONS ***********************
+                    // Watch out for the intermediate getting cached now that I have Udap.Certificate.Server running for integration work.
+                    // The integration also allows the intermediate* certs to be loaded into your personal intermediate store in Windows
+                    // ************* DRAGONS ***********************
                 }
             },
             "udap://fhirlabs2/");
@@ -427,6 +434,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
                 sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
                 sp.GetRequiredService<ILogger<UdapClient>>(),
                 sp.GetRequiredService<ITrustAnchorStore>()));
 

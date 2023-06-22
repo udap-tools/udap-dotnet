@@ -29,6 +29,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		LICENSE = LICENSE
 		nuget.config = nuget.config
 		README.md = README.md
+		tye.yaml = tye.yaml
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Common", "Udap.Common\Udap.Common.csproj", "{B4BA64F6-AB18-4A52-91B5-9C2CEE280D70}"
@@ -90,7 +91,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Metadata.Vonk.Server",
 		{0B925B7B-4E10-41CB-B6F9-708E134674CE} = {0B925B7B-4E10-41CB-B6F9-708E134674CE}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Udap.Identity.Provider", "examples\Udap.Identity.Provider\Udap.Identity.Provider.csproj", "{59BB96F4-CAFE-4802-984F-9F0EAA3A7E1A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Identity.Provider", "examples\Udap.Identity.Provider\Udap.Identity.Provider.csproj", "{59BB96F4-CAFE-4802-984F-9F0EAA3A7E1A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Certificates.Server", "examples\Udap.Certificates.Server\Udap.Certificates.Server.csproj", "{B4E18166-A588-4CB8-BF48-0119FB365FFF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -202,6 +205,10 @@ Global
 		{59BB96F4-CAFE-4802-984F-9F0EAA3A7E1A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59BB96F4-CAFE-4802-984F-9F0EAA3A7E1A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{59BB96F4-CAFE-4802-984F-9F0EAA3A7E1A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4E18166-A588-4CB8-BF48-0119FB365FFF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4E18166-A588-4CB8-BF48-0119FB365FFF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4E18166-A588-4CB8-BF48-0119FB365FFF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4E18166-A588-4CB8-BF48-0119FB365FFF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -228,6 +235,7 @@ Global
 		{A933AA5E-A9EE-4FED-8046-3663C4FF6C61} = {2D52ACC2-6D22-4C31-A90C-505D04980EEF}
 		{8DEB8BA8-68C6-43AB-9687-716009DCF17E} = {2D52ACC2-6D22-4C31-A90C-505D04980EEF}
 		{59BB96F4-CAFE-4802-984F-9F0EAA3A7E1A} = {4B854644-1F54-4ECA-9290-A89B91A19FF9}
+		{B4E18166-A588-4CB8-BF48-0119FB365FFF} = {4B854644-1F54-4ECA-9290-A89B91A19FF9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4C22E2C0-B5D3-497F-BAD0-EB769D6D6CD1}

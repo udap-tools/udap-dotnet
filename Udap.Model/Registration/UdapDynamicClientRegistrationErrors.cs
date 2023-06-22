@@ -36,7 +36,14 @@ public static class UdapDynamicClientRegistrationErrorDescriptions
     public const string ClientNameMissing = "invalid_client_metadata client_name is missing";
     public const string GrantTypeMissing = "grant_types is missing";
     public const string ResponseTypesMissing = "invalid_client_metadata response_types is missing";
+
     public const string TokenEndpointAuthMethodMissing = "invalid_client_metadata token_endpoint_auth_method is missing";
+
     public const string MissingValidationResult = "Missing validation result.";
     public const string MalformedMetaDataDocument = "Malformed metadata document";
+
+    public const string ClientCredentialsRefreshError = "Client credentials does not support refresh tokens";
+    public const string UnsupportedGrantType = "Unsupported grant type";
+    public const string MalformedRedirectUri = "Malformed redirect uri";
+    public const string RedirectUriRequiredForAuthCode = "Redirect uri is required for authorization_code grant type";
 }

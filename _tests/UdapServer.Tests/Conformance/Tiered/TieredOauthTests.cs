@@ -16,6 +16,7 @@ using IdentityModel.Client;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Registration;
@@ -57,6 +58,14 @@ public class TieredOauthTests
                 DefaultSystemScopes = "udap"
                 // ForceStateParamOnAuthorizationCode = false (default)
             });
+
+            s.AddSingleton<UdapClientOptions>(new UdapClientOptions
+            {
+                ClientName = "Mock Client",
+                Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
+            });
+
+
         };
 
         _mockAuthorServerPipeline.OnPreConfigureServices += services =>
@@ -66,45 +75,45 @@ public class TieredOauthTests
             // It was not intended to work with the concept of a dynamic client registration.
             services.AddSingleton(_mockAuthorServerPipeline.Clients);
 
-            services.AddReverseProxy()
-                .LoadFromMemory(
-                    new[]
-                    {
-                        new RouteConfig()
-                        {
-                            RouteId = "api_user",
-                            ClusterId = "cluster1",
-
-                            Match = new()
-                            {
-                                Path = "/server/connect/authorize"
-                            }
-                        }
-                    },
-                    new[]
-                    {
-                        new ClusterConfig
-                        {
-                            ClusterId = "cluster1",
-
-                            Destinations = new Dictionary<string, DestinationConfig>(StringComparer.OrdinalIgnoreCase)
-                            {
-                                { "destination1", new() { Address = "https://localhost:5010" } },
-                            }
-                        }
-                    });
+            // services.AddReverseProxy()
+            //     .LoadFromMemory(
+            //         new[]
+            //         {
+            //             new RouteConfig()
+            //             {
+            //                 RouteId = "api_user",
+            //                 ClusterId = "cluster1",
+            //
+            //                 Match = new()
+            //                 {
+            //                     Path = "/server/connect/authorize"
+            //                 }
+            //             }
+            //         },
+            //         new[]
+            //         {
+            //             new ClusterConfig
+            //             {
+            //                 ClusterId = "cluster1",
+            //
+            //                 Destinations = new Dictionary<string, DestinationConfig>(StringComparer.OrdinalIgnoreCase)
+            //                 {
+            //                     { "destination1", new() { Address = "https://localhost:5010" } },
+            //                 }
+            //             }
+            //         });
         };
 
-        _mockAuthorServerPipeline.OnPostConfigure += app =>
-        {
-            // Enable endpoint routing, required for the reverse proxy
-            app.UseRouting();
-            // Register the reverse proxy routes
-            app.UseEndpoints(endpoints =>
-            {
-                endpoints.MapReverseProxy();
-            });
-        };
+        // _mockAuthorServerPipeline.OnPostConfigure += app =>
+        // {
+        //     // Enable endpoint routing, required for the reverse proxy
+        //     app.UseRouting();
+        //     // Register the reverse proxy routes
+        //     app.UseEndpoints(endpoints =>
+        //     {
+        //         endpoints.MapReverseProxy();
+        //     });
+        // };
 
         _mockAuthorServerPipeline.Initialize(enableLogging: true);
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
@@ -171,6 +180,13 @@ public class TieredOauthTests
                 DefaultSystemScopes = "udap"
                 // ForceStateParamOnAuthorizationCode = false (default)
             });
+
+            s.AddSingleton<UdapClientOptions>(new UdapClientOptions
+            {
+                ClientName = "Mock Client",
+                Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
+            });
+
         };
 
         _mockIdentityProviderPipeline.OnPreConfigureServices += s =>

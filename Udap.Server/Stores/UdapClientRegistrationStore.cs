@@ -211,6 +211,23 @@ namespace Udap.Server.Stores
             return new X509Certificate2Collection(anchors.Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());
         }
 
+        public async Task<string?> GetCommunityId(string community, CancellationToken token = default)
+        {
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetCommunityId");
+            activity?.SetTag(Tracing.Properties.Community, community);
+
+            if (string.IsNullOrEmpty(community))
+            {
+                return await _dbContext.Communities.Where(c => c.Default)
+                    .Select(c => c.Id.ToString())
+                    .FirstAsync(token);
+            }
+
+            return await _dbContext.Communities.Where(c => c.Name == community)
+                .Select(c => c.Id.ToString())
+                .SingleOrDefaultAsync(token);
+        }
+
         private string ShowSummary(IEnumerable<Anchor> anchors)
         {
             var sb = new StringBuilder();

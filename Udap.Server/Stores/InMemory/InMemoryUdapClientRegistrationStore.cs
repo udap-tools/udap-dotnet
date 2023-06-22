@@ -221,4 +221,9 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
         return Task.FromResult<X509Certificate2Collection?>(certificates);
     }
+
+    public Task<string?> GetCommunityId(string community, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
+    }
 }

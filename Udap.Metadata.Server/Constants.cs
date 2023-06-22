@@ -10,9 +10,6 @@
 namespace Udap.Metadata.Server;
 public static class Constants
 {
-    /// <summary>
-    /// Appsettings Configuration name identifier
-    /// </summary>
-    public const string UDAP_FILE_STORE_MANIFEST = "UdapFileCertStoreManifest";
+    
 
 }

@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <DockerfileContext>.</DockerfileContext>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileRunArguments>-p "5002:443" -e ASPNETCORE_HTTPS_PORT=7016 </DockerfileRunArguments>
+    <DockerfileRunArguments>-p "5055:443" -e ASPNETCORE_HTTPS_PORT=5055 </DockerfileRunArguments>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
 

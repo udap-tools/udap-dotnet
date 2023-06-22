@@ -20,6 +20,7 @@ using IdentityModel.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
+using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Access;
@@ -57,6 +58,13 @@ public class ClientCredentialsUdapModeTests
                 DefaultSystemScopes = "udap",
                 ForceStateParamOnAuthorizationCode = true
             });
+
+            s.AddSingleton<UdapClientOptions>(new UdapClientOptions
+            {
+                ClientName = "Mock Client",
+                Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
+            });
+
         };
 
         _mockPipeline.OnPreConfigureServices += s =>

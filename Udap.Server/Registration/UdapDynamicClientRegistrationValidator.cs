@@ -314,14 +314,14 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         // we only support the two above grant types but, an empty GrantType is an indication of a cancel registration action.
-        // TODO: This whole method needs to be migrated into a better software pattern.
+        // TODO: This whole method needs to be migrated into a better software pattern.  Also, UdapTieredOAuthMiddleware now has this logic
         if (client.AllowedGrantTypes.Count == 0 && 
             document.GrantTypes != null && 
             document.GrantTypes.Any())
         {
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                "unsupported grant type"));
+                UdapDynamicClientRegistrationErrorDescriptions.UnsupportedGrantType));
         }
 
         //TODO: Ensure test covers this and follows Security IG: http://hl7.org/fhir/us/udap-security/b2b.html#refresh-tokens
@@ -332,7 +332,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             {
                 return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                    "client credentials does not support refresh tokens"));
+                    UdapDynamicClientRegistrationErrorDescriptions.ClientCredentialsRefreshError));
             }
 
             client.AllowOfflineAccess = true;
@@ -362,7 +362,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     {
                         return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                             UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                            "malformed redirect URI"));
+                            UdapDynamicClientRegistrationErrorDescriptions.MalformedRedirectUri));
                     }
                 }
             }
@@ -370,7 +370,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             {
                 return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                    "redirect URI required for authorization_code grant type"));
+                    UdapDynamicClientRegistrationErrorDescriptions.RedirectUriRequiredForAuthCode));
             }
 
             if (document.ResponseTypes != null && document.ResponseTypes.Count == 0)
@@ -501,7 +501,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     return false;
                 }
 
-                var clientSecrets = client.ClientSecrets = new List<Secret>();
+               var clientSecrets = client.ClientSecrets = new List<Secret>();
 
                clientSecrets.Add(new()
                 {
@@ -529,6 +529,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
     private readonly string[]? _x5cArray = null;
 
+    //Todo duplicate code
     private string[]? Getx5c(JwtHeader jwtHeader)
     {
         if (_x5cArray != null && _x5cArray.Any()) return _x5cArray;

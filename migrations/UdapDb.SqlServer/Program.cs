@@ -26,6 +26,7 @@ string dbChoice;
 
 dbChoice = Environment.GetEnvironmentVariable("ConnStrName") ?? "db";
 string identityProvider = Environment.GetEnvironmentVariable("IdentityProvider") ?? "false";
+string authProviderLocal = Environment.GetEnvironmentVariable("AuthProviderLocal") ?? "false";
 
 var connectionString = builder.Configuration.GetConnectionString(dbChoice);
 
@@ -42,6 +43,13 @@ var app = builder.Build();
 if (identityProvider.Equals("true", StringComparison.OrdinalIgnoreCase))
 {
     await SeedDataIdentityProvider.EnsureSeedData(
+        connectionString,
+        "../../../../../_tests/Udap.PKI.Generator/certstores",
+        Log.Logger);
+}
+else if (authProviderLocal.Equals("true", StringComparison.OrdinalIgnoreCase))
+{
+    await SeedDataAuthServer.EnsureSeedData(
         connectionString,
         "../../../../../_tests/Udap.PKI.Generator/certstores",
         Log.Logger);

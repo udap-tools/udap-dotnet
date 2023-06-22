@@ -9,12 +9,22 @@
 
 using Duende.IdentityServer.Configuration;
 using IdentityModel;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Udap.Client.Client;
+using Udap.Client.Configuration;
+using Udap.Common;
+using Udap.Common.Certificates;
+using Udap.Common.Extensions;
+using Udap.Common.Models;
 using Udap.Server;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Udap.Server.Extensions;
+using Udap.Server.Mappers;
 using Udap.Server.Options;
+using Udap.Server.Stores;
 using static Udap.Server.Constants;
 
 //
@@ -44,10 +54,16 @@ public static class IdentityServerBuilderExtensions
     public static IIdentityServerBuilder AddUdapServer(
         this IIdentityServerBuilder builder,
         Action<ServerSettings> setupAction,
+        Action<UdapClientOptions>? clientOptionAction = null,
         Action<UdapConfigurationStoreOptions>? storeOptionAction = null,
         string? baseUrl = null)
     {
         builder.Services.Configure(setupAction);
+        if (clientOptionAction != null)
+        {
+            builder.Services.Configure(clientOptionAction);
+            builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<UdapClientOptions>>().Value);
+        }
         builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
         builder.AddUdapServer(baseUrl);
         builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
@@ -77,6 +93,7 @@ public static class IdentityServerBuilderExtensions
         builder.Services.Configure(setupAction);
         builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
         builder.AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl);
+        builder.AddUdapServerConfiguration();
         builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
 
         return builder;
@@ -98,6 +115,31 @@ public static class IdentityServerBuilderExtensions
         string? baseUrl = null)
     {
 
+        builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
+            new IssuedCertificateStore(
+                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
+                "Udap.Auth.Server"));
+
+        // TODO: TrustAnchor has to be singleton because
+        // builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>
+        // forces IOptionsMonitor<TieredOAuthAuthenticationOptions> to be singleton.
+        // So I would have to get very creative in creating a background thread to keep a monitor
+        // on the database.  .... Future
+        builder.Services.TryAddSingleton<ITrustAnchorStore>(sp =>
+        {
+            using var scope = sp.CreateScope();
+            using var db =  scope.ServiceProvider.GetService<IUdapDbContext>();
+            
+            if (db == null)            {
+                return new TrustAnchorStore(new List<Anchor>());  //Some unit tests don't care about this. //TODO
+
+            }
+            return new TrustAnchorStore(db.Anchors.Select(a => a.ToModel()).ToList());
+        });
+
+        builder.Services.AddHttpClient<IUdapClient, UdapClient>();
+
         builder.AddUdapJwtBearerClientAuthentication()
             .AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl)
             .AddUdapDiscovery()
@@ -106,7 +148,9 @@ public static class IdentityServerBuilderExtensions
         return builder;
     }
     
-
+    //
+    // This just adds the registration endpoint to /.well-known/openid-configuration
+    //
     private static IIdentityServerBuilder AddRegistrationEndpointToOpenIdConnectMetadata(
         this IIdentityServerBuilder builder,
        string? baseUrl = null)

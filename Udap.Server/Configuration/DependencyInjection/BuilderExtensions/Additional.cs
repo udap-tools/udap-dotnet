@@ -43,7 +43,7 @@ public static class IdentityServerBuilderExtensionsAdditional
     public static IIdentityServerBuilder AddUdapClientRegistrationStore<T>(this IIdentityServerBuilder builder)
         where T : class, IUdapClientRegistrationStore
     {
-        builder.Services.AddTransient<IUdapClientRegistrationStore, T>();
+        builder.Services.AddScoped<IUdapClientRegistrationStore, T>();
 
         // Todo: Oportunity to add validation in pattern with other Identity Store techniques
         //builder.Services.TryAddTransient(typeof(T));

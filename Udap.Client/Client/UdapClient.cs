@@ -8,20 +8,27 @@
 #endregion
 
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using Hl7.Fhir.Rest;
 using IdentityModel.Client;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
+using Udap.Client.Configuration;
 using Udap.Client.Extensions;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Common.Models;
 using Udap.Model;
+using Udap.Model.Registration;
+using Udap.Model.Statement;
 using Udap.Util.Extensions;
 
 namespace Udap.Client.Client
@@ -29,6 +36,7 @@ namespace Udap.Client.Client
 
     public interface IUdapClient
     {
+        //TODO Cancellation Token add...
         Task<UdapDiscoveryDocumentResponse> ValidateResource(
             string baseUrl,
             string? community = null,
@@ -62,12 +70,18 @@ namespace Udap.Client.Client
         /// Event fired when JWT Token validation fails
         /// </summary>
         event Action<string>? TokenError;
+
+        Task<UdapDynamicClientRegistrationDocument> RegisterClient(
+            string redirectUrl,
+            IEnumerable<X509Certificate2> certificates,
+            CancellationToken token = default);
     }
 
     public class UdapClient : IUdapClient
     {
         private readonly HttpClient _httpClient;
         private readonly TrustChainValidator _trustChainValidator;
+        private readonly UdapClientOptions _udapClientOptions;
         private ITrustAnchorStore? _trustAnchorStore;
         private DiscoveryPolicy _discoveryPolicy;
         private readonly ILogger<UdapClient> _logger;
@@ -76,12 +90,14 @@ namespace Udap.Client.Client
         public UdapClient(
             HttpClient httpClient,
             TrustChainValidator trustChainValidator,
+            IOptionsMonitor<UdapClientOptions> udapClientOptions,
             ILogger<UdapClient> logger,
             ITrustAnchorStore? trustAnchorStore = null,
             DiscoveryPolicy? discoveryPolicy = null)
         {
             _httpClient = httpClient;
             _trustChainValidator = trustChainValidator;
+            _udapClientOptions = udapClientOptions.CurrentValue;
             _trustAnchorStore = trustAnchorStore;
             _logger = logger;
             _discoveryPolicy = discoveryPolicy ?? DiscoveryPolicy.DefaultMetadataServerPolicy();
@@ -113,7 +129,93 @@ namespace Udap.Client.Client
 
         /// <inheritdoc/>
         public event Action<string>? TokenError;
-        
+
+        //TODO the certs include the private key.  This needs work.  It should be a service or struct that
+        // allows a an abstraction in "Sign" so that a vault or HSM can sign the metadata.
+        public async Task<UdapDynamicClientRegistrationDocument> RegisterClient(
+            string redirectUrl,
+            IEnumerable<X509Certificate2> certificates,
+            CancellationToken token = default)
+        {
+            if (this.UdapServerMetaData == null)
+            {
+                throw new Exception("Tiered OAuth: UdapServerMetaData is null.  Call ValidateResource first.");
+            }
+
+            try
+            {
+                foreach (var clientCert in certificates)
+                {
+
+                    var document = UdapDcrBuilderForAuthorizationCode
+                        .Create(clientCert)
+                        .WithAudience(this.UdapServerMetaData?.RegistrationEndpoint)
+                        .WithExpiration(TimeSpan.FromMinutes(5))
+                        .WithJwtId()
+                        .WithClientName(_udapClientOptions.ClientName)
+                        .WithContacts(_udapClientOptions.Contacts)
+                        .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues
+                            .TokenEndpointAuthMethodValue)
+                        .WithScope("openid udap email profile")
+                        .WithResponseTypes(new List<string> { "code" })
+                        .WithRedirectUrls(new List<string> { redirectUrl })
+                        .Build();
+                    //
+                    // Example adding claims
+                    //
+                    // document.AddClaims(new List<Claim>() { new Claim("client_uri", "http://test.com/hello/") });
+
+                    var signedSoftwareStatement =
+                        SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                            .Create(clientCert, document)
+                            .Build();
+
+                    var requestBody = new UdapRegisterRequest
+                    (
+                        signedSoftwareStatement,
+                        UdapConstants.UdapVersionsSupportedValue
+                        // new string[] { }
+                    );
+
+                    // New StringContent constructor taking a MediaTypeHeaderValue to ensure CharSet can be controlled
+                    // by the caller.  
+                    // Good historical conversations.  
+                    // https://github.com/dotnet/runtime/pull/63231
+                    // https://github.com/dotnet/runtime/issues/17036
+                    //
+#if NET7_0_OR_GREATER
+                    var content = new StringContent(
+                        JsonSerializer.Serialize(requestBody),
+                        new MediaTypeHeaderValue("application/json") );
+#else
+                    var content = new StringContent(JsonSerializer.Serialize(requestBody), null, "application/json");
+                                        content.Headers.ContentType!.CharSet = string.Empty;
+                    #endif
+
+                    var response = await _httpClient.PostAsync(this.UdapServerMetaData?.RegistrationEndpoint, content, token);
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        var resultDocument =
+                            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>(cancellationToken: token);
+
+                        return resultDocument;
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Tiered OAuth: Unable to register client to {RegistrationEndpoint}",
+                        this.UdapServerMetaData?.RegistrationEndpoint);
+                throw;
+            }
+
+            
+            _logger.LogWarning("Tiered OAuth: Unable to register client to {RegistrationEndpoint}", this.UdapServerMetaData?.RegistrationEndpoint);
+            // Todo: typed exception? or null return etc...
+            throw new Exception($"Tiered OAuth: Unable to register client to {this.UdapServerMetaData?.RegistrationEndpoint}");
+        }
+
 
         /// <summary>
         /// Client dynamically supplying the trustAnchorStore
@@ -221,9 +323,9 @@ namespace Udap.Client.Client
                 return false;
             }
 
-            if (!baseUrl.Equals(jwt?.Issuer, StringComparison.OrdinalIgnoreCase))
+            if (!baseUrl.TrimEnd('/').Equals(jwt?.Issuer.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))
             {
-                NotifyTokenError("JWT iss does not match baseUrl.");
+                NotifyTokenError($"JWT iss does not match baseUrl. iss: {jwt?.Issuer.TrimEnd('/')}  baseUrl: {baseUrl.TrimEnd('/')}");
                 return false;
             }
 
@@ -364,7 +466,9 @@ namespace Udap.Client.Client
         }
     }
 
-
+    // TODO: UdapClient should use UdapClientMessageHandler
+    // The UdapClientMessageHandler came into existence when adding Tiered OAuth 
+    // and attached it to the BackchannelHttpHandler of Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions
     public class UdapClientMessageHandler : DelegatingHandler
     {
         private readonly TrustChainValidator _trustChainValidator;

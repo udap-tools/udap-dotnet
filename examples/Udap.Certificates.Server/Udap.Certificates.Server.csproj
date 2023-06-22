@@ -15,8 +15,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\certs\" />
-    <Folder Include="wwwroot\crl\" />
+    <Content Remove="wwwroot\certs\.gitignore" />
+    <Content Remove="wwwroot\crl\.gitignore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="wwwroot\certs\.gitignore" />
+    <None Include="wwwroot\crl\.gitignore" />
   </ItemGroup>
 
 </Project>

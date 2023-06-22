@@ -1257,17 +1257,17 @@ namespace Udap.PKI.Generator
             // CRL -> Udap.Certificates.Server project
             //
             File.Copy(IntermediateCrlFilePath,
-                $"{BaseDir}/../../examples/udap.certificates.server/wwwroot/crl/{intermediateName}.crl",
+                $"{BaseDir}/../../examples/Udap.Certificates.Server/wwwroot/crl/{intermediateName}.crl",
                 true);
             File.Copy(AnchorCrlFilePath,
-                $"{BaseDir}/../../examples/udap.certificates.server/wwwroot/crl/{anchorName}.crl",
+                $"{BaseDir}/../../examples/Udap.Certificates.Server/wwwroot/crl/{anchorName}.crl",
                 true);
 
             //
             // AIA resolved certificates -> Udap.Certificates.Server project
             //
             File.Copy($"{LocalhostUdapIntermediates}/{intermediateName}.cer",
-                $"{BaseDir}/../../examples/udap.certificates.server/wwwroot/certs/{intermediateName}.cer",
+                $"{BaseDir}/../../examples/Udap.Certificates.Server/wwwroot/certs/{intermediateName}.cer",
                 true);
             
             //

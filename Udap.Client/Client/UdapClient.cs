@@ -14,6 +14,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Hl7.Fhir.Rest;
 using IdentityModel.Client;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -27,6 +28,7 @@ using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Common.Models;
 using Udap.Model;
+using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Util.Extensions;
@@ -75,6 +77,8 @@ namespace Udap.Client.Client
             string redirectUrl,
             IEnumerable<X509Certificate2> certificates,
             CancellationToken token = default);
+
+        Task<OAuthTokenResponse> ExchangeCode(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
     }
 
     public class UdapClient : IUdapClient
@@ -216,6 +220,10 @@ namespace Udap.Client.Client
             throw new Exception($"Tiered OAuth: Unable to register client to {this.UdapServerMetaData?.RegistrationEndpoint}");
         }
 
+        public async Task<OAuthTokenResponse> ExchangeCode(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default)
+        {
+            return await _httpClient.UdapExchangeCodeAsync(tokenRequest, token);
+        }
 
         /// <summary>
         /// Client dynamically supplying the trustAnchorStore
@@ -517,9 +525,6 @@ namespace Udap.Client.Client
 
         /// <inheritdoc/>
         public event Action<string>? TokenError;
-
-
-
 
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,

@@ -36,4 +36,13 @@
     <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="Microsoft.AspNetCore.Authentication">
+      <HintPath>..\..\..\..\..\..\Program Files\dotnet\packs\Microsoft.AspNetCore.App.Ref\6.0.16\ref\net6.0\Microsoft.AspNetCore.Authentication.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.AspNetCore.Authentication.OAuth">
+      <HintPath>..\..\..\..\..\..\Program Files\dotnet\shared\Microsoft.AspNetCore.App\6.0.16\Microsoft.AspNetCore.Authentication.OAuth.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

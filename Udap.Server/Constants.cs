@@ -32,7 +32,7 @@ namespace Udap.Server
             public const string Token = ConnectPathPrefix + "/token";
         }
 
-        public static class TieredOAuth
+        public static class TieredOAuthConstants
         {
             public const string ClientRandomState = "client_random_state";
             public const string ResourceHolderRandomState = "resource_holder_random_state";

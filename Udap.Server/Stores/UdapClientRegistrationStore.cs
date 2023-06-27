@@ -77,11 +77,13 @@ namespace Udap.Server.Stores
                     .ToList();
                 existingClient.RedirectUris = client.ToEntity().RedirectUris;
                 await _dbContext.SaveChangesAsync(token);
+                _logger.LogInformation("Updated client");
                 return true;
             }
 
             _dbContext.Clients.Add(client.ToEntity());
             await _dbContext.SaveChangesAsync(token);
+            _logger.LogInformation("Created client");
             return false;
         }
 

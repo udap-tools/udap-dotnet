@@ -169,6 +169,8 @@ internal static class HostingExtensions
             .AddTieredOAuth(options =>
             {
                 options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                options.AuthorizationEndpoint = "https://localhost:5055/connect/authorize";
+                // options.ClientId = "dynamic";
                 // options.Events.OnRedirectToAuthorizationEndpoint
                 // {
                 //     

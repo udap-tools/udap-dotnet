@@ -27,7 +27,7 @@ public static class IdentityServerBuilderExtensionsAdditional
     /// <returns></returns>
     public static IIdentityServerBuilder AddUdapJwtBearerClientAuthentication(this IIdentityServerBuilder builder)
     {
-        builder.Services.TryAddTransient<IReplayCache, DefaultReplayCache>();
+        builder.Services.TryAddTransient<IReplayCache, DefaultReplayCache>(); 
         builder.AddSecretParser<UdapJwtBearerClientAssertionSecretParser>();
         builder.AddSecretValidator<UdapJwtSecretValidator>();
 

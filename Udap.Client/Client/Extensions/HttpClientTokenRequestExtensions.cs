@@ -14,10 +14,16 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
 //
 
+
+using System.Text;
+using System.Text.Json;
 using IdentityModel;
 using IdentityModel.Client;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Udap.Model;
 using Udap.Model.Access;
+using TokenResponse = IdentityModel.Client.TokenResponse;
 
 namespace Udap.Client.Client.Extensions;
 
@@ -91,5 +97,65 @@ public static class HttpClientTokenRequestExtensions
         }
 
         return await ProtocolResponse.FromHttpResponseAsync<TokenResponse>(response).ConfigureAwait(false);
+    }
+
+    public static async Task<OAuthTokenResponse> UdapExchangeCodeAsync(this HttpMessageInvoker client, AuthorizationCodeTokenRequest request, CancellationToken cancellationToken = default)
+    {
+        var clone = request.Clone();
+
+        clone.Parameters.AddRequired(OidcConstants.TokenRequest.GrantType, OidcConstants.GrantTypes.AuthorizationCode);
+        clone.Parameters.AddRequired(OidcConstants.TokenRequest.Code, request.Code);
+        // TODO: revisit:: This is not required according to https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
+        // UDAP profiles also do not require it.  
+        // I think that the Duende.IdentityServer.Validation.TokenRequestValidator will always fail without it.
+        // The https://www.udap.org/UDAPTestTool/ sends the redirect_uri.  So not sure on the path forward yet.
+        clone.Parameters.AddOptional(OidcConstants.TokenRequest.RedirectUri, request.RedirectUri);
+        clone.Parameters.AddRequired(UdapConstants.TokenRequest.Udap, UdapConstants.UdapVersionsSupportedValue);
+
+        foreach (var resource in request.Resource)
+        {
+            clone.Parameters.AddRequired(OidcConstants.TokenRequest.Resource, resource, allowDuplicates: true);
+        }
+
+        clone.Prepare();
+        clone.Method = HttpMethod.Post;
+
+        var response = await client.SendAsync(clone, cancellationToken);
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+        return response.IsSuccessStatusCode switch
+        {
+            true => OAuthTokenResponse.Success(JsonDocument.Parse(body)),
+            false => PrepareFailedOAuthTokenResponse(JsonDocument.Parse(body))
+        };
+    }
+
+    private static OAuthTokenResponse PrepareFailedOAuthTokenResponse(JsonDocument jsonDocument)
+    {
+        var root = jsonDocument.RootElement;
+        var error = root.GetString("error");
+
+        var result = new StringBuilder("OAuth token endpoint failure: ");
+        result.Append(error);
+
+        if (root.TryGetProperty("error_description", out var errorDescription))
+        {
+            result.Append(";Description=");
+            result.Append(errorDescription);
+        }
+
+        if (root.TryGetProperty("error_uri", out var errorUri))
+        {
+            result.Append(";Uri=");
+            result.Append(errorUri);
+        }
+
+        var exception = new Exception(result.ToString());
+        exception.Data["error"] = error.ToString();
+        exception.Data["error_description"] = errorDescription.ToString();
+        exception.Data["error_uri"] = errorUri.ToString();
+
+        return OAuthTokenResponse.Failed(exception);
     }
 }

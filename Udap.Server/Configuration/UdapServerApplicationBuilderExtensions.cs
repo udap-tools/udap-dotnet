@@ -21,7 +21,7 @@ public static class UdapServerApplicationBuilderExtensions
         app.UseMiddleware<UdapTokenResponseMiddleware>();
         app.UseMiddleware<UdapScopeEnrichmentMiddleware>();
         app.UseMiddleware<UdapAuthorizationResponseMiddleware>();
-        app.UseMiddleware<UdapTieredOAuthMiddleware>();
+        // app.UseMiddleware<UdapTieredOAuthMiddleware>();
 
         app.MapPost("/connect/register",
                 async (
@@ -44,7 +44,7 @@ public static class UdapServerApplicationBuilderExtensions
         app.UseMiddleware<UdapTokenResponseMiddleware>();
         app.UseMiddleware<UdapScopeEnrichmentMiddleware>();
         app.UseMiddleware<UdapAuthorizationResponseMiddleware>();
-        app.UseMiddleware<UdapTieredOAuthMiddleware>();
+        // app.UseMiddleware<UdapTieredOAuthMiddleware>();
 
         return app;
     }

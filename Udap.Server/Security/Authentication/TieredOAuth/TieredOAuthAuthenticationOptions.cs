@@ -21,6 +21,12 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions{
         ClientSecret = "signed metadata";
         AuthorizationEndpoint = TieredOAuthAuthenticationDefaults.AuthorizationEndpoint;
         TokenEndpoint = TieredOAuthAuthenticationDefaults.TokenEndpoint;
-        SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+        SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;
+
+        Scope.Add("openid");
+        Scope.Add("udap");
+        Scope.Add("email");
+        Scope.Add("profile");
+
     }
 }

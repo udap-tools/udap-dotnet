@@ -95,6 +95,7 @@ public static class IdentityServerBuilderExtensions
         builder.AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl);
         builder.AddUdapServerConfiguration();
         builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
+        builder.AddUdapJwtBearerClientAuthentication();
 
         return builder;
     }

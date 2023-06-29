@@ -150,6 +150,7 @@ namespace Udap.Client.Client
             {
                 foreach (var clientCert in certificates)
                 {
+                    _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
 
                     var document = UdapDcrBuilderForAuthorizationCode
                         .Create(clientCert)

@@ -80,9 +80,6 @@
     <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert2.pfx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert3.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

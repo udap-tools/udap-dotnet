@@ -25,7 +25,7 @@ public static class TieredOAuthAuthenticationDefaults
 
     public static readonly string CallbackPath = "/signin-tieredoauth";
 
-    public static readonly string AuthorizationEndpoint = "https://localhost:5055/connect/authorize";
-
-    public static readonly string TokenEndpoint = "https://localhost:5055/connect/token";
+    // public static readonly string AuthorizationEndpoint = "https://localhost:5055/connect/authorize";
+    //
+    // public static readonly string TokenEndpoint = "https://localhost:5055/connect/token";
 }

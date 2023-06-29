@@ -146,7 +146,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            "udap://fhirlabs1/");
+            "udap://Provider2");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
@@ -154,7 +154,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            "udap://fhirlabs2/");
+            "udap://Provider2");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
@@ -243,7 +243,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                     }
                 }
             },
-            "udap://fhirlabs2/");
+            "udap://Provider2");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
@@ -270,7 +270,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                     // ************* DRAGONS ***********************
                 }
             },
-            "udap://fhirlabs2/");
+            "udap://Provider2");
     
         disco.IsError.Should().BeTrue(disco.Raw);
         Assert.NotNull(udapClient.UdapServerMetaData);
@@ -296,7 +296,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                 {
                     new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"))
                     {
-                        Community = "udap://fhirlabs2/",
+                        Community = "udap://Provider2",
                         Intermediates = new List<Intermediate>
                         {
                             new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert.cer"))
@@ -304,13 +304,13 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                     }
                 }
             },
-            "udap://fhirlabs2/");
+            "udap://Provider2");
 
         disco.IsError.Should().BeTrue(disco.Raw);
         Assert.NotNull(udapClient.UdapServerMetaData);
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
         _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
-        _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=localhost2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
+        _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
     }
 
     /// <summary>
@@ -333,13 +333,13 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                     new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"))
                 }
             },
-            "udap://fhirlabs2/");
+            "udap://Provider2");
 
         disco.IsError.Should().BeTrue(disco.Raw);
         Assert.NotNull(udapClient.UdapServerMetaData);
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
         _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
-        _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=localhost2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
+        _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
 
 
     }
@@ -445,7 +445,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            "udap://fhirlabs2/");
+            "udap://Provider2");
 
         disco.IsError.Should().BeTrue($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
@@ -499,7 +499,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            "udap://fhirlabs2/");
+            "udap://Provider2");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);

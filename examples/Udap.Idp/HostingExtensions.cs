@@ -134,6 +134,7 @@ internal static class HostingExtensions
                         options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
                         options.ServerSupport = udapServerOptions.ServerSupport;
                         options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
+                        options.IdPMappings = udapServerOptions.IdPMappings;
                     },
                 udapClientOptions =>
                 {
@@ -160,24 +161,57 @@ internal static class HostingExtensions
         // Special IPrivateCertificateStore for Google Cloud Deploy
         // 
         //
-        // TODO: UdapFileCertStoreManifest doesn't have a good abstratction story for transitioning to other storage 
+        // TODO: UdapFileCertStoreManifest doesn't have a good abstraction story for transitioning to other storage 
         builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
         
-
-
+        
         builder.Services.AddAuthentication()
+            //
+            // By convention the scheme name should match the community name in UdapFileCertStoreManifest
+            // to allow discovery of the IdPBaseUrl
+            //
             .AddTieredOAuth(options =>
             {
                 options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
                 options.AuthorizationEndpoint = "https://localhost:5055/connect/authorize";
+                //options.TokenEndpoint = "Get from UDAP metadata
+                options.TokenEndpoint = "https://localhost:5055/connect/token";
                 // options.ClientId = "dynamic";
                 // options.Events.OnRedirectToAuthorizationEndpoint
                 // {
                 //     
                 // };
+            })
+            .AddTieredOAuth("TieredOAuthProvider2", "DOTNET-Provider2", options =>
+            {
+                options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
+                options.AuthorizationEndpoint = "https://localhost:5057/connect/authorize";
+                options.TokenEndpoint = "https://localhost:5057/connect/token";
+                //
+                // When repeating AddTieredOAuth extention always add set a unuique CallbackPath
+                // Otherwise the following error will occur: "The oauth state was missing or invalid."
+                //
+                // Buried in asp.net RemoteAuthenticationHandler.cs the following code decides on what scheme
+                // to use during HandleRequestAsync() by the CallbackPath registered
+                //
+                // deciding code in RemoteAuthenticationHandler.cs:
+                //  public virtual Task<bool> ShouldHandleRequestAsync()
+                //      => Task.FromResult(Options.CallbackPath == Request.Path);
+                //
+                options.CallbackPath = "/signin-tieredoauthprovider2"; 
+            })
+            .AddTieredOAuth("OktaForUDAP", "Okta", options =>
+            {
+                options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
+                options.AuthorizationEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/authorize";
+                //options.TokenEndpoint = "Get from UDAP metadata
+                options.TokenEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/token";
+                options.CallbackPath = "/signin-oktaforudap";
             });
-
-
+        
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
         //
@@ -208,9 +242,7 @@ internal static class HostingExtensions
                     });
             });
 
-
         
-
         // builder.Services.AddHttpLogging(options =>
         // {
         //     options.LoggingFields = HttpLoggingFields.All;

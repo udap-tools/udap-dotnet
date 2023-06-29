@@ -916,8 +916,13 @@ namespace Udap.PKI.Generator
                 "caLocalhostCert2",                                                         //anchorName
                 "intermediateLocalhostCert2",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert2",                                          //issuedName
-                "CN=localhost2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",//issuedDistinguishedName
-                new List<string> { "http://localhost/fhir/r4" },                            //SubjAltNames
+                "CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",//issuedDistinguishedName
+                new List<string>
+                {
+                    "http://localhost/fhir/r4",
+                    "https://localhost:7016/fhir/r4",
+                    "https://localhost:5057"
+                },
                 "FhirLabsApi",                                                              //deliveryProjectPath    
                 "RSA"
             };
@@ -1247,11 +1252,18 @@ namespace Udap.PKI.Generator
                 true);
 
 
-            // TODO: had to hard code deliveryProjectPath for Udap.Identity.Server
+            // TODO: had to hard code deliveryProjectPath for Udap.Identity.Provider
             File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",
                 $"{BaseDir}/../../examples/Udap.Identity.Provider/CertStore/issued/{issuedName}.pfx",
                 true);
 
+            // Udap.Identity.Provider.2 :: Second Idenity Provider
+            if (issuedName == "fhirLabsApiClientLocalhostCert2")
+            {
+                File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",
+                    $"{BaseDir}/../../examples/Udap.Identity.Provider.2/CertStore/issued/{issuedName}.pfx",
+                    true);
+            }
 
             //
             // CRL -> Udap.Certificates.Server project

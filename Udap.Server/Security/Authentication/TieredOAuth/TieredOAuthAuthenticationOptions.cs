@@ -19,8 +19,8 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions{
         CallbackPath = TieredOAuthAuthenticationDefaults.CallbackPath;
         ClientId = "dynamic";
         ClientSecret = "signed metadata";
-        AuthorizationEndpoint = TieredOAuthAuthenticationDefaults.AuthorizationEndpoint;
-        TokenEndpoint = TieredOAuthAuthenticationDefaults.TokenEndpoint;
+        // AuthorizationEndpoint = TieredOAuthAuthenticationDefaults.AuthorizationEndpoint;
+        // TokenEndpoint = TieredOAuthAuthenticationDefaults.TokenEndpoint;
         SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;
 
         Scope.Add("openid");

@@ -1,19 +1,30 @@
 {
   "profiles": {
-    "Local_Udap.Idp_Migrate": {
+    "Local_Udap.Auth.Server_Migrate": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "AuthProviderLocal": "true"
+        "AuthProviderLocal": "true",
+        "ConnStrName": "DefaultConnection"
       },
       "dotnetRunMessages": true
     },
 
-    "Local_Idenitity.Provider_Migrate": {
+    "Local_Udap.Idenitity.Provider_Migrate": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ConnStrName": "db_identity_provider",
+        "IdentityProvider": "true"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "Local_Udap.Idenitity.Provider2_Migrate": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "db_identity_provider2",
         "IdentityProvider": "true"
       },
       "dotnetRunMessages": true

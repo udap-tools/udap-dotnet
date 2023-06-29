@@ -160,7 +160,7 @@ public partial class UdapBusinessToBusiness
             ClientId = $"client_id={AppState.RegistrationDocument?.ClientId}",
             Scope = $"scope={AppState.SoftwareStatementBeforeEncoding?.Scope}",
             RedirectUri = $"redirect_uri={AppState.RegistrationDocument?.RedirectUris.FirstOrDefault()}",
-            Aud = $"aud={AppState.BaseUrl}&idp=https://localhost:5055&update_registration=true"
+            Aud = $"aud={AppState.BaseUrl}"
         };
 
         AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
@@ -182,7 +182,6 @@ public partial class UdapBusinessToBusiness
             sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Scope);
             sb.Append("&").Append(@AppState.AuthorizationCodeRequest.RedirectUri);
             sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Aud);
-            sb.Append("&").Append("idp=https://localhost:5055&update_registration=true");
         }
 
         AuthCodeRequestLink = sb.ToString();

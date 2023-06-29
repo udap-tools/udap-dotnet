@@ -96,6 +96,36 @@ public static class SeedDataAuthServer
             await udapContext.SaveChangesAsync();
         }
 
+
+        if (!udapContext.Communities.Any(c => c.Name == "udap://stage.healthtogo.me/"))
+        {
+            var community = new Community { Name = "udap://stage.healthtogo.me/" };
+            community.Enabled = true;
+            community.Default = false;
+            udapContext.Communities.Add(community);
+            await udapContext.SaveChangesAsync();
+        }
+
+
+        if (!udapContext.Communities.Any(c => c.Name == "udap://Provider2"))
+        {
+            var community = new Community { Name = "udap://Provider2" };
+            community.Enabled = true;
+            community.Default = false;
+            udapContext.Communities.Add(community);
+            await udapContext.SaveChangesAsync();
+        }
+
+        if (!udapContext.Communities.Any(c => c.Name == "udap://ECDSA/"))
+        {
+            var community = new Community { Name = "udap://ECDSA/" };
+            community.Enabled = true;
+            community.Default = false;
+            udapContext.Communities.Add(community);
+            await udapContext.SaveChangesAsync();
+        }
+    
+
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
 
@@ -161,6 +191,34 @@ public static class SeedDataAuthServer
 
 
         //
+        // Anchor surefhirlabs_community
+        //
+        var emrDirectTestCA = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath, "EmrDirect/EMRDirectTestCA.crt"));
+
+        if ((await clientRegistrationStore.GetAnchors("udap://stage.healthtogo.me/"))
+            .All(a => a.Thumbprint != emrDirectTestCA.Thumbprint))
+        {
+            var community = udapContext.Communities.Single(c => c.Name == "udap://stage.healthtogo.me/");
+
+            anchor = new Anchor
+            {
+                BeginDate = emrDirectTestCA.NotBefore.ToUniversalTime(),
+                EndDate = emrDirectTestCA.NotAfter.ToUniversalTime(),
+                Name = emrDirectTestCA.Subject,
+                Community = community,
+                X509Certificate = emrDirectTestCA.ToPemFormat(),
+                Thumbprint = emrDirectTestCA.Thumbprint,
+                Enabled = true
+            };
+
+            udapContext.Anchors.Add(anchor);
+            await udapContext.SaveChangesAsync();
+        }
+
+        
+
+        //
         // Anchor localhost_community
         //
         var anchorLocalhostCert = new X509Certificate2(
@@ -211,7 +269,133 @@ public static class SeedDataAuthServer
             }
         }
 
-        
+
+
+        //
+        // Anchor localhost_fhirlabs_community2 for Udap.Identity.Provider2
+        //
+        var anchorUdapIdentityProvider2 = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community2/caLocalhostCert2.cer"));
+
+        if ((await clientRegistrationStore.GetAnchors("udap://Provider2"))
+            .All(a => a.Thumbprint != anchorUdapIdentityProvider2.Thumbprint))
+        {
+            var community = udapContext.Communities.Single(c => c.Name == "udap://Provider2");
+
+            anchor = new Anchor
+            {
+                BeginDate = anchorUdapIdentityProvider2.NotBefore.ToUniversalTime(),
+                EndDate = anchorUdapIdentityProvider2.NotAfter.ToUniversalTime(),
+                Name = anchorUdapIdentityProvider2.Subject,
+                Community = community,
+                X509Certificate = anchorUdapIdentityProvider2.ToPemFormat(),
+                Thumbprint = anchorUdapIdentityProvider2.Thumbprint,
+                Enabled = true
+            };
+
+            udapContext.Anchors.Add(anchor);
+            await udapContext.SaveChangesAsync();
+        }
+
+        var intermediateCertProvider2 = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath,
+                "localhost_fhirlabs_community2/intermediates/intermediateLocalhostCert2.cer"));
+
+        if ((await clientRegistrationStore.GetIntermediateCertificates())
+            .All(a => a.Thumbprint != intermediateCertProvider2.Thumbprint))
+        {
+            var anchorProvider2 = udapContext.Anchors.Single(a => a.Thumbprint == anchorUdapIdentityProvider2.Thumbprint);
+
+            //
+            // Intermediate surefhirlabs_community
+            //
+            var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
+
+            if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
+                    .All(r => r.Thumbprint != intermediateCertProvider2.Thumbprint))
+            {
+
+                udapContext.IntermediateCertificates.Add(new Intermediate
+                {
+                    BeginDate = intermediateCertProvider2.NotBefore.ToUniversalTime(),
+                    EndDate = intermediateCertProvider2.NotAfter.ToUniversalTime(),
+                    Name = intermediateCertProvider2.Subject,
+                    X509Certificate = intermediateCertProvider2.ToPemFormat(),
+                    Thumbprint = intermediateCertProvider2.Thumbprint,
+                    Enabled = true,
+                    Anchor = anchorProvider2
+                });
+
+                await udapContext.SaveChangesAsync();
+            }
+        }
+
+
+
+
+        //
+        // Anchor udap://ECDSA/ community for Udap.Identity.Provider2
+        //
+        var anchorUdapECDSA = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community6/caLocalhostCert6.cer"));
+
+        if ((await clientRegistrationStore.GetAnchors("udap://ECDSA/"))
+            .All(a => a.Thumbprint != anchorUdapECDSA.Thumbprint))
+        {
+            var community = udapContext.Communities.Single(c => c.Name == "udap://ECDSA/");
+
+            anchor = new Anchor
+            {
+                BeginDate = anchorUdapECDSA.NotBefore.ToUniversalTime(),
+                EndDate = anchorUdapECDSA.NotAfter.ToUniversalTime(),
+                Name = anchorUdapECDSA.Subject,
+                Community = community,
+                X509Certificate = anchorUdapECDSA.ToPemFormat(),
+                Thumbprint = anchorUdapECDSA.Thumbprint,
+                Enabled = true
+            };
+
+            udapContext.Anchors.Add(anchor);
+            await udapContext.SaveChangesAsync();
+        }
+
+        var intermediateECDSA= new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath,
+                "localhost_fhirlabs_community6/intermediates/intermediateLocalhostCert6.cer"));
+
+        if ((await clientRegistrationStore.GetIntermediateCertificates())
+            .All(a => a.Thumbprint != intermediateECDSA.Thumbprint))
+        {
+            var anchorProvider2 = udapContext.Anchors.Single(a => a.Thumbprint == anchorUdapECDSA.Thumbprint);
+
+            //
+            // Intermediate udap://ECDSA/ community
+            //
+            var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
+
+            if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
+                    .All(r => r.Thumbprint != intermediateECDSA.Thumbprint))
+            {
+
+                udapContext.IntermediateCertificates.Add(new Intermediate
+                {
+                    BeginDate = intermediateECDSA.NotBefore.ToUniversalTime(),
+                    EndDate = intermediateECDSA.NotAfter.ToUniversalTime(),
+                    Name = intermediateECDSA.Subject,
+                    X509Certificate = intermediateECDSA.ToPemFormat(),
+                    Thumbprint = intermediateECDSA.Thumbprint,
+                    Enabled = true,
+                    Anchor = anchorProvider2
+                });
+
+                await udapContext.SaveChangesAsync();
+            }
+        }
+
+
+
+
+
         await SeedFhirScopes(configDbContext, "patient");
         await SeedFhirScopes(configDbContext, "user");
         await SeedFhirScopes(configDbContext, "system");
@@ -345,13 +529,6 @@ public static class SeedDataAuthServer
         }
 
         await configDbContext.SaveChangesAsync();
-
-        if (configDbContext.ApiScopes.All(s => s.Name != "udap"))
-        {
-            var apiScope = new ApiScope("udap");
-            configDbContext.ApiScopes.Add(apiScope.ToEntity());
-
-            await configDbContext.SaveChangesAsync();
-        }
+        
     }
 }

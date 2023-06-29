@@ -345,13 +345,6 @@ public static class SeedData
         }
 
         await configDbContext.SaveChangesAsync();
-
-        if (configDbContext.ApiScopes.All(s => s.Name != "udap"))
-        {
-            var apiScope = new ApiScope("udap");
-            configDbContext.ApiScopes.Add(apiScope.ToEntity());
-
-            await configDbContext.SaveChangesAsync();
-        }
+        
     }
 }

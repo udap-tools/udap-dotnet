@@ -34,6 +34,14 @@ public class ServerSettings
     /// </summary>
     [JsonPropertyName("ForceStateParamOnAuthorizationCode")]
     public bool ForceStateParamOnAuthorizationCode { get; set; } = false;
+
+    public ICollection<IdPMapping>? IdPMappings { get; set; } 
+}
+
+public class IdPMapping
+{
+    public string? Scheme { get; set; }
+    public string? IdpBaseUrl { get; set; }
 }
 
 public enum ServerSupport

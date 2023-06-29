@@ -39,7 +39,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     private readonly IServiceScopeFactory _scopeFactory;
 
     /// <summary>
-    /// Initializes a new instance of <see cref="TieredOAuthHandler" />.
+    /// Initializes a new instance of <see cref="TieredOAuthAuthenticationHandler" />.
     /// </summary>
     /// <inheritdoc />
     public TieredOAuthAuthenticationHandler(
@@ -99,7 +99,6 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         return base.InitializeHandlerAsync();
     }
 
-
     /// <inheritdoc />
     protected override async Task<OAuthTokenResponse> ExchangeCodeAsync([NotNull] OAuthCodeExchangeContext context)
     {
@@ -110,8 +109,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var originalRequestParams = HttpUtility.ParseQueryString(context.Properties.Items["returnUrl"]);
         var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
         // var redirectUrl = originalRequestParams.Get("redirect_uri");
+        
+        
         var resourceHolderRedirectUrl =
-            $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{TieredOAuthAuthenticationDefaults.CallbackPath}";
+            $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
 
         var requestParams = Context.Request.Query;
         var code = requestParams["code"];
@@ -148,27 +149,45 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var idp = (requestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
         var scope = (requestParams.GetValues("scope") ?? throw new InvalidOperationException()).First();
         var clientRedirectUrl = (requestParams.GetValues("redirect_uri") ?? throw new InvalidOperationException()).Last();
-        var updateRegistration = requestParams.GetValues("update_registration").Last();
+        var updateRegistration = requestParams.GetValues("update_registration")?.Last();
 
         // Validate idp Server;
         var community = idp.GetCommunityFromQueryParams();
+
+        _udapClient.Problem += element => properties.Parameters.Add("Problem", element.ChainElementStatus.Summarize(TrustChainValidator.DefaultProblemFlags));
+        _udapClient.Untrusted += certificate2 => properties.Parameters.Add("Untrusted", certificate2.Subject);
+        _udapClient.TokenError += message => properties.Parameters.Add("TokenError", message);
+        
         var response = await _udapClient.ValidateResource(idp, community);
+        
         var resourceHolderRedirectUrl =
-            $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{TieredOAuthAuthenticationDefaults.CallbackPath}";
+            $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
 
         if (response.IsError)
         {
             Logger.LogError(response.Error);
 
-            await HandleForbiddenAsync(properties);
+
+            var untrustedContext = new UdapUntrustedContext(Context, Scheme, Options, properties);
+            Response.StatusCode = 401;
+
+            // await Response.WriteAsJsonAsync(_udapClient.UdapServerMetaData);
+
+            foreach (var prop in properties.Parameters.Where(p => p.Key == "Untrusted").Select(p => p))
+            {
+                await Response.WriteAsync($"{prop.Key}: {prop.Value}"); 
+            }
+
+            await Response.Body.FlushAsync();
+
+            return;
         }
-        else
-        {
-            Logger.LogInformation($"Validated UDAP signed_metadata from {idp}");
-            Logger.LogDebug(JsonSerializer.Serialize(
-                _udapClient.UdapServerMetaData,
-                new JsonSerializerOptions { WriteIndented = true }));
-        }
+
+
+        Logger.LogInformation($"Validated UDAP signed_metadata from {idp}");
+        Logger.LogDebug(JsonSerializer.Serialize(
+            _udapClient.UdapServerMetaData,
+            new JsonSerializerOptions { WriteIndented = true }));
 
         //
         // if not registered with IdP, then register.
@@ -216,14 +235,17 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                     .Select(ic => ic.Certificate), 
                 Context.RequestAborted);
 
-            idpClientId = idpClient.ClientSecrets
-                .SingleOrDefault(cs => cs.Type == "TIERED_OAUTH_CLIENT_ID")?.Value;
+            if (idpClient == null)
+            {
+                idpClientId = document.ClientId;
+            }
+            // idpClientId = idpClient.ClientSecrets
+            //     .SingleOrDefault(cs => cs.Type == "TIERED_OAUTH_CLIENT_ID")?.Value;
 
             var tokenHandler = new JsonWebTokenHandler();
             var jsonWebToken = tokenHandler.ReadJsonWebToken(document.SoftwareStatement);
             var publicCert = jsonWebToken.GetPublicCertificate();
             
-
             var client = new Duende.IdentityServer.Models.Client
             {
                 ClientId = idp,

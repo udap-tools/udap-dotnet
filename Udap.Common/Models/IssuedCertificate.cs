@@ -15,7 +15,7 @@ public class IssuedCertificate
 {
     public int Id { get; set; }
     public bool Enabled { get; set; }
-    public string Name { get; set; } = string.Empty;
+    // public string Name { get; set; } = string.Empty;
     public string? IdPBaseUrl { get; set; }
     public string Community { get; set; } = string.Empty;
 

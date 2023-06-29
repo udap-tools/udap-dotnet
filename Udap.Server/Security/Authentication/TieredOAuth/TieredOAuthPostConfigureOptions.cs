@@ -34,5 +34,6 @@ public class TieredOAuthPostConfigureOptions : IPostConfigureOptions<TieredOAuth
     public void PostConfigure(string? name, TieredOAuthAuthenticationOptions options)
     {
         options.BackchannelHttpHandler = _udapClientMessageHandler;
+        options.SignInScheme = options.SignInScheme;
     }
 }

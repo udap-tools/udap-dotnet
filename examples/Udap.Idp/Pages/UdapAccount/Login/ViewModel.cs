@@ -1,4 +1,4 @@
-namespace Udap.Idp.Pages.UdapAccount.Login;
+namespace Udap.Idp.Pages.UdapLogin;
 
 public class ViewModel
 {

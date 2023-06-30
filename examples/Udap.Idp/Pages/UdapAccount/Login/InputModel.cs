@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Udap.Idp.Pages.UdapAccount.Login;
+namespace Udap.Idp.Pages.UdapLogin;
 
 public class InputModel
 {

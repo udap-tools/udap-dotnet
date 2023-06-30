@@ -31,7 +31,7 @@ public class Challenge : PageModel
         // start challenge and roundtrip the return URL and scheme 
         var props = new AuthenticationProperties
         {
-            RedirectUri = Url.Page("/externallogin/callback"),
+            RedirectUri = Url.Page("/udaptieredlogin/callback"),
                 
             Items =
             {

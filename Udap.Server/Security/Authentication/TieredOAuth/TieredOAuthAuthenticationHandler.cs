@@ -8,6 +8,9 @@
 #endregion
 
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
+using System.Security.Claims;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Web;
@@ -21,7 +24,9 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Udap.Client.Client;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
@@ -97,6 +102,168 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     {
 
         return base.InitializeHandlerAsync();
+    }
+
+
+    //
+    // TODO: come back here and decide if this was the way to go.
+    // Code from base Microsoft.AspNetCore.Authentication.OAuth.OAuthHandler.
+    // Modified to behave according to UDAP Tiered OAuth // I am considering going
+    // implementing OpenIdConnectHandler.HandleRemoteAuthenticateAsync internals instead.
+    // Or start over and use OpenIdConnectHandler.  Maybe not inherit from it, but connect up the DCR and PKI
+    // mechanics via OpenIdConnectEvents, like hook events via
+    // options.Events.OnAuthorizationCodeReceived = RedeemAuthorizationCodeAsync;
+    // from within the OpenIdConnectHandler.HandleRemoteAuthenticateAsync method
+    // https://github.com/dotnet/aspnetcore/issues/10564
+    // 
+
+    /// <inheritdoc />
+    protected override async Task<HandleRequestResult> HandleRemoteAuthenticateAsync()
+    {
+        var query = Request.Query;
+
+        var state = query["state"];
+        var properties = Options.StateDataFormat.Unprotect(state);
+
+        if (properties == null)
+        {
+            return HandleRequestResults.InvalidState;
+        }
+
+        // OAuth2 10.12 CSRF
+        // https://datatracker.ietf.org/doc/html/rfc6749#section-10.12
+        if (!ValidateCorrelationId(properties))
+        {
+            return HandleRequestResult.Fail("Correlation failed.", properties);
+        }
+
+        var error = query["error"];
+        if (!StringValues.IsNullOrEmpty(error))
+        {
+            // Note: access_denied errors are special protocol errors indicating the user didn't
+            // approve the authorization demand requested by the remote authorization server.
+            // Since it's a frequent scenario (that is not caused by incorrect configuration),
+            // denied errors are handled differently using HandleAccessDeniedErrorAsync().
+            // Visit https://tools.ietf.org/html/rfc6749#section-4.1.2.1 for more information.
+            var errorDescription = query["error_description"];
+            var errorUri = query["error_uri"];
+            if (StringValues.Equals(error, "access_denied"))
+            {
+                var result = await HandleAccessDeniedErrorAsync(properties);
+                if (!result.None)
+                {
+                    return result;
+                }
+                var deniedEx = new Exception("Access was denied by the resource owner or by the remote server.");
+                deniedEx.Data["error"] = error.ToString();
+                deniedEx.Data["error_description"] = errorDescription.ToString();
+                deniedEx.Data["error_uri"] = errorUri.ToString();
+
+                return HandleRequestResult.Fail(deniedEx, properties);
+            }
+
+            var failureMessage = new StringBuilder();
+            failureMessage.Append(error);
+            if (!StringValues.IsNullOrEmpty(errorDescription))
+            {
+                failureMessage.Append(";Description=").Append(errorDescription);
+            }
+            if (!StringValues.IsNullOrEmpty(errorUri))
+            {
+                failureMessage.Append(";Uri=").Append(errorUri);
+            }
+
+            var ex = new Exception(failureMessage.ToString());
+            ex.Data["error"] = error.ToString();
+            ex.Data["error_description"] = errorDescription.ToString();
+            ex.Data["error_uri"] = errorUri.ToString();
+
+            return HandleRequestResult.Fail(ex, properties);
+        }
+
+        var code = query["code"];
+
+        if (StringValues.IsNullOrEmpty(code))
+        {
+            return HandleRequestResult.Fail("Code was not found.", properties);
+        }
+
+        var codeExchangeContext = new OAuthCodeExchangeContext(properties, code.ToString(), BuildRedirectUri(Options.CallbackPath));
+        
+        // UDAP
+        using var tokens = await ExchangeCodeAsync(codeExchangeContext);
+
+        if (tokens.Error != null)
+        {
+            return HandleRequestResult.Fail(tokens.Error, properties);
+        }
+
+        if (string.IsNullOrEmpty(tokens.AccessToken))
+        {
+            return HandleRequestResult.Fail("Failed to retrieve access token.", properties);
+        }
+
+        var identity = new ClaimsIdentity(ClaimsIssuer);
+
+        // if (Options.SaveTokens)
+        // {
+        //     var authTokens = new List<AuthenticationToken>();
+        //
+        //     authTokens.Add(new AuthenticationToken { Name = "access_token", Value = tokens.AccessToken });
+        //     if (!string.IsNullOrEmpty(tokens.RefreshToken))
+        //     {
+        //         authTokens.Add(new AuthenticationToken { Name = "refresh_token", Value = tokens.RefreshToken });
+        //     }
+        //
+        //     if (!string.IsNullOrEmpty(tokens.TokenType))
+        //     {
+        //         authTokens.Add(new AuthenticationToken { Name = "token_type", Value = tokens.TokenType });
+        //     }
+        //
+        //     if (!string.IsNullOrEmpty(tokens.ExpiresIn))
+        //     {
+        //         int value;
+        //         if (int.TryParse(tokens.ExpiresIn, NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+        //         {
+        //             // https://www.w3.org/TR/xmlschema-2/#dateTime
+        //             // https://msdn.microsoft.com/en-us/library/az4se3k1(v=vs.110).aspx
+        //             var expiresAt = Clock.UtcNow + TimeSpan.FromSeconds(value);
+        //             authTokens.Add(new AuthenticationToken
+        //             {
+        //                 Name = "expires_at",
+        //                 Value = expiresAt.ToString("o", CultureInfo.InvariantCulture)
+        //             });
+        //         }
+        //     }
+        //     
+        //     properties.StoreTokens(authTokens);
+        // }
+
+        #region UDAP
+
+        // var authorizationResponse = new OpenIdConnectMessage(Request.Query.Select(pair => new KeyValuePair<string, string[]>(pair.Key, pair.Value.ToArray())));
+        //
+        //
+        // var authTokens = new List<AuthenticationToken>();
+        // string? idToken = tokens.Response?.RootElement.GetString("id_token");
+        //
+        // if (!string.IsNullOrEmpty(idToken))
+        // {
+        //     authTokens.Add(new AuthenticationToken() { Name = "id_token", Value = idToken });
+        // }
+        //
+        // properties.StoreTokens(authTokens);
+        #endregion
+
+        var ticket = await CreateTicketAsync(identity, properties, tokens);
+        if (ticket != null)
+        {
+            return HandleRequestResult.Success(ticket);
+        }
+        else
+        {
+            return HandleRequestResult.Fail("Failed to retrieve user information from remote server.", properties);
+        }
     }
 
     /// <inheritdoc />

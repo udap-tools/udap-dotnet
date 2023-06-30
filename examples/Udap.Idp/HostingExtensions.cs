@@ -11,18 +11,12 @@ using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Google.Cloud.SecretManager.V1;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Udap.Client.Client;
 using Udap.Common;
-using Udap.Common.Certificates;
 using Udap.Server.Configuration;
 using Udap.Server.Security.Authentication.TieredOAuth;
 
@@ -89,9 +83,10 @@ internal static class HostingExtensions
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
                 options.EmitStaticAudienceClaim = true;
-                options.InputLengthRestrictions.Scope =
-                    7000; //TODO: Very large!  Again I need to solve the policy/community/certification concept
-                // options.UserInteraction.LoginUrl = "/joe";
+                // options.InputLengthRestrictions.Scope =
+                //     7000; //TODO: Very large!  Again I need to solve the policy/community/certification concept
+                options.UserInteraction.LoginUrl = "/udapaccount/login";
+                options.UserInteraction.LogoutUrl = "/udapaccount/logout";
             })
             .AddServerSideSessions()
             .AddConfigurationStore(options =>

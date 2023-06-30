@@ -1,5 +1,5 @@
 
-namespace Udap.Idp.Pages.UdapAccount.Logout;
+namespace Udap.Idp.Pages.UdapLogout;
 
 public class LogoutOptions
 {

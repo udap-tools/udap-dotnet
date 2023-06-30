@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Options;
 using Udap.Server.Configuration;
 
-namespace Udap.Idp.Pages.UdapAccount.Login;
+namespace Udap.Idp.Pages.UdapLogin;
 
 [SecurityHeaders]
 [AllowAnonymous]
@@ -54,7 +54,7 @@ public class Index : PageModel
         if (View.IsExternalLoginOnly)
         {
             // we only have one option for logging in and it's an external provider
-            return RedirectToPage("/ExternalLogin/Challenge", new { scheme = View.ExternalLoginScheme, returnUrl });
+            return RedirectToPage("/UdapTieredLogin/Challenge", new { scheme = View.ExternalLoginScheme, returnUrl });
         }
 
         return Page();

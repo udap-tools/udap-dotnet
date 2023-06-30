@@ -99,7 +99,10 @@ public static class HttpClientTokenRequestExtensions
         return await ProtocolResponse.FromHttpResponseAsync<TokenResponse>(response).ConfigureAwait(false);
     }
 
-    public static async Task<OAuthTokenResponse> UdapExchangeCodeAsync(this HttpMessageInvoker client, AuthorizationCodeTokenRequest request, CancellationToken cancellationToken = default)
+    public static async Task<OAuthTokenResponse> UdapExchangeCodeAsync(
+        this HttpMessageInvoker client, 
+        AuthorizationCodeTokenRequest request, 
+        CancellationToken cancellationToken = default)
     {
         var clone = request.Clone();
 

@@ -223,7 +223,9 @@ namespace Udap.Client.Client
 
         public async Task<OAuthTokenResponse> ExchangeCode(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default)
         {
-            return await _httpClient.UdapExchangeCodeAsync(tokenRequest, token);
+            var response = await _httpClient.UdapExchangeCodeAsync(tokenRequest, token);
+
+            return response;
         }
 
         /// <summary>

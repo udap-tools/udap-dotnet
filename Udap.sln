@@ -97,6 +97,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Certificates.Server", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Identity.Provider.2", "examples\Udap.Identity.Provider.2\Udap.Identity.Provider.2.csproj", "{2899E179-2E24-46D7-8AA3-9FFE5AC9BFC5}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IdentityModel", "..\..\..\IdentityModel\IdentityModel\src\IdentityModel.csproj", "{CD2DA35A-B048-4AF8-B97B-0A7210A9087F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -215,6 +217,10 @@ Global
 		{2899E179-2E24-46D7-8AA3-9FFE5AC9BFC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2899E179-2E24-46D7-8AA3-9FFE5AC9BFC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2899E179-2E24-46D7-8AA3-9FFE5AC9BFC5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CD2DA35A-B048-4AF8-B97B-0A7210A9087F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CD2DA35A-B048-4AF8-B97B-0A7210A9087F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CD2DA35A-B048-4AF8-B97B-0A7210A9087F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CD2DA35A-B048-4AF8-B97B-0A7210A9087F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

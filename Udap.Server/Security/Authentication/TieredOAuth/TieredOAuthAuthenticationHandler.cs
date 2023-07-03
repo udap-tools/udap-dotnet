@@ -9,6 +9,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -17,6 +18,7 @@ using System.Web;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Stores;
 using IdentityModel;
+using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Http;
@@ -26,7 +28,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.JsonWebTokens;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
@@ -74,7 +76,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             { "redirect_uri", redirectUri }
         };
 
-        AddQueryString(queryStrings, properties, "client_id");
+        AddQueryString(queryStrings, properties, "client_id", true);
         AddQueryString(queryStrings, properties, OAuthChallengeProperties.ScopeKey, FormatScope, Options.Scope);
 
         var state = Options.StateDataFormat.Protect(properties);
@@ -84,15 +86,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         return authorizationEndpoint;
         
     }
-
-    public string BuildUrl(AuthenticationProperties properties, string redirectUri)
-    {
-        if(properties.Parameters.TryGetValue("client_id", out var clientId))
-        {
-            Options.ClientId = (clientId as string)!;
-        }
-        return base.BuildChallengeUrl(properties, redirectUri);
-    }
+    
 
     /// <summary>
     /// Called after options/events have been initialized for the handler to finish initializing itself.
@@ -103,7 +97,6 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         return base.InitializeHandlerAsync();
     }
-
 
     //
     // TODO: come back here and decide if this was the way to go.
@@ -122,149 +115,259 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     {
         var query = Request.Query;
 
-        var state = query["state"];
-        var properties = Options.StateDataFormat.Unprotect(state);
-
-        if (properties == null)
+        try
         {
-            return HandleRequestResults.InvalidState;
-        }
+            var state = query["state"];
+            var properties = Options.StateDataFormat.Unprotect(state);
 
-        // OAuth2 10.12 CSRF
-        // https://datatracker.ietf.org/doc/html/rfc6749#section-10.12
-        if (!ValidateCorrelationId(properties))
-        {
-            return HandleRequestResult.Fail("Correlation failed.", properties);
-        }
-
-        var error = query["error"];
-        if (!StringValues.IsNullOrEmpty(error))
-        {
-            // Note: access_denied errors are special protocol errors indicating the user didn't
-            // approve the authorization demand requested by the remote authorization server.
-            // Since it's a frequent scenario (that is not caused by incorrect configuration),
-            // denied errors are handled differently using HandleAccessDeniedErrorAsync().
-            // Visit https://tools.ietf.org/html/rfc6749#section-4.1.2.1 for more information.
-            var errorDescription = query["error_description"];
-            var errorUri = query["error_uri"];
-            if (StringValues.Equals(error, "access_denied"))
+            if (properties == null)
             {
-                var result = await HandleAccessDeniedErrorAsync(properties);
-                if (!result.None)
+                return HandleRequestResults.InvalidState;
+            }
+
+            // OAuth2 10.12 CSRF
+            // https://datatracker.ietf.org/doc/html/rfc6749#section-10.12
+            if (!ValidateCorrelationId(properties))
+            {
+                return HandleRequestResult.Fail("Correlation failed.", properties);
+            }
+
+            var error = query["error"];
+            if (!StringValues.IsNullOrEmpty(error))
+            {
+                // Note: access_denied errors are special protocol errors indicating the user didn't
+                // approve the authorization demand requested by the remote authorization server.
+                // Since it's a frequent scenario (that is not caused by incorrect configuration),
+                // denied errors are handled differently using HandleAccessDeniedErrorAsync().
+                // Visit https://tools.ietf.org/html/rfc6749#section-4.1.2.1 for more information.
+                var errorDescription = query["error_description"];
+                var errorUri = query["error_uri"];
+                if (StringValues.Equals(error, "access_denied"))
                 {
-                    return result;
+                    var result = await HandleAccessDeniedErrorAsync(properties);
+                    if (!result.None)
+                    {
+                        return result;
+                    }
+
+                    var deniedEx = new Exception("Access was denied by the resource owner or by the remote server.");
+                    deniedEx.Data["error"] = error.ToString();
+                    deniedEx.Data["error_description"] = errorDescription.ToString();
+                    deniedEx.Data["error_uri"] = errorUri.ToString();
+
+                    return HandleRequestResult.Fail(deniedEx, properties);
                 }
-                var deniedEx = new Exception("Access was denied by the resource owner or by the remote server.");
-                deniedEx.Data["error"] = error.ToString();
-                deniedEx.Data["error_description"] = errorDescription.ToString();
-                deniedEx.Data["error_uri"] = errorUri.ToString();
 
-                return HandleRequestResult.Fail(deniedEx, properties);
+                var failureMessage = new StringBuilder();
+                failureMessage.Append(error);
+                if (!StringValues.IsNullOrEmpty(errorDescription))
+                {
+                    failureMessage.Append(";Description=").Append(errorDescription);
+                }
+
+                if (!StringValues.IsNullOrEmpty(errorUri))
+                {
+                    failureMessage.Append(";Uri=").Append(errorUri);
+                }
+
+                var ex = new Exception(failureMessage.ToString());
+                ex.Data["error"] = error.ToString();
+                ex.Data["error_description"] = errorDescription.ToString();
+                ex.Data["error_uri"] = errorUri.ToString();
+
+                return HandleRequestResult.Fail(ex, properties);
             }
 
-            var failureMessage = new StringBuilder();
-            failureMessage.Append(error);
-            if (!StringValues.IsNullOrEmpty(errorDescription))
+            var code = query["code"];
+
+            if (StringValues.IsNullOrEmpty(code))
             {
-                failureMessage.Append(";Description=").Append(errorDescription);
+                return HandleRequestResult.Fail("Code was not found.", properties);
             }
-            if (!StringValues.IsNullOrEmpty(errorUri))
+
+
+            JwtSecurityToken? jwt = null;
+            string? nonce = null;
+            //
+            // Options.ProtocolValidator.ValidateAuthenticationResponse(new OpenIdConnectProtocolValidationContext()
+            // {
+            //     ClientId = Options.ClientId,
+            //     ProtocolMessage = authorizationResponse,
+            //     ValidatedIdToken = jwt,
+            //     Nonce = nonce
+            // });
+
+
+            var codeExchangeContext =
+                new OAuthCodeExchangeContext(properties, code.ToString(), BuildRedirectUri(Options.CallbackPath));
+
+            // UDAP
+            using var tokens = await ExchangeCodeAsync(codeExchangeContext);
+
+            if (tokens.Error != null)
             {
-                failureMessage.Append(";Uri=").Append(errorUri);
+                return HandleRequestResult.Fail(tokens.Error, properties);
             }
 
-            var ex = new Exception(failureMessage.ToString());
-            ex.Data["error"] = error.ToString();
-            ex.Data["error_description"] = errorDescription.ToString();
-            ex.Data["error_uri"] = errorUri.ToString();
+            if (string.IsNullOrEmpty(tokens.AccessToken))
+            {
+                return HandleRequestResult.Fail("Failed to retrieve access token.", properties);
+            }
 
-            return HandleRequestResult.Fail(ex, properties);
+            var idToken = tokens.Response?.RootElement.GetString("id_token");
+            
+            if (idToken == null)
+            {
+                return HandleRequestResults.MissingIdToken;
+            }
+
+            var validationParameters = Options.TokenValidationParameters.Clone();
+
+            // TODO: pre installed keys check?
+
+            var request = new DiscoveryDocumentRequest
+            {
+                Address = Options.IdPBaseUrl,
+                Policy = new IdentityModel.Client.DiscoveryPolicy()
+                {
+                    //TODO: Promote to TieredOAuthOptions.  Maybe even injectable for advanced use cases.
+                    EndpointValidationExcludeList = new List<string>{ OidcConstants.Discovery.RegistrationEndpoint }
+                }
+            };
+
+            var keys = await _udapClient.ResolveJwtKeys(request);
+            validationParameters.IssuerSigningKeys = keys;
+
+            var tokenEndpointUser = ValidateToken(idToken, properties, validationParameters, out var tokenEndpointJwt);
+
+            // nonce = tokenEndpointJwt.Payload.Nonce;
+            // if (!string.IsNullOrEmpty(nonce))
+            // {
+            //     nonce = ReadNonceCookie(nonce);
+            // }
+
+            // var tokenValidatedContext = await RunTokenValidatedEventAsync(authorizationResponse, tokenEndpointResponse, tokenEndpointUser, properties, tokenEndpointJwt, nonce);
+            // if (tokenValidatedContext.Result != null)
+            // {
+            //     return tokenValidatedContext.Result;
+            // }
+            // authorizationResponse = tokenValidatedContext.ProtocolMessage;
+            // tokenEndpointResponse = tokenValidatedContext.TokenEndpointResponse;
+            // user = tokenValidatedContext.Principal!;
+            // properties = tokenValidatedContext.Properties;
+            // jwt = tokenValidatedContext.SecurityToken;
+            // nonce = tokenValidatedContext.Nonce;
+
+
+            return HandleRequestResult.Success(new AuthenticationTicket(tokenEndpointUser, properties, Scheme.Name));
         }
-
-        var code = query["code"];
-
-        if (StringValues.IsNullOrEmpty(code))
+        catch (Exception exception)
         {
-            return HandleRequestResult.Fail("Code was not found.", properties);
+            return HandleRequestResult.Fail(exception);
+        }
+    }
+
+    // Note this modifies properties if Options.UseTokenLifetime
+    private ClaimsPrincipal ValidateToken(
+        string idToken, 
+        AuthenticationProperties properties, 
+        TokenValidationParameters validationParameters,
+        out JwtSecurityToken jwt)
+    {
+        if (!Options.SecurityTokenValidator.CanReadToken(idToken))
+        {
+            // Logger.UnableToReadIdToken(idToken);
+            throw new SecurityTokenException(string.Format(CultureInfo.InvariantCulture, "Unable to validate the 'id_token', no suitable ISecurityTokenValidator was found for: '{0}'.\"", idToken));
         }
 
-        var codeExchangeContext = new OAuthCodeExchangeContext(properties, code.ToString(), BuildRedirectUri(Options.CallbackPath));
+        // if (_configuration != null)
+        // {
+        //     var issuer = new[] { _configuration.Issuer };
+        //     validationParameters.ValidIssuers = validationParameters.ValidIssuers?.Concat(issuer) ?? issuer;
+        //
+        //     validationParameters.IssuerSigningKeys = validationParameters.IssuerSigningKeys?.Concat(_configuration.SigningKeys)
+        //         ?? _configuration.SigningKeys;
+        // }
+
+        // no need to validate signature when token is received using "code flow" as per spec
+        // [http://openid.net/specs/openid-connect-core-1_0.html#IDTokenValidation].
+        validationParameters.ValidIssuer = Options.IdPBaseUrl;
+        properties.Items.TryGetValue("client_id", out var clientId);
+        validationParameters.ValidAudience = clientId;
+        validationParameters.ValidateIssuerSigningKey = false;
         
-        // UDAP
-        using var tokens = await ExchangeCodeAsync(codeExchangeContext);
-
-        if (tokens.Error != null)
+        var principal = Options.SecurityTokenValidator.ValidateToken(idToken, validationParameters, out SecurityToken validatedToken);
+        if (validatedToken is JwtSecurityToken validatedJwt)
         {
-            return HandleRequestResult.Fail(tokens.Error, properties);
-        }
-
-        if (string.IsNullOrEmpty(tokens.AccessToken))
-        {
-            return HandleRequestResult.Fail("Failed to retrieve access token.", properties);
-        }
-
-        var identity = new ClaimsIdentity(ClaimsIssuer);
-
-        // if (Options.SaveTokens)
-        // {
-        //     var authTokens = new List<AuthenticationToken>();
-        //
-        //     authTokens.Add(new AuthenticationToken { Name = "access_token", Value = tokens.AccessToken });
-        //     if (!string.IsNullOrEmpty(tokens.RefreshToken))
-        //     {
-        //         authTokens.Add(new AuthenticationToken { Name = "refresh_token", Value = tokens.RefreshToken });
-        //     }
-        //
-        //     if (!string.IsNullOrEmpty(tokens.TokenType))
-        //     {
-        //         authTokens.Add(new AuthenticationToken { Name = "token_type", Value = tokens.TokenType });
-        //     }
-        //
-        //     if (!string.IsNullOrEmpty(tokens.ExpiresIn))
-        //     {
-        //         int value;
-        //         if (int.TryParse(tokens.ExpiresIn, NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
-        //         {
-        //             // https://www.w3.org/TR/xmlschema-2/#dateTime
-        //             // https://msdn.microsoft.com/en-us/library/az4se3k1(v=vs.110).aspx
-        //             var expiresAt = Clock.UtcNow + TimeSpan.FromSeconds(value);
-        //             authTokens.Add(new AuthenticationToken
-        //             {
-        //                 Name = "expires_at",
-        //                 Value = expiresAt.ToString("o", CultureInfo.InvariantCulture)
-        //             });
-        //         }
-        //     }
-        //     
-        //     properties.StoreTokens(authTokens);
-        // }
-
-        #region UDAP
-
-        // var authorizationResponse = new OpenIdConnectMessage(Request.Query.Select(pair => new KeyValuePair<string, string[]>(pair.Key, pair.Value.ToArray())));
-        //
-        //
-        // var authTokens = new List<AuthenticationToken>();
-        // string? idToken = tokens.Response?.RootElement.GetString("id_token");
-        //
-        // if (!string.IsNullOrEmpty(idToken))
-        // {
-        //     authTokens.Add(new AuthenticationToken() { Name = "id_token", Value = idToken });
-        // }
-        //
-        // properties.StoreTokens(authTokens);
-        #endregion
-
-        var ticket = await CreateTicketAsync(identity, properties, tokens);
-        if (ticket != null)
-        {
-            return HandleRequestResult.Success(ticket);
+            jwt = validatedJwt;
         }
         else
         {
-            return HandleRequestResult.Fail("Failed to retrieve user information from remote server.", properties);
+            // Logger.InvalidSecurityTokenType(validatedToken?.GetType().ToString());
+            throw new SecurityTokenException(string.Format(CultureInfo.InvariantCulture, "The Validated Security Token must be of type JwtSecurityToken, but instead its type is: '{0}'.", validatedToken?.GetType()));
         }
+
+        if (validatedToken == null)
+        {
+            // Logger.UnableToValidateIdToken(idToken);
+            throw new SecurityTokenException(string.Format(CultureInfo.InvariantCulture, "Unable to validate the 'id_token', no suitable ISecurityTokenValidator was found for: '{0}'.", idToken));
+        }
+
+        // if (Options.UseTokenLifetime)
+        // {
+        //     var issued = validatedToken.ValidFrom;
+        //     if (issued != DateTime.MinValue)
+        //     {
+        //         properties.IssuedUtc = issued;
+        //     }
+        //
+        //     var expires = validatedToken.ValidTo;
+        //     if (expires != DateTime.MinValue)
+        //     {
+        //         properties.ExpiresUtc = expires;
+        //     }
+        // }
+
+        return principal;
     }
+
+    /// <summary>
+    /// Searches <see cref="HttpRequest.Cookies"/> for a matching nonce.
+    /// </summary>
+    /// <param name="nonce">the nonce that we are looking for.</param>
+    /// <returns>echos 'nonce' if a cookie is found that matches, null otherwise.</returns>
+    /// <remarks>Examine <see cref="IRequestCookieCollection.Keys"/> of <see cref="HttpRequest.Cookies"/> that start with the prefix: 'OpenIdConnectAuthenticationDefaults.Nonce'.
+    /// <see cref="M:ISecureDataFormat{TData}.Unprotect"/> of <see cref="OpenIdConnectOptions.StringDataFormat"/> is used to obtain the actual 'nonce'. If the nonce is found, then <see cref="M:IResponseCookies.Delete"/> of <see cref="HttpResponse.Cookies"/> is called.</remarks>
+    // private string? ReadNonceCookie(string nonce)
+    // {
+    //     if (nonce == null)
+    //     {
+    //         return null;
+    //     }
+    //
+    //     foreach (var nonceKey in Request.Cookies.Keys)
+    //     {
+    //         if (Options.NonceCookie.Name is string name && nonceKey.StartsWith(name, StringComparison.Ordinal))
+    //         {
+    //             try
+    //             {
+    //                 var nonceDecodedValue = Options.StringDataFormat.Unprotect(nonceKey.Substring(Options.NonceCookie.Name.Length, nonceKey.Length - Options.NonceCookie.Name.Length));
+    //                 if (nonceDecodedValue == nonce)
+    //                 {
+    //                     var cookieOptions = Options.NonceCookie.Build(Context, Clock.UtcNow);
+    //                     Response.Cookies.Delete(nonceKey, cookieOptions);
+    //                     return nonce;
+    //                 }
+    //             }
+    //             catch (Exception ex)
+    //             {
+    //                 Logger.UnableToProtectNonceCookie(ex);
+    //             }
+    //         }
+    //     }
+    //
+    //     return null;
+    // }
 
     /// <inheritdoc />
     protected override async Task<OAuthTokenResponse> ExchangeCodeAsync([NotNull] OAuthCodeExchangeContext context)
@@ -550,7 +653,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             await registrationStore.UpsertClient(client, Context.RequestAborted);
         }
 
-        properties.SetParameter("client_id", idpClientId);
+        properties.SetString("client_id", idpClientId);
 
         await base.HandleChallengeAsync(properties);
     }
@@ -561,10 +664,12 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         AuthenticationProperties properties,
         string name,
         Func<T, string?> formatter,
-        T defaultValue)
+        T defaultValue,
+        bool retainAuthProperty = false)
     {
         string? value;
         var parameterValue = properties.GetParameter<T>(name);
+
         if (parameterValue != null)
         {
             value = formatter(parameterValue);
@@ -574,9 +679,12 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             value = formatter(defaultValue);
         }
 
-        // Remove the parameter from AuthenticationProperties so it won't be serialized into the state
-        properties.Items.Remove(name);
-
+        if (!retainAuthProperty)
+        {
+            // Remove the parameter from AuthenticationProperties so it won't be serialized into the state
+            properties.Items.Remove(name);
+        }
+        
         if (value != null)
         {
             queryStrings[name] = value;
@@ -587,6 +695,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         IDictionary<string, string> queryStrings,
         AuthenticationProperties properties,
         string name,
+        bool retainAuthProperty = false,
         string? defaultValue = null)
-        => AddQueryString(queryStrings, properties, name, x => x, defaultValue);
+        => AddQueryString(queryStrings, properties, name, x => x, defaultValue, retainAuthProperty);
 }

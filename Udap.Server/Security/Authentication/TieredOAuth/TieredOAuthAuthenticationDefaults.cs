@@ -21,7 +21,7 @@ public static class TieredOAuthAuthenticationDefaults
     /// <summary>
     /// Default value for <see cref="Microsoft.AspNetCore.Authentication.AuthenticationScheme.DisplayName"/>.
     /// </summary>
-    public static readonly string DisplayName = "UDAP Tiered OAuth";
+    public static readonly string DisplayName = "UDAP Tiered OAuth (DOTNET-Provider1)";
 
     public static readonly string CallbackPath = "/signin-tieredoauth";
 

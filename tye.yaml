@@ -33,16 +33,16 @@ services:
      - /fhir/r4/.well-known/udap/communities/ashtml
   
 
-#- name: udap-auth
-#  project: examples/Udap.Idp/Udap.Idp.csproj
-#  bindings:
-#  - protocol: https
-#    name: https
-#    host: host.docker.internal
-#    port: 5002
-#  env:
-#  - name: UdapIdpBaseUrl
-#    value: https://host.docker.internal:5002
+- name: udap-auth
+  project: examples/Udap.Idp/Udap.Idp.csproj
+  bindings:
+  - protocol: https
+    name: https
+    host: host.docker.internal
+    port: 5002
+  env:
+  - name: UdapIdpBaseUrl
+    value: https://host.docker.internal:5002
 
 - name: udap-idp
   project: examples/Udap.Identity.Provider/Udap.Identity.Provider.csproj

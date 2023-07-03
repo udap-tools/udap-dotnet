@@ -10,9 +10,12 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using Hl7.Fhir.Model;
 using Hl7.Fhir.Rest;
+using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.Logging;
@@ -20,6 +23,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Org.BouncyCastle.Utilities.Net;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Client.Configuration;
@@ -79,6 +83,8 @@ namespace Udap.Client.Client
             CancellationToken token = default);
 
         Task<OAuthTokenResponse> ExchangeCode(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
+        
+        Task<IEnumerable<SecurityKey>?> ResolveJwtKeys(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default);
     }
 
     public class UdapClient : IUdapClient
@@ -228,6 +234,7 @@ namespace Udap.Client.Client
             return response;
         }
 
+        
         /// <summary>
         /// Client dynamically supplying the trustAnchorStore
         /// </summary>
@@ -307,6 +314,33 @@ namespace Udap.Client.Client
         }
 
         
+        public async Task<IEnumerable<SecurityKey>?> ResolveJwtKeys(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default)
+        {
+            //TODO: Cache Discovery Document?
+            var disco = await _httpClient.GetDiscoveryDocumentAsync(request, cancellationToken: cancellationToken);
+           
+            if (disco.HttpStatusCode != HttpStatusCode.OK || disco.IsError)
+            {
+                throw new Exception("Failed to retrieve discovery document: " + disco.Error);
+            }
+
+            IEnumerable<SecurityKey>? keys = disco.KeySet?.Keys
+                .Where(x => x.N != null && x.E != null)
+                .Select(x => {
+                    var rsa = new RSAParameters
+                    {
+                        Exponent = Base64UrlEncoder.DecodeBytes(x.E),
+                        Modulus = Base64UrlEncoder.DecodeBytes(x.N),
+                    };
+
+                    return new RsaSecurityKey(rsa)
+                    {
+                        KeyId = x.Kid
+                    };
+                });
+
+            return keys;
+        }
 
         private async Task<bool> ValidateJwtToken(UdapMetadata udapServerMetaData, string baseUrl)
         {

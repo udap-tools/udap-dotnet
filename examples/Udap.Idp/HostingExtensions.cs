@@ -177,15 +177,16 @@ internal static class HostingExtensions
                 // {
                 //     
                 // };
+                options.IdPBaseUrl = "https://localhost:5055";
             })
-            .AddTieredOAuth("TieredOAuthProvider2", "DOTNET-Provider2", options =>
+            .AddTieredOAuth("TieredOAuthProvider2", "UDAP Tiered OAuth (DOTNET-Provider2)", options =>
             {
                 options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                 //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
                 options.AuthorizationEndpoint = "https://localhost:5057/connect/authorize";
                 options.TokenEndpoint = "https://localhost:5057/connect/token";
                 //
-                // When repeating AddTieredOAuth extention always add set a unuique CallbackPath
+                // When repeating AddTieredOAuth extension always add set a unique CallbackPath
                 // Otherwise the following error will occur: "The oauth state was missing or invalid."
                 //
                 // Buried in asp.net RemoteAuthenticationHandler.cs the following code decides on what scheme
@@ -195,9 +196,10 @@ internal static class HostingExtensions
                 //  public virtual Task<bool> ShouldHandleRequestAsync()
                 //      => Task.FromResult(Options.CallbackPath == Request.Path);
                 //
-                options.CallbackPath = "/signin-tieredoauthprovider2"; 
+                options.CallbackPath = "/signin-tieredoauthprovider2";
+                options.IdPBaseUrl = "https://localhost:5057";
             })
-            .AddTieredOAuth("OktaForUDAP", "Okta", options =>
+            .AddTieredOAuth("OktaForUDAP", "UDAP Tiered OAuth Okta", options =>
             {
                 options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                 //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
@@ -205,6 +207,8 @@ internal static class HostingExtensions
                 //options.TokenEndpoint = "Get from UDAP metadata
                 options.TokenEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/token";
                 options.CallbackPath = "/signin-oktaforudap";
+                options.IdPBaseUrl = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7";
+                
             });
         
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();

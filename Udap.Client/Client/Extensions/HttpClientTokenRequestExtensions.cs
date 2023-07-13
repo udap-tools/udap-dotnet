@@ -134,6 +134,8 @@ public static class HttpClientTokenRequestExtensions
         };
     }
 
+    //TODO: how can I refactor out the OAuthTokenResponse?  It requires the Microsoft.AspNetCore.App framework to be included.
+    // I need a Udap.TieredOauth package so simple clients do not need this reference.
     private static OAuthTokenResponse PrepareFailedOAuthTokenResponse(JsonDocument jsonDocument)
     {
         var root = jsonDocument.RootElement;

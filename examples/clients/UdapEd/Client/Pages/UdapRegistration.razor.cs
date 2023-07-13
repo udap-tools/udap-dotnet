@@ -176,6 +176,7 @@ public partial class UdapRegistration
     private string _signingAlgorithm = UdapConstants.SupportedAlgorithm.RS256;
     private string? _requestBody;
     private bool _missingScope;
+    private bool _cancelRegistration;
 
     private string RequestBody
     {
@@ -200,6 +201,7 @@ public partial class UdapRegistration
 
     private async Task BuildRawSoftwareStatement()
     {
+        _cancelRegistration = false;
         SetRawMessage("Loading ...");
 
         await Task.Delay(150);
@@ -208,13 +210,20 @@ public partial class UdapRegistration
         {
             await BuildRawSoftwareStatementForClientCredentials();
         }
+        else if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
+        {
+            await BuildRawSoftwareStatementForAuthorizationCode(
+                RegisterService.GetScopesForAuthorizationCodeB2B(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported));
+        }
         else
         {
-            await BuildRawSoftwareStatementForAuthorizationCode();
+            await BuildRawSoftwareStatementForAuthorizationCode(
+                RegisterService.GetScopesForAuthorizationCodeConsumer(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported));
         }
     }
     private async Task BuildRawCancelSoftwareStatement()
     {
+        _cancelRegistration = true;
         SetRawMessage("Loading ...");
 
         await Task.Delay(150);
@@ -225,7 +234,7 @@ public partial class UdapRegistration
         }
         else
         {
-            await BuildRawSoftwareStatementForAuthorizationCode(true);
+            await BuildRawSoftwareStatementForAuthorizationCode(null, true);
         }
     }
 
@@ -260,11 +269,11 @@ public partial class UdapRegistration
             
             var request = dcrBuilder.Build();
 
-            if (request.Scope == null)
+            if (request.Scope == null && request.GrantTypes?.Count > 0)
             {
                 _missingScope = true;
             }
-
+            
             var statement = await RegisterService
                 .BuildSoftwareStatementForClientCredentials(request, _signingAlgorithm);
             if (statement != null)
@@ -281,12 +290,10 @@ public partial class UdapRegistration
         }
     }
     
-    private async Task BuildRawSoftwareStatementForAuthorizationCode(bool cancelRegistration = false)
+    private async Task BuildRawSoftwareStatementForAuthorizationCode(string? scope, bool cancelRegistration = false)
     {
         try
         {
-            var scope = RegisterService.GetScopesForAuthorizationCode(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported);
-            
             UdapDcrBuilderForAuthorizationCodeUnchecked dcrBuilder;
 
             if (cancelRegistration)
@@ -299,6 +306,8 @@ public partial class UdapRegistration
             }
 
 
+            var redirectUrl = Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b ?  "udapBusinessToBusiness" : "udapConsumer";
+
             dcrBuilder.WithAudience(AppState.MetadataVerificationModel?.UdapServerMetaData?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
@@ -309,7 +318,7 @@ public partial class UdapRegistration
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithResponseTypes(new HashSet<string> { "code" })
-                .WithRedirectUrls(new List<string> { $"{NavigationManager.BaseUri}udapBusinessToBusiness" })
+                .WithRedirectUrls(new List<string> { $"{NavigationManager.BaseUri}{redirectUrl}" })
                 .WithScope(scope);
 
             dcrBuilder.Document.Subject = _subjectAltName;
@@ -317,7 +326,7 @@ public partial class UdapRegistration
 
             var request = dcrBuilder.Build();
 
-            if (request.Scope == null)
+            if (request.Scope == null && request.GrantTypes?.Count > 0)
             {
                 _missingScope = true;
             }
@@ -337,6 +346,7 @@ public partial class UdapRegistration
             ResetSoftwareStatement();
         }
     }
+
 
     private void SetRawMessage(string message)
     {
@@ -448,7 +458,16 @@ public partial class UdapRegistration
             RegistrationResult += JsonSerializer.Serialize(
                 resultModel.Result,
                 new JsonSerializerOptions { WriteIndented = true });
-            
+
+            if (_cancelRegistration)
+            { // cancel registration
+                AppState.ClientRegistrations?.CancelRegistration(resultModel.Result);
+            }
+            else if (AppState.BaseUrl != null)
+            {
+                AppState.ClientRegistrations?.SetRegistration(resultModel.Result, Oauth2Flow, AppState.BaseUrl);
+            }
+
             await AppState.SetPropertyAsync(this, nameof(AppState.RegistrationDocument), resultModel.Result);
         }
         else
@@ -470,5 +489,10 @@ public partial class UdapRegistration
             StateHasChanged();
             Task.Delay(50);
         }
+    }
+
+    private void ResetLocalRegisteredClients()
+    {
+        AppState.SetProperty(this, nameof(AppState.ClientRegistrations), null);
     }
 }

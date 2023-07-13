@@ -13,12 +13,12 @@
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
     <PackageReference Include="Udap.Model" Version="$(UdapDotNetPackageVersion)" />
-    <PackageReference Include="Udap.Client" Version="$(UdapDotNetPackageVersion)" />
+    <!-- <PackageReference Include="Udap.Client" Version="$(UdapDotNetPackageVersion)" /> -->
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="..\..\..\..\Udap.Model\Udap.Model.csproj" />
-    <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" />
+    <!-- <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" /> -->
   </ItemGroup>
 
   <ItemGroup>
@@ -30,6 +30,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Razor.Language" Version="6.0.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Udap.Common\Udap.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

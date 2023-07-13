@@ -400,7 +400,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         // validate scopes
         //////////////////////////////
         
-        if (_serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG && (document.Scope == null || !document.Scope.Any()))
+        if (client.AllowedGrantTypes.Count != 0 && //Cancel Registration
+            _serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG && 
+            (document.Scope == null || !document.Scope.Any()))
         {
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,

@@ -81,15 +81,15 @@ public class UdapClientState : IAppState
 
             var tokensList = new List<string>();
 
-            if (!AccessTokens.AccessToken.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(AccessTokens.AccessToken))
             {
                 tokensList.Add("Access");
             }
-            if (!AccessTokens.IdentityToken.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(AccessTokens.IdentityToken))
             {
                 tokensList.Add("Identity");
             }
-            if (!AccessTokens.RefreshToken.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(AccessTokens.RefreshToken))
             {
                 tokensList.Add("Refresh");
             }
@@ -109,6 +109,8 @@ public class UdapClientState : IAppState
     /// String representation of UDAP 3.1 Authorization Code Flow
     /// </summary>
     public AuthorizationCodeRequest? AuthorizationCodeRequest { get; set; }
+
+    public ClientRegistrations? ClientRegistrations { get; set; }
 
     public event Action? StateChanged;
 

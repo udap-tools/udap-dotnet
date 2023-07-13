@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
+using Udap.Common.Extensions;
 using Udap.Server.Extensions;
 
 namespace Udap.Server.Validation.Default;

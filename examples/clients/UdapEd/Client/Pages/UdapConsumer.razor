@@ -1,4 +1,4 @@
-﻿@page "/udapBusinessToBusiness"
+﻿@page "/udapConsumer"
 @using System.Collections.Immutable
 
 
@@ -6,115 +6,36 @@
   <ChildContent>
   <MudGrid Class="mt-4">
       <MudItem xs="12" sm="12" md="12">
-          <MudText Typo="Typo.h4">Business-to-Business</MudText>
+          <MudText Typo="Typo.h4">Consumer</MudText>
           <MudText Typo="Typo.h6" Color="Color.Tertiary">Requesting Access Tokens for either client_credentials or authorization_code flows</MudText>
       </MudItem>
-      <MudItem xs="12" sm="12" md="12">
+            <MudItem xs="12" sm="12" md="12">
           <MudCard Class="pa-2 ma-2" Elevation="3">
-              <MudCardContent>
-                  <MudGrid Spacing="1" Justify="Justify.FlexStart" Class="mb-2">
-                      
-                      <MudItem md="8" xs="12" >
-                          <ClientIdSelection 
-                              ClientRegistrations="@AppState.ClientRegistrations.Registrations.Where(r => !r.Value.UserFlowSelected.EndsWith("_consumer")).ToImmutableDictionary()"
-                              SelectedRegistration = "@AppState.ClientRegistrations?.SelectedRegistration"
-                              ClientIdSelected="(registration) =>  
+                    <MudCardContent>
+                        <MudGrid Spacing="1" Justify="Justify.FlexStart" Class="mb-2">
+
+                            <MudItem md="8" xs="12">
+                                <ClientIdSelection ClientRegistrations="@AppState.ClientRegistrations.Registrations.Where(r => r.Value.UserFlowSelected.EndsWith("_consumer")).ToImmutableDictionary()"
+                                                   SelectedRegistration="@AppState.ClientRegistrations?.SelectedRegistration"
+                                                   ClientIdSelected="(registration) =>
 {
     Enum.TryParse(registration.UserFlowSelected, out Oauth2FlowEnum flow);
     AppState.SetProperty(this, nameof(AppState.Oauth2Flow), flow, true, false);
     AppState.ClientRegistrations.SelectedRegistration = registration;
     AppState.SetProperty(this, nameof(AppState.ClientRegistrations), AppState.ClientRegistrations.SelectedRegistration, true, true);
-}"/>
-                      </MudItem>
+}" />
+                            </MudItem>
 
-                      <MudItem md="4" xs="12">
-                          <ClientCertLoader/>
-                      </MudItem>
-                  </MudGrid>
-              </MudCardContent>
+                            <MudItem md="4" xs="12">
+                                <ClientCertLoader />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
           </MudCard>
       </MudItem>
+
   </MudGrid>
-
-
-
-        @if (AppState.Oauth2Flow == Oauth2FlowEnum.client_credentials)
-        {
-            <MudCard Class="pa-2 ma-2" Elevation="3">
-                <MudCardActions>
-                    <MudGrid>
-                        <MudItem md="3" sm="6" xs="12">
-                            <MudButton Class="m-3"
-                                       Color="Color.Primary"
-                                       ButtonType="ButtonType.Button"
-                                       Variant="Variant.Filled"
-                                       Disabled="@(AppState.ClientRegistrations.SelectedRegistration == null)"
-                                       OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
-                        </MudItem>
-                        <MudItem md="3" sm="6" xs="12">
-                            <MudSelect @bind-Value="_signingAlgorithm"
-                                       Label="Select Signing Algorithm"
-                                       T="string"
-                                       Clearable="true"
-                                       AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
-                                       AdornmentColor="Color.Primary"
-                                       Variant="Variant.Outlined">
-                                <MudSelectItem Value="UdapConstants.SupportedAlgorithm.RS256">@UdapConstants.SupportedAlgorithm.RS256</MudSelectItem>
-                                <MudSelectItem Value="UdapConstants.SupportedAlgorithm.RS384">@UdapConstants.SupportedAlgorithm.RS384</MudSelectItem>
-                                <MudSelectItem Value="UdapConstants.SupportedAlgorithm.ES256">@UdapConstants.SupportedAlgorithm.ES256</MudSelectItem>
-                                <MudSelectItem Value="UdapConstants.SupportedAlgorithm.ES384">@UdapConstants.SupportedAlgorithm.ES384</MudSelectItem>
-                            </MudSelect>
-                        </MudItem>
-                        <MudItem md="3" sm="6" xs="12">
-                            <MudSwitch Class="m-3" Label="@(LegacyMode ? "udap.org Mode (sub==iss==SubjectAltName)"
-                                                                       : "HL7 FHIR Mode (sub==iss==client_id)")"
-                                       T="bool"
-                                       @bind-Checked="@LegacyMode" />
-                        </MudItem>
-                    </MudGrid>
-                </MudCardActions>
-                <MudCardContent>
-                    <MudGrid Spacing="1">
-                        
-                        <MudItem sm="6" xs="12">
-                            <MudPaper Class="udap-input" Elevation="3">
-                                <MudText Align="Align.Right" Color="Color.Tertiary">
-                                    5.2 Client Credentials Flow Request
-                                </MudText>
-                                <MudText Align="Align.Right" Color="Color.Tertiary">
-                                    Client Token Request
-                                </MudText>
-                                <pre>@TokenRequest1</pre>
-                                <pre style="padding-left: 10px">@TokenRequest2</pre>
-
-                                <pre style="padding-left:10px; background-color:lightyellow">@TokenRequest3</pre>
-                                <pre style="padding-left: 10px">@TokenRequestScope</pre>
-                                <pre style="padding-left:10px">@TokenRequest4</pre>
-                            </MudPaper>
-                        </MudItem>
-
-                        <MudItem sm="6" xs="12">
-                            <MudPaper Class="udap-analyzed" Elevation="3">
-                                <MudText Align="Align.Right" Color="Color.Tertiary">Client Assertion Decoded</MudText>
-                                <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
-                                    <MudTabPanel Text="Client Assertion">
-                                        <SignedJwtViewer Title="<b>Decoded client_assertion::</b>"
-                                                         SignedSoftwareStatement="@AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value"/>
-                                    </MudTabPanel>
-                                    <MudTabPanel Text="Certificates">
-                                        <CertificateViewer JwtHeaderWithx5c="@GetJwtHeader(AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value)" />
-                                    </MudTabPanel>
-                                </MudTabs>
-                            </MudPaper>
-                        </MudItem>
-                        
-
-                    </MudGrid>
-                </MudCardContent>
-            </MudCard>
-        }
-
-        @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
+        @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_consumer)
         {
             <MudCard Class="pa-2 ma-2" Elevation="3">
                 <MudCardActions>

@@ -25,7 +25,7 @@ using JsonExtensions = UdapEd.Shared.JsonExtensions;
 
 namespace UdapEd.Client.Pages;
 
-public partial class UdapBusinessToBusiness
+public partial class UdapConsumer
 {
     [CascadingParameter]
     public CascadingAppState AppState { get; set; } = null!;
@@ -43,6 +43,7 @@ public partial class UdapBusinessToBusiness
 
     public bool LegacyMode { get; set; } = false;
 
+    
     private string? TokenRequest1 { get; set; }
     private string? TokenRequest2 { get; set; }
     private string? TokenRequest3 { get; set; }
@@ -241,7 +242,7 @@ public partial class UdapBusinessToBusiness
             return;
         }
 
-        if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
+        if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_consumer)
         {
             var tokenRequestModel = new AuthorizationCodeTokenRequestModel
             {
@@ -250,7 +251,6 @@ public partial class UdapBusinessToBusiness
             };
 
             tokenRequestModel.RedirectUrl = AppState.ClientRegistrations?.SelectedRegistration?.RedirectUri;
-            
 
             if (AppState.LoginCallBackResult?.Code != null)
             {
@@ -359,7 +359,7 @@ public partial class UdapBusinessToBusiness
             AccessToken = "Loading ...";
             await Task.Delay(150);
 
-            if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
+            if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_consumer)
             {
                 if (AppState.AuthorizationCodeTokenRequest == null)
                 {

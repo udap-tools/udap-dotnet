@@ -12,6 +12,7 @@
       <PackagePath>\</PackagePath>
       <Pack>true</Pack>
     </None>
+    <None Include="Shared\ClientIdSelection.razor" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,12 +30,12 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Client" Version="$(UdapDotNetPackageVersion)" />
+    <!-- <PackageReference Include="Udap.Client" Version="$(UdapDotNetPackageVersion)" /> -->
     <PackageReference Include="Udap.Common" Version="$(UdapDotNetPackageVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
-    <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" />
+    <!-- <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" /> -->
     <ProjectReference Include="..\..\..\..\Udap.Common\Udap.Common.csproj" />
   </ItemGroup>
 
@@ -42,5 +43,11 @@
   <Target Name="CollectMudBlazorStaticAssets" DependsOnTargets="ResolveStaticWebAssetsInputs" AfterTargets="Build" Condition=" '$(Configuration)' == 'Debug' ">
     <Copy SourceFiles="%(StaticWebAsset.Identity)" DestinationFolder="wwwroot/temp" Condition="$([System.String]::Copy(%(StaticWebAsset.Identity)).Contains('mudblazor'))" />
   </Target>
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Shared\ClientIdSelection.razor" />
+  </ItemGroup>
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Shared\ClientIdSelection.razor" />
+  </ItemGroup>
 
 </Project>

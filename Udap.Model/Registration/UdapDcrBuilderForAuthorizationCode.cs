@@ -53,6 +53,13 @@ public class UdapDcrBuilderForAuthorizationCode
         {
             _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.AuthorizationCode };
         }
+        else
+        {
+            //
+            // Cancel registration is requested with an empty GranTypes array, not a missing grant_types element
+            //
+            _document.GrantTypes = new List<string>();
+        }
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
     }
     /// <summary>

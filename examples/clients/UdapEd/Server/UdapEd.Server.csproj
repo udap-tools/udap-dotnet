@@ -41,11 +41,15 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
+    <PackageReference Include="Udap.Client" Version="$(UdapDotNetPackageVersion)" />
     <PackageReference Include="Udap.Model" Version="$(UdapDotNetPackageVersion)" />
+    <PackageReference Include="Udap.Common" Version="$(UdapDotNetPackageVersion)" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
+    <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\..\..\..\Udap.Model\Udap.Model.csproj" />
+    <ProjectReference Include="..\..\..\..\Udap.Common\Udap.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

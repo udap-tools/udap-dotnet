@@ -178,12 +178,25 @@ public class RegisterService
         return null;
     }
 
-    public string GetScopesForAuthorizationCode(ICollection<string>? scopes)
+    public string GetScopesForAuthorizationCodeB2B(ICollection<string>? scopes)
     {
         if (scopes != null)
         {
             return scopes
-                .Where(s => !s.StartsWith("system"))
+                .Where(s => !s.StartsWith("system") && !s.StartsWith("user"))
+                .Take(10).ToList()
+                .ToSpaceSeparatedString();
+        }
+
+        return "openid";
+    }
+
+    public string GetScopesForAuthorizationCodeConsumer(ICollection<string>? scopes)
+    {
+        if (scopes != null)
+        {
+            return scopes
+                .Where(s => !s.StartsWith("system") && !s.StartsWith("patient"))
                 .Take(10).ToList()
                 .ToSpaceSeparatedString();
         }

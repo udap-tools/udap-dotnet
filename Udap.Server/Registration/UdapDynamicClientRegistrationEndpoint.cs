@@ -141,6 +141,7 @@ public class UdapDynamicClientRegistrationEndpoint
                 if (!result.Client.AllowedGrantTypes.Any())
                 {
                     var numberOfClientsRemoved = await _store.CancelRegistration(result.Client, token);
+                    result.Client.ClientId = "removed";
 
                     if (numberOfClientsRemoved == 0)
                     {

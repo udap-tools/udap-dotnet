@@ -33,7 +33,7 @@ public class UnitTest1
             .BeEquivalentTo("m_safeCertContext is an invalid handle.");
     }
 
-    [Fact]
+    
     public X509Certificate2 GenerateRootCertTest()
     {
         var subject = "CN=SureFhir-TestCA, OU=Root, O=Fhir Coding, L=Portland, S=Oregon, C=US";
@@ -48,7 +48,7 @@ public class UnitTest1
         return rootCert;
     }
 
-    [Fact]
+    
     public X509Certificate2 GenerateIntermediateCertTest()
     {
         var rootCertificate = GenerateRootCertTest();

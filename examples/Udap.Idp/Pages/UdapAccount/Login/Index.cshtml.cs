@@ -8,8 +8,12 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text.Encodings.Web;
+using System.Web;
 using Udap.Server.Configuration;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+using Base64UrlTextEncoder = Microsoft.AspNetCore.Authentication.Base64UrlTextEncoder;
 
 namespace Udap.Idp.Pages.UdapLogin;
 
@@ -168,6 +172,7 @@ public class Index : PageModel
         var context = await _interaction.GetAuthorizationContextAsync(returnUrl);
 
         // NOTE:: This if statement concerning IdP is not the same as the UDAP IdP.
+        // TODO: Well...  this could be... need to revisit
         if (context?.IdP != null && await _schemeProvider.GetSchemeAsync(context.IdP) != null)
         {
             var local = context.IdP == Duende.IdentityServer.IdentityServerConstants.LocalIdentityProvider;
@@ -190,15 +195,26 @@ public class Index : PageModel
 
         var schemes = await _schemeProvider.GetAllSchemesAsync();
         
+        
 
         var providers = schemes
             .Where(x => x.DisplayName != null)
-            .Select(x => new ViewModel.ExternalProvider
+            .Select(x =>
             {
-                DisplayName = x.DisplayName ?? x.Name,
-                AuthenticationScheme = x.Name,
-                ReturnUrl = LoadReturnUrl(x, returnUrl)
-            }).ToList();
+                var (enrichedReturnUrl, matchIdp) = LoadReturnUrl(x, returnUrl);
+                
+
+                var externalProvider = new ViewModel.ExternalProvider
+                {
+                    DisplayName = x.DisplayName ?? x.Name,
+                    AuthenticationScheme = x.Name,
+                    ReturnUrl = enrichedReturnUrl,
+                    IsChosenIdp = matchIdp
+                };
+                
+                return externalProvider;
+            })
+            .ToList();
 
         var dynamicSchemes = (await _identityProviderStore.GetAllSchemeNamesAsync())
             .Where(x => x.Enabled)
@@ -230,7 +246,7 @@ public class Index : PageModel
         };
     }
 
-    private string LoadReturnUrl(AuthenticationScheme authenticationScheme, string returnUrl)
+    private (string, bool) LoadReturnUrl(AuthenticationScheme authenticationScheme, string returnUrl)
     {
         if (_serverSettings.IdPMappings != null && _serverSettings.IdPMappings.Any())
         {
@@ -239,11 +255,21 @@ public class Index : PageModel
                 ?.IdpBaseUrl;
         
             if(string.IsNullOrEmpty(idpBaseUrl))
-                return returnUrl;
+                return (returnUrl, false);
 
-            return $"{returnUrl}&idp={idpBaseUrl}";
+            if (QueryHelpers.ParseQuery(HttpUtility.UrlDecode(returnUrl)).TryGetValue("idp", out var udapIdp))
+            {
+                if (udapIdp == idpBaseUrl)
+                {
+                    return (returnUrl, true);
+                }
+
+                return (returnUrl, false);
+            }
+
+            return ($"{returnUrl}&idp={idpBaseUrl}", false);
         }
 
-        return returnUrl;
+        return (returnUrl, false);
     }
 }

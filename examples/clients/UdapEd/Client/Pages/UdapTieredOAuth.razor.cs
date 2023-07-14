@@ -144,6 +144,7 @@ public partial class UdapTieredOAuth
         if (@AppState.AuthorizationCodeRequest != null)
         {
             sb.Append("?").Append(@AppState.AuthorizationCodeRequest.ResponseType);
+            sb.Append("&").Append(@AppState.AuthorizationCodeRequest.IdPBaseUrl);
             sb.Append("&").Append(@AppState.AuthorizationCodeRequest.State);
             sb.Append("&").Append(@AppState.AuthorizationCodeRequest.ClientId);
             sb.Append("&").Append(@AppState.AuthorizationCodeRequest.Scope);
@@ -263,7 +264,7 @@ public partial class UdapTieredOAuth
         var requestToken = await AccessService
             .BuildRequestAccessTokenForAuthCode(tokenRequestModel, _signingAlgorithm);
         
-        AppState.SetProperty(this, nameof(AppState.AuthorizationCodeTokenRequest), requestToken);
+        await AppState.SetPropertyAsync(this, nameof(AppState.AuthorizationCodeTokenRequest), requestToken);
 
         if (AppState.AuthorizationCodeTokenRequest == null)
         {

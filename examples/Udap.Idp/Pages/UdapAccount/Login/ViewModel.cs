@@ -17,5 +17,7 @@ public class ViewModel
         public string AuthenticationScheme { get; set; }
 
         public string ReturnUrl { get; set; }
+
+        public bool IsChosenIdp { get; set; }
     }
 }

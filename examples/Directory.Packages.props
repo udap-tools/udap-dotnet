@@ -2,7 +2,7 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-  <ItemGroup >
+  <ItemGroup>
     <PackageVersion Include="Duende.IdentityServer" Version="6.2.3" />
     <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="6.2.3" />
     <PackageVersion Include="Duende.IdentityServer.EntityFramework" Version="6.2.3" />
@@ -16,10 +16,10 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.5" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.5" />
-    <PackageVersion Include="OpenTelemetry" Version="1.5.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.5.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.4.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.4.0" />
+    <PackageVersion Include="OpenTelemetry" Version="1.5.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.5.1" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.5.1" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.5.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc9.14" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.0.0-rc9.14" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.0.0-rc9.14" />

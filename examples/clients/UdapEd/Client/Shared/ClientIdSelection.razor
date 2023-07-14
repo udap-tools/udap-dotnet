@@ -24,11 +24,26 @@
     <MudItem lg="4" sm="6" md="6" xs="12">
         <MudTextField Label="Subject Alt Name" @bind-Value="SubjAltName" />
     </MudItem>
+    @if (TieredOauth)
+    {
+        <MudItem xs="12">
+            <MudGrid Spacing="2" Justify="Justify.FlexStart" align-start>
+
+                <MudItem lg="6" md="8" sm="10" xs="12">
+                    <MudTextField @bind-Value="IdPBaseUrl"
+                                  Label="OpenID Connect Identity Provider"
+                    @onblur="SelectIdPBaseUrl" />
+                </MudItem>
+                
+            </MudGrid>
+        </MudItem>
+    }
 </MudGrid>
 
 @code {
   
     private string? _clientId;
+    private string? _idPBaseUrl;
 
     [Parameter]
     public string? ClientId
@@ -50,6 +65,9 @@
     }
 
     [Parameter]
+    public bool TieredOauth { get; set; }
+
+    [Parameter]
     public EventCallback<ClientRegistration> ClientIdSelected { get; set; }
 
     internal async Task ActivateRegistration(ClientRegistration registration)
@@ -57,6 +75,36 @@
         await ClientIdSelected.InvokeAsync(registration);
     }
 
+    [Parameter]
+    public string? IdPBaseUrl
+    {
+        get
+        {
+            if (ClientId == null)
+            {
+                return null;
+            }
+
+            return _idPBaseUrl;
+
+        }
+        set
+        {
+            if (ClientId != null)
+            {
+                _idPBaseUrl = value;
+            }
+        }
+    }
+
+    [Parameter]
+    public EventCallback<string> IdPBaseUrlSelected { get; set; }
+
+    internal async Task SelectIdPBaseUrl()
+    {
+        await IdPBaseUrlSelected.InvokeAsync(IdPBaseUrl);
+    }
+    
 
     [Parameter]
     public IDictionary<string, ClientRegistration>? ClientRegistrations { get; set; }

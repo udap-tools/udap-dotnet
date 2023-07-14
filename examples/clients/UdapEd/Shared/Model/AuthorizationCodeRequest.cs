@@ -19,4 +19,5 @@ public class AuthorizationCodeRequest
 
     public string? RedirectUri { get; set; }
     public string? Aud { get; set; }
+    public string? IdPBaseUrl { get; set; }
 }

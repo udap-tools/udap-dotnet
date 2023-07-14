@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Hl7.Fhir.Rest;
@@ -172,8 +173,10 @@ public partial class UdapRegistration
         set => AppState.SetProperty(this, nameof(AppState.Oauth2Flow), value);
     }
 
-    private string? _subjectAltName;
+    private string? _subjectAltName { get; set; }
     private string _signingAlgorithm = UdapConstants.SupportedAlgorithm.RS256;
+    public bool TieredOauth { get; set; }
+    public string? IdP { get; set; }
     private string? _requestBody;
     private bool _missingScope;
     private bool _cancelRegistration;
@@ -199,6 +202,9 @@ public partial class UdapRegistration
         set => _requestBody = value;
     }
 
+    
+
+
     private async Task BuildRawSoftwareStatement()
     {
         _cancelRegistration = false;
@@ -213,12 +219,12 @@ public partial class UdapRegistration
         else if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
         {
             await BuildRawSoftwareStatementForAuthorizationCode(
-                RegisterService.GetScopesForAuthorizationCodeB2B(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported));
+                RegisterService.GetScopesForAuthorizationCodeB2B(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported.ToList(), TieredOauth));
         }
         else
         {
             await BuildRawSoftwareStatementForAuthorizationCode(
-                RegisterService.GetScopesForAuthorizationCodeConsumer(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported));
+                RegisterService.GetScopesForAuthorizationCodeConsumer(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported.ToList(), TieredOauth));
         }
     }
     private async Task BuildRawCancelSoftwareStatement()
@@ -307,6 +313,11 @@ public partial class UdapRegistration
 
 
             var redirectUrl = Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b ?  "udapBusinessToBusiness" : "udapConsumer";
+            var redirectUrls = new List<string> { $"{NavigationManager.BaseUri}{redirectUrl}" };
+            if (TieredOauth)
+            {
+                redirectUrls.Add($"{NavigationManager.BaseUri}udapTieredOAuth");
+            }
 
             dcrBuilder.WithAudience(AppState.MetadataVerificationModel?.UdapServerMetaData?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
@@ -318,7 +329,7 @@ public partial class UdapRegistration
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithResponseTypes(new HashSet<string> { "code" })
-                .WithRedirectUrls(new List<string> { $"{NavigationManager.BaseUri}{redirectUrl}" })
+                .WithRedirectUrls(redirectUrls)
                 .WithScope(scope);
 
             dcrBuilder.Document.Subject = _subjectAltName;
@@ -483,12 +494,17 @@ public partial class UdapRegistration
     protected override void OnParametersSet()
     {
         ErrorBoundary?.Recover();
-        if (AppState.ClientCertificateInfo?.SubjectAltNames != null && AppState.ClientCertificateInfo.SubjectAltNames.Any())
+    }
+    
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && AppState.ClientCertificateInfo?.SubjectAltNames != null && AppState.ClientCertificateInfo.SubjectAltNames.Any())
         {
-            _subjectAltName = AppState.ClientCertificateInfo.SubjectAltNames.First();
+            _subjectAltName = AppState.ClientCertificateInfo?.SubjectAltNames.First();
             StateHasChanged();
-            Task.Delay(50);
         }
+
+        return base.OnAfterRenderAsync(firstRender);
     }
 
     private void ResetLocalRegisteredClients()

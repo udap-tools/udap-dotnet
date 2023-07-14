@@ -26,7 +26,7 @@ using JsonExtensions = UdapEd.Shared.JsonExtensions;
 
 namespace UdapEd.Client.Pages;
 
-public partial class UdapBusinessToBusiness
+public partial class UdapTieredOAuth
 {
     [CascadingParameter]
     public CascadingAppState AppState { get; set; } = null!;
@@ -44,6 +44,7 @@ public partial class UdapBusinessToBusiness
 
     public bool LegacyMode { get; set; } = false;
 
+    
     private string? TokenRequest1 { get; set; }
     private string? TokenRequest2 { get; set; }
     private string? TokenRequest3 { get; set; }
@@ -109,13 +110,13 @@ public partial class UdapBusinessToBusiness
     private async Task BuildAuthCodeRequest()
     {
         AccessToken = string.Empty;
-        AppState.SetProperty(this, nameof(AppState.AccessTokens), string.Empty, true, false);
+        await AppState.SetPropertyAsync(this, nameof(AppState.AccessTokens), string.Empty, true, false);
         AuthorizationCodeRequest = new AuthorizationCodeRequest
         {
             RedirectUri = "Loading..."
         };
 
-        AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
+        await AppState.SetPropertyAsync(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
         await Task.Delay(250);
 
         AuthorizationCodeRequest = new AuthorizationCodeRequest
@@ -125,15 +126,16 @@ public partial class UdapBusinessToBusiness
             ClientId = $"client_id={AppState.ClientRegistrations?.SelectedRegistration?.ClientId}",
             Scope = $"scope={AppState.ClientRegistrations?.SelectedRegistration?.Scope}",
             RedirectUri = $"redirect_uri={NavManager.Uri.RemoveQueryParameters()}",
-            Aud = $"aud={AppState.BaseUrl}"
+            Aud = $"aud={AppState.BaseUrl}",
+            IdPBaseUrl = $"idp={AppState.ClientRegistrations?.SelectedRegistration?.IdPBaseUrl}"
         };
 
-        AppState.SetProperty(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
+        await AppState.SetPropertyAsync(this, nameof(AppState.AuthorizationCodeRequest), AuthorizationCodeRequest, true, false);
 
         BuildAuthorizeLink();
     }
 
-    private string AuthCodeRequestLink { get; set; } = string.Empty;
+        private string AuthCodeRequestLink { get; set; } = string.Empty;
     
     private void BuildAuthorizeLink()
     {
@@ -242,83 +244,41 @@ public partial class UdapBusinessToBusiness
             return;
         }
 
-        if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
-        {
-            var tokenRequestModel = new AuthorizationCodeTokenRequestModel
-            {
-                ClientId = AppState.ClientRegistrations?.SelectedRegistration?.ClientId,
-                TokenEndpointUrl = AppState.MetadataVerificationModel?.UdapServerMetaData?.TokenEndpoint,
-            };
-
-            tokenRequestModel.RedirectUrl = NavManager.Uri.RemoveQueryParameters();
-            
-
-            if (AppState.LoginCallBackResult?.Code != null)
-            {
-                tokenRequestModel.Code = AppState.LoginCallBackResult?.Code!;
-            }
-
-            tokenRequestModel.LegacyMode = LegacyMode;
-
-            var requestToken = await AccessService
-                .BuildRequestAccessTokenForAuthCode(tokenRequestModel, _signingAlgorithm);
-            
-            AppState.SetProperty(this, nameof(AppState.AuthorizationCodeTokenRequest), requestToken);
-
-            if (AppState.AuthorizationCodeTokenRequest == null)
-            {
-                TokenRequest1 = "Could not build an access token request";
-                TokenRequest2 = string.Empty;
-                TokenRequest3 = string.Empty;
-                TokenRequest4 = string.Empty;
-
-                return;
-            }
-
-            BuildAccessTokenRequestVisualForAuthorizationCode();
-        }
-        else  //client_credentials
-        {
-            var tokenRequestModel = new ClientCredentialsTokenRequestModel
-            {
-                ClientId = AppState.ClientRegistrations?.SelectedRegistration?.ClientId,
-                TokenEndpointUrl = AppState.MetadataVerificationModel?.UdapServerMetaData?.TokenEndpoint,
-                LegacyMode = LegacyMode,
-                Scope = AppState.ClientRegistrations?.SelectedRegistration?.Scope
-            };
-
-            var requestToken = await AccessService
-                .BuildRequestAccessTokenForClientCredentials(tokenRequestModel, _signingAlgorithm);
-
-            AppState.SetProperty(this, nameof(AppState.ClientCredentialsTokenRequest), requestToken);
-
-            BuildAccessTokenRequestVisualForClientCredentials();
-        }
-    }
-
-    private void BuildAccessTokenRequestVisualForClientCredentials()
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine("POST /token HTTP/1.1");
-        sb.AppendLine("Content-Type: application/x-www-form-urlencoded");
-        sb.AppendLine($"Host: {AppState.MetadataVerificationModel?.UdapServerMetaData?.AuthorizationEndpoint}");
-        sb.AppendLine("Content-type: application/x-www-form-urlencoded");
-        sb.AppendLine();
-        sb.AppendLine("grant_type=client_credentials&");
-        TokenRequest1 = sb.ToString();
-
-        sb = new StringBuilder();
-        sb.AppendLine($"client_assertion_type={OidcConstants.ClientAssertionTypes.JwtBearer}&");
-        TokenRequest2 = sb.ToString();
-
-        TokenRequest3 = $"client_assertion={AppState.ClientCredentialsTokenRequest?.ClientAssertion?.Value}&";
-        TokenRequestScope = $"scope={AppState.ClientCredentialsTokenRequest?.Scope}&";
-        sb = new StringBuilder();
-        sb.Append($"udap={UdapConstants.UdapVersionsSupportedValue}&\r\n");
-        TokenRequest4 = sb.ToString();
         
+        var tokenRequestModel = new AuthorizationCodeTokenRequestModel
+        {
+            ClientId = AppState.ClientRegistrations?.SelectedRegistration?.ClientId,
+            TokenEndpointUrl = AppState.MetadataVerificationModel?.UdapServerMetaData?.TokenEndpoint,
+        };
+
+        tokenRequestModel.RedirectUrl = NavManager.Uri.RemoveQueryParameters();
+
+        if (AppState.LoginCallBackResult?.Code != null)
+        {
+            tokenRequestModel.Code = AppState.LoginCallBackResult?.Code!;
+        }
+
+        tokenRequestModel.LegacyMode = LegacyMode;
+
+        var requestToken = await AccessService
+            .BuildRequestAccessTokenForAuthCode(tokenRequestModel, _signingAlgorithm);
+        
+        AppState.SetProperty(this, nameof(AppState.AuthorizationCodeTokenRequest), requestToken);
+
+        if (AppState.AuthorizationCodeTokenRequest == null)
+        {
+            TokenRequest1 = "Could not build an access token request";
+            TokenRequest2 = string.Empty;
+            TokenRequest3 = string.Empty;
+            TokenRequest4 = string.Empty;
+
+            return;
+        }
+
+        BuildAccessTokenRequestVisualForAuthorizationCode();
     }
 
+    
     private void BuildAccessTokenRequestVisualForAuthorizationCode()
     {
         if (AppState.LoginCallBackResult == null)
@@ -344,6 +304,7 @@ public partial class UdapBusinessToBusiness
 
         sb = new StringBuilder();
         sb.AppendLine($"redirect_uri={NavManager.Uri.RemoveQueryParameters()}");
+        
         sb.Append($"udap={UdapConstants.UdapVersionsSupportedValue}");
         TokenRequest4 = sb.ToString();
         
@@ -356,40 +317,21 @@ public partial class UdapBusinessToBusiness
             AccessToken = "Loading ...";
             await Task.Delay(150);
 
-            if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
+            
+            if (AppState.AuthorizationCodeTokenRequest == null)
             {
-                if (AppState.AuthorizationCodeTokenRequest == null)
-                {
-                    AccessToken = "Missing prerequisites.";
-                    return;
-                }
-
-                var tokenResponse = await AccessService
-                    .RequestAccessTokenForAuthorizationCode(
-                        AppState.AuthorizationCodeTokenRequest);
-
-                AppState.SetProperty(this, nameof(AppState.AccessTokens), tokenResponse);
-
-                AccessToken = tokenResponse is { IsError: false } ? tokenResponse.Raw : tokenResponse?.Error;
+                AccessToken = "Missing prerequisites.";
+                return;
             }
-            else //client_credentials
-            {
-                if (AppState.ClientCredentialsTokenRequest == null)
-                {
-                    AccessToken = "Missing prerequisites.";
-                    return;
-                }
 
-                var tokenResponse = await AccessService
-                    .RequestAccessTokenForClientCredentials(
-                        AppState.ClientCredentialsTokenRequest);
+            var tokenResponse = await AccessService
+                .RequestAccessTokenForAuthorizationCode(
+                    AppState.AuthorizationCodeTokenRequest);
 
-                AppState.SetProperty(this, nameof(AppState.AccessTokens), tokenResponse);
+            AppState.SetProperty(this, nameof(AppState.AccessTokens), tokenResponse);
 
-                AccessToken = tokenResponse is { IsError: false }
-                    ? tokenResponse.Raw 
-                    : $"Failed:\r\n\r\n{tokenResponse?.Error}\r\n{tokenResponse?.Headers}";
-            }
+            AccessToken = tokenResponse is { IsError: false } ? tokenResponse.Raw : tokenResponse?.Error;
+            
         }
         catch (Exception ex)
         {

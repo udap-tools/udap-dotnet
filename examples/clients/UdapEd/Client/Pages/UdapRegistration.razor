@@ -59,7 +59,8 @@
                                Clearable="true"
                                AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
                                AdornmentColor="Color.Primary"
-                               Variant="Variant.Outlined">
+                               Variant="Variant.Outlined" 
+                               Error="_subjectAltName == null">
 
                         @foreach (var item in AppState.ClientCertificateInfo.SubjectAltNames)
                         {
@@ -89,10 +90,12 @@
     </MudCardContent>
 </MudCard>
 
-<MudCard Class="pa-2 ma-2" Elevation="3">
-    <MudCardHeader Class="bold"><MudText Typo="Typo.h6">Build Raw Software Statements For Registration</MudText></MudCardHeader>
+        <MudCard Class="pa-2 ma-2" Elevation="3">
+    <MudCardHeader Class="bold">
+        <MudText Typo="Typo.h6">Build Raw Software Statements For Registration</MudText>
+    </MudCardHeader>
     <MudCardActions>
-        <MudGrid Spacing="2" Justify="Justify.FlexStart">
+        <MudGrid Spacing="2" Justify="Justify.FlexStart" align-start>
             <MudItem>
                 <MudButton
                     Color="Color.Primary"
@@ -110,6 +113,11 @@
                            Disabled="@(!AppState.CertificateLoaded)"
                            OnClick="BuildRawCancelSoftwareStatement">Build Cancel</MudButton>
             </MudItem>
+            <MudItem>
+                <MudCheckBox @bind-Checked="TieredOauth"
+                             Label="Tiered Oauth"
+                />
+            </MudItem>
 
             @if (!string.IsNullOrEmpty(RawSoftwareStatementError))
             {
@@ -118,6 +126,7 @@
                 </MudItem>
             }
         </MudGrid>
+        
     </MudCardActions>
     <MudCardContent>
         <MudGrid Spacing="1" Class="mt-8">

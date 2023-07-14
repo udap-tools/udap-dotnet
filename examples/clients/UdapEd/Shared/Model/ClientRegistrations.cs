@@ -34,7 +34,7 @@ public class ClientRegistrations
                 UserFlowSelected = oauth2Flow.ToString(),
                 AuthServer = resultModelResult.Audience,
                 ResourceServer = resourceServer,
-                RedirectUri = resultModelResult.RedirectUris.FirstOrDefault(),
+                RedirectUri = resultModelResult.RedirectUris,
                 Scope = resultModelResult.Scope
             };
         }
@@ -65,6 +65,7 @@ public class ClientRegistration
     public string SubjAltName { get; set; } = string.Empty;
     public string AuthServer { get; set; } = string.Empty;
     public string ResourceServer { get; set; } = string.Empty;
-    public string? RedirectUri { get; set; }
+    public ICollection<string>? RedirectUri { get; set; }
     public string? Scope { get; set; }
+    public string? IdPBaseUrl { get; set; }
 }

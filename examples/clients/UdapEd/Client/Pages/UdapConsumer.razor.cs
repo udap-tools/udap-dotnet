@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
+using Udap.Common.Extensions;
 using Udap.Model;
 using UdapEd.Client.Services;
 using UdapEd.Client.Shared;
@@ -124,7 +125,7 @@ public partial class UdapConsumer
             State = $"state={CryptoRandom.CreateUniqueId()}",
             ClientId = $"client_id={AppState.ClientRegistrations?.SelectedRegistration?.ClientId}",
             Scope = $"scope={AppState.ClientRegistrations?.SelectedRegistration?.Scope}",
-            RedirectUri = $"redirect_uri={AppState.ClientRegistrations?.SelectedRegistration?.RedirectUri}",
+            RedirectUri = $"redirect_uri={NavManager.Uri.RemoveQueryParameters()}",
             Aud = $"aud={AppState.BaseUrl}"
         };
 
@@ -250,7 +251,7 @@ public partial class UdapConsumer
                 TokenEndpointUrl = AppState.MetadataVerificationModel?.UdapServerMetaData?.TokenEndpoint,
             };
 
-            tokenRequestModel.RedirectUrl = AppState.ClientRegistrations?.SelectedRegistration?.RedirectUri;
+            tokenRequestModel.RedirectUrl = NavManager.Uri.RemoveQueryParameters();
 
             if (AppState.LoginCallBackResult?.Code != null)
             {
@@ -342,11 +343,8 @@ public partial class UdapConsumer
             $"client_assertion={AppState.AuthorizationCodeTokenRequest?.ClientAssertion?.Value}&\r\n";
 
         sb = new StringBuilder();
-        if (!string.IsNullOrEmpty(AppState.AuthorizationCodeTokenRequest?.RedirectUri))
-        {
-            sb.AppendLine($"redirect_uri={AppState.AuthorizationCodeTokenRequest.RedirectUri}");
-        }
-
+        sb.AppendLine($"redirect_uri={NavManager.Uri.RemoveQueryParameters()}");
+        
         sb.Append($"udap={UdapConstants.UdapVersionsSupportedValue}");
         TokenRequest4 = sb.ToString();
         

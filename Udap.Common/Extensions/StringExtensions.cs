@@ -90,4 +90,13 @@ public static class StringExtensions
 
         return community!.Split("=").LastOrDefault();
     }
+
+    [DebuggerStepThrough]
+    public static string RemoveQueryParameters(this string url)
+    {
+        var uri = new Uri(url);
+        var path = $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{uri.AbsolutePath}";
+
+        return path;
+    }
 }

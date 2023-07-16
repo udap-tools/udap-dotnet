@@ -9,6 +9,8 @@
 
 #endregion
 
+using Udap.Model.Registration;
+
 namespace UdapEd.Shared.Model;
 
 public class ClientRegistrations
@@ -22,14 +24,14 @@ public class ClientRegistrations
 
     public Dictionary<string, ClientRegistration> Registrations { get; set; } = new();
 
-    public void SetRegistration(RegistrationDocument? resultModelResult, Oauth2FlowEnum oauth2Flow, string resourceServer)
+    public void SetRegistration(string clientId, UdapDynamicClientRegistrationDocument? resultModelResult, Oauth2FlowEnum oauth2Flow, string resourceServer)
     {
-        if (resultModelResult is { ClientId: not null, Issuer: not null, Audience: not null })
+        if (resultModelResult is { Issuer: not null, Audience: not null })
         {
-            Registrations[resultModelResult.ClientId] = new ClientRegistration
+            Registrations[clientId] = new ClientRegistration
             {
-                ClientId = resultModelResult.ClientId,
-                GrantType = resultModelResult.GrantTypes.FirstOrDefault(),
+                ClientId = clientId,
+                GrantType = resultModelResult.GrantTypes?.FirstOrDefault(),
                 SubjAltName = resultModelResult.Issuer,
                 UserFlowSelected = oauth2Flow.ToString(),
                 AuthServer = resultModelResult.Audience,
@@ -37,6 +39,28 @@ public class ClientRegistrations
                 RedirectUri = resultModelResult.RedirectUris,
                 Scope = resultModelResult.Scope
             };
+
+            CleanUpRegistration(Registrations[clientId]);
+        }
+    }
+
+    private void CleanUpRegistration(ClientRegistration registration)
+    {
+        var clientId = Registrations.Where(r =>
+            r.Value.SubjAltName == registration.SubjAltName &&
+            r.Value.AuthServer == registration.AuthServer &&
+            r.Value.ResourceServer == registration.ResourceServer &&
+            r.Value.UserFlowSelected == registration.UserFlowSelected &&
+            r.Value.ClientId != registration.ClientId)
+            .Select(r => r.Key)
+            .ToList();
+
+        if (clientId.Any())
+        {
+            foreach (var id in clientId)
+            {
+                Registrations.Remove(id);
+            }
         }
     }
 

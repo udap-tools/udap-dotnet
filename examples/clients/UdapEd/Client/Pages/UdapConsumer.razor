@@ -22,7 +22,7 @@
     Enum.TryParse(registration.UserFlowSelected, out Oauth2FlowEnum flow);
     AppState.SetProperty(this, nameof(AppState.Oauth2Flow), flow, true, false);
     AppState.ClientRegistrations.SelectedRegistration = registration;
-    AppState.SetProperty(this, nameof(AppState.ClientRegistrations), AppState.ClientRegistrations.SelectedRegistration, true, true);
+    AppState.SetProperty(this, nameof(AppState.ClientRegistrations), AppState.ClientRegistrations, true, true);
 }" />
                             </MudItem>
 

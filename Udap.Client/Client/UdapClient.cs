@@ -284,6 +284,8 @@ namespace Udap.Client.Client
                 {
                     UdapServerMetaData = disco.Json.Deserialize<UdapMetadata>();
 
+                    _logger.LogDebug(UdapServerMetaData?.SerializeToJson());
+
                     if (!await ValidateJwtToken(UdapServerMetaData!, baseUrl))
                     {
                         throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
@@ -340,6 +342,11 @@ namespace Udap.Client.Client
         private async Task<bool> ValidateJwtToken(UdapMetadata udapServerMetaData, string baseUrl)
         {
             var tokenHandler = new JsonWebTokenHandler();
+
+            if (udapServerMetaData.SignedMetadata == null)
+            {
+               NotifyTokenError($"SignedMetadata is missing at {baseUrl}");
+            }
             var jwt = tokenHandler.ReadJsonWebToken(udapServerMetaData.SignedMetadata);
             _publicCertificate = jwt?.GetPublicCertificate();
 

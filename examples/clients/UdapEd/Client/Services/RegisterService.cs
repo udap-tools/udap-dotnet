@@ -180,9 +180,9 @@ public class RegisterService
         return null;
     }
 
-    public string GetScopesForAuthorizationCodeB2B(List<string>? scopes, bool tieredOauth = false)
+    public string GetScopesForAuthorizationCodeB2B(ICollection<string>? scopes, bool tieredOauth = false)
     {
-        var enrichScopes = scopes ?? new List<string>();
+        var enrichScopes = scopes == null ? new List<string>() : scopes.ToList();
 
         if (tieredOauth)
         {
@@ -203,9 +203,9 @@ public class RegisterService
         return "openid";
     }
 
-    public string GetScopesForAuthorizationCodeConsumer(List<string>? scopes, bool tieredOauth = false)
+    public string GetScopesForAuthorizationCodeConsumer(ICollection<string>? scopes, bool tieredOauth = false)
     {
-        var enrichScopes = scopes ?? new List<string>();
+        var enrichScopes = scopes == null ? new List<string>() : scopes.ToList();
 
         if (tieredOauth)
         {

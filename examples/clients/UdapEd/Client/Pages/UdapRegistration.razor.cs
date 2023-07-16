@@ -13,6 +13,7 @@ using System.Text.Json.Nodes;
 using Hl7.Fhir.Rest;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using MudBlazor;
 using Udap.Model;
 using Udap.Model.Registration;
@@ -21,6 +22,7 @@ using UdapEd.Client.Shared;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Registration;
+using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 
 namespace UdapEd.Client.Pages;
 
@@ -36,6 +38,8 @@ public partial class UdapRegistration
     [Inject] RegisterService RegisterService { get; set; } = null!;
 
     [Inject] NavigationManager NavigationManager { get; set; } = null!;
+
+    [Inject] private IJSRuntime JsRuntime { get; set; } = null!;
 
     private string RawSoftwareStatementError { get; set; } = string.Empty;
 
@@ -124,9 +128,9 @@ public partial class UdapRegistration
     {
         try
         {
-            var statement = JsonSerializer
+            _udapDcrDocument = JsonSerializer
                 .Deserialize<UdapDynamicClientRegistrationDocument>(_beforeEncodingStatement);
-            var beforeEncodingScope = statement?.Scope;
+            var beforeEncodingScope = _udapDcrDocument?.Scope;
 
             var rawStatement = new RawSoftwareStatementAndHeader
             {
@@ -180,6 +184,8 @@ public partial class UdapRegistration
     private string? _requestBody;
     private bool _missingScope;
     private bool _cancelRegistration;
+    private UdapDynamicClientRegistrationDocument? _udapDcrDocument;
+    private string _localRegisteredClients = string.Empty;
 
     private string RequestBody
     {
@@ -219,12 +225,12 @@ public partial class UdapRegistration
         else if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
         {
             await BuildRawSoftwareStatementForAuthorizationCode(
-                RegisterService.GetScopesForAuthorizationCodeB2B(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported.ToList(), TieredOauth));
+                RegisterService.GetScopesForAuthorizationCodeB2B(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported, TieredOauth));
         }
         else
         {
             await BuildRawSoftwareStatementForAuthorizationCode(
-                RegisterService.GetScopesForAuthorizationCodeConsumer(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported.ToList(), TieredOauth));
+                RegisterService.GetScopesForAuthorizationCodeConsumer(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported, TieredOauth));
         }
     }
     private async Task BuildRawCancelSoftwareStatement()
@@ -381,9 +387,15 @@ public partial class UdapRegistration
                 WriteIndented = true,
                 
             });
+
+        if (jsonStatement != null)
+        {
+            _udapDcrDocument = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(jsonStatement);
+        }
         
         SoftwareStatementBeforeEncodingHeader = jsonHeader ?? string.Empty;
         SoftwareStatementBeforeEncodingSoftwareStatement = jsonStatement ?? string.Empty;
+        
     }
 
     private async Task ResetSoftwareStatement()
@@ -476,7 +488,8 @@ public partial class UdapRegistration
             }
             else if (AppState.BaseUrl != null)
             {
-                AppState.ClientRegistrations?.SetRegistration(resultModel.Result, Oauth2Flow, AppState.BaseUrl);
+                AppState.ClientRegistrations?.SetRegistration(resultModel.Result?.ClientId, _udapDcrDocument, Oauth2Flow, AppState.BaseUrl);
+                await AppState.SetPropertyAsync(this, nameof(AppState.ClientRegistrations), AppState.ClientRegistrations);
             }
 
             await AppState.SetPropertyAsync(this, nameof(AppState.RegistrationDocument), resultModel.Result);
@@ -507,8 +520,38 @@ public partial class UdapRegistration
         return base.OnAfterRenderAsync(firstRender);
     }
 
-    private void ResetLocalRegisteredClients()
+    private async Task ResetLocalRegisteredClients()
     {
-        AppState.SetProperty(this, nameof(AppState.ClientRegistrations), null);
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Would you like to remove all local registered clients?");
+        if (!confirmed)
+        {
+            return;
+        }
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientRegistrations), null);
+    }
+
+    private async Task SaveLocalRegisteredClients()
+    {
+        bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "Would you like to update registered clients?");
+        if (!confirmed)
+        {
+            return;
+        }
+        var localRegisteredClients = JsonSerializer.Deserialize<ClientRegistrations>(_localRegisteredClients);
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientRegistrations), localRegisteredClients);
+    }
+
+    private string LocalRegisteredClients
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_localRegisteredClients))
+            {
+                _localRegisteredClients = AppState.ClientRegistrations.AsJson();
+            }
+
+            return _localRegisteredClients;
+        }
+        set => _localRegisteredClients = value;
     }
 }

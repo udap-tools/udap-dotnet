@@ -264,7 +264,20 @@ public class Index : PageModel
                     return (returnUrl, true);
                 }
 
-                return (returnUrl, false);
+                var uri = new Uri(returnUrl, UriKind.Relative);
+                var uriParts = uri.OriginalString.Split('?');
+
+                if (uriParts.Length != 2)
+                {
+                    throw new Exception("invalid return URL");
+                }
+                
+
+                var queryParams = QueryHelpers.ParseQuery(HttpUtility.UrlDecode(uriParts[1]));
+                queryParams.Remove("idp");
+                var newReturnUrl = QueryHelpers.AddQueryString(uriParts[0], queryParams.ToDictionary(x => x.Key, x => x.Value.ToString())!);
+
+                return ($"{newReturnUrl}&idp={idpBaseUrl}", false);
             }
 
             return ($"{returnUrl}&idp={idpBaseUrl}", false);

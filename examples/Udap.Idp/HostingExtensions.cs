@@ -209,6 +209,16 @@ internal static class HostingExtensions
                 options.CallbackPath = "/signin-oktaforudap";
                 options.IdPBaseUrl = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7";
                 
+            })
+            .AddTieredOAuth("HealthToGo", "UDAP Tiered OAuth HealthToGo", options =>
+            {
+                options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
+                options.AuthorizationEndpoint = "https://stage.healthtogo.me:8181/oauth/stage/authz";
+                //options.TokenEndpoint = "Get from UDAP metadata
+                options.TokenEndpoint = "https://stage.healthtogo.me:8181/oauth/stage/token";
+                options.CallbackPath = "/signin-healthtogo";
+                options.IdPBaseUrl = "https://stage.healthtogo.me:8181/oauth/stage";
             });
         
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();

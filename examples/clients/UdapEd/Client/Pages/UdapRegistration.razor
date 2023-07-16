@@ -30,7 +30,17 @@
                         ButtonType="ButtonType.Button"
                         Variant="Variant.Filled"
                         @onclick="ResetLocalRegisteredClients">Reset Local Registered Clients</MudButton>
-            <pre>@AppState.ClientRegistrations.AsJson()</pre>
+                    <MudButton Color="Color.Primary"
+                               ButtonType="ButtonType.Button"
+                               Variant="Variant.Filled"
+                    @onclick="SaveLocalRegisteredClients">Save changes</MudButton>
+             
+            <InputTextArea id="ClientRegisrations"
+                           Class="pre"
+                                   rows="@(LocalRegisteredClients.Count(s => s == '\n'))"
+                    @bind-Value="LocalRegisteredClients" />
+            
+
         </MudTabPanel>
     </MudTabs>
 

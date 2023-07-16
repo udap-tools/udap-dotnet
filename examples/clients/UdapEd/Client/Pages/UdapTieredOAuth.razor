@@ -18,7 +18,7 @@
                         <ClientIdSelection ClientRegistrations="@AppState.ClientRegistrations?.Registrations.Where(r => r.Value.UserFlowSelected != "client_credentials").ToImmutableDictionary()"
                                            SelectedRegistration="@AppState.ClientRegistrations?.SelectedRegistration"
                                            TieredOauth="true"
-                                           IdPBaseUrl="@AppState.ClientRegistrations.SelectedRegistration.IdPBaseUrl"
+                                           IdPBaseUrl="@AppState.ClientRegistrations?.SelectedRegistration?.IdPBaseUrl"
                                            IdPBaseUrlSelected="(baseUrl) => 
 {
     if( AppState.ClientRegistrations?.SelectedRegistration != null)
@@ -30,10 +30,11 @@
 }"
                                            ClientIdSelected="(registration) =>
 {
+
     Enum.TryParse(registration.UserFlowSelected, out Oauth2FlowEnum flow);
     AppState.SetProperty(this, nameof(AppState.Oauth2Flow), flow, true, false);
     AppState.ClientRegistrations.SelectedRegistration = registration;
-    AppState.SetProperty(this, nameof(AppState.ClientRegistrations), AppState.ClientRegistrations.SelectedRegistration);
+    AppState.SetProperty(this, nameof(AppState.ClientRegistrations), AppState.ClientRegistrations);
 }" />
                     </MudItem>
 

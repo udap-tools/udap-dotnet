@@ -744,30 +744,54 @@ namespace Udap.PKI.Generator
         }
 
 
-        [Fact(Skip = "Enabled on desktop when needed.")]
+        [Fact]//(Skip = "Enabled on desktop when needed.")]
         public void MakeIdentityProviderCertificates()
         {
             using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
             using var subCA = new X509Certificate2($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx",
                 "udap-test");
 
+
+
             //
-            // Expired certificate
+            // Identity Provider 1, server signing cert
             //
             BuildClientCertificate(
                 subCA,
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
-                "CN=IdP Server, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                new List<string> { "https://idp.securedcontrols.net", "https://localhost:5055" },
-                $"{SurefhirlabsUdapIssued}/idp.securedcontrols.net.client",
+                "CN=IdP1 Server, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                new List<string> { "https://idp1.securedcontrols.net", "https://localhost:5055" },
+                $"{SurefhirlabsUdapIssued}/idp1.securedcontrols.net.client",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
             );
 
-            File.Copy($"{SurefhirlabsUdapIssued}/idp.securedcontrols.net.client.pfx",
-                $"{BaseDir}/../../examples/Udap.Identity.Provider/CertStore/issued/idp.securedcontrols.net.client.pfx",
+            File.Copy($"{SurefhirlabsUdapIssued}/idp1.securedcontrols.net.client.pfx",
+                $"{BaseDir}/../../examples/Udap.Identity.Provider/CertStore/issued/idp1.securedcontrols.net.server.pfx",
                 true);
+
+            //
+            // Identity Provider 2, server signing cert
+            //
+            BuildClientCertificate(
+                subCA,
+                rootCA,
+                subCA.GetRSAPrivateKey()!,
+                "CN=IdP2 Server, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                new List<string> { "https://idp2.securedcontrols.net", "https://localhost:5057" },
+                $"{SurefhirlabsUdapIssued}/idp2.securedcontrols.net.client",
+                SureFhirLabsIntermediateCrl,
+                SureFhirLabsIntermediatePublicCertHosted
+            );
+
+            File.Copy($"{SurefhirlabsUdapIssued}/idp2.securedcontrols.net.client.pfx",
+                $"{BaseDir}/../../examples/Udap.Identity.Provider.2/CertStore/issued/idp2.securedcontrols.net.server.pfx",
+                true);
+
+
+
+
         }
 
             //

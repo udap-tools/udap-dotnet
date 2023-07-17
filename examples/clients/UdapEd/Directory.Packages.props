@@ -13,7 +13,7 @@
     <Description>UDAP Learning tool is a part of the UDAP reference implementation for .NET.</Description>
     <TAG_NAME_ENV Condition="'$(TAG_NAME_ENV)' == ''">0.2.0.0</TAG_NAME_ENV>
     <VersionPrefix>$(TAG_NAME_ENV)</VersionPrefix>
-    <UdapDotNetPackageVersion>0.1.*</UdapDotNetPackageVersion>
+    <UdapDotNetPackageVersion>0.2.*</UdapDotNetPackageVersion>
   </PropertyGroup>
   <ItemGroup>
   </ItemGroup>

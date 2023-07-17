@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -30,12 +30,10 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <!-- <PackageReference Include="Udap.Client" Version="$(UdapDotNetPackageVersion)" /> -->
-    <PackageReference Include="Udap.Common" Version="$(UdapDotNetPackageVersion)" />
+    <PackageReference Include="Udap.Common" Version="0.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
-    <!-- <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" /> -->
     <ProjectReference Include="..\..\..\..\Udap.Common\Udap.Common.csproj" />
   </ItemGroup>
 

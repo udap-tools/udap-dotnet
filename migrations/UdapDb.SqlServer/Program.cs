@@ -64,6 +64,20 @@ else if (connStrName.Equals("gcp_db", StringComparison.OrdinalIgnoreCase))
         "../../../../../_tests/Udap.PKI.Generator/certstores",
         Log.Logger);
 }
+else if (connStrName.Equals("gcp_db_Idp1", StringComparison.OrdinalIgnoreCase))
+{
+    await Seed_GCP_Idp1.EnsureSeedData(
+        connectionString,
+        "../../../../../_tests/Udap.PKI.Generator/certstores",
+        Log.Logger);
+}
+else if (connStrName.Equals("gcp_db_Idp2", StringComparison.OrdinalIgnoreCase))
+{
+    await Seed_GCP_Idp2.EnsureSeedData(
+        connectionString,
+        "../../../../../_tests/Udap.PKI.Generator/certstores",
+        Log.Logger);
+}
 
 // Configure the HTTP request pipeline.
 

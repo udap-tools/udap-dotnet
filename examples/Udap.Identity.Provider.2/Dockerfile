@@ -9,19 +9,19 @@ FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
 WORKDIR /src
 
 COPY ["nuget.config", "."]
-COPY ["Udap.Identity.Provider.csproj", "."]
-RUN dotnet restore "Udap.Identity.Provider.csproj"
+COPY ["Udap.Identity.Provider.2.csproj", "."]
+RUN dotnet restore "Udap.Identity.Provider.2.csproj"
 COPY . . 
 
 ENV GCPDeploy=true
-RUN dotnet build "Udap.Identity.Provider.csproj" -c Release -o /app/build
+RUN dotnet build "Udap.Identity.Provider.2.csproj" -c Release -o /app/build
 
 FROM build AS publish 
-RUN dotnet publish "Udap.Identity.Provider.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "Udap.Identity.Provider.2.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
 ENV ASPNETCORE_URLS=http://*:8080
 ENV GCPDeploy=true
-ENTRYPOINT ["dotnet", "Udap.Identity.Provider.dll"]
+ENTRYPOINT ["dotnet", "Udap.Identity.Provider.2.dll"]

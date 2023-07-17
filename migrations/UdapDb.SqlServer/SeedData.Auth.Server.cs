@@ -191,7 +191,7 @@ public static class SeedDataAuthServer
 
 
         //
-        // Anchor surefhirlabs_community
+        // Anchor for Community udap://stage.healthtogo.me/
         //
         var emrDirectTestCA = new X509Certificate2(
             Path.Combine(assemblyPath!, certStoreBasePath, "EmrDirect/EMRDirectTestCA.crt"));

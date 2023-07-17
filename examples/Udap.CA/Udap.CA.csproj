@@ -33,7 +33,7 @@
 
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Common" Version="0.1.*" />
+    <PackageReference Include="Udap.Common" Version="0.2.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">

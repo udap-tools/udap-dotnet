@@ -30,13 +30,32 @@
       "dotnetRunMessages": true
     },
 
-    "GCPMigrate": {
+    "GCPMigrate Auth Server": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ConnStrName": "gcp_db"
       },
       "dotnetRunMessages": true
+    },
+
+    "GCPMigrate IdP1 Server": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "gcp_db_Idp1"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "GCPMigrate IdP2 Server": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "gcp_db_Idp2"
+      },
+      "dotnetRunMessages": true
     }
+
   }
 }

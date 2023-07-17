@@ -36,19 +36,15 @@ internal static class HostingExtensions
         
         string connectionString;
 
-        var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
+        var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db_Idp2" : "DefaultConnection";
 
         //Ugly but works so far.
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
         {
-            // Log.Logger.Information("Loading connection string from gcp_db");
-            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
-            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
-
             Log.Logger.Information("Creating client");
             var client = SecretManagerServiceClient.Create();
 
-            const string secretResource = "projects/288013792534/secrets/gcp_db/versions/latest";
+            const string secretResource = "projects/288013792534/secrets/gcp_db_Idp2/versions/latest";
 
             Log.Logger.Information("Requesting {secretResource");
             // Call the API.
@@ -140,7 +136,8 @@ internal static class HostingExtensions
         // Special IPrivateCertificateStore for Google Cloud Deploy
         // 
         //
-        builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
+        // builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
+        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
         builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
             new IssuedCertificateStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
@@ -229,31 +226,27 @@ internal static class HostingExtensions
     }
 
 
-    static IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webApplicationBuilder)
-    {
-        //Ugly but works so far.
-        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
-        {
-            // Log.Logger.Information("Loading connection string from gcp_db");
-            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
-            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
-
-            Log.Logger.Information("Creating client");
-            var client = SecretManagerServiceClient.Create();
-
-            var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest/versions/latest";
-
-            Log.Logger.Information("Requesting {secretResource");
-            // Call the API.
-            var result = client.AccessSecretVersion(secretResource);
-
-            // Convert the payload to a string. Payloads are bytes by default.
-            var stream = new MemoryStream(result.Payload.Data.ToByteArray());
-
-
-            webApplicationBuilder.Configuration.AddJsonStream(stream);
-        }
-
-        return webApplicationBuilder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST);
-    }
+    // static IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webApplicationBuilder)
+    // {
+    //     //Ugly but works so far.
+    //     if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
+    //     {
+    //         Log.Logger.Information("Creating client");
+    //         var client = SecretManagerServiceClient.Create();
+    //
+    //         var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest/versions/latest";
+    //
+    //         Log.Logger.Information("Requesting {secretResource");
+    //         // Call the API.
+    //         var result = client.AccessSecretVersion(secretResource);
+    //
+    //         // Convert the payload to a string. Payloads are bytes by default.
+    //         var stream = new MemoryStream(result.Payload.Data.ToByteArray());
+    //
+    //
+    //         webApplicationBuilder.Configuration.AddJsonStream(stream);
+    //     }
+    //
+    //     return webApplicationBuilder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST);
+    // }
 }

@@ -36,19 +36,15 @@ internal static class HostingExtensions
         
         string connectionString;
 
-        var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
+        var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db_Idp1" : "DefaultConnection";
 
         //Ugly but works so far.
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
         {
-            // Log.Logger.Information("Loading connection string from gcp_db");
-            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
-            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
-
             Log.Logger.Information("Creating client");
             var client = SecretManagerServiceClient.Create();
 
-            const string secretResource = "projects/288013792534/secrets/gcp_db/versions/latest";
+            const string secretResource = "projects/288013792534/secrets/gcp_db_Idp1/versions/latest";
 
             Log.Logger.Information("Requesting {secretResource");
             // Call the API.
@@ -234,14 +230,10 @@ internal static class HostingExtensions
         //Ugly but works so far.
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
         {
-            // Log.Logger.Information("Loading connection string from gcp_db");
-            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
-            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
-
             Log.Logger.Information("Creating client");
             var client = SecretManagerServiceClient.Create();
 
-            var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest/versions/latest";
+            var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest-IdP1/versions/latest";
 
             Log.Logger.Information("Requesting {secretResource");
             // Call the API.

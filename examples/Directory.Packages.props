@@ -28,6 +28,6 @@
     <PackageVersion Include="Serilog.Extensions.Logging" Version="[6.1.0,7.0.0]" />
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <!-- <PackageVersion Include="Udap.Metadata.Server" Version="$(UdapDotNetPackageVersion)" /> -->
-    <!-- <PackageVersion Include="Udap.Server" Version="0.1.*" /> -->
+    <!-- <PackageVersion Include="Udap.Server" Version="0.2.*" /> -->
   </ItemGroup>
 </Project>

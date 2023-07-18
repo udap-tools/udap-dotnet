@@ -794,7 +794,7 @@ namespace Udap.PKI.Generator
 
         }
 
-            //
+        //
             // Run this in Linux.
             //
             // Todo: enable to run in Windows.  
@@ -806,7 +806,7 @@ namespace Udap.PKI.Generator
             // https://stackoverflow.com/a/57330499/6115838
             // Also see this Github issue comment: https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
             //
-            [Fact (Skip = "Enabled on desktop when needed.  Actually I performed the work around in SignedSoftwareStatementBuilder<T>.BuildECDSA")]
+        [Fact (Skip = "Enabled on desktop when needed.  Actually I performed the work around in SignedSoftwareStatementBuilder<T>.BuildECDSA")]
         public void GenerateCrlForFailTests()
         {
             var subCA = new X509Certificate2($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test", X509KeyStorageFlags.Exportable);
@@ -1320,12 +1320,12 @@ namespace Udap.PKI.Generator
             //
             // Distribute to Udap.Auth.Server project
             //
-            File.Copy($"{communityStorePath}/{anchorName}.cer",
-                $"{BaseDir}/../../examples/Udap.Idp/CertStore/anchors/{anchorName}.cer",
-                true);
-            File.Copy($"{LocalhostUdapIntermediates}/{intermediateName}.cer",
-                $"{BaseDir}/../../examples/Udap.Idp/CertStore/intermediates/{intermediateName}.cer",
-                true);
+            // File.Copy($"{communityStorePath}/{anchorName}.cer",
+            //     $"{BaseDir}/../../examples/Udap.Idp/CertStore/anchors/{anchorName}.cer",
+            //     true);
+            // File.Copy($"{LocalhostUdapIntermediates}/{intermediateName}.cer",
+            //     $"{BaseDir}/../../examples/Udap.Idp/CertStore/intermediates/{intermediateName}.cer",
+            //     true);
 
             File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",
                 $"{BaseDir}/../../examples/Udap.Idp/CertStore/issued/{issuedName}.pfx",

@@ -482,6 +482,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             await _certificateStore.Resolve();
 
 
+
+            // What does this code even accomplish?  Shouldn't it look for more than the first community?
+            // Maybe I am still tied to one community.  Lots more work here.
+
             var communityName = _certificateStore.IssuedCertificates.First().Community;
             var registrationStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
             
@@ -496,6 +500,13 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                 //Todo: return strategy?
                 return;
             }
+
+
+
+
+
+
+
 
             //TODO: RegisterClient should be typed to the two builders
             // UdapDcrBuilderForAuthorizationCode or UdapDcrBuilderForClientCredentials

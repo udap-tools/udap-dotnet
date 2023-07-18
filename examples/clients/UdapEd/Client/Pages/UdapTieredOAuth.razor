@@ -57,7 +57,6 @@
                            Color="Color.Primary"
                            ButtonType="ButtonType.Button"
                            Variant="Variant.Filled"
-                           Disabled="@(AppState.RegistrationDocument == null)"
                            OnClick="BuildAuthCodeRequest">Build Access Code Request</MudButton>
             </MudItem>
         </MudGrid>
@@ -102,7 +101,6 @@
                    Color="Color.Primary"
                    Variant="Variant.Filled"
                    ButtonType="ButtonType.Button"
-                   Disabled="@(AppState.RegistrationDocument == null)"
                    OnClick="GetAccessCode">View Intermediate Redirect</MudButton>
     </MudCardActions>
     <MudCardContent>
@@ -189,7 +187,6 @@
                 <MudButton ButtonType="ButtonType.Button"
                            Color="Color.Primary"
                            Variant="Variant.Filled"
-                           Disabled="@(AppState.RegistrationDocument == null)"
                            OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
             </MudItem>
             <MudItem md="3" sm="6" xs="12">
@@ -248,7 +245,6 @@
                Color="Color.Primary"
                ButtonType="ButtonType.Button"
                Variant="Variant.Filled"
-               Disabled="@(AppState.RegistrationDocument == null)"
                OnClick="GetAccessToken">Get Access Token</MudButton>
 
     <MudGrid Spacing="1" Class="mt-8">

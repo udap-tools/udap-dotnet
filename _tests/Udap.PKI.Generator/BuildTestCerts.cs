@@ -767,7 +767,7 @@ namespace Udap.PKI.Generator
                 SureFhirLabsIntermediatePublicCertHosted
             );
 
-            File.Copy($"{SurefhirlabsUdapIssued}/idp1.securedcontrols.net.client.pfx",
+            File.Copy($"{SurefhirlabsUdapIssued}/idp1.securedcontrols.net.server.pfx",
                 $"{BaseDir}/../../examples/Udap.Identity.Provider/CertStore/issued/idp1.securedcontrols.net.server.pfx",
                 true);
 
@@ -780,12 +780,12 @@ namespace Udap.PKI.Generator
                 subCA.GetRSAPrivateKey()!,
                 "CN=IdP2 Server, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://idp2.securedcontrols.net", "https://localhost:5057" },
-                $"{SurefhirlabsUdapIssued}/idp2.securedcontrols.net.client",
+                $"{SurefhirlabsUdapIssued}/idp2.securedcontrols.net.server",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
             );
 
-            File.Copy($"{SurefhirlabsUdapIssued}/idp2.securedcontrols.net.client.pfx",
+            File.Copy($"{SurefhirlabsUdapIssued}/idp2.securedcontrols.net.server.pfx",
                 $"{BaseDir}/../../examples/Udap.Identity.Provider.2/CertStore/issued/idp2.securedcontrols.net.server.pfx",
                 true);
 

@@ -159,8 +159,44 @@ internal static class HostingExtensions
         // TODO: UdapFileCertStoreManifest doesn't have a good abstraction story for transitioning to other storage 
         builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
         
-        
-        builder.Services.AddAuthentication()
+        //TODO: Hack for connectionathon for the time being
+
+        if (Environment.GetEnvironmentVariable("GCPDeploy") == "true")
+        {
+            builder.Services.AddAuthentication()
+           //
+           // By convention the scheme name should match the community name in UdapFileCertStoreManifest
+           // to allow discovery of the IdPBaseUrl
+           //
+           .AddTieredOAuth(options =>
+           {
+               options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+               options.AuthorizationEndpoint = "https://idp1.securedcontrols.net/connect/authorize";
+               options.TokenEndpoint = "https://idp1.securedcontrols.net/connect/token";
+               options.IdPBaseUrl = "https://idp1.securedcontrols.net";
+           })
+           .AddTieredOAuth("TieredOAuthProvider2", "UDAP Tiered OAuth (DOTNET-Provider2)", options =>
+           {
+               options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+               options.AuthorizationEndpoint = "https://idp2.securedcontrols.net/connect/authorize";
+               options.TokenEndpoint = "https://idp2.securedcontrols.net/connect/token";
+               options.CallbackPath = "/signin-tieredoauthprovider2";
+               options.IdPBaseUrl = "https://idp2.securedcontrols.net";
+           })
+           .AddTieredOAuth("OktaForUDAP", "UDAP Tiered OAuth Okta", options =>
+           {
+               options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+               options.AuthorizationEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/authorize";
+               options.TokenEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/token";
+               options.CallbackPath = "/signin-oktaforudap";
+               options.IdPBaseUrl = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7";
+
+           });
+
+        }
+        else
+        {
+            builder.Services.AddAuthentication()
             //
             // By convention the scheme name should match the community name in UdapFileCertStoreManifest
             // to allow discovery of the IdPBaseUrl
@@ -208,8 +244,10 @@ internal static class HostingExtensions
                 options.TokenEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/token";
                 options.CallbackPath = "/signin-oktaforudap";
                 options.IdPBaseUrl = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7";
-                
+
             });
+        }
+        
         
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 
@@ -327,7 +365,7 @@ internal static class HostingExtensions
             Log.Logger.Information("Creating client");
             var client = SecretManagerServiceClient.Create();
 
-            var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest/versions/latest";
+            var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest-AuthServer/versions/latest";
 
             Log.Logger.Information("Requesting {secretResource");
             // Call the API.

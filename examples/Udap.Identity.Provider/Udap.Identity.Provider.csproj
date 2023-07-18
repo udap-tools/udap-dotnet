@@ -20,7 +20,7 @@
   <ItemGroup>
     <PackageReference Include="Duende.IdentityServer" Version="6.2.3" />
     <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="6.2.3" />
-    <PackageReference Include="Google.Cloud.SecretManager.V1"  Version="2.1.0" />
+    <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.1.0" />
     <PackageReference Include="Google.Cloud.Storage.V1" Version="4.6.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.5">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -56,6 +56,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="CertStore\issued\idp1.securedcontrols.net.server.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

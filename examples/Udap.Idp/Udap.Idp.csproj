@@ -65,79 +65,16 @@
   </ItemGroup>
   
   <ItemGroup>
-    <None Update="CertStore\anchors\caLocalhostCert.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\anchors\caLocalhostCert2.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\anchors\caLocalhostCert3.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\anchors\caLocalhostCert4.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\anchors\caLocalhostCert5.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\anchors\caLocalhostCert6.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\anchors\caWeatherApiLocalhostCert.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\anchors\caWeatherApiLocalhostCert2.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\intermediates\intermediateLocalhostCert.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\intermediates\intermediateLocalhostCert2.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\intermediates\intermediateLocalhostCert3.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\intermediates\intermediateLocalhostCert4.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\intermediates\intermediateLocalhostCert5.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\intermediates\intermediateLocalhostCert6.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\intermediates\intermediateWeatherApiLocalhostCert.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\intermediates\intermediateWeatherApiLocalhostCert2.cer">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert2.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert3.pfx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert4.pfx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert5.pfx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert6_ECDSA.pfx">
+    <None Update="CertStore\issued\idp2.securedcontrols.net.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\udap-sandbox-surescripts.p12">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\issued\weatherApiClientLocalhostCert1.pfx">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="CertStore\issued\weatherApiClientLocalhostCert2.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="host.docker.internal.pfx">

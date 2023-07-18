@@ -226,11 +226,7 @@ public partial class UdapConsumer
         TokenRequest1 = "Loading ...";
         await Task.Delay(50);
 
-        if (AppState.RegistrationDocument == null)
-        {
-            return;
-        }
-
+        
         if (string.IsNullOrEmpty(AppState.ClientRegistrations?.SelectedRegistration?.ClientId))
         {
             TokenRequest1 = "Missing ClientId";

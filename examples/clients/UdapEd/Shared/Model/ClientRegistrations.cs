@@ -15,20 +15,17 @@ namespace UdapEd.Shared.Model;
 
 public class ClientRegistrations
 {
-    public ClientRegistrations()
-    {
-
-    }
+    private ClientRegistration? _clientRegistration;
 
     public ClientRegistration? SelectedRegistration { get; set; } 
 
-    public Dictionary<string, ClientRegistration> Registrations { get; set; } = new();
+    public Dictionary<string, ClientRegistration?> Registrations { get; set; } = new();
 
-    public void SetRegistration(string clientId, UdapDynamicClientRegistrationDocument? resultModelResult, Oauth2FlowEnum oauth2Flow, string resourceServer)
+    public ClientRegistration? SetRegistration(string clientId, UdapDynamicClientRegistrationDocument? resultModelResult, Oauth2FlowEnum oauth2Flow, string resourceServer)
     {
         if (resultModelResult is { Issuer: not null, Audience: not null })
         {
-            Registrations[clientId] = new ClientRegistration
+            _clientRegistration = new ClientRegistration
             {
                 ClientId = clientId,
                 GrantType = resultModelResult.GrantTypes?.FirstOrDefault(),
@@ -40,13 +37,19 @@ public class ClientRegistrations
                 Scope = resultModelResult.Scope
             };
 
-            CleanUpRegistration(Registrations[clientId]);
+            Registrations[clientId] = _clientRegistration;
+            CleanUpRegistration(_clientRegistration);
+
+            return _clientRegistration;
         }
+
+        return null;
     }
 
     private void CleanUpRegistration(ClientRegistration registration)
     {
         var clientId = Registrations.Where(r =>
+            r.Value != null &&
             r.Value.SubjAltName == registration.SubjAltName &&
             r.Value.AuthServer == registration.AuthServer &&
             r.Value.ResourceServer == registration.ResourceServer &&
@@ -69,6 +72,7 @@ public class ClientRegistrations
         if (resultModelResult != null)
         {
             var clients = Registrations.Where(r =>
+                    r.Value != null &&
                     resultModelResult.Issuer == r.Value.SubjAltName &&
                     resultModelResult.Audience == r.Value.AuthServer)
                 .ToList();

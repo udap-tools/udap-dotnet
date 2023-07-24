@@ -63,14 +63,14 @@
             @if (AppState.ClientCertificateInfo?.SubjectAltNames != null)
             {
                 <MudItem md="4" sm="6" xs="12">
-                    <MudSelect @bind-Value="_subjectAltName"
+                    <MudSelect @bind-Value="SubjectAltName"
                                Label="Select Subject Alt Name"
                                T="string"
                                Clearable="true"
                                AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
                                AdornmentColor="Color.Primary"
                                Variant="Variant.Outlined" 
-                               Error="_subjectAltName == null">
+                               Error="SubjectAltName == null">
 
                         @foreach (var item in AppState.ClientCertificateInfo.SubjectAltNames)
                         {

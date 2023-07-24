@@ -105,6 +105,14 @@
         }
     }
 
+    private static List<string> _idPBaseUrLs = new List<string>
+    {
+        "https://securefhir.zimt.work/udap-public",
+        "https://idp1.securedcontrols.net",
+        "https://idp2.securedcontrols.net"
+    };
+    
+
     public string Community { get; private set; }
 
     private OrderedDictionary? _baseUrls;
@@ -125,6 +133,26 @@
             return _baseUrls;
         }
         set => _baseUrls = value;
+    }
+
+    private OrderedDictionary? _idPDictionary;
+
+    public OrderedDictionary? IdPDictionary
+    {
+        get
+        {
+            if (_idPDictionary == null || !(_idPDictionary.Count > 0))
+            {
+                _idPDictionary = new OrderedDictionary();
+                foreach (var idPBaseUrL in _idPBaseUrLs)
+                {
+                    _idPDictionary.Add(idPBaseUrL, idPBaseUrL);
+                }
+            }
+
+            return _idPDictionary;
+        }
+        set => _idPDictionary = value;
     }
 
     private ClientStatus _status = new ClientStatus(false, "Missing");

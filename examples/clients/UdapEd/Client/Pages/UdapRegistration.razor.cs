@@ -7,14 +7,12 @@
 // */
 #endregion
 
-using System.Collections.ObjectModel;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Hl7.Fhir.Rest;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
-using MudBlazor;
 using Udap.Model;
 using Udap.Model.Registration;
 using UdapEd.Client.Services;
@@ -22,7 +20,6 @@ using UdapEd.Client.Shared;
 using UdapEd.Shared;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Registration;
-using static Microsoft.AspNetCore.Razor.Language.TagHelperMetadata;
 
 namespace UdapEd.Client.Pages;
 
@@ -114,10 +111,7 @@ public partial class UdapRegistration
             return jsonStatement ?? string.Empty;
         }
 
-        set
-        {
-            _beforeEncodingStatement = value;
-        }
+        set => _beforeEncodingStatement = value;
     }
 
     private const string VALID_STYLE = "pre udap-indent-1";
@@ -177,7 +171,7 @@ public partial class UdapRegistration
         set => AppState.SetProperty(this, nameof(AppState.Oauth2Flow), value);
     }
 
-    private string? _subjectAltName { get; set; }
+    private string? SubjectAltName { get; set; }
     private string _signingAlgorithm = UdapConstants.SupportedAlgorithm.RS256;
     public bool TieredOauth { get; set; }
     public string? IdP { get; set; }
@@ -254,16 +248,9 @@ public partial class UdapRegistration
     {
         try
         {
-            UdapDcrBuilderForClientCredentialsUnchecked dcrBuilder;
-
-            if (cancelRegistration)
-            {
-                dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked.Cancel();
-            }
-            else
-            {
-                dcrBuilder = UdapDcrBuilderForClientCredentialsUnchecked.Create();
-            }
+            var dcrBuilder = cancelRegistration ? 
+                UdapDcrBuilderForClientCredentialsUnchecked.Cancel() : 
+                UdapDcrBuilderForClientCredentialsUnchecked.Create();
 
             dcrBuilder.WithAudience(AppState.MetadataVerificationModel?.UdapServerMetaData?.RegistrationEndpoint)
                 .WithExpiration(TimeSpan.FromMinutes(5))
@@ -276,8 +263,8 @@ public partial class UdapRegistration
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithScope(RegisterService.GetScopesForClientCredentials(AppState.MetadataVerificationModel?.UdapServerMetaData?.ScopesSupported));
 
-            dcrBuilder.Document.Subject = _subjectAltName;
-            dcrBuilder.Document.Issuer = _subjectAltName;
+            dcrBuilder.Document.Subject = SubjectAltName;
+            dcrBuilder.Document.Issuer = SubjectAltName;
             
             var request = dcrBuilder.Build();
 
@@ -306,16 +293,9 @@ public partial class UdapRegistration
     {
         try
         {
-            UdapDcrBuilderForAuthorizationCodeUnchecked dcrBuilder;
-
-            if (cancelRegistration)
-            {
-                dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Cancel();
-            }
-            else
-            {
-                dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked.Create();
-            }
+            var dcrBuilder = cancelRegistration ? 
+                UdapDcrBuilderForAuthorizationCodeUnchecked.Cancel() : 
+                UdapDcrBuilderForAuthorizationCodeUnchecked.Create();
 
 
             var redirectUrl = Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b ?  "udapBusinessToBusiness" : "udapConsumer";
@@ -338,8 +318,8 @@ public partial class UdapRegistration
                 .WithRedirectUrls(redirectUrls)
                 .WithScope(scope);
 
-            dcrBuilder.Document.Subject = _subjectAltName;
-            dcrBuilder.Document.Issuer = _subjectAltName;
+            dcrBuilder.Document.Subject = SubjectAltName;
+            dcrBuilder.Document.Issuer = SubjectAltName;
 
             var request = dcrBuilder.Build();
 
@@ -355,12 +335,12 @@ public partial class UdapRegistration
                 statement.Scope = scope;
             }
 
-            AppState.SetProperty(this, nameof(AppState.SoftwareStatementBeforeEncoding), statement);
+            await AppState.SetPropertyAsync(this, nameof(AppState.SoftwareStatementBeforeEncoding), statement);
         }
         catch (Exception ex)
         {
             SetRawMessage(ex.Message);
-            ResetSoftwareStatement();
+            await ResetSoftwareStatement();
         }
     }
 
@@ -474,7 +454,7 @@ public partial class UdapRegistration
             return;
         }
 
-        if (resultModel.HttpStatusCode.IsSuccessful())
+        if (resultModel.HttpStatusCode.IsSuccessful() && resultModel.Result != null)
         {
             RegistrationResult = $"HTTP/{resultModel.Version} {(int)resultModel.HttpStatusCode} {resultModel.HttpStatusCode}" +
                                  $"{Environment.NewLine}{Environment.NewLine}"; 
@@ -486,9 +466,14 @@ public partial class UdapRegistration
             { // cancel registration
                 AppState.ClientRegistrations?.CancelRegistration(resultModel.Result);
             }
-            else if (AppState.BaseUrl != null)
+            else if (AppState is { BaseUrl: not null, ClientRegistrations: not null })
             {
-                AppState.ClientRegistrations?.SetRegistration(resultModel.Result?.ClientId, _udapDcrDocument, Oauth2Flow, AppState.BaseUrl);
+                if (resultModel.Result.ClientId != null)
+                {
+                    var registration = AppState.ClientRegistrations.SetRegistration(resultModel.Result.ClientId, _udapDcrDocument, Oauth2Flow, AppState.BaseUrl);
+                    AppState.ClientRegistrations.SelectedRegistration = registration;
+                }
+
                 await AppState.SetPropertyAsync(this, nameof(AppState.ClientRegistrations), AppState.ClientRegistrations);
             }
 
@@ -513,7 +498,7 @@ public partial class UdapRegistration
     {
         if (firstRender && AppState.ClientCertificateInfo?.SubjectAltNames != null && AppState.ClientCertificateInfo.SubjectAltNames.Any())
         {
-            _subjectAltName = AppState.ClientCertificateInfo?.SubjectAltNames.First();
+            SubjectAltName = AppState.ClientCertificateInfo?.SubjectAltNames.First();
             StateHasChanged();
         }
 

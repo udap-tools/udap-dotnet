@@ -210,9 +210,11 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithLogoUri(string logoUri)
+    public UdapDcrBuilderForAuthorizationCode WithLogoUri(string? logoUri)
     {
-        _document.LogoUri = new Uri(logoUri);
+        //TODO: Testing.  And better technique.
+        _ = new Uri(logoUri);
+        _document.LogoUri = logoUri;
         return this;
     }
 

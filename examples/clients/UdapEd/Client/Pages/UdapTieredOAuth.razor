@@ -7,7 +7,8 @@
 <MudGrid Class="mt-4">
     <MudItem xs="12" sm="12" md="12">
         <MudText Typo="Typo.h4">Tiered OAuth</MudText>
-                <MudText Typo="Typo.h6" Color="Color.Tertiary">Client selects a preferred OpenID Connect Identity Provider (IdP) service </MudText>
+        <MudText Typo="Typo.h6" Color="Color.Tertiary">Client selects a preferred OpenID Connect Identity Provider (IdP) service </MudText>
+        <MudLink Href="/udapDiscovery" Color="Color.Info"> [ @RequestUrl.GetWellKnownUdap(AppState.BaseUrl, AppState.Community) ]</MudLink>
     </MudItem>
     <MudItem xs="12" sm="12" md="12">
         <MudCard Class="pa-2 ma-2" Elevation="3">
@@ -240,22 +241,37 @@
     </MudCardContent>
 </MudCard>
   
-<MudPaper Class="pa-2 ma-2" Elevation="3">
-    <MudButton Class="mt-3"
-               Color="Color.Primary"
-               ButtonType="ButtonType.Button"
-               Variant="Variant.Filled"
-               OnClick="GetAccessToken">Get Access Token</MudButton>
+<MudCard Class="pa-2 ma-2" Elevation="3">
+    <MudCardActions>
+        <MudButton Class="mt-3"
+                   Color="Color.Primary"
+                   ButtonType="ButtonType.Button"
+                   Variant="Variant.Filled"
+                   OnClick="GetAccessToken">Get Access Token</MudButton>
+    </MudCardActions>
+    <MudCardContent>
+        <MudGrid Spacing="1">
+            <MudItem sm="6" xs="12">
+                <MudPaper Class="pa-4 ma-2" Elevation="3">
+                    <MudText Align="Align.Right" Color="Color.Tertiary">7.1 Success</MudText>
+                    <pre>@AccessToken</pre>
+                </MudPaper>
+            </MudItem>
+            <MudItem sm="6" xs="12">
+                <MudPaper Class="udap-analyzed">
+                    <MudText Align="Align.Right" Color="Color.Tertiary">TODO: Links to Identity IG</MudText>
+                           
+                    <IdentityViewer Title="<b>Decoded Identity Token::</b>"
+                                    IdentityToken="@AppState.AccessTokens?.IdentityToken" />
 
-    <MudGrid Spacing="1" Class="mt-8">
-        <MudItem xl="6" xs="12">
-            <MudPaper Class="pa-4 ma-2" Elevation="3">
-                <MudText Align="Align.Right" Color="Color.Tertiary">7.1 Success</MudText>
-                <pre>@AccessToken</pre>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+
+
+    </MudCardContent>
+</MudCard>
+
 </ChildContent>
 
 <ErrorContent Context="ex">

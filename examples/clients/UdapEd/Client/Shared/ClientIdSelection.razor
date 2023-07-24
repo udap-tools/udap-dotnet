@@ -1,4 +1,5 @@
-﻿
+﻿@using System.Runtime.CompilerServices
+
 
 <MudGrid Spacing="2" Justify="Justify.FlexEnd" Class="bottom:0;right:0">
     <MudItem lg="4" sm="12" md="12" xs="12">
@@ -24,26 +25,46 @@
     <MudItem lg="4" sm="6" md="6" xs="12">
         <MudTextField Label="Subject Alt Name" @bind-Value="SubjAltName" />
     </MudItem>
+    <MudItem lg="4" sm="12" md="12" xs="12">
+           
+    </MudItem>
     @if (TieredOauth)
     {
-        <MudItem xs="12">
-            <MudGrid Spacing="2" Justify="Justify.FlexStart" align-start>
+        <MudItem lg="4" sm="6" md="6" xs="12">
+            <MudTextField @bind-Value="IdPBaseUrl"
+                          Label="OpenID Connect IdP"
+                          @onblur="SelectIdPBaseUrl"
+                          AdornmentIcon="@Icons.Material.Outlined.Input"
+                          Adornment="@IdpAdornment"
+                          OnAdornmentClick="SelectKnownIdps"/>
+        </MudItem>
 
-                <MudItem lg="6" md="8" sm="10" xs="12">
-                    <MudTextField @bind-Value="IdPBaseUrl"
-                                  Label="OpenID Connect Identity Provider"
-                    @onblur="SelectIdPBaseUrl" />
-                </MudItem>
-                
-            </MudGrid>
+        <MudItem lg="4" sm="6" md="6" xs="12">
+            <MudTextField Label="Resource Server" @bind-Value="ResourceServer" />
         </MudItem>
     }
+    else
+    {
+        <MudItem lg="8" sm="12" md="12" xs="12">
+            <MudTextField Label="Resource Server" @bind-Value="ResourceServer" />
+        </MudItem>
+    }
+    
+    <MudSpacer></MudSpacer>
+
 </MudGrid>
 
 @code {
   
     private string? _clientId;
     private string? _idPBaseUrl;
+
+    private Adornment IdpAdornment
+    {
+        get => !string.IsNullOrEmpty(ClientId) ? Adornment.End : Adornment.None;
+    }
+
+    [Inject] IDialogService DialogService { get; set; } = null!;
 
     [Parameter]
     public string? ClientId
@@ -59,6 +80,7 @@
             {
                 GrantType = registration.GrantType;
                 SubjAltName = registration.SubjAltName;
+                ResourceServer = registration.ResourceServer;
                 ActivateRegistration(registration).GetAwaiter();
             }
         }
@@ -153,5 +175,15 @@
     public string? GrantType { get; set; }
 
     public string? SubjAltName { get; set; }
+    public string? ResourceServer { get; set; }
+
+    private async Task SelectKnownIdps()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<SelectIdP_Dialog>("Select a known IdPrd", options);
+        var result = await dialog.Result;
+        IdPBaseUrl = result.Data?.ToString() ?? "";
+        await SelectIdPBaseUrl();
+    }
 
 }

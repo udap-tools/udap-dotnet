@@ -280,8 +280,9 @@ public class RegisterController : Controller
             .WithScope(request.Scope ?? string.Empty)
             .WithResponseTypes(request.ResponseTypes)
             .WithRedirectUrls(request.RedirectUris)
+            .WithLogoUri(request.LogoUri ?? "https://udaped.fhirlabs.net/images/hl7/icon-fhir-32.png")//TODO Logo required
             .Build();
-    
+        
         var signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
                 .Create(clientCert, document)
@@ -401,14 +402,15 @@ public class RegisterController : Controller
         dcrBuilder.Document.Subject = document.Subject;
 
         dcrBuilder.WithAudience(document.Audience)
-                .WithExpiration(document.Expiration)
-                .WithJwtId(document.JwtId)
-                .WithClientName(document.ClientName!)
-                .WithContacts(document.Contacts)
-                .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-                .WithScope(document.Scope!)
-                .WithResponseTypes(document.ResponseTypes)
-                .WithRedirectUrls(document.RedirectUris);
+            .WithExpiration(document.Expiration)
+            .WithJwtId(document.JwtId)
+            .WithClientName(document.ClientName!)
+            .WithContacts(document.Contacts)
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope(document.Scope!)
+            .WithResponseTypes(document.ResponseTypes)
+            .WithRedirectUrls(document.RedirectUris)
+            .WithLogoUri(document.LogoUri); //TODO Logo required
 
         var signedSoftwareStatement = dcrBuilder.BuildSoftwareStatement(alg);
 

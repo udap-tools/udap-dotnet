@@ -74,7 +74,7 @@ public class UdapDynamicClientRegistrationEndpoint
         catch (Exception ex)
         {
             _logger.LogWarning(ex, UdapDynamicClientRegistrationErrorDescriptions.MalformedMetaDataDocument);
-            _logger.LogWarning("Request: {Request}", await GetBody(context));
+            _logger.LogDebug("Request: {Request}", await GetBody(context));
 
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsJsonAsync(new UdapDynamicClientRegistrationErrorResponse

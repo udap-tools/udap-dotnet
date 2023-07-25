@@ -325,7 +325,7 @@ public class IdentityServerPipeline
     {
         BrowserClient.RemoveCookie(BaseUrl, IdentityServerConstants.DefaultCheckSessionCookieName);
     }
-    public Cookie GetSessionCookie()
+    public Cookie? GetSessionCookie()
     {
         return BrowserClient.GetCookie(BaseUrl, IdentityServerConstants.DefaultCheckSessionCookieName);
     }

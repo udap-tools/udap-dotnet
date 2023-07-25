@@ -13,12 +13,15 @@ namespace UdapEd.Shared.Model;
 
 public class PatientSearchModel
 {
+    public bool GetResource { get; set; }
+
     public string? Family { get; set; }
     public string? Given { get; set; }
     public string? Name { get; set; }
     public DateTime? BirthDate { get; set; }
     public string? Id { get; set; }
     public string? Identifier { get; set; }
+    
 }
 
 public class PatientMatchModel

@@ -53,6 +53,13 @@ public class UdapDcrBuilderForAuthorizationCode
         {
             _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.AuthorizationCode };
         }
+        else
+        {
+            //
+            // Cancel registration is requested with an empty GranTypes array, not a missing grant_types element
+            //
+            _document.GrantTypes = new List<string>();
+        }
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
     }
     /// <summary>
@@ -167,7 +174,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithClientName(string clientName)
+    public UdapDcrBuilderForAuthorizationCode WithClientName(string? clientName)
     {
         _document.ClientName = clientName;
         return this;
@@ -203,9 +210,11 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithLogoUri(string logoUri)
+    public UdapDcrBuilderForAuthorizationCode WithLogoUri(string? logoUri)
     {
-        _document.LogoUri = new Uri(logoUri);
+        //TODO: Testing.  And better technique.
+        _ = new Uri(logoUri);
+        _document.LogoUri = logoUri;
         return this;
     }
 

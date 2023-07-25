@@ -10,6 +10,7 @@ using Duende.IdentityServer.Test;
 using FluentAssertions;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Registration;
@@ -45,13 +46,20 @@ public class HealthGorillaTests
                 DefaultSystemScopes = "udap",
                 ForceStateParamOnAuthorizationCode = true
             });
+
+            s.AddSingleton<UdapClientOptions>(new UdapClientOptions
+            {
+                ClientName = "Mock Client",
+                Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
+            });
+
         };
 
         _mockPipeline.OnPreConfigureServices += s =>
         {
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
-            // TODO: PR Deunde for this issue.
-            // They register Clients as IEnumerable<Client> in AddInMemoryClients extension
+            // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
+            // It was not intended to work with the concept of a dynamic client registration.
             s.AddSingleton(_mockPipeline.Clients);
         };
 

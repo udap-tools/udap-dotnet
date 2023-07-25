@@ -28,6 +28,7 @@ using Udap.Idp;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
+using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Xunit.Abstractions;
 
@@ -56,7 +57,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
         Environment.SetEnvironmentVariable("provider", "Sqlite");
         builder.UseEnvironment("Development");
         
-        builder.ConfigureServices(services =>
+        builder.ConfigureServices((hostContext, services) =>
         {
             services.AddSingleton<IHostLifetime, NoopHostLifetime>();
 
@@ -97,7 +98,8 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
         };
 
         builder.ConfigureHostConfiguration(b => b.AddInMemoryCollection(overrideSettings!));
-        
+
+
         builder.ConfigureLogging(logging =>
         {
             logging.ClearProviders();
@@ -119,7 +121,6 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseSetting("skipRateLimiting", null);
-
         //
         // Linux needs to know how to find appsettings file in web api under test.
         // Still works with Windows but what a pain.  This feels fragile
@@ -190,6 +191,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
+            LogoUri = "https://example.com/logo.png",
             Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
             GrantTypes = new HashSet<string> { "authorization_code" },
             ResponseTypes = new HashSet<string> { "code" },
@@ -888,7 +890,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegistrationInvalidSoftwareStatement_expMissing_Test()
+    public async Task RegistrationInvalidSoftwareStatement_exp_Missing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -953,7 +955,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegistrationInvalidSoftwareStatement_expExpired_Test()
+    public async Task RegistrationInvalidSoftwareStatement_exp_Expired_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1018,7 +1020,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
     //invalid_software_statement
     [Fact]
-    public async Task RegistrationInvalidSoftwareStatement_iatMissing_Test()
+    public async Task RegistrationInvalidSoftwareStatement_iat_Missing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1081,9 +1083,9 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.IssuedAtMissing}");
     }
 
-    //invalid_software_statement
+    //invalid_client_metadata
     [Fact]
-    public async Task RegistrationInvalidSoftwareStatement_clientNameMissing_Test()
+    public async Task RegistrationInvalidClientMetadata_clientName_Missing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1146,9 +1148,9 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.ClientNameMissing}");
     }
 
-    //invalid_software_statement
+    //invalid_client_metadata
     [Fact]
-    public async Task RegistrationInvalidSoftwareStatement_responseTypesMissing_Test()
+    public async Task RegistrationInvalidClientMetadata_logo_uri_Missing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1175,6 +1177,73 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
             JwtId = jwtId,
             ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "authorization_code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "user/Patient.* user/Practitioner.read",
+            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        errorResponse.Should().NotBeNull();
+        errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
+        errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.LogoMissing}");
+    }
+
+    //invalid_client_metadata
+    [Fact]
+    public async Task RegistrationInvalidClientMetadata_responseTypesMissing_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocument();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint!);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert1.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var now = DateTime.UtcNow;
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            LogoUri = "https://example.com/logo.png",
             Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
             GrantTypes = new HashSet<string> { "authorization_code" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
@@ -1210,11 +1279,13 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         errorResponse.Should().NotBeNull();
         errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing}");
+
+
     }
 
-    //invalid_software_statement
+    //invalid_client_metadata
     [Fact]
-    public async Task RegistrationInvalidSoftwareStatement_tokenEndpointAuthMethodMissing_Test()
+    public async Task RegistrationInvalidClientMetadata_tokenEndpointAuthMethodMissing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();

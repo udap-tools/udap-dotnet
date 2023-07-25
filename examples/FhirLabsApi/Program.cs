@@ -25,7 +25,7 @@ using Newtonsoft.Json.Serialization;
 using Serilog;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Metadata.Server;
+using Constants = Udap.Common.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddUserSecrets<Program>(optional:true);  // I want user secrets even in release mode.

@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.IdentityModel.Tokens.Jwt;
 using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
@@ -14,7 +15,7 @@ using IdentityModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
-using System.IdentityModel.Tokens.Jwt;
+using Udap.Common.Extensions;
 using Udap.Server.Configuration;
 using Udap.Server.Extensions;
 using Udap.Util.Extensions;

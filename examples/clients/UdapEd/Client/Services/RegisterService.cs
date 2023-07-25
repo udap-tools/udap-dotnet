@@ -8,10 +8,12 @@
 #endregion
 
 using System.Net.Http.Json;
+using System.Net.NetworkInformation;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Hl7.Fhir.Rest;
+using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Util.Extensions;
 using UdapEd.Shared.Model;
@@ -178,12 +180,45 @@ public class RegisterService
         return null;
     }
 
-    public string GetScopesForAuthorizationCode(ICollection<string>? scopes)
+    public string GetScopesForAuthorizationCodeB2B(ICollection<string>? scopes, bool tieredOauth = false)
     {
-        if (scopes != null)
+        var enrichScopes = scopes == null ? new List<string>() : scopes.ToList();
+
+        if (tieredOauth)
         {
-            return scopes
-                .Where(s => !s.StartsWith("system"))
+            if (!enrichScopes.Contains(UdapConstants.StandardScopes.Udap))
+            {
+                enrichScopes.Insert(0, UdapConstants.StandardScopes.Udap);
+            }
+        }
+
+        if (enrichScopes.Any())
+        {
+            return enrichScopes
+                .Where(s => !s.StartsWith("system") && !s.StartsWith("user"))
+                .Take(10).ToList()
+                .ToSpaceSeparatedString();
+        }
+
+        return "openid";
+    }
+
+    public string GetScopesForAuthorizationCodeConsumer(ICollection<string>? scopes, bool tieredOauth = false)
+    {
+        var enrichScopes = scopes == null ? new List<string>() : scopes.ToList();
+
+        if (tieredOauth)
+        {
+            if (!enrichScopes.Contains(UdapConstants.StandardScopes.Udap))
+            {
+                enrichScopes.Insert(0, UdapConstants.StandardScopes.Udap);
+            }
+        }
+
+        if (enrichScopes.Any())
+        {
+            return enrichScopes
+                .Where(s => !s.StartsWith("system") && !s.StartsWith("patient"))
                 .Take(10).ToList()
                 .ToSpaceSeparatedString();
         }

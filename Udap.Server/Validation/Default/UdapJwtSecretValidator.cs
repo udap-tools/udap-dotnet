@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Certificates;
+using Udap.Common.Extensions;
 using Udap.Server.Configuration;
 using Udap.Server.Extensions;
 using Udap.Server.Storage.Stores;
@@ -64,6 +65,7 @@ public class UdapJwtSecretValidator : ISecretValidator
 
 
     //Todo: Write replay unit tests
+    //Todo: Write workflow diagrams to describe this process
 
     /// <summary>Validates a secret</summary>
     /// <param name="secrets">The stored secrets.</param>

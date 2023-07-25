@@ -125,7 +125,7 @@
         var options = new DialogOptions { CloseOnEscapeKey = true };
         var dialog = await DialogService.ShowAsync<Password_Dialog>("Certificate Password", options);
         var result = await dialog.Result;
-        var certViewModel = await RegisterService.ValidateCertificate(result.Data.ToString() ?? "");
+        var certViewModel = await RegisterService.ValidateCertificate(result.Data?.ToString() ?? "");
         await SetCertLoadedColor(certViewModel?.CertLoaded);
         await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), certViewModel);
     }

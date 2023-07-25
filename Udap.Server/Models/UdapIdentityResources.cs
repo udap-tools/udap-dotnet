@@ -23,14 +23,27 @@ public static class UdapIdentityResources
     public class FhirUser : IdentityResource
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityResources.OpenId"/> class.
+        /// Initializes a new instance of the <see cref="FhirUser"/> class.
         /// </summary>
         public FhirUser()
         {
             Name = UdapConstants.StandardScopes.FhirUser;
             DisplayName = "FHIR resource representation of the current user.";
             Required = false;
-            UserClaims.Add(JwtClaimTypes.Subject);
+            UserClaims.Add("fhir_resource");
+        }
+    }
+
+    public class Udap : IdentityResource
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Udap"/> class.
+        /// </summary>
+        public Udap()
+        {
+            Name = UdapConstants.StandardScopes.Udap;
+            DisplayName = "UDAP resource to signal to the receiver that UDAP Tiered OAuth for User Authentication is being requested";
+            Required = false;
         }
     }
 }

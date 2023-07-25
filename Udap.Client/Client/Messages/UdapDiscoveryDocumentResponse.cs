@@ -8,7 +8,7 @@ using System.Text.Json;
 using IdentityModel;
 using IdentityModel.Client;
 using IdentityModel.Jwk;
-using Udap.Client.Internal;
+using Udap.Common.Extensions;
 using Udap.Model;
 
 namespace Udap.Client.Client.Messages;

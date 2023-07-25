@@ -1,27 +1,27 @@
 ﻿<MudPaper Width="250px" Class="py-3" Elevation="0">
-<MudNavMenu Style="left: 0; top:0; bottom: auto; width: 100%; height: auto">
-    <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" IconColor="Color.Inherit">
-        Home
-    </MudNavLink>
-    <MudNavGroup Title="UDAP Area" Expanded="true">
-        <MudNavLink Href="udapDiscovery" Icon="@Icons.Material.Filled.Explore" IconColor="Color.Inherit">Discovery</MudNavLink>
-        <MudNavLink Href="udapRegistration" Icon="@Icons.Material.Filled.Explore" IconColor="Color.Inherit">Registration</MudNavLink>
-        <MudNavLink Href="udapBusinessToBusiness" Icon="@Icons.Material.Filled.Explore" IconColor="Color.Inherit">B2B</MudNavLink>
-            <MudNavLink Href="/udapConsumer" Icon="@Icons.Material.Filled.HourglassEmpty" IconColor="Color.Inherit">Consumer</MudNavLink>
-            <MudNavLink Href="/udapTieredOAuth" Icon="@Icons.Material.Filled.HourglassEmpty" IconColor="Color.Inherit">Tiered OAuth</MudNavLink>
-    </MudNavGroup>
+    <MudNavMenu Style="left: 0; top:0; bottom: auto; width: 100%; height: auto">
+        <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard" IconColor="Color.Inherit">
+            Home
+        </MudNavLink>
+        <MudNavGroup Title="UDAP Area" Expanded="true">
+            <MudNavLink Href="udapDiscovery" Icon="@Icons.Material.Filled.RocketLaunch" IconColor="Color.Inherit">Discovery</MudNavLink>
+            <MudNavLink Href="udapRegistration" Icon="@Icons.Material.Filled.AppRegistration" IconColor="Color.Inherit">Registration</MudNavLink>
+            <MudNavLink Href="udapBusinessToBusiness" Icon="@Icons.Material.Filled.PrivateConnectivity" IconColor="Color.Inherit">B2B</MudNavLink>
+            <MudNavLink Href="udapConsumer" Icon="@Icons.Material.Filled.Person" IconColor="Color.Inherit">Consumer</MudNavLink>
+            <MudNavLink Href="udapTieredOAuth" Icon="@Icons.Material.Filled.PermIdentity" IconColor="Color.Inherit">Tiered OAuth</MudNavLink>
+        </MudNavGroup>
 
 
-    <MudDivider Class="my-2" />
-    <MudNavGroup Title="Patient" Expanded="true">
+        <MudDivider Class="my-2" />
+        <MudNavGroup Title="Patient" Expanded="true">
             <MudNavLink Href="/patientSearch" Icon="@Icons.Material.Filled.Search" IconColor="Color.Inherit">Search</MudNavLink>
             <MudNavLink Href="/patientMatch" Icon="@Icons.Material.Filled.Pattern" IconColor="Color.Inherit">Match</MudNavLink>
-    </MudNavGroup>
-    
-    <MudDivider Class="my-2" />
-    <MudNavGroup Title="Directory" Expanded="true">
-        <MudNavLink Href="/directory">Todo</MudNavLink>
-    </MudNavGroup>
+        </MudNavGroup>
 
-</MudNavMenu>
+        <MudDivider Class="my-2" />
+        <MudNavGroup Title="Directory" Expanded="true">
+            <MudNavLink Href="/directory">Todo</MudNavLink>
+        </MudNavGroup>
+
+    </MudNavMenu>
 </MudPaper>

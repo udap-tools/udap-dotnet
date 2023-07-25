@@ -97,7 +97,9 @@ public class UdapApiTestFixture : WebApplicationFactory<Program>
         var overrideSettings = new Dictionary<string, string>
         {
             { "ConnectionStrings:DefaultConnection", "Data Source=Udap.Idp.db;" },
-            { "ServerSettings:ServerSupport", "UDAP" }
+            { "ServerSettings:ServerSupport", "UDAP"},
+            { "ServerSettings:LogoRequired", "false"}
+
         };
 
         var sb = new StringBuilder();
@@ -140,7 +142,6 @@ public class UdapApiTestFixture : WebApplicationFactory<Program>
     {
         _serviceScope.Dispose();
         await _serviceProvider.DisposeAsync();
-        await base.DisposeAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -1099,7 +1100,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
 
     //invalid_client_metadata
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_clientNameMissing_Test()
+    public async Task RegistrationInvalidClientMetadata_clientName_Missing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1169,7 +1170,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     // But a missing grant_types is an error
     //
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_grant_types_Missing_Test()
+    public async Task RegisrationInvalidClientMetadata_grant_types_Missing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1232,9 +1233,9 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.GrantTypeMissing}");
     }
 
-    //invalid_software_statement
+    //invalid_client_metadata
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_responseTypesMissing_Test()
+    public async Task RegisrationInvalidClientMetadata_responseTypes_Missing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
@@ -1298,9 +1299,9 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing}");
     }
 
-    //invalid_software_statement
+    //invalid_client_metadata
     [Fact]
-    public async Task RegisrationInvalidSotwareStatement_tokenEndpointAuthMethodMissing_Test()
+    public async Task RegisrationInvalidClientMetadata_tokenEndpointAuthMethodMissing_Test()
     {
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();

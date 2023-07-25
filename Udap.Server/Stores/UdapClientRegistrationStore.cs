@@ -59,7 +59,6 @@ namespace Udap.Server.Stores
                 .Include(c => c.AllowedScopes)
                 .Include(c => c.RedirectUris)
                 .SingleOrDefault(c =>
-                c.AllowedGrantTypes.Any(grant => client.AllowedGrantTypes.Contains(grant.GrantType)) &&
                 // ISS
                 c.ClientSecrets.Any(cs =>
                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
@@ -77,11 +76,13 @@ namespace Udap.Server.Stores
                     .ToList();
                 existingClient.RedirectUris = client.ToEntity().RedirectUris;
                 await _dbContext.SaveChangesAsync(token);
+                _logger.LogInformation("Updated client");
                 return true;
             }
 
             _dbContext.Clients.Add(client.ToEntity());
             await _dbContext.SaveChangesAsync(token);
+            _logger.LogInformation("Created client");
             return false;
         }
 
@@ -209,6 +210,23 @@ namespace Udap.Server.Stores
             }
 
             return new X509Certificate2Collection(anchors.Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());
+        }
+
+        public async Task<string?> GetCommunityId(string community, CancellationToken token = default)
+        {
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetCommunityId");
+            activity?.SetTag(Tracing.Properties.Community, community);
+
+            if (string.IsNullOrEmpty(community))
+            {
+                return await _dbContext.Communities.Where(c => c.Default)
+                    .Select(c => c.Id.ToString())
+                    .FirstAsync(token);
+            }
+
+            return await _dbContext.Communities.Where(c => c.Name == community)
+                .Select(c => c.Id.ToString())
+                .SingleOrDefaultAsync(token);
         }
 
         private string ShowSummary(IEnumerable<Anchor> anchors)

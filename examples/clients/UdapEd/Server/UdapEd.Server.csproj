@@ -20,16 +20,16 @@
   <ItemGroup>
     <PackageReference Include="Duende.IdentityServer" Version="6.2.3" />
     <PackageReference Include="Duende.IdentityServer.Storage" Version="6.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.7" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.1.0-rc.2" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.5.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
     <PackageReference Include="System.IO" Version="4.3.0" />
 
     
-    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.4.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.4.0" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.4.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.5.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.5.1" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.5.1" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc9.14" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.0.0-rc9.14" />
 
@@ -41,11 +41,15 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Model" Version="$(UdapDotNetPackageVersion)" />
+    <PackageReference Include="Udap.Client" Version="0.2.0" />
+    <PackageReference Include="Udap.Model" Version="0.2.0" />
+    <PackageReference Include="Udap.Common" Version="0.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
+    <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\..\..\..\Udap.Model\Udap.Model.csproj" />
+    <ProjectReference Include="..\..\..\..\Udap.Common\Udap.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

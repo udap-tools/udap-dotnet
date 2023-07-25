@@ -131,9 +131,10 @@ public class MetadataController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(ex, "Failed loading certificate");
+            _logger.LogDebug(ex,
                 $"Failed loading certificate from {nameof(base64String)} {base64String}");
-
+            
             return BadRequest(result);
         }
     }

@@ -86,6 +86,7 @@ public class AccessTokenRequestForAuthorizationCodeBuilder
         return new UdapAuthorizationCodeTokenRequest()
         {
             Address = _tokenEndpoint,
+            RequestUri = new Uri(_tokenEndpoint), //TODO
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
             Code = _code,
             RedirectUri = _redirectUri,

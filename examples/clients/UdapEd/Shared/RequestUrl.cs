@@ -1,4 +1,4 @@
-﻿using Udap.Client.Internal;
+﻿using Udap.Common.Extensions;
 using Udap.Model;
 
 namespace UdapEd.Shared;

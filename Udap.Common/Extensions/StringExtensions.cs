@@ -12,6 +12,54 @@ using System.Diagnostics;
 namespace Udap.Common.Extensions;
 public static class StringExtensions
 {
+
+    [DebuggerStepThrough]
+    public static string EnsureTrailingSlash(this string url)
+    {
+        if (!url.EndsWith("/"))
+        {
+            return url + "/";
+        }
+
+        return url;
+    }
+
+    [DebuggerStepThrough]
+    public static string EnsureLeadingSlash(this string? url)
+    {
+        if (url != null && !url.StartsWith("/"))
+        {
+            return "/" + url;
+        }
+
+        return string.Empty;
+    }
+
+    [DebuggerStepThrough]
+    public static bool IsPresent(this string? value)
+    {
+        return !string.IsNullOrWhiteSpace(value);
+    }
+
+
+
+    [DebuggerStepThrough]
+    public static bool IsMissing(this string value)
+    {
+        return string.IsNullOrWhiteSpace(value);
+    }
+
+    [DebuggerStepThrough]
+    public static string RemoveTrailingSlash(this string url)
+    {
+        if (url.EndsWith("/"))
+        {
+            url = url.Substring(0, url.Length - 1);
+        }
+    
+        return url;
+    }
+
     [DebuggerStepThrough]
     public static string GetBaseUrlFromMetadataUrl(this string url)
     {
@@ -24,5 +72,31 @@ public static class StringExtensions
         var uri = new Uri(url);
 
         return uri.AbsoluteUri;
+    }
+
+
+    [DebuggerStepThrough]
+    public static string? GetCommunityFromQueryParams(this string queryPath)
+    {
+        var parameters = queryPath.Split('&');
+
+        var community = parameters.FirstOrDefault(x => 
+            x.StartsWith("community=", StringComparison.OrdinalIgnoreCase));
+
+        if (community == null)
+        {
+            return null;
+        }
+
+        return community!.Split("=").LastOrDefault();
+    }
+
+    [DebuggerStepThrough]
+    public static string RemoveQueryParameters(this string url)
+    {
+        var uri = new Uri(url);
+        var path = $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{uri.AbsolutePath}";
+
+        return path;
     }
 }

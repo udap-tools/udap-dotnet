@@ -88,7 +88,7 @@
         "https://securefhir.zimt.work/udap-public",
         "https://identity-matching.fast.hl7.org/fhir",
         "https://national-directory.meteorapp.com/",
-        "https://udap.poolnook.me/"
+        "https://udap.fhir.poolnook.me/evernorth"
     };
     private string? _baseUrl = _certDefaultBaseUrLs.First();
 
@@ -104,6 +104,14 @@
             }
         }
     }
+
+    private static List<string> _idPBaseUrLs = new List<string>
+    {
+        "https://securefhir.zimt.work/udap-public",
+        "https://idp1.securedcontrols.net",
+        "https://idp2.securedcontrols.net"
+    };
+    
 
     public string Community { get; private set; }
 
@@ -125,6 +133,26 @@
             return _baseUrls;
         }
         set => _baseUrls = value;
+    }
+
+    private OrderedDictionary? _idPDictionary;
+
+    public OrderedDictionary? IdPDictionary
+    {
+        get
+        {
+            if (_idPDictionary == null || !(_idPDictionary.Count > 0))
+            {
+                _idPDictionary = new OrderedDictionary();
+                foreach (var idPBaseUrL in _idPBaseUrLs)
+                {
+                    _idPDictionary.Add(idPBaseUrL, idPBaseUrL);
+                }
+            }
+
+            return _idPDictionary;
+        }
+        set => _idPDictionary = value;
     }
 
     private ClientStatus _status = new ClientStatus(false, "Missing");
@@ -170,15 +198,15 @@
 
             var tokensList = new List<string>();
 
-            if (!AccessTokens.AccessToken.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(AccessTokens.AccessToken))
             {
                 tokensList.Add("Access");
             }
-            if (!AccessTokens.IdentityToken.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(AccessTokens.IdentityToken))
             {
                 tokensList.Add("Identity");
             }
-            if (!AccessTokens.RefreshToken.IsNullOrEmpty())
+            if (!string.IsNullOrEmpty(AccessTokens.RefreshToken))
             {
                 tokensList.Add("Refresh");
             }
@@ -214,6 +242,14 @@
 
     public AuthorizationCodeRequest? AuthorizationCodeRequest { get; private set; }
 
+    private ClientRegistrations? _clientRegistrations;
+
+    public ClientRegistrations? ClientRegistrations
+    {
+        get { return _clientRegistrations ??= new ClientRegistrations(); } 
+        private set => _clientRegistrations = value;
+    }
+
     /// <summary>
     /// Certificate from Material Design Icons
     /// </summary>
@@ -221,6 +257,7 @@
     "<path fill=\"currentColor\" d=\"M13 21L15 20L17 21V14H13M17 9V7L15 8L13 7V9L11 10L13 11V13L15 12L17 13V11L19 10M20 3H4A2 2 0 0 0 2 5V15A2 2 0 0 0 4 17H11V15H4V5H20V15H19V17H20A2 2 0 0 0 22 15V5A2 2 0 0 0 20 3M11 8H5V6H11M9 11H5V9H9M11 14H5V12H11Z\" />" +
     "</svg>";
 
+    
     private const string UdapStateKeyName = "udapClientState";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

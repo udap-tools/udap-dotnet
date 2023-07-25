@@ -98,6 +98,7 @@ public class IssuedCertificateStore : IPrivateCertificateStore
                             IssuedCertificates.Add(new IssuedCertificate
                             {
                                 Community = community.Name,
+                                IdPBaseUrl = community.IdPBaseUrl,
                                 Certificate = x509Cert,
                                 Thumbprint = x509Cert.Thumbprint
                             });

@@ -22,9 +22,9 @@
 
   <ItemGroup>
     <PackageReference Include="Hl7.Fhir.Specification.R4B" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions"  />
-    <PackageReference Include="Microsoft.Extensions.Options"  />
-    <PackageReference Include="Portable.BouncyCastle"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+    <PackageReference Include="Portable.BouncyCastle" />
   </ItemGroup>
 
   <ItemGroup>

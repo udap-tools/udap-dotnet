@@ -314,14 +314,14 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         // we only support the two above grant types but, an empty GrantType is an indication of a cancel registration action.
-        // TODO: This whole method needs to be migrated into a better software pattern.
+        // TODO: This whole method needs to be migrated into a better software pattern.  Also, UdapTieredOAuthMiddleware now has this logic
         if (client.AllowedGrantTypes.Count == 0 && 
             document.GrantTypes != null && 
             document.GrantTypes.Any())
         {
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                "unsupported grant type"));
+                UdapDynamicClientRegistrationErrorDescriptions.UnsupportedGrantType));
         }
 
         //TODO: Ensure test covers this and follows Security IG: http://hl7.org/fhir/us/udap-security/b2b.html#refresh-tokens
@@ -332,17 +332,27 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             {
                 return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                    "client credentials does not support refresh tokens"));
+                    UdapDynamicClientRegistrationErrorDescriptions.ClientCredentialsRefreshError));
             }
 
             client.AllowOfflineAccess = true;
         }
 
         //
-        // validate redirect URIs and ResponseTypes
+        // validate redirect URIs and ResponseTypes and logo_uri
         //
         if (client.AllowedGrantTypes.Contains(GrantType.AuthorizationCode))
         {
+            if (_serverSettings.LogoRequired)
+            {
+                if ( ! ValidateLogoUri(document, out UdapDynamicClientRegistrationValidationResult? errorResult))
+                {
+                    return errorResult!;
+                }
+
+                client.LogoUri = document.LogoUri;
+            }
+
             if (document.RedirectUris != null && document.RedirectUris.Any())
             {
                 foreach (var requestRedirectUri in document.RedirectUris)
@@ -362,7 +372,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     {
                         return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                             UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                            "malformed redirect URI"));
+                            UdapDynamicClientRegistrationErrorDescriptions.MalformedRedirectUri));
                     }
                 }
             }
@@ -370,7 +380,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             {
                 return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                    "redirect URI required for authorization_code grant type"));
+                    UdapDynamicClientRegistrationErrorDescriptions.RedirectUriRequiredForAuthCode));
             }
 
             if (document.ResponseTypes != null && document.ResponseTypes.Count == 0)
@@ -400,7 +410,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         // validate scopes
         //////////////////////////////
         
-        if (_serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG && (document.Scope == null || !document.Scope.Any()))
+        if (client.AllowedGrantTypes.Count != 0 && //Cancel Registration
+            _serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG && 
+            (document.Scope == null || !document.Scope.Any()))
         {
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -469,6 +481,57 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
     }
 
+    public bool ValidateLogoUri(UdapDynamicClientRegistrationDocument document,
+        out UdapDynamicClientRegistrationValidationResult? errorResult)
+    {
+        errorResult = null;
+
+        if (string.IsNullOrEmpty(document.LogoUri))
+        {
+            errorResult = new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                UdapDynamicClientRegistrationErrorDescriptions.LogoMissing);
+
+            return false;
+        }
+
+        if (Uri.TryCreate(document.LogoUri, UriKind.Absolute, out var logoUri))
+        {
+            if (!logoUri.OriginalString.EndsWith("png", StringComparison.OrdinalIgnoreCase) &&
+                !logoUri.OriginalString.EndsWith("jpg", StringComparison.OrdinalIgnoreCase) &&
+                !logoUri.OriginalString.EndsWith("gif", StringComparison.OrdinalIgnoreCase))
+            {
+                errorResult = new UdapDynamicClientRegistrationValidationResult(
+                    UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                    UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidFileType);
+
+                return false;
+            }
+
+            if (!logoUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+            {
+                errorResult = new UdapDynamicClientRegistrationValidationResult(
+                    UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                    UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidScheme);
+
+                return false;
+            }
+
+           
+        }
+        else
+        {
+            errorResult = new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidUri);
+
+            return false;
+        }
+
+        return true;
+    }
+
+
     private bool ValidateChain(
         Duende.IdentityServer.Models.Client client,
         JsonWebToken jwtSecurityToken,
@@ -501,7 +564,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     return false;
                 }
 
-                var clientSecrets = client.ClientSecrets = new List<Secret>();
+               var clientSecrets = client.ClientSecrets = new List<Secret>();
 
                clientSecrets.Add(new()
                 {
@@ -529,6 +592,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
     private readonly string[]? _x5cArray = null;
 
+    //Todo duplicate code
     private string[]? Getx5c(JwtHeader jwtHeader)
     {
         if (_x5cArray != null && _x5cArray.Any()) return _x5cArray;

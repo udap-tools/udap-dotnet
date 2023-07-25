@@ -59,7 +59,6 @@ namespace Udap.Server.Stores
                 .Include(c => c.AllowedScopes)
                 .Include(c => c.RedirectUris)
                 .SingleOrDefault(c =>
-                c.AllowedGrantTypes.Any(grant => client.AllowedGrantTypes.Contains(grant.GrantType)) &&
                 // ISS
                 c.ClientSecrets.Any(cs =>
                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&

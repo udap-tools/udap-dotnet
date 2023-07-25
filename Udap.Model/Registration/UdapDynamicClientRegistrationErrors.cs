@@ -33,7 +33,11 @@ public static class UdapDynamicClientRegistrationErrorDescriptions
     public const string IssuedAtInFuture = "software_statement iat is in the future";
     public const string FailedTokenValidation = "Failed JsonWebTokenHandler.ValidateToken";
 
-    public const string ClientNameMissing = "invalid_client_metadata client_name is missing";
+    public const string ClientNameMissing = "client_name is missing";
+    public const string LogoMissing = "logo_uri is missing";
+    public const string LogoInvalidUri = "logo_uri is not a valid uri";
+    public const string LogoInvalidFileType = "logo_uri is not a valid file type";
+    public const string LogoInvalidScheme = "logo_uri is not a valid https schema";
     public const string GrantTypeMissing = "grant_types is missing";
     public const string ResponseTypesMissing = "invalid_client_metadata response_types is missing";
 

@@ -7,7 +7,9 @@
 // */
 #endregion
 
+using Duende.IdentityServer.Models;
 using Udap.Common.Models;
+using Udap.Server.Storage.Stores;
 using Udap.Server.Stores.InMemory;
 
 
@@ -21,11 +23,14 @@ public static class InMemory
 {
     public static IIdentityServerBuilder AddInMemoryUdapCertificates(
         this IIdentityServerBuilder builder,
-        IEnumerable<Community> communities)
+        IEnumerable<Community> communities,
+        InMemoryUdapClientRegistrationStore clientRegistrationStore)
     {
         builder.Services.AddSingleton(communities);
-        builder.AddUdapClientRegistrationStore<InMemoryUdapClientRegistrationStore>();
-        
+        builder.Services.AddScoped<IUdapClientRegistrationStore>(sp => 
+            new InMemoryUdapClientRegistrationStore(
+                sp.GetRequiredService<List<Client>>(),
+                sp.GetRequiredService<IEnumerable<Community>>()));
 
         return builder;
     }

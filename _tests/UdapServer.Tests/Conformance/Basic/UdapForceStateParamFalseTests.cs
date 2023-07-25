@@ -145,6 +145,7 @@ public class UdapForceStateParamFalseTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
+            .WithLogoUri("https://example.com/logo.png")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"

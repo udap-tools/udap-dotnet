@@ -35,7 +35,10 @@ public class ServerSettings
     [JsonPropertyName("ForceStateParamOnAuthorizationCode")]
     public bool ForceStateParamOnAuthorizationCode { get; set; } = false;
 
-    public ICollection<IdPMapping>? IdPMappings { get; set; } 
+    public ICollection<IdPMapping>? IdPMappings { get; set; }
+
+    [JsonPropertyName("LogoRequired")]
+    public bool LogoRequired { get; set; } = true;
 }
 
 public class IdPMapping

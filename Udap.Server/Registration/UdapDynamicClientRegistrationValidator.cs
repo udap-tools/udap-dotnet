@@ -339,10 +339,20 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         //
-        // validate redirect URIs and ResponseTypes
+        // validate redirect URIs and ResponseTypes and logo_uri
         //
         if (client.AllowedGrantTypes.Contains(GrantType.AuthorizationCode))
         {
+            if (_serverSettings.LogoRequired)
+            {
+                if ( ! ValidateLogoUri(document, out UdapDynamicClientRegistrationValidationResult? errorResult))
+                {
+                    return errorResult!;
+                }
+
+                client.LogoUri = document.LogoUri;
+            }
+
             if (document.RedirectUris != null && document.RedirectUris.Any())
             {
                 foreach (var requestRedirectUri in document.RedirectUris)
@@ -470,6 +480,57 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         // validation successful - return client
         return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
     }
+
+    public bool ValidateLogoUri(UdapDynamicClientRegistrationDocument document,
+        out UdapDynamicClientRegistrationValidationResult? errorResult)
+    {
+        errorResult = null;
+
+        if (string.IsNullOrEmpty(document.LogoUri))
+        {
+            errorResult = new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                UdapDynamicClientRegistrationErrorDescriptions.LogoMissing);
+
+            return false;
+        }
+
+        if (Uri.TryCreate(document.LogoUri, UriKind.Absolute, out var logoUri))
+        {
+            if (!logoUri.OriginalString.EndsWith("png", StringComparison.OrdinalIgnoreCase) &&
+                !logoUri.OriginalString.EndsWith("jpg", StringComparison.OrdinalIgnoreCase) &&
+                !logoUri.OriginalString.EndsWith("gif", StringComparison.OrdinalIgnoreCase))
+            {
+                errorResult = new UdapDynamicClientRegistrationValidationResult(
+                    UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                    UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidFileType);
+
+                return false;
+            }
+
+            if (!logoUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+            {
+                errorResult = new UdapDynamicClientRegistrationValidationResult(
+                    UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                    UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidScheme);
+
+                return false;
+            }
+
+           
+        }
+        else
+        {
+            errorResult = new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidUri);
+
+            return false;
+        }
+
+        return true;
+    }
+
 
     private bool ValidateChain(
         Duende.IdentityServer.Models.Client client,

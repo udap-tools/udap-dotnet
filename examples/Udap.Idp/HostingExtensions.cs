@@ -130,6 +130,7 @@ internal static class HostingExtensions
                         options.ServerSupport = udapServerOptions.ServerSupport;
                         options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
                         options.IdPMappings = udapServerOptions.IdPMappings;
+                        options.LogoRequired = udapServerOptions.LogoRequired;
                     },
                 udapClientOptions =>
                 {

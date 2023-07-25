@@ -6,12 +6,18 @@
     <Nullable>enable</Nullable>
     <IncludeSymbols>True</IncludeSymbols>
 
-    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Vonk.Core" Version="5.0.0" />
+    <PackageReference Include="Vonk.Core" />
+    <PackageReference Include="System.Text.Json" VersionOverride="6.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" VersionOverride="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" VersionOverride="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="6.0.3" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" VersionOverride="6.10.0" />
+    <PackageReference Include="IdentityModel" VersionOverride="6.0.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" VersionOverride="6.10.0" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" VersionOverride="6.10.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +30,10 @@
 
   <Target Name="CopySupportDLLs" AfterTargets="Build">
     <Message Text="Executing CopySupportDLLs task" Importance="High" />
+
+    <!-- <Copy -->
+    <!--   SourceFiles="..\_tests\UdapMetadata.Tests\bin\$(Configuration)\net7.0\System.IdentityModel.Tokens.Jwt.dll" -->
+    <!--   DestinationFolder="$(TargetDir)" /> -->
 
     <Copy
       SourceFiles="..\migrations\UdapDb.SqlServer\bin\$(Configuration)\net6.0\BouncyCastle.Crypto.dll"

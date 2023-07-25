@@ -74,7 +74,7 @@ public class UdapDynamicClientRegistrationEndpoint
         catch (Exception ex)
         {
             _logger.LogWarning(ex, UdapDynamicClientRegistrationErrorDescriptions.MalformedMetaDataDocument);
-            _logger.LogWarning("Request: {Request}", await GetBody(context));
+            _logger.LogDebug("Request: {Request}", await GetBody(context));
 
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             await context.Response.WriteAsJsonAsync(new UdapDynamicClientRegistrationErrorResponse
@@ -141,6 +141,7 @@ public class UdapDynamicClientRegistrationEndpoint
                 if (!result.Client.AllowedGrantTypes.Any())
                 {
                     var numberOfClientsRemoved = await _store.CancelRegistration(result.Client, token);
+                    result.Client.ClientId = "removed";
 
                     if (numberOfClientsRemoved == 0)
                     {

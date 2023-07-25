@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
+using Udap.Common.Extensions;
 using Udap.Model;
 using UdapEd.Client.Services;
 using UdapEd.Client.Shared;
@@ -42,42 +43,6 @@ public partial class UdapBusinessToBusiness
     private string LoginRedirectLinkText { get; set; } = "Login Redirect";
 
     public bool LegacyMode { get; set; } = false;
-
-    private string? _clientId = "";
-
-    private string? ClientId
-    {
-        get
-        {
-            if (string.IsNullOrEmpty(_clientId) )
-            {
-                _clientId = AppState.RegistrationDocument?.ClientId;
-            }
-            
-            return _clientId;
-        }
-        set
-        {
-            _clientId = value;
-            if (AppState.RegistrationDocument != null)
-            {
-                AppState.RegistrationDocument.ClientId = value;
-            }
-        }
-        
-    }
-
-    private string? _oauth2Flow;
-
-    private string? Oauth2Flow
-    {
-        get
-        {
-            _oauth2Flow = AppState.Oauth2Flow.ToString();
-            return _oauth2Flow;
-        }
-        set => _oauth2Flow = value;
-    }
 
     private string? TokenRequest1 { get; set; }
     private string? TokenRequest2 { get; set; }
@@ -157,9 +122,9 @@ public partial class UdapBusinessToBusiness
         {
             ResponseType = "response_type=code",
             State = $"state={CryptoRandom.CreateUniqueId()}",
-            ClientId = $"client_id={AppState.RegistrationDocument?.ClientId}",
-            Scope = $"scope={AppState.SoftwareStatementBeforeEncoding?.Scope}",
-            RedirectUri = $"redirect_uri={AppState.RegistrationDocument?.RedirectUris.FirstOrDefault()}",
+            ClientId = $"client_id={AppState.ClientRegistrations?.SelectedRegistration?.ClientId}",
+            Scope = $"scope={AppState.ClientRegistrations?.SelectedRegistration?.Scope}",
+            RedirectUri = $"redirect_uri={NavManager.Uri.RemoveQueryParameters()}",
             Aud = $"aud={AppState.BaseUrl}"
         };
 
@@ -260,12 +225,8 @@ public partial class UdapBusinessToBusiness
         TokenRequest1 = "Loading ...";
         await Task.Delay(50);
 
-        if (AppState.RegistrationDocument == null)
-        {
-            return;
-        }
-
-        if (string.IsNullOrEmpty(AppState.RegistrationDocument?.ClientId))
+        
+        if (string.IsNullOrEmpty(AppState.ClientRegistrations?.SelectedRegistration?.ClientId))
         {
             TokenRequest1 = "Missing ClientId";
             return;
@@ -277,18 +238,16 @@ public partial class UdapBusinessToBusiness
             return;
         }
 
-        if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
+        if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
         {
             var tokenRequestModel = new AuthorizationCodeTokenRequestModel
             {
-                ClientId = AppState.RegistrationDocument.ClientId,
+                ClientId = AppState.ClientRegistrations?.SelectedRegistration?.ClientId,
                 TokenEndpointUrl = AppState.MetadataVerificationModel?.UdapServerMetaData?.TokenEndpoint,
             };
 
-            if (AppState.RegistrationDocument?.RedirectUris.Count > 0)
-            {
-                tokenRequestModel.RedirectUrl = AppState.RegistrationDocument?.RedirectUris.First() ?? string.Empty;
-            }
+            tokenRequestModel.RedirectUrl = NavManager.Uri.RemoveQueryParameters();
+            
 
             if (AppState.LoginCallBackResult?.Code != null)
             {
@@ -318,10 +277,10 @@ public partial class UdapBusinessToBusiness
         {
             var tokenRequestModel = new ClientCredentialsTokenRequestModel
             {
-                ClientId = AppState.RegistrationDocument.ClientId,
+                ClientId = AppState.ClientRegistrations?.SelectedRegistration?.ClientId,
                 TokenEndpointUrl = AppState.MetadataVerificationModel?.UdapServerMetaData?.TokenEndpoint,
                 LegacyMode = LegacyMode,
-                Scope = AppState.SoftwareStatementBeforeEncoding?.Scope
+                Scope = AppState.ClientRegistrations?.SelectedRegistration?.Scope
             };
 
             var requestToken = await AccessService
@@ -380,11 +339,7 @@ public partial class UdapBusinessToBusiness
             $"client_assertion={AppState.AuthorizationCodeTokenRequest?.ClientAssertion?.Value}&\r\n";
 
         sb = new StringBuilder();
-        if (!string.IsNullOrEmpty(AppState.AuthorizationCodeTokenRequest?.RedirectUri))
-        {
-            sb.AppendLine($"redirect_uri={AppState.AuthorizationCodeTokenRequest.RedirectUri}");
-        }
-
+        sb.AppendLine($"redirect_uri={NavManager.Uri.RemoveQueryParameters()}");
         sb.Append($"udap={UdapConstants.UdapVersionsSupportedValue}");
         TokenRequest4 = sb.ToString();
         
@@ -397,7 +352,7 @@ public partial class UdapBusinessToBusiness
             AccessToken = "Loading ...";
             await Task.Delay(150);
 
-            if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code)
+            if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
             {
                 if (AppState.AuthorizationCodeTokenRequest == null)
                 {

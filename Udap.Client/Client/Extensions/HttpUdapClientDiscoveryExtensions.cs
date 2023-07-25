@@ -14,7 +14,7 @@
 
 using IdentityModel.Client;
 using Udap.Client.Client.Messages;
-using Udap.Client.Internal;
+using Udap.Common.Extensions;
 
 namespace Udap.Client.Client.Extensions
 {

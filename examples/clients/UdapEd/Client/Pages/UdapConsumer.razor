@@ -1,0 +1,272 @@
+﻿@page "/udapConsumer"
+@using System.Collections.Immutable
+
+
+<ErrorBoundary @ref="ErrorBoundary">
+  <ChildContent>
+  <MudGrid Class="mt-4">
+      <MudItem xs="12" sm="12" md="12">
+          <MudText Typo="Typo.h4">Consumer</MudText>
+          <MudLink Href="/udapDiscovery" Color="Color.Info"> [ @RequestUrl.GetWellKnownUdap(AppState.BaseUrl, AppState.Community) ]</MudLink>
+          <MudText Typo="Typo.h6" Color="Color.Tertiary">Consumer requesting access tokens with authorization_code flow</MudText>
+      </MudItem>
+      <MudItem xs="12" sm="12" md="12">
+          <MudCard Class="pa-2 ma-2" Elevation="3">
+                    <MudCardContent>
+                        <MudGrid Spacing="1" Justify="Justify.FlexStart" Class="mb-2">
+
+                            <MudItem md="8" xs="12">
+                                <ClientIdSelection ClientRegistrations="@AppState.ClientRegistrations.Registrations.Where(r => r.Value.UserFlowSelected.EndsWith("_consumer")).ToImmutableDictionary()"
+                                                   SelectedRegistration="@AppState.ClientRegistrations?.SelectedRegistration"
+                                                   ClientIdSelected="(registration) =>
+{
+    Enum.TryParse(registration.UserFlowSelected, out Oauth2FlowEnum flow);
+    AppState.SetProperty(this, nameof(AppState.Oauth2Flow), flow, true, false);
+    AppState.ClientRegistrations.SelectedRegistration = registration;
+    AppState.SetProperty(this, nameof(AppState.ClientRegistrations), AppState.ClientRegistrations, true, true);
+}" />
+                            </MudItem>
+
+                            <MudItem md="4" xs="12">
+                                <ClientCertLoader />
+                            </MudItem>
+                        </MudGrid>
+                    </MudCardContent>
+          </MudCard>
+      </MudItem>
+
+  </MudGrid>
+        @if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_consumer)
+        {
+            <MudCard Class="pa-2 ma-2" Elevation="3">
+                <MudCardActions>
+                    <MudGrid Justify="Justify.FlexStart">
+                        <MudItem sm="6" xs="12">
+                            <MudButton Class="m-3"
+                                       Color="Color.Primary"
+                                       ButtonType="ButtonType.Button"
+                                       Variant="Variant.Filled"
+                                       OnClick="BuildAuthCodeRequest">Build Access Code Request</MudButton>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardActions>
+                <MudCardContent>
+                    <MudGrid Spacing="1">
+                        <MudItem sm="6" xs="12">
+                            <MudPaper Class="udap-input" Elevation="3">
+                  <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow (part 1)</MudText>
+                                @if (AppState.AuthorizationCodeRequest != null)
+                                {
+                                    <pre>GET /authorize?</pre>
+                                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ResponseType" @oninput="BuildAuthorizeLink" />
+                                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.State" @oninput="BuildAuthorizeLink" />
+                                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.ClientId" @oninput="BuildAuthorizeLink" />
+                                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Scope" @oninput="BuildAuthorizeLink" />
+                                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.RedirectUri" @oninput="BuildAuthorizeLink" />
+                                    <input Class="pre udap-indent-1" @bind-value="AppState.AuthorizationCodeRequest.Aud" @oninput="BuildAuthorizeLink" />
+                                    <pre>Host: @AppState.MetadataVerificationModel?.UdapServerMetaData?.AuthorizationEndpoint</pre>
+                                }
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem sm="6" xs="12">
+                            <MudPaper Class="udap-knowledge" Elevation="3">
+                                <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow (part 1)</MudText>
+                                <a href="https://www.udap.org/udap-jwt-client-auth.html#3.1">See section 3.1 of the JWT Client Authentication UDAP Profile</a>
+                                <pre>The build of the GET request to the Authorization servers "authorize" endpoint.  This is the endpoint discovered in the resource servers metadata.  Specifically the authorization_endpoint metadata item.</pre>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+
+
+
+
+
+            <MudCard Class="pa-2 ma-2" Elevation="3">
+                <MudCardActions>
+                    <MudButton Class="mt-3"
+                               Color="Color.Primary"
+                               Variant="Variant.Filled"
+                               ButtonType="ButtonType.Button"
+                               OnClick="GetAccessCode">View Intermediate Redirect</MudButton>
+                </MudCardActions>
+                <MudCardContent>
+                    <MudTextField ReadOnly="true" @bind-Value="AuthCodeRequestLink"></MudTextField>
+                    <MudGrid Spacing="1">
+                        <MudItem sm="6" xs="12">
+                            <MudPaper Class="udap-input" Elevation="3">
+                  <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow (part 2)</MudText>
+
+                                <MudText Color="@(AppState.AccessCodeRequestResult is {IsError: true } ? Color.Error : Color.Primary)">
+                                    @LoginRedirectLinkText
+                                </MudText>
+                                <pre>@AppState.AccessCodeRequestResult?.RedirectUrl</pre>
+
+                                @if (AppState.AccessCodeRequestResult?.IsError == true &&
+                                     AppState.AccessCodeRequestResult.Message != null)
+                                {
+                                    <pre>@AppState.AccessCodeRequestResult?.Message</pre>
+                                }
+
+                                @if (AppState.AccessCodeRequestResult?.Cookies != null)
+                                {
+                                    @if (AppState.AccessCodeRequestResult?.Cookies != null)
+                                    {
+                                        <pre style="font-weight: bold;">cookies:</pre>
+                                        <pre>
+                                            @((MarkupString)String.Join("\r\n", AppState.AccessCodeRequestResult.Cookies))
+                                            </pre>
+                                    }
+                                }
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem sm="6" xs="12">
+                            <MudPaper Class="udap-knowledge" Elevation="3">
+                                <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow (part 2)</MudText>
+                                <a href="https://www.udap.org/udap-jwt-client-auth.html#3.1">See section 3.1 of the JWT Client Authentication UDAP Profile</a>
+                                <pre>The Login Redirect is constructed by the Authorization server in response to GET request to the authorize_endpoint.</pre>
+                                <pre>The text on the left captures that redirect rather than following it for illustration.</pre>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+
+            <MudCard Class="pa-2 ma-2" Elevation="3">
+                <MudCardActions>
+                    <MudItem>
+                        <MudButton Class="mt-3"
+                                   Color="Color.Primary"
+                                   Variant="Variant.Filled"
+                                   Disabled="@(string.IsNullOrWhiteSpace(AuthCodeRequestLink))"
+                                   OnClick="@LaunchAuthorize">
+                            Run Authorize Code Request
+                        </MudButton>
+                    </MudItem>
+                </MudCardActions>
+                <MudCardContent>
+                    <MudGrid Spacing="1" >
+                        <MudItem sm="6" xs="12">
+                            <MudPaper Class="udap-input" Elevation="3">
+                  <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow (part 3)</MudText>
+                                <pre>HTTP/1.1 302 Found</pre>
+                                <pre style="padding-left: 10px">@LoginCallback()</pre>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem sm="6" xs="12">
+                            <MudPaper Class="udap-knowledge" Elevation="3">
+                                <MudText Align="Align.Right" Color="Color.Tertiary">3.1 Authorization Code Flow (part 3)</MudText>
+                                <a href="https://www.udap.org/udap-jwt-client-auth.html#3.1">See section 3.1 of the JWT Client Authentication UDAP Profile</a>
+                                <pre>The Login Redirect is constructed by the Authorization server in response to GET request to the authorize_endpoint.</pre>
+                                <pre>This button will launch GET request in part 1 and follow the redirect from part 2.</pre>
+                                <pre>The 302 response on the left is the redirect from the Authorization server back to this page after success fully entering valid credentials</pre>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+
+
+            <MudCard Class="pa-2 ma-2" Elevation="3">
+                <MudCardActions>
+                    <MudGrid Justify="Justify.FlexStart">
+                        <MudItem md="3" sm="6" xs="12">
+                            <MudButton ButtonType="ButtonType.Button"
+                                       Color="Color.Primary"
+                                       Variant="Variant.Filled"
+                                       OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
+                        </MudItem>
+                        <MudItem md="3" sm="6" xs="12">
+                            <MudSelect @bind-Value="_signingAlgorithm"
+                                       Label="Select Signing Algorithm"
+                                       T="string"
+                                       Clearable="true"
+                                       AdornmentIcon="@Icons.Material.Outlined.ArrowDropDown"
+                                       AdornmentColor="Color.Primary"
+                                       Variant="Variant.Outlined">
+                                <MudSelectItem Value="UdapConstants.SupportedAlgorithm.RS256">@UdapConstants.SupportedAlgorithm.RS256</MudSelectItem>
+                                <MudSelectItem Value="UdapConstants.SupportedAlgorithm.RS384">@UdapConstants.SupportedAlgorithm.RS384</MudSelectItem>
+                                <MudSelectItem Value="UdapConstants.SupportedAlgorithm.ES256">@UdapConstants.SupportedAlgorithm.ES256</MudSelectItem>
+                                <MudSelectItem Value="UdapConstants.SupportedAlgorithm.ES384">@UdapConstants.SupportedAlgorithm.ES384</MudSelectItem>
+                            </MudSelect>
+                        </MudItem>
+                        <MudItem md="3" sm="6" xs="12">
+                            <MudSwitch Label="@(LegacyMode ? "udap.org Mode (sub==iss==SubjectAltName)" : "HL7 FHIR Mode (sub==iss==client_id)")"
+                                       T="bool"
+                                       @bind-Checked="@LegacyMode" />
+                        </MudItem>
+                    </MudGrid>
+                </MudCardActions>
+                <MudCardContent>
+                    <MudGrid Spacing="1">
+                        <MudItem sm="6" xs="12">
+                            <MudPaper Class="udap-input">
+                                <MudText Align="Align.Right" Color="Color.Tertiary">5.1 Authorization Code Flow</MudText>
+                                <MudText Align="Align.Right" Color="Color.Tertiary">Cash Code in for Access Token</MudText>
+                                <pre>@TokenRequest1</pre>
+                                <pre style="padding-left: 10px">@TokenRequest2</pre>
+                                <pre style="padding-left:10px; background-color:lightyellow">@TokenRequest3</pre>
+                                <pre style="padding-left:10px">@TokenRequest4</pre>
+                            </MudPaper>
+                        </MudItem>
+                        <MudItem sm="6" xs="12">
+                            <MudPaper Class="udap-analyzed">
+                                <MudText Align="Align.Right" Color="Color.Tertiary">Client Assertion Decoded</MudText>
+                                <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                                    <MudTabPanel Text="Client Assertion">
+                                        <SignedJwtViewer Title="<b>Decoded client_assertion::</b>"
+                                                         SignedSoftwareStatement="@AppState.AuthorizationCodeTokenRequest?.ClientAssertion?.Value" />
+                                    </MudTabPanel>
+                                    <MudTabPanel Text="Certificates">
+                                        <CertificateViewer JwtHeaderWithx5c="@GetJwtHeader(AppState.AuthorizationCodeTokenRequest?.ClientAssertion?.Value)" />
+                                    </MudTabPanel>
+                                </MudTabs>
+                            </MudPaper>
+                        </MudItem>
+                    </MudGrid>
+                </MudCardContent>
+            </MudCard>
+
+        }
+  <MudCard Class="pa-2 ma-2" Elevation="3">
+      <MudCardActions>
+          <MudButton Class="mt-3"
+                     Color="Color.Primary"
+                     ButtonType="ButtonType.Button"
+                     Variant="Variant.Filled"
+                     OnClick="GetAccessToken">Get Access Token</MudButton>
+      </MudCardActions>
+      <MudCardContent>
+          <MudGrid Spacing="1">
+              <MudItem sm="6" xs="12">
+                  <MudPaper Class="pa-4 ma-2" Elevation="3">
+                      <MudText Align="Align.Right" Color="Color.Tertiary">7.1 Success</MudText>
+                      <pre>@AccessToken</pre>
+                  </MudPaper>
+              </MudItem>
+              <MudItem sm="6" xs="12">
+                  <MudPaper Class="udap-analyzed">
+                      <MudText Align="Align.Right" Color="Color.Tertiary">TODO: Links to Identity IG</MudText>
+                           
+                      <IdentityViewer Title="<b>Decoded Identity Token::</b>"
+                                      IdentityToken="@AppState.AccessTokens?.IdentityToken" />
+
+                  </MudPaper>
+              </MudItem>
+          </MudGrid>
+
+
+      </MudCardContent>
+  </MudCard>
+
+  </ChildContent>
+  <ErrorContent Context="ex">
+        @{
+            Console.Write(ex.Message);
+        }
+    <pre class="blazor-error-boundary">
+            @ex.Message
+      </pre>
+  </ErrorContent>
+</ErrorBoundary>

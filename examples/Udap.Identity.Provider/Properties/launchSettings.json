@@ -1,0 +1,16 @@
+﻿{
+  "profiles": {
+    "Localhost": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:5055",
+      "environmentVariables": {
+        "GCPDeploy": "false",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "UdapIdpBaseUrl": "https://localhost:5055"
+      },
+      "sslPort": 5055
+    }
+  }
+}

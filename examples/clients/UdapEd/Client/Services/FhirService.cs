@@ -35,6 +35,12 @@ public class FhirService
         if (response.IsSuccessStatusCode)
         {
             var result = await response.Content.ReadAsStringAsync();
+            if (model.GetResource)
+            {
+                var patient = new FhirJsonParser().Parse<Patient>(result);
+                return new FhirResultModel<List<Patient>>(new List<Patient> { patient }, response.StatusCode, response.Version);
+            }
+
             var bundle = new FhirJsonParser().Parse<Bundle>(result);
             var patients = bundle.Entry.Select(e => e.Resource as Patient).ToList();
 

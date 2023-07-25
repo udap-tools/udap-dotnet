@@ -5,19 +5,20 @@
 #    https://aka.ms/AA7q20u
 #
 name: udap
+
 services:
-- name: weatherapi
-  project: examples/WeatherApi/WeatherApi.csproj
-  bindings:
-  - protocol: https
-    name: https
-    host: host.docker.internal
-    port: 5021
-    routes:
-     - /swagger
-  - protocol: http
-    name: http
-    port: 5020
+#- name: weatherapi
+#  project: examples/WeatherApi/WeatherApi.csproj
+#  bindings:
+#  - protocol: https
+#    name: https
+#    host: host.docker.internal
+#    port: 5021
+#    routes:
+#     - /swagger
+#  - protocol: http
+#    name: http
+#    port: 5020
   
 - name: fhirlabsapi
   project: examples/FhirLabsApi/FhirLabsApi.csproj
@@ -30,32 +31,68 @@ services:
      - /fhir/r4/.well-known/udap
      - /fhir/r4/.well-known/udap/communities
      - /fhir/r4/.well-known/udap/communities/ashtml
+  
 
-- name: udap-idp
+- name: udap-auth
   project: examples/Udap.Idp/Udap.Idp.csproj
   bindings:
   - protocol: https
     name: https
     host: host.docker.internal
     port: 5002
+  env:
+  - name: UdapIdpBaseUrl
+    value: https://host.docker.internal:5002
 
-- name: udap-idp-admin
-  project: examples/Udap.Idp.Admin/Udap.Idp.Admin.csproj
+- name: udap-idp
+  project: examples/Udap.Identity.Provider/Udap.Identity.Provider.csproj
   bindings:
   - protocol: https
     name: https
-    host: host.docker.internal
-    port: 7087
+    host: localhost
+    port: 5055
+  env:
+  - name: UdapIdpBaseUrl
+    value: https://localhost:5055
 
-- name: udap-ca
-  project: examples/Udap.CA/Udap.CA.csproj
+
+- name: udap-idp-2
+  project: examples/Udap.Identity.Provider.2/Udap.Identity.Provider.2.csproj
   bindings:
   - protocol: https
     name: https
-    host: host.docker.internal
-    port: 6061
+    host: localhost
+    port: 5057
+  env:
+  - name: UdapIdpBaseUrl
+    value: https://localhost:5057
 
-- name: fhirlabs-udaped
+- name: certificate-server
+  project: examples/Udap.Certificates.Server/Udap.Certificates.Server.csproj
+  bindings:
+  - protocol: http
+    name: http
+    host: localhost
+    port: 5033
+
+
+#- name: udap-idp-admin
+#  project: examples/Udap.Idp.Admin/Udap.Idp.Admin.csproj
+#  bindings:
+#  - protocol: https
+#    name: https
+#    host: host.docker.internal
+#    port: 7087
+
+#- name: udap-ca
+#  project: examples/Udap.CA/Udap.CA.csproj
+#  bindings:
+#  - protocol: https
+#    name: https
+#    host: host.docker.internal
+#    port: 6061
+
+- name: UdapEd
   project: examples/clients/UdapEd/Server/UdapEd.Server.csproj
   bindings:
   - protocol: https

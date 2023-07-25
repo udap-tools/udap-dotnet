@@ -15,16 +15,18 @@ namespace UdapEd.Server.Authentication;
 public class AccessTokenProvider : IAccessTokenProvider
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ILogger<AccessTokenProvider> _logger;
 
-    public AccessTokenProvider(IHttpContextAccessor httpContextAccessor)
+    public AccessTokenProvider(IHttpContextAccessor httpContextAccessor, ILogger<AccessTokenProvider> logger)
     {
         _httpContextAccessor = httpContextAccessor;
+        _logger = logger;
     }
 
     public Task<string?> GetAccessToken(CancellationToken token = default)
     {
         var accessToken = _httpContextAccessor.HttpContext?.Session.GetString(UdapEdConstants.TOKEN);
-
+        _logger.LogDebug($"AccessTokenProvider.GetAccessToken: {accessToken}");
         return Task.FromResult(accessToken);
     }
 }

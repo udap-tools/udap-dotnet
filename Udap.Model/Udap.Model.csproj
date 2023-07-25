@@ -26,9 +26,9 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup >
+  <ItemGroup>
     <PackageReference Include="IdentityModel"  />
-    <PackageReference Include="Microsoft.Extensions.Options"  />
+    <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt"  />
   </ItemGroup>
 

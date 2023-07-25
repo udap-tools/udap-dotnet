@@ -26,11 +26,13 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client;
+using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Metadata.Server;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
+using Constants = Udap.Common.Constants;
 using weatherApiProgram = WeatherApi.Program;
 
 
@@ -122,6 +124,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
                 sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
                 sp.GetRequiredService<ILogger<UdapClient>>(),
                 sp.GetRequiredService<ITrustAnchorStore>()));
 
@@ -270,6 +273,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
                 sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
                 sp.GetRequiredService<ILogger<UdapClient>>(),
                 sp.GetRequiredService<ITrustAnchorStore>()));
 

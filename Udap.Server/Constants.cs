@@ -32,6 +32,12 @@ namespace Udap.Server
             public const string Token = ConnectPathPrefix + "/token";
         }
 
+        public static class TieredOAuthConstants
+        {
+            public const string ClientRandomState = "client_random_state";
+            public const string ResourceHolderRandomState = "resource_holder_random_state";
+        }
+
         public static class EndpointAuthenticationMethods
         {
             public const string UdapPkiJwt = "udap_pki_jwt";
@@ -67,5 +73,8 @@ namespace Udap.Server
                 public const string DeviceVerification = "/device";
             }
         }
+
+        public const string IdentityServerName = "Udap.Authorizaton.Server";
+        public const string IdentityServerAuthenticationType = IdentityServerName;
     }
 }

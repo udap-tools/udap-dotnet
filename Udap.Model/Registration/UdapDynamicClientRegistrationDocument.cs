@@ -46,7 +46,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     private string? _clientName;
     private Uri? _clientUri;
     private ICollection<string>? _redirectUris = new List<string>();
-    private Uri? _logoUri;
+    private string? _logoUri;
     private ICollection<string>? _contacts = new HashSet<string>();
     private ICollection<string>? _grantTypes = new HashSet<string>();
     private ICollection<string>? _responseTypes = new HashSet<string>();
@@ -321,7 +321,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     // /// <a href="https://datatracker.ietf.org/doc/html/rfc7591#section-2.2">Section 2.2</a>.
     // /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.LogoUri)]
-    public Uri? LogoUri
+    public string? LogoUri
     {
         get
         {
@@ -329,7 +329,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
             {
                 if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.LogoUri), UriKind.Absolute, out var value))
                 {
-                    _logoUri = value;
+                    _logoUri = value.OriginalString;
                 }
             }
             return _logoUri;

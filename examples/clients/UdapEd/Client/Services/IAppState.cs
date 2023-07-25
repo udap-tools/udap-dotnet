@@ -39,4 +39,6 @@ public interface IAppState
     ClientStatus Status { get; }
 
     AuthorizationCodeRequest?AuthorizationCodeRequest { get; }
+
+    ClientRegistrations? ClientRegistrations { get; }
 }

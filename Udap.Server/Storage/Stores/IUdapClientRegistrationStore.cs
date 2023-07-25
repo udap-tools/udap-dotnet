@@ -9,7 +9,7 @@ namespace Udap.Server.Storage.Stores;
 /// </summary>
 public interface IUdapClientRegistrationStore
 {
-    Task<Client?> GetClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default);
+    Task<Duende.IdentityServer.Models.Client?> GetClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default);
 
     /// <summary>
     /// The UDAP store will key clients by joining specific named <see cref="Secret"/>s.
@@ -20,7 +20,7 @@ public interface IUdapClientRegistrationStore
     /// <param name="client"></param>
     /// <param name="token"></param>
     /// <returns>Returns true if client is updated, false if created</returns>
-    Task<bool> UpsertClient(Client client, CancellationToken token = default);
+    Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default);
 
     /// <summary>
     /// Cancel registration by passing an empty grant_types claim.  The cancel registration will cancel the
@@ -29,7 +29,7 @@ public interface IUdapClientRegistrationStore
     /// <param name="client"></param>
     /// <param name="token"></param>
     /// <returns>The number of clients deleted</returns>
-    Task<int> CancelRegistration(Client client, CancellationToken token = default);
+    Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default);
 
     Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default);
 
@@ -38,4 +38,5 @@ public interface IUdapClientRegistrationStore
     Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default);
 
     Task<X509Certificate2Collection> GetAnchorsCertificates(string? community, CancellationToken token = default);
+    Task<string?> GetCommunityId(string community, CancellationToken token = default);
 }

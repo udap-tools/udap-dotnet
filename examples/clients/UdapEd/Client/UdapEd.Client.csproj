@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
@@ -12,16 +12,17 @@
       <PackagePath>\</PackagePath>
       <Pack>true</Pack>
     </None>
+    <None Include="Shared\ClientIdSelection.razor" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Blazored.LocalStorage" Version="4.3.0" />
     <PackageReference Include="BQuery" Version="3.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="7.0.5" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.5" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="7.0.7" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
-    <PackageReference Include="MudBlazor" Version="6.3.0" />
+    <PackageReference Include="MudBlazor" Version="6.3.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,12 +30,10 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Client" Version="$(UdapDotNetPackageVersion)" />
-    <PackageReference Include="Udap.Common" Version="$(UdapDotNetPackageVersion)" />
+    <PackageReference Include="Udap.Common" Version="0.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
-    <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\..\..\..\Udap.Common\Udap.Common.csproj" />
   </ItemGroup>
 
@@ -42,5 +41,11 @@
   <Target Name="CollectMudBlazorStaticAssets" DependsOnTargets="ResolveStaticWebAssetsInputs" AfterTargets="Build" Condition=" '$(Configuration)' == 'Debug' ">
     <Copy SourceFiles="%(StaticWebAsset.Identity)" DestinationFolder="wwwroot/temp" Condition="$([System.String]::Copy(%(StaticWebAsset.Identity)).Contains('mudblazor'))" />
   </Target>
+  <ItemGroup>
+    <UpToDateCheckInput Remove="Shared\ClientIdSelection.razor" />
+  </ItemGroup>
+  <ItemGroup>
+    <_ContentIncludedByDefault Remove="Shared\ClientIdSelection.razor" />
+  </ItemGroup>
 
 </Project>

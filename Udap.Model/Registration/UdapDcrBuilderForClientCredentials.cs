@@ -225,7 +225,8 @@ public class UdapDcrBuilderForClientCredentials
 
     public UdapDcrBuilderForClientCredentials WithLogoUri(string logoUri)
     {
-        _document.LogoUri = new Uri(logoUri);
+        //TODO: Testing.  And better technique.
+        _ = new Uri(logoUri);
         return this;
     }
 

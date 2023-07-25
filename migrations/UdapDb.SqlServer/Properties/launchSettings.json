@@ -1,19 +1,61 @@
 {
   "profiles": {
-    "Local_Migrate": {
-      "commandName": "Project",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "dotnetRunMessages": true
-    },
-    "GCPMigrate": {
+    "Local_Udap.Auth.Server_Migrate": {
       "commandName": "Project",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "GCPDeploy": "true"
+        "AuthProviderLocal": "true",
+        "ConnStrName": "DefaultConnection"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "Local_Udap.Idenitity.Provider_Migrate": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "db_identity_provider",
+        "IdentityProvider": "true"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "Local_Udap.Idenitity.Provider2_Migrate": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "db_identity_provider2",
+        "IdentityProvider": "true"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "GCPMigrate Auth Server": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "gcp_db"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "GCPMigrate IdP1 Server": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "gcp_db_Idp1"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "GCPMigrate IdP2 Server": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "gcp_db_Idp2"
       },
       "dotnetRunMessages": true
     }
+
   }
 }

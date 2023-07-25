@@ -27,6 +27,7 @@ using Duende.IdentityServer.Test;
 using FluentAssertions;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Registration;
@@ -60,6 +61,13 @@ public class UdapResponseTypeResponseModeTests
                 DefaultSystemScopes = "system/*.read",
                 ForceStateParamOnAuthorizationCode = true
             });
+
+            s.AddSingleton<UdapClientOptions>(new UdapClientOptions
+            {
+                ClientName = "Mock Client",
+                Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
+            });
+
         };
 
         _mockPipeline.OnPreConfigureServices += s =>
@@ -135,6 +143,7 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
+            .WithLogoUri("https://example.com/logo.png")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
@@ -213,6 +222,7 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
+            .WithLogoUri("https://example.com/logo.png")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
@@ -285,6 +295,7 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
+            .WithLogoUri("https://example.com/logo.png")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
@@ -358,6 +369,7 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
+            .WithLogoUri("https://example.com/logo.png")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
@@ -426,6 +438,7 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
+            .WithLogoUri("https://example.com/logo.png")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
@@ -485,14 +498,13 @@ public class UdapResponseTypeResponseModeTests
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
-        await _mockPipeline.LoginAsync("bob");
-        
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
+            .WithLogoUri("https://example.com/logo.png")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
@@ -529,6 +541,8 @@ public class UdapResponseTypeResponseModeTests
 
         var state = Guid.NewGuid().ToString();
         var nonce = Guid.NewGuid().ToString();
+
+        await _mockPipeline.LoginAsync("bob");
 
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
@@ -567,6 +581,7 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
+            .WithLogoUri("https://example.com/logo.png")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
@@ -706,6 +721,7 @@ public class UdapResponseTypeResponseModeTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
+            .WithLogoUri("https://example.com/logo.png")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"

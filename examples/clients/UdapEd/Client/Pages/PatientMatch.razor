@@ -223,7 +223,7 @@
         if (!string.IsNullOrEmpty(_baseUrlOverride))
         {
             await AppState.SetPropertyAsync(this, nameof(AppState.BaseUrl), _baseUrlOverride);
-            await DiscoveryService.SetBaseFhirUrl(_baseUrlOverride, true);
+            await DiscoveryService.SetBaseFhirUrl(_baseUrlOverride);
         }
     }
 

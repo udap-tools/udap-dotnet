@@ -26,12 +26,14 @@ using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Newtonsoft.Json;
 using Udap.Client.Client;
+using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Metadata.Server;
 using Udap.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
+using Constants = Udap.Common.Constants;
 using fhirLabsProgram = FhirLabsApi.Program;
 
 
@@ -126,6 +128,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         services.AddScoped<IUdapClient>(sp => 
             new UdapClient(_fixture.CreateClient(), 
                 sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
                 sp.GetRequiredService<ILogger<UdapClient>>(),
                 sp.GetRequiredService<ITrustAnchorStore>()));
 

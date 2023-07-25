@@ -70,6 +70,12 @@
                        Color="Color.Primary"
                        ButtonType="ButtonType.Button"
                        Variant="Variant.Text"
+                       Disabled="@(string.IsNullOrEmpty(_model.Id))"
+                       OnClick="Get">Get</MudButton>
+            <MudButton Class="mt-3"
+                       Color="Color.Primary"
+                       ButtonType="ButtonType.Button"
+                       Variant="Variant.Text"
                        OnClick="Cancel">Cancel</MudButton>
         </MudCardActions>
     </MudCardContent>
@@ -161,11 +167,8 @@
     }
     private async Task ChangeBaseUrl()
     {
-        if (!string.IsNullOrEmpty(_baseUrlOverride))
-        {
-            await AppState.SetPropertyAsync(this, nameof(AppState.BaseUrl), _baseUrlOverride);
-            await DiscoveryService.SetBaseFhirUrl(_baseUrlOverride, true);
-        }
+        await AppState.SetPropertyAsync(this, nameof(AppState.BaseUrl), _baseUrlOverride);
+        await DiscoveryService.SetBaseFhirUrl(_baseUrlOverride);
     }
 
     //
@@ -222,6 +225,13 @@
         }
     }
 
+    private async Task Get()
+    {
+        _model.GetResource = true;
+
+        await Search();
+    }
+
     private void Cancel()
     {
         _model = new();
@@ -239,4 +249,7 @@
             _selectedItemText = string.Empty;
         }
     }
+
+    
+
 }

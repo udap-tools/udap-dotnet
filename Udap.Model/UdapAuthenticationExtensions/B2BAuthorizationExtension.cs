@@ -89,17 +89,17 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
     }
 
-    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.OraganizationName)]
+    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.OrganizationName)]
     public string? OraganizationName
     {
         get
         {
-            return _organizationName ??= GetStandardClaim(UdapConstants.B2BAuthorizationExtension.OraganizationName);
+            return _organizationName ??= GetStandardClaim(UdapConstants.B2BAuthorizationExtension.OrganizationName);
         }
         set
         {
             _organizationName = value;
-            if (value != null) this[UdapConstants.B2BAuthorizationExtension.OraganizationName] = value;
+            if (value != null) this[UdapConstants.B2BAuthorizationExtension.OrganizationName] = value;
         }
     }
 

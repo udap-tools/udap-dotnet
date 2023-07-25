@@ -1,7 +1,3 @@
-// Copyright (c) Duende Software. All rights reserved.
-// See LICENSE in the project root for license information.
-
-
 using System.Net;
 
 namespace UdapServer.Tests.Common;
@@ -10,7 +6,7 @@ namespace UdapServer.Tests.Common;
 // https://github.com/damianh/OwinHttpMessageHandler/blob/master/src/OwinHttpMessageHandler/OwinHttpMessageHandler.cs
 public class BrowserHandler : DelegatingHandler
 {
-    private CookieContainer _cookieContainer = new CookieContainer();
+    private readonly CookieContainer _cookieContainer = new CookieContainer();
 
     public bool AllowCookies { get; set; } = true;
     public bool AllowAutoRedirect { get; set; } = true;
@@ -22,7 +18,7 @@ public class BrowserHandler : DelegatingHandler
     {
     }
 
-    protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         var response = await SendCookiesAsync(request, cancellationToken);
 
@@ -34,13 +30,13 @@ public class BrowserHandler : DelegatingHandler
         {
             if (redirectCount >= ErrorRedirectLimit)
             {
-                throw new InvalidOperationException(string.Format("Too many redirects. Error limit = {0}", redirectCount));
+                throw new InvalidOperationException($"Too many redirects. Error limit = {redirectCount}");
             }
 
             var location = response.Headers.Location;
-            if (!location.IsAbsoluteUri)
+            if (!location!.IsAbsoluteUri)
             {
-                location = new Uri(response.RequestMessage.RequestUri, location);
+                location = new Uri(response.RequestMessage?.RequestUri!, location);
             }
 
             request = new HttpRequestMessage(HttpMethod.Get, location);
@@ -53,14 +49,14 @@ public class BrowserHandler : DelegatingHandler
         return response;
     }
 
-    internal Cookie GetCookie(string uri, string name)
+    internal Cookie? GetCookie(string uri, string name)
     {
-        return _cookieContainer.GetCookies(new Uri(uri)).Cast<Cookie>().Where(x => x.Name == name).FirstOrDefault();
+        return _cookieContainer.GetCookies(new Uri(uri)).FirstOrDefault(x => x.Name == name);
     }
 
     internal void RemoveCookie(string uri, string name)
     {
-        var cookie = _cookieContainer.GetCookies(new Uri(uri)).Cast<Cookie>().Where(x=>x.Name == name).FirstOrDefault();
+        var cookie = _cookieContainer.GetCookies(new Uri(uri)).FirstOrDefault(x => x.Name == name);
         if (cookie != null)
         {
             cookie.Expired = true;
@@ -71,10 +67,13 @@ public class BrowserHandler : DelegatingHandler
     {
         if (AllowCookies)
         {
-            string cookieHeader = _cookieContainer.GetCookieHeader(request.RequestUri);
-            if (!string.IsNullOrEmpty(cookieHeader))
+            if (request.RequestUri != null)
             {
-                request.Headers.Add("Cookie", cookieHeader);
+                string cookieHeader = _cookieContainer.GetCookieHeader(request.RequestUri);
+                if (!string.IsNullOrEmpty(cookieHeader))
+                {
+                    request.Headers.Add("Cookie", cookieHeader);
+                }
             }
         }
 
@@ -83,7 +82,10 @@ public class BrowserHandler : DelegatingHandler
         if (AllowCookies && response.Headers.Contains("Set-Cookie"))
         {
             var responseCookieHeader = string.Join(",", response.Headers.GetValues("Set-Cookie"));
-            _cookieContainer.SetCookies(request.RequestUri, responseCookieHeader);
+            if (request.RequestUri != null)
+            {
+                _cookieContainer.SetCookies(request.RequestUri, responseCookieHeader);
+            }
         }
 
         return response;

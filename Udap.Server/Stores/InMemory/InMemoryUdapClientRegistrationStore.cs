@@ -74,7 +74,6 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             ?.Value;
 
         var existingClient = _clients.SingleOrDefault(c => 
-            c.AllowedGrantTypes.Any(grant => client.AllowedGrantTypes.Contains(grant)) &&
             // ISS
             c.ClientSecrets.Any(cs =>
                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME && 
@@ -220,5 +219,10 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
                 .ToArray());
 
         return Task.FromResult<X509Certificate2Collection?>(certificates);
+    }
+
+    public Task<string?> GetCommunityId(string community, CancellationToken token = default)
+    {
+        throw new NotImplementedException();
     }
 }

@@ -18,7 +18,6 @@ using OpenTelemetry.Trace;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Identity.Provider;
-using Udap.Metadata.Server;
 using Udap.Server.Configuration;
 
 namespace Udap.Idp;

@@ -159,6 +159,8 @@ namespace Udap.Client.Client
                         .WithExpiration(TimeSpan.FromMinutes(5))
                         .WithJwtId()
                         .WithClientName(_udapClientOptions.ClientName)
+                        //Todo get logo from client registration, maybe Client object.  But still nee to retain logo in clientproperties during registration
+                        .WithLogoUri("https://udaped.fhirlabs.net/images/udap-dotnet-auth-server.png")
                         .WithContacts(_udapClientOptions.Contacts)
                         .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues
                             .TokenEndpointAuthMethodValue)
@@ -200,7 +202,7 @@ namespace Udap.Client.Client
 
                     var response = await _httpClient.PostAsync(this.UdapServerMetaData?.RegistrationEndpoint, content, token);
 
-                    if (response.IsSuccessStatusCode)
+                    if (((int)response.StatusCode) < 500)
                     {
                         var resultDocument =
                             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>(cancellationToken: token);

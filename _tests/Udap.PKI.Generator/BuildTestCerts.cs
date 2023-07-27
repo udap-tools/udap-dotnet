@@ -789,23 +789,20 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/Udap.Identity.Provider.2/CertStore/issued/idp2.securedcontrols.net.server.pfx",
                 true);
 
-
-
-
         }
 
         //
-            // Run this in Linux.
-            //
-            // Todo: enable to run in Windows.  
-            // The short answer is, Windows will not allow this code rsa.ExportParameters(true).  
-            // You have to follow DotNetUtilities.GetKeyPair code to see where it is.
-            // That ExportParams would have needed the plaintext exportable bit set originally.
-            // Windows behaves in such a way when importing the pfx it creates the CNG key so it can only be exported encrypted.
-            // See this answer by bartonjs https://stackoverflow.com/users/6535399/bartonjs
-            // https://stackoverflow.com/a/57330499/6115838
-            // Also see this Github issue comment: https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
-            //
+        // Run this in Linux.
+        //
+        // Todo: enable to run in Windows.  
+        // The short answer is, Windows will not allow this code rsa.ExportParameters(true).  
+        // You have to follow DotNetUtilities.GetKeyPair code to see where it is.
+        // That ExportParams would have needed the plaintext exportable bit set originally.
+        // Windows behaves in such a way when importing the pfx it creates the CNG key so it can only be exported encrypted.
+        // See this answer by bartonjs https://stackoverflow.com/users/6535399/bartonjs
+        // https://stackoverflow.com/a/57330499/6115838
+        // Also see this Github issue comment: https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
+        //
         [Fact (Skip = "Enabled on desktop when needed.  Actually I performed the work around in SignedSoftwareStatementBuilder<T>.BuildECDSA")]
         public void GenerateCrlForFailTests()
         {
@@ -919,7 +916,7 @@ namespace Udap.PKI.Generator
         {
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community1",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community1",                      //communityStorePath
                 "caLocalhostCert",                                                          //anchorName
                 "intermediateLocalhostCert",                                                //intermediateName
                 "fhirLabsApiClientLocalhostCert",                                           //issuedName
@@ -936,7 +933,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community2",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community2",                      //communityStorePath
                 "caLocalhostCert2",                                                         //anchorName
                 "intermediateLocalhostCert2",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert2",                                          //issuedName
@@ -953,7 +950,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community3",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community3",                      //communityStorePath
                 "caLocalhostCert3",                                                         //anchorName
                 "intermediateLocalhostCert3",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert3",                                          //issuedName
@@ -968,7 +965,7 @@ namespace Udap.PKI.Generator
             //
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community4",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community4",                      //communityStorePath
                 "caLocalhostCert4",                                                         //anchorName
                 "intermediateLocalhostCert4",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert4",                                          //issuedName
@@ -987,7 +984,7 @@ namespace Udap.PKI.Generator
             //
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community5",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community5",                      //communityStorePath
                 "caLocalhostCert5",                                                         //anchorName
                 "intermediateLocalhostCert5",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert5",                                          //issuedName
@@ -1002,7 +999,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community6",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community6",                      //communityStorePath
                 "caLocalhostCert6",                                                         //anchorName
                 "intermediateLocalhostCert6",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert6_ECDSA",                                    //issuedName
@@ -1018,7 +1015,7 @@ namespace Udap.PKI.Generator
             
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_weatherapi_community1",                    //communityStorePath
+                $"{LocalhostCertStore}localhost_weatherapi_community1",                    //communityStorePath
                 "caWeatherApiLocalhostCert",                                                //anchorName
                 "intermediateWeatherApiLocalhostCert",                                      //intermediateName
                 "weatherApiClientLocalhostCert1",                                           //issuedName
@@ -1034,7 +1031,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_weatherapi_community2",                    //communityStorePath
+                $"{LocalhostCertStore}localhost_weatherapi_community2",                    //communityStorePath
                 "caWeatherApiLocalhostCert2",                                               //anchorName
                 "intermediateWeatherApiLocalhostCert2",                                     //intermediateName
                 "weatherApiClientLocalhostCert2",                                           //issuedName
@@ -1185,6 +1182,23 @@ namespace Udap.PKI.Generator
                             $"{LocalhostCdp}/{intermediateName}.crl",
                             $"http://localhost:5033/certs/{intermediateName}.cer"
                         );
+
+                        if (issuedName == "fhirLabsApiClientLocalhostCert")
+                        {
+                            BuildClientCertificate(
+                                intermediateCert,
+                                caCert,
+                                intermediate,
+                                "CN=idpserver", //issuedDistinguishedName
+                                new List<string>
+                                {
+                                    "https://idpserver",
+                                },
+                                $"{LocalhostUdapIssued}/idpserver",
+                                $"{LocalhostCdp}/{intermediateName}.crl",
+                                $"http://localhost:5033/certs/{intermediateName}.cer"
+                            );
+                        }
                     }
 
 
@@ -1281,7 +1295,23 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/Udap.Identity.Provider/CertStore/issued/{issuedName}.pfx",
                 true);
 
-            // Udap.Identity.Provider.2 :: Second Idenity Provider
+            // Udap.Server.Tests :: Identity Provider
+            if (issuedName == "fhirLabsApiClientLocalhostCert")
+            {
+                File.Copy($"{LocalhostUdapIssued}/idpserver.pfx",
+                    $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/issued/idpserver.pfx",
+                    true);
+
+                File.Copy($"{communityStorePath}/{anchorName}.cer",
+                    $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/anchors/{anchorName}.cer",
+                    true);
+                File.Copy($"{LocalhostUdapIntermediates}/{intermediateName}.cer",
+                    $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/intermediates/{intermediateName}.cer",
+                    true);
+            }
+
+
+            // Udap.Identity.Provider.2 :: Second Identity Provider
             if (issuedName == "fhirLabsApiClientLocalhostCert2")
             {
                 File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",

@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography.X509Certificates;
 using Udap.Common;
 using Udap.Common.Models;
@@ -223,6 +224,20 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<string?> GetCommunityId(string community, CancellationToken token = default)
     {
-        throw new NotImplementedException();
+        string? id;
+        if (string.IsNullOrEmpty(community))
+        {
+            id = _communities.Where(c => c.Default)
+                .Select(c => c.Id.ToString())
+            .First();
+
+            return Task.FromResult<string?>(id);
+        }
+
+        id = _communities.Where(c => c.Name == community)
+            .Select(c => c.Id.ToString())
+            .SingleOrDefault();
+
+        return Task.FromResult<string?>(id);
     }
 }

@@ -159,7 +159,8 @@ public class MetadataController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            _logger.LogError(ex, "Failed loading anchor from {anchorCertificate}", anchorCertificate);
+            _logger.LogDebug(ex,
                 $"Failed loading certificate from {nameof(anchorCertificate)} {anchorCertificate}");
 
             return BadRequest(result);

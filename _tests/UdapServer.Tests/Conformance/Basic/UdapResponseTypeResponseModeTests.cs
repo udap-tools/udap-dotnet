@@ -43,7 +43,7 @@ namespace UdapServer.Tests.Conformance.Basic;
 public class UdapResponseTypeResponseModeTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private UdapIdentityServerPipeline _mockPipeline = new UdapIdentityServerPipeline();
+    private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
     
 
     public UdapResponseTypeResponseModeTests(ITestOutputHelper testOutputHelper)
@@ -70,7 +70,7 @@ public class UdapResponseTypeResponseModeTests
 
         };
 
-        _mockPipeline.OnPreConfigureServices += s =>
+        _mockPipeline.OnPreConfigureServices += (_, s) =>
         {
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
             // TODO: PR Deunde for this issue.
@@ -139,7 +139,7 @@ public class UdapResponseTypeResponseModeTests
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
-            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
@@ -169,7 +169,7 @@ public class UdapResponseTypeResponseModeTests
 
        
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint, 
+            UdapAuthServerPipeline.RegistrationEndpoint, 
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -218,7 +218,7 @@ public class UdapResponseTypeResponseModeTests
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
-            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
@@ -250,7 +250,7 @@ public class UdapResponseTypeResponseModeTests
 
 
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -291,7 +291,7 @@ public class UdapResponseTypeResponseModeTests
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
-            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
@@ -321,7 +321,7 @@ public class UdapResponseTypeResponseModeTests
 
 
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -365,7 +365,7 @@ public class UdapResponseTypeResponseModeTests
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
-            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
@@ -396,7 +396,7 @@ public class UdapResponseTypeResponseModeTests
 
 
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -434,7 +434,7 @@ public class UdapResponseTypeResponseModeTests
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
-            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
@@ -463,7 +463,7 @@ public class UdapResponseTypeResponseModeTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
 
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -500,7 +500,7 @@ public class UdapResponseTypeResponseModeTests
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
-            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
@@ -531,7 +531,7 @@ public class UdapResponseTypeResponseModeTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
 
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -577,7 +577,7 @@ public class UdapResponseTypeResponseModeTests
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
-            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
@@ -608,7 +608,7 @@ public class UdapResponseTypeResponseModeTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
 
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);
@@ -664,7 +664,7 @@ public class UdapResponseTypeResponseModeTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
 
         response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -717,7 +717,7 @@ public class UdapResponseTypeResponseModeTests
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
-            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
@@ -748,7 +748,7 @@ public class UdapResponseTypeResponseModeTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
 
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);

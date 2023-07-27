@@ -100,11 +100,15 @@
   <ItemGroup>
     <ProjectReference Include="..\..\examples\Udap.Idp\Udap.Idp.csproj" />
     <ProjectReference Include="..\..\Udap.Client\Udap.Client.csproj" />
+    <ProjectReference Include="..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
     <ProjectReference Include="..\..\Udap.Server\Udap.Server.csproj" />
     <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="CertStore\anchors\caLocalhostCert.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="CertStore\intermediates\intermediateLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -113,6 +117,9 @@
     </None>
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\idpserver.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

@@ -12,7 +12,6 @@
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Policy;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Models;
@@ -28,18 +27,21 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Moq;
+using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
-using Udap.Server;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Stores.InMemory;
+using Constants = Udap.Server.Constants;
 
 namespace UdapServer.Tests.Common;
 
-public class UdapIdentityServerPipeline
+public class UdapAuthServerPipeline
 {
-    public const string BaseUrl = "https://idpserver";
+    public const string BaseUrl = "https://server";
     public const string LoginPage = BaseUrl + "/account/login";
     public const string LogoutPage = BaseUrl + "/account/logout";
     public const string ConsentPage = BaseUrl + "/account/consent";
@@ -62,6 +64,7 @@ public class UdapIdentityServerPipeline
 
     public const string FederatedSignOutPath = "/signout-oidc";
     public const string FederatedSignOutUrl = BaseUrl + FederatedSignOutPath;
+
 
     public IdentityServerOptions Options { get; set; }
     public List<Client> Clients { get; set; } = new List<Client>();
@@ -118,6 +121,7 @@ public class UdapIdentityServerPipeline
         }
         
         Server = new TestServer(builder);
+
         Handler = Server.CreateHandler();
             
         BrowserClient = new BrowserClient(new BrowserHandler(Handler));
@@ -147,6 +151,13 @@ public class UdapIdentityServerPipeline
         });
 
         ClientRegistrationStore = new InMemoryUdapClientRegistrationStore(Clients, Communities);
+
+        services.AddSingleton<ITrustAnchorStore>(sp =>
+            new TrustAnchorFileStore(
+                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                new Mock<ILogger<TrustAnchorFileStore>>().Object,
+                "FhirLabsApi")); //Note: FhirLabsApi is the key to pick the correct data from appsettings.json
+
         services.AddIdentityServer(options =>
             {
                 options.Events = new EventsOptions
@@ -166,10 +177,8 @@ public class UdapIdentityServerPipeline
             .AddInMemoryApiScopes(ApiScopes)
             .AddTestUsers(Users)
             .AddDeveloperSigningCredential(persistKey: false)
-            .AddUdapServerAsIdentityProvider(baseUrl: BaseUrl)
+            .AddUdapServer(BaseUrl, "FhirLabsApi")
             .AddInMemoryUdapCertificates(Communities, ClientRegistrationStore);
-
-        services.AddUdapMetadataServer(builder.Configuration);
 
         // BackChannelMessageHandler is used by .AddTieredOAuthForTest()
         // services.AddHttpClient(IdentityServerConstants.HttpClients.BackChannelLogoutHttpClient)
@@ -205,8 +214,7 @@ public class UdapIdentityServerPipeline
 
         OnPreConfigure(app);
 
-        app.UseUdapMetadataServer();
-        app.UseUdapIdPServer();
+        app.UseUdapServer();
         app.UseIdentityServer();
         
         // UI endpoints

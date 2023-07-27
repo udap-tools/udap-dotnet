@@ -44,7 +44,7 @@ public class UdapForceStateParamFalseTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
     
-    private UdapIdentityServerPipeline _mockPipeline = new UdapIdentityServerPipeline();
+    private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
 
     public UdapForceStateParamFalseTests(ITestOutputHelper testOutputHelper)
     {
@@ -70,7 +70,7 @@ public class UdapForceStateParamFalseTests
 
         };
 
-        _mockPipeline.OnPreConfigureServices += s =>
+        _mockPipeline.OnPreConfigureServices += (_, s) =>
         {
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
@@ -141,7 +141,7 @@ public class UdapForceStateParamFalseTests
         
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
-            .WithAudience(UdapIdentityServerPipeline.RegistrationEndpoint)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
@@ -171,7 +171,7 @@ public class UdapForceStateParamFalseTests
 
 
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.Created);

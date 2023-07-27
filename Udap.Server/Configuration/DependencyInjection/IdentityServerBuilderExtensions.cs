@@ -86,11 +86,15 @@ public static class IdentityServerBuilderExtensions
     /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
     public static IIdentityServerBuilder AddUdapServerAsIdentityProvider(
         this IIdentityServerBuilder builder,
-        Action<ServerSettings> setupAction,
+        Action<ServerSettings>? setupAction = null,
         Action<UdapConfigurationStoreOptions>? storeOptionAction = null,
         string? baseUrl = null)
     {
-        builder.Services.Configure(setupAction);
+        if (setupAction != null)
+        {
+            builder.Services.Configure(setupAction);
+        }
+
         builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
         builder.AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl);
         builder.AddUdapServerConfiguration();
@@ -113,14 +117,15 @@ public static class IdentityServerBuilderExtensions
     /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
     public static IIdentityServerBuilder AddUdapServer(
         this IIdentityServerBuilder builder,
-        string? baseUrl = null)
+        string? baseUrl = null,
+        string? resourceServerName = null)//Todo refactor resourceServerName out everywhere
     {
 
         builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
             new IssuedCertificateStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
                 sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
-                "Udap.Auth.Server"));
+                resourceServerName ?? "Udap.Auth.Server"));
 
         // TODO: TrustAnchor has to be singleton because
         // builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>
@@ -139,7 +144,6 @@ public static class IdentityServerBuilderExtensions
             return new TrustAnchorStore(db.Anchors.Select(a => a.ToModel()).ToList());
         });
 
-        builder.Services.AddHttpClient<IUdapClient, UdapClient>();
 
         builder.AddUdapJwtBearerClientAuthentication()
             .AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl)

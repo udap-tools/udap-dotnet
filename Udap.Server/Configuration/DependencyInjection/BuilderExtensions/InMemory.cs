@@ -23,10 +23,10 @@ public static class InMemory
 {
     public static IIdentityServerBuilder AddInMemoryUdapCertificates(
         this IIdentityServerBuilder builder,
-        IEnumerable<Community> communities,
-        InMemoryUdapClientRegistrationStore clientRegistrationStore)
+        IEnumerable<Community> communities)
     {
         builder.Services.AddSingleton(communities);
+
         builder.Services.AddScoped<IUdapClientRegistrationStore>(sp => 
             new InMemoryUdapClientRegistrationStore(
                 sp.GetRequiredService<List<Client>>(),

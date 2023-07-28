@@ -4,10 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Udap.Client.Client;
 using Udap.Server.Security.Authentication.TieredOAuth;
-using System.Net.Http;
 using Udap.Common.Certificates;
 using Microsoft.Extensions.Logging;
 using Udap.Client.Configuration;
+using FluentAssertions.Common;
 
 namespace UdapServer.Tests.Common;
 public static class TestExtensions

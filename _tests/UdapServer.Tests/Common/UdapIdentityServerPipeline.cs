@@ -70,7 +70,6 @@ public class UdapIdentityServerPipeline
     public List<ApiScope> ApiScopes { get; set; } = new List<ApiScope>();
     public List<TestUser> Users { get; set; } = new List<TestUser>();
     public List<Community> Communities { get; set; } = new List<Community>();
-    public InMemoryUdapClientRegistrationStore ClientRegistrationStore { get; set; }
     public TestServer Server { get; set; }
     public HttpMessageHandler Handler { get; set; }
 
@@ -145,8 +144,7 @@ public class UdapIdentityServerPipeline
             if (OnFederatedSignout != null) handler.OnFederatedSignout = OnFederatedSignout;
             return handler;
         });
-
-        ClientRegistrationStore = new InMemoryUdapClientRegistrationStore(Clients, Communities);
+        
         services.AddIdentityServer(options =>
             {
                 options.Events = new EventsOptions
@@ -167,7 +165,7 @@ public class UdapIdentityServerPipeline
             .AddTestUsers(Users)
             .AddDeveloperSigningCredential(persistKey: false)
             .AddUdapServerAsIdentityProvider(baseUrl: BaseUrl)
-            .AddInMemoryUdapCertificates(Communities, ClientRegistrationStore);
+            .AddInMemoryUdapCertificates(Communities);
 
         services.AddUdapMetadataServer(builder.Configuration);
 

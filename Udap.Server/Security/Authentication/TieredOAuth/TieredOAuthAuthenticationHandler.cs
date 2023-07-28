@@ -431,7 +431,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var response = await _udapClient.ValidateResource(idp, community);
         
         var resourceHolderRedirectUrl =
-            $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
+            $"{Context.Request.Scheme}://{Context.Request.Host}{Options.CallbackPath}";
 
         if (response.IsError)
         {

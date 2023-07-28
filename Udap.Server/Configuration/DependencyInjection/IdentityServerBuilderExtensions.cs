@@ -40,25 +40,26 @@ public static class IdentityServerBuilderExtensions
 {
     /// <summary>
     /// Extend Identity Server with <see cref="Udap.Server"/>.
-    ///
+    /// 
     /// /// Include "registration_endpoint" in the Identity Server, discovery document
     /// (.well-known/openid-configuration)
     /// 
     /// </summary>
     /// <param name="builder"></param>
-    /// <param name="setupAction">Apply <see cref="ServerSettings"/></param>
+    /// <param name="serverSettingsAction">Apply <see cref="ServerSettings"/></param>
+    /// <param name="clientOptionAction">Apply <see cref="UdapClientOptions"/></param>
     /// <param name="storeOptionAction">Apply <see cref="UdapConfigurationStoreOptions"/></param>
     /// <param name="baseUrl">Supply the baseUrl or set UdapIdpBaseUrl environment variable.</param>
     /// <returns></returns>
     /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
     public static IIdentityServerBuilder AddUdapServer(
         this IIdentityServerBuilder builder,
-        Action<ServerSettings> setupAction,
+        Action<ServerSettings> serverSettingsAction,
         Action<UdapClientOptions>? clientOptionAction = null,
         Action<UdapConfigurationStoreOptions>? storeOptionAction = null,
         string? baseUrl = null)
     {
-        builder.Services.Configure(setupAction);
+        builder.Services.Configure(serverSettingsAction);
         if (clientOptionAction != null)
         {
             builder.Services.Configure(clientOptionAction);
@@ -106,7 +107,7 @@ public static class IdentityServerBuilderExtensions
 
     /// <summary>
     /// Not used for a typical server.  Exposed for testing.
-    ///
+    /// 
     /// Include "registration_endpoint" in the Identity Server, discovery document
     /// (.well-known/openid-configuration)
     /// 
@@ -118,9 +119,8 @@ public static class IdentityServerBuilderExtensions
     public static IIdentityServerBuilder AddUdapServer(
         this IIdentityServerBuilder builder,
         string? baseUrl = null,
-        string? resourceServerName = null)//Todo refactor resourceServerName out everywhere
+        string? resourceServerName = null) //Todo refactor resourceServerName out everywhere
     {
-
         builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
             new IssuedCertificateStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),

@@ -6,7 +6,11 @@
 //  See LICENSE in the project root for license information.
 // */
 #endregion
-#pragma warning disable 
+
+// Original code from:
+// Copyright (c) Duende Software. All rights reserved.
+// See LICENSE in the project root for license information.
+
 
 
 using System.Net;

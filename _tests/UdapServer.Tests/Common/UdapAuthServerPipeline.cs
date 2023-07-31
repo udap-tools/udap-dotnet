@@ -14,27 +14,33 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
+using Duende.IdentityServer.Events;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.VisualBasic;
 using Moq;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
+using Udap.Idp.Pages;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Stores.InMemory;
+using UnitTests.Common;
 using Constants = Udap.Server.Constants;
 
 namespace UdapServer.Tests.Common;
@@ -72,6 +78,7 @@ public class UdapAuthServerPipeline
     public List<ApiResource> ApiResources { get; set; } = new List<ApiResource>();
     public List<ApiScope> ApiScopes { get; set; } = new List<ApiScope>();
     public List<TestUser> Users { get; set; } = new List<TestUser>();
+    public  TestUserStore? UserStore { get; set; }
     public List<Community> Communities { get; set; } = new List<Community>();
     public TestServer Server { get; set; }
     public HttpMessageHandler Handler { get; set; }
@@ -81,6 +88,8 @@ public class UdapAuthServerPipeline
 
     public MockMessageHandler BackChannelMessageHandler { get; set; } = new MockMessageHandler();
     public MockMessageHandler JwtRequestMessageHandler { get; set; } = new MockMessageHandler();
+
+    public TestEventService EventService = new TestEventService();
 
     public event Action<WebHostBuilderContext, IServiceCollection> OnPreConfigureServices = (ctx, services) => { };
     public event Action<IServiceCollection> OnPostConfigureServices = services => { };
@@ -251,9 +260,14 @@ public class UdapAuthServerPipeline
             path.Run(ctx => OnExternalLoginChallenge(ctx));
         });
 
+        app.Map("/externallogin/callback", path =>
+        {
+            path.Run(async ctx => await OnExternalLoginCallback(ctx,  new Mock<ILogger>().Object));
+        });
+
         OnPostConfigure(app);
     }
-
+    
     public bool LoginWasCalled { get; set; }
     public string LoginReturnUrl { get; set; }
     public AuthorizationRequest LoginRequest { get; set; }
@@ -272,6 +286,7 @@ public class UdapAuthServerPipeline
 
     private async Task OnExternalLoginChallenge(HttpContext ctx)
     {
+        //TODO: factor this code into library code and share with the Challenge.cshtml.cs file
         var interactionService = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
         var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault();
         
@@ -295,6 +310,114 @@ public class UdapAuthServerPipeline
 
         // When calling ChallengeAsync your handler will be called if it is registered.
         await ctx.ChallengeAsync(TieredOAuthAuthenticationDefaults.AuthenticationScheme, props);
+    }
+
+    private async Task OnExternalLoginCallback(HttpContext ctx, ILogger logger)
+    {
+        //TODO: factor this code into library code and share with the Callback.cshtml.cs file
+
+        var interactionService = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
+
+
+        // read external identity from the temporary cookie
+        var result = await ctx.AuthenticateAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
+        if (result?.Succeeded != true)
+        {
+            throw new Exception("External authentication error");
+        }
+
+        var externalUser = result.Principal;
+
+        if (logger.IsEnabled(LogLevel.Debug))
+        {
+            var externalClaims = externalUser.Claims.Select(c => $"{c.Type}: {c.Value}");
+            logger.LogDebug("External claims: {@claims}", externalClaims);
+        }
+
+        // lookup our user and external provider info
+        // try to determine the unique id of the external user (issued by the provider)
+        // the most common claim type for that are the sub claim and the NameIdentifier
+        // depending on the external provider, some other claim type might be used
+        var userIdClaim = externalUser.FindFirst(JwtClaimTypes.Subject) ??
+                          externalUser.FindFirst(ClaimTypes.NameIdentifier) ??
+                          throw new Exception("Unknown userid");
+
+        var provider = result.Properties.Items["scheme"];
+        var providerUserId = userIdClaim.Value;
+
+        // find external user
+        var user = UserStore.FindByExternalProvider(provider, providerUserId);
+        if (user == null)
+        {
+            // this might be where you might initiate a custom workflow for user registration
+            // in this sample we don't show how that would be done, as our sample implementation
+            // simply auto-provisions new external user
+            //
+            // remove the user id claim so we don't include it as an extra claim if/when we provision the user
+            var claims = externalUser.Claims.ToList();
+            claims.Remove(userIdClaim);
+            user = UserStore.AutoProvisionUser(provider, providerUserId, claims.ToList());
+        }
+
+        // this allows us to collect any additional claims or properties
+        // for the specific protocols used and store them in the local auth cookie.
+        // this is typically used to store data needed for signout from those protocols.
+        var additionalLocalClaims = new List<Claim>();
+        var localSignInProps = new AuthenticationProperties();
+        CaptureExternalLoginContext(result, additionalLocalClaims, localSignInProps);
+
+        // issue authentication cookie for user
+        var isuser = new IdentityServerUser(user.SubjectId)
+        {
+            DisplayName = user.Username,
+            IdentityProvider = provider,
+            AdditionalClaims = additionalLocalClaims
+        };
+
+        await ctx.SignInAsync(isuser, localSignInProps);
+
+        // delete temporary cookie used during external authentication
+        await ctx.SignOutAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
+
+        // retrieve return URL
+        var returnUrl = result.Properties.Items["returnUrl"] ?? "~/";
+
+        // check if external login is in the context of an OIDC request
+        var context = await interactionService.GetAuthorizationContextAsync(returnUrl);
+        await EventService.RaiseAsync(new UserLoginSuccessEvent(provider, providerUserId, user.SubjectId, user.Username, true, context?.Client.ClientId));
+
+        if (context != null)
+        {
+            if (context.IsNativeClient())
+            {
+                // The client is native, so this change in how to
+                // return the response is for better UX for the end user.
+                //this.LoadingPage(returnUrl, ctx);
+            }
+        }
+
+        ctx.Response.Redirect(returnUrl);
+    }
+    
+
+    // if the external login is OIDC-based, there are certain things we need to preserve to make logout work
+    // this will be different for WS-Fed, SAML2p or other protocols
+    private void CaptureExternalLoginContext(AuthenticateResult externalResult, List<Claim> localClaims, AuthenticationProperties localSignInProps)
+    {
+        // if the external system sent a session id claim, copy it over
+        // so we can use it for single sign-out
+        var sid = externalResult.Principal.Claims.FirstOrDefault(x => x.Type == JwtClaimTypes.SessionId);
+        if (sid != null)
+        {
+            localClaims.Add(new Claim(JwtClaimTypes.SessionId, sid.Value));
+        }
+
+        // if the external provider issued an id_token, we'll keep it for signout
+        var idToken = externalResult.Properties.GetTokenValue("id_token");
+        if (idToken != null)
+        {
+            localSignInProps.StoreTokens(new[] { new AuthenticationToken { Name = "id_token", Value = idToken } });
+        }
     }
 
     private async Task OnLogin(HttpContext ctx)
@@ -513,6 +636,13 @@ public class UdapAuthServerPipeline
     {
         // create throw-away scope
         return ApplicationServices.CreateScope().ServiceProvider.GetRequiredService<T>();
+    }
+
+    public string? GetClientState(HttpResponseMessage response)
+    {
+        var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.OriginalString);
+        queryParams.TryGetValue("state", out var state);
+        return state.SingleOrDefault();
     }
 }
 

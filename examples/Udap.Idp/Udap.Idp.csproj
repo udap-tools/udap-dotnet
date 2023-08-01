@@ -74,7 +74,7 @@
     <None Update="CertStore\issued\idp2.securedcontrols.net.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="CertStore\issued\udap-sandbox-surescripts.p12">
+    <None Update="CertStore\issued\udap-sandbox-surescripts-2.p12">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="host.docker.internal.pfx">

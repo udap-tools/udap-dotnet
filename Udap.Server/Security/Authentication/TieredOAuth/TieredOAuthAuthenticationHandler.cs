@@ -408,7 +408,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         //TODO algorithm selectable.
         var tokenRequest = tokenRequestBuilder.Build();
         
-        return await _udapClient.ExchangeCode(tokenRequest, Context.RequestAborted);
+        return await _udapClient.ExchangeCodeForAuthTokenResponse(tokenRequest, Context.RequestAborted);
     }
 
     /// <inheritdoc />

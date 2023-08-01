@@ -18,15 +18,21 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using IdentityModel.Client;
+using IdentityModel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
+using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Model;
+using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Server.Configuration;
@@ -35,6 +41,8 @@ using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
 using Xunit.Sdk;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
 
 namespace UdapServer.Tests.Conformance.Tiered;
 
@@ -268,17 +276,26 @@ public class TieredOauthTests
         _mockIdPPipeline.Subject = new IdentityServerUser("bob").CreatePrincipal();
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <returns></returns>
     [Fact]
-    public async Task ShouldReturnAuthorizationCode()
+    public async Task ClientAuthorize_IdPDiscovery_IdPRegistration_IdPAuthAccess_ClientAuthAccess_Test()
     {
         // Register client with auth server
         var resultDocument = await RegisterClientWithAuthServer();
         _mockAuthorServerPipeline.RemoveSessionCookie();
         _mockAuthorServerPipeline.RemoveLoginCookie();
-
         resultDocument.Should().NotBeNull();
         resultDocument!.ClientId.Should().NotBeNull();
 
+
+
+        //////////////////////
+        // ClientAuthorize
+        //////////////////////
+         
         // Data Holder's Auth Server validates Identity Provider's Server software statement
 
         var clientState = Guid.NewGuid().ToString();
@@ -325,6 +342,17 @@ public class TieredOauthTests
         sb.Append("&returnUrl=").Append(Uri.EscapeDataString(returnUrl));
         url = sb.ToString();
 
+
+
+        //////////////////////////////////
+        //
+        // IdPDiscovery
+        // IdPRegistration
+        // IdPAuthAccess
+        //
+        //////////////////////////////////
+
+
         // Auto Dynamic registration between Auth Server and Identity Provider happens here.
         // /Challenge?
         //      ctx.ChallengeAsync -> launch registered scheme.  In this case the TieredOauthAuthenticationHandler
@@ -332,7 +360,7 @@ public class TieredOauthTests
         //      Backchannel
         //          Discovery
         //          Auto registration
-        // *** We are here after the next line of code ***
+        // *** We are here after the request to the IdPs /authorize  call.  If the client is registered already then Discovery and Reg is skipped ***
         //
         //          Authentication request (/authorize?)
         //            User logs in at IdP
@@ -394,27 +422,74 @@ public class TieredOauthTests
         var schemeCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(authorizeCallbackResult.Headers.Location!.AbsoluteUri);
         schemeCallbackResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await schemeCallbackResult.Content.ReadAsStringAsync());
         schemeCallbackResult.Headers.Location.Should().NotBeNull();
-        _testOutputHelper.WriteLine(schemeCallbackResult.Headers.Location!.OriginalString);
-        
-
-        //Validate Cookies
+        schemeCallbackResult.Headers.Location!.OriginalString.Should().StartWith("/connect/authorize/callback?");
+        // _testOutputHelper.WriteLine(schemeCallbackResult.Headers.Location!.OriginalString);
+        // Validate Cookies
         _mockAuthorServerPipeline.GetSessionCookie().Should().NotBeNull();
         _mockAuthorServerPipeline.BrowserClient.GetCookie("https://server", "idsrv").Should().NotBeNull();
         //TODO assert match State and nonce between Auth Server and IdP
 
-
+        // Run the authServer  https://server/connect/authorize/callback 
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
         var clientCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(
                        $"https://server{schemeCallbackResult.Headers.Location!.OriginalString}");
         clientCallbackResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await clientCallbackResult.Content.ReadAsStringAsync());
         clientCallbackResult.Headers.Location.Should().NotBeNull();
         clientCallbackResult.Headers.Location!.AbsoluteUri.Should().StartWith("https://code_client/callback?");
-        _testOutputHelper.WriteLine(clientCallbackResult.Headers.Location!.AbsoluteUri);
+        // _testOutputHelper.WriteLine(clientCallbackResult.Headers.Location!.AbsoluteUri);
         
         
         // Assert match state and nonce between User and Auth Server
         clientState.Should().BeEquivalentTo(_mockAuthorServerPipeline.GetClientState(clientCallbackResult));
 
+        queryParams = QueryHelpers.ParseQuery(clientCallbackResult.Headers.Location.Query);
+        queryParams.Should().Contain(p => p.Key == "code");
+        var code = queryParams.Single(p => p.Key == "code").Value.ToString();
+
+        ////////////////////////////
+        //
+        // ClientAuthAccess
+        //
+        ///////////////////////////
+
+        // Get a Access Token (Cash in the code)
+
+        var privateCerts = _mockAuthorServerPipeline.Resolve<IPrivateCertificateStore>();
+
+        var tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
+            resultDocument!.ClientId,
+            "https://server/connect/token",
+            privateCerts.IssuedCertificates.Select(ic => ic.Certificate).First(),
+            "https://code_client/callback",
+            code)
+            .Build();
+        
+        var udapClient = new UdapClient(
+                _mockAuthorServerPipeline.BrowserClient,
+                _mockAuthorServerPipeline.Resolve<TrustChainValidator>(),
+                _mockAuthorServerPipeline.Resolve<IOptionsMonitor<UdapClientOptions>>(),
+                _mockAuthorServerPipeline.Resolve<ILogger<UdapClient>>(),
+                _mockAuthorServerPipeline.Resolve<ITrustAnchorStore>());
+
+        var accessToken = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
+        accessToken.Should().NotBeNull();
+        accessToken.IdentityToken.Should().NotBeNull();
+        var jwt = new JwtSecurityToken(accessToken.IdentityToken);
+
+        using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
+        var formattedStatement = JsonSerializer.Serialize(
+            jsonDocument,
+            new JsonSerializerOptions { WriteIndented = true }
+        );
+
+        var formattedHeader = Base64UrlEncoder.Decode(jwt.EncodedHeader);
+        
+        _testOutputHelper.WriteLine(formattedHeader);
+        _testOutputHelper.WriteLine(formattedStatement);
+
+        // Todo: Nonce 
+        // Todo: Validate claims.  Like missing name and other identity claims.  Maybe add a hl7_identifier
+        // Why is idp:TieredOAuth in the returned claims?
     }
 
     private async Task<UdapDynamicClientRegistrationDocument?> RegisterClientWithAuthServer()

@@ -77,7 +77,7 @@ namespace Udap.Client.Client
             IEnumerable<X509Certificate2> certificates,
             CancellationToken token = default);
 
-        Task<OAuthTokenResponse> ExchangeCode(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
+        Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
         
         Task<IEnumerable<SecurityKey>?> ResolveJwtKeys(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default);
     }
@@ -224,9 +224,34 @@ namespace Udap.Client.Client
             throw new Exception($"Tiered OAuth: Unable to register client to {this.UdapServerMetaData?.RegistrationEndpoint}");
         }
 
-        public async Task<OAuthTokenResponse> ExchangeCode(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default)
+        /// <summary>
+        /// Sends a token request using the authorization_code grant type.
+        /// </summary>
+        /// <param name="tokenRequest">The request.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns></returns>
+        public async Task<TokenResponse> ExchangeCodeForTokenResponse(
+            UdapAuthorizationCodeTokenRequest tokenRequest, 
+            CancellationToken token = default)
         {
-            var response = await _httpClient.UdapExchangeCodeAsync(tokenRequest, token);
+            var response = await _httpClient.ExchangeCodeForTokenResponse(tokenRequest, token);
+        
+            return response;
+        }
+
+        /// <summary>
+        /// Sends a token request using the authorization_code grant type.  Typically used when called from
+        /// from a OAuthHandler implementation.  TieredOAuthAuthenticationHandler is an implementation that
+        /// calls this method.
+        /// </summary>
+        /// <param name="tokenRequest">The request.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns><see cref="OAuthTokenResponse"/></returns>
+        public async Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(
+            UdapAuthorizationCodeTokenRequest tokenRequest, 
+            CancellationToken token = default)
+        {
+            var response = await _httpClient.ExchangeCodeForAuthTokenResponse(tokenRequest, token);
 
             return response;
         }

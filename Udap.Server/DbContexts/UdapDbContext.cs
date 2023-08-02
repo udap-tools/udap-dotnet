@@ -23,6 +23,8 @@ public interface IUdapDbAdminContext : IDisposable
     DbSet<Intermediate> IntermediateCertificates { get; set; }
     DbSet<Community> Communities { get; set; }
     DbSet<Certification> Certifications { get; set; }
+    DbSet<TieredClient> TieredClients { get; set; }
+
     /// <summary>
     /// Saves the changes.
     /// </summary>
@@ -37,6 +39,7 @@ public interface IUdapDbContext : IDisposable
     DbSet<Intermediate> IntermediateCertificates { get; set; }
     DbSet<Community> Communities { get; set; }
     DbSet<Certification> Certifications { get; set; }
+    DbSet<TieredClient> TieredClients { get; set; }
 }
 
 public class UdapDbContext : UdapDbContext<UdapDbContext>
@@ -70,6 +73,7 @@ public class UdapDbContext<TContext> : DbContext, IUdapDbAdminContext, IUdapDbCo
     public DbSet<Duende.IdentityServer.EntityFramework.Entities.Client> Clients { get; set; } = null!;
     public DbSet<Community> Communities { get; set; } = null!;
     public DbSet<Certification> Certifications { get; set; } = null!;
+    public DbSet<TieredClient> TieredClients { get; set; } = null!;
 
     public UdapDbContext(DbContextOptions<TContext> options, bool migrateClientTables = false) : base(options)
     {

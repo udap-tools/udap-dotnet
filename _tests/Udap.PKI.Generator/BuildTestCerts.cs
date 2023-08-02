@@ -762,7 +762,7 @@ namespace Udap.PKI.Generator
                 subCA.GetRSAPrivateKey()!,
                 "CN=IdP1 Server, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://idp1.securedcontrols.net", "https://localhost:5055" },
-                $"{SurefhirlabsUdapIssued}/idp1.securedcontrols.net.client",
+                $"{SurefhirlabsUdapIssued}/idp1.securedcontrols.net.server",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
             );

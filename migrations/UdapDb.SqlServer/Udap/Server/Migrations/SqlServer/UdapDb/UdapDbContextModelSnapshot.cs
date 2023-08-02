@@ -17,7 +17,7 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.3")
+                .HasAnnotation("ProductVersion", "7.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -526,7 +526,7 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                     b.ToTable("UdapCommunityCertification", (string)null);
                 });
 
-            modelBuilder.Entity("Udap.Server.Entities.Intermediates", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Intermediate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -563,6 +563,45 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                     b.HasIndex("AnchorId");
 
                     b.ToTable("UdapIntermediateCertificates", (string)null);
+                });
+
+            modelBuilder.Entity("Udap.Server.Entities.TieredClient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ClientUriSan")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CommunityId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("IdPBaseUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("RedirectUri")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TieredClients");
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientClaim", b =>
@@ -720,10 +759,10 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                     b.Navigation("Community");
                 });
 
-            modelBuilder.Entity("Udap.Server.Entities.Intermediates", b =>
+            modelBuilder.Entity("Udap.Server.Entities.Intermediate", b =>
                 {
                     b.HasOne("Udap.Server.Entities.Anchor", "Anchor")
-                        .WithMany("AnchorCertificates")
+                        .WithMany("Intermediates")
                         .HasForeignKey("AnchorId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("FK_IntermediateCertificate_Anchor");
@@ -756,7 +795,7 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                 {
                     b.Navigation("AnchorCertifications");
 
-                    b.Navigation("AnchorCertificates");
+                    b.Navigation("Intermediates");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.Certification", b =>

@@ -26,10 +26,12 @@ public static class InMemory
         IEnumerable<Community> communities)
     {
         builder.Services.AddSingleton(communities);
+        builder.Services.AddSingleton<ICollection<TieredClient>>(new List<TieredClient>());
 
         builder.Services.AddScoped<IUdapClientRegistrationStore>(sp => 
             new InMemoryUdapClientRegistrationStore(
                 sp.GetRequiredService<List<Client>>(),
+                sp.GetRequiredService<ICollection<TieredClient>>(),
                 sp.GetRequiredService<IEnumerable<Community>>()));
 
         return builder;

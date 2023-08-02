@@ -72,7 +72,15 @@ namespace Udap.Client.Client
         /// </summary>
         event Action<string>? TokenError;
 
-        Task<UdapDynamicClientRegistrationDocument> RegisterClient(
+        /// <summary>
+        /// Register a TieredClient in the Authorization Server.
+        /// Currently it is not SAN and Community aware.  It picks the first SAN.
+        /// </summary>
+        /// <param name="redirectUrl"></param>
+        /// <param name="certificates"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(
             string redirectUrl,
             IEnumerable<X509Certificate2> certificates,
             CancellationToken token = default);
@@ -137,7 +145,7 @@ namespace Udap.Client.Client
 
         //TODO the certs include the private key.  This needs work.  It should be a service or struct that
         // allows a an abstraction in "Sign" so that a vault or HSM can sign the metadata.
-        public async Task<UdapDynamicClientRegistrationDocument> RegisterClient(
+        public async Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(
             string redirectUrl,
             IEnumerable<X509Certificate2> certificates,
             CancellationToken token = default)
@@ -149,7 +157,13 @@ namespace Udap.Client.Client
 
             try
             {
-                foreach (var clientCert in certificates)
+                var x509Certificate2s = certificates.ToList();
+                if (certificates == null || !x509Certificate2s.Any())
+                {
+                    throw new Exception("Tiered OAuth: No client certificates provided.");
+                }
+
+                foreach (var clientCert in x509Certificate2s)
                 {
                     _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
 
@@ -168,10 +182,7 @@ namespace Udap.Client.Client
                         .WithResponseTypes(new List<string> { "code" })
                         .WithRedirectUrls(new List<string> { redirectUrl })
                         .Build();
-                    //
-                    // Example adding claims
-                    //
-                    // document.AddClaims(new List<Claim>() { new Claim("client_uri", "http://test.com/hello/") });
+                    
 
                     var signedSoftwareStatement =
                         SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>

@@ -18,6 +18,7 @@ namespace Udap.Server.Stores.InMemory;
 public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 {
     private readonly ICollection<Duende.IdentityServer.Models.Client> _clients;
+    private readonly ICollection<TieredClient> _tieredClients;
     private readonly IEnumerable<Community> _communities;
     private readonly IEnumerable<Intermediate> _intermediateCertificates;
 
@@ -29,10 +30,12 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
     /// <param name="intermediateCertificates"></param>
     public InMemoryUdapClientRegistrationStore(
         List<Duende.IdentityServer.Models.Client> clients,
+        ICollection<TieredClient> tierdClients,
         IEnumerable<Community> communities)
     {
         _clients = clients;
         _communities = communities;
+        _tieredClients = tierdClients;
         _intermediateCertificates = _communities
             .Where(c => c.Enabled && c.Anchors != null)
             .SelectMany(c =>
@@ -63,7 +66,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.AddClient");
+        using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.UpsertClient");
         activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
 
         var iss = client.ClientSecrets.SingleOrDefault(i =>
@@ -98,6 +101,34 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             _clients.Add(client);
             return Task.FromResult<bool>(false);
         }
+    }
+
+    public Task<bool> UpsertTieredClient(TieredClient client, CancellationToken token = default)
+    {
+        using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.UpsertTieredClient");
+        activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
+        activity?.SetTag(Tracing.Properties.ClientId, client.IdPBaseUrl);
+
+
+        var existingClient = _tieredClients
+            .SingleOrDefault(t =>
+                    t.IdPBaseUrl == client.IdPBaseUrl &&
+                    t.CommunityId == client.CommunityId);
+
+        if (existingClient != null)
+        {
+            client.ClientId = existingClient.ClientId;
+            existingClient.RedirectUri = client.RedirectUri;
+            return Task.FromResult<bool>(true);
+        }
+
+        _tieredClients.Add(client);
+        return Task.FromResult<bool>(false);
+    }
+
+    public Task<TieredClient?> FindTieredClientById(string clientId, CancellationToken token = default)
+    {
+        return Task.FromResult(_tieredClients.SingleOrDefault(t => t.ClientId == clientId));
     }
 
     public Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
@@ -222,22 +253,22 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         return Task.FromResult<X509Certificate2Collection?>(certificates);
     }
 
-    public Task<string?> GetCommunityId(string community, CancellationToken token = default)
+    public Task<int?> GetCommunityId(string community, CancellationToken token = default)
     {
-        string? id;
+        int? id;
         if (string.IsNullOrEmpty(community))
         {
             id = _communities.Where(c => c.Default)
-                .Select(c => c.Id.ToString())
+                .Select(c => c.Id)
             .First();
 
-            return Task.FromResult<string?>(id);
+            return Task.FromResult<int?>(id);
         }
 
         id = _communities.Where(c => c.Name == community)
-            .Select(c => c.Id.ToString())
+            .Select(c => c.Id)
             .SingleOrDefault();
 
-        return Task.FromResult<string?>(id);
+        return Task.FromResult<int?>(id);
     }
 }

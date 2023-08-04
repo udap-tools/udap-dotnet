@@ -8,7 +8,7 @@ This package is intended to be used with Duende's Identity Server.  Duende must 
 
 This package contains a few extension methods and two endpoints.  The first endpoint is an UDAP metadata endpoint, implementing Duende's IEndpointHandler interface allowing /.well-known/udap to render metadata.  The items of interest in the metadata is the registration_endpoint which points to the next endpoint; `UdapDynamicClientRegistrationEndpoint`.  This code is a simple endpoint called as a delegate using the dotnet minimal api technique.  All of this is configured by adding the ```AddUdapServer()``` extension method to the Identity Server pipeline.
 
-**Assumptions:**  An Identity Sever exists is backed by a relational database.  Use [Udap.Idp](./examples/Udap.Idp/) as an example.  I may revisit this in the future and build an in memory version but this reference implementation. For now it assumes a relational database is deployed.
+**Assumptions:**  An Identity Sever exists is backed by a relational database.  Use [Udap.Auth.Server](./../examples/Udap.Auth.Server/) as an example.  I may revisit this in the future and build an in memory version but this reference implementation. For now it assumes a relational database is deployed.
 
 ## Full Example
 
@@ -68,7 +68,7 @@ builder.Services.AddIdentityServer()
 
 ```
 
-## Udap.Idp Database Configuration
+## Udap.Auth.Server Database Configuration
 
 For your convenience a EF Migrations Project called [UdapDb.SqlServer](/migrations/UdapDb.SqlServer/) can deploy the database schema.  Run from Visual Studio using the UdapDb profile (/properties/launchSettings.json).  This project will create all the Udap tables and Duende Identity tables.  It will seed data needed for running local system tests.  See the SeedData.cs for details.
 
@@ -78,8 +78,8 @@ Not the [UdapDb.SqlServer](/migrations/UdapDb.SqlServer/) project includes two m
 
 ## UDAP Authorization Server Examples
 
-- [Udap.Idp](./examples/Udap.Idp/)
-- [Udap.Idp Deployed](https://securedcontrols.net/.well-known/udap)
+- [Udap.Auth.Server](./../examples/Udap.Auth.Server/)
+- [Udap.Auth.Server Deployed](https://securedcontrols.net/.well-known/udap)
 
 - FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of the contents of this repository by HL7.
 - UDAP® and the UDAP gear logo, ecosystem gears, and green lock designs are trademarks of UDAP.org. UDAP Draft Specifications are referenced and displayed in parts of this source code to document specification implementation.

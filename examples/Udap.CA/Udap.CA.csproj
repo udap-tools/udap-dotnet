@@ -41,7 +41,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Udap.Idp\Udap.Idp.csproj" />
+    <ProjectReference Include="..\Udap.Idp\Udap.Auth.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -99,7 +99,7 @@ The following tests are normal to run and the build server runs these same tests
 
 This is a MVP version of an Admin UI Tool.  It is only capable of administering the Udap prefixed tables.
 
-See [Udap.Idp.Admin](./examples/Udap.Idp.Admin/)
+See [Udap.Auth.Server.Admin](./examples/Auth.Server.Admin/)
 
 ### UDAP CA UI Tool
 

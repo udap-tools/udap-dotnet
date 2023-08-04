@@ -34,7 +34,7 @@ services:
   
 
 - name: udap-auth
-  project: examples/Udap.Idp/Udap.Idp.csproj
+  project: examples/Udap.Idp/Udap.Auth.Server.csproj
   bindings:
   - protocol: https
     name: https

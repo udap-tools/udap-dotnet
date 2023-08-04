@@ -31,15 +31,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.VisualBasic;
 using Moq;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
-using Udap.Idp.Pages;
+using Udap.Auth.Server.Pages;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
-using Udap.Server.Stores.InMemory;
 using UnitTests.Common;
 using Constants = Udap.Server.Constants;
 

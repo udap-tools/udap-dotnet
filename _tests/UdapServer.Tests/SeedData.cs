@@ -17,7 +17,7 @@ using Hl7.Fhir.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using Udap.Idp;
+using Udap.Auth.Server;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 using Udap.Server.Storage.Stores;

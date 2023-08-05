@@ -1096,4 +1096,63 @@ public class ClientCredentialsUdapModeTests
 
         regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Deleted finished so returns a 404 status code
     }
+
+    [Fact]
+    public async Task ReplayRegistration()
+    {
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+
+        //
+        // First Registration
+        //
+        var document = UdapDcrBuilderForClientCredentials
+            .Create(clientCert)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("system/Patient.rs")
+            .Build();
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        var regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapAuthServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        regDocumentResult!.Scope.Should().Be("system/Patient.rs");
+
+
+
+        //
+        // Second Registration
+        //
+        regResponse = await _mockPipeline.BrowserClient.PostAsync(
+            UdapAuthServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var errorResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+        errorResult.Should().NotBeNull();
+        errorResult!.Error.Should().Be("invalid_client_metadata");
+        errorResult.ErrorDescription.Should().Be("software_statement replayed");
+        
+    }
 }

@@ -20,6 +20,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Duende.IdentityServer.Models;
+using Duende.IdentityServer.Services;
+using Hl7.Fhir.Utility;
 using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Http;
@@ -27,8 +29,10 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Linq;
 using Udap.Common;
 using Udap.Common.Certificates;
+using Udap.Common.Extensions;
 using Udap.Common.Models;
 using Udap.Model.Registration;
 using Udap.Server.Configuration;
@@ -43,17 +47,22 @@ namespace Udap.Server.Registration;
 public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistrationValidator
 {
     private readonly TrustChainValidator _trustChainValidator;
+    private readonly IReplayCache _replayCache;
     private readonly ILogger _logger;
     private readonly ServerSettings _serverSettings;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
+    private const string Purpose = nameof(UdapDynamicClientRegistrationValidator);
+
     public UdapDynamicClientRegistrationValidator(
         TrustChainValidator trustChainValidator,
+        IReplayCache replayCache,
         ServerSettings serverSettings,
         IHttpContextAccessor httpContextAccessor,
         ILogger<UdapDynamicClientRegistrationValidator> logger)
     {
         _trustChainValidator = trustChainValidator;
+        _replayCache = replayCache;
         _serverSettings = serverSettings;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
@@ -153,6 +162,18 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         var document = new UdapDynamicClientRegistrationDocument();
         document.AddClaims(jsonWebToken.Claims);
+
+        if (_serverSettings.RegistrationJtiRequired)
+        {
+            var result = await ValidateJti(document, jsonWebToken.ValidTo);
+
+            if (result.IsError)
+            {
+                return result;
+            }
+        }
+
+
 
         if (document.Subject == null)
         {
@@ -531,6 +552,38 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         return true;
     }
 
+    public async Task<UdapDynamicClientRegistrationValidationResult> ValidateJti(
+        UdapDynamicClientRegistrationDocument document,
+        DateTime validTo)
+    {
+        var jti = document.JwtId;
+        
+
+        if (jti == null || jti.IsMissing())
+        {
+            _logger.LogWarning("jti is missing.");
+            return new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                UdapDynamicClientRegistrationErrorDescriptions.InvalidJti);
+            
+        }
+
+        if (await _replayCache.ExistsAsync(Purpose, jti))
+        {
+            _logger.LogWarning("jti is found in replay cache. Possible replay attack.");
+
+            return new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                UdapDynamicClientRegistrationErrorDescriptions.Replay);
+        }
+        else
+        {
+            await _replayCache.AddAsync(Purpose, jti, validTo.AddMinutes(5));
+        }
+
+
+        return new UdapDynamicClientRegistrationValidationResult(string.Empty);
+    }
 
     private bool ValidateChain(
         Duende.IdentityServer.Models.Client client,

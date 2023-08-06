@@ -639,7 +639,7 @@ namespace Udap.PKI.Generator
             // other docker images via host.docker.internal host name.
             // Example: FhirLabsApi project calling Udap.Idp via the back channel OpenIdConnect access token validation.
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
-                $"{BaseDir}/../../examples/Udap.Idp/host.docker.internal.pfx",
+                $"{BaseDir}/../../examples/Udap.Auth.Server/host.docker.internal.pfx",
                 true);
 
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
@@ -1351,14 +1351,14 @@ namespace Udap.PKI.Generator
             // Distribute to Udap.Auth.Server project
             //
             // File.Copy($"{communityStorePath}/{anchorName}.cer",
-            //     $"{BaseDir}/../../examples/Udap.Idp/CertStore/anchors/{anchorName}.cer",
+            //     $"{BaseDir}/../../examples/Udap.Auth.Server/CertStore/anchors/{anchorName}.cer",
             //     true);
             // File.Copy($"{LocalhostUdapIntermediates}/{intermediateName}.cer",
-            //     $"{BaseDir}/../../examples/Udap.Idp/CertStore/intermediates/{intermediateName}.cer",
+            //     $"{BaseDir}/../../examples/Udap.Auth.Server/CertStore/intermediates/{intermediateName}.cer",
             //     true);
 
             File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",
-                $"{BaseDir}/../../examples/Udap.Idp/CertStore/issued/{issuedName}.pfx",
+                $"{BaseDir}/../../examples/Udap.Auth.Server/CertStore/issued/{issuedName}.pfx",
                 true);
         }
 

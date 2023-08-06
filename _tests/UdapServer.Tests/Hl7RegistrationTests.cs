@@ -126,7 +126,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
         // TODO: 
         //
         //This is not working for linux tests like it did in other projects.
-        builder.UseSetting("contentRoot", "../../../../../examples/Udap.Idp/");
+        builder.UseSetting("contentRoot", "../../../../../examples/Udap.Auth.Server/");
     }
 
     

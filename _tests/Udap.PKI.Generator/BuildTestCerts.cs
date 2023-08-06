@@ -651,7 +651,7 @@ namespace Udap.PKI.Generator
                 true);
 
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
-                $"{BaseDir}/../../examples/Udap.Idp.Admin/host.docker.internal.pfx",
+                $"{BaseDir}/../../examples/Udap.Auth.Server.Admin/host.docker.internal.pfx",
                 true);
 
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",

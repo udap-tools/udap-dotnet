@@ -2,9 +2,9 @@
 
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Udap.Auth.Server.Data.Migrations.IdentityServer.ConfigurationDb
+namespace UdapServer.Tests.Migrations.ConfigurationDb
 {
-    public partial class InitialIdentityServerConfigurationDbMigration : Migration
+    public partial class Configuration : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -75,6 +75,9 @@ namespace Udap.Auth.Server.Data.Migrations.IdentityServer.ConfigurationDb
                     AllowPlainTextPkce = table.Column<bool>(type: "INTEGER", nullable: false),
                     RequireRequestObject = table.Column<bool>(type: "INTEGER", nullable: false),
                     AllowAccessTokensViaBrowser = table.Column<bool>(type: "INTEGER", nullable: false),
+                    RequireDPoP = table.Column<bool>(type: "INTEGER", nullable: false),
+                    DPoPValidationMode = table.Column<int>(type: "INTEGER", nullable: false),
+                    DPoPClockSkew = table.Column<TimeSpan>(type: "TEXT", nullable: false),
                     FrontChannelLogoutUri = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
                     FrontChannelLogoutSessionRequired = table.Column<bool>(type: "INTEGER", nullable: false),
                     BackChannelLogoutUri = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
@@ -96,6 +99,7 @@ namespace Udap.Auth.Server.Data.Migrations.IdentityServer.ConfigurationDb
                     AlwaysSendClientClaims = table.Column<bool>(type: "INTEGER", nullable: false),
                     ClientClaimsPrefix = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
                     PairWiseSubjectSalt = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
+                    InitiateLoginUri = table.Column<string>(type: "TEXT", maxLength: 2000, nullable: true),
                     UserSsoLifetime = table.Column<int>(type: "INTEGER", nullable: true),
                     UserCodeType = table.Column<string>(type: "TEXT", maxLength: 100, nullable: true),
                     DeviceCodeLifetime = table.Column<int>(type: "INTEGER", nullable: false),

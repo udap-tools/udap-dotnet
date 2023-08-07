@@ -25,6 +25,7 @@ using System.Text.Json;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using IdentityModel;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Udap.Client.Configuration;
@@ -39,7 +40,7 @@ using Xunit.Abstractions;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
-[Collection("Udap.Idp")]
+[Collection("Udap.Auth.Server")]
 public class UdapResponseTypeResponseModeTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
@@ -648,6 +649,7 @@ public class UdapResponseTypeResponseModeTests
 
         _httpsCodeClientCallback = "https://code_client/different_callback";
         document.RedirectUris = new List<string> { _httpsCodeClientCallback };
+        document.JwtId = CryptoRandom.CreateUniqueId();
 
         signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>

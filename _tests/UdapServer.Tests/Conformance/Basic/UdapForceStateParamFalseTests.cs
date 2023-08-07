@@ -39,7 +39,7 @@ using Xunit.Abstractions;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
-[Collection("Udap.Idp")]
+[Collection("Udap.Auth.Server")]
 public class UdapForceStateParamFalseTests
 {
     private readonly ITestOutputHelper _testOutputHelper;

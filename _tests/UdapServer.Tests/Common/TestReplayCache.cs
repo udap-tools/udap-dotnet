@@ -15,7 +15,9 @@
 // 
 //
 
+
 using Duende.IdentityServer.Services;
+using Udap.Server.Infrastructure.Clock;
 
 
 namespace UdapServer.Tests.Common;
@@ -44,13 +46,4 @@ public class TestReplayCache : IReplayCache
         }
         return Task.FromResult(false);
     }
-}
-
-//TODO:  When Duende package is updated then this interface is in Server
-public interface IClock
-{
-    /// <summary>
-    /// The current UTC date/time.
-    /// </summary>
-    DateTimeOffset UtcNow { get; }
 }

@@ -26,7 +26,7 @@ public class UdapCaContext : DbContext, IUdapCaContext
 {
     public UdapCaContext(DbContextOptions options) : base(options)
     {
-        this.Database.EnsureCreated();
+        // this.Database.EnsureCreated();
     }
     
     public DbSet<Community> Communities { get; set; }

@@ -24,7 +24,6 @@ using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client.Extensions;
 using Udap.Common.Certificates;
-using Udap.Auth.Server;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
@@ -33,7 +32,7 @@ using Xunit.Abstractions;
 
 namespace UdapServer.Tests;
 
-public class HL7ApiTestFixture : WebApplicationFactory<Program>
+public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
 {
     public ITestOutputHelper Output { get; set; } = null!;
 
@@ -135,7 +134,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
 /// <summary>
 /// Full Web tests.  Using <see cref="Udap.Idp"/> web server.
 /// </summary>
-[Collection("Udap.Idp")]
+[Collection("Udap.Auth.Server")]
 public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 {
     private readonly HL7ApiTestFixture _fixture;

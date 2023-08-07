@@ -2,9 +2,9 @@
 
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Udap.Auth.Server.Data.Migrations.IdentityServer.PersistedGrantDb
+namespace UdapServer.Tests.Migrations.PersistedGrantDb
 {
-    public partial class InitialIdentityServerPersistedGrantDbMigration : Migration
+    public partial class Grants : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -118,7 +118,8 @@ namespace Udap.Auth.Server.Data.Migrations.IdentityServer.PersistedGrantDb
                 name: "IX_PersistedGrants_Key",
                 table: "PersistedGrants",
                 column: "Key",
-                unique: true);
+                unique: true,
+                filter: "[Key] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
                 name: "IX_PersistedGrants_SubjectId_ClientId_Type",

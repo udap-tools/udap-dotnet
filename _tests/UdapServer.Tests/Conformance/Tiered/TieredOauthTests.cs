@@ -46,7 +46,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace UdapServer.Tests.Conformance.Tiered;
 
-[Collection("Udap.Idp")]
+[Collection("Udap.Auth.Server")]
 public class TieredOauthTests
 {
     private readonly ITestOutputHelper _testOutputHelper;

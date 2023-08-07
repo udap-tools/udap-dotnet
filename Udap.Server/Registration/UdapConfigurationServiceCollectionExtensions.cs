@@ -7,8 +7,10 @@
 // */
 #endregion
 
+using Duende.IdentityServer;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Udap.Common.Certificates;
+using Udap.Server.Infrastructure.Clock;
 using Udap.Server.Registration;
 
 //
@@ -31,6 +33,11 @@ public static class UdapConfigurationServiceCollectionExtensions
     public static IServiceCollection AddUdapServerConfiguration(this IServiceCollection services)
     {
         services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
+#if NET8_0_OR_GREATER
+        services.TryAddTransient<IClock, DefaultClock>();
+#else
+        services.TryAddTransient<IClock, LegacyClock>();
+#endif
         services.TryAddTransient<IUdapDynamicClientRegistrationValidator, UdapDynamicClientRegistrationValidator>();
         services.TryAddSingleton<TrustChainValidator>();
 

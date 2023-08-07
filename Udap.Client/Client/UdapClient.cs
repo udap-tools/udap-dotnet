@@ -437,7 +437,8 @@ namespace Udap.Client.Client
 
             if (publicKey != null)
             {
-                var validatedToken = await tokenHandler.ValidateTokenAsync(
+                
+                var validatedToken = tokenHandler.ValidateToken(
                     udapServerMetaData.SignedMetadata,
                     new TokenValidationParameters
                     {
@@ -459,7 +460,7 @@ namespace Udap.Client.Client
             {
                 var ecdsaPublicKey = _publicCertificate?.PublicKey.GetECDsaPublicKey();
 
-                var validatedToken = await tokenHandler.ValidateTokenAsync(
+                var validatedToken = tokenHandler.ValidateToken(
                     udapServerMetaData.SignedMetadata,
                     new TokenValidationParameters
                     {
@@ -703,7 +704,7 @@ namespace Udap.Client.Client
 
             if (publicKey != null)
             {
-                var validatedToken = await tokenHandler.ValidateTokenAsync(
+                var validatedToken = tokenHandler.ValidateToken(
                     udapServerMetaData.SignedMetadata,
                     new TokenValidationParameters
                     {
@@ -725,7 +726,7 @@ namespace Udap.Client.Client
             {
                 var ecdsaPublicKey = _publicCertificate?.PublicKey.GetECDsaPublicKey();
 
-                var validatedToken = await tokenHandler.ValidateTokenAsync(
+                var validatedToken = tokenHandler.ValidateToken(
                     udapServerMetaData.SignedMetadata,
                     new TokenValidationParameters
                     {

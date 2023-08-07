@@ -102,7 +102,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         
         if (publicKey != null)
         {
-            validatedToken = await tokenHandler.ValidateTokenAsync(request.SoftwareStatement,
+            validatedToken = tokenHandler.ValidateToken(request.SoftwareStatement,
                 new TokenValidationParameters
                 {
                     RequireSignedTokens = true,
@@ -123,7 +123,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         {
             var ecdsaPublicKey = publicCert?.PublicKey.GetECDsaPublicKey();
 
-            validatedToken = await tokenHandler.ValidateTokenAsync(request.SoftwareStatement,
+            validatedToken = tokenHandler.ValidateToken(request.SoftwareStatement,
                 new TokenValidationParameters
                 {
                     RequireSignedTokens = true,

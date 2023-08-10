@@ -11,7 +11,7 @@ public class X509ExtensionTests
     [Fact]
     public void ResolveUriSubjAltName()
     {
-        var certificate = new X509Certificate2($"{CertStore}/surefhirlabs_community/issued/idp1.securedcontrols.net.client.cer");
+        var certificate = new X509Certificate2($"{CertStore}/surefhirlabs_community/issued/idp1.securedcontrols.net.server.cer");
 
         // Both should succeed.
         // The C# code cannot generated a SAN without the trailing slash on a URI without a path.

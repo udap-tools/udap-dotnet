@@ -282,7 +282,7 @@ public class RegisterController : Controller
             .WithRedirectUrls(request.RedirectUris)
             .WithLogoUri(request.LogoUri ?? "https://udaped.fhirlabs.net/images/hl7/icon-fhir-32.png")//TODO Logo required
             .Build();
-        
+
         var signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
                 .Create(clientCert, document)
@@ -396,6 +396,8 @@ public class RegisterController : Controller
         {
             dcrBuilder = UdapDcrBuilderForAuthorizationCodeUnchecked
                 .Create(clientCert);
+
+            dcrBuilder.Document.GrantTypes = document.GrantTypes;
         }
 
         dcrBuilder.Document.Issuer = document.Issuer;
@@ -411,6 +413,8 @@ public class RegisterController : Controller
             .WithResponseTypes(document.ResponseTypes)
             .WithRedirectUrls(document.RedirectUris)
             .WithLogoUri(document.LogoUri); //TODO Logo required
+
+        
 
         var signedSoftwareStatement = dcrBuilder.BuildSoftwareStatement(alg);
 

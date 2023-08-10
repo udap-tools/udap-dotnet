@@ -55,15 +55,6 @@
         "ConnStrName": "gcp_db_Idp2"
       },
       "dotnetRunMessages": true
-    },
-
-    "Sqlite": {
-      "commandName": "Project",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "ConnStrName": "db_sqlite"
-      },
-      "dotnetRunMessages": true
     }
   }
 }

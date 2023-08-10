@@ -327,11 +327,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         
         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
         {
-            client.AllowedGrantTypes.Add(GrantType.ClientCredentials);
+            client.AllowedGrantTypes.Add(OidcConstants.GrantTypes.ClientCredentials);
         }
         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
         {
-            client.AllowedGrantTypes.Add(GrantType.AuthorizationCode); 
+            client.AllowedGrantTypes.Add(OidcConstants.GrantTypes.AuthorizationCode); 
         }
 
         // we only support the two above grant types but, an empty GrantType is an indication of a cancel registration action.
@@ -349,7 +349,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.RefreshToken))
         {
             if (client.AllowedGrantTypes.Count == 1 &&
-                client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
+                client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(OidcConstants.GrantTypes.ClientCredentials)) != null)
             {
                 return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -362,7 +362,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //
         // validate redirect URIs and ResponseTypes and logo_uri
         //
-        if (client.AllowedGrantTypes.Contains(GrantType.AuthorizationCode))
+        if (client.AllowedGrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
         {
             if (_serverSettings.LogoRequired)
             {
@@ -387,7 +387,6 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                         //TODO: I need to create a policy engine or dig into the Duende policy stuff and see it if makes sense
                         //Threat analysis?
                         client.RequirePkce = false;
-                        client.AllowOfflineAccess = true;
                     }
                     else
                     {
@@ -416,7 +415,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         if (client.AllowedGrantTypes.Count == 1 &&
-            client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
+            client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(OidcConstants.GrantTypes.ClientCredentials)) != null)
         {
             //TODO: find the RFC reference for this rule and add a Test
             if (document.RedirectUris != null && document.RedirectUris.Any())
@@ -460,11 +459,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             {
                 IEnumerable<string>? scopes = null;
 
-                if (document.GrantTypes != null && document.GrantTypes.Contains(GrantType.ClientCredentials))
+                if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
                 {
                     scopes = _serverSettings.DefaultSystemScopes?.FromSpaceSeparatedString();
                 }
-                else if (document.GrantTypes != null && document.GrantTypes.Contains(GrantType.AuthorizationCode))
+                else if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
                 {
                     scopes = _serverSettings.DefaultUserScopes?.FromSpaceSeparatedString();
                 }

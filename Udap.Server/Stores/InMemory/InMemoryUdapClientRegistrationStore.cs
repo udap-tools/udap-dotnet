@@ -92,6 +92,8 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             client.ClientId = existingClient.ClientId;
             existingClient.AllowedScopes = client.AllowedScopes;
             existingClient.RedirectUris = client.RedirectUris;
+            existingClient.AllowedGrantTypes = client.AllowedGrantTypes;
+            existingClient.AllowOfflineAccess = client.AllowOfflineAccess;
             //TODO update Certifications
             //TODO update others?
             return Task.FromResult<bool>(true);

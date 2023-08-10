@@ -214,7 +214,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             JwtId = jwtId,
             ClientName = "udapTestClient",
             Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "authorization_code" },
+            GrantTypes = new HashSet<string> { "authorization_code", "refresh_token" },
             ResponseTypes = new HashSet<string> { "code" },
             RedirectUris = new List<string>(){ "http://localhost/signin-oidc" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,

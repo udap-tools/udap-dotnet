@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
@@ -133,7 +134,14 @@ public class UdapDcrBuilderForAuthorizationCode
             return _now;
         }
     }
-    
+
+    public UdapDcrBuilderForAuthorizationCode WithGrantType(string grantType)
+    {
+        _document.GrantTypes!.Add(grantType);
+
+        return this;
+    }
+
     public UdapDcrBuilderForAuthorizationCode WithAudience(string? audience)
     {
         _document.Audience = audience;

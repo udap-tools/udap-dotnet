@@ -53,14 +53,14 @@ public class UdapDcrBuilderForClientCredentials
         _document = new UdapDynamicClientRegistrationDocument();
         if (!cancelRegistration)
         {
-            _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.ClientCredentials };
+            _document.GrantTypes = new HashSet<string> { OidcConstants.GrantTypes.ClientCredentials };
         }
         else
         {
             //
             // Cancel registration is requested with an empty GranTypes array, not a missing grant_types element
             //
-            _document.GrantTypes = new List<string>(); 
+            _document.GrantTypes = new HashSet<string>(); 
         }
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
     }

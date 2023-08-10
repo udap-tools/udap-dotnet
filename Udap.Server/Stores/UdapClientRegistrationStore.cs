@@ -75,6 +75,8 @@ namespace Udap.Server.Stores
                     .Select(s => new ClientScope(){ClientId = existingClient.Id, Scope = s})
                     .ToList();
                 existingClient.RedirectUris = client.ToEntity().RedirectUris;
+                existingClient.AllowedGrantTypes = client.ToEntity().AllowedGrantTypes;
+                existingClient.AllowOfflineAccess = client.AllowOfflineAccess;
                 await _dbContext.SaveChangesAsync(token);
                 _logger.LogInformation("Updated client: {Id}", existingClient.Id);
                 return true;

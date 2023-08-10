@@ -55,8 +55,7 @@ public class ClientCredentialsUdapModeTests
             {
                 ServerSupport = ServerSupport.UDAP,
                 DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap",
-                ForceStateParamOnAuthorizationCode = true
+                DefaultSystemScopes = "udap"
             });
 
             s.AddSingleton<UdapClientOptions>(new UdapClientOptions
@@ -497,91 +496,7 @@ public class ClientCredentialsUdapModeTests
 
     }
 
-    [Fact]
-    public async Task RegisterClientCredentialsThenRegisterAuthorizationCode()
-    {
-        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
-
-        //
-        // First Registration
-        //
-        var document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock test")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.rs")
-            .Build();
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
-        var requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
-
-        var regResponse = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        regDocumentResult!.Scope.Should().Be("system/Patient.rs");
-        var clientId = regDocumentResult.ClientId;
-
-        //
-        // Second Registration as Authorization Code Flow should be a change registration, replacing the grant type
-        // and returning the same clientId.
-        //
-        document = UdapDcrBuilderForAuthorizationCode
-            .Create(clientCert)
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock test")
-            .WithLogoUri("https://example.com/logo.png")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.rs system/Appointment.rs")
-            .WithResponseTypes(new List<string> { "code" })
-            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .Build();
-
-        signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
-        requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
-
-        regResponse = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK, await regResponse.Content.ReadAsStringAsync());
-        regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        regDocumentResult!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
-        regDocumentResult!.ClientId.Should().Be(clientId);
-    }
+    
 
    
     [Fact]

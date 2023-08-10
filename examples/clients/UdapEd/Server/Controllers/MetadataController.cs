@@ -49,7 +49,6 @@ public class MetadataController : Controller
     [HttpGet]
     public async Task<IActionResult> Get([FromQuery] string metadataUrl, [FromQuery] string community)
     {
-        var baseUrl = metadataUrl.EnsureTrailingSlash() + UdapConstants.Discovery.DiscoveryEndpoint;
         var anchorString = HttpContext.Session.GetString(UdapEdConstants.ANCHOR_CERTIFICATE);
 
         if (anchorString != null)
@@ -73,12 +72,12 @@ public class MetadataController : Controller
             _udapClient.TokenError += message => result.Notifications.Add("TokenError: " + message);
 
             await _udapClient.ValidateResource(
-                baseUrl.GetBaseUrlFromMetadataUrl(), 
+                metadataUrl, 
                 trustAnchorStore,
                 community);
             
             result.UdapServerMetaData = _udapClient.UdapServerMetaData;
-            HttpContext.Session.SetString(UdapEdConstants.BASE_URL, baseUrl.GetBaseUrlFromMetadataUrl());
+            HttpContext.Session.SetString(UdapEdConstants.BASE_URL, metadataUrl);
 
             return Ok(result);
         }

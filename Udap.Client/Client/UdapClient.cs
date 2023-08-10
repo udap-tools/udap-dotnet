@@ -391,7 +391,7 @@ namespace Udap.Client.Client
             var subjectAltNames = _publicCertificate?
                 .GetSubjectAltNames(n =>
                     n.TagNo == (int)X509Extensions.GeneralNameType.URI) //URI only, by udap.org specification
-                .Select(n => new Uri(n.Item2).AbsoluteUri)
+                .Select(n => new Uri(n.Item2).OriginalString)
                 .ToArray();
 
             var validatedToken = await ValidateToken(udapServerMetaData, tokenHandler, subjectAltNames, jwt);

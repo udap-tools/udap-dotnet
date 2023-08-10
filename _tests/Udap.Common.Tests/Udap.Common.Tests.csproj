@@ -9,8 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Hl7.Fhir.R4B" />
-    <PackageReference Include="Microsoft.Data.SqlClient"/>
+    <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio">
@@ -25,11 +26,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Udap.Model\Udap.Model.csproj" />
+    <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
   </ItemGroup>
 
-  <ItemGroup >
-    <PackageReference Include="IdentityModel"  />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt"   />
+  <ItemGroup>
+    <PackageReference Include="IdentityModel" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
 
 </Project>

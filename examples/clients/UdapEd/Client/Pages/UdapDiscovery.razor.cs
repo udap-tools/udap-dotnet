@@ -217,7 +217,7 @@ public partial class UdapDiscovery: IDisposable
             return AppState.BaseUrls.Cast<DictionaryEntry>().Select(e => (string)e.Key);
         }
 
-        if (Uri.TryCreate(value, UriKind.Absolute, out var baseUri))
+        if (Uri.TryCreate(value, UriKind.Absolute, out var _))
         {
             if (BaseUrl != null)
             {
@@ -230,7 +230,7 @@ public partial class UdapDiscovery: IDisposable
 
                 if (result != null && result.UdapServerMetaData != null)
                 {
-                    AppendOrMoveBaseUrl(baseUri.AbsoluteUri);
+                    AppendOrMoveBaseUrl(BaseUrl);
                 }
             }
         }

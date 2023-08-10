@@ -342,9 +342,10 @@ public static class X509Extensions
 
         foreach (var san in sans.Select(s => s.Item2))
         {
-            if (baseUrl == new Uri(san).AbsoluteUri)
+            if (baseUrl == san ||
+                new Uri(baseUrl.TrimEnd('/')).AbsoluteUri == san)
             {
-                return baseUrl;
+                return san;
             }
         }
 

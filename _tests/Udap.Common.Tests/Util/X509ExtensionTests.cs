@@ -6,7 +6,7 @@ namespace Udap.Common.Tests.Util;
 
 public class X509ExtensionTests
 {
-    private string CertStore = "../../../../Udap.Pki.Generator/certstores";
+    private string CertStore = "../../../../Udap.PKI.Generator/certstores";
 
     [Fact]
     public void ResolveUriSubjAltName()

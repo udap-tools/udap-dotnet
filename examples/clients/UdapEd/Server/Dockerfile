@@ -15,7 +15,7 @@ WORKDIR /src
 
 ENV GCPDeploy=true
 #this technique of setting env to control version is not working yet.
-ARG TAG_NAME=0.2.1.1
+ARG TAG_NAME=0.2.5.0
 ENV TAG_NAME_ENV=$TAG_NAME
 
 COPY ["nuget.config", "."]
@@ -30,7 +30,7 @@ RUN dotnet build "UdapEd.Server.csproj" -c Release -o /app/build
 
 
 FROM build AS publish
-ARG TAG_NAME=0.2.1.1
+ARG TAG_NAME=0.2.5.0
 RUN dotnet publish "UdapEd.Server.csproj" --version-suffix 99 -c Release -o /app/publish /p:UseAppHost=false 
 
 FROM base AS final

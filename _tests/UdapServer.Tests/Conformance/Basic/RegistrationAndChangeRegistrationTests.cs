@@ -191,7 +191,7 @@ public class RegistrationAndChangeRegistrationTests
         
         _mockPipeline.Clients.Single().AllowedGrantTypes.Should().Contain(OidcConstants.GrantTypes.ClientCredentials);
         _mockPipeline.Clients.Single().AllowOfflineAccess.Should().BeFalse();
-        _mockPipeline.Clients.Single().RequirePkce.Should().BeFalse();
+        _mockPipeline.Clients.Single().RequirePkce.Should().BeTrue(); // new client is always true by default.  Don't care for ClientCredentials
 
         //
         // Second Registration as Authorization Code Flow should be a change registration, replacing the grant type

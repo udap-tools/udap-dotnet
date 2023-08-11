@@ -206,7 +206,7 @@ public static class UdapConstants
     public static class StandardScopes
     {
         /// <summary>Permission to retrieve information about the current logged-in user.</summary>
-        public const string FhirUser = "fhiruser";
+        public const string FhirUser = "fhirUser";
 
         /// <summary>
         /// The Client App includes the scope “udap” in the authorize request to signal to the Resource Holder

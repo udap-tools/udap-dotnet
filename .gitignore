@@ -219,3 +219,5 @@ NuGet.Config
 _tests/UdapMetadata.Tests/DemoFileSystemService/.search-index-cache.json
 /_tests/Udap.PKI.Generator/TefcaRce.cs
 _tests/Udap.PKI.Generator/certstores/TEFCA_RCE
+examples/clients/UdapEd/Client/wwwroot/temp/MudBlazor.min.js
+examples/clients/UdapEd/Client/wwwroot/temp/MudBlazor.min.css

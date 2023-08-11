@@ -188,8 +188,11 @@ public class RegistrationAndChangeRegistrationTests
         var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
         regDocumentResult!.Scope.Should().Be("system/Patient.rs");
         var clientId = regDocumentResult.ClientId;
+        
         _mockPipeline.Clients.Single().AllowedGrantTypes.Should().Contain(OidcConstants.GrantTypes.ClientCredentials);
         _mockPipeline.Clients.Single().AllowOfflineAccess.Should().BeFalse();
+        _mockPipeline.Clients.Single().RequirePkce.Should().BeFalse();
+
         //
         // Second Registration as Authorization Code Flow should be a change registration, replacing the grant type
         // and returning the same clientId.
@@ -234,7 +237,9 @@ public class RegistrationAndChangeRegistrationTests
         regDocumentResult!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
         regDocumentResult!.ClientId.Should().Be(clientId);
 
+        _mockPipeline.Clients.Single().AllowedGrantTypes.Should().NotContain(OidcConstants.GrantTypes.ClientCredentials);
         _mockPipeline.Clients.Single().AllowedGrantTypes.Should().Contain(OidcConstants.GrantTypes.AuthorizationCode);
         _mockPipeline.Clients.Single().AllowOfflineAccess.Should().BeTrue();
+        _mockPipeline.Clients.Single().RequirePkce.Should().BeTrue();
     }
 }

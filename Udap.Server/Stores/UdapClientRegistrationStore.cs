@@ -58,6 +58,7 @@ namespace Udap.Server.Stores
             var existingClient = await _dbContext.Clients
                 .Include(c => c.AllowedScopes)
                 .Include(c => c.RedirectUris)
+                .Include(c => c.AllowedGrantTypes)
                 .SingleOrDefaultAsync(c =>
                 // ISS
                 c.ClientSecrets.Any(cs =>
@@ -77,6 +78,7 @@ namespace Udap.Server.Stores
                 existingClient.RedirectUris = client.ToEntity().RedirectUris;
                 existingClient.AllowedGrantTypes = client.ToEntity().AllowedGrantTypes;
                 existingClient.AllowOfflineAccess = client.AllowOfflineAccess;
+                existingClient.RequirePkce = client.RequirePkce;
                 await _dbContext.SaveChangesAsync(token);
                 _logger.LogInformation("Updated client: {Id}", existingClient.Id);
                 return true;

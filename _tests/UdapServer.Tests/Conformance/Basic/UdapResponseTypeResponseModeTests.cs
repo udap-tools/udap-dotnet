@@ -194,7 +194,7 @@ public class UdapResponseTypeResponseModeTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
         var query = response.Headers.Location?.Query;
-        _testOutputHelper.WriteLine(query);
+        // _testOutputHelper.WriteLine(query);
         var responseParams = QueryHelpers.ParseQuery(query);
         responseParams["error"].Should().BeEquivalentTo("invalid_request");
         responseParams["error_description"].Should().BeEquivalentTo("Missing response_type");
@@ -272,7 +272,7 @@ public class UdapResponseTypeResponseModeTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
         var query = response.Headers.Location?.Query;
-        _testOutputHelper.WriteLine(query);
+        // _testOutputHelper.WriteLine(query);
         var responseParams = QueryHelpers.ParseQuery(query);
         responseParams["error"].Should().BeEquivalentTo("invalid_request");
         responseParams["error_description"].Should().BeEquivalentTo("Missing state");
@@ -346,7 +346,7 @@ public class UdapResponseTypeResponseModeTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
         var query = response.Headers.Location.Query;
-        _testOutputHelper.WriteLine(query);
+        // _testOutputHelper.WriteLine(query);
         var responseParams = QueryHelpers.ParseQuery(query);
         responseParams["error"].Should().BeEquivalentTo("invalid_request");
         responseParams["error_description"].Should().BeEquivalentTo("Response type not supported");
@@ -423,7 +423,7 @@ public class UdapResponseTypeResponseModeTests
         var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
         errorMessage.Should().NotBeNull();
         errorMessage!.Error.Should().Be("invalid_request");
-        _testOutputHelper.WriteLine(errorMessage.ToString());
+        // _testOutputHelper.WriteLine(errorMessage.ToString());
     }
 
     [Fact]
@@ -490,7 +490,7 @@ public class UdapResponseTypeResponseModeTests
         var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
         errorMessage.Should().NotBeNull();
         errorMessage!.Error.Should().Be("unauthorized_client");
-        _testOutputHelper.WriteLine(errorMessage.ToString());
+        // _testOutputHelper.WriteLine(errorMessage.ToString());
     }
 
 
@@ -514,6 +514,7 @@ public class UdapResponseTypeResponseModeTests
             .WithScope("openid")
             .WithResponseTypes(new List<string> {"code"})
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
+            .WithGrantType( "refresh_token" )
             .Build();
 
         
@@ -548,7 +549,7 @@ public class UdapResponseTypeResponseModeTests
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
             responseType: "code",
-            scope: "openid",
+            scope: "openid offline_access",
             redirectUri: "https://code_client/callback",
             state: state,
             nonce: nonce);
@@ -560,12 +561,12 @@ public class UdapResponseTypeResponseModeTests
 
         response.Headers.Location.Should().NotBeNull();
         response.Headers.Location!.AbsoluteUri.Should().Contain("https://code_client/callback");
-        _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
-        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");
+        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid offline_access");
         queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
-        //iss ???
+        
     }
 
     [Fact]
@@ -635,7 +636,7 @@ public class UdapResponseTypeResponseModeTests
 
         response.Headers.Location.Should().NotBeNull();
         response.Headers.Location!.AbsoluteUri.Should().Contain(_httpsCodeClientCallback);
-        _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
         queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");
@@ -695,7 +696,7 @@ public class UdapResponseTypeResponseModeTests
 
         response.Headers.Location.Should().NotBeNull();
         response.Headers.Location!.AbsoluteUri.Should().Contain(_httpsCodeClientCallback);
-        _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
         queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");
@@ -776,7 +777,7 @@ public class UdapResponseTypeResponseModeTests
 
         response.Headers.Location.Should().NotBeNull();
         response.Headers.Location!.AbsoluteUri.Should().Contain(redirect_url);
-        _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
         queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");

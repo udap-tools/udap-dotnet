@@ -33,12 +33,13 @@ public class TestUsers
                     Password = "alice",
                     Claims =
                     {
-                        new Claim(JwtClaimTypes.Name, "Alice Smith"),
+                        new Claim(JwtClaimTypes.Name, "Alice Newman"),
                         new Claim(JwtClaimTypes.GivenName, "Alice"),
                         new Claim(JwtClaimTypes.FamilyName, "Smith"),
-                        new Claim(JwtClaimTypes.Email, "AliceSmith@email.com"),
+                        new Claim(JwtClaimTypes.Email, "alicenewman@example.com"),
                         new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
-                        new Claim(JwtClaimTypes.WebSite, "http://alice.com"),
+                        // new Claim(JwtClaimTypes.WebSite, "http://alice.com"),
+                        new Claim("hl7_identifier", "123e4567-e89b-12d3-a456-426614174000a"),
                         new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json)
                     }
                 },

@@ -290,6 +290,7 @@ public class TieredOauthTests
         resultDocument.Should().NotBeNull();
         resultDocument!.ClientId.Should().NotBeNull();
 
+        var clientId = resultDocument.ClientId!;
 
 
         //////////////////////
@@ -300,8 +301,8 @@ public class TieredOauthTests
 
         var clientState = Guid.NewGuid().ToString();
         
-        var url = _mockAuthorServerPipeline.CreateAuthorizeUrl(
-            clientId: resultDocument!.ClientId!,
+        var clientAuthorizeUrl = _mockAuthorServerPipeline.CreateAuthorizeUrl(
+            clientId: clientId,
             responseType: "code",
             scope: "udap openid user/*.read",
             redirectUri: "https://code_client/callback",
@@ -315,7 +316,7 @@ public class TieredOauthTests
         // The BrowserHandler.cs will normally set the cookie to indicate user signed in.
         // We want to skip that and get a redirect to the login page
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = false;
-        var response = await _mockAuthorServerPipeline.BrowserClient.GetAsync(url);
+        var response = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
         response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
         response.Headers.Location.Should().NotBeNull();
         response.Headers.Location!.AbsoluteUri.Should().Contain("https://server/Account/Login");
@@ -340,7 +341,7 @@ public class TieredOauthTests
         sb.Append("https://server/externallogin/challenge?"); // built in UdapAccount/Login/Index.cshtml.cs
         sb.Append("scheme=").Append(schemes.First().Name);
         sb.Append("&returnUrl=").Append(Uri.EscapeDataString(returnUrl));
-        url = sb.ToString();
+        clientAuthorizeUrl = sb.ToString();
 
 
 
@@ -372,11 +373,12 @@ public class TieredOauthTests
 
         // response after discovery and registration
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = true; // Need to set the idsrv cookie so calls to /authorize will succeed
-        var backChannelChallengeResponse = await _mockAuthorServerPipeline.BrowserClient.GetAsync(url);
+        var backChannelChallengeResponse = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
         backChannelChallengeResponse.StatusCode.Should().Be(HttpStatusCode.Redirect, await backChannelChallengeResponse.Content.ReadAsStringAsync());
         backChannelChallengeResponse.Headers.Location.Should().NotBeNull();
         backChannelChallengeResponse.Headers.Location!.AbsoluteUri.Should().StartWith("https://idpserver/connect/authorize");
-        // _testOutputHelper.WriteLine(backChannelResponse.Headers.Location!.AbsoluteUri);
+        // _testOutputHelper.WriteLine(backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
+        var backChannelClientId = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.ToString();
         var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "state").Value.ToString();
         backChannelState.Should().NotBeNullOrEmpty();
 
@@ -394,12 +396,21 @@ public class TieredOauthTests
         // Run IdP /connect/authorize/callback
         var authorizeCallbackResult = await _mockIdPPipeline.BrowserClient.GetAsync(
             $"https://idpserver{loginCallbackResult.Headers.Location!.OriginalString}");
-        // _testOutputHelper.WriteLine(authorizeCallbackResult.Headers.Location!.OriginalString);
+        _testOutputHelper.WriteLine(authorizeCallbackResult.Headers.Location!.OriginalString);
         authorizeCallbackResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await authorizeCallbackResult.Content.ReadAsStringAsync());
         authorizeCallbackResult.Headers.Location.Should().NotBeNull();
         authorizeCallbackResult.Headers.Location!.AbsoluteUri.Should().StartWith("https://server/signin-tieredoauth?");
 
+        var backChannelCode = QueryHelpers.ParseQuery(authorizeCallbackResult.Headers.Location.Query).Single(p => p.Key == "code").Value.ToString();
+
+        //
+        // Validate backchannel state is the same
+        //
         backChannelState.Should().BeEquivalentTo(_mockAuthorServerPipeline.GetClientState(authorizeCallbackResult));
+
+        //
+        // Ensure client state and back channel state never become the same.
+        //
         clientState.Should().NotBeEquivalentTo(backChannelState);
 
         _mockAuthorServerPipeline.GetSessionCookie().Should().BeNull();
@@ -431,8 +442,10 @@ public class TieredOauthTests
 
         // Run the authServer  https://server/connect/authorize/callback 
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
+        
         var clientCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(
                        $"https://server{schemeCallbackResult.Headers.Location!.OriginalString}");
+
         clientCallbackResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await clientCallbackResult.Content.ReadAsStringAsync());
         clientCallbackResult.Headers.Location.Should().NotBeNull();
         clientCallbackResult.Headers.Location!.AbsoluteUri.Should().StartWith("https://code_client/callback?");
@@ -445,7 +458,7 @@ public class TieredOauthTests
         queryParams = QueryHelpers.ParseQuery(clientCallbackResult.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
         var code = queryParams.Single(p => p.Key == "code").Value.ToString();
-
+        _testOutputHelper.WriteLine($"Code: {code}");
         ////////////////////////////
         //
         // ClientAuthAccess
@@ -457,7 +470,7 @@ public class TieredOauthTests
         var privateCerts = _mockAuthorServerPipeline.Resolve<IPrivateCertificateStore>();
 
         var tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
-            resultDocument!.ClientId,
+            clientId,
             "https://server/connect/token",
             privateCerts.IssuedCertificates.Select(ic => ic.Certificate).First(),
             "https://code_client/callback",
@@ -486,6 +499,27 @@ public class TieredOauthTests
         
         _testOutputHelper.WriteLine(formattedHeader);
         _testOutputHelper.WriteLine(formattedStatement);
+
+
+
+        // udap.org Tiered 4.3
+        // aud: client_id of Resource Holder (matches client_id in Resource Holder request in Step 3.4)
+        jwt.Claims.Should().Contain(c => c.Type == "aud");
+        jwt.Claims.Single(c => c.Type == "aud").Value.Should().Be(clientId);
+
+        // iss: IdP’s unique identifying URI (matches idp parameter from Step 2)
+        jwt.Claims.Should().Contain(c => c.Type == "iss");
+        jwt.Claims.Single(c => c.Type == "iss").Value.Should().Be(UdapAuthServerPipeline.BaseUrl);
+
+        // sub: unique identifier for user in namespace of issuer, i.e. iss + sub is globally unique
+
+        // TODO: Currently the sub is the code given at access time.  Maybe that is OK?  I could put the clientId in from 
+        // backchannel.  But I am not sure I want to show that.  After all it is still globally unique.
+        // jwt.Claims.Should().Contain(c => c.Type == "sub");
+        // jwt.Claims.Single(c => c.Type == "sub").Value.Should().Be(backChannelClientId);
+
+        // jwt.Claims.Should().Contain(c => c.Type == "sub");
+        // jwt.Claims.Single(c => c.Type == "sub").Value.Should().Be(backChannelCode);
 
         // Todo: Nonce 
         // Todo: Validate claims.  Like missing name and other identity claims.  Maybe add a hl7_identifier

@@ -264,6 +264,7 @@ namespace Udap.Client.Client
         {
             var response = await _httpClient.ExchangeCodeForAuthTokenResponse(tokenRequest, token);
 
+            _logger.LogDebug("Tiered OAuth Client Access Token: {TokenResponse}", JsonSerializer.Serialize(response));
             return response;
         }
 

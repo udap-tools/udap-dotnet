@@ -489,6 +489,9 @@ public class TieredOauthTests
         accessToken.IdentityToken.Should().NotBeNull();
         var jwt = new JwtSecurityToken(accessToken.IdentityToken);
 
+        var at = new JwtSecurityToken(accessToken.AccessToken);
+
+
         using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
         var formattedStatement = JsonSerializer.Serialize(
             jsonDocument,
@@ -524,6 +527,13 @@ public class TieredOauthTests
         // Todo: Nonce 
         // Todo: Validate claims.  Like missing name and other identity claims.  Maybe add a hl7_identifier
         // Why is idp:TieredOAuth in the returned claims?
+
+
+        /*
+         * new Claim("name", "Bob Loblaw"),
+                new Claim("email", "bob@loblaw.com"),
+                new Claim("role", "Attorney")
+         */
     }
 
     private async Task<UdapDynamicClientRegistrationDocument?> RegisterClientWithAuthServer()

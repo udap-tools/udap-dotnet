@@ -1,6 +1,7 @@
 ﻿using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Org.BouncyCastle.X509;
 using Udap.Common.Models;
 
 namespace Udap.Common.Certificates;
@@ -69,6 +70,8 @@ public class IssuedCertificateStore : IPrivateCertificateStore
 
         foreach (var community in communities)
         {
+            _logger.LogInformation($"Loading Community:: Name: '{community.Name}' IdPBaseUrl: '{community.IdPBaseUrl}'");
+
             foreach (var communityIssuer in community.IssuedCerts)
             {
                 if (communityIssuer.FilePath == null)
@@ -95,6 +98,7 @@ public class IssuedCertificateStore : IPrivateCertificateStore
                                 is X509BasicConstraintsExtension extension && 
                             !extension.CertificateAuthority)
                         {
+                            _logger.LogInformation($"Loading Certificate:: Thumbprint: {x509Cert.Thumbprint}  Subject: {x509Cert.SubjectName.Name}");
                             IssuedCertificates.Add(new IssuedCertificate
                             {
                                 Community = community.Name,

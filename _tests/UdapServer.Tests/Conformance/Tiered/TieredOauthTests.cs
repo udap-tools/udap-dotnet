@@ -260,6 +260,7 @@ public class TieredOauthTests
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.Profile());
         _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.Email());
+        _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.FhirUser());
 
         _mockIdPPipeline.Users.Add(new TestUser
         {
@@ -269,7 +270,8 @@ public class TieredOauthTests
             {
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
-                new Claim("role", "Attorney")
+                new Claim("role", "Attorney"),
+                new Claim("hl7_identifier", "123")
             }
         });
 
@@ -446,6 +448,14 @@ public class TieredOauthTests
         _mockAuthorServerPipeline.BrowserClient.GetCookie("https://server", "idsrv").Should().NotBeNull();
         //TODO assert match State and nonce between Auth Server and IdP
 
+        //
+        // Check the IdToken in the back channel.  Ensure the HL7_Identifier is in the claims
+        //
+        // _testOutputHelper.WriteLine(_mockIdPPipeline.IdToken.ToString()); 
+
+        _mockIdPPipeline.IdToken.Claims.Should().Contain(c => c.Type == "hl7_identifier");
+        _mockIdPPipeline.IdToken.Claims.Single(c => c.Type == "hl7_identifier").Value.Should().Be("123");
+
         // Run the authServer  https://server/connect/authorize/callback 
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
         
@@ -560,7 +570,7 @@ public class TieredOauthTests
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap openid user/*.read")
+            .WithScope("udap openid fhirUser user/*.read")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();

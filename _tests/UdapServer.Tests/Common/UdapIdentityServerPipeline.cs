@@ -13,18 +13,23 @@
 
 
 
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Security.Policy;
+using System.Text.Json;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
+using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using Google.Api;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -207,10 +212,46 @@ public class UdapIdentityServerPipeline
 
         OnPreConfigure(app);
 
+        app.Use(async (ctx, next) =>
+        {
+            ctx.Request.EnableBuffering();
+
+            if (ctx.Request.Path == "/connect/token")
+            {
+                var originalBody = ctx.Response.Body;
+
+                if (ctx.Response.StatusCode == (int)HttpStatusCode.OK)
+                {
+                    
+                    try
+                    {
+                        using var memStream = new MemoryStream();
+                        ctx.Response.Body = memStream;
+                        await next.Invoke(ctx);
+                        memStream.Position = 0;
+                        var responseBody = await new StreamReader(memStream).ReadToEndAsync();
+                        var jsonDoc = JsonDocument.Parse(responseBody!).RootElement;
+                        IdToken = new JwtSecurityToken(jsonDoc.GetString("id_token"));
+                        memStream.Position = 0;
+                        await memStream.CopyToAsync(originalBody);
+                    }
+                    finally {
+                        ctx.Response.Body = originalBody;
+                    }
+
+                    return;
+                }
+            }
+
+            await next(ctx);
+        });
+
         app.UseUdapMetadataServer();
         app.UseUdapIdPServer();
         app.UseIdentityServer();
+
         
+
         // UI endpoints
         app.Map(Constants.UIConstants.DefaultRoutePaths.Login.EnsureLeadingSlash(), path =>
         {
@@ -247,10 +288,10 @@ public class UdapIdentityServerPipeline
         {
             path.Run(ctx => OnExternalLoginChallenge(ctx));
         });
-
+        
         OnPostConfigure(app);
     }
-
+    
     public bool LoginWasCalled { get; set; }
     public string LoginReturnUrl { get; set; }
     public AuthorizationRequest LoginRequest { get; set; }
@@ -294,6 +335,7 @@ public class UdapIdentityServerPipeline
         await ctx.ChallengeAsync(TieredOAuthAuthenticationDefaults.AuthenticationScheme, props);
     }
 
+    
     private async Task OnLogin(HttpContext ctx)
     {
         LoginWasCalled = true;
@@ -383,6 +425,11 @@ public class UdapIdentityServerPipeline
     public bool ErrorWasCalled { get; set; }
     public ErrorMessage ErrorMessage { get; set; }
     public IServiceProvider ApplicationServices { get; private set; }
+
+    /// <summary>
+    /// Record the backchannel Identity Token during Tiered OAuth
+    /// </summary>
+    public JwtSecurityToken IdToken { get; set; }
 
     private async Task OnError(HttpContext ctx)
     {

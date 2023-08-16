@@ -78,11 +78,12 @@ namespace Udap.Client.Client
         /// </summary>
         /// <param name="redirectUrl"></param>
         /// <param name="certificates"></param>
+        /// <param name="scopes"></param>
         /// <param name="token"></param>
         /// <returns></returns>
-        Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(
-            string redirectUrl,
+        Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(string redirectUrl,
             IEnumerable<X509Certificate2> certificates,
+            string scopes,
             CancellationToken token = default);
 
         Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
@@ -145,9 +146,9 @@ namespace Udap.Client.Client
 
         //TODO the certs include the private key.  This needs work.  It should be a service or struct that
         // allows a an abstraction in "Sign" so that a vault or HSM can sign the metadata.
-        public async Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(
-            string redirectUrl,
+        public async Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(string redirectUrl,
             IEnumerable<X509Certificate2> certificates,
+            string scopes,
             CancellationToken token = default)
         {
             if (this.UdapServerMetaData == null)
@@ -178,7 +179,7 @@ namespace Udap.Client.Client
                         .WithContacts(_udapClientOptions.Contacts)
                         .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues
                             .TokenEndpointAuthMethodValue)
-                        .WithScope("openid udap email profile")
+                        .WithScope(scopes)
                         .WithResponseTypes(new List<string> { "code" })
                         .WithRedirectUrls(new List<string> { redirectUrl })
                         .Build();

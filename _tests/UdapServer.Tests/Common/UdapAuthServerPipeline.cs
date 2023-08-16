@@ -247,12 +247,7 @@ public class UdapAuthServerPipeline
         {
             path.Run(ctx => OnRegister(ctx));
         });
-
-        app.Map("/connect/register", path =>
-        {
-            path.Run(ctx => OnRegister(ctx));
-        });
-
+                
         app.Map("/externallogin/challenge", path =>
         {
             path.Run(ctx => OnExternalLoginChallenge(ctx));

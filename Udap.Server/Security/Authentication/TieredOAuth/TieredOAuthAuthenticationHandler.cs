@@ -37,6 +37,7 @@ using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Server.Storage.Stores;
 using Udap.Util.Extensions;
+using static IdentityModel.ClaimComparer;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 
@@ -506,7 +507,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             var document = await _udapClient.RegisterTieredClient(
                 resourceHolderRedirectUrl,
                 _certificateStore.IssuedCertificates.Where(ic => ic.IdPBaseUrl == idp)
-                    .Select(ic => ic.Certificate), 
+                    .Select(ic => ic.Certificate),
+                OptionsMonitor.CurrentValue.Scope.ToSpaceSeparatedString(),
                 Context.RequestAborted);
 
             if (idpClient == null)

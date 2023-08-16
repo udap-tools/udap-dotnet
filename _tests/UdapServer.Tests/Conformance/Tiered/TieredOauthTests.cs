@@ -208,6 +208,7 @@ public class TieredOauthTests
                 DefaultUserScopes = "udap",
                 DefaultSystemScopes = "udap",
                 // ForceStateParamOnAuthorizationCode = false (default)
+                AlwaysIncludeUserClaimsInIdToken = true
             });
         };
 
@@ -381,6 +382,11 @@ public class TieredOauthTests
         var backChannelClientId = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.ToString();
         var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "state").Value.ToString();
         backChannelState.Should().NotBeNullOrEmpty();
+
+
+        var idpClient = _mockIdPPipeline.Clients.Single(c => c.ClientName == "AuthServer Client");
+        idpClient.AlwaysIncludeUserClaimsInIdToken.Should().BeTrue();
+
 
         var backChannelAuthResult = await _mockIdPPipeline.BrowserClient.GetAsync(backChannelChallengeResponse.Headers.Location);
         backChannelAuthResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await backChannelAuthResult.Content.ReadAsStringAsync());

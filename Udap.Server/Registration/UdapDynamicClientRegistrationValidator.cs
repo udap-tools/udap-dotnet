@@ -267,11 +267,12 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing));
         }
 
-        //TODO Inject the client
+        //TODO There should be a context already created where the client can be injected.
         var client = new Duende.IdentityServer.Models.Client
         {
             //TODO: Maybe inject a component to generate the clientID so a user can use their own technique.
-            ClientId = CryptoRandom.CreateUniqueId()
+            ClientId = CryptoRandom.CreateUniqueId(),
+            AlwaysIncludeUserClaimsInIdToken = _serverSettings.AlwaysIncludeUserClaimsInIdToken
         };
 
         

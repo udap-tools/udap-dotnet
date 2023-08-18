@@ -214,6 +214,9 @@ public class UdapIdentityServerPipeline
 
         app.Use(async (ctx, next) =>
         {
+            //
+            // Enabled response buffering so that I can read the response body
+            //
             ctx.Request.EnableBuffering();
 
             if (ctx.Request.Path == "/connect/token")

@@ -10,6 +10,7 @@
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
+using Duende.IdentityServer.ResponseHandling;
 using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +20,7 @@ using Serilog;
 using Udap.Auth.Server.Pages;
 using Udap.Common;
 using Udap.Server.Configuration;
+using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace Udap.Auth.Server;
@@ -79,7 +81,11 @@ internal static class HostingExtensions
         builder.Services.AddInMemoryRateLimiting();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddRazorPages();
+
         
+        builder.Services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
+
+
         builder.Services.AddIdentityServer(options =>
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes

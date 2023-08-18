@@ -54,6 +54,11 @@ public class BrowserHandler : DelegatingHandler
         return _cookieContainer.GetCookies(new Uri(uri)).FirstOrDefault(x => x.Name == name);
     }
 
+    internal Cookie? GetXsrfCookie(string uri, string name)
+    {
+        return _cookieContainer.GetCookies(new Uri(uri)).FirstOrDefault(x => x.Name.StartsWith(name));
+    }
+
     internal void RemoveCookie(string uri, string name)
     {
         var cookie = _cookieContainer.GetCookies(new Uri(uri)).FirstOrDefault(x => x.Name == name);

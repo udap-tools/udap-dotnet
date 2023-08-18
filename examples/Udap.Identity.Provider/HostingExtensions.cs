@@ -116,6 +116,7 @@ internal static class HostingExtensions
                         options.ServerSupport = udapServerOptions.ServerSupport;
                         options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
                         options.LogoRequired = udapServerOptions.LogoRequired;
+                        options.AlwaysIncludeUserClaimsInIdToken = udapServerOptions.AlwaysIncludeUserClaimsInIdToken;
                     },
                 options =>
                     _ = provider switch

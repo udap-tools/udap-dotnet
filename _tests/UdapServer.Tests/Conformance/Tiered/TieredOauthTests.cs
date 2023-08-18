@@ -42,7 +42,13 @@ using UdapServer.Tests.Common;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 using System.IdentityModel.Tokens.Jwt;
+using Duende.IdentityServer.Services;
+using Duende.IdentityServer.Stores;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Server.Security.Authentication.TieredOAuth;
+using Microsoft.AspNetCore.Session;
+using FluentAssertions.Common;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace UdapServer.Tests.Conformance.Tiered;
 
@@ -364,6 +370,8 @@ public class TieredOauthTests
         //      Backchannel
         //          Discovery
         //          Auto registration
+        //          externalloging/challenge or in the Udap implementation it is the UdapAccount/Login/Index.cshtml.cs.  XSRF cookie is set here.
+
         // *** We are here after the request to the IdPs /authorize  call.  If the client is registered already then Discovery and Reg is skipped ***
         //
         //          Authentication request (/authorize?)
@@ -374,12 +382,18 @@ public class TieredOauthTests
         //
 
 
+        
         // response after discovery and registration
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = true; // Need to set the idsrv cookie so calls to /authorize will succeed
+
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/signin-tieredoauth", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name).Should().BeNull();
         var backChannelChallengeResponse = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/signin-tieredoauth", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name).Should().NotBeNull();
+        
         backChannelChallengeResponse.StatusCode.Should().Be(HttpStatusCode.Redirect, await backChannelChallengeResponse.Content.ReadAsStringAsync());
         backChannelChallengeResponse.Headers.Location.Should().NotBeNull();
         backChannelChallengeResponse.Headers.Location!.AbsoluteUri.Should().StartWith("https://idpserver/connect/authorize");
+        
         // _testOutputHelper.WriteLine(backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
         var backChannelClientId = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.ToString();
         var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "state").Value.ToString();
@@ -388,9 +402,11 @@ public class TieredOauthTests
 
         var idpClient = _mockIdPPipeline.Clients.Single(c => c.ClientName == "AuthServer Client");
         idpClient.AlwaysIncludeUserClaimsInIdToken.Should().BeTrue();
-
+        
 
         var backChannelAuthResult = await _mockIdPPipeline.BrowserClient.GetAsync(backChannelChallengeResponse.Headers.Location);
+
+        
         backChannelAuthResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await backChannelAuthResult.Content.ReadAsStringAsync());
         // _testOutputHelper.WriteLine(backChannelAuthResult.Headers.Location!.AbsoluteUri);
         backChannelAuthResult.Headers.Location!.AbsoluteUri.Should().StartWith("https://idpserver/Account/Login");
@@ -404,7 +420,7 @@ public class TieredOauthTests
         // Run IdP /connect/authorize/callback
         var authorizeCallbackResult = await _mockIdPPipeline.BrowserClient.GetAsync(
             $"https://idpserver{loginCallbackResult.Headers.Location!.OriginalString}");
-        _testOutputHelper.WriteLine(authorizeCallbackResult.Headers.Location!.OriginalString);
+        // _testOutputHelper.WriteLine(authorizeCallbackResult.Headers.Location!.OriginalString);
         authorizeCallbackResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await authorizeCallbackResult.Content.ReadAsStringAsync());
         authorizeCallbackResult.Headers.Location.Should().NotBeNull();
         authorizeCallbackResult.Headers.Location!.AbsoluteUri.Should().StartWith("https://server/signin-tieredoauth?");
@@ -425,7 +441,7 @@ public class TieredOauthTests
         _mockAuthorServerPipeline.BrowserClient.GetCookie("https://server", "idsrv").Should().BeNull();
 
         // Run Auth Server /signin-tieredoauth  This is the Registered scheme callback endpoint
-        // Allow one redirect to run /Callback.
+        // Allow one redirect to run /connect/token.
         //  Sets Cookies: idsrv.external idsrv.session, and idsrv 
         //  Backchannel:
         //      POST https://idpserver/connect/token
@@ -438,13 +454,18 @@ public class TieredOauthTests
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = true;
         _mockAuthorServerPipeline.BrowserClient.StopRedirectingAfter = 1;
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = true;
+
+
         var schemeCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(authorizeCallbackResult.Headers.Location!.AbsoluteUri);
+
+
         schemeCallbackResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await schemeCallbackResult.Content.ReadAsStringAsync());
         schemeCallbackResult.Headers.Location.Should().NotBeNull();
         schemeCallbackResult.Headers.Location!.OriginalString.Should().StartWith("/connect/authorize/callback?");
         // _testOutputHelper.WriteLine(schemeCallbackResult.Headers.Location!.OriginalString);
         // Validate Cookies
         _mockAuthorServerPipeline.GetSessionCookie().Should().NotBeNull();
+        _testOutputHelper.WriteLine(_mockAuthorServerPipeline.GetSessionCookie()!.Value);
         _mockAuthorServerPipeline.BrowserClient.GetCookie("https://server", "idsrv").Should().NotBeNull();
         //TODO assert match State and nonce between Auth Server and IdP
 
@@ -474,7 +495,7 @@ public class TieredOauthTests
         queryParams = QueryHelpers.ParseQuery(clientCallbackResult.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
         var code = queryParams.Single(p => p.Key == "code").Value.ToString();
-        _testOutputHelper.WriteLine($"Code: {code}");
+        // _testOutputHelper.WriteLine($"Code: {code}");
         ////////////////////////////
         //
         // ClientAuthAccess
@@ -492,7 +513,8 @@ public class TieredOauthTests
             "https://code_client/callback",
             code)
             .Build();
-        
+
+
         var udapClient = new UdapClient(
                 _mockAuthorServerPipeline.BrowserClient,
                 _mockAuthorServerPipeline.Resolve<TrustChainValidator>(),
@@ -530,6 +552,12 @@ public class TieredOauthTests
         jwt.Claims.Should().Contain(c => c.Type == "iss");
         jwt.Claims.Single(c => c.Type == "iss").Value.Should().Be(UdapAuthServerPipeline.BaseUrl);
 
+        jwt.Claims.Should().Contain(c => c.Type == "hl7_identifier");
+        jwt.Claims.Single(c => c.Type == "hl7_identifier").Value.Should().Be("123");
+
+
+
+
         // sub: unique identifier for user in namespace of issuer, i.e. iss + sub is globally unique
 
         // TODO: Currently the sub is the code given at access time.  Maybe that is OK?  I could put the clientId in from 
@@ -556,7 +584,7 @@ public class TieredOauthTests
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test");
 
-        await _mockAuthorServerPipeline.LoginAsync("bob");
+        // await _mockAuthorServerPipeline.LoginAsync("bob");
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)

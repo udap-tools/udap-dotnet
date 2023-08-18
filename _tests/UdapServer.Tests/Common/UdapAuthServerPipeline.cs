@@ -16,6 +16,7 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Events;
 using Duende.IdentityServer.Models;
+using Duende.IdentityServer.ResponseHandling;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
@@ -40,6 +41,11 @@ using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using UnitTests.Common;
 using Constants = Udap.Server.Constants;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Duende.IdentityServer.Stores;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Udap.Server.ResponseHandling;
+using AuthorizeResponse = IdentityModel.Client.AuthorizeResponse;
 
 namespace UdapServer.Tests.Common;
 
@@ -162,6 +168,9 @@ public class UdapAuthServerPipeline
                 new Mock<ILogger<TrustAnchorFileStore>>().Object,
                 "FhirLabsApi")); //Note: FhirLabsApi is the key to pick the correct data from appsettings.json
 
+        // Replace pluggable service with generator that will augment the IdToken with the hl7_identifier 
+        services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
+
         services.AddIdentityServer(options =>
             {
                 options.Events = new EventsOptions
@@ -172,7 +181,6 @@ public class UdapAuthServerPipeline
                     RaiseSuccessEvents = true
                 };
                 options.KeyManagement.Enabled = false;
-                
                 Options = options;
             })
             .AddInMemoryClients(Clients)
@@ -638,4 +646,3 @@ public class UdapAuthServerPipeline
         return state.SingleOrDefault();
     }
 }
-

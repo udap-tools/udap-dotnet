@@ -45,7 +45,6 @@ public class TestUsers
                         // new Claim(JwtClaimTypes.WebSite, "http://alice.com"),
                         new Claim("hl7_identifier", "123e4567-e89b-12d3-a456-426614174000a"),
                         // new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json)
-                        new Claim("fhirUser", "https://stage.healthtogo.me:8181/fhir/r4/stage/Patient/1001")
                     }
                 },
 

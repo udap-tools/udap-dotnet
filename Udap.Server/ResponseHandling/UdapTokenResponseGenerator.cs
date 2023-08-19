@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System.Security.Claims;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.ResponseHandling;
@@ -25,6 +24,7 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
     /// <summary>
     /// Initializes a new instance of the <see cref="T:Duende.IdentityServer.ResponseHandling.TokenResponseGenerator" /> class.
     /// </summary>
+    /// <param name="profile"></param>
     /// <param name="clock">The clock.</param>
     /// <param name="tokenService">The token service.</param>
     /// <param name="refreshTokenService">The refresh token service.</param>
@@ -49,20 +49,13 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
 
         var response = await ProcessTokenRequestAsync(request);
 
+        if (request.ValidatedRequest.AuthorizationCode == null)
+        {
+            throw new InvalidOperationException($"Missing {nameof(AuthorizationCode)}.");
+        }
+
         if (request.ValidatedRequest.AuthorizationCode.IsOpenId)
         {
-            // load the client that belongs to the authorization code
-            Duende.IdentityServer.Models.Client client = null;
-            if (request.ValidatedRequest.AuthorizationCode.ClientId != null)
-            {
-                // todo: do we need this check?
-                client = await Clients.FindEnabledClientByIdAsync(request.ValidatedRequest.AuthorizationCode.ClientId);
-            }
-            if (client == null)
-            {
-                throw new InvalidOperationException("Client does not exist anymore.");
-            }
-
             var tokenRequest = new TokenCreationRequest
             {
                 Subject = request.ValidatedRequest.AuthorizationCode.Subject,
@@ -86,7 +79,7 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
     private void AugmentClaims(Token idToken, ValidatedRequest validationResult)
     {
         var context = new ProfileDataRequestContext(
-            validationResult.Subject,
+            validationResult.Subject!,
             validationResult.Client,
             IdentityServerConstants.ProfileDataCallers.UserInfoEndpoint,
             new List<string>() { "hl7_identifier" });

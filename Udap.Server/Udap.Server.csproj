@@ -27,8 +27,9 @@
     <PackageReference Include="Duende.IdentityServer.AspNetIdentity" />
     <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" />
     <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt"  />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
   <!-- -->
   <!-- <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'"> -->

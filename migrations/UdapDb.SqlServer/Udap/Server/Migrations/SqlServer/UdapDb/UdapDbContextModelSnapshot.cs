@@ -17,7 +17,7 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.5")
+                .HasAnnotation("ProductVersion", "7.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -93,6 +93,12 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                     b.Property<DateTime>("Created")
                         .HasColumnType("datetime2");
 
+                    b.Property<TimeSpan>("DPoPClockSkew")
+                        .HasColumnType("time");
+
+                    b.Property<int>("DPoPValidationMode")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
 
@@ -116,6 +122,9 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
 
                     b.Property<bool>("IncludeJwtId")
                         .HasColumnType("bit");
+
+                    b.Property<string>("InitiateLoginUri")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("LastAccessed")
                         .HasColumnType("datetime2");
@@ -145,6 +154,9 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                         .HasColumnType("bit");
 
                     b.Property<bool>("RequireConsent")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("RequireDPoP")
                         .HasColumnType("bit");
 
                     b.Property<bool>("RequirePkce")
@@ -408,6 +420,25 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                         {
                             t.ExcludeFromMigrations();
                         });
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("FriendlyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Xml")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DataProtectionKeys");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.Anchor", b =>

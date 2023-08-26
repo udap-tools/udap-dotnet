@@ -12,6 +12,7 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Duende.IdentityServer.ResponseHandling;
 using Google.Cloud.SecretManager.V1;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Resources;
@@ -20,6 +21,7 @@ using Serilog;
 using Udap.Auth.Server.Pages;
 using Udap.Common;
 using Udap.Server.Configuration;
+using Udap.Server.DbContexts;
 using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
 
@@ -33,6 +35,15 @@ internal static class HostingExtensions
         // {
         //     sslPort = 5002;
         // }
+
+
+        // TODO: Maybe build a .ProtectKeysWithCertificate extension method for use on GCP to grab the cert from the secret manager.
+        // otherwise the keys are not protected.  This is more of a ASP.NET GCP hosted concern an not a UDAP concern. 
+        // Yes, I would like to revisit this.  Would make a good medium article.
+        // https://learn.microsoft.com/en-us/aspnet/core/security/data-protection/configuration/overview?view=aspnetcore-6.0#protectkeyswith
+        builder.Services.AddDataProtection()
+            .PersistKeysToDbContext<UdapDbContext>();
+        
 
         var provider = builder.Configuration.GetValue("provider", "SqlServer");
         

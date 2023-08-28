@@ -26,7 +26,7 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions{
         // TokenEndpoint = TieredOAuthAuthenticationDefaults.TokenEndpoint;
         SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;
         
-        // DCR at Tiered OAuth only is asking for these two. 
+        // DCR at Tiered OAuth only requires these two scopes. 
         Scope.Add("openid");
         Scope.Add("fhirUser");
         // Scope.Add("email");

@@ -44,5 +44,19 @@ public class SignedMetadataConfig
 
     public string RegistrationEndpoint { get; set; } = string.Empty;
 
+}
 
+public static class DefaultAlgorithms
+{
+    public static List<string> RsaTokenSigningAlgorithms { get; } = new List<string>
+    {
+        "RS256",
+        "RS384"
+    };
+
+    public static List<string> EcdsaTokenSigningAlgorithms { get; } = new List<string>
+    {
+        "ES256",
+        "ES384"
+    };
 }

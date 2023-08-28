@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Security.Cryptography.X509Certificates;
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
@@ -20,6 +21,7 @@ using OpenTelemetry.Trace;
 using Serilog;
 using Udap.Auth.Server.Pages;
 using Udap.Common;
+using Udap.Model;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Udap.Server.ResponseHandling;
@@ -101,11 +103,13 @@ internal static class HostingExtensions
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
                 options.EmitStaticAudienceClaim = true;
-                // options.InputLengthRestrictions.Scope =
-                //     7000; //TODO: Very large!  Again I need to solve the policy/community/certification concept
                 options.UserInteraction.LoginUrl = "/udapaccount/login";
                 options.UserInteraction.LogoutUrl = "/udapaccount/logout";
+                // options.KeyManagement.Enabled = false;
             })
+            // .AddSigningCredential(new X509Certificate2("./CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test"), UdapConstants.SupportedAlgorithm.RS256)
+            // .AddSigningCredential(new X509Certificate2("./CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test"), UdapConstants.SupportedAlgorithm.RS384)
+
             .AddServerSideSessions()
             .AddConfigurationStore(options =>
                 _ = provider switch

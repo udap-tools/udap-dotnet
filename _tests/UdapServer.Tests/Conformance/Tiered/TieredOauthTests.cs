@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -18,14 +19,13 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
-using IdentityModel.Client;
-using IdentityModel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
@@ -37,18 +37,10 @@ using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Server.Configuration;
 using Udap.Server.Models;
+using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
-using Xunit.Sdk;
-using System.IdentityModel.Tokens.Jwt;
-using Duende.IdentityServer.Services;
-using Duende.IdentityServer.Stores;
-using Microsoft.IdentityModel.Tokens;
-using Udap.Server.Security.Authentication.TieredOAuth;
-using Microsoft.AspNetCore.Session;
-using FluentAssertions.Common;
-using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace UdapServer.Tests.Conformance.Tiered;
 
@@ -224,7 +216,6 @@ public class TieredOauthTests
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
             // It was not intended to work with the concept of a dynamic client registration.
             services.AddSingleton(_mockIdPPipeline.Clients);
-
         };
 
         _mockIdPPipeline.Initialize(enableLogging: true);
@@ -443,12 +434,12 @@ public class TieredOauthTests
         // Run Auth Server /signin-tieredoauth  This is the Registered scheme callback endpoint
         // Allow one redirect to run /connect/token.
         //  Sets Cookies: idsrv.external idsrv.session, and idsrv 
-        //  Backchannel:
+        //  Backchannel calls:
         //      POST https://idpserver/connect/token
         //      GET https://idpserver/.well-known/openid-configuration
         //      GET https://idpserver/.well-known/openid-configuration/jwks
         //
-        //  Redirect to https://server/externallogin/callback
+        //  Redirects to https://server/externallogin/callback
         //
 
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = true;
@@ -456,6 +447,7 @@ public class TieredOauthTests
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = true;
 
 
+        // "https://server/signin-tieredoauth?..."
         var schemeCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(authorizeCallbackResult.Headers.Location!.AbsoluteUri);
 
 

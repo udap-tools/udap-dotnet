@@ -96,6 +96,7 @@ public static class IdentityServerBuilderExtensions
             builder.Services.Configure(setupAction);
         }
 
+        builder.AddUdapSigningCredentials();
         builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
         builder.AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl);
         builder.AddUdapServerConfiguration();

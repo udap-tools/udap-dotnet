@@ -77,8 +77,6 @@ internal static class HostingExtensions
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
                 options.EmitStaticAudienceClaim = true;
-                options.InputLengthRestrictions.Scope =
-                    7000; //TODO: Very large!  Again I need to solve the policy/community/certification concept
             })
             .AddServerSideSessions()
             .AddConfigurationStore(options =>

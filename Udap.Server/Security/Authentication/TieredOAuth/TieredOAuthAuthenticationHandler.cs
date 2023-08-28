@@ -375,10 +375,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     protected override async Task<OAuthTokenResponse> ExchangeCodeAsync([NotNull] OAuthCodeExchangeContext context)
     {
         Logger.LogInformation("UDAP exchanging authorization code.");
-        Logger.LogDebug(context.Properties.Items["returnUrl"]);
+        Logger.LogDebug(context.Properties.Items["returnUrl"] ?? "~/");
         Logger.LogDebug(Context.Request.QueryString.Value);
 
-        var originalRequestParams = HttpUtility.ParseQueryString(context.Properties.Items["returnUrl"]);
+        var originalRequestParams = HttpUtility.ParseQueryString(context.Properties.Items["returnUrl"] ?? "~/");
         var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
         var clientId = context.Properties.Items["client_id"];
         
@@ -414,7 +414,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     /// <inheritdoc />
     protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
     {
-        var requestParams = HttpUtility.ParseQueryString(properties.Items["returnUrl"]);
+        var requestParams = HttpUtility.ParseQueryString(properties.Items["returnUrl"] ?? "~/");
         
         var idp = (requestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
         var scope = (requestParams.GetValues("scope") ?? throw new InvalidOperationException()).First();

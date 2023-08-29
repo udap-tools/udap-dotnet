@@ -39,6 +39,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
+using Udap.Model;
 using Udap.Server;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
@@ -163,7 +164,6 @@ public class UdapIdentityServerPipeline
                     RaiseInformationEvents = true,
                     RaiseSuccessEvents = true
                 };
-                options.KeyManagement.Enabled = false;
                 
                 Options = options;
             })
@@ -172,7 +172,6 @@ public class UdapIdentityServerPipeline
             .AddInMemoryApiResources(ApiResources)
             .AddInMemoryApiScopes(ApiScopes)
             .AddTestUsers(Users)
-            .AddDeveloperSigningCredential(persistKey: false)
             .AddUdapServerAsIdentityProvider(baseUrl: BaseUrl)
             .AddInMemoryUdapCertificates(Communities);
 

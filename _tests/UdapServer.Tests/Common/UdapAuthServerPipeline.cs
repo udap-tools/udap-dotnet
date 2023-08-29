@@ -44,6 +44,7 @@ using Constants = Udap.Server.Constants;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Duende.IdentityServer.Stores;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Udap.Model;
 using Udap.Server.ResponseHandling;
 using AuthorizeResponse = IdentityModel.Client.AuthorizeResponse;
 
@@ -183,6 +184,7 @@ public class UdapAuthServerPipeline
                 options.KeyManagement.Enabled = false;
                 Options = options;
             })
+           
             .AddInMemoryClients(Clients)
             .AddInMemoryIdentityResources(IdentityScopes)
             .AddInMemoryApiResources(ApiResources)
@@ -467,8 +469,8 @@ public class UdapAuthServerPipeline
     }
 
     public bool ConsentWasCalled { get; set; }
-    public AuthorizationRequest ConsentRequest { get; set; }
-    public ConsentResponse ConsentResponse { get; set; }
+    public AuthorizationRequest? ConsentRequest { get; set; }
+    public ConsentResponse? ConsentResponse { get; set; }
 
     private async Task OnConsent(HttpContext ctx)
     {

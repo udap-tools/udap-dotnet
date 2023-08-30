@@ -10,6 +10,7 @@
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Google.Cloud.SecretManager.V1;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -18,8 +19,8 @@ using OpenTelemetry.Trace;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Identity.Provider;
-using Udap.Metadata.Server;
 using Udap.Server.Configuration;
+using Udap.Server.DbContexts;
 
 namespace Udap.Idp;
 
@@ -31,6 +32,9 @@ internal static class HostingExtensions
         // {
         //     sslPort = 5002;
         // }
+
+        builder.Services.AddDataProtection()
+            .PersistKeysToDbContext<UdapDbContext>();
 
         var provider = builder.Configuration.GetValue("provider", "SqlServer");
         

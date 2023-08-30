@@ -129,7 +129,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             .Create(clientCert)
             .WithAudience(disco.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
+            .WithJwtId() // This can be left off for HealthToGo where MEDITECH requires it and checks for replay attacks.
             .WithClientName("dotnet system test client")
             .WithContacts(new HashSet<string>
             {
@@ -160,7 +160,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
         }
 
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         // var documentAsJson = JsonSerializer.Serialize(document);
         var result = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();

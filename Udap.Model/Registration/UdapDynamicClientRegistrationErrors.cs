@@ -32,6 +32,8 @@ public static class UdapDynamicClientRegistrationErrorDescriptions
     public const string IssuedAtMissing = "software_statement iat is missing";
     public const string IssuedAtInFuture = "software_statement iat is in the future";
     public const string FailedTokenValidation = "Failed JsonWebTokenHandler.ValidateToken";
+    public const string InvalidJti = "software_statement jti is invalid";
+    public const string Replay = "software_statement replayed";
 
     public const string ClientNameMissing = "client_name is missing";
     public const string LogoMissing = "logo_uri is missing";
@@ -50,4 +52,5 @@ public static class UdapDynamicClientRegistrationErrorDescriptions
     public const string UnsupportedGrantType = "Unsupported grant type";
     public const string MalformedRedirectUri = "Malformed redirect uri";
     public const string RedirectUriRequiredForAuthCode = "Redirect uri is required for authorization_code grant type";
+    
 }

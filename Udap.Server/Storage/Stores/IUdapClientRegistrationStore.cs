@@ -22,6 +22,9 @@ public interface IUdapClientRegistrationStore
     /// <returns>Returns true if client is updated, false if created</returns>
     Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default);
 
+    Task<bool> UpsertTieredClient(TieredClient client, CancellationToken token = default);
+
+    Task<TieredClient?> FindTieredClientById(string clientId, CancellationToken token = default);
     /// <summary>
     /// Cancel registration by passing an empty grant_types claim.  The cancel registration will cancel the
     /// community specific registration based on the signed_software statement. 
@@ -38,5 +41,5 @@ public interface IUdapClientRegistrationStore
     Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default);
 
     Task<X509Certificate2Collection> GetAnchorsCertificates(string? community, CancellationToken token = default);
-    Task<string?> GetCommunityId(string community, CancellationToken token = default);
+    Task<int?> GetCommunityId(string community, CancellationToken token = default);
 }

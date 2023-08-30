@@ -24,7 +24,7 @@ using UdapServer.Tests.Common;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
-[Collection("Udap.Idp")]
+[Collection("Udap.Auth.Server")]
 public class ResponseTypeResponseModeTests
 {
     private IdentityServerPipeline _mockPipeline = new IdentityServerPipeline();

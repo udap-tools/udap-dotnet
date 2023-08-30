@@ -101,6 +101,7 @@ namespace Udap.Client.Client.Extensions
                             $"Error connecting to {url}: {response.ReasonPhrase}").ConfigureAwait(false);
                 }
 
+                var joe = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
                 var disco = await ProtocolResponse
                     .FromHttpResponseAsync<UdapDiscoveryDocumentResponse>(response, request.Policy)
                     .ConfigureAwait(false);

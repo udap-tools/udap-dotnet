@@ -25,7 +25,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Common.Certificates;
-using Udap.Idp;
+using Udap.Auth.Server;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;

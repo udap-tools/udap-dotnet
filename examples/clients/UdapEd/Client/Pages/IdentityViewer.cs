@@ -6,7 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace UdapEd.Client.Pages;
 
-partial class IdentityViewer
+public partial class IdentityViewer
 {
 
     [Parameter]

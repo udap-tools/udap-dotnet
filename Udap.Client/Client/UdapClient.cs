@@ -72,12 +72,21 @@ namespace Udap.Client.Client
         /// </summary>
         event Action<string>? TokenError;
 
-        Task<UdapDynamicClientRegistrationDocument> RegisterClient(
-            string redirectUrl,
+        /// <summary>
+        /// Register a TieredClient in the Authorization Server.
+        /// Currently it is not SAN and Community aware.  It picks the first SAN.
+        /// </summary>
+        /// <param name="redirectUrl"></param>
+        /// <param name="certificates"></param>
+        /// <param name="scopes"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(string redirectUrl,
             IEnumerable<X509Certificate2> certificates,
+            string scopes,
             CancellationToken token = default);
 
-        Task<OAuthTokenResponse> ExchangeCode(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
+        Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
         
         Task<IEnumerable<SecurityKey>?> ResolveJwtKeys(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default);
     }
@@ -137,9 +146,9 @@ namespace Udap.Client.Client
 
         //TODO the certs include the private key.  This needs work.  It should be a service or struct that
         // allows a an abstraction in "Sign" so that a vault or HSM can sign the metadata.
-        public async Task<UdapDynamicClientRegistrationDocument> RegisterClient(
-            string redirectUrl,
+        public async Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(string redirectUrl,
             IEnumerable<X509Certificate2> certificates,
+            string scopes,
             CancellationToken token = default)
         {
             if (this.UdapServerMetaData == null)
@@ -149,7 +158,13 @@ namespace Udap.Client.Client
 
             try
             {
-                foreach (var clientCert in certificates)
+                var x509Certificate2s = certificates.ToList();
+                if (certificates == null || !x509Certificate2s.Any())
+                {
+                    throw new Exception("Tiered OAuth: No client certificates provided.");
+                }
+
+                foreach (var clientCert in x509Certificate2s)
                 {
                     _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
 
@@ -159,17 +174,16 @@ namespace Udap.Client.Client
                         .WithExpiration(TimeSpan.FromMinutes(5))
                         .WithJwtId()
                         .WithClientName(_udapClientOptions.ClientName)
+                        //Todo get logo from client registration, maybe Client object.  But still nee to retain logo in clientproperties during registration
+                        .WithLogoUri("https://udaped.fhirlabs.net/images/udap-dotnet-auth-server.png")
                         .WithContacts(_udapClientOptions.Contacts)
                         .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues
                             .TokenEndpointAuthMethodValue)
-                        .WithScope("openid udap email profile")
+                        .WithScope(scopes)
                         .WithResponseTypes(new List<string> { "code" })
                         .WithRedirectUrls(new List<string> { redirectUrl })
                         .Build();
-                    //
-                    // Example adding claims
-                    //
-                    // document.AddClaims(new List<Claim>() { new Claim("client_uri", "http://test.com/hello/") });
+                    
 
                     var signedSoftwareStatement =
                         SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
@@ -200,7 +214,7 @@ namespace Udap.Client.Client
 
                     var response = await _httpClient.PostAsync(this.UdapServerMetaData?.RegistrationEndpoint, content, token);
 
-                    if (response.IsSuccessStatusCode)
+                    if (((int)response.StatusCode) < 500)
                     {
                         var resultDocument =
                             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>(cancellationToken: token);
@@ -222,10 +236,36 @@ namespace Udap.Client.Client
             throw new Exception($"Tiered OAuth: Unable to register client to {this.UdapServerMetaData?.RegistrationEndpoint}");
         }
 
-        public async Task<OAuthTokenResponse> ExchangeCode(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default)
+        /// <summary>
+        /// Sends a token request using the authorization_code grant type.
+        /// </summary>
+        /// <param name="tokenRequest">The request.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns></returns>
+        public async Task<TokenResponse> ExchangeCodeForTokenResponse(
+            UdapAuthorizationCodeTokenRequest tokenRequest, 
+            CancellationToken token = default)
         {
-            var response = await _httpClient.UdapExchangeCodeAsync(tokenRequest, token);
+            var response = await _httpClient.ExchangeCodeForTokenResponse(tokenRequest, token);
+        
+            return response;
+        }
 
+        /// <summary>
+        /// Sends a token request using the authorization_code grant type.  Typically used when called from
+        /// from a OAuthHandler implementation.  TieredOAuthAuthenticationHandler is an implementation that
+        /// calls this method.
+        /// </summary>
+        /// <param name="tokenRequest">The request.</param>
+        /// <param name="token">The cancellation token.</param>
+        /// <returns><see cref="OAuthTokenResponse"/></returns>
+        public async Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(
+            UdapAuthorizationCodeTokenRequest tokenRequest, 
+            CancellationToken token = default)
+        {
+            var response = await _httpClient.ExchangeCodeForAuthTokenResponse(tokenRequest, token);
+
+            _logger.LogDebug("Tiered OAuth Client Access Token: {TokenResponse}", JsonSerializer.Serialize(response));
             return response;
         }
 
@@ -353,7 +393,7 @@ namespace Udap.Client.Client
             var subjectAltNames = _publicCertificate?
                 .GetSubjectAltNames(n =>
                     n.TagNo == (int)X509Extensions.GeneralNameType.URI) //URI only, by udap.org specification
-                .Select(n => new Uri(n.Item2).AbsoluteUri)
+                .Select(n => new Uri(n.Item2).OriginalString)
                 .ToArray();
 
             var validatedToken = await ValidateToken(udapServerMetaData, tokenHandler, subjectAltNames, jwt);
@@ -399,7 +439,8 @@ namespace Udap.Client.Client
 
             if (publicKey != null)
             {
-                var validatedToken = await tokenHandler.ValidateTokenAsync(
+                
+                var validatedToken = tokenHandler.ValidateToken(
                     udapServerMetaData.SignedMetadata,
                     new TokenValidationParameters
                     {
@@ -421,7 +462,7 @@ namespace Udap.Client.Client
             {
                 var ecdsaPublicKey = _publicCertificate?.PublicKey.GetECDsaPublicKey();
 
-                var validatedToken = await tokenHandler.ValidateTokenAsync(
+                var validatedToken = tokenHandler.ValidateToken(
                     udapServerMetaData.SignedMetadata,
                     new TokenValidationParameters
                     {
@@ -665,7 +706,7 @@ namespace Udap.Client.Client
 
             if (publicKey != null)
             {
-                var validatedToken = await tokenHandler.ValidateTokenAsync(
+                var validatedToken = tokenHandler.ValidateToken(
                     udapServerMetaData.SignedMetadata,
                     new TokenValidationParameters
                     {
@@ -687,7 +728,7 @@ namespace Udap.Client.Client
             {
                 var ecdsaPublicKey = _publicCertificate?.PublicKey.GetECDsaPublicKey();
 
-                var validatedToken = await tokenHandler.ValidateTokenAsync(
+                var validatedToken = tokenHandler.ValidateToken(
                     udapServerMetaData.SignedMetadata,
                     new TokenValidationParameters
                     {

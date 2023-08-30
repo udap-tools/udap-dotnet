@@ -32,10 +32,12 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Common.Models;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Server.Storage.Stores;
 using Udap.Util.Extensions;
+using static IdentityModel.ClaimComparer;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 
@@ -373,13 +375,12 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     protected override async Task<OAuthTokenResponse> ExchangeCodeAsync([NotNull] OAuthCodeExchangeContext context)
     {
         Logger.LogInformation("UDAP exchanging authorization code.");
-        Logger.LogDebug(context.Properties.Items["returnUrl"]);
+        Logger.LogDebug(context.Properties.Items["returnUrl"] ?? "~/");
         Logger.LogDebug(Context.Request.QueryString.Value);
 
-        var originalRequestParams = HttpUtility.ParseQueryString(context.Properties.Items["returnUrl"]);
+        var originalRequestParams = HttpUtility.ParseQueryString(context.Properties.Items["returnUrl"] ?? "~/");
         var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
-        // var redirectUrl = originalRequestParams.Get("redirect_uri");
-        
+        var clientId = context.Properties.Items["client_id"];
         
         var resourceHolderRedirectUrl =
             $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
@@ -388,10 +389,9 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var code = requestParams["code"];
 
         using var serviceScope = _scopeFactory.CreateScope();
-        var clientStore = serviceScope.ServiceProvider.GetRequiredService<IClientStore>();
-        var idpClient = await clientStore.FindClientByIdAsync(idp);
-        var idpClientId = idpClient.ClientSecrets
-            .Single(cs => cs.Type == "TIERED_OAUTH_CLIENT_ID")?.Value;
+        var clientStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
+        var idpClient = await clientStore.FindTieredClientById(clientId);
+        var idpClientId = idpClient.ClientId;
 
         await _certificateStore.Resolve();
 
@@ -408,13 +408,13 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         //TODO algorithm selectable.
         var tokenRequest = tokenRequestBuilder.Build();
         
-        return await _udapClient.ExchangeCode(tokenRequest, Context.RequestAborted);
+        return await _udapClient.ExchangeCodeForAuthTokenResponse(tokenRequest, Context.RequestAborted);
     }
 
     /// <inheritdoc />
     protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
     {
-        var requestParams = HttpUtility.ParseQueryString(properties.Items["returnUrl"]);
+        var requestParams = HttpUtility.ParseQueryString(properties.Items["returnUrl"] ?? "~/");
         
         var idp = (requestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
         var scope = (requestParams.GetValues("scope") ?? throw new InvalidOperationException()).First();
@@ -431,7 +431,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var response = await _udapClient.ValidateResource(idp, community);
         
         var resourceHolderRedirectUrl =
-            $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
+            $"{Context.Request.Scheme}://{Context.Request.Host}{Options.CallbackPath}";
 
         if (response.IsError)
         {
@@ -464,15 +464,14 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         //
 
         using var serviceScope = _scopeFactory.CreateScope();
-        var clientStore = serviceScope.ServiceProvider.GetRequiredService<IClientStore>();
-        var idpClient = await clientStore.FindClientByIdAsync(idp);
+        var clientStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
+        var idpClient = await clientStore.FindTieredClientById(idp);
 
         var idpClientId = null as string;
 
         if (idpClient != null)
         {
-            idpClientId = idpClient.ClientSecrets
-                .SingleOrDefault(cs => cs.Type == "TIERED_OAUTH_CLIENT_ID")?.Value;
+            idpClientId = idpClient.ClientId;
         }
 
         // TODO Special provision query param updateRegistration to enable update registration.
@@ -501,167 +500,38 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                 return;
             }
 
-
-
-
-
-
-
+            
 
             //TODO: RegisterClient should be typed to the two builders
             // UdapDcrBuilderForAuthorizationCode or UdapDcrBuilderForClientCredentials
-            var document = await _udapClient.RegisterClient(
+            var document = await _udapClient.RegisterTieredClient(
                 resourceHolderRedirectUrl,
                 _certificateStore.IssuedCertificates.Where(ic => ic.IdPBaseUrl == idp)
-                    .Select(ic => ic.Certificate), 
+                    .Select(ic => ic.Certificate),
+                OptionsMonitor.CurrentValue.Scope.ToSpaceSeparatedString(),
                 Context.RequestAborted);
 
             if (idpClient == null)
             {
                 idpClientId = document.ClientId;
             }
-            // idpClientId = idpClient.ClientSecrets
-            //     .SingleOrDefault(cs => cs.Type == "TIERED_OAUTH_CLIENT_ID")?.Value;
-
+          
             var tokenHandler = new JsonWebTokenHandler();
             var jsonWebToken = tokenHandler.ReadJsonWebToken(document.SoftwareStatement);
             var publicCert = jsonWebToken.GetPublicCertificate();
             
-            var client = new Duende.IdentityServer.Models.Client
+            var tieredClient = new TieredClient
             {
-                ClientId = idp,
                 ClientName = document.ClientName,
+                ClientId = document.ClientId,
+                IdPBaseUrl = idp,
+                RedirectUri = clientRedirectUrl,
+                ClientUriSan = publicCert.GetSubjectAltNames().First().Item2,   //TODO: can a AuthServer register multiple times per community?
+                CommunityId = communityId.Value,
+                Enabled = true
             };
-
-            var clientSecrets = client.ClientSecrets = new List<Duende.IdentityServer.Models.Secret>();
-
-            clientSecrets.Add(new()
-            {
-                Expiration = publicCert.NotAfter,
-                Type = UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME,
-                Value = idp
-            });
-
-            clientSecrets.Add(new()
-            {
-                Expiration = publicCert.NotAfter,
-                Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY,
-                Value = communityId
-            });
-
-            //TODO: Temp solution.  Need to create first class UdapTieredOAuthClient entity instead
-            clientSecrets.Add(new()
-            {
-                Expiration = publicCert.NotAfter,
-                Type = "TIERED_OAUTH_CLIENT_ID",
-                Value = document.ClientId
-            });
-
-            client.AllowedGrantTypes.Add(GrantType.AuthorizationCode);
-
-            if (document.GrantTypes != null &&
-                document.GrantTypes.Contains(OidcConstants.GrantTypes.RefreshToken))
-            {
-                if (client.AllowedGrantTypes.Count == 1 &&
-                    client.AllowedGrantTypes.FirstOrDefault(t =>
-                        t.Equals(GrantType.ClientCredentials)) != null)
-                {
-                    // TODO: Technique in UdapClientRegistrationValidator.ValidateClientSecretsAsync
-                    // return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
-                    //     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                    //     "client credentials does not support refresh tokens"));
-
-                    Context.Response.StatusCode = StatusCodes.Status400BadRequest;
-
-                    var error = new UdapDynamicClientRegistrationErrorResponse
-                    (
-                        UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                        UdapDynamicClientRegistrationErrorDescriptions
-                            .ClientCredentialsRefreshError
-                    );
-                    Logger.LogWarning(JsonSerializer.Serialize(error));
-
-                    await Context.Response.WriteAsJsonAsync(error,
-                        cancellationToken: Context.RequestAborted);
-
-                    return;
-                }
-
-                client.AllowOfflineAccess = true;
-            }
-
-
-            //
-            // validate redirect URIs and ResponseTypes, add redirect_url
-            //
-            if (client.AllowedGrantTypes.Contains(GrantType.AuthorizationCode))
-            {
-                if (document.RedirectUris != null && document.RedirectUris.Any())
-                {
-                    foreach (var requestRedirectUri in document.RedirectUris)
-                    {
-                        //TODO add tests and decide how to handle invalid Uri exception
-                        var uri = new Uri(requestRedirectUri);
-
-                        if (uri.IsAbsoluteUri)
-                        {
-                            client.RedirectUris.Add(uri.OriginalString);
-                            //TODO: I need to create a policy engine or dig into the Duende policy stuff and see it if makes sense
-                            //Threat analysis?
-                            client.RequirePkce = false;
-                            client.AllowOfflineAccess = true;
-                        }
-                        else
-                        {
-                            var error = new UdapDynamicClientRegistrationErrorResponse
-                            (
-                                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                                UdapDynamicClientRegistrationErrorDescriptions
-                                    .MalformedRedirectUri
-                            );
-
-                            await Context.Response.WriteAsJsonAsync(error,
-                                cancellationToken: Context.RequestAborted);
-
-                            return;
-                        }
-                    }
-                }
-                else
-                {
-                    var error = new UdapDynamicClientRegistrationErrorResponse
-                    (
-                        UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                        UdapDynamicClientRegistrationErrorDescriptions
-                            .RedirectUriRequiredForAuthCode
-                    );
-
-                    await Context.Response.WriteAsJsonAsync(error,
-                        cancellationToken: Context.RequestAborted);
-
-                    return;
-                }
-
-                if (document.ResponseTypes != null && document.ResponseTypes.Count == 0)
-                {
-                    Logger.LogWarning(
-                        $"{UdapDynamicClientRegistrationErrors.InvalidClientMetadata}::" +
-                        UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing);
-
-                    var error = new UdapDynamicClientRegistrationErrorResponse
-                    (
-                        UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                        UdapDynamicClientRegistrationErrorDescriptions.ResponseTypesMissing
-                    );
-
-                    await Context.Response.WriteAsJsonAsync(error,
-                        cancellationToken: Context.RequestAborted);
-
-                    return;
-                }
-            }
-
-            await registrationStore.UpsertClient(client, Context.RequestAborted);
+            
+            await registrationStore.UpsertTieredClient(tieredClient, Context.RequestAborted);
         }
 
         properties.SetString("client_id", idpClientId);

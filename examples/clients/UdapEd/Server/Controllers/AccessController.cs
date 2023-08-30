@@ -187,7 +187,7 @@ public class AccessController : Controller
     public async Task<IActionResult> RequestAccessTokenForAuthorizationCode([FromBody] UdapAuthorizationCodeTokenRequestModel request)
     {
         var tokenRequest = request.ToUdapAuthorizationCodeTokenRequest();
-        var tokenResponse = await _httpClient.UdapRequestAuthorizationCodeTokenAsync(tokenRequest);
+        var tokenResponse = await _httpClient.ExchangeCodeForTokenResponse(tokenRequest);
 
         var tokenResponseModel = new TokenResponseModel
         {

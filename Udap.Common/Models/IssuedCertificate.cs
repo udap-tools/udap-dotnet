@@ -38,6 +38,6 @@ public class IssuedCertificate
     /// <see langword="true" /> if the specified object  is equal to the current object; otherwise, <see langword="false" />.</returns>
     public override bool Equals(object? obj)
     {
-        return obj is IssuedCertificate issued && issued.Thumbprint.Equals(Thumbprint);
+        return obj is IssuedCertificate issued && issued.Thumbprint.Equals(Thumbprint) && issued.Community.Equals(Community);
     }
 }

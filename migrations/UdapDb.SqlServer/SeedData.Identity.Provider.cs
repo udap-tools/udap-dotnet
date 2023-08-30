@@ -245,8 +245,8 @@ public static class SeedDataIdentityProvider
         //
         if (configDbContext.IdentityResources.All(i => i.Name != UdapConstants.StandardScopes.Udap))
         {
-            var fhirUserIdentity = new UdapIdentityResources.Udap();
-            configDbContext.IdentityResources.Add(fhirUserIdentity.ToEntity());
+            var udapIdentity = new UdapIdentityResources.Udap();
+            configDbContext.IdentityResources.Add(udapIdentity.ToEntity());
 
             await configDbContext.SaveChangesAsync();
         }

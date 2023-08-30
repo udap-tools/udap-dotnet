@@ -57,28 +57,31 @@ public static class HttpClientTokenRequestExtensions
     /// Sends a token request using the authorization_code grant type.
     /// </summary>
     /// <param name="client">The client.</param>
-    /// <param name="request">The request.</param>
-    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="tokenRequest">The request.</param>
+    /// <param name="token">The cancellation token.</param>
     /// <returns></returns>
-    public static async Task<TokenResponse> UdapRequestAuthorizationCodeTokenAsync(this HttpMessageInvoker client, AuthorizationCodeTokenRequest request, CancellationToken cancellationToken = default)
+    public static async Task<TokenResponse> ExchangeCodeForTokenResponse(
+        this HttpMessageInvoker client, 
+        AuthorizationCodeTokenRequest tokenRequest,
+        CancellationToken token = default)
     {
-        var clone = request.Clone();
+        var clone = tokenRequest.Clone();
 
         clone.Parameters.AddRequired(OidcConstants.TokenRequest.GrantType, OidcConstants.GrantTypes.AuthorizationCode);
-        clone.Parameters.AddRequired(OidcConstants.TokenRequest.Code, request.Code);
+        clone.Parameters.AddRequired(OidcConstants.TokenRequest.Code, tokenRequest.Code);
         // TODO: revisit:: This is not required according to https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
         // UDAP profiles also do not require it.  
         // I think that the Duende.IdentityServer.Validation.TokenRequestValidator will always fail without it.
         // The https://www.udap.org/UDAPTestTool/ sends the redirect_uri.  So not sure on the path forward yet.
-        clone.Parameters.AddOptional(OidcConstants.TokenRequest.RedirectUri, request.RedirectUri);
+        clone.Parameters.AddOptional(OidcConstants.TokenRequest.RedirectUri, tokenRequest.RedirectUri);
         clone.Parameters.AddRequired(UdapConstants.TokenRequest.Udap, UdapConstants.UdapVersionsSupportedValue);
 
-        foreach (var resource in request.Resource)
+        foreach (var resource in tokenRequest.Resource)
         {
             clone.Parameters.AddRequired(OidcConstants.TokenRequest.Resource, resource, allowDuplicates: true);
         }
 
-        return await client.RequestTokenAsync(clone, cancellationToken).ConfigureAwait(false);
+        return await client.RequestTokenAsync(clone, token).ConfigureAwait(false);
     }
 
     internal static async Task<TokenResponse> RequestTokenAsync(this HttpMessageInvoker client, ProtocolRequest request, CancellationToken cancellationToken = default)
@@ -99,10 +102,20 @@ public static class HttpClientTokenRequestExtensions
         return await ProtocolResponse.FromHttpResponseAsync<TokenResponse>(response).ConfigureAwait(false);
     }
 
-    public static async Task<OAuthTokenResponse> UdapExchangeCodeAsync(
+
+    /// <summary>
+    /// Sends a token request using the authorization_code grant type.  Typically used when called from
+    /// from a OAuthHandler implementation.  TieredOAuthAuthenticationHandler is an implementation that
+    /// calls this method.
+    /// </summary>
+    /// <param name="client">The client.</param>
+    /// <param name="request">The request.</param>
+    /// <param name="tokenRequest">The cancellation token.</param>
+    /// <returns><see cref="OAuthTokenResponse"/></returns>
+    public static async Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(
         this HttpMessageInvoker client, 
         AuthorizationCodeTokenRequest request, 
-        CancellationToken cancellationToken = default)
+        CancellationToken tokenRequest = default)
     {
         var clone = request.Clone();
 
@@ -123,9 +136,9 @@ public static class HttpClientTokenRequestExtensions
         clone.Prepare();
         clone.Method = HttpMethod.Post;
 
-        var response = await client.SendAsync(clone, cancellationToken);
+        var response = await client.SendAsync(clone, tokenRequest);
 
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(tokenRequest);
 
         return response.IsSuccessStatusCode switch
         {

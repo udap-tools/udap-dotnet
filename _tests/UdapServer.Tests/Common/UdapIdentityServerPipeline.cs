@@ -6,36 +6,50 @@
 //  See LICENSE in the project root for license information.
 // */
 #endregion
-#pragma warning disable 
 
+// Original code from:
+// Copyright (c) Duende Software. All rights reserved.
+// See LICENSE in the project root for license information.
+
+
+
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Policy;
+using System.Text.Json;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
+using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using Google.Api;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
+using Udap.Model;
 using Udap.Server;
 using Udap.Server.Registration;
+using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Stores.InMemory;
 
 namespace UdapServer.Tests.Common;
 
 public class UdapIdentityServerPipeline
 {
-    public const string BaseUrl = "https://server";
+    public const string BaseUrl = "https://idpserver";
     public const string LoginPage = BaseUrl + "/account/login";
     public const string LogoutPage = BaseUrl + "/account/logout";
     public const string ConsentPage = BaseUrl + "/account/consent";
@@ -66,7 +80,6 @@ public class UdapIdentityServerPipeline
     public List<ApiScope> ApiScopes { get; set; } = new List<ApiScope>();
     public List<TestUser> Users { get; set; } = new List<TestUser>();
     public List<Community> Communities { get; set; } = new List<Community>();
-    public InMemoryUdapClientRegistrationStore ClientRegistrationStore { get; set; }
     public TestServer Server { get; set; }
     public HttpMessageHandler Handler { get; set; }
 
@@ -76,7 +89,7 @@ public class UdapIdentityServerPipeline
     public MockMessageHandler BackChannelMessageHandler { get; set; } = new MockMessageHandler();
     public MockMessageHandler JwtRequestMessageHandler { get; set; } = new MockMessageHandler();
 
-    public event Action<IServiceCollection> OnPreConfigureServices = services => { };
+    public event Action<WebHostBuilderContext, IServiceCollection> OnPreConfigureServices = (ctx, services) => { };
     public event Action<IServiceCollection> OnPostConfigureServices = services => { };
     public event Action<IApplicationBuilder> OnPreConfigure = app => { };
     public event Action<IApplicationBuilder> OnPostConfigure = app => { };
@@ -102,6 +115,8 @@ public class UdapIdentityServerPipeline
             }
         });
 
+        builder.ConfigureAppConfiguration(configure => configure.AddJsonFile("appsettings.json"));
+
         if (enableLogging)
         {
             builder.ConfigureLogging((ctx, b) =>
@@ -115,32 +130,31 @@ public class UdapIdentityServerPipeline
         Handler = Server.CreateHandler();
             
         BrowserClient = new BrowserClient(new BrowserHandler(Handler));
+        
         BackChannelClient = new HttpClient(Handler);
-
 
     }
 
-    public void ConfigureServices(IServiceCollection services)
+    public void ConfigureServices(WebHostBuilderContext builder, IServiceCollection services)
     {
+        
+        OnPreConfigureServices(builder, services);
 
-        OnPreConfigureServices(services);
-
-        services.AddAuthentication(opts =>
-        {
-            opts.AddScheme("external", scheme =>
-            {
-                scheme.DisplayName = "External";
-                scheme.HandlerType = typeof(MockExternalAuthenticationHandler);
-            });
-        });
+        // services.AddAuthentication(opts =>
+        // {
+        //     opts.AddScheme("external", scheme =>
+        //     {
+        //         scheme.DisplayName = "External";
+        //         scheme.HandlerType = typeof(MockExternalAuthenticationHandler);
+        //     });
+        // });
         services.AddTransient<MockExternalAuthenticationHandler>(svcs =>
         {
             var handler = new MockExternalAuthenticationHandler(svcs.GetRequiredService<IHttpContextAccessor>());
             if (OnFederatedSignout != null) handler.OnFederatedSignout = OnFederatedSignout;
             return handler;
         });
-
-        ClientRegistrationStore = new InMemoryUdapClientRegistrationStore(Clients, Communities);
+        
         services.AddIdentityServer(options =>
             {
                 options.Events = new EventsOptions
@@ -150,7 +164,6 @@ public class UdapIdentityServerPipeline
                     RaiseInformationEvents = true,
                     RaiseSuccessEvents = true
                 };
-                options.KeyManagement.Enabled = false;
                 
                 Options = options;
             })
@@ -159,12 +172,14 @@ public class UdapIdentityServerPipeline
             .AddInMemoryApiResources(ApiResources)
             .AddInMemoryApiScopes(ApiScopes)
             .AddTestUsers(Users)
-            .AddDeveloperSigningCredential(persistKey: false)
-            .AddUdapServer(BaseUrl)
-            .AddInMemoryUdapCertificates(Communities, ClientRegistrationStore);
+            .AddUdapServerAsIdentityProvider(baseUrl: BaseUrl)
+            .AddInMemoryUdapCertificates(Communities);
 
-        services.AddHttpClient(IdentityServerConstants.HttpClients.BackChannelLogoutHttpClient)
-            .AddHttpMessageHandler(() => BackChannelMessageHandler);
+        services.AddUdapMetadataServer(builder.Configuration);
+
+        // BackChannelMessageHandler is used by .AddTieredOAuthForTest()
+        // services.AddHttpClient(IdentityServerConstants.HttpClients.BackChannelLogoutHttpClient)
+        //     .AddHttpMessageHandler(() => BackChannelMessageHandler);
 
         services.AddHttpClient(IdentityServerConstants.HttpClients.JwtRequestUriHttpClient)
             .AddHttpMessageHandler(() => JwtRequestMessageHandler);
@@ -196,9 +211,49 @@ public class UdapIdentityServerPipeline
 
         OnPreConfigure(app);
 
-        app.UseUdapServer();
+        app.Use(async (ctx, next) =>
+        {
+            //
+            // Enabled response buffering so that I can read the response body
+            //
+            ctx.Request.EnableBuffering();
+
+            if (ctx.Request.Path == "/connect/token")
+            {
+                var originalBody = ctx.Response.Body;
+
+                if (ctx.Response.StatusCode == (int)HttpStatusCode.OK)
+                {
+                    
+                    try
+                    {
+                        using var memStream = new MemoryStream();
+                        ctx.Response.Body = memStream;
+                        await next.Invoke(ctx);
+                        memStream.Position = 0;
+                        var responseBody = await new StreamReader(memStream).ReadToEndAsync();
+                        var jsonDoc = JsonDocument.Parse(responseBody!).RootElement;
+                        IdToken = new JwtSecurityToken(jsonDoc.GetString("id_token"));
+                        memStream.Position = 0;
+                        await memStream.CopyToAsync(originalBody);
+                    }
+                    finally {
+                        ctx.Response.Body = originalBody;
+                    }
+
+                    return;
+                }
+            }
+
+            await next(ctx);
+        });
+
+        app.UseUdapMetadataServer();
+        app.UseUdapIdPServer();
         app.UseIdentityServer();
+
         
+
         // UI endpoints
         app.Map(Constants.UIConstants.DefaultRoutePaths.Login.EnsureLeadingSlash(), path =>
         {
@@ -225,10 +280,20 @@ public class UdapIdentityServerPipeline
         {
             path.Run(ctx => OnRegister(ctx));
         });
+
+        app.Map("/connect/register", path =>
+        {
+            path.Run(ctx => OnRegister(ctx));
+        });
+
+        app.Map("/externallogin/challenge", path =>
+        {
+            path.Run(ctx => OnExternalLoginChallenge(ctx));
+        });
         
         OnPostConfigure(app);
     }
-
+    
     public bool LoginWasCalled { get; set; }
     public string LoginReturnUrl { get; set; }
     public AuthorizationRequest LoginRequest { get; set; }
@@ -245,6 +310,34 @@ public class UdapIdentityServerPipeline
         await regEndpoint.Process(ctx, CancellationToken.None);
     }
 
+    private async Task OnExternalLoginChallenge(HttpContext ctx)
+    {
+        var interactionService = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
+        var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault();
+        
+        if (interactionService.IsValidReturnUrl(returnUrl) == false)
+        {
+            throw new Exception("invalid return URL");
+        }
+
+        var scheme = ctx.Request.Query["scheme"].FirstOrDefault();
+        ;
+        var props = new AuthenticationProperties
+        {
+            RedirectUri = "/externallogin/callback",
+
+            Items =
+            {
+                { "returnUrl", returnUrl },
+                { "scheme", scheme },
+            }
+        };
+
+        // When calling ChallengeAsync your handler will be called if it is registered.
+        await ctx.ChallengeAsync(TieredOAuthAuthenticationDefaults.AuthenticationScheme, props);
+    }
+
+    
     private async Task OnLogin(HttpContext ctx)
     {
         LoginWasCalled = true;
@@ -334,6 +427,11 @@ public class UdapIdentityServerPipeline
     public bool ErrorWasCalled { get; set; }
     public ErrorMessage ErrorMessage { get; set; }
     public IServiceProvider ApplicationServices { get; private set; }
+
+    /// <summary>
+    /// Record the backchannel Identity Token during Tiered OAuth
+    /// </summary>
+    public JwtSecurityToken IdToken { get; set; }
 
     private async Task OnError(HttpContext ctx)
     {

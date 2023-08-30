@@ -43,6 +43,7 @@
     <Folder Include="certstores\Kestrel\FhirLabs\" />
     <Folder Include="certstores\Kestrel\IdentityServer\" />
     <Folder Include="certstores\Kestrel\WeatherApi\" />
+    <Folder Include="certstores\nginx_proxy_ssl\" />
     <Folder Include="certstores\surefhirlabs_community\crl\" />
     <Folder Include="certstores\surefhirlabs_community\issued\" />
   </ItemGroup>

@@ -34,7 +34,7 @@ services:
   
 
 - name: udap-auth
-  project: examples/Udap.Idp/Udap.Idp.csproj
+  project: examples/Udap.Auth.Server/Udap.Auth.Server.csproj
   bindings:
   - protocol: https
     name: https
@@ -44,7 +44,7 @@ services:
   - name: UdapIdpBaseUrl
     value: https://host.docker.internal:5002
 
-- name: udap-idp
+- name: udap-idp-1
   project: examples/Udap.Identity.Provider/Udap.Identity.Provider.csproj
   bindings:
   - protocol: https

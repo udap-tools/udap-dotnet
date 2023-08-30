@@ -30,7 +30,7 @@ public static class UdapIdentityResources
             Name = UdapConstants.StandardScopes.FhirUser;
             DisplayName = "FHIR resource representation of the current user.";
             Required = false;
-            UserClaims.Add("fhir_resource");
+            UserClaims.Add("hl7_identifier");
         }
     }
 

@@ -44,7 +44,7 @@ namespace Udap.Server.Stores
         
         public async Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.AddClient");
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.UpsertClient");
             activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
 
             var iss = client.ClientSecrets
@@ -55,10 +55,11 @@ namespace Udap.Server.Stores
                 .SingleOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY)
                 ?.Value;
 
-            var existingClient = _dbContext.Clients
+            var existingClient = await _dbContext.Clients
                 .Include(c => c.AllowedScopes)
                 .Include(c => c.RedirectUris)
-                .SingleOrDefault(c =>
+                .Include(c => c.AllowedGrantTypes)
+                .SingleOrDefaultAsync(c =>
                 // ISS
                 c.ClientSecrets.Any(cs =>
                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
@@ -66,7 +67,7 @@ namespace Udap.Server.Stores
                 // Community
                 c.ClientSecrets.Any(cs =>
                 cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY &&
-                cs.Value == community));
+                cs.Value == community), cancellationToken: token);
 
             if (existingClient != null)
             {
@@ -75,8 +76,11 @@ namespace Udap.Server.Stores
                     .Select(s => new ClientScope(){ClientId = existingClient.Id, Scope = s})
                     .ToList();
                 existingClient.RedirectUris = client.ToEntity().RedirectUris;
+                existingClient.AllowedGrantTypes = client.ToEntity().AllowedGrantTypes;
+                existingClient.AllowOfflineAccess = client.AllowOfflineAccess;
+                existingClient.RequirePkce = client.RequirePkce;
                 await _dbContext.SaveChangesAsync(token);
-                _logger.LogInformation("Updated client");
+                _logger.LogInformation("Updated client: {Id}", existingClient.Id);
                 return true;
             }
 
@@ -84,6 +88,43 @@ namespace Udap.Server.Stores
             await _dbContext.SaveChangesAsync(token);
             _logger.LogInformation("Created client");
             return false;
+        }
+
+        public async Task<bool> UpsertTieredClient(TieredClient client, CancellationToken token = default)
+        {
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.UpsertTieredClient");
+            activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
+            activity?.SetTag(Tracing.Properties.ClientId, client.IdPBaseUrl);
+
+
+            var existingClient = await _dbContext.TieredClients
+                .SingleOrDefaultAsync(t => 
+                    t.IdPBaseUrl == client.IdPBaseUrl  &&
+                    t.CommunityId == client.CommunityId, 
+                    cancellationToken: token);
+            
+            if (existingClient != null)
+            {
+                client.ClientId = existingClient.ClientId;
+                existingClient.RedirectUri = client.RedirectUri;
+                await _dbContext.SaveChangesAsync(token);
+                _logger.LogInformation("Updated client: {Id}", existingClient.Id);
+                return true;
+            }
+
+            _dbContext.TieredClients.Add(client.ToEntity());
+
+            await _dbContext.SaveChangesAsync(token);
+            _logger.LogInformation("Created client");
+            return false;
+        }
+
+        public async Task<TieredClient?> FindTieredClientById(string clientId, CancellationToken token = default)
+        {
+            var entity = await _dbContext.TieredClients
+                .SingleOrDefaultAsync(t => t.ClientId == clientId, token);
+
+            return entity.ToModel();
         }
 
         public async Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
@@ -212,7 +253,7 @@ namespace Udap.Server.Stores
             return new X509Certificate2Collection(anchors.Select(a => X509Certificate2.CreateFromPem(a.Certificate)).ToArray());
         }
 
-        public async Task<string?> GetCommunityId(string community, CancellationToken token = default)
+        public async Task<int?> GetCommunityId(string community, CancellationToken token = default)
         {
             using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetCommunityId");
             activity?.SetTag(Tracing.Properties.Community, community);
@@ -220,12 +261,12 @@ namespace Udap.Server.Stores
             if (string.IsNullOrEmpty(community))
             {
                 return await _dbContext.Communities.Where(c => c.Default)
-                    .Select(c => c.Id.ToString())
+                    .Select(c => c.Id)
                     .FirstAsync(token);
             }
 
             return await _dbContext.Communities.Where(c => c.Name == community)
-                .Select(c => c.Id.ToString())
+                .Select(c => c.Id)
                 .SingleOrDefaultAsync(token);
         }
 

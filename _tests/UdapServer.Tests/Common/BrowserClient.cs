@@ -46,4 +46,9 @@ public class BrowserClient : HttpClient
     {
         return BrowserHandler.GetCookie(uri, name);
     }
+
+    internal Cookie? GetXsrfCookie(string uri, string name)
+    {
+        return BrowserHandler.GetXsrfCookie(uri, name);
+    }
 }

@@ -39,6 +39,14 @@ public class ServerSettings
 
     [JsonPropertyName("LogoRequired")]
     public bool LogoRequired { get; set; } = true;
+
+    /// <summary>
+    /// By default the jti claim is required on registration requests.  And replay attacks are monitored.
+    /// </summary>
+    public bool RegistrationJtiRequired { get; set; } = true;
+
+    
+    public bool AlwaysIncludeUserClaimsInIdToken { get; set; }
 }
 
 public class IdPMapping

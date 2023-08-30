@@ -35,8 +35,8 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="7.0.1" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
-    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.23269.1" />
-    <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.23219.2" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.23407.1" />
+    <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.23407.1" />
     <PackageReference Include="Udap.Client" Version="0.*" />
   </ItemGroup>
  

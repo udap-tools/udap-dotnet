@@ -24,10 +24,18 @@
     <None Remove="Models\**" />
   </ItemGroup>
 
-  <ItemGroup>
+
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
     <PackageReference Include="IdentityModel"  />
-    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" VersionOverride="6.30.1" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens"  />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+    <PackageReference Include="IdentityModel"  />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens"  />
+  </ItemGroup>
+
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />

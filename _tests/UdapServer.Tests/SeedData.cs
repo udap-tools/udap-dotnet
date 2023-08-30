@@ -17,7 +17,6 @@ using Hl7.Fhir.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
-using Udap.Idp;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 using Udap.Server.Storage.Stores;
@@ -38,19 +37,19 @@ public static class SeedData
         services.AddOperationalDbContext(options =>
         {
             options.ConfigureDbContext = db => db.UseSqlite(connectionString,
-                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
         });
         services.AddConfigurationDbContext(options =>
         {
             options.ConfigureDbContext = db => db.UseSqlite(connectionString,
-                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
         });
 
         services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
         services.AddUdapDbContext(options =>
         {
             options.UdapDbContext = db => db.UseSqlite(connectionString,
-                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
         });
 
         await using var serviceProvider = services.BuildServiceProvider();
@@ -65,8 +64,8 @@ public static class SeedData
 
         var configDbContext = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
 
-        scope.ServiceProvider.GetService<PersistedGrantDbContext>()?.Database.Migrate();
-        scope.ServiceProvider.GetService<ConfigurationDbContext>()?.Database.Migrate();
+        await scope.ServiceProvider.GetService<PersistedGrantDbContext>()?.Database.MigrateAsync();
+        await scope.ServiceProvider.GetService<ConfigurationDbContext>()?.Database.MigrateAsync();
 
 
         var clientRegistrationStore = scope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
@@ -211,14 +210,14 @@ public static class SeedData
                 configDbContext.ApiScopes.Add(apiScope.ToEntity());
             }
         }
-
+        
         await configDbContext.SaveChangesAsync();
-
+        
         if (configDbContext.ApiScopes.All(s => s.Name != "udap"))
         {
             var apiScope = new ApiScope("udap");
             configDbContext.ApiScopes.Add(apiScope.ToEntity());
-
+        
             await configDbContext.SaveChangesAsync();
         }
 

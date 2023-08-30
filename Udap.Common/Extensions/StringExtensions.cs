@@ -71,7 +71,7 @@ public static class StringExtensions
 
         var uri = new Uri(url);
 
-        return uri.AbsoluteUri;
+        return uri.OriginalString;
     }
 
 

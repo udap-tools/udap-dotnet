@@ -63,6 +63,7 @@ public static class Tracing
         public const string EndpointType = "endpoint_type";
 
         public const string ClientId = "client_id";
+        public const string IdPBaseUrl = "idp_base_url";
         public const string GrantType = "grant_type";
         public const string Scope = "scope";
         public const string Resource = "resource";

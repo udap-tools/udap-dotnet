@@ -18,10 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Duende.IdentityServer" Version="6.2.3" />
-    <PackageReference Include="Duende.IdentityServer.Storage" Version="6.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.7" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
+    <PackageReference Include="Duende.IdentityServer" Version="6.3.3" />
+    <PackageReference Include="Duende.IdentityServer.Storage" Version="6.3.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.10" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.5.0" />
     <PackageReference Include="Serilog.AspNetCore" Version="7.0.0" />
     <PackageReference Include="System.IO" Version="4.3.0" />
@@ -41,9 +41,9 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Client" Version="0.2.0" />
-    <PackageReference Include="Udap.Model" Version="0.2.0" />
-    <PackageReference Include="Udap.Common" Version="0.2.0" />
+    <PackageReference Include="Udap.Client" Version="0.2.*" />
+    <PackageReference Include="Udap.Model" Version="0.2.*" />
+    <PackageReference Include="Udap.Common" Version="0.2.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">

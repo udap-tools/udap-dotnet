@@ -75,6 +75,7 @@ public static class TieredOAuthAuthenticationExtensions
         string caption,
         Action<TieredOAuthAuthenticationOptions> configuration)
     {
+        builder.Services.AddHttpClient<IUdapClient, UdapClient>();
         builder.Services.TryAddSingleton<UdapClientMessageHandler>();
         builder.Services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
         return builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>(scheme, caption, configuration);

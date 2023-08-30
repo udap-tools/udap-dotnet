@@ -13,9 +13,9 @@ using Udap.Server.Entities;
 namespace Udap.Server.Mappers
 {
     //TODO: check if this is the best way:: https://jimmybogard.com/automapper-usage-guidelines/
-    public static class CommnityMapper
+    public static class CommunityMapper
     {
-        static CommnityMapper()
+        static CommunityMapper()
         {
             Mapper = new MapperConfiguration(cfg =>
                 {

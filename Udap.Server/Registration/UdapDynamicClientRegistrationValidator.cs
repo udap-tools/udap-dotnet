@@ -20,6 +20,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Duende.IdentityServer.Models;
+using Duende.IdentityServer.Services;
+using Hl7.Fhir.Utility;
 using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Http;
@@ -27,8 +29,10 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json.Linq;
 using Udap.Common;
 using Udap.Common.Certificates;
+using Udap.Common.Extensions;
 using Udap.Common.Models;
 using Udap.Model.Registration;
 using Udap.Server.Configuration;
@@ -43,17 +47,22 @@ namespace Udap.Server.Registration;
 public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistrationValidator
 {
     private readonly TrustChainValidator _trustChainValidator;
+    private readonly IReplayCache _replayCache;
     private readonly ILogger _logger;
     private readonly ServerSettings _serverSettings;
     private readonly IHttpContextAccessor _httpContextAccessor;
 
+    private const string Purpose = nameof(UdapDynamicClientRegistrationValidator);
+
     public UdapDynamicClientRegistrationValidator(
         TrustChainValidator trustChainValidator,
+        IReplayCache replayCache,
         ServerSettings serverSettings,
         IHttpContextAccessor httpContextAccessor,
         ILogger<UdapDynamicClientRegistrationValidator> logger)
     {
         _trustChainValidator = trustChainValidator;
+        _replayCache = replayCache;
         _serverSettings = serverSettings;
         _httpContextAccessor = httpContextAccessor;
         _logger = logger;
@@ -93,7 +102,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         
         if (publicKey != null)
         {
-            validatedToken = await tokenHandler.ValidateTokenAsync(request.SoftwareStatement,
+            validatedToken = tokenHandler.ValidateToken(request.SoftwareStatement,
                 new TokenValidationParameters
                 {
                     RequireSignedTokens = true,
@@ -114,7 +123,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         {
             var ecdsaPublicKey = publicCert?.PublicKey.GetECDsaPublicKey();
 
-            validatedToken = await tokenHandler.ValidateTokenAsync(request.SoftwareStatement,
+            validatedToken = tokenHandler.ValidateToken(request.SoftwareStatement,
                 new TokenValidationParameters
                 {
                     RequireSignedTokens = true,
@@ -153,6 +162,18 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         var document = new UdapDynamicClientRegistrationDocument();
         document.AddClaims(jsonWebToken.Claims);
+
+        if (_serverSettings.RegistrationJtiRequired)
+        {
+            var result = await ValidateJti(document, jsonWebToken.ValidTo);
+
+            if (result.IsError)
+            {
+                return result;
+            }
+        }
+
+
 
         if (document.Subject == null)
         {
@@ -246,11 +267,12 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing));
         }
 
-        //TODO Inject the client
+        //TODO There should be a context already created where the client can be injected.
         var client = new Duende.IdentityServer.Models.Client
         {
             //TODO: Maybe inject a component to generate the clientID so a user can use their own technique.
-            ClientId = CryptoRandom.CreateUniqueId()
+            ClientId = CryptoRandom.CreateUniqueId(),
+            AlwaysIncludeUserClaimsInIdToken = _serverSettings.AlwaysIncludeUserClaimsInIdToken
         };
 
         
@@ -306,11 +328,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         
         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
         {
-            client.AllowedGrantTypes.Add(GrantType.ClientCredentials);
+            client.AllowedGrantTypes.Add(OidcConstants.GrantTypes.ClientCredentials);
         }
         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
         {
-            client.AllowedGrantTypes.Add(GrantType.AuthorizationCode); 
+            client.AllowedGrantTypes.Add(OidcConstants.GrantTypes.AuthorizationCode); 
         }
 
         // we only support the two above grant types but, an empty GrantType is an indication of a cancel registration action.
@@ -328,7 +350,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.RefreshToken))
         {
             if (client.AllowedGrantTypes.Count == 1 &&
-                client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
+                client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(OidcConstants.GrantTypes.ClientCredentials)) != null)
             {
                 return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -341,7 +363,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //
         // validate redirect URIs and ResponseTypes and logo_uri
         //
-        if (client.AllowedGrantTypes.Contains(GrantType.AuthorizationCode))
+        if (client.AllowedGrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
         {
             if (_serverSettings.LogoRequired)
             {
@@ -364,9 +386,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     {
                         client.RedirectUris.Add(uri.OriginalString);
                         //TODO: I need to create a policy engine or dig into the Duende policy stuff and see it if makes sense
-                        //Threat analysis?
                         client.RequirePkce = false;
-                        client.AllowOfflineAccess = true;
                     }
                     else
                     {
@@ -395,7 +415,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         if (client.AllowedGrantTypes.Count == 1 &&
-            client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(GrantType.ClientCredentials)) != null)
+            client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(OidcConstants.GrantTypes.ClientCredentials)) != null)
         {
             //TODO: find the RFC reference for this rule and add a Test
             if (document.RedirectUris != null && document.RedirectUris.Any())
@@ -439,11 +459,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             {
                 IEnumerable<string>? scopes = null;
 
-                if (document.GrantTypes != null && document.GrantTypes.Contains(GrantType.ClientCredentials))
+                if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
                 {
                     scopes = _serverSettings.DefaultSystemScopes?.FromSpaceSeparatedString();
                 }
-                else if (document.GrantTypes != null && document.GrantTypes.Contains(GrantType.AuthorizationCode))
+                else if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
                 {
                     scopes = _serverSettings.DefaultUserScopes?.FromSpaceSeparatedString();
                 }
@@ -531,6 +551,38 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         return true;
     }
 
+    public async Task<UdapDynamicClientRegistrationValidationResult> ValidateJti(
+        UdapDynamicClientRegistrationDocument document,
+        DateTime validTo)
+    {
+        var jti = document.JwtId;
+        
+
+        if (jti == null || jti.IsMissing())
+        {
+            _logger.LogWarning("jti is missing.");
+            return new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                UdapDynamicClientRegistrationErrorDescriptions.InvalidJti);
+            
+        }
+
+        if (await _replayCache.ExistsAsync(Purpose, jti))
+        {
+            _logger.LogWarning("jti is found in replay cache. Possible replay attack.");
+
+            return new UdapDynamicClientRegistrationValidationResult(
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                UdapDynamicClientRegistrationErrorDescriptions.Replay);
+        }
+        else
+        {
+            await _replayCache.AddAsync(Purpose, jti, validTo.AddMinutes(5));
+        }
+
+
+        return new UdapDynamicClientRegistrationValidationResult(string.Empty);
+    }
 
     private bool ValidateChain(
         Duende.IdentityServer.Models.Client client,

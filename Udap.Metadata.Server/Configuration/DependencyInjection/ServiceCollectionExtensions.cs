@@ -21,6 +21,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Net.Http;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
@@ -149,6 +150,29 @@ public static class ServiceCollectionExtensions
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
 
+        return app;
+    }
+
+    public static IApplicationBuilder UseUdapMetadataServer(this IApplicationBuilder app)
+    {
+
+        app.Map($"/{UdapConstants.Discovery.DiscoveryEndpoint}", path =>
+        {
+            path.Run(async ctx =>
+            {
+                var endpoint = ctx.RequestServices.GetRequiredService<UdapMetaDataEndpoint>();
+                var result = await endpoint.Process(ctx, null, default);
+                if (result != null)
+                {
+                    await result.ExecuteAsync(ctx);
+                }
+                else
+                {
+                    ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                }
+            });
+        });
+        
         return app;
     }
 

@@ -11,6 +11,27 @@ GO
 BEGIN TRANSACTION;
 GO
 
+CREATE TABLE [DataProtectionKeys] (
+    [Id] int NOT NULL IDENTITY,
+    [FriendlyName] nvarchar(max) NULL,
+    [Xml] nvarchar(max) NULL,
+    CONSTRAINT [PK_DataProtectionKeys] PRIMARY KEY ([Id])
+);
+GO
+
+CREATE TABLE [TieredClients] (
+    [Id] int NOT NULL IDENTITY,
+    [ClientName] nvarchar(max) NOT NULL,
+    [ClientId] nvarchar(max) NOT NULL,
+    [IdPBaseUrl] nvarchar(max) NOT NULL,
+    [RedirectUri] nvarchar(max) NOT NULL,
+    [ClientUriSan] nvarchar(max) NOT NULL,
+    [CommunityId] int NOT NULL,
+    [Enabled] bit NOT NULL,
+    CONSTRAINT [PK_TieredClients] PRIMARY KEY ([Id])
+);
+GO
+
 CREATE TABLE [UdapCommunities] (
     [Id] int NOT NULL IDENTITY,
     [Name] nvarchar(200) NOT NULL,
@@ -91,7 +112,7 @@ CREATE INDEX [IX_UdapIntermediateCertificates_AnchorId] ON [UdapIntermediateCert
 GO
 
 INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20230315204016_InitialSqlServerUdap', N'7.0.3');
+VALUES (N'20230826205429_InitialSqlServerUdap', N'7.0.10');
 GO
 
 COMMIT;

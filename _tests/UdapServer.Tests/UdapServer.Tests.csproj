@@ -69,11 +69,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="6.1.7" /> -->
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Hl7.Fhir.Specification.R4B" />
     <PackageReference Include="IdentityModel" />
-    <!-- <PackageReference Include="JetBrains.DotMemoryUnit" Version="3.2.20220510" /> -->
     <PackageReference Include="MartinCostello.Logging.XUnit" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
@@ -94,17 +92,20 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Yarp.ReverseProxy" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\examples\Udap.Idp\Udap.Idp.csproj" />
+    <ProjectReference Include="..\..\examples\Udap.Auth.Server\Udap.Auth.Server.csproj" />
     <ProjectReference Include="..\..\Udap.Client\Udap.Client.csproj" />
+    <ProjectReference Include="..\..\Udap.Metadata.Server\Udap.Metadata.Server.csproj" />
     <ProjectReference Include="..\..\Udap.Server\Udap.Server.csproj" />
     <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="CertStore\anchors\caLocalhostCert.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="CertStore\intermediates\intermediateLocalhostCert.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -113,6 +114,9 @@
     </None>
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\idpserver.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

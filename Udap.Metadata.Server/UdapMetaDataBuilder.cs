@@ -60,7 +60,7 @@ public class UdapMetaDataBuilder
 
         if (udapMetadataConfig == null)
         {
-            _logger.LogWarning($"Missing metadata for community: {community}");
+            _logger.LogWarning($"Missing metadata for community: {System.Web.HttpUtility.UrlEncode(community)}");
             return null;
         }
 
@@ -82,7 +82,7 @@ public class UdapMetaDataBuilder
 
         if (certificate == null)
         {
-            _logger.LogWarning($"Missing default community certificate: {community}");
+            _logger.LogWarning($"Missing default community certificate: {System.Web.HttpUtility.UrlEncode(community)}");
             return null;
         }
 

@@ -29,7 +29,7 @@ using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
 namespace Udap.PKI.Generator
 {
-    public class MakeCa
+    public class MakeCa : CertificateBase
     {
         private readonly ITestOutputHelper _testOutputHelper;
 
@@ -37,7 +37,7 @@ namespace Udap.PKI.Generator
         //
         // Community:SureFhirLabs:: Certificate Store File Constants
         //
-        public static string SureFhirLabsCertStore
+        private static string SureFhirLabsCertStore
         {
             get
             {
@@ -47,35 +47,7 @@ namespace Udap.PKI.Generator
             }
         }
 
-        private static string _baseDir;
-
-        private static string BaseDir
-        {
-            get
-            {
-                if (!String.IsNullOrEmpty(_baseDir))
-                {
-                    return _baseDir;
-                }
-
-                var assembly = Assembly.GetExecutingAssembly();
-                var resourcePath = String.Format(
-                    $"{Regex.Replace(assembly.ManifestModule.Name, @"\.(exe|dll)$", string.Empty, RegexOptions.IgnoreCase)}" +
-                    $".Resources.ProjectDirectory.txt");
-
-                var rm = new ResourceManager("Resources", assembly);
-
-                // string[] names = assembly.GetManifestResourceNames(); // Help finding names
-
-                using var stream = assembly.GetManifestResourceStream(resourcePath);
-                using var streamReader = new StreamReader(stream);
-
-                _baseDir = streamReader.ReadToEnd().Trim();
-
-                return _baseDir;
-            }
-        }
-
+       
         private static string SurefhirlabsCrl { get; } = $"{SureFhirLabsCertStore}/crl";
 
         private static string SureFhirLabsIntermediatePkcsFileCrl { get; } = "surefhirlabsIntermediateCrl.crl";
@@ -127,7 +99,7 @@ namespace Udap.PKI.Generator
         public void MakeCaWithIntermediateUdapAndSSLForDefaultCommunity()
         {
             Console.WriteLine("*************************************");
-            Console.WriteLine(_baseDir);
+            Console.WriteLine(BaseDir);
             Console.WriteLine("*************************************");
 
             //
@@ -639,7 +611,7 @@ namespace Udap.PKI.Generator
             // other docker images via host.docker.internal host name.
             // Example: FhirLabsApi project calling Udap.Idp via the back channel OpenIdConnect access token validation.
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
-                $"{BaseDir}/../../examples/Udap.Idp/host.docker.internal.pfx",
+                $"{BaseDir}/../../examples/Udap.Auth.Server/host.docker.internal.pfx",
                 true);
 
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
@@ -651,7 +623,7 @@ namespace Udap.PKI.Generator
                 true);
 
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
-                $"{BaseDir}/../../examples/Udap.Idp.Admin/host.docker.internal.pfx",
+                $"{BaseDir}/../../examples/Udap.Auth.Server.Admin/host.docker.internal.pfx",
                 true);
 
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
@@ -762,7 +734,7 @@ namespace Udap.PKI.Generator
                 subCA.GetRSAPrivateKey()!,
                 "CN=IdP1 Server, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://idp1.securedcontrols.net", "https://localhost:5055" },
-                $"{SurefhirlabsUdapIssued}/idp1.securedcontrols.net.client",
+                $"{SurefhirlabsUdapIssued}/idp1.securedcontrols.net.server",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
             );
@@ -789,23 +761,20 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/Udap.Identity.Provider.2/CertStore/issued/idp2.securedcontrols.net.server.pfx",
                 true);
 
-
-
-
         }
 
         //
-            // Run this in Linux.
-            //
-            // Todo: enable to run in Windows.  
-            // The short answer is, Windows will not allow this code rsa.ExportParameters(true).  
-            // You have to follow DotNetUtilities.GetKeyPair code to see where it is.
-            // That ExportParams would have needed the plaintext exportable bit set originally.
-            // Windows behaves in such a way when importing the pfx it creates the CNG key so it can only be exported encrypted.
-            // See this answer by bartonjs https://stackoverflow.com/users/6535399/bartonjs
-            // https://stackoverflow.com/a/57330499/6115838
-            // Also see this Github issue comment: https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
-            //
+        // Run this in Linux.
+        //
+        // Todo: enable to run in Windows.  
+        // The short answer is, Windows will not allow this code rsa.ExportParameters(true).  
+        // You have to follow DotNetUtilities.GetKeyPair code to see where it is.
+        // That ExportParams would have needed the plaintext exportable bit set originally.
+        // Windows behaves in such a way when importing the pfx it creates the CNG key so it can only be exported encrypted.
+        // See this answer by bartonjs https://stackoverflow.com/users/6535399/bartonjs
+        // https://stackoverflow.com/a/57330499/6115838
+        // Also see this Github issue comment: https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
+        //
         [Fact (Skip = "Enabled on desktop when needed.  Actually I performed the work around in SignedSoftwareStatementBuilder<T>.BuildECDSA")]
         public void GenerateCrlForFailTests()
         {
@@ -872,24 +841,6 @@ namespace Udap.PKI.Generator
 
         }
 
-        private static CrlNumber GetNextCrlNumber(string fileName)
-        {
-            CrlNumber nextCrlNum = new CrlNumber(BigInteger.One);
-
-            if (File.Exists(fileName))
-            {
-                byte[] buf = File.ReadAllBytes(fileName);
-                var crlParser = new X509CrlParser();
-                var prevCrl = crlParser.ReadCrl(buf);
-                var prevCrlNum = prevCrl.GetExtensionValue(X509Extensions.CrlNumber);
-                var asn1Object = X509ExtensionUtilities.FromExtensionValue(prevCrlNum);
-                var prevCrlNumVal = DerInteger.GetInstance(asn1Object).PositiveValue;
-                nextCrlNum = new CrlNumber(prevCrlNumVal.Add(BigInteger.One));
-            }
-
-            return nextCrlNum;
-        }
-
         //
         // Community:localhost:: Certificate Store File Constants  Community used for unit tests
         //
@@ -919,7 +870,7 @@ namespace Udap.PKI.Generator
         {
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community1",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community1",                      //communityStorePath
                 "caLocalhostCert",                                                          //anchorName
                 "intermediateLocalhostCert",                                                //intermediateName
                 "fhirLabsApiClientLocalhostCert",                                           //issuedName
@@ -936,7 +887,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community2",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community2",                      //communityStorePath
                 "caLocalhostCert2",                                                         //anchorName
                 "intermediateLocalhostCert2",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert2",                                          //issuedName
@@ -953,7 +904,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community3",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community3",                      //communityStorePath
                 "caLocalhostCert3",                                                         //anchorName
                 "intermediateLocalhostCert3",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert3",                                          //issuedName
@@ -968,7 +919,7 @@ namespace Udap.PKI.Generator
             //
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community4",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community4",                      //communityStorePath
                 "caLocalhostCert4",                                                         //anchorName
                 "intermediateLocalhostCert4",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert4",                                          //issuedName
@@ -987,7 +938,7 @@ namespace Udap.PKI.Generator
             //
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community5",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community5",                      //communityStorePath
                 "caLocalhostCert5",                                                         //anchorName
                 "intermediateLocalhostCert5",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert5",                                          //issuedName
@@ -1002,7 +953,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_fhirlabs_community6",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community6",                      //communityStorePath
                 "caLocalhostCert6",                                                         //anchorName
                 "intermediateLocalhostCert6",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert6_ECDSA",                                    //issuedName
@@ -1018,7 +969,7 @@ namespace Udap.PKI.Generator
             
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_weatherapi_community1",                    //communityStorePath
+                $"{LocalhostCertStore}localhost_weatherapi_community1",                    //communityStorePath
                 "caWeatherApiLocalhostCert",                                                //anchorName
                 "intermediateWeatherApiLocalhostCert",                                      //intermediateName
                 "weatherApiClientLocalhostCert1",                                           //issuedName
@@ -1034,7 +985,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}/localhost_weatherapi_community2",                    //communityStorePath
+                $"{LocalhostCertStore}localhost_weatherapi_community2",                    //communityStorePath
                 "caWeatherApiLocalhostCert2",                                               //anchorName
                 "intermediateWeatherApiLocalhostCert2",                                     //intermediateName
                 "weatherApiClientLocalhostCert2",                                           //issuedName
@@ -1185,6 +1136,23 @@ namespace Udap.PKI.Generator
                             $"{LocalhostCdp}/{intermediateName}.crl",
                             $"http://localhost:5033/certs/{intermediateName}.cer"
                         );
+
+                        if (issuedName == "fhirLabsApiClientLocalhostCert")
+                        {
+                            BuildClientCertificate(
+                                intermediateCert,
+                                caCert,
+                                intermediate,
+                                "CN=idpserver", //issuedDistinguishedName
+                                new List<string>
+                                {
+                                    "https://idpserver",
+                                },
+                                $"{LocalhostUdapIssued}/idpserver",
+                                $"{LocalhostCdp}/{intermediateName}.crl",
+                                $"http://localhost:5033/certs/{intermediateName}.cer"
+                            );
+                        }
                     }
 
 
@@ -1281,7 +1249,23 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/Udap.Identity.Provider/CertStore/issued/{issuedName}.pfx",
                 true);
 
-            // Udap.Identity.Provider.2 :: Second Idenity Provider
+            // Udap.Server.Tests :: Identity Provider
+            if (issuedName == "fhirLabsApiClientLocalhostCert")
+            {
+                File.Copy($"{LocalhostUdapIssued}/idpserver.pfx",
+                    $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/issued/idpserver.pfx",
+                    true);
+
+                File.Copy($"{communityStorePath}/{anchorName}.cer",
+                    $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/anchors/{anchorName}.cer",
+                    true);
+                File.Copy($"{LocalhostUdapIntermediates}/{intermediateName}.cer",
+                    $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/intermediates/{intermediateName}.cer",
+                    true);
+            }
+
+
+            // Udap.Identity.Provider.2 :: Second Identity Provider
             if (issuedName == "fhirLabsApiClientLocalhostCert2")
             {
                 File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",
@@ -1321,14 +1305,14 @@ namespace Udap.PKI.Generator
             // Distribute to Udap.Auth.Server project
             //
             // File.Copy($"{communityStorePath}/{anchorName}.cer",
-            //     $"{BaseDir}/../../examples/Udap.Idp/CertStore/anchors/{anchorName}.cer",
+            //     $"{BaseDir}/../../examples/Udap.Auth.Server/CertStore/anchors/{anchorName}.cer",
             //     true);
             // File.Copy($"{LocalhostUdapIntermediates}/{intermediateName}.cer",
-            //     $"{BaseDir}/../../examples/Udap.Idp/CertStore/intermediates/{intermediateName}.cer",
+            //     $"{BaseDir}/../../examples/Udap.Auth.Server/CertStore/intermediates/{intermediateName}.cer",
             //     true);
 
             File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",
-                $"{BaseDir}/../../examples/Udap.Idp/CertStore/issued/{issuedName}.pfx",
+                $"{BaseDir}/../../examples/Udap.Auth.Server/CertStore/issued/{issuedName}.pfx",
                 true);
         }
 
@@ -1521,85 +1505,7 @@ namespace Udap.PKI.Generator
             return clientCert;
         }
 
-        private void UpdateWindowsMachineStore(X509Certificate2 certificate)
-        {
-            //This could be modified to handle Linux also... Maybe later.
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
-                store.Open(OpenFlags.ReadWrite);
-
-                var oldCert = store.Certificates.SingleOrDefault(c => c.Subject == certificate.Subject);
-
-                if (oldCert != null)
-                {
-                    store.Remove(oldCert);
-                }
-
-                store.Add(certificate);
-                store.Close();
-            }
-        }
-
-        private static X509Extension MakeCdp(string url)
-        {
-            //
-            // urls less than 119 char solution.
-            // From Bartonjs of course.
-            //
-            // https://stackoverflow.com/questions/60742814/add-crl-distribution-points-cdp-extension-to-x509certificate2-certificate
-            //
-            // From Crypt32:  .NET doesn't support CDP extension. You have to use 3rd party libraries for that. BC is ok if it works for you.
-            // Otherwise write you own. :)
-            //
-
-            byte[] encodedUrl = Encoding.ASCII.GetBytes(url);
-
-            if (encodedUrl.Length > 119)
-            {
-                throw new NotSupportedException();
-            }
-
-            byte[] payload = new byte[encodedUrl.Length + 10];
-            int offset = 0;
-            payload[offset++] = 0x30;
-            payload[offset++] = (byte)(encodedUrl.Length + 8);
-            payload[offset++] = 0x30;
-            payload[offset++] = (byte)(encodedUrl.Length + 6);
-            payload[offset++] = 0xA0;
-            payload[offset++] = (byte)(encodedUrl.Length + 4);
-            payload[offset++] = 0xA0;
-            payload[offset++] = (byte)(encodedUrl.Length + 2);
-            payload[offset++] = 0x86;
-            payload[offset++] = (byte)(encodedUrl.Length);
-            Buffer.BlockCopy(encodedUrl, 0, payload, offset, encodedUrl.Length);
-
-            return new X509Extension("2.5.29.31", payload, critical: false);
-        }
-
-        private static void AddAuthorityKeyIdentifier(X509Certificate2 caCert, CertificateRequest intermediateReq, ITestOutputHelper testOutputHelper)
-        {
-            //
-            // Found way to generate intermediate below
-            //
-            // https://github.com/rwatjen/AzureIoTDPSCertificates/blob/711429e1b6dee7857452233a73f15c22c2519a12/src/DPSCertificateTool/CertificateUtil.cs#L69
-            // https://blog.rassie.dk/2018/04/creating-an-x-509-certificate-chain-in-c/
-            //
-
-
-            var issuerSubjectKey = caCert.Extensions?["2.5.29.14"].RawData;
-            var segment = new ArraySegment<byte>(issuerSubjectKey, 2, issuerSubjectKey.Length - 2);
-            var authorityKeyIdentifier = new byte[segment.Count + 4];
-            // these bytes define the "KeyID" part of the AuthorityKeyIdentifier
-            authorityKeyIdentifier[0] = 0x30;
-            authorityKeyIdentifier[1] = 0x16;
-            authorityKeyIdentifier[2] = 0x80;
-            authorityKeyIdentifier[3] = 0x14;
-            segment.CopyTo(authorityKeyIdentifier, 4);
-            intermediateReq.CertificateExtensions.Add(new X509Extension("2.5.29.35", authorityKeyIdentifier, false));
-        }
-
-
+        
         [Fact(Skip = "Depends on ordering")]
         public void TestCrl()
         {

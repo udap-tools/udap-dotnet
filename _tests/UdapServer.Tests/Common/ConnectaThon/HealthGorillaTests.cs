@@ -28,7 +28,7 @@ public class HealthGorillaTests
     private readonly ITestOutputHelper _testOutputHelper;
     private const string Category = "Conformance.Basic.UdapResponseTypeResponseModeTests";
 
-    private readonly UdapIdentityServerPipeline _mockPipeline = new UdapIdentityServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
 
 
     public HealthGorillaTests(ITestOutputHelper testOutputHelper)
@@ -55,7 +55,7 @@ public class HealthGorillaTests
 
         };
 
-        _mockPipeline.OnPreConfigureServices += s =>
+        _mockPipeline.OnPreConfigureServices += (_, s) =>
         {
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
@@ -142,7 +142,7 @@ public class HealthGorillaTests
         JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(regDocOnWire);
 
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(regDocOnWire, new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -161,7 +161,7 @@ public class HealthGorillaTests
         JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(regDocOnWire);
 
         var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapIdentityServerPipeline.RegistrationEndpoint,
+            UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(regDocOnWire, new MediaTypeHeaderValue("application/json")));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);

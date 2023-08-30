@@ -11,6 +11,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using Duende.IdentityServer.Models;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
@@ -24,17 +25,15 @@ using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client.Extensions;
 using Udap.Common.Certificates;
-using Udap.Idp;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
-using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Xunit.Abstractions;
 
 namespace UdapServer.Tests;
 
-public class HL7ApiTestFixture : WebApplicationFactory<Program>
+public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
 {
     public ITestOutputHelper Output { get; set; } = null!;
 
@@ -127,7 +126,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
         // TODO: 
         //
         //This is not working for linux tests like it did in other projects.
-        builder.UseSetting("contentRoot", "../../../../../examples/Udap.Idp/");
+        builder.UseSetting("contentRoot", "../../../../../examples/Udap.Auth.Server/");
     }
 
     
@@ -136,7 +135,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Program>
 /// <summary>
 /// Full Web tests.  Using <see cref="Udap.Idp"/> web server.
 /// </summary>
-[Collection("Udap.Idp")]
+[Collection("Udap.Auth.Server")]
 public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 {
     private readonly HL7ApiTestFixture _fixture;
@@ -193,7 +192,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
             ClientName = "udapTestClient",
             LogoUri = "https://example.com/logo.png",
             Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "authorization_code" },
+            GrantTypes = new HashSet<string> { "authorization_code", "refresh_token" },
             ResponseTypes = new HashSet<string> { "code" },
             RedirectUris = new List<string>(){ "http://localhost/signin-oidc" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
@@ -1212,6 +1211,113 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         errorResponse.Should().NotBeNull();
         errorResponse!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.LogoMissing}");
+    }
+
+    //invalid_client_metadata
+    [Fact]
+    public async Task RegistrationInvalidClientMetadata_Invalid_GrantType_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocument();
+
+        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint!);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert1.pfx");
+
+        var clientCert = new X509Certificate2(cert, "udap-test");
+        var now = DateTime.UtcNow;
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        //
+        // One acceptable grant type.  Ignore the other.
+        //
+        var document = new UdapDynamicClientRegistrationDocument
+        { 
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            LogoUri = "https://example.com/logo.png",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "authorization_code", "refresh_bad" },
+            ResponseTypes = new HashSet<string> { "code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "user/Patient.* user/Practitioner.read",
+            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        //
+        // No accepted grant types
+        //
+        document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost/",
+            Subject = "http://localhost/",
+            Audience = "https://localhost/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            LogoUri = "https://example.com/logo.png",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "refresh_bad" },
+            ResponseTypes = new HashSet<string> { "code" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "user/Patient.* user/Practitioner.read",
+            RedirectUris = new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri },
+        };
+
+        document.Add("Extra", "Stuff" as string);
+
+        signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
+
+        response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     //invalid_client_metadata

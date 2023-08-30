@@ -27,7 +27,6 @@ using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client.Extensions;
 using Udap.Common.Certificates;
-using Udap.Idp;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
@@ -37,7 +36,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace UdapServer.Tests;
 
-public class UdapApiTestFixture : WebApplicationFactory<Program>
+public class UdapApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
 {
     public ITestOutputHelper? Output { get; set; }
     public IUdapDbAdminContext UdapDbAdminContext { get; set; } = null!;
@@ -154,14 +153,14 @@ public class UdapApiTestFixture : WebApplicationFactory<Program>
         // TODO: 
         //
         //This is not working for linux tests like it did in other projects.
-        builder.UseSetting("contentRoot", "../../../../../examples/Udap.Idp/");
+        builder.UseSetting("contentRoot", "../../../../../examples/Udap.Auth.Server/");
     }
 }
 
 /// <summary>
 /// Full Web tests.  Using <see cref="Udap.Idp"/> web server.
 /// </summary>
-[Collection("Udap.Idp")]
+[Collection("Udap.Auth.Server")]
 public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
 {
     private UdapApiTestFixture _fixture;
@@ -215,7 +214,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
             JwtId = jwtId,
             ClientName = "udapTestClient",
             Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
-            GrantTypes = new HashSet<string> { "authorization_code" },
+            GrantTypes = new HashSet<string> { "authorization_code", "refresh_token" },
             ResponseTypes = new HashSet<string> { "code" },
             RedirectUris = new List<string>(){ "http://localhost/signin-oidc" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,

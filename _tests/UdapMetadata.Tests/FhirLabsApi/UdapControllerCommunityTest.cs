@@ -263,7 +263,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                 AnchorCertificates = new HashSet<Anchor>
                 {
                     new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert2.cer"))
-                    // No intermediate and no way to load it because this test cert has not AIA extension to follow.
+                    // No intermediate and no way to load it because this test cert has no AIA extension to follow.
                     // ************* DRAGONS ***********************
                     // Watch out for the intermediate getting cached now that I have Udap.Certificate.Server running for integration work.
                     // The integration also allows the intermediate* certs to be loaded into your personal intermediate store in Windows

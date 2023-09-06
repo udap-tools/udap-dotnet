@@ -23,12 +23,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Server", "Udap.Server\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{522A1681-215E-4C39-B1AC-1324F7CE516E}"
 	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
 		Common.props = Common.props
 		Directory.Build.props = Directory.Build.props
 		Directory.Packages.props = Directory.Packages.props
 		LICENSE = LICENSE
 		nuget.config = nuget.config
 		README.md = README.md
+		tye.docker.yaml = tye.docker.yaml
 		tye.yaml = tye.yaml
 	EndProjectSection
 EndProject
@@ -52,9 +54,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{2D52
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UdapEd", "UdapEd", "{B84896B0-6796-4059-8799-7A7F342E0B88}"
 	ProjectSection(SolutionItems) = preProject
+		examples\clients\UdapEd\.dockerignore = examples\clients\UdapEd\.dockerignore
 		examples\clients\UdapEd\.gcloudignore = examples\clients\UdapEd\.gcloudignore
 		examples\clients\UdapEd\cloudbuild.yaml = examples\clients\UdapEd\cloudbuild.yaml
 		examples\clients\UdapEd\Directory.Packages.props = examples\clients\UdapEd\Directory.Packages.props
+		examples\clients\UdapEd\Dockerfile = examples\clients\UdapEd\Dockerfile
 		examples\clients\UdapEd\Server\EMRDirectTestCA.crt = examples\clients\UdapEd\Server\EMRDirectTestCA.crt
 		examples\clients\UdapEd\Server\EMRDirectTestClientSubCA.crt = examples\clients\UdapEd\Server\EMRDirectTestClientSubCA.crt
 		examples\clients\UdapEd\nuget.config = examples\clients\UdapEd\nuget.config

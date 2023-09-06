@@ -28,12 +28,13 @@ RUN dotnet restore "Shared/UdapEd.Shared.csproj"
 RUN dotnet restore "Server/UdapEd.Server.csproj"
 COPY . .
 
-RUN dotnet build "Server/UdapEd.Server.csproj" -c Release  -o /app/build 
+
+RUN dotnet build "Server/UdapEd.Server.csproj" -c Release --no-restore -o /app/build 
 
 
 FROM build AS publish
 ARG TAG_NAME=0.2.5.0
-RUN dotnet publish "UdapEd.Server.csproj" --version-suffix 99 -c Release -o /app/publish /p:UseAppHost=false 
+RUN dotnet publish "Server/UdapEd.Server.csproj" --version-suffix 99 -c Release -o /app/publish /p:UseAppHost=false 
 
 FROM base AS final
 WORKDIR /app

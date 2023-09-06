@@ -228,22 +228,22 @@ internal static class HostingExtensions
             {
                 options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                 //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
-                options.AuthorizationEndpoint = "https://localhost:5055/connect/authorize";
+                options.AuthorizationEndpoint = "https://host.docker.internal:5055/connect/authorize";
                 //options.TokenEndpoint = "Get from UDAP metadata
-                options.TokenEndpoint = "https://localhost:5055/connect/token";
+                options.TokenEndpoint = "https://host.docker.internal:5055/connect/token";
                 // options.ClientId = "dynamic";
                 // options.Events.OnRedirectToAuthorizationEndpoint
                 // {
                 //     
                 // };
-                options.IdPBaseUrl = "https://localhost:5055";
+                options.IdPBaseUrl = "https://host.docker.internal:5055";
             })
             .AddTieredOAuth("TieredOAuthProvider2", "UDAP Tiered OAuth (DOTNET-Provider2)", options =>
             {
                 options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                 //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
-                options.AuthorizationEndpoint = "https://localhost:5057/connect/authorize";
-                options.TokenEndpoint = "https://localhost:5057/connect/token";
+                options.AuthorizationEndpoint = "https://host.docker.internal:5057/connect/authorize";
+                options.TokenEndpoint = "https://host.docker.internal:5057/connect/token";
                 //
                 // When repeating AddTieredOAuth extension always add set a unique CallbackPath
                 // Otherwise the following error will occur: "The oauth state was missing or invalid."
@@ -256,7 +256,7 @@ internal static class HostingExtensions
                 //      => Task.FromResult(Options.CallbackPath == Request.Path);
                 //
                 options.CallbackPath = "/signin-tieredoauthprovider2";
-                options.IdPBaseUrl = "https://localhost:5057";
+                options.IdPBaseUrl = "https://host.docker.internal:5057";
             })
             .AddTieredOAuth("OktaForUDAP", "UDAP Tiered OAuth Okta", options =>
             {

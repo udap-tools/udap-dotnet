@@ -41,7 +41,7 @@ internal static class HostingExtensions
         string connectionString;
 
         var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db_Idp2" : "DefaultConnection";
-
+         
         //Ugly but works so far.
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
         {

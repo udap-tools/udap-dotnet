@@ -16,6 +16,7 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
 using Duende.IdentityServer.Models;
+using Hl7.Fhir.Rest;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Udap.Common.Extensions;
@@ -31,7 +32,7 @@ using Task = System.Threading.Tasks.Task;
 
 namespace UdapDb;
 
-public static class SeedData
+public static class Seed_GCP_Auth_Server
 {
     private static Anchor anchor;
 
@@ -211,10 +212,16 @@ public static class SeedData
             }
         }
 
-        
-        await SeedFhirScopes(configDbContext, "patient");
-        await SeedFhirScopes(configDbContext, "user");
-        await SeedFhirScopes(configDbContext, "system");
+        Func<string, bool> treatmentSpecification = r => r is "Patient" or "AllergyIntolerance" or "Condition" or "Encounter";
+
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV1Scopes("patient", treatmentSpecification), 1);
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV1Scopes("user", treatmentSpecification), 1);
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV1Scopes("system", treatmentSpecification), 1);
+
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV2Scopes("patient", treatmentSpecification), 2);
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV2Scopes("user", treatmentSpecification), 2);
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV2Scopes("system", treatmentSpecification), 2);
+
 
         //
         // openid
@@ -285,12 +292,9 @@ public static class SeedData
         return 0;
     }
 
-    private static async Task SeedFhirScopes(ConfigurationDbContext configDbContext, string prefix)
-    {
-        //TODO: needs more thought.  The should be richer than a list of strings. And plenty of constants to code up.
-        // And of course there is some kind of Policy engine that should be here.
-        var seedScopes = Hl7ModelInfoExtensions.BuildHl7FhirV1AndV2Scopes(prefix);
 
+    private static async Task SeedFhirScopes(ConfigurationDbContext configDbContext, HashSet<string>? seedScopes, int version)
+    {
         var apiScopes = configDbContext.ApiScopes
             .Include(s => s.Properties)
             .Where(s => s.Enabled)
@@ -304,11 +308,12 @@ public static class SeedData
             {
                 var apiScope = new ApiScope(scopeName);
                 apiScope.ShowInDiscoveryDocument = false;
-                if (apiScope.Name == "system/*.read")
+                if (apiScope.Name.StartsWith("system/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
                 }
                 apiScope.Properties.Add("udap_prefix", "system");
+                apiScope.Properties.Add("smart_version", version.ToString());
                 configDbContext.ApiScopes.Add(apiScope.ToEntity());
             }
         }
@@ -320,11 +325,12 @@ public static class SeedData
             {
                 var apiScope = new ApiScope(scopeName);
                 apiScope.ShowInDiscoveryDocument = false;
-                if (apiScope.Name == "patient/*.read")
+                if (apiScope.Name.StartsWith("patient/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
                 }
                 apiScope.Properties.Add("udap_prefix", "user");
+                apiScope.Properties.Add("smart_version", version.ToString());
                 configDbContext.ApiScopes.Add(apiScope.ToEntity());
             }
         }
@@ -335,11 +341,12 @@ public static class SeedData
             {
                 var apiScope = new ApiScope(scopeName);
                 apiScope.ShowInDiscoveryDocument = false;
-                if (apiScope.Name == "patient/*.read")
+                if (apiScope.Name.StartsWith("patient/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
                 }
                 apiScope.Properties.Add("udap_prefix", "patient");
+                apiScope.Properties.Add("smart_version", version.ToString());
                 configDbContext.ApiScopes.Add(apiScope.ToEntity());
             }
         }

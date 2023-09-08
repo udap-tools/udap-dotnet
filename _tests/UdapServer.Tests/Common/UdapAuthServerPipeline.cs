@@ -45,6 +45,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Duende.IdentityServer.Stores;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Udap.Model;
+using Udap.Server.Configuration.BuilderExtensions;
 using Udap.Server.ResponseHandling;
 using AuthorizeResponse = IdentityModel.Client.AuthorizeResponse;
 
@@ -171,6 +172,7 @@ public class UdapAuthServerPipeline
 
         // Replace pluggable service with generator that will augment the IdToken with the hl7_identifier 
         services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
+        services.AddSmartV2Expander();
 
         services.AddIdentityServer(options =>
             {
@@ -188,7 +190,12 @@ public class UdapAuthServerPipeline
             .AddInMemoryClients(Clients)
             .AddInMemoryIdentityResources(IdentityScopes)
             .AddInMemoryApiResources(ApiResources)
-            .AddInMemoryApiScopes(ApiScopes)
+
+            //
+            // Scope SMART v2 expansion
+            //
+            .AddUdapInMemoryApiScopes(ApiScopes)
+            
             .AddTestUsers(Users)
             .AddDeveloperSigningCredential(persistKey: false)
             .AddUdapServer(BaseUrl, "FhirLabsApi")

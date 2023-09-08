@@ -7,10 +7,12 @@
 // */
 #endregion
 
+using Duende.IdentityServer.Validation;
 using Microsoft.EntityFrameworkCore;
 using Udap.Server.DbContexts;
 using Udap.Server.Options;
 using Udap.Server.Stores;
+using Udap.Server.Validation;
 
 //
 // See reason for Microsoft.Extensions.DependencyInjection namespace
@@ -102,6 +104,14 @@ public static class ServiceCollectionExtensions
         builder.AddUdapClientRegistrationStore<UdapClientRegistrationStore>();
 
         return builder;
+    }
+
+    public static IServiceCollection AddSmartV2Expander(this IServiceCollection services)
+    {
+        services.AddScoped<IScopeExpander, SmartV2Expander>();
+        services.AddScoped<IScopeParser, UdapSmartV2ScopeParser>();
+        
+        return services;
     }
 }
 

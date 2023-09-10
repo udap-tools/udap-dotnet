@@ -19,4 +19,14 @@ public class DefaultScopeExpander : IScopeExpander
     {
         return scopes;
     }
+
+    /// <summary>
+    /// Shrinks scope parameters.
+    /// </summary>
+    /// <param name="scopes"></param>
+    /// <returns></returns>
+    public IEnumerable<string> Shrink(IEnumerable<string> scopes)
+    {
+        return scopes;
+    }
 }

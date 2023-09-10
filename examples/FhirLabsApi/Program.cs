@@ -63,11 +63,10 @@ builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(s => {
 builder.Services
     .UseFhirServerController( /*systemService,*/ options =>
     {
+        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));
         // An example HTML formatter that puts the raw XML on the output
         options.OutputFormatters.Add(new SimpleHtmlFhirOutputFormatter());
-        // need this to serialize udap metadata becaue UseFhirServerController clears OutputFormatters
-        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));
-        
+        // need this to serialize udap metadata because UseFhirServerController clears OutputFormatters
     })
     .AddNewtonsoftJson(options =>
     {

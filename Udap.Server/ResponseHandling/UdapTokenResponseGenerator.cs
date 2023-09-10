@@ -15,11 +15,14 @@ using Duende.IdentityServer.Stores;
 using Duende.IdentityServer.Validation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
+using Udap.Server.Validation;
+using Udap.Util.Extensions;
 
 namespace Udap.Server.ResponseHandling;
 public class UdapTokenResponseGenerator : TokenResponseGenerator
 {
     private readonly IProfileService _profile;
+    private readonly IScopeExpander _scopeExpander;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="T:Duende.IdentityServer.ResponseHandling.TokenResponseGenerator" /> class.
@@ -32,9 +35,33 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
     /// <param name="resources">The resources.</param>
     /// <param name="clients">The clients.</param>
     /// <param name="logger">The logger.</param>
-    public UdapTokenResponseGenerator(IProfileService profile, ISystemClock clock, ITokenService tokenService, IRefreshTokenService refreshTokenService, IScopeParser scopeParser, IResourceStore resources, IClientStore clients, ILogger<TokenResponseGenerator> logger) : base(clock, tokenService, refreshTokenService, scopeParser, resources, clients, logger)
+    public UdapTokenResponseGenerator(
+        IProfileService profile, 
+        IScopeExpander scopeExpander,
+        ISystemClock clock, 
+        ITokenService tokenService, 
+        IRefreshTokenService refreshTokenService, 
+        IScopeParser scopeParser, 
+        IResourceStore resources, 
+        IClientStore clients, 
+        ILogger<TokenResponseGenerator> logger) : base(clock, tokenService, refreshTokenService, scopeParser, resources, clients, logger)
     {
         _profile = profile;
+        _scopeExpander = scopeExpander;
+    }
+
+    //// <summary>
+    /// Creates the response for an client credentials request.
+    /// </summary>
+    /// <param name="request">The request.</param>
+    /// <returns></returns>
+    protected override async Task<TokenResponse> ProcessClientCredentialsRequestAsync(TokenRequestValidationResult request)
+    {
+        var response =  await ProcessTokenRequestAsync(request);
+
+        ExpandScopes(response);
+
+        return response;
     }
 
     /// <summary>
@@ -48,6 +75,8 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
         Logger.LogTrace("Creating response for authorization code request");
 
         var response = await ProcessTokenRequestAsync(request);
+
+        ExpandScopes(response);
 
         if (request.ValidatedRequest.AuthorizationCode == null)
         {
@@ -74,6 +103,16 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
 
         return response;
     }
+
+    protected virtual void ExpandScopes(TokenResponse response)
+    {
+        //TODO create extension method for scope splitting
+        var expandedScopes = _scopeExpander.Shrink(response.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+
+        // TODO: ToSpaceSeparatedString is a name I can't remember because it doesn't have the word scope in it
+        response.Scope = expandedScopes.ToSpaceSeparatedString();
+    }
+
 
     //TODO: Configure propagated claims and test with AspNetIdentity persistence.  
     private void AugmentClaims(Token idToken, ValidatedRequest validationResult)

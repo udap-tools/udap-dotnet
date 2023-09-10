@@ -14,11 +14,6 @@ namespace Udap.Server.Validation;
 ///
 /// From HL7 FHIR SMART v2 the parameters portion of system/Patient.crud can be expanded to discrete scopes.  For example::
 ///
-/// system/Patient.c
-/// system/Patient.r
-/// system/Patient.u
-/// system/Patient.d
-///
 /// </summary>
 public interface IScopeExpander
 {
@@ -29,4 +24,11 @@ public interface IScopeExpander
     /// <param name="scopes">The scope parameter value.</param>
     /// <returns>A set of discrete scopes.</returns>
     IEnumerable<string> Expand(IEnumerable<string> scopes);
+
+    /// <summary>
+    /// Shrinks scope parameters.
+    /// </summary>
+    /// <param name="scopes"></param>
+    /// <returns></returns>
+    IEnumerable<string> Shrink(IEnumerable<string> scopes);
 }

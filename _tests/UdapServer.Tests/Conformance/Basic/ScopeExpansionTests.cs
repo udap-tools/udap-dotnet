@@ -30,6 +30,9 @@ using Udap.Server.Configuration;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
+using Microsoft.AspNetCore.WebUtilities;
+using Udap.Server.Models;
+using Duende.IdentityServer.Test;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
@@ -108,10 +111,24 @@ public class ScopeExpansionTests
         });
         _mockPipeline.ApiScopes.Add(new ApiScope("system/Patient.r"));
         _mockPipeline.ApiScopes.Add(new ApiScope("system/Patient.s"));
+        _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
+        _mockPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
+
+        _mockPipeline.Users.Add(new TestUser
+        {
+            SubjectId = "bob",
+            Username = "bob",
+            Claims = new Claim[]
+            {
+                new Claim("name", "Bob Loblaw"),
+                new Claim("email", "bob@loblaw.com"),
+                new Claim("role", "Attorney")
+            }
+        });
     }
 
     [Fact]
-    public async Task ScopeV2Test()
+    public async Task ScopeV2WithClientCredentialsTest()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
         var resultDocument = await RegisterClientWithAuthServer("system/Patient.rs", clientCert);
@@ -282,10 +299,85 @@ public class ScopeExpansionTests
 
         tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
 
-        tokenResponse.Scope.Should().Be("system/Patient.u", tokenResponse.Raw);
+        tokenResponse.IsError.Should().BeTrue();
+        tokenResponse.Error.Should().Be("invalid_scope");
     }
 
+    [Fact]
+    public async Task ScopeV2WithAuthCodeTest()
+    {
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
+        var document = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithLogoUri("https://example.com/logo.png")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("openid system/Patient.rs")
+            .WithResponseTypes(new List<string> { "code" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
+            .WithGrantType("refresh_token")
+            .Build();
+
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+            .Create(clientCert, document)
+            .Build();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            new string[] { }
+        );
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+        var response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapAuthServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        var state = Guid.NewGuid().ToString();
+        var nonce = Guid.NewGuid().ToString();
+
+        await _mockPipeline.LoginAsync("bob");
+
+        var url = _mockPipeline.CreateAuthorizeUrl(
+            clientId: resultDocument!.ClientId!,
+            responseType: "code",
+            scope: "openid system/Patient.rs",
+            redirectUri: "https://code_client/callback",
+            state: state,
+            nonce: nonce);
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
+        response = await _mockPipeline.BrowserClient.GetAsync(url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
+
+        response.Headers.Location.Should().NotBeNull();
+        var redirectUri = response.Headers.Location!.AbsoluteUri;
+         response.Headers.Location!.AbsoluteUri.Should().Contain("https://code_client/callback");
+        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+        queryParams.Should().Contain(p => p.Key == "code");
+        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid system/Patient.rs");
+        queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
+
+    }
     private async Task<UdapDynamicClientRegistrationDocument?> RegisterClientWithAuthServer(string scopes, X509Certificate2 clientCert)
     {
         // await _mockAuthorServerPipeline.LoginAsync("bob");

@@ -27,6 +27,7 @@ using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Server.Configuration;
+using Udap.Server.Validation;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
@@ -144,8 +145,8 @@ public class ClientCredentialsUdapModeTests
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockPipeline.IdentityScopes.Add(new IdentityResources.Profile());
-        _mockPipeline.ApiScopes.Add(new ApiScope("system/Patient.rs"));
-        _mockPipeline.ApiScopes.Add(new ApiScope(" system/Appointment.rs"));
+        _mockPipeline.ApiScopes.AddRange(new SmartV2Expander().ExpandToApiScopes("system/Patient.rs"));
+        _mockPipeline.ApiScopes.AddRange(new SmartV2Expander().ExpandToApiScopes(" system/Appointment.rs"));
     }
 
     [Fact]

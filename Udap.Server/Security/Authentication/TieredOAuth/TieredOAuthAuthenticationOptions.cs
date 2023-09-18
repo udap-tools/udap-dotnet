@@ -28,12 +28,11 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions{
         // TokenEndpoint = TieredOAuthAuthenticationDefaults.TokenEndpoint;
         SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;
         
-        // TODO:  configurable.  
+        // TODO:  configurable. 
         Scope.Add(OidcConstants.StandardScopes.OpenId);
-        Scope.Add(UdapConstants.StandardScopes.FhirUser);
+        // Scope.Add(UdapConstants.StandardScopes.FhirUser);
         Scope.Add(OidcConstants.StandardScopes.Email);
         Scope.Add(OidcConstants.StandardScopes.Profile);
-        Scope.Add("peopleMover");
 
         SecurityTokenValidator = _defaultHandler;
     }

@@ -257,7 +257,7 @@ public class TieredOauthTests
         _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.Profile());
         _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.Email());
-        // _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.FhirUser());
+        _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.FhirUser());
 
         _mockIdPPipeline.Users.Add(new TestUser
         {

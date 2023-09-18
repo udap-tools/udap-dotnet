@@ -10,6 +10,8 @@
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
+using IdentityModel;
+using Udap.Model;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 
@@ -26,10 +28,12 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions{
         // TokenEndpoint = TieredOAuthAuthenticationDefaults.TokenEndpoint;
         SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;
         
-        // DCR at Tiered OAuth only requires these two scopes. 
-        Scope.Add("openid");
-        // Scope.Add("email");
-        // Scope.Add("profile");
+        // TODO:  configurable.  
+        Scope.Add(OidcConstants.StandardScopes.OpenId);
+        Scope.Add(UdapConstants.StandardScopes.FhirUser);
+        Scope.Add(OidcConstants.StandardScopes.Email);
+        Scope.Add(OidcConstants.StandardScopes.Profile);
+        Scope.Add("peopleMover");
 
         SecurityTokenValidator = _defaultHandler;
     }

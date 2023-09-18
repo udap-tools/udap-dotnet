@@ -411,6 +411,9 @@ public static class SeedDataAuthServer
             await configDbContext.SaveChangesAsync();
         }
 
+        //
+        // fhirUser
+        //
         if (configDbContext.IdentityResources.All(i => i.Name != UdapConstants.StandardScopes.FhirUser))
         {
             var fhirUserIdentity = new UdapIdentityResources.FhirUser();
@@ -435,7 +438,7 @@ public static class SeedDataAuthServer
         //
         if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.Profile))
         {
-            var identityResource = new IdentityResources.Profile();
+            var identityResource = new UdapIdentityResources.Profile();
             configDbContext.IdentityResources.Add(identityResource.ToEntity());
 
             await configDbContext.SaveChangesAsync();

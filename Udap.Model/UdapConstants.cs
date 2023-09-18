@@ -187,7 +187,7 @@ public static class UdapConstants
     public static class JwtClaimTypes
     {
         public static string Extensions = "extensions";
-        public static string FhirUser = "hl7_identifier";
+        public static string Hl7Identifier = "hl7_identifier";
     }
 
     public static class TokenRequest

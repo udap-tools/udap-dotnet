@@ -28,7 +28,6 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions{
         
         // DCR at Tiered OAuth only requires these two scopes. 
         Scope.Add("openid");
-        Scope.Add("fhirUser");
         // Scope.Add("email");
         // Scope.Add("profile");
 

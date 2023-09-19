@@ -5,7 +5,7 @@
   <ItemGroup>
     <!-- https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges -->
     <PackageVersion Include="Duende.IdentityServer" Version="6.3.3" />
-    <PackageVersion Include="Duende.IdentityServer.Storage" Version="6.3.3" />
+    <PackageVersion Include="Duende.IdentityServer.Storage" Version="6.3.4" />
     <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="6.3.3" />
     <PackageVersion Include="Hl7.Fhir.R4B" Version="4.3.0" />
     <PackageVersion Include="Hl7.Fhir.Specification.R4B" Version="4.3.0" />

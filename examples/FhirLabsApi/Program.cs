@@ -19,6 +19,7 @@ using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -80,14 +81,14 @@ builder.Services
         options.SerializerSettings.Formatting = Formatting.Indented;
     })
     ;
-
+IdentityModelEventSource.ShowPII = true;
 builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
 
     .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>
     {
         options.Authority = builder.Configuration["Jwt:Authority"];
         options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
-        
+     
         
         options.TokenValidationParameters = new TokenValidationParameters
         {

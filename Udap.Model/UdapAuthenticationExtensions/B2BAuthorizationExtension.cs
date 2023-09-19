@@ -210,7 +210,7 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
         else
         {
-            claimValues.Add(JsonExtensions.SerializeToJson(value));
+            claimValues.Add(JsonSerializer.Serialize(value));
         }
 
         return claimValues;
@@ -231,7 +231,7 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
                 }
             }
 
-            return JsonExtensions.SerializeToJson(value);
+            return JsonSerializer.Serialize(value);
         }
 
         return null;

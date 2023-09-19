@@ -9,6 +9,7 @@
 
 using System;
 using System.IdentityModel.Tokens.Jwt;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
@@ -249,17 +250,15 @@ public class UdapCertificationAndEndorsementDocument : ISoftwareStatementSeriali
     /// Serializes this instance to JSON.
     /// </summary>
     /// <returns>This instance as JSON.</returns>
-    /// <remarks>Use <see cref="System.IdentityModel.Tokens.Jwt.JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
     public virtual string SerializeToJson()
     {
-        return JsonExtensions.SerializeToJson(this);
+        return JsonSerializer.Serialize(this);
     }
 
     /// <summary>
     /// Encodes this instance as Base64UrlEncoded JSON.
     /// </summary>
     /// <returns>Base64UrlEncoded JSON.</returns>
-    /// <remarks>Use <see cref="System.IdentityModel.Tokens.Jwt.JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
     public virtual string Base64UrlEncode()
     {
         return Base64UrlEncoder.Encode(SerializeToJson());

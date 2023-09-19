@@ -267,8 +267,8 @@ namespace UdapServer.Tests
                     signingCredentials);
             var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayloadJwt, ".", encodedSignature);
 
-            JsonExtensions.SerializeToJson(jwtPayload).Should()
-                .BeEquivalentTo(JsonExtensions.SerializeToJson(document));
+            jwtPayload.SerializeToJson().Should()
+                .BeEquivalentTo(JsonSerializer.Serialize(document));
 
             encodedPayloadJwt.Should().BeEquivalentTo(encodedPayload);
 
@@ -504,8 +504,8 @@ namespace UdapServer.Tests
                     signingCredentials);
             var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayloadJwt, ".", encodedSignature);
 
-            JsonExtensions.SerializeToJson(jwtPayload).Should()
-                .BeEquivalentTo(JsonExtensions.SerializeToJson(document));
+            jwtPayload.SerializeToJson().Should()
+                .BeEquivalentTo(JsonSerializer.Serialize(document));
             
             encodedPayloadJwt.Should().BeEquivalentTo(encodedPayload);
             

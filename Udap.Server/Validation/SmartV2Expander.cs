@@ -9,7 +9,7 @@
 
 using System.Text.RegularExpressions;
 using Duende.IdentityServer.Models;
-using static System.Formats.Asn1.AsnWriter;
+using Udap.Common.Extensions;
 
 namespace Udap.Server.Validation;
 
@@ -48,9 +48,10 @@ public class SmartV2Expander : IScopeExpander
                 {
                     var value = match.Value;
                     var parts = value.Split('.');
-                    var parameters = parts[1].ToList();
+                    
+                    var combinations = ScopeExtensions.GenerateCombinations(parts[1]);
 
-                    foreach (var parameter in parameters)
+                    foreach (var parameter in combinations)
                     {
                         expandedScopes.Add($"{parts[0]}.{parameter}");
                     }
@@ -72,6 +73,7 @@ public class SmartV2Expander : IScopeExpander
         return expandedScopes.Select(s => new ApiScope(s));
     }
 
+    
     /// <summary>
     /// Shrinks scope parameters.
     /// </summary>

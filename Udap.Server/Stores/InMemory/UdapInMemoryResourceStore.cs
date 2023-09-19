@@ -18,7 +18,6 @@ namespace Udap.Server.Stores.InMemory;
 
 public class UdapInMemoryResourceStore : IResourceStore
 {
-    private readonly IScopeExpander _scopeExpander;
     private readonly IEnumerable<IdentityResource> _identityResources;
     private readonly IEnumerable<ApiResource> _apiResources;
     private readonly IEnumerable<ApiScope> _apiScopes;
@@ -27,12 +26,10 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// Initializes a new instance of the <see cref="InMemoryResourcesStore" /> class.
     /// </summary>
     public UdapInMemoryResourceStore(
-        IScopeExpander scopeExpander,
         IEnumerable<IdentityResource>? identityResources = null,
         IEnumerable<ApiResource>? apiResources = null,
         IEnumerable<ApiScope>? apiScopes = null)
     {
-        _scopeExpander = scopeExpander;
         if (identityResources?.HasDuplicates(m => m.Name) == true)
         {
             throw new ArgumentException("Identity resources must not contain duplicate names");
@@ -66,14 +63,16 @@ public class UdapInMemoryResourceStore : IResourceStore
     public Task<IEnumerable<ApiResource>> FindApiResourcesByNameAsync(IEnumerable<string> apiResourceNames)
     {
         using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.FindApiResourcesByName");
-        var apiRsourceNamesList = apiResourceNames as List<string> ?? apiResourceNames.ToList();
-        activity?.SetTag(Tracing.Properties.ApiResourceNames, apiRsourceNamesList.ToSpaceSeparatedString());
+        var apiResourceNamesList = apiResourceNames as List<string> ?? apiResourceNames.ToList();
+        activity?.SetTag(Tracing.Properties.ApiResourceNames, apiResourceNamesList.ToSpaceSeparatedString());
 
         if (apiResourceNames == null) throw new ArgumentNullException(nameof(apiResourceNames));
-
+        
         var query = from a in _apiResources
-                    where apiRsourceNamesList.Contains(a.Name)
+                    where apiResourceNamesList.Contains(a.Name)
                     select a;
+
+
         return Task.FromResult(query);
     }
 
@@ -117,16 +116,12 @@ public class UdapInMemoryResourceStore : IResourceStore
         activity?.SetTag(Tracing.Properties.ScopeNames, scopeNamesList.ToSpaceSeparatedString());
 
         if (scopeNames == null) throw new ArgumentNullException(nameof(scopeNames));
-
-        var expandedScopes = _scopeExpander.Expand(scopeNamesList);
-
-       
+        
         var query =
             from x in _apiScopes
-            where expandedScopes.Contains(x.Name)
+            where scopeNamesList.Contains(x.Name)
             select x;
-
-
+        
         return Task.FromResult(query);
     }
 }

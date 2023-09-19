@@ -6,7 +6,8 @@
 //  See LICENSE in the project root for license information.
 // */
 #endregion
-#pragma warning disable 
+
+#pragma warning disable
 
 
 using System.Net;
@@ -33,21 +34,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Udap.Auth.Server.Pages;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
-using Udap.Auth.Server.Pages;
+using Udap.Server.Configuration.BuilderExtensions;
 using Udap.Server.Registration;
+using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using UnitTests.Common;
-using Constants = Udap.Server.Constants;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Duende.IdentityServer.Stores;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Udap.Model;
-using Udap.Server.Configuration.BuilderExtensions;
-using Udap.Server.ResponseHandling;
 using AuthorizeResponse = IdentityModel.Client.AuthorizeResponse;
+using Constants = Udap.Server.Constants;
 
 namespace UdapServer.Tests.Common;
 
@@ -172,7 +169,7 @@ public class UdapAuthServerPipeline
 
         // Replace pluggable service with generator that will augment the IdToken with the hl7_identifier 
         services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
-        services.AddTransient<IAuthorizeResponseGenerator, UdapAuthorizeResponseGenerator>();
+        
 
         services.AddSmartV2Expander();
 

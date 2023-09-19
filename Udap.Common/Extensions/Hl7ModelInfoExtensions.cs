@@ -82,7 +82,7 @@ public static class Hl7ModelInfoExtensions
     {
         scopes ??= new HashSet<string>();
         specification ??= r => true;
-        var parameters = suffix.ToList();
+        var parameters = ScopeExtensions.GenerateCombinations(suffix);
 
         foreach (var parameter in parameters)
         {

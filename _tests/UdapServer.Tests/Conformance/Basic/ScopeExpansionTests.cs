@@ -33,6 +33,9 @@ using Xunit.Abstractions;
 using Microsoft.AspNetCore.WebUtilities;
 using Udap.Server.Models;
 using Duende.IdentityServer.Test;
+using System.Text;
+using Udap.Common.Extensions;
+using Udap.Server.Validation;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
@@ -109,8 +112,9 @@ public class ScopeExpansionTests
                 }
             }
         });
-        _mockPipeline.ApiScopes.Add(new ApiScope("system/Patient.r"));
-        _mockPipeline.ApiScopes.Add(new ApiScope("system/Patient.s"));
+        _mockPipeline.ApiScopes.AddRange(new SmartV2Expander().ExpandToApiScopes("system/Patient.cruds"));
+        _mockPipeline.ApiScopes.AddRange(new SmartV2Expander().ExpandToApiScopes("system/Encounter.r"));
+        _mockPipeline.ApiScopes.AddRange(new SmartV2Expander().ExpandToApiScopes("system/Condition.s"));
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
 
@@ -126,6 +130,20 @@ public class ScopeExpansionTests
             }
         });
     }
+
+
+    [Theory]
+    [InlineData("cruds")]
+    public void GenerateCombinations_ReturnsUniqueStringCombinationsInGivenOrder(string input)
+    {
+        var expectedOutput = ScopeExtensions.GenerateCombinations(input);
+
+        foreach (var output in expectedOutput)
+        {
+            _testOutputHelper.WriteLine(output);
+        }
+    }
+
 
     [Fact]
     public async Task ScopeV2WithClientCredentialsTest()
@@ -259,6 +277,46 @@ public class ScopeExpansionTests
 
         tokenResponse.Scope.Should().Be("system/Patient.rs", tokenResponse.Raw);
 
+        //
+        // Again wild card expansion:  TODO
+        //
+
+        // jwtPayload = new JwtPayLoadExtension(
+        //     resultDocument!.ClientId,
+        //     IdentityServerPipeline.TokenEndpoint,
+        //     new List<Claim>()
+        //     {
+        //         new Claim(JwtClaimTypes.Subject, resultDocument.ClientId!),
+        //         new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+        //         new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+        //         // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+        //     },
+        //     now.ToUniversalTime(),
+        //     now.AddMinutes(5).ToUniversalTime()
+        // );
+        //
+        // clientAssertion =
+        //     SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+        //         .Create(clientCert, jwtPayload)
+        //         .Build("RS384");
+        //
+        //
+        // clientRequest = new UdapClientCredentialsTokenRequest
+        // {
+        //     Address = IdentityServerPipeline.TokenEndpoint,
+        //     //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
+        //     ClientAssertion = new ClientAssertion()
+        //     {
+        //         Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+        //         Value = clientAssertion
+        //     },
+        //     Udap = UdapConstants.UdapVersionsSupportedValue,
+        //     Scope = "system/Patient.*"
+        // };
+        //
+        // tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+        //
+        // tokenResponse.Scope.Should().Be("system/Patient.rs", tokenResponse.Raw);
 
         //
         // Again negative

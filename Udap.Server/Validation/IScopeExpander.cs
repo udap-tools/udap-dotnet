@@ -7,6 +7,8 @@
 // */
 #endregion
 
+using Duende.IdentityServer.Models;
+
 namespace Udap.Server.Validation;
 
 /// <summary>

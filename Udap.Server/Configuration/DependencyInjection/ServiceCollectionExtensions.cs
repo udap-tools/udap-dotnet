@@ -109,7 +109,6 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddSmartV2Expander(this IServiceCollection services)
     {
         services.AddScoped<IScopeExpander, SmartV2Expander>();
-        services.AddScoped<IScopeParser, UdapSmartV2ScopeParser>();
         
         return services;
     }

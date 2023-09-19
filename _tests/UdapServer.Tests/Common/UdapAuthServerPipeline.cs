@@ -172,6 +172,8 @@ public class UdapAuthServerPipeline
 
         // Replace pluggable service with generator that will augment the IdToken with the hl7_identifier 
         services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
+        services.AddTransient<IAuthorizeResponseGenerator, UdapAuthorizeResponseGenerator>();
+
         services.AddSmartV2Expander();
 
         services.AddIdentityServer(options =>

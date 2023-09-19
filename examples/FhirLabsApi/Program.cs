@@ -81,7 +81,7 @@ builder.Services
         options.SerializerSettings.Formatting = Formatting.Indented;
     })
     ;
-IdentityModelEventSource.ShowPII = true;
+
 builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
 
     .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>

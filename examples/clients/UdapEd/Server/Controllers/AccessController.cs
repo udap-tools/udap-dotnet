@@ -129,9 +129,9 @@ public class AccessController : Controller
         var b2bHl7 = new B2BAuthorizationExtension()
         {
             SubjectId = "urn:oid:2.16.840.1.113883.4.6#1234567890",
-            OrganizationId = new Uri("https://fhirlabs.net/fhir/r4"),
+            OrganizationId = new Uri("https://fhirlabs.net/fhir/r4").OriginalString,
             OraganizationName = "FhirLabs",
-            PurposeOfUse = new HashSet<string>
+            PurposeOfUse = new List<string>
             {
                 "urn:oid:2.16.840.1.113883.5.8#TREAT"
             }

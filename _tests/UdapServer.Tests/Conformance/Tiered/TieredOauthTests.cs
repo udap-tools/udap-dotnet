@@ -464,7 +464,7 @@ public class TieredOauthTests
         //
         // Check the IdToken in the back channel.  Ensure the HL7_Identifier is in the claims
         //
-         _testOutputHelper.WriteLine(_mockIdPPipeline.IdToken.ToString()); 
+        // _testOutputHelper.WriteLine(_mockIdPPipeline.IdToken.ToString()); 
 
         _mockIdPPipeline.IdToken.Claims.Should().Contain(c => c.Type == "hl7_identifier");
         _mockIdPPipeline.IdToken.Claims.Single(c => c.Type == "hl7_identifier").Value.Should().Be("123");

@@ -17,6 +17,8 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Udap.Server.Validation;
 using Udap.Util.Extensions;
+using Udap.Model;
+
 
 namespace Udap.Server.ResponseHandling;
 public class UdapTokenResponseGenerator : TokenResponseGenerator
@@ -121,7 +123,7 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
             validationResult.Subject!,
             validationResult.Client,
             IdentityServerConstants.ProfileDataCallers.UserInfoEndpoint,
-            new List<string>() { "hl7_identifier" });
+            new List<string>() { UdapConstants.JwtClaimTypes.Hl7Identifier });
         // context.RequestedResources = validatedResources;
 
         _profile.GetProfileDataAsync(context);

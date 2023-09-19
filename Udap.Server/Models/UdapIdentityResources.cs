@@ -30,7 +30,32 @@ public static class UdapIdentityResources
             Name = UdapConstants.StandardScopes.FhirUser;
             DisplayName = "FHIR resource representation of the current user.";
             Required = false;
-            UserClaims.Add("hl7_identifier");
+            UserClaims.Add(UdapConstants.JwtClaimTypes.Hl7Identifier);
+        }
+    }
+
+    /// <summary>
+    /// Models the standard openid scope
+    /// </summary>
+    /// <seealso cref="IdentityServer.Models.IdentityResource" />
+    public class Profile : IdentityResource
+    {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Profile"/> class.
+        /// </summary>
+        public Profile()
+        {
+            var profile = new IdentityResources.Profile();
+            Name = profile.Name;
+            DisplayName = profile.DisplayName;
+            Required = profile.Required;
+            UserClaims = profile.UserClaims;
+            //
+            // Ensure HL7Identifier is included in the profile scope when the profile scope is requested
+            // http://build.fhir.org/ig/HL7/fhir-identity-matching-ig/digital-identity.html 
+            // http://hl7.org/fhir/smart-app-launch/1.0.0/scopes-and-launch-context/index.html
+            //
+            UserClaims.Add(UdapConstants.JwtClaimTypes.Hl7Identifier);
         }
     }
 

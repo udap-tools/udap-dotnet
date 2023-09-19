@@ -234,6 +234,9 @@ public static class Seed_GCP_Auth_Server
             await configDbContext.SaveChangesAsync();
         }
 
+        //
+        // fhirUser
+        //
         if (configDbContext.IdentityResources.All(i => i.Name != UdapConstants.StandardScopes.FhirUser))
         {
             var fhirUserIdentity = new UdapIdentityResources.FhirUser();
@@ -258,7 +261,7 @@ public static class Seed_GCP_Auth_Server
         //
         if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.Profile))
         {
-            var identityResource = new IdentityResources.Profile();
+            var identityResource = new UdapIdentityResources.Profile();
             configDbContext.IdentityResources.Add(identityResource.ToEntity());
 
             await configDbContext.SaveChangesAsync();

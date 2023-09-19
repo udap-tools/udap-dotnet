@@ -19,6 +19,7 @@ using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
@@ -63,10 +64,10 @@ builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(s => {
 builder.Services
     .UseFhirServerController( /*systemService,*/ options =>
     {
-        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));
         // An example HTML formatter that puts the raw XML on the output
         options.OutputFormatters.Add(new SimpleHtmlFhirOutputFormatter());
         // need this to serialize udap metadata because UseFhirServerController clears OutputFormatters
+        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));        
     })
     .AddNewtonsoftJson(options =>
     {
@@ -86,7 +87,7 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
     {
         options.Authority = builder.Configuration["Jwt:Authority"];
         options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
-        
+     
         
         options.TokenValidationParameters = new TokenValidationParameters
         {

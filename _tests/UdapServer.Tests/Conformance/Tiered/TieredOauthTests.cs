@@ -254,7 +254,7 @@ public class TieredOauthTests
         });
 
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
-        _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.Profile());
+        _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.Profile());
         _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.Email());
         _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.FhirUser());
@@ -590,7 +590,7 @@ public class TieredOauthTests
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap openid fhirUser user/*.read")
+            .WithScope("udap openid user/*.read")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();

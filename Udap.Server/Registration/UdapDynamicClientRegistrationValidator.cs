@@ -18,18 +18,14 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.Json;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
-using Hl7.Fhir.Utility;
 using IdentityModel;
-using IdentityModel.Client;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using Newtonsoft.Json.Linq;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
@@ -642,7 +638,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         return false;
     }
 
-    private readonly string[]? _x5cArray = null;
+    private string[]? _x5cArray = null;
 
     //Todo duplicate code
     private string[]? Getx5c(JwtHeader jwtHeader)
@@ -654,13 +650,15 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             return null;
         }
 
-        var x5cArray = JsonSerializer.Deserialize<string[]>(jwtHeader.X5c);
-        
-        if (x5cArray != null && !x5cArray.Any())
+        var certificates = jwtHeader["x5c"] as List<object>;
+
+        if (certificates == null)
         {
             return null;
         }
 
-        return x5cArray;
+        _x5cArray = certificates.Select(c => c.ToString()).ToArray()!;
+        
+        return _x5cArray;
     }
 }

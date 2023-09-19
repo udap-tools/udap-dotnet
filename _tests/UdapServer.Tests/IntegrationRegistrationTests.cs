@@ -545,7 +545,7 @@ namespace UdapServer.Tests
             _testOutputHelper.WriteLine(documentSerialized);
 
             var docDeserialized =
-                JsonExtensions.DeserializeFromJson<UdapDynamicClientRegistrationDocument>(documentSerialized);
+                JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(documentSerialized);
 
             // var docDeserialized = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(documentSerialized);
             _testOutputHelper.WriteLine(docDeserialized.RedirectUris.First());

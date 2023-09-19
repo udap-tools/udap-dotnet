@@ -12,6 +12,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
@@ -517,8 +518,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         issClaim.Value.Should().Be("http://localhost/fhir/r4");
 
         var tokenHeader = jwt.Header;
-        var x5CArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
-        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()));
+        var x5CArray = tokenHeader["x5c"] as List<object>;
+        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First().ToString()!));
         var subjectAltName = cert.GetNameInfo(X509NameType.UrlName, false);
         subjectAltName.Should().Be(issClaim.Value,
             $"iss: {issClaim.Value} does not match Subject Alternative Name extension");
@@ -529,10 +530,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         issClaim.Value.Should().BeEquivalentTo(subClaim.Value);
 
         var iatClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.IssuedAt);
-        iatClaim.ValueType.Should().Be(ClaimValueTypes.Integer);
+        iatClaim.ValueType.Should().Be(ClaimValueTypes.Integer64);
 
         var expClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.Expiration);
-        expClaim.ValueType.Should().Be(ClaimValueTypes.Integer);
+        expClaim.ValueType.Should().Be(ClaimValueTypes.Integer64);
 
         var iat = int.Parse(iatClaim.Value);
         var exp = int.Parse(expClaim.Value);

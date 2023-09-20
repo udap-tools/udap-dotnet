@@ -33,6 +33,7 @@ using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Server.Configuration;
+using Udap.Server.Models;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
@@ -112,7 +113,7 @@ public class UdapForceStateParamFalseTests
         
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockPipeline.IdentityScopes.Add(new IdentityResources.Profile());
-        _mockPipeline.ApiScopes.Add(new ApiScope("udap"));
+        _mockPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
 
         _mockPipeline.Users.Add(new TestUser
         {
@@ -151,7 +152,7 @@ public class UdapForceStateParamFalseTests
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap")
+            .WithScope("openid udap")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .Build();
@@ -185,7 +186,7 @@ public class UdapForceStateParamFalseTests
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
             responseType: "code",
-            scope: "udap",
+            scope: "openid udap",
             redirectUri: "https://code_client/callback",
             // state: state, //missing state
             nonce: nonce);
@@ -200,7 +201,7 @@ public class UdapForceStateParamFalseTests
         _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
-        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("udap");
+        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid udap");
         queryParams.Count(q => q.Key == "state").Should().Be(0);
     }
 }

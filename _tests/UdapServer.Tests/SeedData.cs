@@ -9,6 +9,7 @@
 
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
+using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
@@ -17,6 +18,7 @@ using Hl7.Fhir.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
+using Udap.Common.Extensions;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;
 using Udap.Server.Storage.Stores;
@@ -189,37 +191,117 @@ public static class SeedData
             }
         }
 
-        var seedScopes = new List<string>();
-
-        foreach (var resName in ModelInfo.SupportedResources)
+        //
+        // openid
+        //
+        if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.OpenId))
         {
-            seedScopes.Add($"system/{resName}.*");
-            seedScopes.Add($"system/{resName}.read");
+            var identityResource = new IdentityResources.OpenId();
+            configDbContext.IdentityResources.Add(identityResource.ToEntity());
+
+            await configDbContext.SaveChangesAsync();
         }
 
+
+        Func<string, bool> treatmentSpecification = r => r is "Patient" or "AllergyIntolerance" or "Condition" or "Encounter";
+        var scopeProperties = new Dictionary<string, string>();
+        scopeProperties.Add("smart_version", "v1");
+
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV1Scopes("patient", treatmentSpecification), scopeProperties);
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV1Scopes("user", treatmentSpecification), scopeProperties);
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV1Scopes("system", treatmentSpecification), scopeProperties);
+
+        scopeProperties = new Dictionary<string, string>();
+        scopeProperties.Add("smart_version", "v2");
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV2Scopes("patient", treatmentSpecification), scopeProperties);
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV2Scopes("user", treatmentSpecification), scopeProperties);
+        await SeedFhirScopes(configDbContext, Hl7ModelInfoExtensions.BuildHl7FhirV2Scopes("system", treatmentSpecification), scopeProperties);
+        
+    }
+
+    private static async Task SeedFhirScopes(
+        ConfigurationDbContext configDbContext,
+        HashSet<string>? seedScopes,
+        Dictionary<string, string> scopeProperties)
+    {
         var apiScopes = configDbContext.ApiScopes
+            .Include(s => s.Properties)
             .Where(s => s.Enabled)
-            .Select(s => s.Name)
+            .Select(s => s)
             .ToList();
 
-        foreach (var scopeName in seedScopes)
+        foreach (var scopeName in seedScopes.Where(s => s.StartsWith("system")))
         {
-            if (!apiScopes.Contains(scopeName))
+            if (!apiScopes.Any(s =>
+                    s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "system")))
             {
                 var apiScope = new ApiScope(scopeName);
+                apiScope.ShowInDiscoveryDocument = false;
+
+                if (apiScope.Name.StartsWith("system/*."))
+                {
+                    apiScope.ShowInDiscoveryDocument = true;
+                }
+
+                apiScope.Properties.Add("udap_prefix", "system");
+
+                foreach (var scopeProperty in scopeProperties)
+                {
+                    apiScope.Properties.Add(scopeProperty.Key, scopeProperty.Value);
+                }
+
                 configDbContext.ApiScopes.Add(apiScope.ToEntity());
             }
         }
-        
-        await configDbContext.SaveChangesAsync();
-        
-        if (configDbContext.ApiScopes.All(s => s.Name != "udap"))
+
+        foreach (var scopeName in seedScopes.Where(s => s.StartsWith("user")))
         {
-            var apiScope = new ApiScope("udap");
-            configDbContext.ApiScopes.Add(apiScope.ToEntity());
-        
-            await configDbContext.SaveChangesAsync();
+            if (!apiScopes.Any(s =>
+                    s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "user")))
+            {
+                var apiScope = new ApiScope(scopeName);
+                apiScope.ShowInDiscoveryDocument = false;
+
+                if (apiScope.Name.StartsWith("patient/*."))
+                {
+                    apiScope.ShowInDiscoveryDocument = true;
+                }
+
+                apiScope.Properties.Add("udap_prefix", "user");
+
+                foreach (var scopeProperty in scopeProperties)
+                {
+                    apiScope.Properties.Add(scopeProperty.Key, scopeProperty.Value);
+                }
+
+                configDbContext.ApiScopes.Add(apiScope.ToEntity());
+            }
         }
+
+        foreach (var scopeName in seedScopes.Where(s => s.StartsWith("patient")))
+        {
+            if (!apiScopes.Any(s => s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "patient")))
+            {
+                var apiScope = new ApiScope(scopeName);
+                apiScope.ShowInDiscoveryDocument = false;
+
+                if (apiScope.Name.StartsWith("patient/*."))
+                {
+                    apiScope.ShowInDiscoveryDocument = true;
+                }
+
+                apiScope.Properties.Add("udap_prefix", "patient");
+
+                foreach (var scopeProperty in scopeProperties)
+                {
+                    apiScope.Properties.Add(scopeProperty.Key, scopeProperty.Value);
+                }
+
+                configDbContext.ApiScopes.Add(apiScope.ToEntity());
+            }
+        }
+
+        await configDbContext.SaveChangesAsync();
 
     }
 }

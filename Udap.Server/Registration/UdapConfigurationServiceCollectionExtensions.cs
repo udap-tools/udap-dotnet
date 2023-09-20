@@ -20,6 +20,8 @@ using Udap.Common.Models;
 using Udap.Model;
 using Udap.Server.Infrastructure.Clock;
 using Udap.Server.Registration;
+using Udap.Server.Validation;
+using Udap.Server.Validation.Default;
 
 //
 // See reason for Microsoft.Extensions.DependencyInjection namespace
@@ -40,6 +42,7 @@ public static class UdapConfigurationServiceCollectionExtensions
     /// <returns></returns>
     public static IServiceCollection AddUdapServerConfiguration(this IServiceCollection services)
     {
+        services.TryAddSingleton<IScopeExpander, DefaultScopeExpander>();
         services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
 #if NET8_0_OR_GREATER
         services.TryAddTransient<IClock, DefaultClock>();

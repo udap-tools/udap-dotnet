@@ -32,6 +32,7 @@ using Udap.Common.Extensions;
 using Udap.Common.Models;
 using Udap.Model.Registration;
 using Udap.Server.Configuration;
+using Udap.Server.Validation;
 using Udap.Util.Extensions;
 using static Udap.Model.UdapConstants;
 
@@ -47,6 +48,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     private readonly ILogger _logger;
     private readonly ServerSettings _serverSettings;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IScopeExpander _scopeExpander;
 
     private const string Purpose = nameof(UdapDynamicClientRegistrationValidator);
 
@@ -55,12 +57,14 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         IReplayCache replayCache,
         ServerSettings serverSettings,
         IHttpContextAccessor httpContextAccessor,
+        IScopeExpander scopeExpander,
         ILogger<UdapDynamicClientRegistrationValidator> logger)
     {
         _trustChainValidator = trustChainValidator;
         _replayCache = replayCache;
         _serverSettings = serverSettings;
         _httpContextAccessor = httpContextAccessor;
+        _scopeExpander = scopeExpander;
         _logger = logger;
     }
 
@@ -475,10 +479,12 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
         if (document.Scope != null && document.Any())
         {
-            string[] scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             // todo: ideally scope names get checked against configuration store?
             
-            foreach (var scope in scopes)
+            var expandedScopes = _scopeExpander.Expand(scopes);
+
+            foreach (var scope in expandedScopes)
             {
                 client?.AllowedScopes.Add(scope);
             }

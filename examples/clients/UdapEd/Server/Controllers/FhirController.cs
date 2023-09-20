@@ -72,11 +72,13 @@ public class FhirController : ControllerBase
         {
             if (model.GetResource)
             {
+                _fhirClient.Settings.PreferredFormat = ResourceFormat.Json;
                 var patient = await _fhirClient.ReadAsync<Patient>($"Patient/{model.Id}");
                 var patientJson = await new FhirJsonSerializer().SerializeToStringAsync(patient);
                 return Ok(patientJson);
             }
 
+            _fhirClient.Settings.PreferredFormat = ResourceFormat.Json;
             var bundle = await _fhirClient.SearchAsync<Patient>(searchParams);
             var bundleJson = await new FhirJsonSerializer().SerializeToStringAsync(bundle);
             return Ok(bundleJson);

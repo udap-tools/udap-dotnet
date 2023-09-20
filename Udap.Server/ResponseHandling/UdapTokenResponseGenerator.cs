@@ -33,7 +33,15 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
     /// <param name="resources">The resources.</param>
     /// <param name="clients">The clients.</param>
     /// <param name="logger">The logger.</param>
-    public UdapTokenResponseGenerator(IProfileService profile, ISystemClock clock, ITokenService tokenService, IRefreshTokenService refreshTokenService, IScopeParser scopeParser, IResourceStore resources, IClientStore clients, ILogger<TokenResponseGenerator> logger) : base(clock, tokenService, refreshTokenService, scopeParser, resources, clients, logger)
+    public UdapTokenResponseGenerator(
+        IProfileService profile, 
+        ISystemClock clock, 
+        ITokenService tokenService, 
+        IRefreshTokenService refreshTokenService, 
+        IScopeParser scopeParser, 
+        IResourceStore resources, 
+        IClientStore clients, 
+        ILogger<TokenResponseGenerator> logger) : base(clock, tokenService, refreshTokenService, scopeParser, resources, clients, logger)
     {
         _profile = profile;
     }
@@ -49,7 +57,7 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
         Logger.LogTrace("Creating response for authorization code request");
 
         var response = await ProcessTokenRequestAsync(request);
-
+        
         if (request.ValidatedRequest.AuthorizationCode == null)
         {
             throw new InvalidOperationException($"Missing {nameof(AuthorizationCode)}.");

@@ -13,11 +13,36 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using IdentityModel.Client;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Configuration;
 using Udap.Common.Extensions;
 using Udap.Model;
 
 namespace Udap.Client.Client;
+
+public class HeaderAugmentationHandler : DelegatingHandler
+{
+    private readonly UdapClientOptions _udapClientOptions;
+
+    public HeaderAugmentationHandler(IOptionsMonitor<UdapClientOptions> udapClientOptions)
+    {
+        _udapClientOptions = udapClientOptions.CurrentValue;
+    }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (_udapClientOptions.Headers != null)
+        {
+            foreach (var pair in _udapClientOptions.Headers)
+            {
+                request.Headers.Add(pair.Key, pair.Value);
+            }
+        }
+
+        return await base.SendAsync(request, cancellationToken);
+    }
+}
 
 public class UdapClientMessageHandler : DelegatingHandler, IUdapClientEvents
 {
@@ -66,6 +91,7 @@ public class UdapClientMessageHandler : DelegatingHandler, IUdapClientEvents
     {
         var baseUrl = request.RequestUri?.AbsoluteUri.GetBaseUrlFromMetadataUrl();
         var community = request.RequestUri?.Query.GetCommunityFromQueryParams();
+
 
         var metadata = await base.SendAsync(request, cancellationToken);
         metadata.EnsureSuccessStatusCode();

@@ -11,8 +11,10 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Client.Client;
+using Udap.Client.Configuration;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 public static class TieredOAuthAuthenticationExtensions
@@ -75,8 +77,21 @@ public static class TieredOAuthAuthenticationExtensions
         string caption,
         Action<TieredOAuthAuthenticationOptions> configuration)
     {
-        builder.Services.AddHttpClient<IUdapClient, UdapClient>();
-        builder.Services.TryAddSingleton<UdapClientMessageHandler>();
+
+        builder.Services.AddTransient<HeaderAugmentationHandler>();
+        builder.Services.AddHttpClient<IUdapClient, UdapClient>().AddHttpMessageHandler<HeaderAugmentationHandler>();
+        
+        builder.Services.TryAddSingleton<UdapClientMessageHandler>(sp =>
+            {
+                var handler = new UdapClientMessageHandler(
+                    sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                    sp.GetRequiredService<ILogger<UdapClient>>());
+
+                handler.InnerHandler = sp.GetRequiredService<HeaderAugmentationHandler>();
+
+                return handler;
+            });
+
         builder.Services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
         return builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>(scheme, caption, configuration);
     }

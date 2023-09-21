@@ -63,8 +63,8 @@ public static class IdentityServerBuilderExtensions
         if (clientOptionAction != null)
         {
             builder.Services.Configure(clientOptionAction);
-            builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<UdapClientOptions>>().Value);
         }
+        
         builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
         builder.AddUdapServer(baseUrl);
         builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);

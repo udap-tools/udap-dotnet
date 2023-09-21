@@ -121,9 +121,11 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
             testOutputHelper.ToLogger<TrustChainValidator>()));
 
         services.AddSingleton<UdapClientDiscoveryValidator>();
+        services.AddTransient<HeaderAugmentationHandler>();
+        services.Configure<UdapClientOptions>(configuration.GetSection("UdapClientOptions"));
 
         services.AddScoped<IUdapClient>(sp => 
-            new UdapClient(_fixture.CreateClient(), 
+            new UdapClient(_fixture.CreateDefaultClient(sp.GetRequiredService<HeaderAugmentationHandler>()), 
                 sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
                 sp.GetRequiredService<ILogger<UdapClient>>()));
@@ -152,8 +154,8 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         disco.HttpStatusCode.Should().Be(HttpStatusCode.OK);
         Assert.NotNull(udapClient.UdapServerMetaData);
     }
-
     
+
     /// <summary>
     /// udap_versions_supported must contain a fixed array with one string
     /// </summary>

@@ -12,6 +12,7 @@ using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Duende.IdentityServer.ResponseHandling;
+using Google.Api;
 using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -20,6 +21,7 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using Udap.Auth.Server.Pages;
+using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Model;
 using Udap.Server.Configuration;
@@ -97,7 +99,7 @@ internal static class HostingExtensions
 
         
         builder.Services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
-
+        builder.Services.Configure<UdapClientOptions>(builder.Configuration.GetSection("UdapClientOptions"));
 
         builder.Services.AddIdentityServer(options =>
             {
@@ -154,14 +156,15 @@ internal static class HostingExtensions
                         options.IdPMappings = udapServerOptions.IdPMappings;
                         options.LogoRequired = udapServerOptions.LogoRequired;
                     },
-                udapClientOptions =>
-                {
-                    udapClientOptions.ClientName = "Udap.Auth.SecuredControls";
-                    udapClientOptions.Contacts = new HashSet<string>
-                        { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" };
-                    udapClientOptions.Headers = "USER_KEY=uY4BUUmxhCabtOI2yvSH ; ORG_KEY=aPTIYBqvqCwYuFDtexPm";
-                },
-                options =>
+                // udapClientOptions =>
+                // {
+                //     var appSettings = builder.Configuration.GetOption<UdapClientOptions>("UdapClientOptions");
+                //     udapClientOptions.ClientName = "Udap.Auth.SecuredControls";
+                //     udapClientOptions.Contacts = new HashSet<string>
+                //         { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" };
+                //     udapClientOptions.Headers = appSettings.Headers;
+                // },
+                storeOptionAction: options =>
                     _ = provider switch
                     {
                         "Sqlite" => options.UdapDbContext = b =>

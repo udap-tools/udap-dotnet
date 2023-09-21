@@ -7,11 +7,13 @@
 // */
 #endregion
 
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using Udap.Client.Authentication;
 using Udap.Client.Client;
+using Udap.Client.Configuration;
 using Udap.Client.Rest;
 using Udap.Common.Certificates;
 using UdapEd.Server.Authentication;
@@ -83,13 +85,19 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddScoped<TrustChainValidator>();
 builder.Services.AddScoped<UdapClientDiscoveryValidator>();
-builder.Services.AddHttpClient<IUdapClient, UdapClient>();
+builder.Services.AddHttpClient<IUdapClient, UdapClient>()
+    .AddHttpMessageHandler(sp => new HeaderAugmentationHandler(sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>()));
+
+builder.Services.AddHttpClient(Options.DefaultName, c => { })
+    .AddHttpMessageHandler(sp => new HeaderAugmentationHandler(sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>()));
 
 builder.Services.AddScoped<IBaseUrlProvider, BaseUrlProvider>();
 builder.Services.AddScoped<IAccessTokenProvider, AccessTokenProvider>();
+
 builder.Services.AddHttpClient<FhirClientWithUrlProvider>((sp, httpClient) =>
 { })
-    .AddHttpMessageHandler(x => new AuthTokenHttpMessageHandler(x.GetRequiredService<IAccessTokenProvider>()));
+    .AddHttpMessageHandler(sp => new AuthTokenHttpMessageHandler(sp.GetRequiredService<IAccessTokenProvider>()))
+    .AddHttpMessageHandler(sp => new HeaderAugmentationHandler(sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>()));
 
 builder.Services.AddHttpContextAccessor();
 

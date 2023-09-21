@@ -250,6 +250,14 @@
         private set => _clientRegistrations = value;
     }
 
+    private ClientHeaders? _cliientHeaders;
+
+    public ClientHeaders? ClientHeaders
+    {
+        get { return _cliientHeaders ??= new ClientHeaders(); }
+        private set => _cliientHeaders = value;
+    }
+
     /// <summary>
     /// Certificate from Material Design Icons
     /// </summary>

@@ -46,12 +46,11 @@
 
     <MudItem xs="12" sm="6" md="6">
         <MudCard>
-            <MudCardHeader><MudText>Set Headers: </MudText></MudCardHeader>
+            <MudCardHeader><MudText>Configure Http Client Headers: </MudText></MudCardHeader>
             <MudCardContent>
-               
 
-                <MudTable Items="@ClientHeaders" Hover Striped Dense="@false" ReadOnly="@false" CanCancelEdit="@true"
-                          RowEditCommit="ItemHasBeenCommitted"
+                <MudTable Items="@Headers" Hover Striped Dense="@false" ReadOnly="@false" CanCancelEdit="@true"
+                          OnCommitEditClick="CommitItem"
                           RowEditCancel="ItemHasBeenCanceled"
                           IsEditRowSwitchingBlocked="@true"
                 >
@@ -244,6 +243,7 @@
 
         await GetCommunities();
         // await GetClientCertificates();
+        Headers = AppState.ClientHeaders?.Headers ?? new List<ClientHeader>();
     }
 
     private async Task GetCommunities()
@@ -260,29 +260,33 @@
         }
     }
 
-    private List<ClientHeader> ClientHeaders { get; set; } = new List<ClientHeader>();
+    private List<ClientHeader> Headers { get; set; }
 
     
-    // A method to add a new row to the table with some default values
     private void AddRow()
     {
-        ClientHeaders.Add(new ClientHeader());
+        Headers.Add(new ClientHeader());
         _rowInEditMode = true;
     }
 
-    // A method to remove the last row from the table if it exists
-    private void RemoveClientHeader(ClientHeader clientHeader)
+    
+    private async Task RemoveClientHeader(ClientHeader clientHeader)
     {
-        ClientHeaders.Remove(clientHeader);
+        var header = Headers.FirstOrDefault(h => h.Name == clientHeader.Name);
+        if (header != null) Headers.Remove(header);
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientHeaders), Headers);
     }
 
-    private void ItemHasBeenCommitted(object obj)
+    private async Task CommitItem(object obj)
     {
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientHeaders), new ClientHeaders{ Headers = Headers});
+        await DiscoveryService.SetClientHeaders(Headers.ToDictionary(h => h.Name, h => h.Value));
         _rowInEditMode = false;
     }
 
     private void ItemHasBeenCanceled(object obj)
     {
+        Headers.Remove((ClientHeader)obj);
         _rowInEditMode = false;
     }
 

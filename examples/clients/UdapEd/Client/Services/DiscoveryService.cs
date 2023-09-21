@@ -103,7 +103,7 @@ public class DiscoveryService
 
     public async Task<bool> SetClientHeaders(Dictionary<string, string> headers)
     {
-        var response = await _httpClient.PutAsJsonAsync("Metadata", headers);
+        var response = await _httpClient.PutAsJsonAsync("Metadata/SetClientHeaders", headers);
 
         if (response.IsSuccessStatusCode)
         {

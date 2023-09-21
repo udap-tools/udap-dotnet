@@ -224,7 +224,7 @@ public class MetadataController : Controller
         return Ok(Environment.GetEnvironmentVariable("MyIp"));
     }
 
-    [HttpPut]
+    [HttpPut("SetClientHeaders")]
     public IActionResult SetClientHeaders([FromBody] Dictionary<string, string> headers)
     {
         // HttpContext.Session.SetString(UdapEdConstants.CLIENT_HEADERS, JsonSerializer.Serialize<Dictionary<string, string>>(headers));

@@ -7,10 +7,18 @@
 // */
 #endregion
 
-namespace UdapEd.Client.Shared;
+namespace UdapEd.Shared.Model;
+
+public class ClientHeaders
+{
+    public List<ClientHeader>? Headers { get; set; }
+}
+
 
 public class ClientHeader
 {
     public string Name { get; set; }
+
     public string Value { get; set; }
 }
+

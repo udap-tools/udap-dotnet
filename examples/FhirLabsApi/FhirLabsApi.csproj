@@ -118,6 +118,9 @@
     <None Update="host.docker.internal.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="specification.zip">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="SureFhirLabs_CA.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

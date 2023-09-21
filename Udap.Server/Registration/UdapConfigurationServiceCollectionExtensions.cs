@@ -15,6 +15,7 @@ using Duende.IdentityServer.Stores;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Client;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Model;
@@ -27,6 +28,7 @@ using Udap.Server.Validation.Default;
 // See reason for Microsoft.Extensions.DependencyInjection namespace
 // here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
 //
+// ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class UdapConfigurationServiceCollectionExtensions
@@ -51,7 +53,7 @@ public static class UdapConfigurationServiceCollectionExtensions
 #endif
         services.TryAddTransient<IUdapDynamicClientRegistrationValidator, UdapDynamicClientRegistrationValidator>();
         services.TryAddSingleton<TrustChainValidator>();
-
+        
         return services;
     }
 
@@ -170,7 +172,7 @@ public static class UdapConfigurationServiceCollectionExtensions
             // https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
             // https://stackoverflow.com/a/57330499/6115838
             //
-            byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
+            var encryptedPrivKeyBytes = key?.ExportEncryptedPkcs8PrivateKey(
                 "ILikePasswords",
                 new PbeParameters(
                     PbeEncryptionAlgorithm.Aes256Cbc,
@@ -178,7 +180,7 @@ public static class UdapConfigurationServiceCollectionExtensions
                     iterationCount: 100_000));
 
             ecdsa.ImportEncryptedPkcs8PrivateKey("ILikePasswords".AsSpan(), encryptedPrivKeyBytes.AsSpan(),
-                out int bytesRead);
+                out int _);
         }
         else
         {
@@ -248,7 +250,7 @@ public static class UdapConfigurationServiceCollectionExtensions
             // https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
             // https://stackoverflow.com/a/57330499/6115838
             //
-            byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
+            var encryptedPrivKeyBytes = key?.ExportEncryptedPkcs8PrivateKey(
                 "ILikePasswords",
                 new PbeParameters(
                     PbeEncryptionAlgorithm.Aes256Cbc,
@@ -256,7 +258,7 @@ public static class UdapConfigurationServiceCollectionExtensions
                     iterationCount: 100_000));
 
             ecdsa.ImportEncryptedPkcs8PrivateKey("ILikePasswords".AsSpan(), encryptedPrivKeyBytes.AsSpan(),
-                out int bytesRead);
+                out int _);
         }
         else
         {

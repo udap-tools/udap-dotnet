@@ -82,6 +82,7 @@ builder.Services.AddRazorPages();
 //     });
 
 builder.Services.AddScoped<TrustChainValidator>();
+builder.Services.AddScoped<UdapClientDiscoveryValidator>();
 builder.Services.AddHttpClient<IUdapClient, UdapClient>();
 
 builder.Services.AddScoped<IBaseUrlProvider, BaseUrlProvider>();

@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,13 +7,10 @@
 // */
 #endregion
 
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
@@ -24,16 +21,12 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Metadata.Server;
-using Udap.Util.Extensions;
 using Xunit.Abstractions;
-using Constants = Udap.Common.Constants;
 using weatherApiProgram = WeatherApi.Program;
 
 
@@ -122,12 +115,13 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.TryAddScoped(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags,
             testOutputHelper.ToLogger<TrustChainValidator>()));
 
+        services.AddSingleton<UdapClientDiscoveryValidator>();
+
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
-                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                sp.GetRequiredService<ITrustAnchorStore>()));
+                sp.GetRequiredService<ILogger<UdapClient>>()));
 
         //
         // Use this method in an application
@@ -183,7 +177,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
 
-        var jwt = new JwtSecurityToken(disco?.SignedMetadata);
+        var jwt = new JwtSecurityToken(disco.SignedMetadata);
         
         var issClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.Issuer);
         issClaim.ValueType.Should().Be(ClaimValueTypes.String);
@@ -269,14 +263,14 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                            X509ChainStatusFlags.CtlNotSignatureValid |
                            X509ChainStatusFlags.RevocationStatusUnknown;
 
-        services.TryAddScoped<TrustChainValidator>(sp => new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>()));
+        services.TryAddScoped<TrustChainValidator>(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>()));
+        services.AddSingleton<UdapClientDiscoveryValidator>();
 
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
-                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                sp.GetRequiredService<ITrustAnchorStore>()));
+                sp.GetRequiredService<ILogger<UdapClient>>()));
 
         var serviceProvider = services.BuildServiceProvider();
 

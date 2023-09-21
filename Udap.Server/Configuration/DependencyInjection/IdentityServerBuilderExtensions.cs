@@ -128,6 +128,8 @@ public static class IdentityServerBuilderExtensions
                 sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
                 resourceServerName ?? "Udap.Auth.Server"));
 
+        builder.Services.TryAddSingleton<UdapClientDiscoveryValidator>();
+
         // TODO: TrustAnchor has to be singleton because
         // builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>
         // forces IOptionsMonitor<TieredOAuthAuthenticationOptions> to be singleton.

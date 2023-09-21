@@ -10,7 +10,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using FluentAssertions;
 using IdentityModel;
@@ -28,10 +27,8 @@ using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Metadata.Server;
 using Udap.Model;
 using Xunit.Abstractions;
-using Constants = Udap.Common.Constants;
 using weatherApiProgram = WeatherApi.Program;
 
 namespace UdapMetadata.Tests.WeatherApi;
@@ -119,13 +116,13 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         services.TryAddScoped(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags,
             testOutputHelper.ToLogger<TrustChainValidator>()));
 
+        services.AddSingleton<UdapClientDiscoveryValidator>();
 
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
-                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                sp.GetRequiredService<ITrustAnchorStore>()));
+                sp.GetRequiredService<ILogger<UdapClient>>()));
 
         //
         // Use this method in an application

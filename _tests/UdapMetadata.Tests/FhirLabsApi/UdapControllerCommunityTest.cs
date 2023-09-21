@@ -7,12 +7,11 @@
 // */
 #endregion
 
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
@@ -23,16 +22,14 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
-using Udap.Metadata.Server;
 using Xunit.Abstractions;
-using Constants = Udap.Common.Constants;
+using static UdapMetadata.Tests.FhirLabsApi.UdapControllerCommunityTest;
 using fhirLabsProgram = FhirLabsApi.Program;
 
 
@@ -124,12 +121,13 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             new TrustChainValidator(new X509ChainPolicy(), problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
 
+        services.AddSingleton<UdapClientDiscoveryValidator>();
+
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
-                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                sp.GetRequiredService<ITrustAnchorStore>()));
+                sp.GetRequiredService<ILogger<UdapClient>>()));
 
         //
         // Use this method in an application
@@ -163,7 +161,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
     [Fact]
-    public async Task ValidateChainECDSATest()
+    public async Task ValidateChainEcdsaTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
         udapClient.Problem += _diagnosticsValidator.OnChainProblem;
@@ -222,128 +220,6 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("JWT iss does not match baseUrl.")).Should().BeTrue();
     }
 
-    [Fact]
-    public async Task ValidateChainWithMyAnchorAndIntermediateTest()
-    {
-        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
-
-        var disco = await udapClient.ValidateResource(
-            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            new TrustAnchorMemoryStore()
-            {
-                AnchorCertificates = new HashSet<Anchor>
-                {
-                    new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert2.cer"))
-                    {
-                        //TODO:  Implement a ICertificateResolver, injected into TrustChainValidator to follow AIA extensions, resolving intermediate certificates
-                        Intermediates = new List<Intermediate>
-                        {
-                            new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert2.cer"))
-                        }
-                    }
-                }
-            },
-            "udap://Provider2");
-
-        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-        Assert.NotNull(udapClient.UdapServerMetaData);
-        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task ValidateChainWithMyAnchorTest()
-    {
-        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Untrusted += _diagnosticsValidator.OnUnTrusted;
-
-        var disco = await udapClient.ValidateResource(
-            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            new TrustAnchorMemoryStore()
-            {
-                AnchorCertificates = new HashSet<Anchor>
-                {
-                    new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert2.cer"))
-                    // No intermediate and no way to load it because this test cert has no AIA extension to follow.
-                    // ************* DRAGONS ***********************
-                    // Watch out for the intermediate getting cached now that I have Udap.Certificate.Server running for integration work.
-                    // The integration also allows the intermediate* certs to be loaded into your personal intermediate store in Windows
-                    // ************* DRAGONS ***********************
-                }
-            },
-            "udap://Provider2");
-    
-        disco.IsError.Should().BeTrue(disco.Raw);
-        Assert.NotNull(udapClient.UdapServerMetaData);
-        _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
-    }
-
-    /// <summary>
-    /// Notice the community and TrustAnchorMemoryStore are different
-    /// </summary>
-    /// <returns></returns>
-    [Fact]
-    public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
-    {
-        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
-        udapClient.Untrusted += _diagnosticsValidator.OnUnTrusted;
-
-        var disco = await udapClient.ValidateResource(
-            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            new TrustAnchorMemoryStore()
-            {
-                AnchorCertificates = new HashSet<Anchor>
-                {
-                    new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"))
-                    {
-                        Community = "udap://Provider2",
-                        Intermediates = new List<Intermediate>
-                        {
-                            new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert.cer"))
-                        }
-                    }
-                }
-            },
-            "udap://Provider2");
-
-        disco.IsError.Should().BeTrue(disco.Raw);
-        Assert.NotNull(udapClient.UdapServerMetaData);
-        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
-        _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
-        _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
-    }
-
-    /// <summary>
-    /// Notice the community and TrustAnchorMemoryStore are different
-    /// </summary>
-    /// <returns></returns>
-    [Fact]
-    public async Task ValidateChainWithMyAnchorFailTest()
-    {
-        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
-        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
-        udapClient.Untrusted += _diagnosticsValidator.OnUnTrusted;
-
-        var disco = await udapClient.ValidateResource(
-            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
-            new TrustAnchorMemoryStore()
-            {
-                AnchorCertificates = new HashSet<Anchor>
-                {
-                    new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"))
-                }
-            },
-            "udap://Provider2");
-
-        disco.IsError.Should().BeTrue(disco.Raw);
-        Assert.NotNull(udapClient.UdapServerMetaData);
-        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
-        _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
-        _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
-
-
-    }
 
     [Fact]
     public async Task MissingCommunityChainTest()
@@ -431,13 +307,13 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.TryAddScoped(_ =>
             new TrustChainValidator(new X509ChainPolicy(), problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
+        services.AddSingleton<UdapClientDiscoveryValidator>();
 
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
-                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                sp.GetRequiredService<ITrustAnchorStore>()));
+                sp.GetRequiredService<ILogger<UdapClient>>()));
 
         var serviceProvider = services.BuildServiceProvider();
 
@@ -586,4 +462,360 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             TokenErrorCalled = true;
         }
     }
+}
+
+public class UdapControllerCommunityCertificateResolverTests : IClassFixture<ApiForCommunityTestFixture>
+{
+    private readonly ApiForCommunityTestFixture _fixture;
+    private readonly ITestOutputHelper _testOutputHelper;
+    private readonly FakeValidatorDiagnostics _diagnosticsValidator = new FakeValidatorDiagnostics();
+
+    public UdapControllerCommunityCertificateResolverTests(ApiForCommunityTestFixture fixture,
+        ITestOutputHelper testOutputHelper)
+    {
+        if (fixture == null) throw new ArgumentNullException(nameof(fixture));
+        fixture.Output = testOutputHelper;
+        _fixture = fixture;
+        _testOutputHelper = testOutputHelper;
+
+
+        //
+        // This are is for client Dependency injection and Configuration
+        //
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", false, true)
+            // .AddUserSecrets<UdapControllerTests>()
+            .Build();
+
+        //
+        // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory
+        //
+        var services = new ServiceCollection();
+
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddXUnit(testOutputHelper);
+        });
+    }
+
+
+
+
+    [Fact]
+public async Task ValidateChainWithMyAnchorAndIntermediateTest()
+{
+
+    //
+    // This are is for client Dependency injection and Configuration
+    //<TrustChainValidator>
+    var configuration = new ConfigurationBuilder()
+        .AddJsonFile("appsettings.json", false, true)
+        // .AddUserSecrets<UdapControllerTests>()
+        .Build();
+
+    //
+    // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory
+    //
+    var services = new ServiceCollection();
+
+    services.AddLogging(logging =>
+    {
+        logging.ClearProviders();
+        logging.AddXUnit(_testOutputHelper);
+    });
+
+    // UDAP CertStore
+    services.Configure<UdapFileCertStoreManifest>(configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
+    services.AddSingleton<ITrustAnchorStore>(sp =>
+        new TrustAnchorMemoryStore()
+        {
+            AnchorCertificates = new HashSet<Anchor>
+            {
+                new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert2.cer"))
+                {
+                    //TODO:  Implement a ICertificateResolver, injected into TrustChainValidator to follow AIA extensions, resolving intermediate certificates
+                    Intermediates = new List<Intermediate>
+                    {
+                        new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert2.cer"))
+                    }
+                }
+            }
+        });
+
+    var problemFlags = X509ChainStatusFlags.NotTimeValid |
+                       X509ChainStatusFlags.Revoked |
+                       X509ChainStatusFlags.NotSignatureValid |
+                       X509ChainStatusFlags.InvalidBasicConstraints |
+                       X509ChainStatusFlags.CtlNotTimeValid |
+                       X509ChainStatusFlags.UntrustedRoot |
+                    // X509ChainStatusFlags.OfflineRevocation |
+                       X509ChainStatusFlags.CtlNotSignatureValid;
+                    // X509ChainStatusFlags.RevocationStatusUnknown;
+
+
+        services.TryAddScoped(_ =>
+        new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+            _testOutputHelper.ToLogger<TrustChainValidator>()));
+
+    services.AddSingleton<UdapClientDiscoveryValidator>();
+
+    services.AddScoped<IUdapClient>(sp =>
+        new UdapClient(_fixture.CreateClient(),
+            sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+            sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+            sp.GetRequiredService<ILogger<UdapClient>>()));
+
+    var serviceProvider = services.BuildServiceProvider();
+
+    var udapClient = serviceProvider.GetRequiredService<IUdapClient>();
+    udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+
+    var disco = await udapClient.ValidateResource(
+        _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+        "udap://Provider2");
+
+    disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+    Assert.NotNull(udapClient.UdapServerMetaData);
+    _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+}
+
+[Fact]
+public async Task ValidateChainWithMyAnchorTest()
+{
+        //
+        // This are is for client Dependency injection and Configuration
+        //<TrustChainValidator>
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", false, true)
+            // .AddUserSecrets<UdapControllerTests>()
+            .Build();
+
+        //
+        // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory
+        //
+        var services = new ServiceCollection();
+
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddXUnit(_testOutputHelper);
+        });
+
+        // UDAP CertStore
+        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
+        services.AddSingleton<ITrustAnchorStore>(sp =>
+            new TrustAnchorMemoryStore()
+            {
+                AnchorCertificates = new HashSet<Anchor>
+                {
+                    new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert2.cer"))
+                    // No intermediate and no way to load it because this test cert has no AIA extension to follow.
+                    // ************* DRAGONS ***********************
+                    // Watch out for the intermediate getting cached now that I have Udap.Certificate.Server running for integration work.
+                    // The integration also allows the intermediate* certs to be loaded into your personal intermediate store in Windows
+                    // ************* DRAGONS ***********************
+                }
+            });
+
+        var problemFlags = X509ChainStatusFlags.NotTimeValid |
+                           X509ChainStatusFlags.Revoked |
+                           X509ChainStatusFlags.NotSignatureValid |
+                           X509ChainStatusFlags.InvalidBasicConstraints |
+                           X509ChainStatusFlags.CtlNotTimeValid |
+                           X509ChainStatusFlags.OfflineRevocation |
+                           X509ChainStatusFlags.CtlNotSignatureValid |
+                           X509ChainStatusFlags.RevocationStatusUnknown |
+                           X509ChainStatusFlags.PartialChain |
+                           X509ChainStatusFlags.UntrustedRoot;
+
+
+        services.TryAddScoped(_ =>
+            new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+                _testOutputHelper.ToLogger<TrustChainValidator>()));
+
+        services.AddSingleton<UdapClientDiscoveryValidator>();
+
+        services.AddScoped<IUdapClient>(sp =>
+            new UdapClient(_fixture.CreateClient(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                sp.GetRequiredService<ILogger<UdapClient>>()));
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        var udapClient = serviceProvider.GetRequiredService<IUdapClient>();
+    udapClient.Untrusted += _diagnosticsValidator.OnUnTrusted;
+
+    var disco = await udapClient.ValidateResource(
+        _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+        "udap://Provider2");
+
+    disco.IsError.Should().BeTrue(disco.Raw);
+    Assert.NotNull(udapClient.UdapServerMetaData);
+    _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
+}
+
+/// <summary>
+/// Notice the community and TrustAnchorMemoryStore are different
+/// </summary>
+/// <returns></returns>
+[Fact]
+public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
+{
+        //
+        // This are is for client Dependency injection and Configuration
+        //<TrustChainValidator>
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", false, true)
+            // .AddUserSecrets<UdapControllerTests>()
+            .Build();
+
+        //
+        // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory
+        //
+        var services = new ServiceCollection();
+
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddXUnit(_testOutputHelper);
+        });
+
+        // UDAP CertStore
+        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
+        services.AddSingleton<ITrustAnchorStore>(sp =>
+            new TrustAnchorMemoryStore()
+            {
+                AnchorCertificates = new HashSet<Anchor>
+                {
+                    new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"))
+                    {
+                        Community = "udap://Provider2",
+                        Intermediates = new List<Intermediate>
+                        {
+                            new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert.cer"))
+                        }
+                    }
+                }
+            });
+
+        var problemFlags = X509ChainStatusFlags.NotTimeValid |
+                           X509ChainStatusFlags.Revoked |
+                           X509ChainStatusFlags.NotSignatureValid |
+                           X509ChainStatusFlags.InvalidBasicConstraints |
+                           X509ChainStatusFlags.CtlNotTimeValid |
+                           X509ChainStatusFlags.UntrustedRoot |
+                        // X509ChainStatusFlags.OfflineRevocation |
+                           X509ChainStatusFlags.CtlNotSignatureValid;
+                        // X509ChainStatusFlags.RevocationStatusUnknown;
+
+
+        services.TryAddScoped(_ =>
+            new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+                _testOutputHelper.ToLogger<TrustChainValidator>()));
+
+        services.AddSingleton<UdapClientDiscoveryValidator>();
+
+        services.AddScoped<IUdapClient>(sp =>
+            new UdapClient(_fixture.CreateClient(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                sp.GetRequiredService<ILogger<UdapClient>>()));
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        var udapClient = serviceProvider.GetRequiredService<IUdapClient>();
+    udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+    udapClient.Untrusted += _diagnosticsValidator.OnUnTrusted;
+
+    var disco = await udapClient.ValidateResource(
+        _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+        "udap://Provider2");
+
+    disco.IsError.Should().BeTrue(disco.Raw);
+    Assert.NotNull(udapClient.UdapServerMetaData);
+    _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+    _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
+    _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
+}
+
+/// <summary>
+/// Notice the community and TrustAnchorMemoryStore are different
+/// </summary>
+/// <returns></returns>
+[Fact]
+public async Task ValidateChainWithMyAnchorFailTest()
+{
+        //
+        // This are is for client Dependency injection and Configuration
+        //<TrustChainValidator>
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", false, true)
+            // .AddUserSecrets<UdapControllerTests>()
+            .Build();
+
+        //
+        // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory
+        //
+        var services = new ServiceCollection();
+
+        services.AddLogging(logging =>
+        {
+            logging.ClearProviders();
+            logging.AddXUnit(_testOutputHelper);
+        });
+
+        // UDAP CertStore
+        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
+        services.AddSingleton<ITrustAnchorStore>(sp =>
+            new TrustAnchorMemoryStore()
+            {
+                AnchorCertificates = new HashSet<Anchor>
+                {
+                    new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"))
+                }
+            });
+
+        var problemFlags = X509ChainStatusFlags.NotTimeValid |
+                           X509ChainStatusFlags.Revoked |
+                           X509ChainStatusFlags.NotSignatureValid |
+                           X509ChainStatusFlags.InvalidBasicConstraints |
+                           X509ChainStatusFlags.CtlNotTimeValid |
+                           X509ChainStatusFlags.UntrustedRoot |
+                        // X509ChainStatusFlags.OfflineRevocation |
+                           X509ChainStatusFlags.CtlNotSignatureValid;
+                        // X509ChainStatusFlags.RevocationStatusUnknown;
+
+
+        services.TryAddScoped(_ =>
+            new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+                _testOutputHelper.ToLogger<TrustChainValidator>()));
+
+        services.AddSingleton<UdapClientDiscoveryValidator>();
+
+        services.AddScoped<IUdapClient>(sp =>
+            new UdapClient(_fixture.CreateClient(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                sp.GetRequiredService<ILogger<UdapClient>>()));
+
+        var serviceProvider = services.BuildServiceProvider();
+
+        var udapClient = serviceProvider.GetRequiredService<IUdapClient>();
+    udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+    udapClient.Untrusted += _diagnosticsValidator.OnUnTrusted;
+
+    var disco = await udapClient.ValidateResource(
+        _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+        "udap://Provider2");
+
+    disco.IsError.Should().BeTrue(disco.Raw);
+    Assert.NotNull(udapClient.UdapServerMetaData);
+    _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+    _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
+    _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
+
+
+}
 }

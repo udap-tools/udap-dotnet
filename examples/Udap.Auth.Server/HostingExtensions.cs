@@ -159,6 +159,7 @@ internal static class HostingExtensions
                     udapClientOptions.ClientName = "Udap.Auth.SecuredControls";
                     udapClientOptions.Contacts = new HashSet<string>
                         { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" };
+                    udapClientOptions.Headers = "USER_KEY=uY4BUUmxhCabtOI2yvSH ; ORG_KEY=aPTIYBqvqCwYuFDtexPm";
                 },
                 options =>
                     _ = provider switch

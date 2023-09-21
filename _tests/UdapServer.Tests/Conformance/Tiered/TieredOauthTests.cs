@@ -509,10 +509,9 @@ public class TieredOauthTests
 
         var udapClient = new UdapClient(
                 _mockAuthorServerPipeline.BrowserClient,
-                _mockAuthorServerPipeline.Resolve<TrustChainValidator>(),
+                _mockAuthorServerPipeline.Resolve<UdapClientDiscoveryValidator>(),
                 _mockAuthorServerPipeline.Resolve<IOptionsMonitor<UdapClientOptions>>(),
-                _mockAuthorServerPipeline.Resolve<ILogger<UdapClient>>(),
-                _mockAuthorServerPipeline.Resolve<ITrustAnchorStore>());
+                _mockAuthorServerPipeline.Resolve<ILogger<UdapClient>>());
 
         var accessToken = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
         accessToken.Should().NotBeNull();

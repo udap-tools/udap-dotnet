@@ -1,4 +1,4 @@
-#region (c) 2022 Joseph Shook. All rights reserved.
+#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -31,7 +31,6 @@ using Udap.Common.Certificates;
 using Udap.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
-using Constants = Udap.Common.Constants;
 using fhirLabsProgram = FhirLabsApi.Program;
 
 
@@ -69,7 +68,6 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
 public class UdapControllerTests : IClassFixture<ApiTestFixture>
 {
     private readonly ApiTestFixture _fixture;
-    private readonly ITestOutputHelper _testOutputHelper;
     private readonly IServiceProvider _serviceProvider;
 
     public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper output, ITestOutputHelper testOutputHelper)
@@ -80,7 +78,6 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         if (fixture == null) throw new ArgumentNullException(nameof(fixture));
         fixture.Output = output;
         _fixture = fixture;
-        _testOutputHelper = testOutputHelper;
 
 
         //
@@ -121,14 +118,15 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
 
 
         services.TryAddScoped(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags,
-            _testOutputHelper.ToLogger<TrustChainValidator>()));
+            testOutputHelper.ToLogger<TrustChainValidator>()));
+
+        services.AddSingleton<UdapClientDiscoveryValidator>();
 
         services.AddScoped<IUdapClient>(sp => 
             new UdapClient(_fixture.CreateClient(), 
-                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                sp.GetRequiredService<ITrustAnchorStore>()));
+                sp.GetRequiredService<ILogger<UdapClient>>()));
 
         //
         // Use this method in an application

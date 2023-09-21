@@ -1,4 +1,4 @@
-#region (c) 2022 Joseph Shook. All rights reserved.
+#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,13 +7,10 @@
 // */
 #endregion
 
-using System.Security.Cryptography.X509Certificates;
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Duende.IdentityServer.ResponseHandling;
-using Google.Api;
-using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +20,6 @@ using Serilog;
 using Udap.Auth.Server.Pages;
 using Udap.Client.Configuration;
 using Udap.Common;
-using Udap.Model;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Udap.Server.ResponseHandling;
@@ -50,44 +46,8 @@ internal static class HostingExtensions
         
 
         var provider = builder.Configuration.GetValue("provider", "SqlServer");
-        
-        string connectionString;
 
-        var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
-
-
-        // foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
-        // {
-        //     Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
-        // }
-        //Ugly but works so far.
-        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
-        {
-            // Log.Logger.Information("Loading connection string from gcp_db");
-            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
-            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
-
-            Log.Logger.Information("Creating client");
-            var client = SecretManagerServiceClient.Create();
-
-            const string secretResource = "projects/288013792534/secrets/gcp_db/versions/latest";
-
-            Log.Logger.Information("Requesting {secretResource");
-            // Call the API.
-            AccessSecretVersionResponse result = client.AccessSecretVersion(secretResource);
-
-            // Convert the payload to a string. Payloads are bytes by default.
-            String payload = result.Payload.Data.ToStringUtf8();
-
-            connectionString = payload;
-        }
-        else
-        {
-            connectionString = builder.Configuration.GetConnectionString(dbChoice);
-        }
-
-        
-
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         Log.Logger.Debug($"ConnectionString:: {connectionString}");
         
         builder.Services.AddOptions();
@@ -179,13 +139,8 @@ internal static class HostingExtensions
                     });
 
 
-        //
-        // Special IPrivateCertificateStore for Google Cloud Deploy
-        // 
-        //
-        // TODO: UdapFileCertStoreManifest doesn't have a good abstraction story for transitioning to other storage 
-        builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
-        
+        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
+
         //TODO: Hack for connectionathon for the time being
 
         if (Environment.GetEnvironmentVariable("GCPDeploy") == "true")
@@ -217,7 +172,6 @@ internal static class HostingExtensions
                options.TokenEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/token";
                options.CallbackPath = "/signin-oktaforudap";
                options.IdPBaseUrl = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7";
-
            });
 
         }
@@ -378,33 +332,5 @@ internal static class HostingExtensions
         app.MapRazorPages().RequireAuthorization();
         
         return app;
-    }
-
-    static IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webApplicationBuilder)
-    {
-        //Ugly but works so far.
-        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
-        {
-            // Log.Logger.Information("Loading connection string from gcp_db");
-            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
-            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
-
-            Log.Logger.Information("Creating client");
-            var client = SecretManagerServiceClient.Create();
-
-            var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest-AuthServer/versions/latest";
-
-            Log.Logger.Information("Requesting {secretResource");
-            // Call the API.
-            var result = client.AccessSecretVersion(secretResource);
-
-            // Convert the payload to a string. Payloads are bytes by default.
-            var stream = new MemoryStream(result.Payload.Data.ToByteArray());
-
-
-            webApplicationBuilder.Configuration.AddJsonStream(stream);
-        }
-
-        return webApplicationBuilder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST);
     }
 }

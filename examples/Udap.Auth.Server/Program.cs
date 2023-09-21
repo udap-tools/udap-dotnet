@@ -45,6 +45,9 @@ try
     //     .Enrich.FromLogContext()
     //     .ReadFrom.Configuration(ctx.Configuration));
 
+    // Mount Cloud Secrets
+    builder.Configuration.AddJsonFile("/secret/udap_auth_appsettings", true, true);
+
     var app = builder
         .ConfigureServices(args)
         .ConfigurePipeline(args);

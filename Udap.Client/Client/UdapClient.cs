@@ -8,13 +8,18 @@
 #endregion
 
 using System.Net;
+using System.Net.Http;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using System.Threading.Tasks;
+
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using IdentityModel.Client;
-using Microsoft.AspNetCore.Authentication.OAuth;
+// using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -27,6 +32,7 @@ using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
+using Microsoft.AspNetCore.Authentication.OAuth;
 
 namespace Udap.Client.Client
 {

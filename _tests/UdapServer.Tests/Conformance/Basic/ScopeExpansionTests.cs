@@ -20,7 +20,6 @@ using IdentityModel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
-using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Access;
@@ -34,6 +33,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Udap.Server.Models;
 using Duende.IdentityServer.Test;
 using System.Text;
+using Udap.Client.Configuration;
 using Udap.Common.Extensions;
 using Udap.Server.Validation;
 

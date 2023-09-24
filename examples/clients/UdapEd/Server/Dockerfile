@@ -7,6 +7,7 @@ EXPOSE 443
 COPY ./Server/EMRDirectTestCA.crt /etc/ssl/certs
 COPY ./Server/EMRDirectTestClientSubCA.crt /etc/ssl/certs
 COPY ./Server/SureFhirLabs_CA.cer /etc/ssl/certs
+COPY ./Server/ngnix-proxy-TestCA.cer /etc/ssl/certs
 RUN update-ca-certificates
 
 
@@ -15,7 +16,7 @@ WORKDIR /src
 
 ENV GCPDeploy=true
 #this technique of setting env to control version is not working yet.
-ARG TAG_NAME=0.2.16.0
+ARG TAG_NAME=0.2.16.2
 ENV TAG_NAME_ENV=$TAG_NAME
 
 COPY ["nuget.config", "."]
@@ -32,7 +33,7 @@ RUN dotnet build "Server/UdapEd.Server.csproj" -c Release  -o /app/build
 
 
 FROM build AS publish
-ARG TAG_NAME=0.2.16.0
+ARG TAG_NAME=0.2.16.2
 RUN dotnet publish "Server/UdapEd.Server.csproj" --version-suffix 99 -c Release -o /app/publish /p:UseAppHost=false 
 
 FROM base AS final

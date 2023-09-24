@@ -6,8 +6,8 @@ using Udap.Client.Client;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Common.Certificates;
 using Microsoft.Extensions.Logging;
-using Udap.Client.Configuration;
 using FluentAssertions.Common;
+using Udap.Client.Configuration;
 
 namespace UdapServer.Tests.Common;
 public static class TestExtensions

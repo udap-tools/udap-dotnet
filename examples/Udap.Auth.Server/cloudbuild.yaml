@@ -19,8 +19,8 @@ steps:
   '--concurrency', '5', 
   '--set-env-vars', 'GCLOUD_PROJECT=true,GCPDeploy=true,UdapIdpBaseUrl=https://securedcontrols.net', 
   '--add-cloudsql-instances', 'udap-idp:us-west1:udap-idp-sqlexpress', 
-  '--vpc-connector', 'udap-idp-conect-us-west1', 
-  '--vpc-egress', 'private-ranges-only',
+  '--vpc-connector', 'udap-auth-connnector', 
+  '--vpc-egress', 'all-traffic',
   '--ingress', 'internal-and-cloud-load-balancing',
   '--set-secrets', '/secret/udap_auth_appsettings=udap_auth_appsettings:latest'  
   ]

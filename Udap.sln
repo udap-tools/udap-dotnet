@@ -11,9 +11,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", "{B73A108B-9163-4463-B755-A0F84344D088}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{4B854644-1F54-4ECA-9290-A89B91A19FF9}"
-	ProjectSection(SolutionItems) = preProject
-		examples\Directory.Packages.props = examples\Directory.Packages.props
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherApi", "examples\WeatherApi\WeatherApi.csproj", "{C66AB685-32FF-4D48-8FC7-80FD14E66980}"
 EndProject

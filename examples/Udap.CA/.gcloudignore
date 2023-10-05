@@ -7,3 +7,5 @@ obj\**
 Udap.CA.db*
 launchSettings.json
 host.docker.internal.pfx
+appsettings.Development.json
+appsettings.Production.json

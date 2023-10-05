@@ -21,7 +21,8 @@ steps:
   '--set-env-vars', 'GCLOUD_PROJECT=true,BUCKET=fhirlabs-r4-bucket',
   '--execution-environment', 'gen2',
   '--cpu', '2000m',
-  '--memory', '2048Mi'
+  '--memory', '2048Mi',
+  '--set-secrets', '/secret/fhirlabs_appsettings=fhirlabs_appsettings:latest'  
   ]
 
 images:

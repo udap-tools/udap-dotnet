@@ -9,7 +9,6 @@
 
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
-using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -37,35 +36,8 @@ internal static class HostingExtensions
             .PersistKeysToDbContext<UdapDbContext>();
 
         var provider = builder.Configuration.GetValue("provider", "SqlServer");
-        
-        string connectionString;
 
-        var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db_Idp1" : "DefaultConnection";
-
-        //Ugly but works so far.
-        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
-        {
-            Log.Logger.Information("Creating client");
-            var client = SecretManagerServiceClient.Create();
-
-            const string secretResource = "projects/288013792534/secrets/gcp_db_Idp1/versions/latest";
-
-            Log.Logger.Information($"Requesting {secretResource}");
-            // Call the API.
-            var result = client.AccessSecretVersion(secretResource);
-
-            // Convert the payload to a string. Payloads are bytes by default.
-            String payload = result.Payload.Data.ToStringUtf8();
-
-            connectionString = payload;
-        }
-        else
-        {
-            connectionString = builder.Configuration.GetConnectionString(dbChoice);
-        }
-
-        
-
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         Log.Logger.Debug($"ConnectionString:: {connectionString}");
         
         builder.Services.AddOptions();
@@ -99,12 +71,8 @@ internal static class HostingExtensions
                         _ => throw new Exception($"Unsupported provider: {provider}")
                     });
 
-        //
-        // Add Metadata Server
-        // Special IPrivateCertificateStore for Google Cloud Deploy
-        // 
-        //
-        builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
+        
+        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
         builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
             new IssuedCertificateStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
@@ -228,30 +196,5 @@ internal static class HostingExtensions
         app.MapRazorPages().RequireAuthorization();
         
         return app;
-    }
-
-
-    static IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webApplicationBuilder)
-    {
-        //Ugly but works so far.
-        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
-        {
-            Log.Logger.Information("Creating client");
-            var client = SecretManagerServiceClient.Create();
-
-            var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest-IdP1/versions/latest";
-
-            Log.Logger.Information("Requesting {secretResource");
-            // Call the API.
-            var result = client.AccessSecretVersion(secretResource);
-
-            // Convert the payload to a string. Payloads are bytes by default.
-            var stream = new MemoryStream(result.Payload.Data.ToByteArray());
-
-
-            webApplicationBuilder.Configuration.AddJsonStream(stream);
-        }
-
-        return webApplicationBuilder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST);
     }
 }

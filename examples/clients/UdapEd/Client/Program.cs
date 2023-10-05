@@ -11,7 +11,6 @@ using Blazored.LocalStorage;
 using BQuery;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
-using Microsoft.Extensions.Options;
 using MudBlazor.Services;
 using UdapEd.Client;
 using UdapEd.Client.Services;
@@ -21,11 +20,10 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 
-builder.Services.AddHttpClient(Options.DefaultName, c => new HttpClient
+builder.Services.AddScoped(sp => new HttpClient
 {
     BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
 });
-    // .AddHttpMessageHandler(sp => new HeaderAugmentationHandler(sp.GetRequiredService<UdapClientState>()));
 
 builder.Services.AddMudServices();
 builder.Services.AddBlazoredLocalStorage();

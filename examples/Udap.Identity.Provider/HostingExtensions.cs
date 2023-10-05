@@ -50,9 +50,9 @@ internal static class HostingExtensions
 
             const string secretResource = "projects/288013792534/secrets/gcp_db_Idp1/versions/latest";
 
-            Log.Logger.Information("Requesting {secretResource");
+            Log.Logger.Information($"Requesting {secretResource}");
             // Call the API.
-            AccessSecretVersionResponse result = client.AccessSecretVersion(secretResource);
+            var result = client.AccessSecretVersion(secretResource);
 
             // Convert the payload to a string. Payloads are bytes by default.
             String payload = result.Payload.Data.ToStringUtf8();

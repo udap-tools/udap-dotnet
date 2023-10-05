@@ -7,9 +7,7 @@
 // */
 #endregion
 
-using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
-using IdentityModel;
 using Udap.Model;
 
 namespace Udap.Server.Models;
@@ -19,7 +17,7 @@ public static class UdapIdentityResources
     /// <summary>
     /// Models the standard openid scope
     /// </summary>
-    /// <seealso cref="IdentityServer.Models.IdentityResource" />
+    /// <seealso cref="IdentityResource" />
     public class FhirUser : IdentityResource
     {
         /// <summary>
@@ -37,7 +35,7 @@ public static class UdapIdentityResources
     /// <summary>
     /// Models the standard openid scope
     /// </summary>
-    /// <seealso cref="IdentityServer.Models.IdentityResource" />
+    /// <seealso cref="IdentityResource" />
     public class Profile : IdentityResource
     {
         /// <summary>

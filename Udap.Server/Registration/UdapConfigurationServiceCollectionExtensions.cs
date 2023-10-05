@@ -15,7 +15,6 @@ using Duende.IdentityServer.Stores;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Client.Client;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Model;
@@ -40,39 +39,25 @@ public static class UdapConfigurationServiceCollectionExtensions
     /// Remember to supply a IUdapClientRegistrationStore to access the certificate anchors
     /// and storage process for new client registrations.
     /// </summary>
-    /// <param name="services"></param>
+    /// <param name="services">IServiceCollection</param>
     /// <returns></returns>
-    public static IServiceCollection AddUdapServerConfiguration(this IServiceCollection services)
+    public static IUdapServiceBuilder AddUdapServerConfiguration(this IUdapServiceBuilder builder)
     {
-        services.TryAddSingleton<IScopeExpander, DefaultScopeExpander>();
-        services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
+        builder.Services.TryAddSingleton<IScopeExpander, DefaultScopeExpander>();
+        builder.Services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
 #if NET8_0_OR_GREATER
         services.TryAddTransient<IClock, DefaultClock>();
 #else
-        services.TryAddTransient<IClock, LegacyClock>();
+        builder.Services.TryAddTransient<IClock, LegacyClock>();
 #endif
-        services.TryAddTransient<IUdapDynamicClientRegistrationValidator, UdapDynamicClientRegistrationValidator>();
-        services.TryAddSingleton<TrustChainValidator>();
+        builder.Services.TryAddTransient<IUdapDynamicClientRegistrationValidator, UdapDynamicClientRegistrationValidator>();
+        builder.Services.TryAddSingleton<TrustChainValidator>();
         
-        return services;
-    }
-
-
-    /// <summary>
-    /// Register a <see cref="UdapDynamicClientRegistrationEndpoint"/> and a
-    /// <see cref="UdapDynamicClientRegistrationValidator"/>.
-    /// Remember to supply a IUdapClientRegistrationStore to access the certificate anchors
-    /// and storage process for new client registrations.
-    /// </summary>
-    /// <returns></returns>
-    public static IIdentityServerBuilder AddUdapServerConfiguration(this IIdentityServerBuilder builder)
-    {
-        builder.Services.AddUdapServerConfiguration();
-
         return builder;
     }
 
-    public static IIdentityServerBuilder AddUdapSigningCredentials(this IIdentityServerBuilder builder)
+
+    public static IUdapServiceBuilder AddUdapSigningCredentials(this IUdapServiceBuilder builder)
     {
         builder.Services.AddSingleton<IEnumerable<ISigningCredentialStore>>(resolver =>
         {

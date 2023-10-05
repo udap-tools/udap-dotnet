@@ -58,8 +58,47 @@ internal static class HostingExtensions
         builder.Services.AddRazorPages();
 
         
-        builder.Services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
+        
         builder.Services.Configure<UdapClientOptions>(builder.Configuration.GetSection("UdapClientOptions"));
+
+        builder.Services.AddUdapServer(
+            options =>
+            {
+                var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
+                options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
+                options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
+                options.ServerSupport = udapServerOptions.ServerSupport;
+                options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
+                options.IdPMappings = udapServerOptions.IdPMappings;
+                options.LogoRequired = udapServerOptions.LogoRequired;
+            },
+            // udapClientOptions =>
+            // {
+            //     var appSettings = builder.Configuration.GetOption<UdapClientOptions>("UdapClientOptions");
+            //     udapClientOptions.ClientName = "Udap.Auth.SecuredControls";
+            //     udapClientOptions.Contacts = new HashSet<string>
+            //         { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" };
+            //     udapClientOptions.Headers = appSettings.Headers;
+            // },
+            storeOptionAction: options =>
+                _ = provider switch
+                {
+                    "Sqlite" => options.UdapDbContext = b =>
+                        b.UseSqlite(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    "SqlServer" => options.UdapDbContext = b =>
+                        b.UseSqlServer(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    _ => throw new Exception($"Unsupported provider: {provider}")
+                })
+            .AddUdapResponseGenerators();
+
+
+        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
+
+        
 
         builder.Services.AddIdentityServer(options =>
             {
@@ -103,43 +142,9 @@ internal static class HostingExtensions
             .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
             //TODO remove
-            .AddTestUsers(TestUsers.Users)
+            .AddTestUsers(TestUsers.Users);
             
-            .AddUdapServer(
-                options =>
-                    {
-                        var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
-                        options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
-                        options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
-                        options.ServerSupport = udapServerOptions.ServerSupport;
-                        options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
-                        options.IdPMappings = udapServerOptions.IdPMappings;
-                        options.LogoRequired = udapServerOptions.LogoRequired;
-                    },
-                // udapClientOptions =>
-                // {
-                //     var appSettings = builder.Configuration.GetOption<UdapClientOptions>("UdapClientOptions");
-                //     udapClientOptions.ClientName = "Udap.Auth.SecuredControls";
-                //     udapClientOptions.Contacts = new HashSet<string>
-                //         { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" };
-                //     udapClientOptions.Headers = appSettings.Headers;
-                // },
-                storeOptionAction: options =>
-                    _ = provider switch
-                    {
-                        "Sqlite" => options.UdapDbContext = b =>
-                            b.UseSqlite(connectionString,
-                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                        "SqlServer" => options.UdapDbContext = b =>
-                            b.UseSqlServer(connectionString,
-                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                        _ => throw new Exception($"Unsupported provider: {provider}")
-                    });
-
-
-        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
+            
 
         //TODO: Hack for connectionathon for the time being
 

@@ -72,7 +72,45 @@ internal static class HostingExtensions
         builder.Services.AddMemoryCache();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddRazorPages();
-        
+
+        builder.Services.AddUdapServerAsIdentityProvider(
+                options =>
+                {
+                    var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
+                    options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
+                    options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
+                    options.ServerSupport = udapServerOptions.ServerSupport;
+                    options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
+                },
+                options =>
+                    _ = provider switch
+                    {
+                        "Sqlite" => options.UdapDbContext = b =>
+                            b.UseSqlite(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                        "SqlServer" => options.UdapDbContext = b =>
+                            b.UseSqlServer(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                        _ => throw new Exception($"Unsupported provider: {provider}")
+                    });
+
+        //
+        // Add Metadata Server
+        // Special IPrivateCertificateStore for Google Cloud Deploy
+        // 
+        //
+        // builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
+        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
+        builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
+            new IssuedCertificateStore(
+                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
+                "FhirLabsApi"));
+
+        builder.Services.AddUdapMetadataServer(builder.Configuration);
+
         builder.Services.AddIdentityServer(options =>
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
@@ -111,44 +149,7 @@ internal static class HostingExtensions
             .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
             //TODO remove
-            .AddTestUsers(TestUsers.Users)
-            .AddUdapServerAsIdentityProvider(
-                options =>
-                    {
-                        var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
-                        options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
-                        options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
-                        options.ServerSupport = udapServerOptions.ServerSupport;
-                        options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
-                    },
-                options =>
-                    _ = provider switch
-                    {
-                        "Sqlite" => options.UdapDbContext = b =>
-                            b.UseSqlite(connectionString,
-                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                        "SqlServer" => options.UdapDbContext = b =>
-                            b.UseSqlServer(connectionString,
-                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                        _ => throw new Exception($"Unsupported provider: {provider}")
-                    });
-
-        //
-        // Add Metadata Server
-        // Special IPrivateCertificateStore for Google Cloud Deploy
-        // 
-        //
-        // builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
-        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
-        builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
-            new IssuedCertificateStore(
-                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
-                "FhirLabsApi"));
-
-        builder.Services.AddUdapMetadataServer(builder.Configuration);
+            .AddTestUsers(TestUsers.Users);
 
 
         //

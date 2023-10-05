@@ -97,8 +97,11 @@ namespace UdapServer.Tests
         public async Task BadIUdapClientConfigurationStore()
         {
             var services = new ServiceCollection();
-            services.AddIdentityServer()
-                .AddUdapServerConfiguration();
+            
+            var builder = services.AddUdapServerBuilder();
+            builder.AddUdapServerConfiguration();
+
+            services.AddIdentityServer();
             services.AddSingleton<IUdapClientConfigurationStore, ErrorConfigStore>();
             var sp = services.BuildServiceProvider();
 
@@ -119,8 +122,11 @@ namespace UdapServer.Tests
         public async Task GoodIUdapClientConfigurationStore()
         {
             var services = new ServiceCollection();
-            services.AddIdentityServer()
-                .AddUdapServerConfiguration();
+
+            var builder = services.AddUdapServerBuilder();
+            builder.AddUdapServerConfiguration();
+
+            services.AddIdentityServer();
             // services.AddSingleton(_databaseProvider);
 
             services.AddSingleton(new ConfigurationStoreOptions());
@@ -299,8 +305,11 @@ namespace UdapServer.Tests
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
 
 
-            services.AddIdentityServer()
-                .AddUdapServerConfiguration();
+            var builder = services.AddUdapServerBuilder();
+            builder.AddUdapServerConfiguration();
+
+            services.AddIdentityServer();
+                
 
             services.AddUdapDbContext<UdapDbContext>(options =>
             {

@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -8,7 +8,10 @@
 #endregion
 
 using Duende.IdentityServer.Configuration;
+using Duende.IdentityServer.Hosting;
+using Duende.IdentityServer.ResponseHandling;
 using IdentityModel;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,11 +23,13 @@ using Udap.Common.Extensions;
 using Udap.Common.Models;
 using Udap.Server;
 using Udap.Server.Configuration;
+using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
-using Udap.Server.Extensions;
 using Udap.Server.Mappers;
 using Udap.Server.Options;
+using Udap.Server.ResponseHandling;
 using Udap.Server.Stores;
+using Udap.Server.Validation;
 using static Udap.Server.Constants;
 
 //
@@ -36,8 +41,19 @@ namespace Microsoft.Extensions.DependencyInjection;
 /// <summary>
 /// Extensions to enable UDAP Server.
 /// </summary>
-public static class IdentityServerBuilderExtensions
+public static class UdapServerServiceCollectionExtensions
 {
+
+    /// <summary>
+    /// Creates a builder.
+    /// </summary>
+    /// <param name="services">The services.</param>
+    /// <returns></returns>
+    public static IUdapServiceBuilder AddUdapServerBuilder(this IServiceCollection services)
+    {
+        return new UdapServiceBuilder(services);
+    }
+
     /// <summary>
     /// Extend Identity Server with <see cref="Udap.Server"/>.
     /// 
@@ -46,27 +62,30 @@ public static class IdentityServerBuilderExtensions
     /// 
     /// </summary>
     /// <param name="builder"></param>
+    /// <param name="services"></param>
     /// <param name="serverSettingsAction">Apply <see cref="ServerSettings"/></param>
     /// <param name="clientOptionAction">Apply <see cref="UdapClientOptions"/></param>
     /// <param name="storeOptionAction">Apply <see cref="UdapConfigurationStoreOptions"/></param>
     /// <param name="baseUrl">Supply the baseUrl or set UdapIdpBaseUrl environment variable.</param>
     /// <returns></returns>
     /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
-    public static IIdentityServerBuilder AddUdapServer(
-        this IIdentityServerBuilder builder,
+    public static IUdapServiceBuilder AddUdapServer(
+        this IServiceCollection services,
         Action<ServerSettings> serverSettingsAction,
         Action<UdapClientOptions>? clientOptionAction = null,
         Action<UdapConfigurationStoreOptions>? storeOptionAction = null,
         string? baseUrl = null)
     {
+        var builder = services.AddUdapServerBuilder();
+
         builder.Services.Configure(serverSettingsAction);
         if (clientOptionAction != null)
         {
             builder.Services.Configure(clientOptionAction);
         }
-        
+
         builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
-        builder.AddUdapServer(baseUrl);
+        builder.Services.AddUdapServer(baseUrl);
         builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
 
         return builder;
@@ -79,25 +98,27 @@ public static class IdentityServerBuilderExtensions
     /// (.well-known/openid-configuration)
     /// 
     /// </summary>
-    /// <param name="builder"></param>
+    /// <param name="services"></param>
     /// <param name="setupAction">Apply <see cref="ServerSettings"/></param>
     /// <param name="storeOptionAction">Apply <see cref="UdapConfigurationStoreOptions"/></param>
     /// <param name="baseUrl">Supply the baseUrl or set UdapIdpBaseUrl environment variable.</param>
     /// <returns></returns>
     /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
-    public static IIdentityServerBuilder AddUdapServerAsIdentityProvider(
-        this IIdentityServerBuilder builder,
+    public static IUdapServiceBuilder AddUdapServerAsIdentityProvider(
+        this IServiceCollection services,
         Action<ServerSettings>? setupAction = null,
         Action<UdapConfigurationStoreOptions>? storeOptionAction = null,
         string? baseUrl = null)
     {
+        var builder = services.AddUdapServerBuilder();
+
         if (setupAction != null)
         {
-            builder.Services.Configure(setupAction);
+            services.Configure(setupAction);
         }
 
         builder.AddUdapSigningCredentials();
-        builder.Services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
+        services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
         builder.AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl);
         builder.AddUdapServerConfiguration();
         builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
@@ -113,15 +134,17 @@ public static class IdentityServerBuilderExtensions
     /// (.well-known/openid-configuration)
     /// 
     /// </summary>
-    /// <param name="builder"></param>
+    /// <param name="services"></param>
     /// <param name="baseUrl">Supply the baseUrl or set UdapIdpBaseUrl environment variable.</param>
     /// <returns></returns>
     /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
-    public static IIdentityServerBuilder AddUdapServer(
-        this IIdentityServerBuilder builder,
+    public static IUdapServiceBuilder AddUdapServer(
+        this IServiceCollection services,
         string? baseUrl = null,
         string? resourceServerName = null) //Todo refactor resourceServerName out everywhere
     {
+        var builder = services.AddUdapServerBuilder();
+
         builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
             new IssuedCertificateStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
@@ -129,6 +152,7 @@ public static class IdentityServerBuilderExtensions
                 resourceServerName ?? "Udap.Auth.Server"));
 
         builder.Services.TryAddSingleton<UdapClientDiscoveryValidator>();
+        builder.Services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
 
         // TODO: TrustAnchor has to be singleton because
         // builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>
@@ -159,8 +183,8 @@ public static class IdentityServerBuilderExtensions
     //
     // This just adds the registration endpoint to /.well-known/openid-configuration
     //
-    private static IIdentityServerBuilder AddRegistrationEndpointToOpenIdConnectMetadata(
-        this IIdentityServerBuilder builder,
+    private static IUdapServiceBuilder AddRegistrationEndpointToOpenIdConnectMetadata(
+        this IUdapServiceBuilder builder,
        string? baseUrl = null)
     {
 
@@ -185,12 +209,115 @@ public static class IdentityServerBuilderExtensions
         return builder;
     }
 
-    private static IIdentityServerBuilder AddUdapDiscovery(
-        this IIdentityServerBuilder builder)
+    private static IUdapServiceBuilder AddUdapDiscovery(
+        this IUdapServiceBuilder builder)
     {
-        return builder.AddEndpoint<UdapDiscoveryEndpoint>(
-            EndpointNames.Discovery,
-            ProtocolRoutePaths.DiscoveryConfiguration.EnsureLeadingSlash());
+        builder.Services.AddTransient<UdapDiscoveryEndpoint>();
+        builder.Services.AddSingleton(new Endpoint(
+            EndpointNames.Discovery, 
+            ProtocolRoutePaths.DiscoveryConfiguration.EnsureLeadingSlash(), 
+            typeof(UdapDiscoveryEndpoint)));
+        
+        return builder;
+    }
+
+    public static IServiceCollection AddUdapDbContext(
+        this IServiceCollection service,
+        Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
+    {
+        return service.AddUdapDbContext<UdapDbContext>(storeOptionAction);
+    }
+
+    public static IServiceCollection AddUdapDbContext<TContext>(
+        this IServiceCollection service,
+        Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
+        where TContext : DbContext, IUdapDbAdminContext, IUdapDbContext
+    {
+        var storeOptions = new UdapConfigurationStoreOptions();
+        service.AddSingleton(storeOptions);
+        storeOptionAction?.Invoke(storeOptions);
+
+        if (storeOptions.ResolveDbContextOptions != null)
+        {
+            if (storeOptions.EnablePooling)
+            {
+                if (storeOptions.PoolSize.HasValue)
+                {
+                    service.AddDbContextPool<TContext>(storeOptions.ResolveDbContextOptions,
+                        storeOptions.PoolSize.Value);
+                }
+                else
+                {
+                    service.AddDbContextPool<TContext>(storeOptions.ResolveDbContextOptions);
+                }
+            }
+            else
+            {
+                service.AddDbContext<TContext>(storeOptions.ResolveDbContextOptions);
+            }
+        }
+        else
+        {
+            if (storeOptions.EnablePooling)
+            {
+                if (storeOptions.PoolSize.HasValue)
+                {
+                    service.AddDbContextPool<TContext>(
+                        dbCtxBuilder => { storeOptions.UdapDbContext?.Invoke(dbCtxBuilder); },
+                        storeOptions.PoolSize.Value);
+                }
+                else
+                {
+                    service.AddDbContextPool<TContext>(
+                        dbCtxBuilder => { storeOptions.UdapDbContext?.Invoke(dbCtxBuilder); });
+                }
+            }
+            else
+            {
+                service.AddDbContext<TContext>(dbCtxBuilder =>
+                {
+                    storeOptions.UdapDbContext?.Invoke(dbCtxBuilder);
+                });
+            }
+        }
+
+        service.AddScoped<IUdapDbAdminContext>(sp => sp.GetRequiredService<TContext>());
+        service.AddScoped<IUdapDbContext>(sp => sp.GetRequiredService<TContext>());
+
+        return service;
+    }
+
+    public static IUdapServiceBuilder AddUdapConfigurationStore(
+        this IUdapServiceBuilder builder,
+        Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
+    {
+        return builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
+    }
+
+    public static IUdapServiceBuilder AddUdapConfigurationStore<TContext>(
+        this IUdapServiceBuilder builder,
+        Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
+        where TContext : DbContext, IUdapDbAdminContext, IUdapDbContext
+    {
+        builder.Services.AddUdapDbContext<TContext>(storeOptionAction);
+        builder.AddUdapClientRegistrationStore<UdapClientRegistrationStore>();
+
+        return builder;
+    }
+
+    public static IUdapServiceBuilder AddSmartV2Expander(this IUdapServiceBuilder builder)
+    {
+        builder.Services.AddScoped<IScopeExpander, SmartV2Expander>();
+        
+        return builder;
+    }
+
+    public static IUdapServiceBuilder AddUdapResponseGenerators(this IUdapServiceBuilder builder)
+    {
+        // Replace pluggable service with generator that will augment the IdToken with the hl7_identifier 
+        builder.Services.TryAddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
+
+        return builder;
     }
 }
 

@@ -38,7 +38,7 @@ using Udap.Auth.Server.Pages;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
-using Udap.Server.Configuration.BuilderExtensions;
+using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Registration;
 using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
@@ -167,11 +167,14 @@ public class UdapAuthServerPipeline
                 new Mock<ILogger<TrustAnchorFileStore>>().Object,
                 "FhirLabsApi")); //Note: FhirLabsApi is the key to pick the correct data from appsettings.json
 
-        // Replace pluggable service with generator that will augment the IdToken with the hl7_identifier 
-        services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
         
+        
+        services.AddUdapServer(BaseUrl, "FhirLabsApi")
+            .AddUdapInMemoryApiScopes(ApiScopes)
+            .AddInMemoryUdapCertificates(Communities)
+            .AddUdapResponseGenerators()
+            .AddSmartV2Expander();
 
-        services.AddSmartV2Expander();
 
         services.AddIdentityServer(options =>
             {
@@ -185,20 +188,13 @@ public class UdapAuthServerPipeline
                 options.KeyManagement.Enabled = false;
                 Options = options;
             })
-           
+
             .AddInMemoryClients(Clients)
             .AddInMemoryIdentityResources(IdentityScopes)
             .AddInMemoryApiResources(ApiResources)
-
-            //
-            // Scope SMART v2 expansion
-            //
-            .AddUdapInMemoryApiScopes(ApiScopes)
-            
             .AddTestUsers(Users)
-            .AddDeveloperSigningCredential(persistKey: false)
-            .AddUdapServer(BaseUrl, "FhirLabsApi")
-            .AddInMemoryUdapCertificates(Communities);
+            .AddDeveloperSigningCredential(persistKey: false);
+            
 
         // BackChannelMessageHandler is used by .AddTieredOAuthForTest()
         // services.AddHttpClient(IdentityServerConstants.HttpClients.BackChannelLogoutHttpClient)

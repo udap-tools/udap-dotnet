@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -8,6 +8,8 @@
 #endregion
 
 using Duende.IdentityServer.Services;
+using Duende.IdentityServer.Validation;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Udap.Server.Storage.Stores;
 using Udap.Server.Validation.Default;
@@ -16,20 +18,20 @@ using Udap.Server.Validation.Default;
 // See reason for Microsoft.Extensions.DependencyInjection namespace
 // here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
 //
-namespace Microsoft.Extensions.DependencyInjection;
+namespace Udap.Server.Configuration.DependencyInjection;
 
 public static class IdentityServerBuilderExtensionsAdditional
 {
     /// <summary>
     /// Adds support for client authentication using JWT bearer assertions.
     /// </summary>
-    /// <param name="builder">The builder.</param>
+    /// <param name="services">IServiceCollection</param>
     /// <returns></returns>
-    public static IIdentityServerBuilder AddUdapJwtBearerClientAuthentication(this IIdentityServerBuilder builder)
+    public static IUdapServiceBuilder AddUdapJwtBearerClientAuthentication(this IUdapServiceBuilder builder)
     {
-        builder.Services.TryAddTransient<IReplayCache, DefaultReplayCache>(); 
-        builder.AddSecretParser<UdapJwtBearerClientAssertionSecretParser>();
-        builder.AddSecretValidator<UdapJwtSecretValidator>();
+        builder.Services.TryAddTransient<IReplayCache, DefaultReplayCache>();
+        builder.Services.AddTransient<ISecretParser, UdapJwtBearerClientAssertionSecretParser>();
+        builder.Services.AddTransient<ISecretValidator, UdapJwtSecretValidator>();
 
         return builder;
     }
@@ -38,9 +40,9 @@ public static class IdentityServerBuilderExtensionsAdditional
     /// Adds a UdapClientRegistrationStore.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    /// <param name="builder">The builder.</param>
+    /// <param name="services">IServiceCollection</param>
     /// <returns></returns>
-    public static IIdentityServerBuilder AddUdapClientRegistrationStore<T>(this IIdentityServerBuilder builder)
+    public static IUdapServiceBuilder AddUdapClientRegistrationStore<T>(this IUdapServiceBuilder builder)
         where T : class, IUdapClientRegistrationStore
     {
         builder.Services.AddScoped<IUdapClientRegistrationStore, T>();

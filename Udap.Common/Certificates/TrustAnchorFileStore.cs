@@ -18,17 +18,14 @@ public class TrustAnchorFileStore : ITrustAnchorStore
 {
     private readonly IOptionsMonitor<UdapFileCertStoreManifest> _manifest;
     private readonly ILogger<TrustAnchorFileStore> _logger;
-    private readonly string? _resourceServerName;
     private bool _resolved;
 
 
     public TrustAnchorFileStore(
         IOptionsMonitor<UdapFileCertStoreManifest> manifest,
-        ILogger<TrustAnchorFileStore> logger,
-        string? resourceServerName = null)
+        ILogger<TrustAnchorFileStore> logger)
     {
         _manifest = manifest;
-        _resourceServerName = resourceServerName;
         _logger = logger;
 
         _manifest.OnChange(_ =>
@@ -53,20 +50,7 @@ public class TrustAnchorFileStore : ITrustAnchorStore
     // TODO convert to Lazy<T> to protect from race conditions
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
     {
-        ICollection<Common.Metadata.Community>? communities;
-
-        if (_resourceServerName == null)
-        {
-            _logger.LogInformation($"Loading first ResourceServers from UdapFileCertStoreManifest:ResourceServers.");
-
-            communities = manifestCurrentValue.Communities;
-        }
-        else
-        {
-            _logger.LogInformation($"Loading UdapFileCertStoreManifest:ResourceServers:Name {_resourceServerName}.");
-
-            communities = manifestCurrentValue.Communities;
-        }
+       var communities = manifestCurrentValue.Communities;
 
         _logger.LogInformation($"{communities.Count} communities loaded");
 

@@ -99,8 +99,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object,
-                "WeatherApi"));
+                new Mock<ILogger<TrustAnchorFileStore>>().Object));
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
                            X509ChainStatusFlags.Revoked |
@@ -251,8 +250,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object,
-                "WeatherApi"));
+                new Mock<ILogger<TrustAnchorFileStore>>().Object));
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
                            X509ChainStatusFlags.Revoked |

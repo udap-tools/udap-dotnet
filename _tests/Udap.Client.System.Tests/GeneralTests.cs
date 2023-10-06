@@ -286,8 +286,7 @@ namespace Udap.Client.System.Tests
             services.AddSingleton<ITrustAnchorStore>(sp =>
                 new TrustAnchorFileStore(
                     sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                    new Mock<ILogger<TrustAnchorFileStore>>().Object,
-                    "FhirLabsApi"));
+                    new Mock<ILogger<TrustAnchorFileStore>>().Object));
 
 
             var sp = services.BuildServiceProvider();

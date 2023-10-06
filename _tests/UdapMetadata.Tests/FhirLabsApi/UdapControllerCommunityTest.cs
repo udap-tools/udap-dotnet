@@ -103,8 +103,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object,
-                "FhirLabsApi")); //Note: FhirLabsApi is the key to pick the correct data from appsettings.json
+                new Mock<ILogger<TrustAnchorFileStore>>().Object));
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
                            X509ChainStatusFlags.Revoked |
@@ -118,7 +117,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
 
         services.TryAddScoped(_ =>
-            new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+            new TrustChainValidator(new X509ChainPolicy(){ DisableCertificateDownloads = true}, problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
 
         services.AddSingleton<UdapClientDiscoveryValidator>();
@@ -289,8 +288,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object,
-                "FhirLabsApi"));
+                new Mock<ILogger<TrustAnchorFileStore>>().Object));
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
                        X509ChainStatusFlags.Revoked |

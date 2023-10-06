@@ -164,11 +164,9 @@ public class UdapAuthServerPipeline
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object,
-                "FhirLabsApi")); //Note: FhirLabsApi is the key to pick the correct data from appsettings.json
+                new Mock<ILogger<TrustAnchorFileStore>>().Object)); 
+        
 
-        
-        
         services.AddUdapServer(BaseUrl, "FhirLabsApi")
             .AddUdapInMemoryApiScopes(ApiScopes)
             .AddInMemoryUdapCertificates(Communities)

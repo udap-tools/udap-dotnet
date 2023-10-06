@@ -69,15 +69,16 @@ internal static class HostingExtensions
                                 dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                         _ => throw new Exception($"Unsupported provider: {provider}")
-                    });
+                    })
+            .AddPrivateFileStore();
 
         
         builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
-        builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
-            new IssuedCertificateStore(
-                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
-                "FhirLabsApi"));
+        // builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
+        //     new IssuedCertificateStore(
+        //         sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+        //         sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
+        //         "FhirLabsApi"));
 
         builder.Services.AddUdapMetadataServer(builder.Configuration);
 

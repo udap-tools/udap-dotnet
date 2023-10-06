@@ -10,7 +10,6 @@
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
-using Duende.IdentityServer.ResponseHandling;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -22,7 +21,6 @@ using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
-using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace Udap.Auth.Server;

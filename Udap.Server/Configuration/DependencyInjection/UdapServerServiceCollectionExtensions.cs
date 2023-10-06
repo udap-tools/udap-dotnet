@@ -92,6 +92,55 @@ public static class UdapServerServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Not used for a typical server.  Exposed for testing.
+    /// 
+    /// Include "registration_endpoint" in the Identity Server, discovery document
+    /// (.well-known/openid-configuration)
+    /// 
+    /// </summary>
+    /// <param name="services"></param>
+    /// <param name="baseUrl">Supply the baseUrl or set UdapIdpBaseUrl environment variable.</param>
+    /// <returns></returns>
+    /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
+    public static IUdapServiceBuilder AddUdapServer(
+        this IServiceCollection services,
+        string? baseUrl = null,
+        string? resourceServerName = null) //Todo refactor resourceServerName out everywhere
+    {
+        var builder = services.AddUdapServerBuilder();
+
+        builder.AddPrivateFileStore(resourceServerName ?? "Udap.Auth.Server");
+
+        builder.Services.TryAddSingleton<UdapClientDiscoveryValidator>();
+        builder.Services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
+
+        // TODO: TrustAnchor has to be singleton because
+        // builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>
+        // forces IOptionsMonitor<TieredOAuthAuthenticationOptions> to be singleton.
+        // So I would have to get very creative in creating a background thread to keep a monitor
+        // on the database.  .... Future
+        builder.Services.TryAddSingleton<ITrustAnchorStore>(sp =>
+        {
+            using var scope = sp.CreateScope();
+            using var db =  scope.ServiceProvider.GetService<IUdapDbContext>();
+            
+            if (db == null)            {
+                return new TrustAnchorStore(new List<Anchor>());  //Some unit tests don't care about this. //TODO
+
+            }
+            return new TrustAnchorStore(db.Anchors.Select(a => a.ToModel()).ToList());
+        });
+
+
+        builder.AddUdapJwtBearerClientAuthentication()
+            .AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl)
+            .AddUdapDiscovery()
+            .AddUdapServerConfiguration();
+
+        return builder;
+    }
+
+    /// <summary>
     /// Extend Identity Server with <see cref="Udap.Server"/>.
     ///
     /// Include "registration_endpoint" in the Identity Server, discovery document
@@ -127,99 +176,9 @@ public static class UdapServerServiceCollectionExtensions
         return builder;
     }
 
-    /// <summary>
-    /// Not used for a typical server.  Exposed for testing.
-    /// 
-    /// Include "registration_endpoint" in the Identity Server, discovery document
-    /// (.well-known/openid-configuration)
-    /// 
-    /// </summary>
-    /// <param name="services"></param>
-    /// <param name="baseUrl">Supply the baseUrl or set UdapIdpBaseUrl environment variable.</param>
-    /// <returns></returns>
-    /// <exception cref="Exception">If missing baseUrl and UdapIdpBaseUrl environment variable.</exception>
-    public static IUdapServiceBuilder AddUdapServer(
-        this IServiceCollection services,
-        string? baseUrl = null,
-        string? resourceServerName = null) //Todo refactor resourceServerName out everywhere
-    {
-        var builder = services.AddUdapServerBuilder();
-
-        builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
-            new IssuedCertificateStore(
-                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
-                resourceServerName ?? "Udap.Auth.Server"));
-
-        builder.Services.TryAddSingleton<UdapClientDiscoveryValidator>();
-        builder.Services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
-
-        // TODO: TrustAnchor has to be singleton because
-        // builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>
-        // forces IOptionsMonitor<TieredOAuthAuthenticationOptions> to be singleton.
-        // So I would have to get very creative in creating a background thread to keep a monitor
-        // on the database.  .... Future
-        builder.Services.TryAddSingleton<ITrustAnchorStore>(sp =>
-        {
-            using var scope = sp.CreateScope();
-            using var db =  scope.ServiceProvider.GetService<IUdapDbContext>();
-            
-            if (db == null)            {
-                return new TrustAnchorStore(new List<Anchor>());  //Some unit tests don't care about this. //TODO
-
-            }
-            return new TrustAnchorStore(db.Anchors.Select(a => a.ToModel()).ToList());
-        });
-
-
-        builder.AddUdapJwtBearerClientAuthentication()
-            .AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl)
-            .AddUdapDiscovery()
-            .AddUdapServerConfiguration();
-
-        return builder;
-    }
-    
     //
     // This just adds the registration endpoint to /.well-known/openid-configuration
     //
-    private static IUdapServiceBuilder AddRegistrationEndpointToOpenIdConnectMetadata(
-        this IUdapServiceBuilder builder,
-       string? baseUrl = null)
-    {
-
-        if (baseUrl == null)
-        {
-            baseUrl = Environment.GetEnvironmentVariable("UdapIdpBaseUrl");
-
-            if (string.IsNullOrEmpty(baseUrl))
-            {
-                throw new Exception(
-                    "Missing ASPNETCORE_URLS environment variable.  Or missing baseUrl parameter in AddUdapServer extension method.");
-            }
-        }
-
-        baseUrl = $"{baseUrl.EnsureTrailingSlash()}{ProtocolRoutePaths.Register}";
-
-        builder.Services.Configure<IdentityServerOptions>(options =>
-            options.Discovery.CustomEntries.Add(
-                OidcConstants.Discovery.RegistrationEndpoint,
-                baseUrl));
-
-        return builder;
-    }
-
-    private static IUdapServiceBuilder AddUdapDiscovery(
-        this IUdapServiceBuilder builder)
-    {
-        builder.Services.AddTransient<UdapDiscoveryEndpoint>();
-        builder.Services.AddSingleton(new Endpoint(
-            EndpointNames.Discovery, 
-            ProtocolRoutePaths.DiscoveryConfiguration.EnsureLeadingSlash(), 
-            typeof(UdapDiscoveryEndpoint)));
-        
-        return builder;
-    }
 
     public static IServiceCollection AddUdapDbContext(
         this IServiceCollection service,
@@ -263,20 +222,20 @@ public static class UdapServerServiceCollectionExtensions
                 if (storeOptions.PoolSize.HasValue)
                 {
                     service.AddDbContextPool<TContext>(
-                        dbCtxBuilder => { storeOptions.UdapDbContext?.Invoke(dbCtxBuilder); },
+                        dbCtxBuilder => { storeOptions.UdapDbContext.Invoke(dbCtxBuilder); },
                         storeOptions.PoolSize.Value);
                 }
                 else
                 {
                     service.AddDbContextPool<TContext>(
-                        dbCtxBuilder => { storeOptions.UdapDbContext?.Invoke(dbCtxBuilder); });
+                        dbCtxBuilder => { storeOptions.UdapDbContext.Invoke(dbCtxBuilder); });
                 }
             }
             else
             {
                 service.AddDbContext<TContext>(dbCtxBuilder =>
                 {
-                    storeOptions.UdapDbContext?.Invoke(dbCtxBuilder);
+                    storeOptions.UdapDbContext.Invoke(dbCtxBuilder);
                 });
             }
         }
@@ -285,39 +244,6 @@ public static class UdapServerServiceCollectionExtensions
         service.AddScoped<IUdapDbContext>(sp => sp.GetRequiredService<TContext>());
 
         return service;
-    }
-
-    public static IUdapServiceBuilder AddUdapConfigurationStore(
-        this IUdapServiceBuilder builder,
-        Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
-    {
-        return builder.AddUdapConfigurationStore<UdapDbContext>(storeOptionAction);
-    }
-
-    public static IUdapServiceBuilder AddUdapConfigurationStore<TContext>(
-        this IUdapServiceBuilder builder,
-        Action<UdapConfigurationStoreOptions>? storeOptionAction = null)
-        where TContext : DbContext, IUdapDbAdminContext, IUdapDbContext
-    {
-        builder.Services.AddUdapDbContext<TContext>(storeOptionAction);
-        builder.AddUdapClientRegistrationStore<UdapClientRegistrationStore>();
-
-        return builder;
-    }
-
-    public static IUdapServiceBuilder AddSmartV2Expander(this IUdapServiceBuilder builder)
-    {
-        builder.Services.AddScoped<IScopeExpander, SmartV2Expander>();
-        
-        return builder;
-    }
-
-    public static IUdapServiceBuilder AddUdapResponseGenerators(this IUdapServiceBuilder builder)
-    {
-        // Replace pluggable service with generator that will augment the IdToken with the hl7_identifier 
-        builder.Services.TryAddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
-
-        return builder;
     }
 }
 

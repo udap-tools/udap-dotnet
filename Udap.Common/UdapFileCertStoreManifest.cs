@@ -20,6 +20,5 @@ public class UdapFileCertStoreManifest
 
 public class ResourceServer
 {
-    public string Name { get; set; } = "Default";
     public ICollection<Community> Communities { get; set; } = new List<Community>();
 }

@@ -67,7 +67,7 @@ public class TrustAnchorFileStore : ITrustAnchorStore
 
             communities = manifestCurrentValue
                 .ResourceServers
-                .SingleOrDefault(r => r.Name == _resourceServerName)
+                .First()
                 ?.Communities;
         }
 

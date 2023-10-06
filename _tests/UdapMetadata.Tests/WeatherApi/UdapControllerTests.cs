@@ -80,7 +80,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         // This are is for client Dependency injection and Configuration
         //
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", false, true)
+            .AddJsonFile("appsettings.Weather.json", false, true)
             // .AddUserSecrets<UdapControllerTests>()
             .Build();
 

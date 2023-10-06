@@ -109,7 +109,7 @@ public static class UdapServerServiceCollectionExtensions
     {
         var builder = services.AddUdapServerBuilder();
 
-        builder.AddPrivateFileStore(resourceServerName ?? "Udap.Auth.Server");
+        builder.AddPrivateFileStore(resourceServerName);
 
         builder.Services.TryAddSingleton<UdapClientDiscoveryValidator>();
         builder.Services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();

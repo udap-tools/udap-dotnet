@@ -79,7 +79,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         // This are is for client Dependency injection and Configuration
         //
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", false, true)
+            .AddJsonFile("appsettings.Weather.json", false, true)
             // .AddUserSecrets<UdapControllerTests>()
             .Build();
 
@@ -231,7 +231,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         // This are is for client Dependency injection and Configuration
         //
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", false, true)
+            .AddJsonFile("appsettings.Weather.json", false, true)
             // .AddUserSecrets<UdapControllerTests>()
             .Build();
 

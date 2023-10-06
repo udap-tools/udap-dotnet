@@ -74,8 +74,7 @@ public class FileCertificateStore : ICertificateStore
 
             communities = manifestCurrentValue
                 .ResourceServers
-                .SingleOrDefault(r => r.Name == _resourceServerName)
-                ?.Communities;
+                .First().Communities;
         }
 
         _logger.LogInformation($"{communities?.Count ?? 0} communities loaded");

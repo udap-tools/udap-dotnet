@@ -93,7 +93,7 @@ namespace UdapServer.Tests
         }
         
 
-        [Fact]
+        [Fact (Timeout = 5000)]
         public async Task BadIUdapClientConfigurationStore()
         {
             var services = new ServiceCollection();
@@ -118,7 +118,7 @@ namespace UdapServer.Tests
         /// built in IdentityServer DBContexts.
         /// </summary>
         /// <returns></returns>
-        [Fact]
+        [Fact (Timeout = 5000)]
         public async Task GoodIUdapClientConfigurationStore()
         {
             var services = new ServiceCollection();
@@ -198,7 +198,7 @@ namespace UdapServer.Tests
         }
 
 
-        [Fact]
+        [Fact (Timeout = 5000)]
         public void UdapDynamicClientRegistrationDocumentCompareToJwtPayloadTest()
         {
             var now = DateTime.UtcNow;
@@ -284,7 +284,7 @@ namespace UdapServer.Tests
         }
 
 
-        [Fact]
+        [Fact (Timeout = 5000)]
         public async Task GoodIUdapClientRegistrationStore()
         {
             var services = new ServiceCollection();
@@ -433,7 +433,7 @@ namespace UdapServer.Tests
         /// <returns></returns>
         // TODO still need to work on this test. Only spent enough time here to determine
         // I was not including redirect Uris in when deserializing claims
-        [Fact]
+        [Fact (Timeout = 5000)]
         public void redirect_uris_Tests() //With and without authorization_code in grant_types
         {
             var now = DateTime.UtcNow;
@@ -525,7 +525,7 @@ namespace UdapServer.Tests
         }
 
 
-        [Fact]
+        [Fact (Timeout = 5000)]
         public void TestSerialization()
         {
             var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");

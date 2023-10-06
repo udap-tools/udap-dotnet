@@ -137,7 +137,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _serviceProvider = services.BuildServiceProvider();
     }
     
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task ValidateChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -160,7 +160,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     }
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task ValidateChainEcdsaTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -186,7 +186,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task InvalidJwtTokentBadIssMatchToSubjectAltNameTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -204,7 +204,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("http://localhost/fhir/r99")).Should().BeTrue();
     }
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task InvalidJwtTokentBadIssMatchToBaseUrlTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -221,7 +221,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task MissingCommunityChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -236,7 +236,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     }
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task UntrustedChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -262,7 +262,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     /// In this case assert a IUdapClient can register for the Problem events.
     /// </summary>
     /// <returns></returns>
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task ValidateChainOffLineRevocationTest2()
     {
         //
@@ -367,7 +367,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                 "Swagger UI Failed to load.");
     }
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task signed_metatdataContentTest()
     {
 
@@ -502,7 +502,7 @@ public class UdapControllerCommunityCertificateResolverTests : IClassFixture<Api
 
 
 
-    [Fact]
+    [Fact (Timeout = 5000)]
 public async Task ValidateChainWithMyAnchorAndIntermediateTest()
 {
 
@@ -580,7 +580,7 @@ public async Task ValidateChainWithMyAnchorAndIntermediateTest()
     _diagnosticsValidator.ProblemCalled.Should().BeFalse();
 }
 
-[Fact]
+[Fact (Timeout = 5000)]
 public async Task ValidateChainWithMyAnchorTest()
 {
         //
@@ -660,7 +660,7 @@ public async Task ValidateChainWithMyAnchorTest()
 /// Notice the community and TrustAnchorMemoryStore are different
 /// </summary>
 /// <returns></returns>
-[Fact]
+[Fact (Timeout = 5000)]
 public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
 {
         //
@@ -744,7 +744,7 @@ public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
 /// Notice the community and TrustAnchorMemoryStore are different
 /// </summary>
 /// <returns></returns>
-[Fact]
+[Fact (Timeout = 5000)]
 public async Task ValidateChainWithMyAnchorFailTest()
 {
         //

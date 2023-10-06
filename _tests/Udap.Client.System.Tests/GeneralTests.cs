@@ -39,7 +39,7 @@ namespace Udap.Client.System.Tests
             _testOutputHelper = testOutputHelper;
         }
 
-        [Fact]
+        [Fact (Timeout = 5000)]
         public async Task Test1()
         {
             var client = new HttpClient();
@@ -123,7 +123,7 @@ namespace Udap.Client.System.Tests
             #endregion
         }
 
-        [Fact]
+        [Fact (Timeout = 5000)]
         public async Task UdapClientDiscoveryForIdentityProvider()
         {
             var client = new HttpClient();
@@ -144,7 +144,7 @@ namespace Udap.Client.System.Tests
             _testOutputHelper.WriteLine(discoJsonFormatted);
         }
 
-        [Fact]
+        [Fact (Timeout = 5000)]
         public async Task RegistrationEndpointExpected()
         {
             var client = new HttpClient();
@@ -165,7 +165,7 @@ namespace Udap.Client.System.Tests
             registrationEndpoint.Should().BeEquivalentTo("https://securedcontrols.net:5001/connect/register");
         }
 
-        [Fact]
+        [Fact (Timeout = 5000)]
         public async Task UdapClientDiscoveryForFhirServer()
         {
             var client = new HttpClient();
@@ -217,7 +217,7 @@ namespace Udap.Client.System.Tests
         }
 
 
-        [Fact]
+        [Fact (Timeout = 5000)]
         public async Task UdapClientDiscoveryForHealthToGo()
         {
             var client = new HttpClient();

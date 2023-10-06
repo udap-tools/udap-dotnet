@@ -131,7 +131,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _serviceProvider = services.BuildServiceProvider();
     }
 
-    [Fact] //Swagger
+    [Fact (Timeout = 5000)] //Swagger
     public async Task OpenApiTest()
     {
         var response = await _fixture.CreateClient().GetAsync($"Swagger/Index.html");
@@ -165,7 +165,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                 "Swagger UI Failed to load.");
     }
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task signed_metatdataContentTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -209,7 +209,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         iat.Should().BeLessOrEqualTo((int)year);
     }
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task ValidateChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -224,7 +224,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _diagnosticsChainValidator.Called.Should().BeFalse();
     }
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task ValidateChainOffLineRevocationTest()
     {
         //

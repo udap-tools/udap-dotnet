@@ -133,7 +133,7 @@ public class UdapForceStateParamFalseTests
     /// <see cref="ServerSettings.ForceStateParamOnAuthorizationCode"/> is false (default)
     /// authorize will succeed.
     /// </summary>
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task Request_state_missing_results_in_success()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");

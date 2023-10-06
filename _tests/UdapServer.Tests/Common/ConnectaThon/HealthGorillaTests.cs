@@ -133,7 +133,7 @@ public class HealthGorillaTests
     }
 
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationDocumentFailCertifiationTest()
     {
         var regDocOnWire =

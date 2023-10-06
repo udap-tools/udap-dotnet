@@ -151,7 +151,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         _testOutputHelper = testOutputHelper;
     }
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationSuccess_authorization_code_Test()
     {
         using var client = _fixture.CreateClient();
@@ -259,7 +259,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         clientEntity.AllowOfflineAccess.Should().BeTrue();
     }
 
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationSuccessTest()
     {
         using var client = _fixture.CreateClient();
@@ -359,7 +359,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationMissingX5cHeaderTest()
     {
         // var clientPolicyStore = _fixture.Services.GetService<IIpPolicyStore>();
@@ -430,7 +430,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidSoftwareStatement_Signature_Test()
     {
         using var client = _fixture.CreateClient();
@@ -496,7 +496,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidSoftwareStatement_issMatchesUriName_Test()
     {
         using var client = _fixture.CreateClient();
@@ -563,7 +563,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidSoftwareStatement_issMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -627,7 +627,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidSoftwareStatement_subMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -693,7 +693,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
 
     //invalid_software_statement
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidSoftwareStatement_subNotEqualtoIss_Test()
     {
         using var client = _fixture.CreateClient();
@@ -758,7 +758,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidSoftwareStatement_audMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -823,7 +823,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidSoftwareStatement_audEqualsRegistrationEndpoint_Test()
     {
         using var client = _fixture.CreateClient();
@@ -888,7 +888,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidSoftwareStatement_exp_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -953,7 +953,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidSoftwareStatement_exp_Expired_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1018,7 +1018,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidSoftwareStatement_iat_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1083,7 +1083,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidClientMetadata_clientName_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1148,7 +1148,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidClientMetadata_logo_uri_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1214,7 +1214,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidClientMetadata_Invalid_GrantType_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1321,7 +1321,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidClientMetadata_responseTypesMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1390,7 +1390,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact]
+    [Fact (Timeout = 5000)]
     public async Task RegistrationInvalidClientMetadata_tokenEndpointAuthMethodMissing_Test()
     {
         using var client = _fixture.CreateClient();

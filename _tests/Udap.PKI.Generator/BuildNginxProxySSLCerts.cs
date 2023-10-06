@@ -15,6 +15,7 @@ using Xunit.Abstractions;
 
 namespace Udap.PKI.Generator;
 
+[Collection("Udap.PKI.Generator")]
 public class BuildNginxProxySSLCerts : CertificateBase
 {
     private readonly ITestOutputHelper _testOutputHelper;

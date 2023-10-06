@@ -29,6 +29,8 @@ using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
 namespace Udap.PKI.Generator
 {
+
+    [Collection("Udap.PKI.Generator")]
     public class MakeCa : CertificateBase
     {
         private readonly ITestOutputHelper _testOutputHelper;

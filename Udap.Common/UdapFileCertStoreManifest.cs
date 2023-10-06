@@ -14,11 +14,5 @@ namespace Udap.Common;
 
 public class UdapFileCertStoreManifest
 {
-    public ICollection<ResourceServer> ResourceServers { get; set; } = new List<ResourceServer>();
-    
-}
-
-public class ResourceServer
-{
     public ICollection<Community> Communities { get; set; } = new List<Community>();
 }

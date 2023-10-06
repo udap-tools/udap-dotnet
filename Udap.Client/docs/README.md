@@ -66,80 +66,76 @@ There is another way for intermediate certificates to be discovered.  That is wi
 
 ```json
 "UdapFileCertStoreManifest": {
-    "ResourceServers": [
-      {
-        "Communities": [
-          {
-            "Name": "udap://stage.healthtogo.me/",
-            "Anchors": [
-              {
-                "FilePath": "CertStore/anchors/EMRDirectTestCA.crt"
-              }
-            ]
-          },
-          {
-            "Name": "udap://fhirlabs.net/",
-            "Intermediates": [
-              "CertStore/intermediates/SureFhirLabs_Intermediate.cer"
-            ],
-            "Anchors": [
-              {
-                "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
-              }
-            ]
-          },
-          {
-            "Name": "udap://expired.fhirlabs.net/",
-            "Anchors": [
-              {
-                "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
-              }
-            ]
-          },
-          {
-            "Name": "udap://revoked.fhirlabs.net/",
-            "Anchors": [
-              {
-                "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
-              }
-            ]
-          },
-          {
-            "Name": "udap://untrusted.fhirlabs.net/",
-            "Anchors": [
-              {
-                "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
-              }
-            ]
-          },
-          {
-            "Name": "udap://Iss.Miss.Match.To.SubjAltName/",
-            "Anchors": [
-              {
-                "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
-              }
-            ]
-          },
-          {
-            "Name": "udap://Iss.Miss.Match.To.BaseUrl//",
-            "Anchors": [
-              {
-                "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
-              }
-            ]
-          },
-          {
-            "Name": "udap://ECDSA/",
-            "Anchors": [
-              {
-                "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
+  "Communities": [
+    {
+      "Name": "udap://stage.healthtogo.me/",
+      "Anchors": [
+        {
+          "FilePath": "CertStore/anchors/EMRDirectTestCA.crt"
+        }
+      ]
+    },
+    {
+      "Name": "udap://fhirlabs.net/",
+      "Intermediates": [
+        "CertStore/intermediates/SureFhirLabs_Intermediate.cer"
+      ],
+      "Anchors": [
+        {
+          "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
+        }
+      ]
+    },
+    {
+      "Name": "udap://expired.fhirlabs.net/",
+      "Anchors": [
+        {
+          "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
+        }
+      ]
+    },
+    {
+      "Name": "udap://revoked.fhirlabs.net/",
+      "Anchors": [
+        {
+          "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
+        }
+      ]
+    },
+    {
+      "Name": "udap://untrusted.fhirlabs.net/",
+      "Anchors": [
+        {
+          "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
+        }
+      ]
+    },
+    {
+      "Name": "udap://Iss.Miss.Match.To.SubjAltName/",
+      "Anchors": [
+        {
+          "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
+        }
+      ]
+    },
+    {
+      "Name": "udap://Iss.Miss.Match.To.BaseUrl//",
+      "Anchors": [
+        {
+          "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
+        }
+      ]
+    },
+    {
+      "Name": "udap://ECDSA/",
+      "Anchors": [
+        {
+          "FilePath": "CertStore/anchors/SureFhirLabs_CA.cer"
+        }
+      ]
+    }
+  ]
+}
 ```
 
 </details>

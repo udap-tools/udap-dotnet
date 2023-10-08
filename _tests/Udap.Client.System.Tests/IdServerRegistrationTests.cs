@@ -70,7 +70,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper = testOutputHelper;
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccess_HealthToGo_Test()
     {
         using var fhirClient = new HttpClient();
@@ -246,7 +246,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccess_HealthGorilla_Test()
     {
         using var fhirClient = new HttpClient();
@@ -422,7 +422,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccess_client_credentials_Udap_Org_Test()
     {
         using var fhirClient = new HttpClient();
@@ -662,7 +662,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccess_client_credentials_FhirLabs_desktop_NoTokenRequestScope_Test()
     {
         using var fhirLabsClient = new HttpClient();
@@ -869,7 +869,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccess_client_credentials_FhirLabs_desktop_WithTokenRequestScopes_Test()
     {
         var handler = new HttpClientHandler();
@@ -1108,7 +1108,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccess_authorization_code_FhirLabs_desktop_Test()
     {
         using var fhirLabsClient = new HttpClient();
@@ -1350,7 +1350,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     // If you want Udap.Idp to run in UDAP mode the use "ASPNETCORE_ENVIRONMENT": "Production" to launch. Or
     // however you get the serer to pickup appsettings.Production.json
     //
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RequestAccessTokent_Fail_For_Issuer_client_credentials_FhirLabs_desktop_Test()
     {
         using var fhirLabsClient = new HttpClient();
@@ -1534,7 +1534,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccess_client_credentials_FhirLabs_LIVE_Test()
     {
         using var fhirLabsClient = new HttpClient();
@@ -1721,7 +1721,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccess_authorization_code_FhirLabs_LIVE_Test()
     {
         var handler = new HttpClientHandler();
@@ -1947,7 +1947,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
 
     }
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationMissingScope_client_credentials_FhirLabs_desktop_Test()
     {
         using var fhirLabsClient = new HttpClient();

@@ -174,7 +174,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         _testOutputHelper = testOutputHelper;
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccess_authorization_code_Test()
     {
         using var client = _fixture.CreateClient();
@@ -282,7 +282,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         clientEntity.AllowOfflineAccess.Should().BeTrue();
     }
     
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccessTest()
     {
         using var client = _fixture.CreateClient();
@@ -380,7 +380,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
         clientEntity.AllowOfflineAccess.Should().BeFalse();
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationMissingx5cHeaderTest()
     {
         // var clientPolicyStore = _fixture.Services.GetService<IIpPolicyStore>();
@@ -449,7 +449,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_Signature_Test()
     {
         using var client = _fixture.CreateClient();
@@ -513,7 +513,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidSotwareStatement_issMatchesUriName_Test()
     {
         using var client = _fixture.CreateClient();
@@ -578,7 +578,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidSotwareStatement_issMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -642,7 +642,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidSotwareStatement_subMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -708,7 +708,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
 
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidSotwareStatement_subNotEqualtoIss_Test()
     {
         using var client = _fixture.CreateClient();
@@ -773,7 +773,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidSotwareStatement_audMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -838,7 +838,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidSotwareStatement_audEqualsRegistrationEndpoint_Test()
     {
         using var client = _fixture.CreateClient();
@@ -903,7 +903,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidSotwareStatement_expMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -968,7 +968,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidSotwareStatement_expExpired_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1033,7 +1033,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidSotwareStatement_iatMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1098,7 +1098,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidClientMetadata_clientName_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1168,7 +1168,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     // http://hl7.org/fhir/us/udap-security/registration.html#modifying-and-cancelling-registrations
     // But a missing grant_types is an error
     //
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidClientMetadata_grant_types_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1233,7 +1233,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidClientMetadata_responseTypes_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1299,7 +1299,7 @@ public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisrationInvalidClientMetadata_tokenEndpointAuthMethodMissing_Test()
     {
         using var client = _fixture.CreateClient();

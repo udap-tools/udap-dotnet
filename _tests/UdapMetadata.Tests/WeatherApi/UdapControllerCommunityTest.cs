@@ -111,7 +111,12 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         // X509ChainStatusFlags.RevocationStatusUnknown;
 
 
-        services.TryAddScoped(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+        services.TryAddScoped(_ => new TrustChainValidator(new X509ChainPolicy()
+            {
+                DisableCertificateDownloads = true,
+                UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
+            }, 
+            problemFlags,
             testOutputHelper.ToLogger<TrustChainValidator>()));
 
         services.AddSingleton<UdapClientDiscoveryValidator>();
@@ -130,7 +135,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _serviceProvider = services.BuildServiceProvider();
     }
 
-    [Fact (Timeout = 5000)] //Swagger
+    [Fact] //Swagger
     public async Task OpenApiTest()
     {
         var response = await _fixture.CreateClient().GetAsync($"Swagger/Index.html");
@@ -164,7 +169,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                 "Swagger UI Failed to load.");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task signed_metatdataContentTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -208,7 +213,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         iat.Should().BeLessOrEqualTo((int)year);
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ValidateChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -223,7 +228,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _diagnosticsChainValidator.Called.Should().BeFalse();
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ValidateChainOffLineRevocationTest()
     {
         //
@@ -261,7 +266,14 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                            X509ChainStatusFlags.CtlNotSignatureValid |
                            X509ChainStatusFlags.RevocationStatusUnknown;
 
-        services.TryAddScoped<TrustChainValidator>(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>()));
+        services.TryAddScoped<TrustChainValidator>(_ => new TrustChainValidator(
+            new X509ChainPolicy()
+            {
+                DisableCertificateDownloads = true,
+                UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+            }, 
+            problemFlags, 
+            _testOutputHelper.ToLogger<TrustChainValidator>()));
         services.AddSingleton<UdapClientDiscoveryValidator>();
 
         services.AddScoped<IUdapClient>(sp =>

@@ -149,7 +149,7 @@ public class ClientCredentialsUdapModeTests
         _mockPipeline.ApiScopes.AddRange(new SmartV2Expander().ExpandToApiScopes(" system/Appointment.rs"));
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Todo()
     {
         //Need tests here:
@@ -158,7 +158,7 @@ public class ClientCredentialsUdapModeTests
         // It should test in UDAP server mode and specifically UdapScopeResolverMiddleware and 
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task GetAccessToken()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -242,7 +242,7 @@ public class ClientCredentialsUdapModeTests
 
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task GetAccessTokenECDSA()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test", 
@@ -327,7 +327,7 @@ public class ClientCredentialsUdapModeTests
 
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task UpdateRegistration()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -500,7 +500,7 @@ public class ClientCredentialsUdapModeTests
     
 
    
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task CancelRegistration()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -693,7 +693,7 @@ public class ClientCredentialsUdapModeTests
         regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Deleted finished so returns a 404 status code
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisterTwoCommunitiesWithSameISS_AndCancelOne()
     {
         var clientCert_1 = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -818,7 +818,7 @@ public class ClientCredentialsUdapModeTests
 
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Missing_grant_types_RegistrationResultsIn_invalid_client()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -1013,7 +1013,7 @@ public class ClientCredentialsUdapModeTests
         regResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest); // Deleted finished so returns a 404 status code
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ReplayRegistration()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");

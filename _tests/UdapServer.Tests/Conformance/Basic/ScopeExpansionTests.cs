@@ -145,7 +145,7 @@ public class ScopeExpansionTests
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ScopeV2WithClientCredentialsTest()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -361,7 +361,7 @@ public class ScopeExpansionTests
         tokenResponse.Error.Should().Be("invalid_scope");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ScopeV2WithAuthCodeTest()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");

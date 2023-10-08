@@ -46,7 +46,7 @@ try
     //     .ReadFrom.Configuration(ctx.Configuration));
 
     // Mount Cloud Secrets
-    builder.Configuration.AddJsonFile("/secret/udap_auth_appsettings", true, true);
+    builder.Configuration.AddJsonFile("/secret/udap_auth_appsettings", true, false);
 
     var app = builder
         .ConfigureServices(args)

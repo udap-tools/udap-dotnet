@@ -36,7 +36,7 @@ builder.Host.UseSerilog((ctx, lc) => lc
 
 // Add services to the container.
 
-builder.Configuration.AddJsonFile("/secret/fhirlabs_appsettings", true, true);
+builder.Configuration.AddJsonFile("/secret/fhirlabs_appsettings", true, false);
 
 //
 // TODO: I would rather do the following:

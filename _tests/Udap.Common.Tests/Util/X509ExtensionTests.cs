@@ -8,7 +8,7 @@ public class X509ExtensionTests
 {
     private string CertStore = "../../../../Udap.PKI.Generator/certstores";
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public void ResolveUriSubjAltName()
     {
         var certificate = new X509Certificate2($"{CertStore}/localhost_fhirlabs_community1/issued/fhirLabsApiClientLocalhostCert.cer");

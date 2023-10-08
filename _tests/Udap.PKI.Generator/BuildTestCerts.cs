@@ -97,7 +97,7 @@ namespace Udap.PKI.Generator
         /// default community uri = udap://fhirlabs.net
         ///
         /// </summary>
-        [Fact (Timeout = 5000)]
+        [Fact]
         public void MakeCaWithIntermediateUdapAndSSLForDefaultCommunity()
         {
             Console.WriteLine("*************************************");
@@ -1555,7 +1555,7 @@ namespace Udap.PKI.Generator
             }
         }
 
-        [Fact (Timeout = 5000)]
+        [Fact]
         public void CompareKid()
         {
 

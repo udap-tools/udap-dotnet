@@ -21,7 +21,7 @@ try
         .Enrich.FromLogContext()
         .ReadFrom.Configuration(ctx.Configuration));
 
-    builder.Configuration.AddJsonFile("/secret/udap_idp2_appsettings", true, true);
+    builder.Configuration.AddJsonFile("/secret/udap_idp2_appsettings", true, false);
 
     var app = builder
         .ConfigureServices(args)

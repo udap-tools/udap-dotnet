@@ -112,7 +112,13 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         // X509ChainStatusFlags.RevocationStatusUnknown;
 
 
-        services.TryAddScoped(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+        services.TryAddScoped(_ => new TrustChainValidator(
+            new X509ChainPolicy()
+            {
+                DisableCertificateDownloads = true,
+                UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+            }, 
+            problemFlags,
             testOutputHelper.ToLogger<TrustChainValidator>()));
 
         services.AddSingleton<UdapClientDiscoveryValidator>();
@@ -135,7 +141,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     /// 200 response.
     /// Well formed Json
     /// </summary>
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task UdapWellKnownConfigIsAvailable()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -149,7 +155,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     /// <summary>
     /// udap_versions_supported must contain a fixed array with one string
     /// </summary>
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task udap_versions_supportedTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -162,7 +168,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task udap_authorization_extensions_supportedTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -183,7 +189,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     /// <summary>
     /// Conditional.  Not required but setup for this test.
     /// </summary>
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task udap_authorization_extensions_requiredTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -197,7 +203,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     /// <summary>
     /// udap_certifications_supported is an array of zero or more certification URIs
     /// </summary>
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task udap_certifications_supportedTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -219,7 +225,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     /// <summary>
     /// udap_certifications_required is an array of zero or more certification URIs
     /// </summary>
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task udap_certifications_requiredTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -232,7 +238,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         uriCertificationsSupported.Should().Be("http://MyUdapCertification");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task grant_types_supportedTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -249,7 +255,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         grantTypes.Should().Contain("client_credentials");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task scopes_supported_supportedTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -264,7 +270,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         scopesSupported.Should().Contain("patient/*.cruds");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task authorization_endpointTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -276,7 +282,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         authorizationEndpoint.Should().Be("https://securedcontrols.net:5001/connect/authorize");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task token_endpointTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -288,7 +294,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         tokenEndpoint.Should().Be("https://securedcontrols.net:5001/connect/token");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task registration_endpointTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -300,7 +306,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         registrationEndpoint.Should().Be("https://securedcontrols.net:5001/connect/register");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task token_endpoint_auth_methods_supportedTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -312,7 +318,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         scopesSupported.Should().Be("private_key_jwt");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task token_endpoint_auth_signing_alg_values_supportedTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -327,7 +333,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         scopesSupported.Count().Should().Be(2);
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task registration_endpoint_jwt_signing_alg_values_supportedTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -342,7 +348,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         scopesSupported.Count().Should().Be(2);
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task signed_metadataTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -358,7 +364,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         regex.IsMatch(signedMetadata!).Should().BeTrue("signed_metadata is not a valid JWT");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task signed_metatdataContentTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();

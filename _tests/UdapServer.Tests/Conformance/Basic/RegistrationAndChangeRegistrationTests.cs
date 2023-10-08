@@ -146,7 +146,7 @@ public class RegistrationAndChangeRegistrationTests
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegisterClientCredentialsThenRegisterAuthorizationCode()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");

@@ -75,6 +75,7 @@ namespace UdapServer.Tests
         }
     }
 
+    [Collection("Udap.Auth.Server")]
     public class IntegrationRegistrationTests : IClassFixture<DatabaseProviderFixture<UdapConfigurationStoreOptions>>
     {
         private readonly ITestOutputHelper _testOutputHelper;
@@ -93,7 +94,7 @@ namespace UdapServer.Tests
         }
         
 
-        [Fact (Timeout = 5000)]
+        [Fact]
         public async Task BadIUdapClientConfigurationStore()
         {
             var services = new ServiceCollection();
@@ -118,7 +119,7 @@ namespace UdapServer.Tests
         /// built in IdentityServer DBContexts.
         /// </summary>
         /// <returns></returns>
-        [Fact (Timeout = 5000)]
+        [Fact]
         public async Task GoodIUdapClientConfigurationStore()
         {
             var services = new ServiceCollection();
@@ -198,7 +199,7 @@ namespace UdapServer.Tests
         }
 
 
-        [Fact (Timeout = 5000)]
+        [Fact]
         public void UdapDynamicClientRegistrationDocumentCompareToJwtPayloadTest()
         {
             var now = DateTime.UtcNow;
@@ -284,7 +285,7 @@ namespace UdapServer.Tests
         }
 
 
-        [Fact (Timeout = 5000)]
+        [Fact]
         public async Task GoodIUdapClientRegistrationStore()
         {
             var services = new ServiceCollection();
@@ -301,7 +302,13 @@ namespace UdapServer.Tests
                                // X509ChainStatusFlags.OfflineRevocation |
                                X509ChainStatusFlags.CtlNotSignatureValid;
 
-            services.AddSingleton(new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+            services.AddSingleton(new TrustChainValidator(
+                new X509ChainPolicy()
+                {
+                    DisableCertificateDownloads = true,
+                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                }, 
+                problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
 
 
@@ -433,7 +440,7 @@ namespace UdapServer.Tests
         /// <returns></returns>
         // TODO still need to work on this test. Only spent enough time here to determine
         // I was not including redirect Uris in when deserializing claims
-        [Fact (Timeout = 5000)]
+        [Fact]
         public void redirect_uris_Tests() //With and without authorization_code in grant_types
         {
             var now = DateTime.UtcNow;
@@ -525,7 +532,7 @@ namespace UdapServer.Tests
         }
 
 
-        [Fact (Timeout = 5000)]
+        [Fact]
         public void TestSerialization()
         {
             var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");

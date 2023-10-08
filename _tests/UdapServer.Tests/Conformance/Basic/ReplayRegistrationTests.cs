@@ -134,7 +134,7 @@ public class ReplayRegistrationTests
         mockPipeline.ApiScopes.Add(new ApiScope("system/Patient.rs"));
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ReplayRegistration()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -193,7 +193,7 @@ public class ReplayRegistrationTests
 
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task JwtRequiredRegistration()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -240,7 +240,7 @@ public class ReplayRegistrationTests
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ReplayRegistrationIgnored()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -295,7 +295,7 @@ public class ReplayRegistrationTests
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task JwtNotRequiredRegistration()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");

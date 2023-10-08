@@ -80,7 +80,7 @@ public class ResponseTypeResponseModeTests
     // this might not be in sync with the actual conformance tests
     // since we dead-end on the error page due to changes 
     // to follow the RFC to address open redirect in original OAuth RFC
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Request_missing_response_type_rejected()
     {
         await _mockPipeline.LoginAsync("bob");

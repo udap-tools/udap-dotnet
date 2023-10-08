@@ -10,7 +10,7 @@ namespace Udap.CA.Tests;
 
 public class UnitTest1
 {
-    [Fact (Timeout = 5000)]
+    [Fact]
     public void GenerateRootCertTestWithDispose()
     {
         var subject = "CN=SureFhir-TestCA, OU=Root, O=Fhir Coding, L=Portland, S=Oregon, C=US";
@@ -74,7 +74,7 @@ public class UnitTest1
         return intermediateCertificate;
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public void GenerateIssuedCertTest()
     {
         var intermediateCertificate = GenerateIntermediateCertTest();

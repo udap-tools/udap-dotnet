@@ -117,7 +117,13 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
 
         services.TryAddScoped(_ =>
-            new TrustChainValidator(new X509ChainPolicy(){ DisableCertificateDownloads = true}, problemFlags,
+            new TrustChainValidator(
+                new X509ChainPolicy()
+                {
+                    DisableCertificateDownloads = true,
+                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                }, 
+                problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
 
         services.AddSingleton<UdapClientDiscoveryValidator>();
@@ -136,7 +142,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _serviceProvider = services.BuildServiceProvider();
     }
     
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ValidateChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -159,7 +165,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ValidateChainEcdsaTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -185,7 +191,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task InvalidJwtTokentBadIssMatchToSubjectAltNameTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -203,7 +209,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("http://localhost/fhir/r99")).Should().BeTrue();
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task InvalidJwtTokentBadIssMatchToBaseUrlTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -220,7 +226,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task MissingCommunityChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -235,7 +241,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task UntrustedChainTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
@@ -261,7 +267,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     /// In this case assert a IUdapClient can register for the Problem events.
     /// </summary>
     /// <returns></returns>
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ValidateChainOffLineRevocationTest2()
     {
         //
@@ -303,7 +309,13 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
 
         services.TryAddScoped(_ =>
-            new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+            new TrustChainValidator(
+                new X509ChainPolicy()
+                {
+                    DisableCertificateDownloads = true,
+                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                }, 
+                problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
         services.AddSingleton<UdapClientDiscoveryValidator>();
 
@@ -365,7 +377,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                 "Swagger UI Failed to load.");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task signed_metatdataContentTest()
     {
 
@@ -500,7 +512,7 @@ public class UdapControllerCommunityCertificateResolverTests : IClassFixture<Api
 
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
 public async Task ValidateChainWithMyAnchorAndIntermediateTest()
 {
 
@@ -553,7 +565,12 @@ public async Task ValidateChainWithMyAnchorAndIntermediateTest()
 
 
         services.TryAddScoped(_ =>
-        new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+        new TrustChainValidator(new X509ChainPolicy()
+            {
+                DisableCertificateDownloads = true,
+                UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+            }, 
+            problemFlags,
             _testOutputHelper.ToLogger<TrustChainValidator>()));
 
     services.AddSingleton<UdapClientDiscoveryValidator>();
@@ -578,7 +595,7 @@ public async Task ValidateChainWithMyAnchorAndIntermediateTest()
     _diagnosticsValidator.ProblemCalled.Should().BeFalse();
 }
 
-[Fact (Timeout = 5000)]
+[Fact]
 public async Task ValidateChainWithMyAnchorTest()
 {
         //
@@ -629,7 +646,12 @@ public async Task ValidateChainWithMyAnchorTest()
 
 
         services.TryAddScoped(_ =>
-            new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+            new TrustChainValidator(new X509ChainPolicy()
+                {
+                    DisableCertificateDownloads = true,
+                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                }, 
+                problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
 
         services.AddSingleton<UdapClientDiscoveryValidator>();
@@ -658,7 +680,7 @@ public async Task ValidateChainWithMyAnchorTest()
 /// Notice the community and TrustAnchorMemoryStore are different
 /// </summary>
 /// <returns></returns>
-[Fact (Timeout = 5000)]
+[Fact]
 public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
 {
         //
@@ -710,7 +732,13 @@ public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
 
 
         services.TryAddScoped(_ =>
-            new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+            new TrustChainValidator(
+                new X509ChainPolicy()
+                {
+                    DisableCertificateDownloads = true,
+                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                }, 
+                problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
 
         services.AddSingleton<UdapClientDiscoveryValidator>();
@@ -742,7 +770,7 @@ public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
 /// Notice the community and TrustAnchorMemoryStore are different
 /// </summary>
 /// <returns></returns>
-[Fact (Timeout = 5000)]
+[Fact]
 public async Task ValidateChainWithMyAnchorFailTest()
 {
         //
@@ -787,7 +815,12 @@ public async Task ValidateChainWithMyAnchorFailTest()
 
 
         services.TryAddScoped(_ =>
-            new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+            new TrustChainValidator(new X509ChainPolicy()
+                {
+                    DisableCertificateDownloads = true,
+                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                }, 
+                problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
 
         services.AddSingleton<UdapClientDiscoveryValidator>();

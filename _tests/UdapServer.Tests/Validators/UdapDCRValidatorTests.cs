@@ -29,7 +29,7 @@ public class UdapDcrValidatorTests
         }
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ValidateLogo_Missing()
     {
         var document = BuildUdapDcrValidator(out var validator);
@@ -41,7 +41,7 @@ public class UdapDcrValidatorTests
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.LogoMissing}");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ValidateLogo_InvalidFileType()
     {
         var document = BuildUdapDcrValidator(out var validator);
@@ -53,7 +53,7 @@ public class UdapDcrValidatorTests
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidFileType}");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ValidateLogo_InvalidScheme()
     {
         var document = BuildUdapDcrValidator(out var validator);
@@ -65,7 +65,7 @@ public class UdapDcrValidatorTests
         errorResponse.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidScheme}");
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ValidateLogo_InvalidUri()
     {
         var document = BuildUdapDcrValidator(out var validator);
@@ -78,7 +78,7 @@ public class UdapDcrValidatorTests
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ValidateJti_And_ReplayTest()
     {
         var now = DateTime.UtcNow;

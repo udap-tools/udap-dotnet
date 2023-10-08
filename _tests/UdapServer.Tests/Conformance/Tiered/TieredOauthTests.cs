@@ -280,7 +280,7 @@ public class TieredOauthTests
     /// 
     /// </summary>
     /// <returns></returns>
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task ClientAuthorize_IdPDiscovery_IdPRegistration_IdPAuthAccess_ClientAuthAccess_Test()
     {
         // Register client with auth server

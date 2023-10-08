@@ -37,7 +37,7 @@ namespace Udap.Common.Tests
             _testOutputHelper = testOutputHelper;
         }
 
-        [Fact (Timeout = 5000)]
+        [Fact]
         public void UdapCertificationAndEndorsementDocument_SerializationTest()
         {
             UdapCertificationAndEndorsementDocument document = new UdapCertificationAndEndorsementDocument("Test Certification");
@@ -47,7 +47,7 @@ namespace Udap.Common.Tests
             _testOutputHelper.WriteLine(document.SerializeToJson());
         }
 
-        [Fact (Timeout = 5000)]
+        [Fact]
         public async Task TestParametersResource()
         {
             var parametersJson = "{\"resourceType\":\"Parameters\",\"parameter\":[{\"name\":\"UdapEdPatientMatch\",\"resource\":{\"resourceType\":\"Patient\",\"birthDate\":\"1970-05-01\"}}]}";
@@ -184,7 +184,7 @@ namespace Udap.Common.Tests
         /// But a good experiment to mess with while working in ECDSA certificates.
         /// </summary>
         /// <returns></returns>
-        [Fact (Timeout = 5000)]
+        [Fact]
         public async Task ExperimentGenECDSAPublishJwksSignThenValidateMultipleTimes()
         {
             using RSA key = RSA.Create(2048);

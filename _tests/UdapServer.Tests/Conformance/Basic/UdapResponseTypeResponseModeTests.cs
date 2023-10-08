@@ -131,7 +131,7 @@ public class UdapResponseTypeResponseModeTests
     }
 
     
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Request_response_type_missing_results_in_unsupported_response_type()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -210,7 +210,7 @@ public class UdapResponseTypeResponseModeTests
     /// authorize will redirect with error.
     /// </summary>
     /// <returns></returns>
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Request_state_missing_results_in_unsupported_response_type()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -283,7 +283,7 @@ public class UdapResponseTypeResponseModeTests
     }
 
     
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Request_response_type_invalid_results_in_unsupported_response_type()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -357,7 +357,7 @@ public class UdapResponseTypeResponseModeTests
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Request_client_id_missing_results_in_invalid_request()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -426,7 +426,7 @@ public class UdapResponseTypeResponseModeTests
         // _testOutputHelper.WriteLine(errorMessage.ToString());
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Request_client_id_invalid_results_in_unauthorized_client()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -494,7 +494,7 @@ public class UdapResponseTypeResponseModeTests
     }
 
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Request_accepted()
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
@@ -569,7 +569,7 @@ public class UdapResponseTypeResponseModeTests
         
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Request_accepted_RegisterWithDifferentRedirectUrl()
     {
         string _httpsCodeClientCallback = "https://code_client/callback";
@@ -709,7 +709,7 @@ public class UdapResponseTypeResponseModeTests
     /// Expect redirect_url requested to be persisted the same way as it was requested by the registering UDAP client.
     /// </summary>
     /// <returns></returns>
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task Request_accepted_URI_HostOnly()
     {
         var redirect_url = "https://code_client";

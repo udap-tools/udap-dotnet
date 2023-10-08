@@ -80,6 +80,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
                 {
                     VerificationFlags = X509VerificationFlags.IgnoreWrongUsage,
                     RevocationFlag = X509RevocationFlag.ExcludeRoot,
+                    DisableCertificateDownloads = true,
                     RevocationMode = X509RevocationMode.NoCheck // This is the change unit testing with no revocation endpoint to host the revocation list.
                 },
                 Output.ToLogger<TrustChainValidator>()));
@@ -151,7 +152,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         _testOutputHelper = testOutputHelper;
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccess_authorization_code_Test()
     {
         using var client = _fixture.CreateClient();
@@ -259,7 +260,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         clientEntity.AllowOfflineAccess.Should().BeTrue();
     }
 
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationSuccessTest()
     {
         using var client = _fixture.CreateClient();
@@ -359,7 +360,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationMissingX5cHeaderTest()
     {
         // var clientPolicyStore = _fixture.Services.GetService<IIpPolicyStore>();
@@ -430,7 +431,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_Signature_Test()
     {
         using var client = _fixture.CreateClient();
@@ -496,7 +497,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_issMatchesUriName_Test()
     {
         using var client = _fixture.CreateClient();
@@ -563,7 +564,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_issMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -627,7 +628,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_subMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -693,7 +694,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_subNotEqualtoIss_Test()
     {
         using var client = _fixture.CreateClient();
@@ -758,7 +759,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_audMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -823,7 +824,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_audEqualsRegistrationEndpoint_Test()
     {
         using var client = _fixture.CreateClient();
@@ -888,7 +889,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_exp_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -953,7 +954,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_exp_Expired_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1018,7 +1019,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_software_statement
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidSoftwareStatement_iat_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1083,7 +1084,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidClientMetadata_clientName_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1148,7 +1149,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidClientMetadata_logo_uri_Missing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1214,7 +1215,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidClientMetadata_Invalid_GrantType_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1321,7 +1322,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidClientMetadata_responseTypesMissing_Test()
     {
         using var client = _fixture.CreateClient();
@@ -1390,7 +1391,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     //invalid_client_metadata
-    [Fact (Timeout = 5000)]
+    [Fact]
     public async Task RegistrationInvalidClientMetadata_tokenEndpointAuthMethodMissing_Test()
     {
         using var client = _fixture.CreateClient();

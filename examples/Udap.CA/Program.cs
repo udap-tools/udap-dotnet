@@ -33,7 +33,7 @@ try
         .Enrich.FromLogContext()
         .ReadFrom.Configuration(ctx.Configuration));
 
-    builder.Configuration.AddJsonFile("/secret/udap-ca_appsettings", true, true);
+    builder.Configuration.AddJsonFile("/secret/udap-ca_appsettings", true, false);
 
     StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 

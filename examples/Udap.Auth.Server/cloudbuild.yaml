@@ -1,7 +1,7 @@
 steps:
 # Build the container image
 - name: 'gcr.io/cloud-builders/docker'
-  args: [ 'build', '-t', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/udap.auth.server:$TAG_NAME', '--file', './Dockerfile', '.' ]
+  args: [ 'build', '-t', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/udap.auth.server:$TAG_NAME', '--file', './Dockerfile.gcp', '.' ]
 
 # See:: https://cloud.google.com/build/docs/deploying-builds/deploy-cloud-run
 # Push the container image to Container Registry
@@ -19,9 +19,10 @@ steps:
   '--concurrency', '5', 
   '--set-env-vars', 'GCLOUD_PROJECT=true,GCPDeploy=true,UdapIdpBaseUrl=https://securedcontrols.net', 
   '--add-cloudsql-instances', 'udap-idp:us-west1:udap-idp-sqlexpress', 
-  '--vpc-connector', 'udap-idp-conect-us-west1', 
-  '--vpc-egress', 'private-ranges-only',
-  '--ingress', 'internal-and-cloud-load-balancing'
+  '--vpc-connector', 'udap-auth-connnector', 
+  '--vpc-egress', 'all-traffic',
+  '--ingress', 'internal-and-cloud-load-balancing',
+  '--set-secrets', '/secret/udap_auth_appsettings=udap_auth_appsettings:latest'  
   ]
 
 images:

@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,12 +7,10 @@
 // */
 #endregion
 
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Text.Json;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
@@ -23,16 +21,12 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using Moq;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Metadata.Server;
-using Udap.Util.Extensions;
 using Xunit.Abstractions;
-using Constants = Udap.Common.Constants;
 using weatherApiProgram = WeatherApi.Program;
 
 
@@ -85,7 +79,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         // This are is for client Dependency injection and Configuration
         //
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", false, true)
+            .AddJsonFile("appsettings.Weather.json", false, true)
             // .AddUserSecrets<UdapControllerTests>()
             .Build();
 
@@ -105,8 +99,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object,
-                "WeatherApi"));
+                new Mock<ILogger<TrustAnchorFileStore>>().Object));
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
                            X509ChainStatusFlags.Revoked |
@@ -118,15 +111,21 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         // X509ChainStatusFlags.RevocationStatusUnknown;
 
 
-        services.TryAddScoped(_ => new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+        services.TryAddScoped(_ => new TrustChainValidator(new X509ChainPolicy()
+            {
+                DisableCertificateDownloads = true,
+                UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
+            }, 
+            problemFlags,
             testOutputHelper.ToLogger<TrustChainValidator>()));
+
+        services.AddSingleton<UdapClientDiscoveryValidator>();
 
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
-                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                sp.GetRequiredService<ITrustAnchorStore>()));
+                sp.GetRequiredService<ILogger<UdapClient>>()));
 
         //
         // Use this method in an application
@@ -182,7 +181,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.NotNull(udapClient.UdapServerMetaData);
 
-        var jwt = new JwtSecurityToken(disco?.SignedMetadata);
+        var jwt = new JwtSecurityToken(disco.SignedMetadata);
         
         var issClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.Issuer);
         issClaim.ValueType.Should().Be(ClaimValueTypes.String);
@@ -191,8 +190,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         issClaim.Value.Should().Be("http://localhost/");
 
         var tokenHeader = jwt.Header;
-        var x5CArray = JsonSerializer.Deserialize<string[]>(tokenHeader.X5c);
-        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()));
+        var x5CArray = tokenHeader["x5c"] as List<object>;
+        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First().ToString()!));
         var subjectAltName = cert.GetNameInfo(X509NameType.UrlName, false);
         subjectAltName.Should().Be(issClaim.Value,
             $"iss: {issClaim.Value} does not match Subject Alternative Name extension");
@@ -203,10 +202,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         issClaim.Value.Should().BeEquivalentTo(subClaim.Value);
 
         var iatClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.IssuedAt);
-        iatClaim.ValueType.Should().Be(ClaimValueTypes.Integer);
+        iatClaim.ValueType.Should().Be(ClaimValueTypes.Integer64);
 
         var expClaim = jwt.Payload.Claims.Single(c => c.Type == JwtClaimTypes.Expiration);
-        expClaim.ValueType.Should().Be(ClaimValueTypes.Integer);
+        expClaim.ValueType.Should().Be(ClaimValueTypes.Integer64);
 
         var iat = int.Parse(iatClaim.Value);
         var exp = int.Parse(expClaim.Value);
@@ -236,7 +235,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         // This are is for client Dependency injection and Configuration
         //
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", false, true)
+            .AddJsonFile("appsettings.Weather.json", false, true)
             // .AddUserSecrets<UdapControllerTests>()
             .Build();
 
@@ -256,8 +255,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object,
-                "WeatherApi"));
+                new Mock<ILogger<TrustAnchorFileStore>>().Object));
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
                            X509ChainStatusFlags.Revoked |
@@ -268,14 +266,21 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                            X509ChainStatusFlags.CtlNotSignatureValid |
                            X509ChainStatusFlags.RevocationStatusUnknown;
 
-        services.TryAddScoped<TrustChainValidator>(sp => new TrustChainValidator(new X509ChainPolicy(), problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>()));
+        services.TryAddScoped<TrustChainValidator>(_ => new TrustChainValidator(
+            new X509ChainPolicy()
+            {
+                DisableCertificateDownloads = true,
+                UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+            }, 
+            problemFlags, 
+            _testOutputHelper.ToLogger<TrustChainValidator>()));
+        services.AddSingleton<UdapClientDiscoveryValidator>();
 
         services.AddScoped<IUdapClient>(sp =>
             new UdapClient(_fixture.CreateClient(),
-                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                sp.GetRequiredService<ITrustAnchorStore>()));
+                sp.GetRequiredService<ILogger<UdapClient>>()));
 
         var serviceProvider = services.BuildServiceProvider();
 

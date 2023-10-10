@@ -9,6 +9,7 @@ public static class UdapEdConstants
 
     public const string TOKEN = "Token";
     public const string BASE_URL = "BaseUrl";
+    public const string CLIENT_HEADERS = "ClientHeaders";
 
     /// <summary>
     /// See <a href="https://www.hl7.org/fhir/patient-operation-match.html">Patient-match</a>

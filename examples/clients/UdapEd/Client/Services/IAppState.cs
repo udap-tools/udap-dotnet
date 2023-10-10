@@ -1,6 +1,7 @@
 ﻿using System.Collections.Specialized;
 using Udap.Model;
 using Udap.Model.Registration;
+using UdapEd.Client.Shared;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Discovery;
 
@@ -41,4 +42,6 @@ public interface IAppState
     AuthorizationCodeRequest?AuthorizationCodeRequest { get; }
 
     ClientRegistrations? ClientRegistrations { get; }
+
+    ClientHeaders? ClientHeaders { get; }
 }

@@ -7,6 +7,8 @@ obj\**
 app.yaml
 README.md
 launchSettings.json
+appsettings.Development.json
+appsettings.Production.json
 fhirLabsApiClientLocalhostCert.pfx
 fhirLabsApiClientLocalhostCert*.pfx
 weatherApiClientLocalhostCert*.pfx

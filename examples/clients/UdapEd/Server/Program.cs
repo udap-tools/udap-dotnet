@@ -7,13 +7,17 @@
 // */
 #endregion
 
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.SystemConsole.Themes;
 using Udap.Client.Authentication;
 using Udap.Client.Client;
+using Udap.Client.Configuration;
 using Udap.Client.Rest;
 using Udap.Common.Certificates;
+
 using UdapEd.Server.Authentication;
 using UdapEd.Server.Extensions;
 using UdapEd.Server.Rest;
@@ -41,7 +45,10 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    // options.Filters.Add(new UserPreferenceFilter());
+});
 
 builder.Services.AddRazorPages();
 // builder.Services.AddBff();
@@ -82,13 +89,20 @@ builder.Services.AddRazorPages();
 //     });
 
 builder.Services.AddScoped<TrustChainValidator>();
-builder.Services.AddHttpClient<IUdapClient, UdapClient>();
+builder.Services.AddScoped<UdapClientDiscoveryValidator>();
+builder.Services.AddHttpClient<IUdapClient, UdapClient>()
+    .AddHttpMessageHandler(sp => new HeaderAugmentationHandler(sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>()));
+
+builder.Services.AddHttpClient(Options.DefaultName, c => { })
+    .AddHttpMessageHandler(sp => new HeaderAugmentationHandler(sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>()));
 
 builder.Services.AddScoped<IBaseUrlProvider, BaseUrlProvider>();
 builder.Services.AddScoped<IAccessTokenProvider, AccessTokenProvider>();
+
 builder.Services.AddHttpClient<FhirClientWithUrlProvider>((sp, httpClient) =>
 { })
-    .AddHttpMessageHandler(x => new AuthTokenHttpMessageHandler(x.GetRequiredService<IAccessTokenProvider>()));
+    .AddHttpMessageHandler(sp => new AuthTokenHttpMessageHandler(sp.GetRequiredService<IAccessTokenProvider>()))
+    .AddHttpMessageHandler(sp => new HeaderAugmentationHandler(sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>()));
 
 builder.Services.AddHttpContextAccessor();
 
@@ -129,5 +143,20 @@ app.MapControllers()
     ;
 
 app.MapFallbackToFile("index.html");
+
+
+//
+// Created to route traffic through AEGIS Touchstone via a Nginx reverse proxy in my cloud environment.
+// Touchstone is also a proxy used to surveil traffic for testing and certification.  
+//
+if (Environment.GetEnvironmentVariable("proxy-hosts") != null)
+{
+    var hostMaps = Environment.GetEnvironmentVariable("proxy-hosts")?.Split(";");
+    foreach (var hostMap in hostMaps!)
+    {
+        Log.Information($"Adding host map: {hostMap}");
+        File.AppendAllText("/etc/hosts", hostMap + Environment.NewLine);
+    }
+}
 
 app.Run();

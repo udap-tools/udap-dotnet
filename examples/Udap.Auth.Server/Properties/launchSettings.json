@@ -63,9 +63,9 @@
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
       "environmentVariables": {
-        "ASPNETCORE_URLS": "http://*:8080;https://*:443",
-        "GCPDeploy": "false",
-        "UdapIdpBaseUrl": "https://localhost:5002"
+        "ASPNETCORE_URLS": "http://*:80;https://*:443",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "UdapIdpBaseUrl": "https://host.docker.internal:5002"
       },
       "publishAllPorts": true,
       "useSSL": true
@@ -75,7 +75,7 @@
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/.well-known/udap",
       "environmentVariables": {
-        "ASPNETCORE_URLS": "http://*:8080;https://*:443",
+        "ASPNETCORE_URLS": "http://*:80;https://*:443",
         "GCPDeploy": "true",
         "UdapIdpBaseUrl": "https://localhost:5002"
       },

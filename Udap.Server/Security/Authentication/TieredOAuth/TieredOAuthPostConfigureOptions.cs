@@ -33,6 +33,8 @@ public class TieredOAuthPostConfigureOptions : IPostConfigureOptions<TieredOAuth
     /// <param name="options">The options instance to configured.</param>
     public void PostConfigure(string? name, TieredOAuthAuthenticationOptions options)
     {
+        //TODO Register _udapClientMessageHandler events for logging
+
         options.BackchannelHttpHandler = _udapClientMessageHandler;
         options.SignInScheme = options.SignInScheme;
     }

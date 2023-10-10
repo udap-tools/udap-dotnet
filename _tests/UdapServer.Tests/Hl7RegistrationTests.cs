@@ -80,6 +80,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
                 {
                     VerificationFlags = X509VerificationFlags.IgnoreWrongUsage,
                     RevocationFlag = X509RevocationFlag.ExcludeRoot,
+                    DisableCertificateDownloads = true,
                     RevocationMode = X509RevocationMode.NoCheck // This is the change unit testing with no revocation endpoint to host the revocation list.
                 },
                 Output.ToLogger<TrustChainValidator>()));

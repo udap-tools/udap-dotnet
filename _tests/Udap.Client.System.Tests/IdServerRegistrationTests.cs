@@ -27,7 +27,6 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
-using Udap.Metadata.Server;
 using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
@@ -97,7 +96,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var jwt = tokenHandler.ReadJsonWebToken(metadata!.SignedMetadata);
         var publicCert = jwt?.GetPublicCertificate();
 
-        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
+        var validatedToken = await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
         {
             RequireSignedTokens = true,
             ValidateIssuer = true,
@@ -120,7 +119,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
 
         var now = DateTime.UtcNow;
@@ -239,11 +238,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         
         fhirClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(UdapConstants.TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirClient.GetAsync("https://stage.healthtogo.me:8181/fhir/r4/stage/Patient/1001");
+        var patientResponse = await fhirClient.GetAsync("https://stage.healthtogo.me:8181/fhir/r4/stage/Patient/1001");
         
-        patientResponse.Result.EnsureSuccessStatusCode();
+        patientResponse.EnsureSuccessStatusCode();
 
-        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+        _testOutputHelper.WriteLine(await patientResponse.Content.ReadAsStringAsync());
 
     }
 
@@ -273,7 +272,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var jwt = tokenHandler.ReadJsonWebToken(metadata!.SignedMetadata);
         var publicCert = jwt!.GetPublicCertificate();
 
-        var validatedToken = tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
+        var validatedToken = await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
         {
             RequireSignedTokens = true,
             ValidateIssuer = true,
@@ -296,7 +295,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "https://api-conn.qa.healthgorilla.com/unit/qhin").Single().IssuedCerts.First().Password);
 
         var now = DateTime.UtcNow;
@@ -415,11 +414,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         fhirClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(UdapConstants.TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirClient.GetAsync("https://api-conn.qa.healthgorilla.com/unit/qhin/Patient/1001");
+        var patientResponse = await fhirClient.GetAsync("https://api-conn.qa.healthgorilla.com/unit/qhin/Patient/1001");
 
-        patientResponse.Result.EnsureSuccessStatusCode();
+        patientResponse.EnsureSuccessStatusCode();
 
-        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+        _testOutputHelper.WriteLine(await patientResponse.Content.ReadAsStringAsync());
 
     }
 
@@ -451,7 +450,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
         
         //
@@ -544,7 +543,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
 
         var document = UdapDcrBuilderForClientCredentials
@@ -617,7 +616,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
 
         var document = UdapDcrBuilderForClientCredentials
@@ -731,7 +730,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var clientCert = new X509Certificate2(
             cert, 
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
         
         var signedSoftwareStatement = UdapDcrBuilderForClientCredentials
@@ -861,12 +860,12 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
+        var patientResponse = await fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
 
-        patientResponse.Result.EnsureSuccessStatusCode();
+        patientResponse.EnsureSuccessStatusCode();
 
         
-        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+        _testOutputHelper.WriteLine(await patientResponse.Content.ReadAsStringAsync());
 
     }
 
@@ -952,7 +951,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var signedSoftwareStatement = UdapDcrBuilderForClientCredentials
@@ -1100,12 +1099,12 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
+        var patientResponse = await fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
 
-        patientResponse.Result.EnsureSuccessStatusCode();
+        patientResponse.EnsureSuccessStatusCode();
 
 
-        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+        _testOutputHelper.WriteLine(await patientResponse.Content.ReadAsStringAsync());
 
     }
 
@@ -1174,7 +1173,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var document = UdapDcrBuilderForAuthorizationCode
@@ -1292,8 +1291,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // Need a redirect handler.
         //
 
-        var url = new RequestUrl(disco.AuthorizeEndpoint).CreateAuthorizeUrl(
-            clientId: result.ClientId,
+        var url = new RequestUrl(disco.AuthorizeEndpoint!).CreateAuthorizeUrl(
+            clientId: result.ClientId!,
             responseType: "code",
             state: CryptoRandom.CreateUniqueId(),
             scope: "udap user.cruds",
@@ -1416,7 +1415,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var document = UdapDcrBuilderForClientCredentials
@@ -1591,7 +1590,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var document = UdapDcrBuilderForClientCredentials
@@ -1714,11 +1713,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirLabsClient.GetAsync("https://fhirlabs.net/fhir/r4/Patient/$count-em");
+        var patientResponse = await fhirLabsClient.GetAsync("https://fhirlabs.net/fhir/r4/Patient/$count-em");
 
-        patientResponse.Result.EnsureSuccessStatusCode();
+        patientResponse.EnsureSuccessStatusCode();
 
-        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+        _testOutputHelper.WriteLine(await patientResponse.Content.ReadAsStringAsync());
 
     }
 
@@ -1801,7 +1800,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var redirectUrls = new List<string?>
@@ -1914,9 +1913,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(string.Empty);
         _testOutputHelper.WriteLine(string.Empty);
 
-
-        var url = new RequestUrl(disco.AuthorizeEndpoint).CreateAuthorizeUrl(
-            clientId: result.ClientId,
+        var url = new RequestUrl(disco.AuthorizeEndpoint!).CreateAuthorizeUrl(
+            clientId: result.ClientId!,
             responseType: "code",
             state: CryptoRandom.CreateUniqueId(),
             scope: result.Scope,
@@ -2018,7 +2016,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var clientCert = new X509Certificate2(
             cert,
-            _fixture.Manifest.ResourceServers.First().Communities
+            _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
 
         var document = UdapDcrBuilderForClientCredentials
@@ -2128,12 +2126,12 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
+        var patientResponse = await fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
 
-        patientResponse.Result.EnsureSuccessStatusCode();
+        patientResponse.EnsureSuccessStatusCode();
 
 
-        _testOutputHelper.WriteLine(await patientResponse.Result.Content.ReadAsStringAsync());
+        _testOutputHelper.WriteLine(await patientResponse.Content.ReadAsStringAsync());
     }
 
     private string BuildHl7B2BExtensions()

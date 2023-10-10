@@ -18,4 +18,6 @@ public class UdapClientOptions
     [JsonPropertyName("Contacts")]
     public HashSet<string>? Contacts { get; set; }
 
+    [JsonPropertyName("Headers")]
+    public Dictionary<string, string>? Headers { get; set; }
 }

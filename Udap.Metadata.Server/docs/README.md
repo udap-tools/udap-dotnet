@@ -121,30 +121,26 @@ UdapMetadataOptions:UdapMetadataConfigs:Community value is the link to UdapFileC
 */
 
 "UdapFileCertStoreManifest": {
-    "ResourceServers": [
-      {
-        "Communities": [
-          {
-            "Name": "http://localhost",
-            "Anchors": [
-              {
-                "FilePath": "CertStore/anchors/caLocalhostCert.cer"
-              }
-            ],
-            "Intermediates": [
-              "CertStore/intermediates/anchorLocalhostCert.cer"
-            ],
-            "IssuedCerts": [
-              {
-                "FilePath": "CertStore/issued/weatherApiClientLocalhostCert.pfx",
-                "Password": "udap-test"
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
+  "Communities": [
+    {
+      "Name": "http://localhost",
+      "Anchors": [
+        {
+          "FilePath": "CertStore/anchors/caLocalhostCert.cer"
+        }
+      ],
+      "Intermediates": [
+        "CertStore/intermediates/anchorLocalhostCert.cer"
+      ],
+      "IssuedCerts": [
+        {
+          "FilePath": "CertStore/issued/weatherApiClientLocalhostCert.pfx",
+          "Password": "udap-test"
+        }
+      ]
+    }
+  ]    
+}
 
 ```
 

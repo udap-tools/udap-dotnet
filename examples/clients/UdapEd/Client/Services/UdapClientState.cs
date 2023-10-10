@@ -111,6 +111,7 @@ public class UdapClientState : IAppState
     public AuthorizationCodeRequest? AuthorizationCodeRequest { get; set; }
 
     public ClientRegistrations? ClientRegistrations { get; set; }
+    public ClientHeaders? ClientHeaders { get; set; }
 
     public event Action? StateChanged;
 

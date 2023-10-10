@@ -33,55 +33,15 @@ try
         .Enrich.FromLogContext()
         .ReadFrom.Configuration(ctx.Configuration));
 
+    builder.Configuration.AddJsonFile("/secret/udap-ca_appsettings", true, false);
 
     StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
     var provider = builder.Configuration.GetValue("provider", "SqlServer");
-    string dbChoice;
+    var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-    if (Environment.GetEnvironmentVariable("GCPDeploy") == "true")
-    {
-        dbChoice = "gcp_udap_ca_sql_db";
-    }
-    else if (Environment.GetEnvironmentVariable("LocalSqlDb") == "true")
-    {
-        dbChoice = "local_sqlDb";
-    }
-    else
-    {
-        dbChoice = "DefaultConnection";
-    }
 
-    string? connectionString;
-
-    if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
-    {
-        // Log.Information("Loading connection string from gcp_db");
-        // connectionString = Environment.GetEnvironmentVariable("gcp_db");
-        // Log.Information($"Loaded connection string, length:: {connectionString?.Length}");
-
-        Log.Information("Creating client");
-        var client = SecretManagerServiceClient.Create();
-
-        const string secretResource = "projects/288013792534/secrets/gcp_udap_ca_sql_db/versions/latest";
-
-        Log.Information("Requesting {secretResource");
-
-        // Call the API.
-        var result = client.AccessSecretVersion(secretResource);
-
-        // Convert the payload to a string. Payloads are bytes by default.
-        var payload = result.Payload.Data.ToStringUtf8();
-
-        connectionString = payload;
-    }
-    else
-    {
-        connectionString = builder.Configuration.GetConnectionString(dbChoice);
-    }
-    
-
-// Add services to the container.
+    // Add services to the container.
     builder.Services.AddRazorPages();
     builder.Services.AddServerSideBlazor();
     builder.Services.AddMudServices();

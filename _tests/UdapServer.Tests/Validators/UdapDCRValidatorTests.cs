@@ -10,6 +10,7 @@ using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Server.Configuration;
 using Udap.Server.Registration;
+using Udap.Server.Validation.Default;
 using UdapServer.Tests.Common;
 
 namespace UdapServer.Tests.Validators;
@@ -114,6 +115,7 @@ public class UdapDcrValidatorTests
             new TestReplayCache(_clock),
             serverSettings,
             mockHttpContextAccessor.Object,
+            new DefaultScopeExpander(),
             new Mock<ILogger<UdapDynamicClientRegistrationValidator>>().Object);
 
     
@@ -193,6 +195,7 @@ public class UdapDcrValidatorTests
             new TestReplayCache(_clock),
             serverSettings,
             mockHttpContextAccessor.Object,
+            new DefaultScopeExpander(),
             new Mock<ILogger<UdapDynamicClientRegistrationValidator>>().Object);
         return document;
     }

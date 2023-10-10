@@ -2,6 +2,8 @@
 @using System.Xml.Serialization
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
+@inject DiscoveryService DiscoveryService
+
 
 <MudGrid Class="mt-2">
     
@@ -33,16 +35,70 @@
         <MudCard>
             <MudCardHeader ><MudText>Client IP: </MudText></MudCardHeader>
             <MudCardContent>
-                
                 <MudText Typo="Typo.body2" Color="Color.Primary">@_myIp</MudText>
-                <MudText Typo="Typo.body2">Same as the User IP you may be asked for. This is because all redirects are redirected through the backend for this tool.</MudText>
-                <MudText Typo="Typo.body2">You will need thip IP Addresses if you are testing with an external test tool that must identify you.</MudText>
+                <MudText Typo="Typo.body2">Same as the User IP you may be asked for from certification and testing tools. This is because all redirects are redirected through the backend for this tool.</MudText>
+                <MudText Typo="Typo.body2">You will need this IP Addresses if you are testing with an external test tool that must identify you.</MudText>
+                <MudText Typo="Typo.body2">In many cases the testing entity will request headers for identification.  Set those in the next section.</MudText>
             </MudCardContent>
         </MudCard>
 
     </MudItem>
 
+    <MudItem xs="12" sm="6" md="6">
+        <MudCard>
+            <MudCardHeader><MudText>Configure Http Client Headers: </MudText></MudCardHeader>
+            <MudCardContent>
 
+                <MudTable Items="@Headers" Hover Striped Dense="@false" ReadOnly="@false" CanCancelEdit="@true"
+                          OnCommitEditClick="CommitItem"
+                          RowEditCancel="ItemHasBeenCanceled"
+                          IsEditRowSwitchingBlocked="@true"
+                >
+                    <ToolBarContent>
+        
+                        <MudSpacer />
+                        <MudTooltip Text="Add">
+                            <MudFab Icon="@Icons.Material.Filled.Add"
+                                    Color="Color.Success"
+                                    @onclick="AddRow"
+                                    Size="Size.Small" />
+                        </MudTooltip>
+                    </ToolBarContent>
+                    <HeaderContent>
+                        <MudTh>Name</MudTh>
+                        <MudTh>Value</MudTh>
+                    </HeaderContent>
+                    <RowTemplate Context="clientHeader">
+                        <MudTd DataLabel="Name">@clientHeader.Name</MudTd>
+                        <MudTd DataLabel="Value">@clientHeader.Value</MudTd>
+                        <MudTd @onclick:stopPropagation="true" Style="">
+                                      
+                            <MudTooltip Text="Delete">
+                                <MudFab HtmlTag="label"
+                                        Size="Size.Small"
+                                        Color="Color.Warning"
+                                        Icon="@Icons.Filled.DeleteForever"
+                                        class="ma-2"
+                                        OnClick="() => RemoveClientHeader(clientHeader)"
+                                        Disabled="@_rowInEditMode" />
+                            </MudTooltip>
+                        </MudTd>
+                    </RowTemplate>
+                    <RowEditingTemplate Context="clientHeader">
+                        <MudTd DataLabel="Name">
+                            <MudTextField @bind-Value="@clientHeader.Name" Required/>
+                        </MudTd>
+                        <MudTd DataLabel="Value">
+                            <MudTextField @bind-Value="@clientHeader.Value" Required/>
+                        </MudTd>
+                    </RowEditingTemplate>
+                </MudTable>
+            
+            </MudCardContent>
+
+        </MudCard>
+
+    </MudItem>
 
 
     <MudItem >
@@ -155,9 +211,14 @@
     <MudItem>
         <MudCard>
             <MudCardContent>
+                Trademarks
+            </MudCardContent>
+            <MudCardContent>
                 <MudText Typo="Typo.caption">
                     FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of the contents of this tool by HL7.
                 </MudText>
+            </MudCardContent>
+            <MudCardContent>
                 <MudText Typo="Typo.caption">
                     UDAP® and the UDAP gear logo, ecosystem gears, and green lock designs are trademarks of UDAP.org. UDAP Draft Specifications are referenced and displayed in parts of this tool to help the user connect an action to the specification.
                 </MudText>
@@ -174,6 +235,7 @@
 
     private string _myIp = string.Empty;
     private string _fhirLabsCommunityList = string.Empty;
+    private bool _rowInEditMode;
 
     protected override async Task OnInitializedAsync()
     {
@@ -186,6 +248,7 @@
 
         await GetCommunities();
         // await GetClientCertificates();
+        Headers = AppState.ClientHeaders?.Headers ?? new List<ClientHeader>();
     }
 
     private async Task GetCommunities()
@@ -200,6 +263,36 @@
         {
             _fhirLabsCommunityList = "Failed to load https://fhirlabs.net/fhir/r4/.well-known/udap/communities/ashtml";
         }
+    }
+
+    private List<ClientHeader> Headers { get; set; }
+
+    
+    private void AddRow()
+    {
+        Headers.Add(new ClientHeader());
+        _rowInEditMode = true;
+    }
+
+    
+    private async Task RemoveClientHeader(ClientHeader clientHeader)
+    {
+        var header = Headers.FirstOrDefault(h => h.Name == clientHeader.Name);
+        if (header != null) Headers.Remove(header);
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientHeaders), Headers);
+    }
+
+    private async Task CommitItem(object obj)
+    {
+        await AppState.SetPropertyAsync(this, nameof(AppState.ClientHeaders), new ClientHeaders{ Headers = Headers});
+        await DiscoveryService.SetClientHeaders(Headers.ToDictionary(h => h.Name, h => h.Value));
+        _rowInEditMode = false;
+    }
+
+    private void ItemHasBeenCanceled(object obj)
+    {
+        Headers.Remove((ClientHeader)obj);
+        _rowInEditMode = false;
     }
 
     // private async Task GetClientCertificates()
@@ -220,4 +313,6 @@
     // {
     //     public string Key { get; set; }
     // }
+
+    
 }

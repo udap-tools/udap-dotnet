@@ -1,4 +1,4 @@
-#region (c) 2022 Joseph Shook. All rights reserved.
+#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,12 +7,9 @@
 // */
 #endregion
 
-using System.Security.Cryptography.X509Certificates;
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
-using Duende.IdentityServer.ResponseHandling;
-using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
@@ -20,11 +17,10 @@ using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
 using Udap.Auth.Server.Pages;
+using Udap.Client.Configuration;
 using Udap.Common;
-using Udap.Model;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
-using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace Udap.Auth.Server;
@@ -48,44 +44,8 @@ internal static class HostingExtensions
         
 
         var provider = builder.Configuration.GetValue("provider", "SqlServer");
-        
-        string connectionString;
 
-        var dbChoice = Environment.GetEnvironmentVariable("GCPDeploy") == "true" ? "gcp_db" : "DefaultConnection";
-
-
-        // foreach (DictionaryEntry environmentVariable in Environment.GetEnvironmentVariables())
-        // {
-        //     Log.Logger.Information($"{environmentVariable.Key} :: {environmentVariable.Value}");
-        // }
-        //Ugly but works so far.
-        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
-        {
-            // Log.Logger.Information("Loading connection string from gcp_db");
-            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
-            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
-
-            Log.Logger.Information("Creating client");
-            var client = SecretManagerServiceClient.Create();
-
-            const string secretResource = "projects/288013792534/secrets/gcp_db/versions/latest";
-
-            Log.Logger.Information("Requesting {secretResource");
-            // Call the API.
-            AccessSecretVersionResponse result = client.AccessSecretVersion(secretResource);
-
-            // Convert the payload to a string. Payloads are bytes by default.
-            String payload = result.Payload.Data.ToStringUtf8();
-
-            connectionString = payload;
-        }
-        else
-        {
-            connectionString = builder.Configuration.GetConnectionString(dbChoice);
-        }
-
-        
-
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         Log.Logger.Debug($"ConnectionString:: {connectionString}");
         
         builder.Services.AddOptions();
@@ -96,8 +56,47 @@ internal static class HostingExtensions
         builder.Services.AddRazorPages();
 
         
-        builder.Services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
+        
+        builder.Services.Configure<UdapClientOptions>(builder.Configuration.GetSection("UdapClientOptions"));
 
+        builder.Services.AddUdapServer(
+            options =>
+            {
+                var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
+                options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
+                options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
+                options.ServerSupport = udapServerOptions.ServerSupport;
+                options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
+                options.IdPMappings = udapServerOptions.IdPMappings;
+                options.LogoRequired = udapServerOptions.LogoRequired;
+            },
+            // udapClientOptions =>
+            // {
+            //     var appSettings = builder.Configuration.GetOption<UdapClientOptions>("UdapClientOptions");
+            //     udapClientOptions.ClientName = "Udap.Auth.SecuredControls";
+            //     udapClientOptions.Contacts = new HashSet<string>
+            //         { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" };
+            //     udapClientOptions.Headers = appSettings.Headers;
+            // },
+            storeOptionAction: options =>
+                _ = provider switch
+                {
+                    "Sqlite" => options.UdapDbContext = b =>
+                        b.UseSqlite(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    "SqlServer" => options.UdapDbContext = b =>
+                        b.UseSqlServer(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    _ => throw new Exception($"Unsupported provider: {provider}")
+                })
+            .AddUdapResponseGenerators();
+
+
+        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
+
+        
 
         builder.Services.AddIdentityServer(options =>
             {
@@ -141,47 +140,10 @@ internal static class HostingExtensions
             .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
             //TODO remove
-            .AddTestUsers(TestUsers.Users)
+            .AddTestUsers(TestUsers.Users);
             
-            .AddUdapServer(
-                options =>
-                    {
-                        var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
-                        options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
-                        options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
-                        options.ServerSupport = udapServerOptions.ServerSupport;
-                        options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
-                        options.IdPMappings = udapServerOptions.IdPMappings;
-                        options.LogoRequired = udapServerOptions.LogoRequired;
-                    },
-                udapClientOptions =>
-                {
-                    udapClientOptions.ClientName = "Udap.Auth.SecuredControls";
-                    udapClientOptions.Contacts = new HashSet<string>
-                        { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" };
-                },
-                options =>
-                    _ = provider switch
-                    {
-                        "Sqlite" => options.UdapDbContext = b =>
-                            b.UseSqlite(connectionString,
-                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+            
 
-                        "SqlServer" => options.UdapDbContext = b =>
-                            b.UseSqlServer(connectionString,
-                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                        _ => throw new Exception($"Unsupported provider: {provider}")
-                    });
-
-
-        //
-        // Special IPrivateCertificateStore for Google Cloud Deploy
-        // 
-        //
-        // TODO: UdapFileCertStoreManifest doesn't have a good abstraction story for transitioning to other storage 
-        builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
-        
         //TODO: Hack for connectionathon for the time being
 
         if (Environment.GetEnvironmentVariable("GCPDeploy") == "true")
@@ -213,7 +175,6 @@ internal static class HostingExtensions
                options.TokenEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/token";
                options.CallbackPath = "/signin-oktaforudap";
                options.IdPBaseUrl = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7";
-
            });
 
         }
@@ -228,22 +189,22 @@ internal static class HostingExtensions
             {
                 options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                 //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
-                options.AuthorizationEndpoint = "https://localhost:5055/connect/authorize";
+                options.AuthorizationEndpoint = "https://host.docker.internal:5055/connect/authorize";
                 //options.TokenEndpoint = "Get from UDAP metadata
-                options.TokenEndpoint = "https://localhost:5055/connect/token";
+                options.TokenEndpoint = "https://host.docker.internal:5055/connect/token";
                 // options.ClientId = "dynamic";
                 // options.Events.OnRedirectToAuthorizationEndpoint
                 // {
                 //     
                 // };
-                options.IdPBaseUrl = "https://localhost:5055";
+                options.IdPBaseUrl = "https://host.docker.internal:5055";
             })
             .AddTieredOAuth("TieredOAuthProvider2", "UDAP Tiered OAuth (DOTNET-Provider2)", options =>
             {
                 options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                 //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
-                options.AuthorizationEndpoint = "https://localhost:5057/connect/authorize";
-                options.TokenEndpoint = "https://localhost:5057/connect/token";
+                options.AuthorizationEndpoint = "https://host.docker.internal:5057/connect/authorize";
+                options.TokenEndpoint = "https://host.docker.internal:5057/connect/token";
                 //
                 // When repeating AddTieredOAuth extension always add set a unique CallbackPath
                 // Otherwise the following error will occur: "The oauth state was missing or invalid."
@@ -256,7 +217,7 @@ internal static class HostingExtensions
                 //      => Task.FromResult(Options.CallbackPath == Request.Path);
                 //
                 options.CallbackPath = "/signin-tieredoauthprovider2";
-                options.IdPBaseUrl = "https://localhost:5057";
+                options.IdPBaseUrl = "https://host.docker.internal:5057";
             })
             .AddTieredOAuth("OktaForUDAP", "UDAP Tiered OAuth Okta", options =>
             {
@@ -374,33 +335,5 @@ internal static class HostingExtensions
         app.MapRazorPages().RequireAuthorization();
         
         return app;
-    }
-
-    static IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webApplicationBuilder)
-    {
-        //Ugly but works so far.
-        if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
-        {
-            // Log.Logger.Information("Loading connection string from gcp_db");
-            // connectionString = Environment.GetEnvironmentVariable("gcp_db");
-            // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
-
-            Log.Logger.Information("Creating client");
-            var client = SecretManagerServiceClient.Create();
-
-            var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest-AuthServer/versions/latest";
-
-            Log.Logger.Information("Requesting {secretResource");
-            // Call the API.
-            var result = client.AccessSecretVersion(secretResource);
-
-            // Convert the payload to a string. Payloads are bytes by default.
-            var stream = new MemoryStream(result.Payload.Data.ToByteArray());
-
-
-            webApplicationBuilder.Configuration.AddJsonStream(stream);
-        }
-
-        return webApplicationBuilder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST);
     }
 }

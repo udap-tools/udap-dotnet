@@ -101,6 +101,18 @@ public class DiscoveryService
         return false;
     }
 
+    public async Task<bool> SetClientHeaders(Dictionary<string, string> headers)
+    {
+        var response = await _httpClient.PutAsJsonAsync("Metadata/SetClientHeaders", headers);
+
+        if (response.IsSuccessStatusCode)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     public async Task<CertificateViewModel?> GetCertificateData(IEnumerable<string>? base64EncodedCertificate,
         CancellationToken token)
     {

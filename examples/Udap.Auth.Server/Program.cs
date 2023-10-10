@@ -45,9 +45,26 @@ try
     //     .Enrich.FromLogContext()
     //     .ReadFrom.Configuration(ctx.Configuration));
 
+    // Mount Cloud Secrets
+    builder.Configuration.AddJsonFile("/secret/udap_auth_appsettings", true, false);
+
     var app = builder
         .ConfigureServices(args)
         .ConfigurePipeline(args);
+
+    //
+    // Created to route traffic through AEGIS Touchstone via a Nginx reverse proxy in my cloud environment.
+    // Touchstone is also a proxy used to surveil traffic for testing and certification.  
+    //
+    if (Environment.GetEnvironmentVariable("proxy-hosts") != null)
+    {
+        var hostMaps = Environment.GetEnvironmentVariable("proxy-hosts")?.Split(";");
+        foreach (var hostMap in hostMaps!)
+        {
+            Log.Information($"Adding host map: {hostMap}");
+            File.AppendAllText("/etc/hosts", hostMap + Environment.NewLine);
+        }
+    }
     
     app.Run();
 }

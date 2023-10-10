@@ -21,7 +21,8 @@ steps:
   '--add-cloudsql-instances', 'udap-idp:us-west1:udap-idp-sqlexpress', 
   '--vpc-connector', 'udap-idp-conect-us-west1',
   '--vpc-egress', 'private-ranges-only',
-  '--ingress', 'internal-and-cloud-load-balancing'
+  '--ingress', 'internal-and-cloud-load-balancing',
+  '--set-secrets', '/secret/udap_ca_appsettings=udap_ca_appsettings:latest'  
 ]
 
 images:

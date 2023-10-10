@@ -66,19 +66,16 @@ public class FileCertificateStore : ICertificateStore
         {
             _logger.LogInformation($"Loading first ResourceServers from UdapFileCertStoreManifest:ResourceServers.");
 
-            communities = manifestCurrentValue.ResourceServers.FirstOrDefault()?.Communities;
+            communities = manifestCurrentValue.Communities;
         }
         else
         {
             _logger.LogInformation($"Loading UdapFileCertStoreManifest:ResourceServers:Name {_resourceServerName}.");
 
-            communities = manifestCurrentValue
-                .ResourceServers
-                .SingleOrDefault(r => r.Name == _resourceServerName)
-                ?.Communities;
+            communities = manifestCurrentValue.Communities;
         }
 
-        _logger.LogInformation($"{communities?.Count ?? 0} communities loaded");
+        _logger.LogInformation($"{communities.Count} communities loaded");
 
         if (communities == null) return;
 

@@ -422,7 +422,7 @@ public class IdentityServerPipeline
 public class MockMessageHandler : DelegatingHandler
 {
     public bool InvokeWasCalled { get; set; }
-    public Func<HttpRequestMessage, Task> OnInvoke { get; set; }
+    public Func<HttpRequestMessage, Task>? OnInvoke { get; set; }
     public HttpResponseMessage Response { get; set; } = new HttpResponseMessage(HttpStatusCode.OK);
 
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

@@ -9,8 +9,19 @@
         "GCPDeploy": "false",
         "ASPNETCORE_ENVIRONMENT": "Development",
         "UdapIdpBaseUrl": "https://localhost:5055"
-      },
-      "sslPort": 5055
+      }
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://host.docker.internal:{ServicePort}",
+      "useSSL": true,
+      "environmentVariables": {
+        "GCPDeploy": "false",
+        "ASPNETCORE_URLS": "http://*:80;https://*:443",
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "UdapIdpBaseUrl": "https://host.docker.internal:5055"
+      }
     }
   }
 }

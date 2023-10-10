@@ -24,7 +24,7 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     private string? _subjectId;
     private string? _subjectRole;
     private string? _organizationName;
-    private Uri _organizationId = default!;
+    private string? _organizationId = default!;
     private ICollection<string> _purposeOfUse = new HashSet<string>();
     private ICollection<string>? _consentPolicy;
     private ICollection<string>? _consentReference;
@@ -104,13 +104,13 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     }
 
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.OrganizationId)]
-    public Uri OrganizationId
+    public string? OrganizationId
     {
         get
         {
-            if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientUri), UriKind.Absolute, out var value))
+            if (_organizationId == null)
             {
-                _organizationId = value;
+                _organizationId = GetStandardClaim(UdapConstants.B2BAuthorizationExtension.OrganizationId);
             }
 
             return _organizationId;
@@ -118,7 +118,7 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         set
         {
             _organizationId = value;
-            this[UdapConstants.B2BAuthorizationExtension.OrganizationId] = value;
+            if (value != null) this[UdapConstants.B2BAuthorizationExtension.OrganizationId] = value;
         }
     }
 
@@ -210,7 +210,7 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
         else
         {
-            claimValues.Add(JsonExtensions.SerializeToJson(value));
+            claimValues.Add(JsonSerializer.Serialize(value));
         }
 
         return claimValues;
@@ -231,7 +231,7 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
                 }
             }
 
-            return JsonExtensions.SerializeToJson(value);
+            return JsonSerializer.Serialize(value);
         }
 
         return null;

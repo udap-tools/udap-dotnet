@@ -1,0 +1,137 @@
+# tye application configuration file
+# read all about it at https://github.com/dotnet/tye
+#
+# when you've given us a try, we'd love to know what you think:
+#    https://aka.ms/AA7q20u
+#
+name: udap
+
+services:
+#- name: weatherapi
+#  project: examples/WeatherApi/WeatherApi.csproj
+#  bindings:
+#  - protocol: https
+#    name: https
+#    host: host.docker.internal
+#    port: 5021
+#    routes:
+#     - /swagger
+#  - protocol: http
+#    name: http
+#    port: 5020
+  
+- name: fhirlabsapi
+  dockerFile: examples/FhirLabsApi/Dockerfile
+  dockerFileArgs:
+    - h: host.docker.internal
+  bindings:
+  - protocol: https
+    name: https
+    #host: host.docker.internal
+    port: 7016
+    routes: 
+     - /fhir/r4/.well-known/udap
+     - /fhir/r4/.well-known/udap/communities
+     - /fhir/r4/.well-known/udap/communities/ashtml
+  env:
+  - name: ASPNETCORE_URLS
+    value: http://*:80;https://*:443
+    # force to load local dev UDAP certificates
+  - name: ASPNETCORE_ENVIRONMENT
+    value: Development
+
+- name: udap-auth
+  dockerFile: examples/Udap.Auth.Server/Dockerfile
+  bindings:
+  - protocol: https
+    name: https
+    #host: host.docker.internal
+    port: 5002
+  env:
+  - name: UdapIdpBaseUrl
+    value: https://host.docker.internal:5002
+  - name: ASPNETCORE_URLS
+    value: http://*:80;https://*:443
+  - name: ASPNETCORE_ENVIRONMENT
+    value: Development
+
+- name: udap-idp-1
+  dockerFile: examples/Udap.Identity.Provider/Dockerfile
+  bindings:
+  - protocol: https
+    name: https
+    #host: host.docker.internal
+    port: 5055
+  env:
+  - name: UdapIdpBaseUrl
+    value: https://host.docker.internal:5055
+  - name: ASPNETCORE_URLS
+    value: http://*:80;https://*:443
+  - name: ASPNETCORE_ENVIRONMENT
+    value: Development
+
+- name: udap-idp-2
+  dockerFile: examples/Udap.Identity.Provider.2/Dockerfile
+  bindings:
+  - protocol: https
+    name: https
+    #host: host.docker.internal
+    port: 5057
+  env:
+  - name: UdapIdpBaseUrl
+    value: https://host.docker.internal:5057
+  - name: ASPNETCORE_URLS
+    value: http://*:80;https://*:443
+  - name: ASPNETCORE_ENVIRONMENT
+    value: Development
+
+- name: certificate-server
+  project: examples/Udap.Certificates.Server/Udap.Certificates.Server.csproj
+  bindings:
+  - protocol: http
+    name: http
+    host: host.docker.internal
+    port: 5033
+
+
+#- name: udap-idp-admin
+#  project: examples/Udap.Idp.Admin/Udap.Idp.Admin.csproj
+#  bindings:
+#  - protocol: https
+#    name: https
+#    host: host.docker.internal
+#    port: 7087
+
+#- name: udap-ca
+#  project: examples/Udap.CA/Udap.CA.csproj
+#  bindings:
+#  - protocol: https
+#    name: https
+#    host: host.docker.internal
+#    port: 6061
+
+
+
+
+
+- name: UdapEd
+  project: examples/clients/UdapEd/Server/UdapEd.Server.csproj
+  bindings:
+  - protocol: https
+    name: https
+    host: host.docker.internal
+    port: 7041
+
+
+#- name: UdapEd
+#  dockerFile: examples/clients/UdapEd/Dockerfile
+#  bindings:
+#  - protocol: https
+#    name: https
+#    #host: host.docker.internal
+#    port: 7041
+#  env:
+#  - name: ASPNETCORE_URLS
+#    value: http://*:80;https://*:443
+
+

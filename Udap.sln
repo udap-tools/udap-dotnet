@@ -11,9 +11,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "migrations", "migrations", "{B73A108B-9163-4463-B755-A0F84344D088}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{4B854644-1F54-4ECA-9290-A89B91A19FF9}"
-	ProjectSection(SolutionItems) = preProject
-		examples\Directory.Packages.props = examples\Directory.Packages.props
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WeatherApi", "examples\WeatherApi\WeatherApi.csproj", "{C66AB685-32FF-4D48-8FC7-80FD14E66980}"
 EndProject
@@ -23,12 +20,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Server", "Udap.Server\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{522A1681-215E-4C39-B1AC-1324F7CE516E}"
 	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
 		Common.props = Common.props
 		Directory.Build.props = Directory.Build.props
 		Directory.Packages.props = Directory.Packages.props
 		LICENSE = LICENSE
 		nuget.config = nuget.config
 		README.md = README.md
+		tye.docker.yaml = tye.docker.yaml
 		tye.yaml = tye.yaml
 	EndProjectSection
 EndProject
@@ -52,6 +51,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{2D52
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UdapEd", "UdapEd", "{B84896B0-6796-4059-8799-7A7F342E0B88}"
 	ProjectSection(SolutionItems) = preProject
+		examples\clients\UdapEd\.dockerignore = examples\clients\UdapEd\.dockerignore
 		examples\clients\UdapEd\.gcloudignore = examples\clients\UdapEd\.gcloudignore
 		examples\clients\UdapEd\cloudbuild.yaml = examples\clients\UdapEd\cloudbuild.yaml
 		examples\clients\UdapEd\Directory.Packages.props = examples\clients\UdapEd\Directory.Packages.props
@@ -87,8 +87,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Certificates.Server", "examples\Udap.Certificates.Server\Udap.Certificates.Server.csproj", "{B4E18166-A588-4CB8-BF48-0119FB365FFF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Identity.Provider.2", "examples\Udap.Identity.Provider.2\Udap.Identity.Provider.2.csproj", "{2899E179-2E24-46D7-8AA3-9FFE5AC9BFC5}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.TieredOAuth", "Udap.TieredOAuth\Udap.TieredOAuth.csproj", "{841771CF-1B2B-44DD-B433-BFE873B0543E}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Auth.Server.Admin", "examples\Udap.Auth.Server.Admin\Udap.Auth.Server.Admin.csproj", "{CF2BC3EC-8B6D-49E4-9C7B-18EF4229F9CF}"
 EndProject
@@ -200,10 +198,6 @@ Global
 		{2899E179-2E24-46D7-8AA3-9FFE5AC9BFC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2899E179-2E24-46D7-8AA3-9FFE5AC9BFC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2899E179-2E24-46D7-8AA3-9FFE5AC9BFC5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{841771CF-1B2B-44DD-B433-BFE873B0543E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{841771CF-1B2B-44DD-B433-BFE873B0543E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{841771CF-1B2B-44DD-B433-BFE873B0543E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{841771CF-1B2B-44DD-B433-BFE873B0543E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CF2BC3EC-8B6D-49E4-9C7B-18EF4229F9CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CF2BC3EC-8B6D-49E4-9C7B-18EF4229F9CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CF2BC3EC-8B6D-49E4-9C7B-18EF4229F9CF}.Release|Any CPU.ActiveCfg = Release|Any CPU

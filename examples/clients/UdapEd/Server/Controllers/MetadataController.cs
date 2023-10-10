@@ -13,9 +13,11 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Udap.Client.Client;
+using Udap.Client.Configuration;
 using Udap.Client.Internal;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
@@ -37,11 +39,13 @@ public class MetadataController : Controller
     private readonly IUdapClient _udapClient;
     private readonly ILogger<MetadataController> _logger;
     private readonly HttpClient _httpClient;
+    private readonly UdapClientOptions _udapClientOptions;
 
-    public MetadataController(IUdapClient udapClient, HttpClient httpClient, ILogger<MetadataController> logger)
+    public MetadataController(IUdapClient udapClient, HttpClient httpClient, IOptionsMonitor<UdapClientOptions> udapClientOptions, ILogger<MetadataController> logger)
     {
         _udapClient = udapClient;
         _httpClient = httpClient;
+        _udapClientOptions = udapClientOptions.CurrentValue;
         _logger = logger;
     }
 
@@ -218,6 +222,15 @@ public class MetadataController : Controller
     public IActionResult Get()
     {
         return Ok(Environment.GetEnvironmentVariable("MyIp"));
+    }
+
+    [HttpPut("SetClientHeaders")]
+    public IActionResult SetClientHeaders([FromBody] Dictionary<string, string> headers)
+    {
+        // HttpContext.Session.SetString(UdapEdConstants.CLIENT_HEADERS, JsonSerializer.Serialize<Dictionary<string, string>>(headers));
+        _udapClientOptions.Headers = headers;
+
+        return Ok();
     }
 
     [HttpGet("FhirLabsCommunityList")]

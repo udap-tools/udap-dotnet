@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -8,111 +8,53 @@
 #endregion
 
 using System.Net;
+using System.Net.Http;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using System.Threading.Tasks;
+
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using IdentityModel.Client;
-using Microsoft.AspNetCore.Authentication.OAuth;
+// using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Client.Configuration;
 using Udap.Client.Extensions;
 using Udap.Common.Certificates;
-using Udap.Common.Extensions;
-using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
-using Udap.Util.Extensions;
+using Microsoft.AspNetCore.Authentication.OAuth;
 
 namespace Udap.Client.Client
 {
-
-    public interface IUdapClient
-    {
-        //TODO Cancellation Token add...
-        Task<UdapDiscoveryDocumentResponse> ValidateResource(
-            string baseUrl,
-            string? community = null,
-            DiscoveryPolicy? discoveryPolicy = null);
-
-        Task<UdapDiscoveryDocumentResponse> ValidateResource(
-            string baseUrl,
-            ITrustAnchorStore? trustAnchorStore,
-            string? community = null,
-            DiscoveryPolicy? discoveryPolicy = null);
-
-        UdapMetadata? UdapDynamicClientRegistrationDocument { get; set; }
-        UdapMetadata? UdapServerMetaData { get; set; }
-
-        /// <summary>
-        /// Event fired when a certificate is untrusted
-        /// </summary>
-        event Action<X509Certificate2>? Untrusted;
-
-        /// <summary>
-        /// Event fired if a certificate has a problem.
-        /// </summary>
-        event Action<X509ChainElement>? Problem;
-
-        /// <summary>
-        /// Event fired if there was an error during certificate validation
-        /// </summary>
-        event Action<X509Certificate2, Exception>? Error;
-
-        /// <summary>
-        /// Event fired when JWT Token validation fails
-        /// </summary>
-        event Action<string>? TokenError;
-
-        /// <summary>
-        /// Register a TieredClient in the Authorization Server.
-        /// Currently it is not SAN and Community aware.  It picks the first SAN.
-        /// </summary>
-        /// <param name="redirectUrl"></param>
-        /// <param name="certificates"></param>
-        /// <param name="scopes"></param>
-        /// <param name="token"></param>
-        /// <returns></returns>
-        Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(string redirectUrl,
-            IEnumerable<X509Certificate2> certificates,
-            string scopes,
-            CancellationToken token = default);
-
-        Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
-        
-        Task<IEnumerable<SecurityKey>?> ResolveJwtKeys(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default);
-    }
-
     public class UdapClient : IUdapClient
     {
         private readonly HttpClient _httpClient;
-        private readonly TrustChainValidator _trustChainValidator;
+        private readonly UdapClientDiscoveryValidator _clientDiscoveryValidator;
         private readonly UdapClientOptions _udapClientOptions;
-        private ITrustAnchorStore? _trustAnchorStore;
         private DiscoveryPolicy _discoveryPolicy;
         private readonly ILogger<UdapClient> _logger;
-        private X509Certificate2? _publicCertificate;
 
         public UdapClient(
             HttpClient httpClient,
-            TrustChainValidator trustChainValidator,
+            UdapClientDiscoveryValidator clientDiscoveryValidator,
             IOptionsMonitor<UdapClientOptions> udapClientOptions,
             ILogger<UdapClient> logger,
-            ITrustAnchorStore? trustAnchorStore = null,
             DiscoveryPolicy? discoveryPolicy = null)
         {
             _httpClient = httpClient;
-            _trustChainValidator = trustChainValidator;
+            _clientDiscoveryValidator = clientDiscoveryValidator;
+            _clientDiscoveryValidator.TokenError += NotifyTokenError;
             _udapClientOptions = udapClientOptions.CurrentValue;
-            _trustAnchorStore = trustAnchorStore;
             _logger = logger;
             _discoveryPolicy = discoveryPolicy ?? DiscoveryPolicy.DefaultMetadataServerPolicy();
         }
@@ -123,22 +65,22 @@ namespace Udap.Client.Client
         /// <inheritdoc/>
         public event Action<X509Certificate2>? Untrusted
         {
-            add => _trustChainValidator.Untrusted += value;
-            remove => _trustChainValidator.Untrusted -= value;
+            add => _clientDiscoveryValidator.Untrusted += value;
+            remove => _clientDiscoveryValidator.Untrusted -= value;
         }
 
         /// <inheritdoc/>
         public event Action<X509ChainElement>? Problem
         {
-            add => _trustChainValidator.Problem += value;
-            remove => _trustChainValidator.Problem -= value;
+            add => _clientDiscoveryValidator.Problem += value;
+            remove => _clientDiscoveryValidator.Problem -= value;
         }
 
         /// <inheritdoc/>
         public event Action<X509Certificate2, Exception>? Error
         {
-            add => _trustChainValidator.Error += value;
-            remove => _trustChainValidator.Error -= value;
+            add => _clientDiscoveryValidator.Error += value;
+            remove => _clientDiscoveryValidator.Error -= value;
         }
 
         /// <inheritdoc/>
@@ -158,13 +100,13 @@ namespace Udap.Client.Client
 
             try
             {
-                var x509Certificate2s = certificates.ToList();
-                if (certificates == null || !x509Certificate2s.Any())
+                var x509Certificates = certificates.ToList();
+                if (certificates == null || !x509Certificates.Any())
                 {
                     throw new Exception("Tiered OAuth: No client certificates provided.");
                 }
 
-                foreach (var clientCert in x509Certificate2s)
+                foreach (var clientCert in x509Certificates)
                 {
                     _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
 
@@ -269,7 +211,6 @@ namespace Udap.Client.Client
             return response;
         }
 
-        
         /// <summary>
         /// Client dynamically supplying the trustAnchorStore
         /// </summary>
@@ -280,13 +221,11 @@ namespace Udap.Client.Client
         /// <returns></returns>
         public Task<UdapDiscoveryDocumentResponse> ValidateResource(
             string baseUrl,
-            ITrustAnchorStore trustAnchorStore,
+            ITrustAnchorStore? trustAnchorStore,
             string? community = null,
             DiscoveryPolicy? discoveryPolicy = null)
         {
-            _trustAnchorStore = trustAnchorStore;
-
-            return ValidateResource(baseUrl, community, discoveryPolicy);
+            return InternalValidateResource(baseUrl, trustAnchorStore, community, discoveryPolicy);
         }
 
         /// <summary>
@@ -302,6 +241,16 @@ namespace Udap.Client.Client
             string? community,
             DiscoveryPolicy? discoveryPolicy)
         {
+            return await InternalValidateResource(baseUrl, null, community, discoveryPolicy);
+        }
+
+        private async Task<UdapDiscoveryDocumentResponse> InternalValidateResource(
+            string baseUrl,
+            ITrustAnchorStore? trustAnchorStore,
+            string? community,
+            DiscoveryPolicy? discoveryPolicy)
+        {
+
             baseUrl.AssertUri();
 
             try
@@ -323,22 +272,21 @@ namespace Udap.Client.Client
                 if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
                 {
                     UdapServerMetaData = disco.Json.Deserialize<UdapMetadata>();
-
                     _logger.LogDebug(UdapServerMetaData?.SerializeToJson());
 
-                    if (!await ValidateJwtToken(UdapServerMetaData!, baseUrl))
+                    if (!await _clientDiscoveryValidator.ValidateJwtToken(UdapServerMetaData!, baseUrl))
                     {
                         throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
                     }
 
-                    if (_publicCertificate != null && !await ValidateTrustChain(_publicCertificate, community))
+                    if (!await _clientDiscoveryValidator.ValidateTrustChain(community, trustAnchorStore))
                     {
                         throw new UnauthorizedAccessException("Failed Trust Chain Validation");
                     }
                 }
                 else
                 {
-                    NotifyTokenError(disco.Error);
+                    NotifyTokenError(disco.Error ?? "Unknown Error");
                 }
 
                 return disco;
@@ -353,6 +301,8 @@ namespace Udap.Client.Client
         
         public async Task<IEnumerable<SecurityKey>?> ResolveJwtKeys(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default)
         {
+            ArgumentNullException.ThrowIfNull(request);
+
             //TODO: Cache Discovery Document?
             var disco = await _httpClient.GetDiscoveryDocumentAsync(request, cancellationToken: cancellationToken);
            
@@ -379,162 +329,6 @@ namespace Udap.Client.Client
             return keys;
         }
 
-        private async Task<bool> ValidateJwtToken(UdapMetadata udapServerMetaData, string baseUrl)
-        {
-            var tokenHandler = new JsonWebTokenHandler();
-
-            if (udapServerMetaData.SignedMetadata == null)
-            {
-               NotifyTokenError($"SignedMetadata is missing at {baseUrl}");
-            }
-            var jwt = tokenHandler.ReadJsonWebToken(udapServerMetaData.SignedMetadata);
-            _publicCertificate = jwt?.GetPublicCertificate();
-
-            var subjectAltNames = _publicCertificate?
-                .GetSubjectAltNames(n =>
-                    n.TagNo == (int)X509Extensions.GeneralNameType.URI) //URI only, by udap.org specification
-                .Select(n => new Uri(n.Item2).OriginalString)
-                .ToArray();
-
-            var validatedToken = await ValidateToken(udapServerMetaData, tokenHandler, subjectAltNames, jwt);
-
-            if (_publicCertificate == null)
-            {
-                NotifyTokenError("Software statement is missing the x5c header.");
-                return false;
-            }
-
-            if (!validatedToken.IsValid)
-            {
-                NotifyTokenError(validatedToken.Exception.Message);
-                return false;
-            }
-
-            if (!baseUrl.TrimEnd('/').Equals(jwt?.Issuer.TrimEnd('/'), StringComparison.OrdinalIgnoreCase))
-            {
-                NotifyTokenError($"JWT iss does not match baseUrl. iss: {jwt?.Issuer.TrimEnd('/')}  baseUrl: {baseUrl.TrimEnd('/')}");
-                return false;
-            }
-
-            if (!udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported
-                    .Contains(jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)))
-            {
-                NotifyTokenError(
-                    $"The x5c header does not match one of the algorithms listed in {UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported}:" +
-                    $"{string.Join(", ", udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported)} ");
-                return false;
-            }
-
-            return true;
-
-        }
-
-        private async Task<TokenValidationResult> ValidateToken(
-            UdapMetadata udapServerMetaData,
-            JsonWebTokenHandler tokenHandler,
-            string[]? subjectAltNames,
-            JsonWebToken? jwt)
-        {
-            var publicKey = _publicCertificate?.PublicKey.GetRSAPublicKey();
-
-            if (publicKey != null)
-            {
-                
-                var validatedToken = tokenHandler.ValidateToken(
-                    udapServerMetaData.SignedMetadata,
-                    new TokenValidationParameters
-                    {
-                        RequireSignedTokens = true,
-                        ValidateIssuer = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuers =
-                            subjectAltNames, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-                        ValidateAudience = false, // No aud for UDAP metadata
-                        ValidateLifetime = true,
-                        IssuerSigningKey = new RsaSecurityKey(publicKey),
-                        ValidAlgorithms = new[]
-                            { jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) }, //must match signing algorithm
-                    });
-
-                return validatedToken;
-            }
-            else
-            {
-                var ecdsaPublicKey = _publicCertificate?.PublicKey.GetECDsaPublicKey();
-
-                var validatedToken = tokenHandler.ValidateToken(
-                    udapServerMetaData.SignedMetadata,
-                    new TokenValidationParameters
-                    {
-                        RequireSignedTokens = true,
-                        ValidateIssuer = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuers =
-                            subjectAltNames, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-                        ValidateAudience = false, // No aud for UDAP metadata
-                        ValidateLifetime = true,
-                        IssuerSigningKey = new ECDsaSecurityKey(ecdsaPublicKey),
-                        ValidAlgorithms = new[]
-                            { jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) }, //must match signing algorithm
-                    });
-
-                return validatedToken;
-            }
-        }
-
-        private async Task<bool> ValidateTrustChain(X509Certificate2 certificate, string? community)
-        {
-            var store = _trustAnchorStore == null ? null : await _trustAnchorStore.Resolve();
-            var anchors = X509Certificate2Collection(community, store).ToList();
-
-            if (!anchors.Any())
-            {
-                _logger.LogWarning($"{nameof(UdapClient)} does not contain any anchor certificates");
-                return false;
-            }
-
-            var anchorCertificates = anchors.ToX509Collection();
-
-            if (anchorCertificates == null || !anchorCertificates.Any())
-            {
-                _logger.LogWarning($"{nameof(UdapClient)} does not contain any anchor certificates");
-                return false;
-            }
-
-            return _trustChainValidator.IsTrustedCertificate(
-                nameof(UdapClient),
-                certificate,
-                anchors.SelectMany(a =>
-                        a.Intermediates == null
-                            ? Enumerable.Empty<X509Certificate2>()
-                            : a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate)))
-                    .ToArray().ToX509Collection(),
-                anchorCertificates);
-        }
-
-
-        private static IEnumerable<Anchor> X509Certificate2Collection(string? community, ITrustAnchorStore? store)
-        {
-            IEnumerable<Anchor> anchorCertificates;
-
-            if (store == null)
-            {
-                return Enumerable.Empty<Anchor>();
-            }
-
-            if (community != null && store.AnchorCertificates.Any(a => a.Community != null))
-            {
-                anchorCertificates = store.AnchorCertificates
-                    .Where(a => a.Community == community)
-                    .Select(a => a);
-            }
-            else
-            {
-                anchorCertificates = store.AnchorCertificates;
-            }
-
-            return anchorCertificates;
-        }
 
         private void NotifyTokenError(string message)
         {
@@ -553,272 +347,5 @@ namespace Udap.Client.Client
             }
         }
     }
-
-    // TODO: UdapClient should use UdapClientMessageHandler
-    // The UdapClientMessageHandler came into existence when adding Tiered OAuth 
-    // and attached it to the BackchannelHttpHandler of Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions
-    public class UdapClientMessageHandler : DelegatingHandler
-    {
-        private readonly TrustChainValidator _trustChainValidator;
-        private ITrustAnchorStore? _trustAnchorStore;
-        private DiscoveryPolicy _discoveryPolicy;
-        private readonly ILogger<UdapClient> _logger;
-        private X509Certificate2? _publicCertificate;
-
-        public UdapClientMessageHandler(
-            TrustChainValidator trustChainValidator,
-            ILogger<UdapClient> logger,
-            ITrustAnchorStore? trustAnchorStore = null,
-            DiscoveryPolicy? discoveryPolicy = null)
-        {
-            _trustChainValidator = trustChainValidator;
-            _trustAnchorStore = trustAnchorStore;
-            _logger = logger;
-            _discoveryPolicy = discoveryPolicy ?? DiscoveryPolicy.DefaultMetadataServerPolicy();
-        }
-
-        public UdapMetadata? UdapDynamicClientRegistrationDocument { get; set; }
-        public UdapMetadata? UdapServerMetaData { get; set; }
-
-
-
-        /// <inheritdoc/>
-        public event Action<X509Certificate2>? Untrusted
-        {
-            add => _trustChainValidator.Untrusted += value;
-            remove => _trustChainValidator.Untrusted -= value;
-        }
-
-        /// <inheritdoc/>
-        public event Action<X509ChainElement>? Problem
-        {
-            add => _trustChainValidator.Problem += value;
-            remove => _trustChainValidator.Problem -= value;
-        }
-
-        /// <inheritdoc/>
-        public event Action<X509Certificate2, Exception>? Error
-        {
-            add => _trustChainValidator.Error += value;
-            remove => _trustChainValidator.Error -= value;
-        }
-
-        /// <inheritdoc/>
-        public event Action<string>? TokenError;
-
-
-        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
-            CancellationToken cancellationToken)
-        {
-            var baseUrl = request.RequestUri?.AbsoluteUri.GetBaseUrlFromMetadataUrl();
-            var community = request.RequestUri?.Query.GetCommunityFromQueryParams();
-
-            var metadata = await base.SendAsync(request, cancellationToken);
-            metadata.EnsureSuccessStatusCode();
-
-            var disco = await metadata.Content.ReadFromJsonAsync<DiscoveryDocumentResponse>(cancellationToken: cancellationToken);
-
-            if (disco == null)
-            {
-                throw new SecurityTokenInvalidTypeException("Failed to read UDAP Discovery Document");
-            }
-
-            if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
-            {
-                UdapServerMetaData = disco.Json.Deserialize<UdapMetadata>();
-
-                if (!await ValidateJwtToken(UdapServerMetaData!, baseUrl!))
-                {
-                    throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
-                }
-
-                if (_publicCertificate != null && !await ValidateTrustChain(_publicCertificate, community))
-                {
-                    throw new UnauthorizedAccessException("Failed Trust Chain Validation");
-                }
-            }
-            else
-            {
-                NotifyTokenError(disco.Error);
-            }
-
-            return metadata;
-
-        }
-
-
-
-        private async Task<bool> ValidateJwtToken(UdapMetadata udapServerMetaData, string baseUrl)
-        {
-            var tokenHandler = new JsonWebTokenHandler();
-            var jwt = tokenHandler.ReadJsonWebToken(udapServerMetaData.SignedMetadata);
-            _publicCertificate = jwt?.GetPublicCertificate();
-
-            var subjectAltNames = _publicCertificate?
-                .GetSubjectAltNames(n =>
-                    n.TagNo == (int)X509Extensions.GeneralNameType.URI) //URI only, by udap.org specification
-                .Select(n => new Uri(n.Item2).AbsoluteUri)
-                .ToArray();
-
-            var validatedToken = await ValidateToken(udapServerMetaData, tokenHandler, subjectAltNames, jwt);
-
-            if (_publicCertificate == null)
-            {
-                NotifyTokenError("Software statement is missing the x5c header.");
-                return false;
-            }
-
-            if (!validatedToken.IsValid)
-            {
-                NotifyTokenError(validatedToken.Exception.Message);
-                return false;
-            }
-
-            if (!baseUrl.Equals(jwt?.Issuer, StringComparison.OrdinalIgnoreCase))
-            {
-                NotifyTokenError("JWT iss does not match baseUrl.");
-                return false;
-            }
-
-            if (!udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported
-                    .Contains(jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)))
-            {
-                NotifyTokenError(
-                    $"The x5c header does not match one of the algorithms listed in {UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported}:" +
-                    $"{string.Join(", ", udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported)} ");
-                return false;
-            }
-
-            return true;
-
-        }
-
-
-
-
-        private async Task<TokenValidationResult> ValidateToken(
-            UdapMetadata udapServerMetaData,
-            JsonWebTokenHandler tokenHandler,
-            string[]? subjectAltNames,
-            JsonWebToken? jwt)
-        {
-            var publicKey = _publicCertificate?.PublicKey.GetRSAPublicKey();
-
-            if (publicKey != null)
-            {
-                var validatedToken = tokenHandler.ValidateToken(
-                    udapServerMetaData.SignedMetadata,
-                    new TokenValidationParameters
-                    {
-                        RequireSignedTokens = true,
-                        ValidateIssuer = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuers =
-                            subjectAltNames, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-                        ValidateAudience = false, // No aud for UDAP metadata
-                        ValidateLifetime = true,
-                        IssuerSigningKey = new RsaSecurityKey(publicKey),
-                        ValidAlgorithms = new[]
-                            { jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) }, //must match signing algorithm
-                    });
-
-                return validatedToken;
-            }
-            else
-            {
-                var ecdsaPublicKey = _publicCertificate?.PublicKey.GetECDsaPublicKey();
-
-                var validatedToken = tokenHandler.ValidateToken(
-                    udapServerMetaData.SignedMetadata,
-                    new TokenValidationParameters
-                    {
-                        RequireSignedTokens = true,
-                        ValidateIssuer = true,
-                        ValidateIssuerSigningKey = true,
-                        ValidIssuers =
-                            subjectAltNames, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
-                        ValidateAudience = false, // No aud for UDAP metadata
-                        ValidateLifetime = true,
-                        IssuerSigningKey = new ECDsaSecurityKey(ecdsaPublicKey),
-                        ValidAlgorithms = new[]
-                            { jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) }, //must match signing algorithm
-                    });
-
-                return validatedToken;
-            }
-        }
-
-
-
-        private async Task<bool> ValidateTrustChain(X509Certificate2 certificate, string? community)
-        {
-            var store = _trustAnchorStore == null ? null : await _trustAnchorStore.Resolve();
-            var anchors = X509Certificate2Collection(community, store).ToList();
-
-            if (!anchors.Any())
-            {
-                _logger.LogWarning($"{nameof(UdapClient)} does not contain any anchor certificates");
-                return false;
-            }
-
-            var anchorCertificates = anchors.ToX509Collection();
-
-            if (anchorCertificates == null || !anchorCertificates.Any())
-            {
-                _logger.LogWarning($"{nameof(UdapClient)} does not contain any anchor certificates");
-                return false;
-            }
-
-            return _trustChainValidator.IsTrustedCertificate(
-                nameof(UdapClient),
-                certificate,
-                anchors.SelectMany(a =>
-                        a.Intermediates == null
-                            ? Enumerable.Empty<X509Certificate2>()
-                            : a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate)))
-                    .ToArray().ToX509Collection(),
-                anchorCertificates);
-        }
-
-
-        private static IEnumerable<Anchor> X509Certificate2Collection(string? community, ITrustAnchorStore? store)
-        {
-            IEnumerable<Anchor> anchorCertificates;
-
-            if (store == null)
-            {
-                return Enumerable.Empty<Anchor>();
-            }
-
-            if (community != null && store.AnchorCertificates.Any(a => a.Community != null))
-            {
-                anchorCertificates = store.AnchorCertificates
-                    .Where(a => a.Community == community)
-                    .Select(a => a);
-            }
-            else
-            {
-                anchorCertificates = store.AnchorCertificates;
-            }
-
-            return anchorCertificates;
-        }
-
-        private void NotifyTokenError(string message)
-        {
-            _logger.LogWarning(message);
-
-            if (TokenError != null)
-            {
-                try
-                {
-                    TokenError(message);
-                }
-                catch
-                {
-                    // ignored
-                }
-            }
-        }
-    }
+    
 }

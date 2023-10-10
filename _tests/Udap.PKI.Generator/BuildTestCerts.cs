@@ -29,6 +29,8 @@ using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
 namespace Udap.PKI.Generator
 {
+
+    [Collection("Udap.PKI.Generator")]
     public class MakeCa : CertificateBase
     {
         private readonly ITestOutputHelper _testOutputHelper;
@@ -607,6 +609,16 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/FhirLabsApi/SureFhirLabs_CA.cer",
                 true);
 
+            // Copy CA to Udap.Auth.Server so it can be added to the Docker Container trust store. 
+            File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
+                $"{BaseDir}/../../examples/Udap.Auth.Server/SureFhirLabs_CA.cer",
+                true);
+
+            // Copy CA to UdapEd so it can be added to the Docker Container trust store. 
+            File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
+                $"{BaseDir}/../../examples/clients/UdapEd/Server/SureFhirLabs_CA.cer",
+                true);
+
             // SubAltName is localhost and host.docker.internal. Udap.Idp server can then be reached from
             // other docker images via host.docker.internal host name.
             // Example: FhirLabsApi project calling Udap.Idp via the back channel OpenIdConnect access token validation.
@@ -879,7 +891,10 @@ namespace Udap.PKI.Generator
                 {
                     "http://localhost/fhir/r4",
                     "https://localhost:7016/fhir/r4",
-                    "https://localhost:5055"
+                    "https://host.docker.internal:7016/fhir/r4",
+                    // For IdP Server
+                    "https://localhost:5055",
+                    "https://host.docker.internal:5055"
                 },                                                                          //SubjAltNames
                 "FhirLabsApi",                                                              //deliveryProjectPath    
                 "RSA"
@@ -896,7 +911,10 @@ namespace Udap.PKI.Generator
                 {
                     "http://localhost/fhir/r4",
                     "https://localhost:7016/fhir/r4",
-                    "https://localhost:5057"
+                    "https://host.docker.internal:7016/fhir/r4",
+                    // For IdP Server
+                    "https://localhost:5057",
+                    "https://host.docker.internal:5057"
                 },
                 "FhirLabsApi",                                                              //deliveryProjectPath    
                 "RSA"
@@ -909,7 +927,9 @@ namespace Udap.PKI.Generator
                 "intermediateLocalhostCert3",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert3",                                          //issuedName
                 "CN=localhost3, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",//issuedDistinguishedName
-                new List<string> { "http://localhost/fhir/r4" },                            //SubjAltNames
+                new List<string> { 
+                    "http://localhost/fhir/r4",
+                    "https://host.docker.internal:7016/fhir/r4" },                            //SubjAltNames
                 "FhirLabsApi",                                                              //deliveryProjectPath    
                 "RSA"
             };
@@ -960,7 +980,9 @@ namespace Udap.PKI.Generator
                 "CN=ECDSA, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",     //issuedDistinguishedName
                 new List<string>
                 {
-                    "http://localhost/fhir/r4", "https://localhost:7016/fhir/r4"
+                    "http://localhost/fhir/r4", 
+                    "https://localhost:7016/fhir/r4",
+                    "https://host.docker.internal:7016/fhir/r4"
                 },                                                                          //SubjAltNames
                 "FhirLabsApi",                                                              //deliveryProjectPath    
                 "ECDSA"
@@ -1024,7 +1046,7 @@ namespace Udap.PKI.Generator
             string cryptoAlgorithm)
         {
             var LocalhostCrl = $"{communityStorePath}/crl";
-            var LocalhostCdp = "http://localhost:5033/crl";
+            var LocalhostCdp = "http://host.docker.internal:5033/crl";
             var LocalhostUdapIntermediates = $"{communityStorePath}/intermediates";
             var LocalhostUdapIssued = $"{communityStorePath}/issued";
 
@@ -1090,7 +1112,7 @@ namespace Udap.PKI.Generator
                         MakeCdp($"{LocalhostCdp}/{anchorName}.crl"));
 
                     var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-                    subAltNameBuilder.AddUri(new Uri("http://localhost"));
+                    subAltNameBuilder.AddUri(new Uri("http://host.docker.internal"));
                     var x509Extension = subAltNameBuilder.Build();
                     intermediateReq.CertificateExtensions.Add(x509Extension);
 
@@ -1121,7 +1143,7 @@ namespace Udap.PKI.Generator
                             issuedSubjectAltNames,
                             $"{LocalhostUdapIssued}/{issuedName}",
                             $"{LocalhostCdp}/{intermediateName}.crl",
-                            $"http://localhost:5033/certs/{intermediateName}.cer"
+                            $"http://host.docker.internal:5033/certs/{intermediateName}.cer"
                         );
                     }
                     else
@@ -1134,7 +1156,7 @@ namespace Udap.PKI.Generator
                             issuedSubjectAltNames,
                             $"{LocalhostUdapIssued}/{issuedName}",
                             $"{LocalhostCdp}/{intermediateName}.crl",
-                            $"http://localhost:5033/certs/{intermediateName}.cer"
+                            $"http://host.docker.internal:5033/certs/{intermediateName}.cer"
                         );
 
                         if (issuedName == "fhirLabsApiClientLocalhostCert")
@@ -1150,7 +1172,7 @@ namespace Udap.PKI.Generator
                                 },
                                 $"{LocalhostUdapIssued}/idpserver",
                                 $"{LocalhostCdp}/{intermediateName}.crl",
-                                $"http://localhost:5033/certs/{intermediateName}.cer"
+                                $"http://host.docker.internal:5033/certs/{intermediateName}.cer"
                             );
                         }
                     }

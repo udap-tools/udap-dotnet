@@ -49,11 +49,11 @@ services:
   bindings:
   - protocol: https
     name: https
-    host: localhost
+    host: host.docker.internal
     port: 5055
   env:
   - name: UdapIdpBaseUrl
-    value: https://localhost:5055
+    value: https://host.docker.internal:5055
 
 
 - name: udap-idp-2
@@ -61,18 +61,18 @@ services:
   bindings:
   - protocol: https
     name: https
-    host: localhost
+    host: host.docker.internal
     port: 5057
   env:
   - name: UdapIdpBaseUrl
-    value: https://localhost:5057
+    value: https://host.docker.internal:5057
 
 - name: certificate-server
   project: examples/Udap.Certificates.Server/Udap.Certificates.Server.csproj
   bindings:
   - protocol: http
     name: http
-    host: localhost
+    host: host.docker.internal
     port: 5033
 
 

@@ -197,7 +197,7 @@ public static class SeedDataIdentityProvider2
         //
         if (configDbContext.IdentityResources.All(i => i.Name != IdentityServerConstants.StandardScopes.Profile))
         {
-            var identityResource = new IdentityResources.Profile();
+            var identityResource = new UdapIdentityResources.Profile();
             configDbContext.IdentityResources.Add(identityResource.ToEntity());
 
             await configDbContext.SaveChangesAsync();

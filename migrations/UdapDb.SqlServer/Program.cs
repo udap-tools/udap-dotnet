@@ -59,7 +59,7 @@ else if (connStrName.Equals("DefaultConnection", StringComparison.OrdinalIgnoreC
 }
 else if (connStrName.Equals("gcp_db", StringComparison.OrdinalIgnoreCase))
 {
-    await SeedData.EnsureSeedData(
+    await Seed_GCP_Auth_Server.EnsureSeedData(
         connectionString,
         "../../../../../_tests/Udap.PKI.Generator/certstores",
         Log.Logger);

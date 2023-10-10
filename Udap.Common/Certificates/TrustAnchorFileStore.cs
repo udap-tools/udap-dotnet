@@ -18,17 +18,14 @@ public class TrustAnchorFileStore : ITrustAnchorStore
 {
     private readonly IOptionsMonitor<UdapFileCertStoreManifest> _manifest;
     private readonly ILogger<TrustAnchorFileStore> _logger;
-    private readonly string? _resourceServerName;
     private bool _resolved;
 
 
     public TrustAnchorFileStore(
         IOptionsMonitor<UdapFileCertStoreManifest> manifest,
-        ILogger<TrustAnchorFileStore> logger,
-        string? resourceServerName = null)
+        ILogger<TrustAnchorFileStore> logger)
     {
         _manifest = manifest;
-        _resourceServerName = resourceServerName;
         _logger = logger;
 
         _manifest.OnChange(_ =>
@@ -53,27 +50,9 @@ public class TrustAnchorFileStore : ITrustAnchorStore
     // TODO convert to Lazy<T> to protect from race conditions
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
     {
-        ICollection<Common.Metadata.Community>? communities;
+       var communities = manifestCurrentValue.Communities;
 
-        if (_resourceServerName == null)
-        {
-            _logger.LogInformation($"Loading first ResourceServers from UdapFileCertStoreManifest:ResourceServers.");
-
-            communities = manifestCurrentValue.ResourceServers.FirstOrDefault()?.Communities;
-        }
-        else
-        {
-            _logger.LogInformation($"Loading UdapFileCertStoreManifest:ResourceServers:Name {_resourceServerName}.");
-
-            communities = manifestCurrentValue
-                .ResourceServers
-                .SingleOrDefault(r => r.Name == _resourceServerName)
-                ?.Communities;
-        }
-
-        _logger.LogInformation($"{communities?.Count ?? 0} communities loaded");
-
-        if (communities == null) return;
+        _logger.LogInformation($"{communities.Count} communities loaded");
 
         foreach (var community in communities)
         {

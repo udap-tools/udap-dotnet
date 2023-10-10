@@ -10,12 +10,8 @@ namespace Udap.Client.Rest;
 public class FhirClientWithUrlProvider : FhirClient
 {
     public FhirClientWithUrlProvider(IBaseUrlProvider baseUrlProvider, HttpClient httpClient, FhirClientSettings? settings = null, IStructureDefinitionSummaryProvider? provider = null)
-         : base(baseUrlProvider.GetBaseUrl(), httpClient, settings, provider)
+         : base(baseUrlProvider.GetBaseUrl(), httpClient, settings)
     {
-        var requester = new HttpClientRequester(baseUrlProvider.GetBaseUrl(), Settings, httpClient);
-        Requester = requester;
-
-        // Expose default request headers to user.
-        RequestHeaders = requester.Client.DefaultRequestHeaders;
+        
     }
 }

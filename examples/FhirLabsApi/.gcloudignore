@@ -8,3 +8,5 @@ app.yaml
 README.md
 launchSettings.json
 fhirLabsApiClientLocalhostCert.*
+appsettings.Development.json
+appsettings.Production.json

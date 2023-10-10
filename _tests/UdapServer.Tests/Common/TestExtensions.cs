@@ -6,8 +6,8 @@ using Udap.Client.Client;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Common.Certificates;
 using Microsoft.Extensions.Logging;
-using Udap.Client.Configuration;
 using FluentAssertions.Common;
+using Udap.Client.Configuration;
 
 namespace UdapServer.Tests.Common;
 public static class TestExtensions
@@ -28,12 +28,11 @@ public static class TestExtensions
         builder.Services.AddScoped<IUdapClient>(sp =>
             new UdapClient(
                 pipeline.BrowserClient,
-                sp.GetRequiredService<TrustChainValidator>(),
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                sp.GetRequiredService<ITrustAnchorStore>()));
-        
-            
+                sp.GetRequiredService<ILogger<UdapClient>>()));
+
+        builder.Services.TryAddSingleton<UdapClientDiscoveryValidator>();
         builder.Services.TryAddSingleton<UdapClientMessageHandler>();
         builder.Services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
         return builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>(

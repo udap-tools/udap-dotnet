@@ -15,6 +15,7 @@ using Duende.IdentityServer.Stores;
 using Duende.IdentityServer.Validation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
+using Udap.Model;
 
 namespace Udap.Server.ResponseHandling;
 public class UdapTokenResponseGenerator : TokenResponseGenerator
@@ -32,7 +33,15 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
     /// <param name="resources">The resources.</param>
     /// <param name="clients">The clients.</param>
     /// <param name="logger">The logger.</param>
-    public UdapTokenResponseGenerator(IProfileService profile, ISystemClock clock, ITokenService tokenService, IRefreshTokenService refreshTokenService, IScopeParser scopeParser, IResourceStore resources, IClientStore clients, ILogger<TokenResponseGenerator> logger) : base(clock, tokenService, refreshTokenService, scopeParser, resources, clients, logger)
+    public UdapTokenResponseGenerator(
+        IProfileService profile, 
+        ISystemClock clock, 
+        ITokenService tokenService, 
+        IRefreshTokenService refreshTokenService, 
+        IScopeParser scopeParser, 
+        IResourceStore resources, 
+        IClientStore clients, 
+        ILogger<TokenResponseGenerator> logger) : base(clock, tokenService, refreshTokenService, scopeParser, resources, clients, logger)
     {
         _profile = profile;
     }
@@ -48,7 +57,7 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
         Logger.LogTrace("Creating response for authorization code request");
 
         var response = await ProcessTokenRequestAsync(request);
-
+        
         if (request.ValidatedRequest.AuthorizationCode == null)
         {
             throw new InvalidOperationException($"Missing {nameof(AuthorizationCode)}.");
@@ -82,7 +91,7 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
             validationResult.Subject!,
             validationResult.Client,
             IdentityServerConstants.ProfileDataCallers.UserInfoEndpoint,
-            new List<string>() { "hl7_identifier" });
+            new List<string>() { UdapConstants.JwtClaimTypes.Hl7Identifier });
         // context.RequestedResources = validatedResources;
 
         _profile.GetProfileDataAsync(context);

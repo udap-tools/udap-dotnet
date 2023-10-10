@@ -20,11 +20,14 @@ using Udap.Common.Models;
 using Udap.Model;
 using Udap.Server.Infrastructure.Clock;
 using Udap.Server.Registration;
+using Udap.Server.Validation;
+using Udap.Server.Validation.Default;
 
 //
 // See reason for Microsoft.Extensions.DependencyInjection namespace
 // here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
 //
+// ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
 public static class UdapConfigurationServiceCollectionExtensions
@@ -36,38 +39,25 @@ public static class UdapConfigurationServiceCollectionExtensions
     /// Remember to supply a IUdapClientRegistrationStore to access the certificate anchors
     /// and storage process for new client registrations.
     /// </summary>
-    /// <param name="services"></param>
+    /// <param name="services">IServiceCollection</param>
     /// <returns></returns>
-    public static IServiceCollection AddUdapServerConfiguration(this IServiceCollection services)
+    public static IUdapServiceBuilder AddUdapServerConfiguration(this IUdapServiceBuilder builder)
     {
-        services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
+        builder.Services.TryAddSingleton<IScopeExpander, DefaultScopeExpander>();
+        builder.Services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
 #if NET8_0_OR_GREATER
         services.TryAddTransient<IClock, DefaultClock>();
 #else
-        services.TryAddTransient<IClock, LegacyClock>();
+        builder.Services.TryAddTransient<IClock, LegacyClock>();
 #endif
-        services.TryAddTransient<IUdapDynamicClientRegistrationValidator, UdapDynamicClientRegistrationValidator>();
-        services.TryAddSingleton<TrustChainValidator>();
-
-        return services;
-    }
-
-
-    /// <summary>
-    /// Register a <see cref="UdapDynamicClientRegistrationEndpoint"/> and a
-    /// <see cref="UdapDynamicClientRegistrationValidator"/>.
-    /// Remember to supply a IUdapClientRegistrationStore to access the certificate anchors
-    /// and storage process for new client registrations.
-    /// </summary>
-    /// <returns></returns>
-    public static IIdentityServerBuilder AddUdapServerConfiguration(this IIdentityServerBuilder builder)
-    {
-        builder.Services.AddUdapServerConfiguration();
-
+        builder.Services.TryAddTransient<IUdapDynamicClientRegistrationValidator, UdapDynamicClientRegistrationValidator>();
+        builder.Services.TryAddSingleton<TrustChainValidator>();
+        
         return builder;
     }
 
-    public static IIdentityServerBuilder AddUdapSigningCredentials(this IIdentityServerBuilder builder)
+
+    public static IUdapServiceBuilder AddUdapSigningCredentials(this IUdapServiceBuilder builder)
     {
         builder.Services.AddSingleton<IEnumerable<ISigningCredentialStore>>(resolver =>
         {
@@ -167,7 +157,7 @@ public static class UdapConfigurationServiceCollectionExtensions
             // https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
             // https://stackoverflow.com/a/57330499/6115838
             //
-            byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
+            var encryptedPrivKeyBytes = key?.ExportEncryptedPkcs8PrivateKey(
                 "ILikePasswords",
                 new PbeParameters(
                     PbeEncryptionAlgorithm.Aes256Cbc,
@@ -175,7 +165,7 @@ public static class UdapConfigurationServiceCollectionExtensions
                     iterationCount: 100_000));
 
             ecdsa.ImportEncryptedPkcs8PrivateKey("ILikePasswords".AsSpan(), encryptedPrivKeyBytes.AsSpan(),
-                out int bytesRead);
+                out int _);
         }
         else
         {
@@ -245,7 +235,7 @@ public static class UdapConfigurationServiceCollectionExtensions
             // https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
             // https://stackoverflow.com/a/57330499/6115838
             //
-            byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
+            var encryptedPrivKeyBytes = key?.ExportEncryptedPkcs8PrivateKey(
                 "ILikePasswords",
                 new PbeParameters(
                     PbeEncryptionAlgorithm.Aes256Cbc,
@@ -253,7 +243,7 @@ public static class UdapConfigurationServiceCollectionExtensions
                     iterationCount: 100_000));
 
             ecdsa.ImportEncryptedPkcs8PrivateKey("ILikePasswords".AsSpan(), encryptedPrivKeyBytes.AsSpan(),
-                out int bytesRead);
+                out int _);
         }
         else
         {

@@ -11,7 +11,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 7
     steps:
     - uses: actions/checkout@v3
     - uses: actions/setup-dotnet@v3
@@ -30,7 +30,7 @@ jobs:
     - name: Test Udap.Common.Tests
       run: dotnet test -c Release  _tests/Udap.Common.Tests/Udap.Common.Tests.csproj --no-build --verbosity normal
     - name: Test UdapMetadata.Tests
-      run: dotnet test -c Release  _tests/UdapMetadata.Tests/UdapMetadata.Tests.csproj --verbosity detailed
+      run: dotnet test -c Release  _tests/UdapMetadata.Tests/UdapMetadata.Tests.csproj --no-build --verbosity normal
     - name: Test UdapServer.Tests
       run: dotnet test -c Release _tests/UdapServer.Tests/UdapServer.Tests.csproj --no-build --verbosity normal
     

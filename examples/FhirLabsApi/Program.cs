@@ -11,7 +11,6 @@ using System.Net;
 using System.Text.Json;
 using FhirLabsApi;
 using FhirLabsApi.Extensions;
-using Google.Cloud.SecretManager.V1;
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
 using Hl7.Fhir.Utility;
@@ -36,6 +35,8 @@ builder.Host.UseSerilog((ctx, lc) => lc
     .ReadFrom.Configuration(ctx.Configuration));
 
 // Add services to the container.
+
+builder.Configuration.AddJsonFile("/secret/fhirlabs_appsettings", true, false);
 
 //
 // TODO: I would rather do the following:
@@ -65,9 +66,8 @@ builder.Services
     {
         // An example HTML formatter that puts the raw XML on the output
         options.OutputFormatters.Add(new SimpleHtmlFhirOutputFormatter());
-        // need this to serialize udap metadata becaue UseFhirServerController clears OutputFormatters
-        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));
-        
+        // need this to serialize udap metadata because UseFhirServerController clears OutputFormatters
+        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));        
     })
     .AddNewtonsoftJson(options =>
     {
@@ -87,7 +87,7 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
     {
         options.Authority = builder.Configuration["Jwt:Authority"];
         options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
-        
+     
         
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -96,14 +96,7 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
     });
 
 
-// UDAP CertStore
-//
-
-//
-// Special IPrivateCertificateStore for Google Cloud Deploy
-// 
-//
-builder.Services.Configure<UdapFileCertStoreManifest>(GetUdapFileCertStoreManifest(builder));
+builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
 builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
     new IssuedCertificateStore(
         sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
@@ -189,37 +182,7 @@ app.MapControllers()
     .RequireAuthorization()
     .RequireRateLimiting(RateLimitExtensions.GetPolicy);
 
-
 app.Run();
-
-IConfigurationSection GetUdapFileCertStoreManifest(WebApplicationBuilder webApplicationBuilder)
-{
-    //Ugly but works so far.
-    if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
-    {
-        // Log.Logger.Information("Loading connection string from gcp_db");
-        // connectionString = Environment.GetEnvironmentVariable("gcp_db");
-        // Log.Logger.Information($"Loaded connection string, length:: {connectionString?.Length}");
-
-        Log.Logger.Information("Creating client");
-        var client = SecretManagerServiceClient.Create();
-        
-        var secretResource = "projects/288013792534/secrets/UdapFileCertStoreManifest/versions/latest";
-
-        Log.Logger.Information("Requesting {secretResource");
-        // Call the API.
-        var result = client.AccessSecretVersion(secretResource);
-
-        // Convert the payload to a string. Payloads are bytes by default.
-        var stream = new MemoryStream(result.Payload.Data.ToByteArray());
-       
-        
-        webApplicationBuilder.Configuration.AddJsonStream(stream);
-    }
-
-    return webApplicationBuilder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST);
-}
-
 
 //
 // Accessible to unit tests

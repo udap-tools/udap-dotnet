@@ -41,6 +41,7 @@ using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Server;
+using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Stores.InMemory;
@@ -154,7 +155,10 @@ public class UdapIdentityServerPipeline
             if (OnFederatedSignout != null) handler.OnFederatedSignout = OnFederatedSignout;
             return handler;
         });
-        
+
+        services.AddUdapServerAsIdentityProvider(baseUrl: BaseUrl)
+            .AddInMemoryUdapCertificates(Communities);
+
         services.AddIdentityServer(options =>
             {
                 options.Events = new EventsOptions
@@ -164,16 +168,15 @@ public class UdapIdentityServerPipeline
                     RaiseInformationEvents = true,
                     RaiseSuccessEvents = true
                 };
-                
+
                 Options = options;
             })
             .AddInMemoryClients(Clients)
             .AddInMemoryIdentityResources(IdentityScopes)
             .AddInMemoryApiResources(ApiResources)
             .AddInMemoryApiScopes(ApiScopes)
-            .AddTestUsers(Users)
-            .AddUdapServerAsIdentityProvider(baseUrl: BaseUrl)
-            .AddInMemoryUdapCertificates(Communities);
+            .AddTestUsers(Users);
+            
 
         services.AddUdapMetadataServer(builder.Configuration);
 
@@ -255,15 +258,15 @@ public class UdapIdentityServerPipeline
         
 
         // UI endpoints
-        app.Map(Constants.UIConstants.DefaultRoutePaths.Login.EnsureLeadingSlash(), path =>
+        app.Map(Constants.UIConstants.DefaultRoutePaths.Login.EnsureLeadingSlash()!, path =>
         {
             path.Run(ctx => OnLogin(ctx));
         });
-        app.Map(Constants.UIConstants.DefaultRoutePaths.Logout.EnsureLeadingSlash(), path =>
+        app.Map(Constants.UIConstants.DefaultRoutePaths.Logout.EnsureLeadingSlash()!, path =>
         {
             path.Run(ctx => OnLogout(ctx));
         });
-        app.Map(Constants.UIConstants.DefaultRoutePaths.Consent.EnsureLeadingSlash(), path =>
+        app.Map(Constants.UIConstants.DefaultRoutePaths.Consent.EnsureLeadingSlash()!, path =>
         {
             path.Run(ctx => OnConsent(ctx));
         });
@@ -271,7 +274,7 @@ public class UdapIdentityServerPipeline
         {
             path.Run(ctx => OnCustom(ctx));
         });
-        app.Map(Constants.UIConstants.DefaultRoutePaths.Error.EnsureLeadingSlash(), path =>
+        app.Map(Constants.UIConstants.DefaultRoutePaths.Error.EnsureLeadingSlash()!, path =>
         {
             path.Run(ctx => OnError(ctx));
         });

@@ -6,8 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <DockerfileContext>.</DockerfileContext>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileRunArguments>-p "5055:443" -e ASPNETCORE_HTTPS_PORT=5055 </DockerfileRunArguments>
+    <DockerfileRunArguments>-p "5057:443" -e ASPNETCORE_HTTPS_PORT=5057 </DockerfileRunArguments>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <UserSecretsId>bc54de63-9a75-4a70-8fe9-78456839baf1</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,21 +19,21 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Duende.IdentityServer" Version="6.3.3" />
-    <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="6.3.3" />
+    <PackageReference Include="Duende.IdentityServer" Version="6.3.5" />
+    <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="6.3.5" />
     <PackageReference Include="Google.Cloud.SecretManager.V1" Version="2.1.0" />
     <PackageReference Include="Google.Cloud.Storage.V1" Version="4.6.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.10">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.11">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.11" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
-    <PackageReference Include="OpenTelemetry" Version="1.5.1" />
-    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.5.1" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.5.1" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.5.1" />
+    <PackageReference Include="OpenTelemetry" Version="1.6.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.6.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.6.0" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.6.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.0.0-rc9.14" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.0.0-rc9.14" />
     <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.0.0-rc9.14" />

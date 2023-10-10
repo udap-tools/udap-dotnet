@@ -27,6 +27,7 @@ using Xunit.Abstractions;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
+[Collection("Udap.Auth.Server")]
 public class ReplayRegistrationTests
 {
     private readonly ITestOutputHelper _testOutputHelper;

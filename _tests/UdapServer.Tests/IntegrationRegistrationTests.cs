@@ -51,17 +51,14 @@ namespace UdapServer.Tests
             Activator.CreateInstance<ConfigurationStoreOptions>();
 
         public string DatabaseName = "UdapTestDb";
-        public X509Certificate2 AnchorCert;
+        public required X509Certificate2 AnchorCert = new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
+            "caWeatherApiLocalhostCert.cer"));
 
         /// <summary>
         /// Called immediately after the class has been created, before it is used.
         /// </summary>
         public async Task InitializeAsync()
         {
-            AnchorCert =
-                new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
-                    "caWeatherApiLocalhostCert.cer"));
-
             await SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", new Mock<Serilog.ILogger>().Object);
 
             // await SeedData();
@@ -78,6 +75,7 @@ namespace UdapServer.Tests
         }
     }
 
+    [Collection("Udap.Auth.Server")]
     public class IntegrationRegistrationTests : IClassFixture<DatabaseProviderFixture<UdapConfigurationStoreOptions>>
     {
         private readonly ITestOutputHelper _testOutputHelper;
@@ -100,8 +98,11 @@ namespace UdapServer.Tests
         public async Task BadIUdapClientConfigurationStore()
         {
             var services = new ServiceCollection();
-            services.AddIdentityServer()
-                .AddUdapServerConfiguration();
+            
+            var builder = services.AddUdapServerBuilder();
+            builder.AddUdapServerConfiguration();
+
+            services.AddIdentityServer();
             services.AddSingleton<IUdapClientConfigurationStore, ErrorConfigStore>();
             var sp = services.BuildServiceProvider();
 
@@ -122,8 +123,11 @@ namespace UdapServer.Tests
         public async Task GoodIUdapClientConfigurationStore()
         {
             var services = new ServiceCollection();
-            services.AddIdentityServer()
-                .AddUdapServerConfiguration();
+
+            var builder = services.AddUdapServerBuilder();
+            builder.AddUdapServerConfiguration();
+
+            services.AddIdentityServer();
             // services.AddSingleton(_databaseProvider);
 
             services.AddSingleton(new ConfigurationStoreOptions());
@@ -196,7 +200,7 @@ namespace UdapServer.Tests
 
 
         [Fact]
-        public async Task UdapDynamicClientRegistrationDocumentCompareToJwtPayloadTest()
+        public void UdapDynamicClientRegistrationDocumentCompareToJwtPayloadTest()
         {
             var now = DateTime.UtcNow;
             var jwtId = CryptoRandom.CreateUniqueId();
@@ -267,8 +271,8 @@ namespace UdapServer.Tests
                     signingCredentials);
             var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayloadJwt, ".", encodedSignature);
 
-            JsonExtensions.SerializeToJson(jwtPayload).Should()
-                .BeEquivalentTo(JsonExtensions.SerializeToJson(document));
+            jwtPayload.SerializeToJson().Should()
+                .BeEquivalentTo(JsonSerializer.Serialize(document));
 
             encodedPayloadJwt.Should().BeEquivalentTo(encodedPayload);
 
@@ -298,12 +302,21 @@ namespace UdapServer.Tests
                                // X509ChainStatusFlags.OfflineRevocation |
                                X509ChainStatusFlags.CtlNotSignatureValid;
 
-            services.AddSingleton(new TrustChainValidator(new X509ChainPolicy(), problemFlags,
+            services.AddSingleton(new TrustChainValidator(
+                new X509ChainPolicy()
+                {
+                    DisableCertificateDownloads = true,
+                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                }, 
+                problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
 
 
-            services.AddIdentityServer()
-                .AddUdapServerConfiguration();
+            var builder = services.AddUdapServerBuilder();
+            builder.AddUdapServerConfiguration();
+
+            services.AddIdentityServer();
+                
 
             services.AddUdapDbContext<UdapDbContext>(options =>
             {
@@ -399,7 +412,7 @@ namespace UdapServer.Tests
         /// </summary>
         /// <returns></returns>
         [Fact(Skip = "xxx")]
-        public async Task iss_and_sub_and_aud_Tests()
+        public void iss_and_sub_and_aud_Tests()
         {
             Assert.Fail("Not Implemented");
         }
@@ -414,7 +427,7 @@ namespace UdapServer.Tests
         /// </summary>
         /// <returns></returns>
         [Fact(Skip = "xxx")]
-        public async Task exp_and_iat_Test()
+        public void exp_and_iat_Test()
         {
             Assert.Fail("Not Implemented");
         }
@@ -428,7 +441,7 @@ namespace UdapServer.Tests
         // TODO still need to work on this test. Only spent enough time here to determine
         // I was not including redirect Uris in when deserializing claims
         [Fact]
-        public async Task redirect_uris_Tests() //With and without authorization_code in grant_types
+        public void redirect_uris_Tests() //With and without authorization_code in grant_types
         {
             var now = DateTime.UtcNow;
             var jwtId = CryptoRandom.CreateUniqueId();
@@ -504,13 +517,14 @@ namespace UdapServer.Tests
                     signingCredentials);
             var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayloadJwt, ".", encodedSignature);
 
-            JsonExtensions.SerializeToJson(jwtPayload).Should()
-                .BeEquivalentTo(JsonExtensions.SerializeToJson(document));
+            jwtPayload.SerializeToJson().Should()
+                .BeEquivalentTo(JsonSerializer.Serialize(document));
             
             encodedPayloadJwt.Should().BeEquivalentTo(encodedPayload);
             
             var handler = new JwtSecurityTokenHandler();
             var token = handler.ReadToken(signedSoftwareStatement) as JwtSecurityToken;
+
             foreach (var tokenClaim in token.Claims)
             {
                 _testOutputHelper.WriteLine(tokenClaim.Value);
@@ -530,14 +544,14 @@ namespace UdapServer.Tests
                 .WithExpiration(TimeSpan.FromMinutes(5))
                 .WithJwtId()
                 .WithClientName("dotnet system test client")
-                .WithContacts(new HashSet<string?>
+                .WithContacts(new HashSet<string>
                 {
                     "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
                 })
                 .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                 .WithScope("user/Patient.* user/Practitioner.read") //Comment out for UDAP Server mode.
-                .WithResponseTypes(new HashSet<string?> { "code" })
-                .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
+                .WithResponseTypes(new HashSet<string> { "code" })
+                .WithRedirectUrls(new List<string> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri })
                 .Build();
 
             var documentSerialized = document.SerializeToJson();
@@ -545,10 +559,10 @@ namespace UdapServer.Tests
             _testOutputHelper.WriteLine(documentSerialized);
 
             var docDeserialized =
-                JsonExtensions.DeserializeFromJson<UdapDynamicClientRegistrationDocument>(documentSerialized);
+                JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(documentSerialized);
 
             // var docDeserialized = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(documentSerialized);
-            _testOutputHelper.WriteLine(docDeserialized.RedirectUris.First());
+            //_testOutputHelper.WriteLine(docDeserialized.RedirectUris.First());
 
 
         }

@@ -230,7 +230,7 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
 
     private void NotifyTokenError(string message)
     {
-        _logger.LogWarning(message);
+        _logger.LogWarning(message.Replace(Environment.NewLine, ""));
 
         if (TokenError != null)
         {

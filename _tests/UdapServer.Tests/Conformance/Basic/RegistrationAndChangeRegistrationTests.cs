@@ -142,7 +142,7 @@ public class RegistrationAndChangeRegistrationTests
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockPipeline.IdentityScopes.Add(new IdentityResources.Profile());
         _mockPipeline.ApiScopes.Add(new ApiScope("system/Patient.rs"));
-        _mockPipeline.ApiScopes.Add(new ApiScope(" system/Appointment.rs"));
+        _mockPipeline.ApiScopes.Add(new ApiScope("system/Appointment.rs"));
     }
 
 
@@ -234,7 +234,7 @@ public class RegistrationAndChangeRegistrationTests
 
         regResponse.StatusCode.Should().Be(HttpStatusCode.OK, await regResponse.Content.ReadAsStringAsync());
         regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        regDocumentResult!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
+        regDocumentResult!.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
         regDocumentResult!.ClientId.Should().Be(clientId);
 
         _mockPipeline.Clients.Single().AllowedGrantTypes.Should().NotContain(OidcConstants.GrantTypes.ClientCredentials);

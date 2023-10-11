@@ -95,7 +95,7 @@ public static  class UdapServiceBuilderExtensionsCore
 
     public static IUdapServiceBuilder AddSmartV2Expander(this IUdapServiceBuilder builder)
     {
-        builder.Services.AddScoped<IScopeExpander, SmartV2Expander>();
+        builder.Services.AddScoped<IScopeExpander, HL7SmartScopeExpander>();
         
         return builder;
     }

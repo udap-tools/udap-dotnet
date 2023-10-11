@@ -16,10 +16,12 @@
 //
 
 using System.IdentityModel.Tokens.Jwt;
+using System.Reflection.Metadata;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
+using Duende.IdentityServer.Stores;
 using IdentityModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Extensions;
@@ -49,6 +51,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     private readonly ServerSettings _serverSettings;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IScopeExpander _scopeExpander;
+    private readonly IResourceStore _resourceStore; 
 
     private const string Purpose = nameof(UdapDynamicClientRegistrationValidator);
 
@@ -58,6 +61,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         ServerSettings serverSettings,
         IHttpContextAccessor httpContextAccessor,
         IScopeExpander scopeExpander,
+        IResourceStore resourceStore, //TODO use CachingResourceStore
         ILogger<UdapDynamicClientRegistrationValidator> logger)
     {
         _trustChainValidator = trustChainValidator;
@@ -65,6 +69,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         _serverSettings = serverSettings;
         _httpContextAccessor = httpContextAccessor;
         _scopeExpander = scopeExpander;
+        _resourceStore = resourceStore;
         _logger = logger;
     }
 
@@ -481,12 +486,30 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         {
             var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             // todo: ideally scope names get checked against configuration store?
-            
-            var expandedScopes = _scopeExpander.Expand(scopes);
 
-            foreach (var scope in expandedScopes)
+            var resources = await _resourceStore.GetAllEnabledResourcesAsync();
+            var expandedScopes = _scopeExpander.Expand(scopes).ToList();
+            var explodedScopes = _scopeExpander.WildCardExpand(expandedScopes, resources.ApiScopes.Select(a => a.Name).ToList()).ToList();
+            var allowedApiScopes = resources.ApiScopes.Where(s => explodedScopes.Contains(s.Name));
+            
+            foreach (var scope in allowedApiScopes)
+            {
+                client?.AllowedScopes.Add(scope.Name);
+            }
+            
+            var allowedResourceScopes = resources.IdentityResources.Where(s => explodedScopes.Contains(s.Name));
+
+            foreach (var scope in allowedResourceScopes.Where(s => s.Enabled).Select(s => s.Name))
             {
                 client?.AllowedScopes.Add(scope);
+            }
+
+            //
+            // Present scopes in aggregate form
+            //
+            if (client?.AllowedScopes != null)
+            {
+                document.Scope = _scopeExpander.Aggregate(client.AllowedScopes).OrderBy(s => s).ToSpaceSeparatedString();
             }
         }
 

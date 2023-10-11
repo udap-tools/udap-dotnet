@@ -30,6 +30,7 @@ using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Server.Configuration;
+using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
 using Udap.Server.Options;
 using Udap.Server.Registration;
@@ -313,7 +314,8 @@ namespace UdapServer.Tests
 
 
             var builder = services.AddUdapServerBuilder();
-            builder.AddUdapServerConfiguration();
+            builder.AddUdapServerConfiguration()
+                .AddUdapInMemoryApiScopes(new List<ApiScope>(){new ApiScope("system/Practitioner.read")});
 
             services.AddIdentityServer();
                 
@@ -366,7 +368,7 @@ namespace UdapServer.Tests
                 GrantTypes = new HashSet<string> { "client_credentials" },
                 ResponseTypes = new HashSet<string> { "authorization_code" },
                 TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
-                Scope = "system/Patient.* system/Practitioner.read"
+                Scope = "system/Practitioner.read"
             };
 
 

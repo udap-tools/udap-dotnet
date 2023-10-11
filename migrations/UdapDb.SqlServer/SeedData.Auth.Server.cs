@@ -501,6 +501,7 @@ public static class SeedDataAuthServer
                 if (apiScope.Name.StartsWith("system/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 
                 apiScope.Properties.Add("udap_prefix", "system");
@@ -525,6 +526,7 @@ public static class SeedDataAuthServer
                 if (apiScope.Name.StartsWith("patient/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 
                 apiScope.Properties.Add("udap_prefix", "user");
@@ -548,6 +550,7 @@ public static class SeedDataAuthServer
                 if (apiScope.Name.StartsWith("patient/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 
                 apiScope.Properties.Add("udap_prefix", "patient");

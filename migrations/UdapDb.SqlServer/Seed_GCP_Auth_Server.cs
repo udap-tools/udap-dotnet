@@ -314,6 +314,7 @@ public static class Seed_GCP_Auth_Server
                 if (apiScope.Name.StartsWith("system/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 apiScope.Properties.Add("udap_prefix", "system");
                 apiScope.Properties.Add("smart_version", version.ToString());
@@ -331,6 +332,7 @@ public static class Seed_GCP_Auth_Server
                 if (apiScope.Name.StartsWith("patient/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 apiScope.Properties.Add("udap_prefix", "user");
                 apiScope.Properties.Add("smart_version", version.ToString());
@@ -347,6 +349,7 @@ public static class Seed_GCP_Auth_Server
                 if (apiScope.Name.StartsWith("patient/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 apiScope.Properties.Add("udap_prefix", "patient");
                 apiScope.Properties.Add("smart_version", version.ToString());

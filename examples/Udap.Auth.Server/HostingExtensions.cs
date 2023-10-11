@@ -91,7 +91,8 @@ internal static class HostingExtensions
 
                     _ => throw new Exception($"Unsupported provider: {provider}")
                 })
-            .AddUdapResponseGenerators();
+            .AddUdapResponseGenerators()
+            .AddSmartV2Expander();
 
 
         builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));

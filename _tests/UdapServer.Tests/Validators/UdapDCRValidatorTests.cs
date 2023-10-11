@@ -1,4 +1,5 @@
-﻿using FluentAssertions;
+﻿using Duende.IdentityServer.Stores;
+using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -116,6 +117,7 @@ public class UdapDcrValidatorTests
             serverSettings,
             mockHttpContextAccessor.Object,
             new DefaultScopeExpander(),
+            new Mock<IResourceStore>().Object,
             new Mock<ILogger<UdapDynamicClientRegistrationValidator>>().Object);
 
     
@@ -196,6 +198,7 @@ public class UdapDcrValidatorTests
             serverSettings,
             mockHttpContextAccessor.Object,
             new DefaultScopeExpander(),
+            new Mock<IResourceStore>().Object,
             new Mock<ILogger<UdapDynamicClientRegistrationValidator>>().Object);
         return document;
     }

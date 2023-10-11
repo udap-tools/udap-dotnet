@@ -96,10 +96,10 @@ public static class ServiceCollectionExtensions
         //TODO: this could use some DI work...
         var udapMetadata = new UdapMetadata(
             udapMetadataOptions!,
-            Hl7ModelInfoExtensions
-                .BuildHl7FhirV1AndV2Scopes(new List<string> { "patient", "user", "system" })
-                .Where(s => s.Contains("/*")) //Just show the wild card
-        );
+            new List<string>
+            {
+                "openid", "patient/*.read", "user/*.read", "system/*.read", "patient/*.rs", "user/*.rs", "system/*.rs"
+            });
 
         services.AddSingleton(udapMetadata);
         services.TryAddScoped<UdapMetaDataBuilder>();

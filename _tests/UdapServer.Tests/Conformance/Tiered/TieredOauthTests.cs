@@ -173,8 +173,7 @@ public class TieredOauthTests
        
         // _mockAuthorServerPipeline.
 
-
-
+        
         _mockAuthorServerPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockAuthorServerPipeline.IdentityScopes.Add(new IdentityResources.Profile());
         _mockAuthorServerPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());

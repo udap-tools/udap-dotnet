@@ -29,13 +29,13 @@ WORKDIR /app
 
 
 # Install system dependencies
+ENV GCSFUSE_VERSION=1.2.0
+
 RUN set -e; \
-    apt-get update -y && apt-get install -y gnupg2 tini lsb-release curl;  \
-    gcsFuseRepo=gcsfuse-`lsb_release -c -s`; \
-    echo "deb http://packages.cloud.google.com/apt gcsfuse-bullseye main" | tee /etc/apt/sources.list.d/gcsfuse.list; \
-    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -; \
-    apt-get update; \
-    apt-get install -y gcsfuse && apt-get clean
+    apt-get update -y && apt-get install -y gnupg2 tini fuse lsb-release curl;  \
+    curl -LJO "https://github.com/GoogleCloudPlatform/gcsfuse/releases/download/v${GCSFUSE_VERSION}/gcsfuse_${GCSFUSE_VERSION}_amd64.deb"; \
+    apt-get install -y gcsfuse && apt-get clean; \
+    dpkg -i "gcsfuse_${GCSFUSE_VERSION}_amd64.deb"
 
 ENV MNT_DIR=/mnt/gcs
 

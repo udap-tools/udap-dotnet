@@ -164,14 +164,14 @@ public class UdapAuthServerPipeline
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object)); 
-        
+                new Mock<ILogger<TrustAnchorFileStore>>().Object));
+
 
         services.AddUdapServer(BaseUrl, "FhirLabsApi")
             .AddUdapInMemoryApiScopes(ApiScopes)
             .AddInMemoryUdapCertificates(Communities)
-            .AddUdapResponseGenerators()
-            .AddSmartV2Expander();
+            .AddUdapResponseGenerators();
+            //.AddSmartV2Expander();
 
 
         services.AddIdentityServer(options =>

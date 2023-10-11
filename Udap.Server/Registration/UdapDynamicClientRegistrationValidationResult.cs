@@ -8,6 +8,7 @@
 #endregion
 
 using Udap.Model.Registration;
+using Udap.Util.Extensions;
 
 namespace Udap.Server.Registration;
 

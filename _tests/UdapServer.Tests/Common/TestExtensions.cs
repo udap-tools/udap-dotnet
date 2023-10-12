@@ -1,13 +1,20 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.Extensions.Options;
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Udap.Client.Client;
-using Udap.Server.Security.Authentication.TieredOAuth;
-using Udap.Common.Certificates;
 using Microsoft.Extensions.Logging;
-using FluentAssertions.Common;
+using Microsoft.Extensions.Options;
+using Udap.Client.Client;
 using Udap.Client.Configuration;
+using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace UdapServer.Tests.Common;
 public static class TestExtensions
@@ -23,14 +30,33 @@ public static class TestExtensions
     public static AuthenticationBuilder AddTieredOAuthForTests(
         this AuthenticationBuilder builder,
         Action<TieredOAuthAuthenticationOptions> configuration,
-        UdapIdentityServerPipeline pipeline)
+        UdapIdentityServerPipeline pipelineIdp1,
+        UdapIdentityServerPipeline pipelineIdp2)
     {
         builder.Services.AddScoped<IUdapClient>(sp =>
-            new UdapClient(
-                pipeline.BrowserClient,
-                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
-                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>()));
+        {
+            var dynamicIdp = sp.GetRequiredService<DynamicIdp>();
+
+            if (dynamicIdp.Name == "https://idpserver")
+            {
+                return new UdapClient(
+                    pipelineIdp1.BackChannelClient,
+                    sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                    sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                    sp.GetRequiredService<ILogger<UdapClient>>());
+            }
+
+            if (dynamicIdp?.Name == "https://idpserver2")
+            {
+                return new UdapClient(
+                    pipelineIdp2.BackChannelClient,
+                    sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                    sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                    sp.GetRequiredService<ILogger<UdapClient>>());
+            }
+
+            return null;
+        });
 
         builder.Services.TryAddSingleton<UdapClientDiscoveryValidator>();
         builder.Services.TryAddSingleton<UdapClientMessageHandler>();

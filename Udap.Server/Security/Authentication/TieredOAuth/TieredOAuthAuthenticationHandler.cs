@@ -11,6 +11,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -416,14 +417,27 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     {
         var requestParams = HttpUtility.ParseQueryString(properties.Items["returnUrl"] ?? "~/");
         
-        var idp = (requestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
+        var idpParam = (requestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
         var scope = (requestParams.GetValues("scope") ?? throw new InvalidOperationException()).First();
         var clientRedirectUrl = (requestParams.GetValues("redirect_uri") ?? throw new InvalidOperationException()).Last();
         var updateRegistration = requestParams.GetValues("update_registration")?.Last();
 
         // Validate idp Server;
-        var community = idp.GetCommunityFromQueryParams();
-
+        var idpUri = new Uri(idpParam);
+        var community = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
+        var idp = idpUri.OriginalString;
+        if (community != null)
+        {
+            if (idp.Contains($":{{idpUri.Port}}"))
+            {
+                idp = $"{idpUri.Scheme}://{idpUri.Host}:{idpUri.Port}{idpUri.LocalPath}";
+            }
+            else
+            {
+                idp = $"{idpUri.Scheme}://{idpUri.Host}{idpUri.LocalPath}";
+            }
+        }
+        
         _udapClient.Problem += element => properties.Parameters.Add("Problem", element.ChainElementStatus.Summarize(TrustChainValidator.DefaultProblemFlags));
         _udapClient.Untrusted += certificate2 => properties.Parameters.Add("Untrusted", certificate2.Subject);
         _udapClient.TokenError += message => properties.Parameters.Add("TokenError", message);
@@ -506,8 +520,12 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             // UdapDcrBuilderForAuthorizationCode or UdapDcrBuilderForClientCredentials
             var document = await _udapClient.RegisterTieredClient(
                 resourceHolderRedirectUrl,
-                _certificateStore.IssuedCertificates.Where(ic => ic.IdPBaseUrl == idp)
-                    .Select(ic => ic.Certificate),
+
+                community == null ? 
+                    new List<X509Certificate2>(){ _certificateStore.IssuedCertificates.First().Certificate } :
+                    _certificateStore.IssuedCertificates.Where(ic => ic.Community == community)
+                        .Select(ic => ic.Certificate),
+
                 OptionsMonitor.CurrentValue.Scope.ToSpaceSeparatedString(),
                 Context.RequestAborted);
 

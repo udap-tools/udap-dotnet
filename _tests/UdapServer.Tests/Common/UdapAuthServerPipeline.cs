@@ -39,6 +39,7 @@ using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Server.Configuration.DependencyInjection;
+using Udap.Server.Hosting.DynamicProviders.Store;
 using Udap.Server.Registration;
 using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
@@ -77,6 +78,7 @@ public class UdapAuthServerPipeline
 
     public IdentityServerOptions Options { get; set; }
     public List<Client> Clients { get; set; } = new List<Client>();
+    public List<OidcProvider> OidcProviders { get; set; } = new List<OidcProvider>();
     public List<IdentityResource> IdentityScopes { get; set; } = new List<IdentityResource>();
     public List<ApiResource> ApiResources { get; set; } = new List<ApiResource>();
     public List<ApiScope> ApiScopes { get; set; } = new List<ApiScope>();
@@ -120,7 +122,7 @@ public class UdapAuthServerPipeline
             }
         });
 
-        builder.ConfigureAppConfiguration(configure => configure.AddJsonFile("appsettings.Test.json"));
+        builder.ConfigureAppConfiguration(configure => configure.AddJsonFile("appsettings.Auth.json"));
 
         if (enableLogging)
         {
@@ -145,6 +147,8 @@ public class UdapAuthServerPipeline
     {
         
         OnPreConfigureServices(builder, services);
+
+        services.AddSingleton<DynamicIdp>();
 
         // services.AddAuthentication(opts =>
         // {
@@ -191,6 +195,9 @@ public class UdapAuthServerPipeline
             .AddInMemoryIdentityResources(IdentityScopes)
             .AddInMemoryApiResources(ApiResources)
             .AddTestUsers(Users)
+            .AddInMemoryOidcProviders(OidcProviders)
+            .AddInMemoryCaching()
+            .AddIdentityProviderStoreCache<UdapInMemoryIdentityProviderStore>()
             .AddDeveloperSigningCredential(persistKey: false);
             
 
@@ -647,4 +654,9 @@ public class UdapAuthServerPipeline
         queryParams.TryGetValue("state", out var state);
         return state.SingleOrDefault();
     }
+}
+
+public class DynamicIdp
+{
+    public string Name { get; set; }
 }

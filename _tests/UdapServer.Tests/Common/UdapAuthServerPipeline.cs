@@ -120,7 +120,7 @@ public class UdapAuthServerPipeline
             }
         });
 
-        builder.ConfigureAppConfiguration(configure => configure.AddJsonFile("appsettings.json"));
+        builder.ConfigureAppConfiguration(configure => configure.AddJsonFile("appsettings.Test.json"));
 
         if (enableLogging)
         {

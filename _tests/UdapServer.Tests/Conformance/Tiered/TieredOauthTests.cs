@@ -389,7 +389,7 @@ public class TieredOauthTests
     /// 
     /// </summary>
     /// <returns></returns>
-    [Fact(Skip = "Dynamic Tiered OAuth Provider WIP")]
+    [Fact]
     public async Task ClientAuthorize_IdPDiscovery_IdPRegistration_IdPAuthAccess_ClientAuthAccess_Test()
     {
         // Register client with auth server
@@ -683,7 +683,7 @@ public class TieredOauthTests
          */
     }
 
-    [Fact]
+    [Fact(Skip = "Dynamic Tiered OAuth Provider WIP")]
     public async Task Tiered_OAuth_With_DynamicProvider()
     {
         // Register client with auth server

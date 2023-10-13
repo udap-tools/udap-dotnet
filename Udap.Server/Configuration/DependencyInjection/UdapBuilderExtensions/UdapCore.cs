@@ -15,20 +15,25 @@
 //
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Hosting;
+using Duende.IdentityServer.Models;
 using Duende.IdentityServer.ResponseHandling;
 using IdentityModel;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Model;
 using Udap.Server;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
 using Udap.Server.Options;
 using Udap.Server.ResponseHandling;
+using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Stores;
 using Udap.Server.Validation;
 using Constants = Udap.Server.Constants;
@@ -115,6 +120,34 @@ public static  class UdapServiceBuilderExtensionsCore
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
                 sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
                 resourceServerName));
+
+        return builder;
+    }
+
+    public static IUdapServiceBuilder AddTieredOAuthDynamicProvider(this IUdapServiceBuilder builder)
+    {
+        builder.Services.Configure<IdentityServerOptions>(options =>
+        {
+            // this associates the TieredOAuthAuthenticationHandler and options (TieredOAuthAuthenticationOptions) classes
+            // to the idp class (OidcProvider) and type value ("udap_oidc") from the identity provider store
+            options.DynamicProviders.AddProviderType<TieredOAuthAuthenticationHandler, TieredOAuthAuthenticationOptions, OidcProvider>("udap_oidc");
+        });
+        
+        builder.Services.TryAddTransient<TieredOAuthAuthenticationHandler>();
+
+        builder.Services.TryAddTransient<HeaderAugmentationHandler>();
+        builder.Services.AddHttpClient<IUdapClient, UdapClient>().AddHttpMessageHandler<HeaderAugmentationHandler>();
+
+        builder.Services.TryAddSingleton<UdapClientMessageHandler>(sp =>
+        {
+            var handler = new UdapClientMessageHandler(
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                sp.GetRequiredService<ILogger<UdapClient>>());
+
+            handler.InnerHandler = sp.GetRequiredService<HeaderAugmentationHandler>();
+
+            return handler;
+        });
 
         return builder;
     }

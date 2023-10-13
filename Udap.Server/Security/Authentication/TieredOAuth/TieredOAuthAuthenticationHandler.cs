@@ -34,6 +34,7 @@ using Udap.Client.Client;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Common.Models;
+using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Server.Storage.Stores;
@@ -46,7 +47,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 {
     private readonly IUdapClient _udapClient;
     private readonly IPrivateCertificateStore _certificateStore;
-    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IUdapClientRegistrationStore _udapClientRegistrationStore;
+    private readonly IEnumerable<IdentityProvider> _identityProviders;
 
     /// <summary>
     /// Initializes a new instance of <see cref="TieredOAuthAuthenticationHandler" />.
@@ -59,12 +61,15 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         ISystemClock clock,
         IUdapClient udapClient,
         IPrivateCertificateStore certificateStore,
-        IServiceScopeFactory scopeFactory) :
+        IUdapClientRegistrationStore udapClientRegistrationStore,
+        IEnumerable<IdentityProvider> identityProviders
+        ) :
         base(options, logger, encoder, clock)
     {
         _udapClient = udapClient;
         _certificateStore = certificateStore;
-        _scopeFactory = scopeFactory;
+        _udapClientRegistrationStore = udapClientRegistrationStore;
+        _identityProviders = identityProviders;
     }
 
     /// <summary>Constructs the OAuth challenge url.</summary>
@@ -84,10 +89,17 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         var state = Options.StateDataFormat.Protect(properties);
         queryStrings.Add("state", state);
-        var authorizationEndpoint = QueryHelpers.AddQueryString(Options.AuthorizationEndpoint, queryStrings!);
-        
-        return authorizationEndpoint;
-        
+
+        // Static configured Options
+        if (!Options.AuthorizationEndpoint.IsNullOrEmpty())
+        {
+            return QueryHelpers.AddQueryString(Options.AuthorizationEndpoint, queryStrings!);
+        }
+
+        var authEndpoint = properties.Items[UdapConstants.Discovery.AuthorizationEndpoint] ??
+                           throw new InvalidOperationException("Missing IdP authorization endpoint.");
+        // Dynamic options
+        return QueryHelpers.AddQueryString(authEndpoint, queryStrings!);
     }
     
 
@@ -384,14 +396,11 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var clientId = context.Properties.Items["client_id"];
         
         var resourceHolderRedirectUrl =
-            $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
+            $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
 
         var requestParams = Context.Request.Query;
         var code = requestParams["code"];
-
-        using var serviceScope = _scopeFactory.CreateScope();
-        var clientStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
-        var idpClient = await clientStore.FindTieredClientById(clientId);
+        var idpClient = await _udapClientRegistrationStore.FindTieredClientById(clientId);
         var idpClientId = idpClient.ClientId;
 
         await _certificateStore.Resolve();
@@ -424,17 +433,17 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         // Validate idp Server;
         var idpUri = new Uri(idpParam);
-        var community = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
+        var communityParam = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
         var idp = idpUri.OriginalString;
-        if (community != null)
+        if (communityParam != null)
         {
             if (idp.Contains($":{{idpUri.Port}}"))
             {
-                idp = $"{idpUri.Scheme}://{idpUri.Host}:{idpUri.Port}{idpUri.LocalPath}";
+                idp = $"{idpUri.Scheme}{Uri.SchemeDelimiter}{idpUri.Host}:{idpUri.Port}{idpUri.LocalPath}";
             }
             else
             {
-                idp = $"{idpUri.Scheme}://{idpUri.Host}{idpUri.LocalPath}";
+                idp = $"{idpUri.Scheme}{Uri.SchemeDelimiter}{idpUri.Host}{idpUri.LocalPath}";
             }
         }
         
@@ -442,10 +451,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         _udapClient.Untrusted += certificate2 => properties.Parameters.Add("Untrusted", certificate2.Subject);
         _udapClient.TokenError += message => properties.Parameters.Add("TokenError", message);
         
-        var response = await _udapClient.ValidateResource(idp, community);
+        var response = await _udapClient.ValidateResource(idp, communityParam);
         
         var resourceHolderRedirectUrl =
-            $"{Context.Request.Scheme}://{Context.Request.Host}{Options.CallbackPath}";
+            $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Options.CallbackPath}";
 
         if (response.IsError)
         {
@@ -477,9 +486,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         // if not registered with IdP, then register.
         //
 
-        using var serviceScope = _scopeFactory.CreateScope();
-        var clientStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
-        var idpClient = await clientStore.FindTieredClientById(idp);
+        var idpClient = await _udapClientRegistrationStore.FindTieredClientById(idp);
 
         var idpClientId = null as string;
 
@@ -493,17 +500,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         if (idpClient == null || !idpClient.Enabled || updateRegistration == "true")
         {
             await _certificateStore.Resolve();
-
-
-
-            // What does this code even accomplish?  Shouldn't it look for more than the first community?
-            // Maybe I am still tied to one community.  Lots more work here.
-
-            var communityName = _certificateStore.IssuedCertificates.First().Community;
-            var registrationStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
-            
-            var communityId =
-                await registrationStore.GetCommunityId(communityName, Context.RequestAborted);
+            var communityName = communityParam ?? _certificateStore.IssuedCertificates.First().Community;
+            var communityId = await _udapClientRegistrationStore.GetCommunityId(communityName, Context.RequestAborted);
 
             if (communityId == null)
             {
@@ -521,9 +519,11 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             var document = await _udapClient.RegisterTieredClient(
                 resourceHolderRedirectUrl,
 
-                community == null ? 
-                    new List<X509Certificate2>(){ _certificateStore.IssuedCertificates.First().Certificate } :
-                    _certificateStore.IssuedCertificates.Where(ic => ic.Community == community)
+                communityParam == null 
+                    ? 
+                    new List<X509Certificate2>(){ _certificateStore.IssuedCertificates.First().Certificate } 
+                    :
+                    _certificateStore.IssuedCertificates.Where(ic => ic.Community == communityParam)
                         .Select(ic => ic.Certificate),
 
                 OptionsMonitor.CurrentValue.Scope.ToSpaceSeparatedString(),
@@ -549,7 +549,14 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                 Enabled = true
             };
             
-            await registrationStore.UpsertTieredClient(tieredClient, Context.RequestAborted);
+            await _udapClientRegistrationStore.UpsertTieredClient(tieredClient, Context.RequestAborted);
+
+            _identityProviders.ToList().Add(new OidcProvider
+            {
+                Scheme = "joe",
+
+            });
+
         }
 
         properties.SetString("client_id", idpClientId);

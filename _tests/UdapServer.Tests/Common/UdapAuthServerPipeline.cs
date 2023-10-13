@@ -13,6 +13,7 @@
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Web;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Events;
@@ -21,6 +22,7 @@ using Duende.IdentityServer.ResponseHandling;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using Google.Api;
 using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication;
@@ -35,9 +37,11 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Udap.Auth.Server.Pages;
+using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
+using Udap.Model;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Hosting.DynamicProviders.Store;
 using Udap.Server.Registration;
@@ -175,6 +179,7 @@ public class UdapAuthServerPipeline
             .AddUdapInMemoryApiScopes(ApiScopes)
             .AddInMemoryUdapCertificates(Communities)
             .AddUdapResponseGenerators();
+            // .AddTieredOAuthDynamicProvider();
             //.AddSmartV2Expander();
 
 
@@ -305,7 +310,7 @@ public class UdapAuthServerPipeline
             throw new Exception("invalid return URL");
         }
 
-        var scheme = ctx.Request.Query["scheme"].FirstOrDefault();
+        var scheme = ctx.Request.Query["scheme"];
         ;
         var props = new AuthenticationProperties
         {
@@ -318,8 +323,28 @@ public class UdapAuthServerPipeline
             }
         };
 
+        
+        // var identityProviders = ctx.RequestServices.GetRequiredService<IEnumerable<IdentityProvider>>();
+        // var schemProvider = ctx.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
+        
+        var _udapClient = ctx.RequestServices.GetRequiredService<IUdapClient>();
+        var originalRequestParams = HttpUtility.ParseQueryString(returnUrl);
+        var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
+        var idpUri = new Uri(idp);
+        var request = new DiscoveryDocumentRequest
+        {
+            Address = idpUri.Scheme + Uri.SchemeDelimiter + idpUri.Host + idpUri.LocalPath,
+            Policy = new IdentityModel.Client.DiscoveryPolicy()
+            {
+                EndpointValidationExcludeList = new List<string> { OidcConstants.Discovery.RegistrationEndpoint }
+            }
+        };
+
+        var openIdConfig = await _udapClient.ResolveOpenIdConfig(request);
+        props.Items.Add(UdapConstants.Discovery.AuthorizationEndpoint, openIdConfig.AuthorizeEndpoint);
+
         // When calling ChallengeAsync your handler will be called if it is registered.
-        await ctx.ChallengeAsync(TieredOAuthAuthenticationDefaults.AuthenticationScheme, props);
+        await ctx.ChallengeAsync(scheme, props);
     }
 
     private async Task OnExternalLoginCallback(HttpContext ctx, ILogger logger)

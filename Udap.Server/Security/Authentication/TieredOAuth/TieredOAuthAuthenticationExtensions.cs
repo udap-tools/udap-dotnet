@@ -78,7 +78,7 @@ public static class TieredOAuthAuthenticationExtensions
         Action<TieredOAuthAuthenticationOptions> configuration)
     {
 
-        builder.Services.AddTransient<HeaderAugmentationHandler>();
+        builder.Services.TryAddTransient<HeaderAugmentationHandler>();
         builder.Services.AddHttpClient<IUdapClient, UdapClient>().AddHttpMessageHandler<HeaderAugmentationHandler>();
         
         builder.Services.TryAddSingleton<UdapClientMessageHandler>(sp =>

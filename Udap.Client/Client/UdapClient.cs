@@ -329,6 +329,21 @@ namespace Udap.Client.Client
             return keys;
         }
 
+        public async Task<DiscoveryDocumentResponse?> ResolveOpenIdConfig(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            //TODO: Cache Discovery Document?
+            var disco = await _httpClient.GetDiscoveryDocumentAsync(request, cancellationToken: cancellationToken);
+
+            if (disco.HttpStatusCode != HttpStatusCode.OK || disco.IsError)
+            {
+                throw new Exception("Failed to retrieve discovery document: " + disco.Error);
+            }
+
+            return disco;
+        }
+
 
         private void NotifyTokenError(string message)
         {

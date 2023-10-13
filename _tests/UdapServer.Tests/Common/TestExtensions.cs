@@ -7,6 +7,8 @@
 // */
 #endregion
 
+using Duende.IdentityServer.Configuration;
+using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -65,5 +67,50 @@ public static class TestExtensions
             TieredOAuthAuthenticationDefaults.AuthenticationScheme,
             TieredOAuthAuthenticationDefaults.DisplayName, 
             configuration);
+    }
+
+    public static IServiceCollection AddTieredOAuthDynamicProviderForTests(
+        this IServiceCollection services,
+        UdapIdentityServerPipeline pipelineIdp1,
+        UdapIdentityServerPipeline pipelineIdp2)
+    {
+        services.Configure<IdentityServerOptions>(options =>
+        {
+            // this associates the TieredOAuthAuthenticationHandler and options (TieredOAuthAuthenticationOptions) classes
+            // to the idp class (OidcProvider) and type value ("udap_oidc") from the identity provider store
+            options.DynamicProviders.AddProviderType<TieredOAuthAuthenticationHandler, TieredOAuthAuthenticationOptions, OidcProvider>("udap_oidc");
+        });
+
+        services.TryAddTransient<TieredOAuthAuthenticationHandler>();
+
+        services.AddScoped<IUdapClient>(sp =>
+        {
+            var dynamicIdp = sp.GetRequiredService<DynamicIdp>();
+
+            if (dynamicIdp.Name == "https://idpserver")
+            {
+                return new UdapClient(
+                    pipelineIdp1.BackChannelClient,
+                    sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                    sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                    sp.GetRequiredService<ILogger<UdapClient>>());
+            }
+
+            if (dynamicIdp?.Name == "https://idpserver2")
+            {
+                return new UdapClient(
+                    pipelineIdp2.BackChannelClient,
+                    sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                    sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                    sp.GetRequiredService<ILogger<UdapClient>>());
+            }
+
+            return null;
+        });
+
+        services.TryAddSingleton<UdapClientDiscoveryValidator>();
+        services.TryAddSingleton<UdapClientMessageHandler>();
+
+        return services;
     }
 }

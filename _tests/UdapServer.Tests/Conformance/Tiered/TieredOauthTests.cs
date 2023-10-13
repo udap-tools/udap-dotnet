@@ -21,6 +21,7 @@ using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Stores;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using IdentityModel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
@@ -55,24 +56,27 @@ public class TieredOauthTests
     private UdapAuthServerPipeline _mockAuthorServerPipeline = new UdapAuthServerPipeline();
     private UdapIdentityServerPipeline _mockIdPPipeline = new UdapIdentityServerPipeline();
     private UdapIdentityServerPipeline _mockIdPPipeline2 = new UdapIdentityServerPipeline("https://idpserver2", "appsettings.Idp2.json");
-
-    private IAuthenticationSchemeProvider _schemeProvider;
+    
+    private X509Certificate2 _community1Anchor;
+    private X509Certificate2 _community1IntermediateCert;
+    private X509Certificate2 _community2Anchor;
+    private X509Certificate2 _community2IntermediateCert;
 
     public TieredOauthTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
-        var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/caLocalhostCert.cer");
-        var intermediateCert = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert.cer");
+        _community1Anchor = new X509Certificate2("CertStore/anchors/caLocalhostCert.cer");
+        _community1IntermediateCert = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert.cer");
 
-        // var idpAnchor1 = new X509Certificate2("CertStore/anchors/caLocalhostCert.cer");
-        // var idpIntermediate1 = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert.cer");
+        _community2Anchor = new X509Certificate2("CertStore/anchors/caLocalhostCert2.cer");
+        _community2IntermediateCert = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert2.cer");
             
-        BuildUdapAuthorizationServer(sureFhirLabsAnchor, intermediateCert);
-        BuildUdapIdentityProvider(sureFhirLabsAnchor, intermediateCert);
-        BuildUdapIdentityProvider2(sureFhirLabsAnchor, intermediateCert);
+        BuildUdapAuthorizationServer();
+        BuildUdapIdentityProvider1();
+        BuildUdapIdentityProvider2();
     }
 
-    private void BuildUdapAuthorizationServer(X509Certificate2 sureFhirLabsAnchor, X509Certificate2 intermediateCert)
+    private void BuildUdapAuthorizationServer()
     {
         _mockAuthorServerPipeline.OnPostConfigureServices += s =>
         {
@@ -125,7 +129,11 @@ public class TieredOauthTests
                 _mockIdPPipeline,
                 _mockIdPPipeline2); // point backchannel to the IdP
 
-           
+                
+
+            services.AddTieredOAuthDynamicProviderForTests(_mockIdPPipeline, _mockIdPPipeline2);
+
+
             services.AddAuthorization(); // required for TieredOAuth Testing
 
 
@@ -143,6 +151,7 @@ public class TieredOauthTests
                     ClientId = "client",
                     ClientSecret = "secret",
                     ResponseType = "code",
+                    Type = "udap_oidc",
                 }
             };
 
@@ -151,9 +160,7 @@ public class TieredOauthTests
 
 
 
-            using var serviceProvider = services.BuildServiceProvider();
-
-            _schemeProvider = serviceProvider.GetRequiredService<IAuthenticationSchemeProvider>();
+            // using var serviceProvider = services.BuildServiceProvider();
 
         };  
 
@@ -170,29 +177,30 @@ public class TieredOauthTests
 
         _mockAuthorServerPipeline.Communities.Add(new Community
         {
-            Name = "udap://fhirlabs.net",
+            Id = 0,
+            Name = "https://idpserver",
             Enabled = true,
             Default = true,
             Anchors = new[]
             {
                 new Anchor
                 {
-                    BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
-                    EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
-                    Name = sureFhirLabsAnchor.Subject,
-                    Community = "udap://fhirlabs.net",
-                    Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                    Thumbprint = sureFhirLabsAnchor.Thumbprint,
+                    BeginDate = _community1Anchor.NotBefore.ToUniversalTime(),
+                    EndDate = _community1Anchor.NotAfter.ToUniversalTime(),
+                    Name = _community1Anchor.Subject,
+                    Community = "https://idpserver",
+                    Certificate = _community1Anchor.ToPemFormat(),
+                    Thumbprint = _community1Anchor.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
                         new Intermediate
                         {
-                            BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
-                            EndDate = intermediateCert.NotAfter.ToUniversalTime(),
-                            Name = intermediateCert.Subject,
-                            Certificate = intermediateCert.ToPemFormat(),
-                            Thumbprint = intermediateCert.Thumbprint,
+                            BeginDate = _community1IntermediateCert.NotBefore.ToUniversalTime(),
+                            EndDate = _community1IntermediateCert.NotAfter.ToUniversalTime(),
+                            Name = _community1IntermediateCert.Subject,
+                            Certificate = _community1IntermediateCert.ToPemFormat(),
+                            Thumbprint = _community1IntermediateCert.Thumbprint,
                             Enabled = true
                         }
                     }
@@ -200,10 +208,43 @@ public class TieredOauthTests
             }
         });
 
-       
+        _mockAuthorServerPipeline.Communities.Add(new Community
+        {
+            Id = 1,
+            Name = "udap://idp-community-2",
+            Enabled = true,
+            Default = true,
+            Anchors = new[]
+            {
+                new Anchor
+                {
+                    BeginDate = _community2Anchor.NotBefore.ToUniversalTime(),
+                    EndDate = _community2Anchor.NotAfter.ToUniversalTime(),
+                    Name = _community2Anchor.Subject,
+                    Community = "udap://idp-community-2",
+                    Certificate = _community2Anchor.ToPemFormat(),
+                    Thumbprint = _community2Anchor.Thumbprint,
+                    Enabled = true,
+                    Intermediates = new List<Intermediate>()
+                    {
+                        new Intermediate
+                        {
+                            BeginDate =  _community2IntermediateCert.NotBefore.ToUniversalTime(),
+                            EndDate = _community2IntermediateCert.NotAfter.ToUniversalTime(),
+                            Name = _community2IntermediateCert.Subject,
+                            Certificate = _community2IntermediateCert.ToPemFormat(),
+                            Thumbprint = _community2IntermediateCert.Thumbprint,
+                            Enabled = true
+                        }
+                    }
+                }
+            }
+        });
+
+
         // _mockAuthorServerPipeline.
 
-        
+
         _mockAuthorServerPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockAuthorServerPipeline.IdentityScopes.Add(new IdentityResources.Profile());
         _mockAuthorServerPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
@@ -225,7 +266,7 @@ public class TieredOauthTests
         _mockAuthorServerPipeline.UserStore = new TestUserStore(_mockAuthorServerPipeline.Users);
     }
 
-    private void BuildUdapIdentityProvider(X509Certificate2 sureFhirLabsAnchor, X509Certificate2 intermediateCert)
+    private void BuildUdapIdentityProvider1()
     {
         _mockIdPPipeline.OnPostConfigureServices += s =>
         {
@@ -252,29 +293,29 @@ public class TieredOauthTests
 
         _mockIdPPipeline.Communities.Add(new Community
         {
-            Name = "udap://fhirlabs.net",
+            Name = "udap://idp-community-1",
             Enabled = true,
             Default = true,
             Anchors = new[]
             {
                 new Anchor
                 {
-                    BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
-                    EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
-                    Name = sureFhirLabsAnchor.Subject,
-                    Community = "udap://fhirlabs.net",
-                    Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                    Thumbprint = sureFhirLabsAnchor.Thumbprint,
+                    BeginDate = _community1Anchor.NotBefore.ToUniversalTime(),
+                    EndDate = _community1Anchor.NotAfter.ToUniversalTime(),
+                    Name = _community1Anchor.Subject,
+                    Community = "udap://idp-community-1",
+                    Certificate = _community1Anchor.ToPemFormat(),
+                    Thumbprint = _community1Anchor.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
                         new Intermediate
                         {
-                            BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
-                            EndDate = intermediateCert.NotAfter.ToUniversalTime(),
-                            Name = intermediateCert.Subject,
-                            Certificate = intermediateCert.ToPemFormat(),
-                            Thumbprint = intermediateCert.Thumbprint,
+                            BeginDate =  _community1IntermediateCert.NotBefore.ToUniversalTime(),
+                            EndDate = _community1IntermediateCert.NotAfter.ToUniversalTime(),
+                            Name = _community1IntermediateCert.Subject,
+                            Certificate = _community1IntermediateCert.ToPemFormat(),
+                            Thumbprint = _community1IntermediateCert.Thumbprint,
                             Enabled = true
                         }
                     }
@@ -305,7 +346,7 @@ public class TieredOauthTests
         _mockIdPPipeline.Subject = new IdentityServerUser("bob").CreatePrincipal();
     }
 
-    private void BuildUdapIdentityProvider2(X509Certificate2 sureFhirLabsAnchor, X509Certificate2 intermediateCert)
+    private void BuildUdapIdentityProvider2()
     {
         _mockIdPPipeline2.OnPostConfigureServices += s =>
         {
@@ -332,29 +373,29 @@ public class TieredOauthTests
 
         _mockIdPPipeline2.Communities.Add(new Community
         {
-            Name = "udap://fhirlabs.net",
+            Name = "udap://idp-community-2",
             Enabled = true,
             Default = true,
             Anchors = new[]
             {
                 new Anchor
                 {
-                    BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
-                    EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
-                    Name = sureFhirLabsAnchor.Subject,
-                    Community = "udap://fhirlabs.net",
-                    Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                    Thumbprint = sureFhirLabsAnchor.Thumbprint,
+                    BeginDate = _community2Anchor.NotBefore.ToUniversalTime(),
+                    EndDate = _community2Anchor.NotAfter.ToUniversalTime(),
+                    Name = _community2Anchor.Subject,
+                    Community = "udap://idp-community-2",
+                    Certificate = _community2Anchor.ToPemFormat(),
+                    Thumbprint = _community2Anchor.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
                         new Intermediate
                         {
-                            BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
-                            EndDate = intermediateCert.NotAfter.ToUniversalTime(),
-                            Name = intermediateCert.Subject,
-                            Certificate = intermediateCert.ToPemFormat(),
-                            Thumbprint = intermediateCert.Thumbprint,
+                            BeginDate =  _community2IntermediateCert.NotBefore.ToUniversalTime(),
+                            EndDate = _community2IntermediateCert.NotAfter.ToUniversalTime(),
+                            Name = _community2IntermediateCert.Subject,
+                            Certificate = _community2IntermediateCert.ToPemFormat(),
+                            Thumbprint = _community2IntermediateCert.Thumbprint,
                             Enabled = true
                         }
                     }
@@ -447,7 +488,7 @@ public class TieredOauthTests
         queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(clientState);
         queryParams.Single(q => q.Key == "idp").Value.Should().BeEquivalentTo("https://idpserver");
         
-        var schemes = await _schemeProvider.GetAllSchemesAsync();
+        var schemes = await _mockAuthorServerPipeline.Resolve<IAuthenticationSchemeProvider>().GetAllSchemesAsync();
    
         var sb = new StringBuilder();
         sb.Append("https://server/externallogin/challenge?"); // built in UdapAccount/Login/Index.cshtml.cs
@@ -714,7 +755,7 @@ public class TieredOauthTests
             state: clientState,
             extra: new
             {
-                idp = "https://idpserver2?community=idp-community-2"
+                idp = "https://idpserver2?community=udap://idp-community-2"
             });
         
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
@@ -738,13 +779,14 @@ public class TieredOauthTests
         queryParams = QueryHelpers.ParseQuery(returnUrl);
         queryParams.Single(q => q.Key == "scope").Value.ToString().Should().Contain("udap openid user/*.read");
         queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(clientState);
-        queryParams.Single(q => q.Key == "idp").Value.Should().BeEquivalentTo("https://idpserver2?community=idp-community-2");
+        queryParams.Single(q => q.Key == "idp").Value.Should().BeEquivalentTo("https://idpserver2?community=udap://idp-community-2");
 
-        var schemes = await _schemeProvider.GetAllSchemesAsync();
+        var schemes = await _mockAuthorServerPipeline.Resolve<IIdentityProviderStore>().GetAllSchemeNamesAsync();
+
 
         var sb = new StringBuilder();
         sb.Append("https://server/externallogin/challenge?"); // built in UdapAccount/Login/Index.cshtml.cs
-        sb.Append("scheme=").Append(schemes.First().Name);
+        sb.Append("scheme=").Append(schemes.First().Scheme);
         sb.Append("&returnUrl=").Append(Uri.EscapeDataString(returnUrl));
         clientAuthorizeUrl = sb.ToString();
 

@@ -92,6 +92,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Auth.Server.Admin", "e
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Auth.Server", "examples\Udap.Auth.Server\Udap.Auth.Server.csproj", "{FD9FBB5C-DBCF-4C1D-9E21-A98485D179E6}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duende.IdentityServer", "..\..\..\DuendeSoftware\IdentityServer\src\IdentityServer\Duende.IdentityServer.csproj", "{A04357D7-35CA-42CC-AC76-69F2BEE26B09}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Duende.IdentityServer.Configuration", "..\..\..\DuendeSoftware\IdentityServer\src\Configuration\Duende.IdentityServer.Configuration.csproj", "{CE954071-37A0-46B6-928B-30657717C406}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -206,6 +210,14 @@ Global
 		{FD9FBB5C-DBCF-4C1D-9E21-A98485D179E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FD9FBB5C-DBCF-4C1D-9E21-A98485D179E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FD9FBB5C-DBCF-4C1D-9E21-A98485D179E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A04357D7-35CA-42CC-AC76-69F2BEE26B09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A04357D7-35CA-42CC-AC76-69F2BEE26B09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A04357D7-35CA-42CC-AC76-69F2BEE26B09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A04357D7-35CA-42CC-AC76-69F2BEE26B09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE954071-37A0-46B6-928B-30657717C406}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE954071-37A0-46B6-928B-30657717C406}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE954071-37A0-46B6-928B-30657717C406}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE954071-37A0-46B6-928B-30657717C406}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

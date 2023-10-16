@@ -91,7 +91,7 @@ public static class TieredOAuthAuthenticationExtensions
 
                 return handler;
             });
-
+        
         builder.Services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
         return builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>(scheme, caption, configuration);
     }

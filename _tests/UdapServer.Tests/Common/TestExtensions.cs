@@ -10,12 +10,15 @@
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
+using Udap.Model;
+using Udap.Server.Hosting.DynamicProviders.Oidc;
 using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace UdapServer.Tests.Common;
@@ -81,8 +84,29 @@ public static class TestExtensions
             options.DynamicProviders.AddProviderType<TieredOAuthAuthenticationHandler, TieredOAuthAuthenticationOptions, OidcProvider>("udap_oidc");
         });
 
+
+
+
+
+
+        // this registers the OidcConfigureOptions to build the TieredOAuthAuthenticationOptions from the OidcProvider data
+        services.AddSingleton<IConfigureOptions<TieredOAuthAuthenticationOptions>, UdapOidcConfigureOptions>();
+
+
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>());
+
         services.TryAddTransient<TieredOAuthAuthenticationHandler>();
 
+        
+        
+        services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
+
+        
+        
+        
+        
+        
+        
         services.AddScoped<IUdapClient>(sp =>
         {
             var dynamicIdp = sp.GetRequiredService<DynamicIdp>();

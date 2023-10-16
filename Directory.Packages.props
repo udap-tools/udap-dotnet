@@ -4,6 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges -->
+    <PackageVersion Include="Duende.IdentityServer.Storage" Version="6.3.5" />
     <PackageVersion Include="Google.Cloud.SecretManager.V1" Version="2.1.0" />
     <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.6.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="[6.0.22,7.0.11]" />

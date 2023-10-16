@@ -43,6 +43,7 @@ using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Server.Configuration.DependencyInjection;
+using Udap.Server.Hosting.DynamicProviders.Oidc;
 using Udap.Server.Hosting.DynamicProviders.Store;
 using Udap.Server.Registration;
 using Udap.Server.ResponseHandling;
@@ -324,16 +325,25 @@ public class UdapAuthServerPipeline
         };
 
         
-        // var identityProviders = ctx.RequestServices.GetRequiredService<IEnumerable<IdentityProvider>>();
-        // var schemProvider = ctx.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
+        var identityProviders = ctx.RequestServices.GetRequiredService<IEnumerable<IdentityProvider>>();
+        var schemProvider = ctx.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
         
         var _udapClient = ctx.RequestServices.GetRequiredService<IUdapClient>();
         var originalRequestParams = HttpUtility.ParseQueryString(returnUrl);
         var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
+
+        var parts = idp.Split(new[] { '?' }, StringSplitOptions.RemoveEmptyEntries);
+
+        if (parts.Length > 1)
+        {
+            props.Items.Add(UdapConstants.Community, parts[1]); // TODO can this be Parameters instead
+        }
+        
         var idpUri = new Uri(idp);
+        var idpBaseUrl = idpUri.Scheme + Uri.SchemeDelimiter + idpUri.Host + idpUri.LocalPath;
         var request = new DiscoveryDocumentRequest
         {
-            Address = idpUri.Scheme + Uri.SchemeDelimiter + idpUri.Host + idpUri.LocalPath,
+            Address = idpBaseUrl,
             Policy = new IdentityModel.Client.DiscoveryPolicy()
             {
                 EndpointValidationExcludeList = new List<string> { OidcConstants.Discovery.RegistrationEndpoint }
@@ -341,7 +351,12 @@ public class UdapAuthServerPipeline
         };
 
         var openIdConfig = await _udapClient.ResolveOpenIdConfig(request);
-        props.Items.Add(UdapConstants.Discovery.AuthorizationEndpoint, openIdConfig.AuthorizeEndpoint);
+
+        // TODO: Properties will be protected in state in the BuildchallengeUrl.  Need to trim out some of these
+        // during the protect process.
+        props.Parameters.Add(UdapConstants.Discovery.AuthorizationEndpoint, openIdConfig.AuthorizeEndpoint);
+        props.Parameters.Add(UdapConstants.Discovery.TokenEndpoint, openIdConfig.TokenEndpoint);
+        props.Parameters.Add("idpBaseUrl", idpBaseUrl.TrimEnd('/'));
 
         // When calling ChallengeAsync your handler will be called if it is registered.
         await ctx.ChallengeAsync(scheme, props);

@@ -15,7 +15,8 @@ using Udap.Model;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 
-public class TieredOAuthAuthenticationOptions : OAuthOptions{
+public class TieredOAuthAuthenticationOptions : OAuthOptions
+{
 
     private readonly JwtSecurityTokenHandler _defaultHandler = new JwtSecurityTokenHandler();
 
@@ -54,4 +55,6 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions{
     /// <see cref="http://hl7.org/fhir/us/udap-security/user.html#client-authorization-request-to-data-holder"/>
     /// </summary>
     public string IdPBaseUrl { get; set; }
+
+    public string Community { get; set; }
 }

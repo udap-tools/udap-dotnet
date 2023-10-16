@@ -31,6 +31,7 @@ using Udap.Model;
 using Udap.Server;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
+using Udap.Server.Hosting.DynamicProviders.Oidc;
 using Udap.Server.Options;
 using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
@@ -123,32 +124,8 @@ public static  class UdapServiceBuilderExtensionsCore
 
         return builder;
     }
+}
 
-    public static IUdapServiceBuilder AddTieredOAuthDynamicProvider(this IUdapServiceBuilder builder)
-    {
-        builder.Services.Configure<IdentityServerOptions>(options =>
-        {
-            // this associates the TieredOAuthAuthenticationHandler and options (TieredOAuthAuthenticationOptions) classes
-            // to the idp class (OidcProvider) and type value ("udap_oidc") from the identity provider store
-            options.DynamicProviders.AddProviderType<TieredOAuthAuthenticationHandler, TieredOAuthAuthenticationOptions, OidcProvider>("udap_oidc");
-        });
-        
-        builder.Services.TryAddTransient<TieredOAuthAuthenticationHandler>();
-
-        builder.Services.TryAddTransient<HeaderAugmentationHandler>();
-        builder.Services.AddHttpClient<IUdapClient, UdapClient>().AddHttpMessageHandler<HeaderAugmentationHandler>();
-
-        builder.Services.TryAddSingleton<UdapClientMessageHandler>(sp =>
-        {
-            var handler = new UdapClientMessageHandler(
-                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
-                sp.GetRequiredService<ILogger<UdapClient>>());
-
-            handler.InnerHandler = sp.GetRequiredService<HeaderAugmentationHandler>();
-
-            return handler;
-        });
-
-        return builder;
-    }
+public class OidcProvUdapProviderider
+{
 }

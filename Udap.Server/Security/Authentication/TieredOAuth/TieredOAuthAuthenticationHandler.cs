@@ -22,6 +22,7 @@ using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
@@ -42,6 +43,7 @@ using Udap.Util.Extensions;
 using static IdentityModel.ClaimComparer;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
+
 
 public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenticationOptions>
 {
@@ -96,8 +98,30 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             return QueryHelpers.AddQueryString(Options.AuthorizationEndpoint, queryStrings!);
         }
 
-        var authEndpoint = properties.Items[UdapConstants.Discovery.AuthorizationEndpoint] ??
+        var authEndpoint = properties.Parameters[UdapConstants.Discovery.AuthorizationEndpoint] as string ??
                            throw new InvalidOperationException("Missing IdP authorization endpoint.");
+
+        var community = properties.GetParameter<string>(UdapConstants.Community);
+        
+        if (!community.IsNullOrEmpty())
+        {
+            queryStrings.Add(UdapConstants.Community, community!);
+        }
+
+        var tokenEndpoint = properties.GetParameter<string>(UdapConstants.Discovery.TokenEndpoint);
+
+        if (!tokenEndpoint.IsNullOrEmpty())
+        {
+            Options.TokenEndpoint = tokenEndpoint!;
+        } 
+
+        var idpBaseUrl = properties.GetParameter<string>("idpBaseUrl");
+
+        if (!idpBaseUrl.IsNullOrEmpty())
+        {
+            Options.IdPBaseUrl = idpBaseUrl;
+        }
+
         // Dynamic options
         return QueryHelpers.AddQueryString(authEndpoint, queryStrings!);
     }
@@ -393,6 +417,9 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         var originalRequestParams = HttpUtility.ParseQueryString(context.Properties.Items["returnUrl"] ?? "~/");
         var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
+        var idpUri = new Uri(idp);
+        var communityParam = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
+
         var clientId = context.Properties.Items["client_id"];
         
         var resourceHolderRedirectUrl =
@@ -409,9 +436,15 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
             idpClientId,
             Options.TokenEndpoint,
-            _certificateStore.IssuedCertificates.Where(ic => ic.IdPBaseUrl == idp)
+
+            communityParam == null
+                ?
+                _certificateStore.IssuedCertificates.First().Certificate
+                :
+                _certificateStore.IssuedCertificates.Where(ic => ic.Community == communityParam)
                 //TODO: multiple certs or latest cert?
-                .Select(ic => ic.Certificate).First(),
+                    .Select(ic => ic.Certificate).First(),
+            
             resourceHolderRedirectUrl,
             code);
 

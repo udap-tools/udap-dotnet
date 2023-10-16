@@ -28,14 +28,22 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions
         // AuthorizationEndpoint = TieredOAuthAuthenticationDefaults.AuthorizationEndpoint;
         // TokenEndpoint = TieredOAuthAuthenticationDefaults.TokenEndpoint;
         SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;
-        
-        // TODO:  configurable. 
+
+        // TODO:  configurable for the non-dynamic AddTieredOAuthForTests call. 
         Scope.Add(OidcConstants.StandardScopes.OpenId);
         // Scope.Add(UdapConstants.StandardScopes.FhirUser);
         Scope.Add(OidcConstants.StandardScopes.Email);
         Scope.Add(OidcConstants.StandardScopes.Profile);
 
         SecurityTokenValidator = _defaultHandler;
+
+        //
+        // Defaults to survive the IIdentityProviderConfigurationValidator
+        // All of these are set during the GET /externallogin/challenge by
+        // placing them in the AuthenticationProperties.Parameters
+        //
+        AuthorizationEndpoint = "/connect/authorize";
+        TokenEndpoint = "/connect/token";
     }
 
     /// <summary>

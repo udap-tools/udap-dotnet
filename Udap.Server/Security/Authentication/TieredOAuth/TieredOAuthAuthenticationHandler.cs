@@ -50,7 +50,6 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     private readonly IUdapClient _udapClient;
     private readonly IPrivateCertificateStore _certificateStore;
     private readonly IUdapClientRegistrationStore _udapClientRegistrationStore;
-    private readonly IEnumerable<IdentityProvider> _identityProviders;
 
     /// <summary>
     /// Initializes a new instance of <see cref="TieredOAuthAuthenticationHandler" />.
@@ -71,7 +70,6 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         _udapClient = udapClient;
         _certificateStore = certificateStore;
         _udapClientRegistrationStore = udapClientRegistrationStore;
-        _identityProviders = identityProviders;
     }
 
     /// <summary>Constructs the OAuth challenge url.</summary>
@@ -93,10 +91,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         queryStrings.Add("state", state);
 
         // Static configured Options
-        if (!Options.AuthorizationEndpoint.IsNullOrEmpty())
-        {
-            return QueryHelpers.AddQueryString(Options.AuthorizationEndpoint, queryStrings!);
-        }
+        // if (!Options.AuthorizationEndpoint.IsNullOrEmpty())
+        // {
+        //     return QueryHelpers.AddQueryString(Options.AuthorizationEndpoint, queryStrings!);
+        // }
 
         var authEndpoint = properties.Parameters[UdapConstants.Discovery.AuthorizationEndpoint] as string ??
                            throw new InvalidOperationException("Missing IdP authorization endpoint.");
@@ -583,13 +581,6 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             };
             
             await _udapClientRegistrationStore.UpsertTieredClient(tieredClient, Context.RequestAborted);
-
-            _identityProviders.ToList().Add(new OidcProvider
-            {
-                Scheme = "joe",
-
-            });
-
         }
 
         properties.SetString("client_id", idpClientId);

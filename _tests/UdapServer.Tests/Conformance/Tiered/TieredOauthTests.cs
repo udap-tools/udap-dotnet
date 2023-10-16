@@ -122,9 +122,9 @@ public class TieredOauthTests
                 .AddTieredOAuthForTests(options =>
                 {
                     options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-                    options.AuthorizationEndpoint = "https://idpserver/connect/authorize";
-                    options.TokenEndpoint = "https://idpserver/connect/token";
-                    options.IdPBaseUrl = "https://idpserver";
+                    // options.AuthorizationEndpoint = "https://idpserver/connect/authorize";
+                    // options.TokenEndpoint = "https://idpserver/connect/token";
+                    // options.IdPBaseUrl = "https://idpserver";
                 }, 
                     _mockIdPPipeline,
                     _mockIdPPipeline2); // point backchannel to the IdP
@@ -1008,6 +1008,7 @@ public class TieredOauthTests
         // Todo: Nonce 
         // Todo: Validate claims.  Like missing name and other identity claims.  Maybe add a hl7_identifier
         // Why is idp:TieredOAuth in the returned claims?
+
 
     }
 

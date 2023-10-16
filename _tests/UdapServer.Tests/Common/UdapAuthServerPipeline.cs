@@ -323,10 +323,6 @@ public class UdapAuthServerPipeline
                 { "scheme", scheme },
             }
         };
-
-        
-        var identityProviders = ctx.RequestServices.GetRequiredService<IEnumerable<IdentityProvider>>();
-        var schemProvider = ctx.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
         
         var _udapClient = ctx.RequestServices.GetRequiredService<IUdapClient>();
         var originalRequestParams = HttpUtility.ParseQueryString(returnUrl);
@@ -336,7 +332,7 @@ public class UdapAuthServerPipeline
 
         if (parts.Length > 1)
         {
-            props.Items.Add(UdapConstants.Community, parts[1]); // TODO can this be Parameters instead
+            props.Parameters.Add(UdapConstants.Community, parts[1]); 
         }
         
         var idpUri = new Uri(idp);

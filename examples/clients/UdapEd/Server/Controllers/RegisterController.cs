@@ -441,7 +441,7 @@ public class RegisterController : Controller
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             }), 
             new MediaTypeHeaderValue("application/json"));
-
+        //TODO: Centralize all registration in UdapClient.  See RegisterTieredClient
         var response = await _httpClient.PostAsync(request.RegistrationEndpoint, content);
 
         if (!response.IsSuccessStatusCode)

@@ -468,7 +468,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var idp = idpUri.OriginalString;
         if (communityParam != null)
         {
-            if (idp.Contains($":{{idpUri.Port}}"))
+            if (idp.Contains($":{idpUri.Port}"))
             {
                 idp = $"{idpUri.Scheme}{Uri.SchemeDelimiter}{idpUri.Host}:{idpUri.Port}{idpUri.LocalPath}";
             }
@@ -531,7 +531,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         if (idpClient == null || !idpClient.Enabled || updateRegistration == "true")
         {
             await _certificateStore.Resolve();
-            var communityName = communityParam ?? _certificateStore.IssuedCertificates.First().Community;
+            var communityName = communityParam ?? _certificateStore.IssuedCertificates.First().Community; //TODO: query by 
             var communityId = await _udapClientRegistrationStore.GetCommunityId(communityName, Context.RequestAborted);
 
             if (communityId == null)
@@ -542,11 +542,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                 //Todo: return strategy?
                 return;
             }
-
             
-
-            //TODO: RegisterClient should be typed to the two builders
-            // UdapDcrBuilderForAuthorizationCode or UdapDcrBuilderForClientCredentials
             var document = await _udapClient.RegisterTieredClient(
                 resourceHolderRedirectUrl,
 
@@ -559,6 +555,13 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
                 OptionsMonitor.CurrentValue.Scope.ToSpaceSeparatedString(),
                 Context.RequestAborted);
+
+            if (document.GetError() != null)
+            {
+                Logger.LogWarning(document.GetError() + ": " + document.GetErrorDescription());
+                await base.HandleChallengeAsync(properties);
+                return;
+            }
 
             if (idpClient == null)
             {

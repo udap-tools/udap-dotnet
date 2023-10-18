@@ -13,7 +13,6 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Hl7.Fhir.Model;
-using Hl7.Fhir.Rest;
 using Hl7.Fhir.Serialization;
 using UdapEd.Shared.Model;
 
@@ -42,6 +41,13 @@ public class FhirService
             }
 
             var bundle = new FhirJsonParser().Parse<Bundle>(result);
+            var operationOutcome = bundle.Entry.Select(e => e.Resource as OperationOutcome).ToList();
+            
+            if (operationOutcome.Any())
+            {
+                return new FhirResultModel<List<Patient>>(operationOutcome.First(), response.StatusCode, response.Version);
+            }
+
             var patients = bundle.Entry.Select(e => e.Resource as Patient).ToList();
 
             return new FhirResultModel<List<Patient>>(patients, response.StatusCode, response.Version);

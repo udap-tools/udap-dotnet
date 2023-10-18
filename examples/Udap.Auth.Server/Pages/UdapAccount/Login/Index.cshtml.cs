@@ -256,7 +256,8 @@ public class Index : PageModel
 
             if (QueryHelpers.ParseQuery(HttpUtility.UrlDecode(returnUrl)).TryGetValue("idp", out var udapIdp))
             {
-                if (udapIdp == idpBaseUrl)
+                
+                if (udapIdp.ToString().StartsWith(idpBaseUrl))
                 {
                     return (returnUrl, true);
                 }

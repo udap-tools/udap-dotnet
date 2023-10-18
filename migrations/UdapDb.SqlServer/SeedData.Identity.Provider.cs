@@ -79,18 +79,18 @@ public static class SeedDataIdentityProvider
         var clientRegistrationStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
 
 
-        if (!udapContext.Communities.Any(c => c.Name == "http://localhost"))
+        if (!udapContext.Communities.Any(c => c.Name == "udap://TieredProvider1"))
         {
-            var community = new Community { Name = "http://localhost" };
+            var community = new Community { Name = "udap://TieredProvider1" };
             community.Enabled = true;
             community.Default = false;
             udapContext.Communities.Add(community);
             await udapContext.SaveChangesAsync();
         }
 
-        if (!udapContext.Communities.Any(c => c.Name == "udap://fhirlabs1/"))
+        if (!udapContext.Communities.Any(c => c.Name == "udap://Provider2"))
         {
-            var community = new Community { Name = "udap://fhirlabs1/" };
+            var community = new Community { Name = "udap://Provider2" };
             community.Enabled = true;
             community.Default = true;
             udapContext.Communities.Add(community);
@@ -98,78 +98,17 @@ public static class SeedDataIdentityProvider
         }
 
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        
 
         //
-        // Anchor surefhirlabs_community
-        //
-        var sureFhirLabsAnchor = new X509Certificate2(
-            Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
-
-        if ((await clientRegistrationStore.GetAnchors("udap://fhirlabs1/"))
-            .All(a => a.Thumbprint != sureFhirLabsAnchor.Thumbprint))
-        {
-            var community = udapContext.Communities.Single(c => c.Name == "udap://fhirlabs1/");
-
-            anchor = new Anchor
-            {
-                BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
-                EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
-                Name = sureFhirLabsAnchor.Subject,
-                Community = community,
-                X509Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                Thumbprint = sureFhirLabsAnchor.Thumbprint,
-                Enabled = true
-            };
-
-            udapContext.Anchors.Add(anchor);
-            await udapContext.SaveChangesAsync();
-        }
-
-        var intermediateCert = new X509Certificate2(
-            Path.Combine(assemblyPath!, certStoreBasePath,
-                "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
-
-        if ((await clientRegistrationStore.GetIntermediateCertificates())
-            .All(a => a.Thumbprint != intermediateCert.Thumbprint))
-        {
-            var anchor = udapContext.Anchors.Single(a => a.Thumbprint == sureFhirLabsAnchor.Thumbprint);
-
-            //
-            // Intermediate surefhirlabs_community
-            //
-            var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
-            
-            if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
-                    .All(r => r.Thumbprint != intermediateCert.Thumbprint))
-            {
-
-                udapContext.IntermediateCertificates.Add(new Intermediate
-                {
-                    BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
-                    EndDate = intermediateCert.NotAfter.ToUniversalTime(),
-                    Name = intermediateCert.Subject,
-                    X509Certificate = intermediateCert.ToPemFormat(),
-                    Thumbprint = intermediateCert.Thumbprint,
-                    Enabled = true,
-                    Anchor = anchor
-                });
-
-                await udapContext.SaveChangesAsync();
-            }
-        }
-
-
-        //
-        // Anchor localhost_community
+        // Anchor localhost_community for Udap.Identity.Provider1
         //
         var anchorLocalhostCert = new X509Certificate2(
             Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community1/caLocalhostCert.cer"));
 
-        if ((await clientRegistrationStore.GetAnchors("http://localhost"))
+        if ((await clientRegistrationStore.GetAnchors("udap://TieredProvider1"))
             .All(a => a.Thumbprint != anchorLocalhostCert.Thumbprint))
         {
-            var community = udapContext.Communities.Single(c => c.Name == "http://localhost");
+            var community = udapContext.Communities.Single(c => c.Name == "udap://TieredProvider1");
             var anchor = new Anchor
             {
                 BeginDate = anchorLocalhostCert.NotBefore.ToUniversalTime(),
@@ -189,7 +128,7 @@ public static class SeedDataIdentityProvider
             //
             var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
 
-            intermediateCert = new X509Certificate2(
+            var intermediateCert = new X509Certificate2(
                 Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community1/intermediates/intermediateLocalhostCert.cer"));
 
             if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
@@ -210,6 +149,70 @@ public static class SeedDataIdentityProvider
                 await udapContext.SaveChangesAsync();
             }
         }
+
+
+        //
+        // Anchor localhost_fhirlabs_community2 for Udap.Identity.Provider2
+        //
+        var anchorUdapIdentityProvider2 = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community2/caLocalhostCert2.cer"));
+
+        if ((await clientRegistrationStore.GetAnchors("udap://Provider2"))
+            .All(a => a.Thumbprint != anchorUdapIdentityProvider2.Thumbprint))
+        {
+            var community = udapContext.Communities.Single(c => c.Name == "udap://Provider2");
+
+            anchor = new Anchor
+            {
+                BeginDate = anchorUdapIdentityProvider2.NotBefore.ToUniversalTime(),
+                EndDate = anchorUdapIdentityProvider2.NotAfter.ToUniversalTime(),
+                Name = anchorUdapIdentityProvider2.Subject,
+                Community = community,
+                X509Certificate = anchorUdapIdentityProvider2.ToPemFormat(),
+                Thumbprint = anchorUdapIdentityProvider2.Thumbprint,
+                Enabled = true
+            };
+
+            udapContext.Anchors.Add(anchor);
+            await udapContext.SaveChangesAsync();
+        }
+
+        var intermediateCertProvider2 = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath,
+                "localhost_fhirlabs_community2/intermediates/intermediateLocalhostCert2.cer"));
+
+        if ((await clientRegistrationStore.GetIntermediateCertificates())
+            .All(a => a.Thumbprint != intermediateCertProvider2.Thumbprint))
+        {
+            var anchorProvider2 = udapContext.Anchors.Single(a => a.Thumbprint == anchorUdapIdentityProvider2.Thumbprint);
+
+            //
+            // Intermediate surefhirlabs_community
+            //
+            var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
+
+            if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
+                    .All(r => r.Thumbprint != intermediateCertProvider2.Thumbprint))
+            {
+
+                udapContext.IntermediateCertificates.Add(new Intermediate
+                {
+                    BeginDate = intermediateCertProvider2.NotBefore.ToUniversalTime(),
+                    EndDate = intermediateCertProvider2.NotAfter.ToUniversalTime(),
+                    Name = intermediateCertProvider2.Subject,
+                    X509Certificate = intermediateCertProvider2.ToPemFormat(),
+                    Thumbprint = intermediateCertProvider2.Thumbprint,
+                    Enabled = true,
+                    Anchor = anchorProvider2
+                });
+
+                await udapContext.SaveChangesAsync();
+            }
+        }
+
+
+
+
 
         /*
          *  "openid",

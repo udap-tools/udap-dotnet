@@ -499,6 +499,16 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         }
     }
 
+    public string? GetError()
+    {
+        return GetStandardClaim("error");
+    }
+
+    public string? GetErrorDescription()
+    {
+        return GetStandardClaim("error_description");
+    }
+
     /// <summary>
     /// Similar to  <see cref="System.IdentityModel.Tokens.Jwt.JwtPayload.AddClaims(System.Collections.Generic.IEnumerable{System.Security.Claims.Claim})"/>.
     /// Adds a number of <see cref="System.Security.Claims.Claim"/> to the <see cref="UdapDynamicClientRegistrationDocument"/>.

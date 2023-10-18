@@ -1,8 +1,18 @@
+#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using Duende.IdentityServer.Services;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Udap.Client.Client;
+using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace Udap.Auth.Server.Pages.UdapTieredLogin;
 
@@ -11,35 +21,26 @@ namespace Udap.Auth.Server.Pages.UdapTieredLogin;
 public class Challenge : PageModel
 {
     private readonly IIdentityServerInteractionService _interactionService;
+    private readonly IUdapClient _udapClient;
 
-    public Challenge(IIdentityServerInteractionService interactionService)
+    public Challenge(IIdentityServerInteractionService interactionService, IUdapClient udapClient)
     {
         _interactionService = interactionService;
+        _udapClient = udapClient;
     }
         
-    public IActionResult OnGet(string scheme, string returnUrl)
+    public async Task<IActionResult> OnGetAsync(string scheme, string returnUrl)
     {
         if (string.IsNullOrEmpty(returnUrl)) returnUrl = "~/";
+        
+        var  props = await TieredOAuthHelpers.BuildDynamicTieredOAuthOptions(
+            _interactionService, 
+            _udapClient,
+            scheme,
+            "/udaptieredlogin/callback",
+            returnUrl);
 
-        // validate returnUrl - either it is a valid OIDC URL or back to a local page
-        if (Url.IsLocalUrl(returnUrl) == false && _interactionService.IsValidReturnUrl(returnUrl) == false)
-        {
-            // user might have clicked on a malicious link - should be logged
-            throw new Exception("invalid return URL");
-        }
-            
         // start challenge and roundtrip the return URL and scheme 
-        var props = new AuthenticationProperties
-        {
-            RedirectUri = Url.Page("/udaptieredlogin/callback"),
-                
-            Items =
-            {
-                { "returnUrl", returnUrl }, 
-                { "scheme", scheme },
-            }
-        };
-
         return Challenge(props, scheme);
     }
 }

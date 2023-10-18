@@ -218,7 +218,7 @@ internal static class HostingExtensions
                 //      => Task.FromResult(Options.CallbackPath == Request.Path);
                 //
                 options.CallbackPath = "/signin-tieredoauthprovider2";
-                options.IdPBaseUrl = "https://host.docker.internal:5057";
+                options.IdPBaseUrl = "https://host.docker.internal:5057?community=udap://Provider2";
             })
             .AddTieredOAuth("OktaForUDAP", "UDAP Tiered OAuth Okta", options =>
             {

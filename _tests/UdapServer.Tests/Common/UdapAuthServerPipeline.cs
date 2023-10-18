@@ -18,11 +18,9 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Events;
 using Duende.IdentityServer.Models;
-using Duende.IdentityServer.ResponseHandling;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
-using Google.Api;
 using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication;
@@ -35,6 +33,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using Moq;
 using Udap.Auth.Server.Pages;
 using Udap.Client.Client;
@@ -43,13 +42,10 @@ using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Server.Configuration.DependencyInjection;
-using Udap.Server.Hosting.DynamicProviders.Oidc;
 using Udap.Server.Hosting.DynamicProviders.Store;
 using Udap.Server.Registration;
-using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using UnitTests.Common;
-using AuthorizeResponse = IdentityModel.Client.AuthorizeResponse;
 using Constants = Udap.Server.Constants;
 
 namespace UdapServer.Tests.Common;
@@ -305,58 +301,20 @@ public class UdapAuthServerPipeline
         //TODO: factor this code into library code and share with the Challenge.cshtml.cs file
         var interactionService = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
         var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault();
-        
-        if (interactionService.IsValidReturnUrl(returnUrl) == false)
-        {
-            throw new Exception("invalid return URL");
-        }
-
         var scheme = ctx.Request.Query["scheme"];
-        ;
-        var props = new AuthenticationProperties
-        {
-            RedirectUri = "/externallogin/callback",
+        var udapClient = ctx.RequestServices.GetService<IUdapClient>();
 
-            Items =
-            {
-                { "returnUrl", returnUrl },
-                { "scheme", scheme },
-            }
-        };
-        
-        var _udapClient = ctx.RequestServices.GetRequiredService<IUdapClient>();
-        var originalRequestParams = HttpUtility.ParseQueryString(returnUrl);
-        var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
-
-        var parts = idp.Split(new[] { '?' }, StringSplitOptions.RemoveEmptyEntries);
-
-        if (parts.Length > 1)
-        {
-            props.Parameters.Add(UdapConstants.Community, parts[1]); 
-        }
-        
-        var idpUri = new Uri(idp);
-        var idpBaseUrl = idpUri.Scheme + Uri.SchemeDelimiter + idpUri.Host + idpUri.LocalPath;
-        var request = new DiscoveryDocumentRequest
-        {
-            Address = idpBaseUrl,
-            Policy = new IdentityModel.Client.DiscoveryPolicy()
-            {
-                EndpointValidationExcludeList = new List<string> { OidcConstants.Discovery.RegistrationEndpoint }
-            }
-        };
-
-        var openIdConfig = await _udapClient.ResolveOpenIdConfig(request);
-
-        // TODO: Properties will be protected in state in the BuildchallengeUrl.  Need to trim out some of these
-        // during the protect process.
-        props.Parameters.Add(UdapConstants.Discovery.AuthorizationEndpoint, openIdConfig.AuthorizeEndpoint);
-        props.Parameters.Add(UdapConstants.Discovery.TokenEndpoint, openIdConfig.TokenEndpoint);
-        props.Parameters.Add("idpBaseUrl", idpBaseUrl.TrimEnd('/'));
+        var props = await TieredOAuthHelpers.BuildDynamicTieredOAuthOptions(
+            interactionService, 
+            udapClient,
+            scheme.ToString(),
+            "/externallogin/callback",
+            returnUrl);
 
         // When calling ChallengeAsync your handler will be called if it is registered.
         await ctx.ChallengeAsync(scheme, props);
     }
+    
 
     private async Task OnExternalLoginCallback(HttpContext ctx, ILogger logger)
     {

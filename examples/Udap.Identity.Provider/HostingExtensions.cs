@@ -1,4 +1,4 @@
-#region (c) 2022 Joseph Shook. All rights reserved.
+#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -12,11 +12,9 @@ using Duende.IdentityServer.EntityFramework.Stores;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Udap.Common;
-using Udap.Common.Certificates;
 using Udap.Identity.Provider;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;

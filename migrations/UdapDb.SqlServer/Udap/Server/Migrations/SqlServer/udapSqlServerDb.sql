@@ -28,6 +28,7 @@ CREATE TABLE [TieredClients] (
     [ClientUriSan] nvarchar(max) NOT NULL,
     [CommunityId] int NOT NULL,
     [Enabled] bit NOT NULL,
+    [TokenEndpoint] nvarchar(max) NOT NULL,
     CONSTRAINT [PK_TieredClients] PRIMARY KEY ([Id])
 );
 GO
@@ -112,7 +113,7 @@ CREATE INDEX [IX_UdapIntermediateCertificates_AnchorId] ON [UdapIntermediateCert
 GO
 
 INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
-VALUES (N'20230826205429_InitialSqlServerUdap', N'7.0.10');
+VALUES (N'20231019222837_InitialSqlServerUdap', N'7.0.12');
 GO
 
 COMMIT;

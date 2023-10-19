@@ -16,16 +16,12 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Web;
-using Duende.IdentityServer.Models;
-using Duende.IdentityServer.Stores;
 using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OAuth;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -33,14 +29,11 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client;
 using Udap.Common.Certificates;
-using Udap.Common.Extensions;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Access;
-using Udap.Model.Registration;
 using Udap.Server.Storage.Stores;
 using Udap.Util.Extensions;
-using static IdentityModel.ClaimComparer;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 
@@ -62,8 +55,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         ISystemClock clock,
         IUdapClient udapClient,
         IPrivateCertificateStore certificateStore,
-        IUdapClientRegistrationStore udapClientRegistrationStore,
-        IEnumerable<IdentityProvider> identityProviders
+        IUdapClientRegistrationStore udapClientRegistrationStore
         ) :
         base(options, logger, encoder, clock)
     {
@@ -260,11 +252,14 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
             var validationParameters = Options.TokenValidationParameters.Clone();
 
+            var clientId = properties.Items["client_id"] ?? throw new InvalidOperationException($"ClientId not found in properties");
+            var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId) ?? throw new InvalidOperationException($"ClientId not found in registration store: {clientId}");
+
             // TODO: pre installed keys check?
 
             var request = new DiscoveryDocumentRequest
             {
-                Address = Options.IdPBaseUrl,
+                Address = tieredClient.IdPBaseUrl,
                 Policy = new IdentityModel.Client.DiscoveryPolicy()
                 {
                     //TODO: Promote to TieredOAuthOptions.  Maybe even injectable for advanced use cases.
@@ -275,7 +270,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             var keys = await _udapClient.ResolveJwtKeys(request);
             validationParameters.IssuerSigningKeys = keys;
 
-            var tokenEndpointUser = ValidateToken(idToken, properties, validationParameters, out var tokenEndpointJwt);
+            var tokenEndpointUser = ValidateToken(idToken, tieredClient.IdPBaseUrl, clientId, validationParameters, out var tokenEndpointJwt);
 
             // nonce = tokenEndpointJwt.Payload.Nonce;
             // if (!string.IsNullOrEmpty(nonce))
@@ -307,7 +302,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     // Note this modifies properties if Options.UseTokenLifetime
     private ClaimsPrincipal ValidateToken(
         string idToken, 
-        AuthenticationProperties properties, 
+        string idpBaseUrl,
+        string clientId,
         TokenValidationParameters validationParameters,
         out JwtSecurityToken jwt)
     {
@@ -328,8 +324,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         // no need to validate signature when token is received using "code flow" as per spec
         // [http://openid.net/specs/openid-connect-core-1_0.html#IDTokenValidation].
-        validationParameters.ValidIssuer = Options.IdPBaseUrl;
-        properties.Items.TryGetValue("client_id", out var clientId);
+        validationParameters.ValidIssuers = new List<string>{ idpBaseUrl , idpBaseUrl.TrimEnd('/')};
         validationParameters.ValidAudience = clientId;
         validationParameters.ValidateIssuerSigningKey = false;
         
@@ -425,16 +420,15 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         var requestParams = Context.Request.Query;
         var code = requestParams["code"];
-        var idpClient = await _udapClientRegistrationStore.FindTieredClientById(clientId);
-        var idpClientId = idpClient.ClientId;
-
+        var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId) ?? throw new InvalidOperationException($"ClientId not found: {clientId}");
+        var tieredClientId = tieredClient.ClientId;
+            
         await _certificateStore.Resolve();
 
         // Sign request for token 
         var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
-            idpClientId,
-            Options.TokenEndpoint,
-
+            tieredClientId,
+            tieredClient.TokenEndpoint,
             communityParam == null
                 ?
                 _certificateStore.IssuedCertificates.First().Certificate
@@ -580,11 +574,14 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                 RedirectUri = clientRedirectUrl,
                 ClientUriSan = publicCert.GetSubjectAltNames().First().Item2,   //TODO: can a AuthServer register multiple times per community?
                 CommunityId = communityId.Value,
-                Enabled = true
+                Enabled = true,
+                TokenEndpoint = properties.Parameters[UdapConstants.Discovery.TokenEndpoint] as string ?? throw new InvalidOperationException("Missing IdP token endpoint."),
             };
             
             await _udapClientRegistrationStore.UpsertTieredClient(tieredClient, Context.RequestAborted);
         }
+
+
 
         properties.SetString("client_id", idpClientId);
 

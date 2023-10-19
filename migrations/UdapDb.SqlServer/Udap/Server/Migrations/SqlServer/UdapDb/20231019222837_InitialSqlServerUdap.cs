@@ -37,7 +37,8 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                     RedirectUri = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     ClientUriSan = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CommunityId = table.Column<int>(type: "int", nullable: false),
-                    Enabled = table.Column<bool>(type: "bit", nullable: false)
+                    Enabled = table.Column<bool>(type: "bit", nullable: false),
+                    TokenEndpoint = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {

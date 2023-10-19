@@ -34,9 +34,7 @@ public class ServerSettings
     /// </summary>
     [JsonPropertyName("ForceStateParamOnAuthorizationCode")]
     public bool ForceStateParamOnAuthorizationCode { get; set; } = false;
-
-    public ICollection<IdPMapping>? IdPMappings { get; set; }
-
+    
     [JsonPropertyName("LogoRequired")]
     public bool LogoRequired { get; set; } = true;
 
@@ -49,11 +47,6 @@ public class ServerSettings
     public bool AlwaysIncludeUserClaimsInIdToken { get; set; }
 }
 
-public class IdPMapping
-{
-    public string? Scheme { get; set; }
-    public string? IdpBaseUrl { get; set; }
-}
 
 public enum ServerSupport
 {

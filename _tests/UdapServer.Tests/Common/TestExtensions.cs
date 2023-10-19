@@ -19,6 +19,7 @@ using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Model;
 using Udap.Server.Hosting.DynamicProviders.Oidc;
+using Udap.Server.Models;
 using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace UdapServer.Tests.Common;
@@ -80,8 +81,8 @@ public static class TestExtensions
         services.Configure<IdentityServerOptions>(options =>
         {
             // this associates the TieredOAuthAuthenticationHandler and options (TieredOAuthAuthenticationOptions) classes
-            // to the idp class (OidcProvider) and type value ("udap_oidc") from the identity provider store
-            options.DynamicProviders.AddProviderType<TieredOAuthAuthenticationHandler, TieredOAuthAuthenticationOptions, OidcProvider>("udap_oidc");
+            // to the idp class (UdapIdentityProvider) and type value ("udap_oidc") from the identity provider store
+            options.DynamicProviders.AddProviderType<TieredOAuthAuthenticationHandler, TieredOAuthAuthenticationOptions, UdapIdentityProvider>("udap_oidc");
         });
 
 
@@ -89,7 +90,7 @@ public static class TestExtensions
 
 
 
-        // this registers the OidcConfigureOptions to build the TieredOAuthAuthenticationOptions from the OidcProvider data
+        // this registers the OidcConfigureOptions to build the TieredOAuthAuthenticationOptions from the UdapIdentityProvider data
         services.AddSingleton<IConfigureOptions<TieredOAuthAuthenticationOptions>, UdapOidcConfigureOptions>();
 
 
@@ -99,7 +100,7 @@ public static class TestExtensions
 
         
         
-        services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
+        //services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
 
         
         

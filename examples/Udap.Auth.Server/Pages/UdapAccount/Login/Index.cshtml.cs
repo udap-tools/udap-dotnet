@@ -10,7 +10,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Serilog.Filters;
 using Udap.Server.Configuration;
+using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace Udap.Auth.Server.Pages.UdapAccount.Login;
 
@@ -24,6 +26,7 @@ public class Index : PageModel
     private readonly ServerSettings _serverSettings;
     private readonly IAuthenticationSchemeProvider _schemeProvider;
     private readonly IIdentityProviderStore _identityProviderStore;
+    private readonly AuthenticationService _authenticationService;
 
     public ViewModel View { get; set; }
         
@@ -34,6 +37,7 @@ public class Index : PageModel
         IIdentityServerInteractionService interaction,
         IAuthenticationSchemeProvider schemeProvider,
         IIdentityProviderStore identityProviderStore,
+        AuthenticationService authenticationService,
         IEventService events,
         ServerSettings serverSettings,
         TestUserStore users = null)
@@ -44,6 +48,7 @@ public class Index : PageModel
         _interaction = interaction;
         _schemeProvider = schemeProvider;
         _identityProviderStore = identityProviderStore;
+        _authenticationService = authenticationService;
         _events = events;
         _serverSettings = serverSettings;
     }
@@ -191,27 +196,15 @@ public class Index : PageModel
         }
 
         var schemes = await _schemeProvider.GetAllSchemesAsync();
-        
-        
 
         var providers = schemes
-            .Where(x => x.DisplayName != null)
-            .Select(x =>
+            .Where(x => x.DisplayName != null && x.HandlerType != typeof(TieredOAuthAuthenticationHandler))
+            .Select(x => new ViewModel.ExternalProvider
             {
-                var (enrichedReturnUrl, matchIdp) = LoadReturnUrl(x, returnUrl);
-                
+                DisplayName = x.DisplayName ?? x.Name,
+                AuthenticationScheme = x.Name
+            }).ToList();
 
-                var externalProvider = new ViewModel.ExternalProvider
-                {
-                    DisplayName = x.DisplayName ?? x.Name,
-                    AuthenticationScheme = x.Name,
-                    ReturnUrl = enrichedReturnUrl,
-                    IsChosenIdp = matchIdp
-                };
-                
-                return externalProvider;
-            })
-            .ToList();
 
         var dynamicSchemes = (await _identityProviderStore.GetAllSchemeNamesAsync())
             .Where(x => x.Enabled)
@@ -221,6 +214,7 @@ public class Index : PageModel
                 DisplayName = x.DisplayName,
                 ReturnUrl = returnUrl
             });
+        
         providers.AddRange(dynamicSchemes);
 
 
@@ -241,46 +235,5 @@ public class Index : PageModel
             EnableLocalLogin = allowLocal && LoginOptions.AllowLocalLogin,
             ExternalProviders = providers.ToArray()
         };
-    }
-
-    private (string, bool) LoadReturnUrl(AuthenticationScheme authenticationScheme, string returnUrl)
-    {
-        if (_serverSettings.IdPMappings != null && _serverSettings.IdPMappings.Any())
-        {
-            var idpBaseUrl = _serverSettings.IdPMappings
-                .FirstOrDefault(x => x.Scheme == authenticationScheme.Name)
-                ?.IdpBaseUrl;
-        
-            if(string.IsNullOrEmpty(idpBaseUrl))
-                return (returnUrl, false);
-
-            if (QueryHelpers.ParseQuery(HttpUtility.UrlDecode(returnUrl)).TryGetValue("idp", out var udapIdp))
-            {
-                
-                if (udapIdp.ToString().StartsWith(idpBaseUrl))
-                {
-                    return (returnUrl, true);
-                }
-
-                var uri = new Uri(returnUrl, UriKind.Relative);
-                var uriParts = uri.OriginalString.Split('?');
-
-                if (uriParts.Length != 2)
-                {
-                    throw new Exception("invalid return URL");
-                }
-                
-
-                var queryParams = QueryHelpers.ParseQuery(HttpUtility.UrlDecode(uriParts[1]));
-                queryParams.Remove("idp");
-                var newReturnUrl = QueryHelpers.AddQueryString(uriParts[0], queryParams.ToDictionary(x => x.Key, x => x.Value.ToString())!);
-
-                return ($"{newReturnUrl}&idp={idpBaseUrl}", false);
-            }
-
-            return ($"{returnUrl}&idp={idpBaseUrl}", false);
-        }
-
-        return (returnUrl, false);
     }
 }

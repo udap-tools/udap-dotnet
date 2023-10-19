@@ -9,7 +9,7 @@
 
     <partial name="_ValidationSummary" />
 
-    <div class="row">
+    <div class="row mt-2">
 
         @if (Model.View.EnableLocalLogin)
         {
@@ -63,10 +63,8 @@
                         <ul class="list-inline">
                             @foreach (var provider in Model.View.VisibleExternalProviders)
                             {
-                                var buttonClass = provider.IsChosenIdp ? "btn-primary" : "btn-secondary";
-
                                 <li class="list-inline-item mb-2">
-                                    <a class="btn @buttonClass"
+                                    <a class="btn"
                                        asp-page="/UdapTieredLogin/Challenge"
                                        asp-route-scheme="@provider.AuthenticationScheme"
                                        asp-route-returnUrl="@(provider.ReturnUrl)">
@@ -85,6 +83,28 @@
             <div class="alert alert-warning">
                 <strong>Invalid login request</strong>
                 There are no login schemes configured for this request.
+            </div>
+        }
+    </div>
+    <div class="row mt-2">
+        @if (Model.View.TieredProvider != null)
+        {
+            <div class="col-sm-12">
+                <div class="card">
+                    <h2>Sign in with your identity provider</h2>
+                </div>
+                <div class="card-body">
+                    @{
+                        var provider = Model.View.TieredProvider;
+                    }
+                    <a 
+                        asp-page="/UdapTieredLogin/Challenge"
+                        asp-route-scheme="@provider.AuthenticationScheme"
+                        asp-route-returnUrl="@(provider.ReturnUrl)">
+                        Sign-in at @provider.DisplayName
+                    </a>
+
+                </div>
             </div>
         }
     </div>

@@ -12,10 +12,11 @@ using Duende.IdentityServer.Models;
 using IdentityModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Udap.Server.Models;
 using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace Udap.Server.Hosting.DynamicProviders.Oidc;
-public class UdapOidcConfigureOptions : ConfigureAuthenticationOptions<TieredOAuthAuthenticationOptions, OidcProvider>
+public class UdapOidcConfigureOptions : ConfigureAuthenticationOptions<TieredOAuthAuthenticationOptions, UdapIdentityProvider>
 {
     /// <summary>
     /// Allows for configuring the handler options from the identity provider configuration.
@@ -25,7 +26,7 @@ public class UdapOidcConfigureOptions : ConfigureAuthenticationOptions<TieredOAu
     {
     }
 
-    protected override void Configure(ConfigureAuthenticationContext<TieredOAuthAuthenticationOptions, OidcProvider> context)
+    protected override void Configure(ConfigureAuthenticationContext<TieredOAuthAuthenticationOptions, UdapIdentityProvider> context)
     {
         context.AuthenticationOptions.SignInScheme = context.DynamicProviderOptions.SignInScheme;
         // context.AuthenticationOptions.SignOutScheme = context.DynamicProviderOptions.SignOutScheme;
@@ -51,11 +52,11 @@ public class UdapOidcConfigureOptions : ConfigureAuthenticationOptions<TieredOAu
         
         context.AuthenticationOptions.UsePkce = context.IdentityProvider.UsePkce;
 
-        context.AuthenticationOptions.Scope.Clear();
-        foreach (var scope in context.IdentityProvider.Scopes)
-        {
-            context.AuthenticationOptions.Scope.Add(scope);
-        }
+        // context.AuthenticationOptions.Scope.Clear();
+        // foreach (var scope in context.IdentityProvider.Scopes)
+        // {
+        //     context.AuthenticationOptions.Scope.Add(scope);
+        // }
 
         context.AuthenticationOptions.SaveTokens = true;
         // context.AuthenticationOptions.GetClaimsFromUserInfoEndpoint = context.IdentityProvider.GetClaimsFromUserInfoEndpoint;

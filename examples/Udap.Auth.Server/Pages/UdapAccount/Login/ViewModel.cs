@@ -7,7 +7,9 @@ public class ViewModel
 
     public IEnumerable<ViewModel.ExternalProvider> ExternalProviders { get; set; } = Enumerable.Empty<ExternalProvider>();
     public IEnumerable<ViewModel.ExternalProvider> VisibleExternalProviders => ExternalProviders.Where(x => !String.IsNullOrWhiteSpace(x.DisplayName));
+    public ExternalProvider? TieredProvider => ExternalProviders.SingleOrDefault(p => p.AuthenticationScheme == "udap-tiered");
 
+    
     public bool IsExternalLoginOnly => EnableLocalLogin == false && ExternalProviders?.Count() == 1;
     public string ExternalLoginScheme => IsExternalLoginOnly ? ExternalProviders?.SingleOrDefault()?.AuthenticationScheme : null;
         
@@ -17,7 +19,5 @@ public class ViewModel
         public string AuthenticationScheme { get; set; }
 
         public string ReturnUrl { get; set; }
-
-        public bool IsChosenIdp { get; set; }
     }
 }

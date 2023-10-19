@@ -67,7 +67,7 @@
                                     <a class="btn btn-secondary"
                                        asp-page="/ExternalLogin/Challenge"
                                        asp-route-scheme="@provider.AuthenticationScheme"
-                                       asp-route-returnUrl="@(provider.ReturnUrl)">
+                                       asp-route-returnUrl="@Model.Input.ReturnUrl">
                                         @provider.DisplayName
                                     </a>
                                 </li>

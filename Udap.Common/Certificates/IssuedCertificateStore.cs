@@ -65,7 +65,7 @@ public class IssuedCertificateStore : IPrivateCertificateStore
 
         foreach (var community in communities)
         {
-            _logger.LogInformation($"Loading Community:: Name: '{community.Name}' IdPBaseUrl: '{community.IdPBaseUrl}'");
+            _logger.LogInformation($"Loading Community:: Name: '{community.Name}'");
 
             foreach (var communityIssuer in community.IssuedCerts)
             {
@@ -97,7 +97,6 @@ public class IssuedCertificateStore : IPrivateCertificateStore
                             IssuedCertificates.Add(new IssuedCertificate
                             {
                                 Community = community.Name,
-                                IdPBaseUrl = community.IdPBaseUrl,
                                 Certificate = x509Cert,
                                 Thumbprint = x509Cert.Thumbprint
                             });

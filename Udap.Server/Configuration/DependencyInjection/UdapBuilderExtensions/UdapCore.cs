@@ -125,7 +125,3 @@ public static  class UdapServiceBuilderExtensionsCore
         return builder;
     }
 }
-
-public class OidcProvUdapProviderider
-{
-}

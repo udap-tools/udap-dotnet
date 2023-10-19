@@ -12,7 +12,7 @@ using Udap.Server.DbContexts;
 namespace Udap.Server.Migrations.SqlServer.UdapDb
 {
     [DbContext(typeof(UdapDbContext))]
-    [Migration("20230826205429_InitialSqlServerUdap")]
+    [Migration("20231019222837_InitialSqlServerUdap")]
     partial class InitialSqlServerUdap
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "7.0.10")
+                .HasAnnotation("ProductVersion", "7.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -630,6 +630,10 @@ namespace Udap.Server.Migrations.SqlServer.UdapDb
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RedirectUri")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TokenEndpoint")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

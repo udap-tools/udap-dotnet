@@ -13,7 +13,6 @@
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Web;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Events;
@@ -33,16 +32,15 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
 using Moq;
 using Udap.Auth.Server.Pages;
 using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
-using Udap.Model;
 using Udap.Server.Configuration.DependencyInjection;
-using Udap.Server.Hosting.DynamicProviders.Store;
+using Udap.Server.Hosting.DynamicProviders.Oidc;
+using Udap.Server.Models;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using UnitTests.Common;
@@ -79,7 +77,7 @@ public class UdapAuthServerPipeline
 
     public IdentityServerOptions Options { get; set; }
     public List<Client> Clients { get; set; } = new List<Client>();
-    public List<OidcProvider> OidcProviders { get; set; } = new List<OidcProvider>();
+    public List<UdapIdentityProvider> UdapIdentityProvider { get; set; } = new List<UdapIdentityProvider>();
     public List<IdentityResource> IdentityScopes { get; set; } = new List<IdentityResource>();
     public List<ApiResource> ApiResources { get; set; } = new List<ApiResource>();
     public List<ApiScope> ApiScopes { get; set; } = new List<ApiScope>();
@@ -197,9 +195,7 @@ public class UdapAuthServerPipeline
             .AddInMemoryIdentityResources(IdentityScopes)
             .AddInMemoryApiResources(ApiResources)
             .AddTestUsers(Users)
-            .AddInMemoryOidcProviders(OidcProviders)
-            .AddInMemoryCaching()
-            .AddIdentityProviderStoreCache<UdapInMemoryIdentityProviderStore>()
+            .AddInMemorIdentityProviders(UdapIdentityProvider)
             .AddDeveloperSigningCredential(persistKey: false);
             
 

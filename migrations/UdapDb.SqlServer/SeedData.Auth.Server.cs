@@ -74,6 +74,28 @@ public static class SeedDataAuthServer
         var udapContext = serviceScope.ServiceProvider.GetRequiredService<UdapDbContext>();
         await udapContext.Database.MigrateAsync();
 
+
+        //
+        // Load udap dynamic auth provider
+        //
+        if (!configDbContext.IdentityProviders.Any(i => i.Scheme == "udap-tiered"))
+        {
+            await configDbContext.IdentityProviders.AddAsync(
+                new OidcProvider()
+                {
+                    Scheme = "udap-tiered",
+                    Authority = "template",
+                    ClientId = "udap.auth.server",
+                    Type = "udap_oidc",
+                    UsePkce = false,
+                    Scope = "openid email profile"
+                }.ToEntity());
+
+            await configDbContext.SaveChangesAsync();
+        }
+
+        
+
         var clientRegistrationStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
 
 
@@ -486,7 +508,6 @@ public static class SeedDataAuthServer
     {
         var apiScopes = configDbContext.ApiScopes
             .Include(s => s.Properties)
-            .Where(s => s.Enabled)
             .Select(s => s)
             .ToList();
 
@@ -540,7 +561,7 @@ public static class SeedDataAuthServer
             }
         }
 
-        foreach (var scopeName in seedScopes.Where(s => s.StartsWith("patient")))
+        foreach (var scopeName in seedScopes.Where(s => s.StartsWith("patient")).ToList())
         {
             if (!apiScopes.Any(s => s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "patient")))
             {

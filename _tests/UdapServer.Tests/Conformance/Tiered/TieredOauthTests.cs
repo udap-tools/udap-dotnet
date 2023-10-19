@@ -83,14 +83,6 @@ public class TieredOauthTests
             s.AddSingleton<ServerSettings>(new ServerSettings
             {
                 ServerSupport = ServerSupport.Hl7SecurityIG,
-                IdPMappings = new List<IdPMapping>
-                {
-                    new IdPMapping()
-                    {
-                        Scheme = "TieredOAuth",  // default name
-                        IdpBaseUrl = "https://idpserver"
-                    }
-                }
                 // DefaultUserScopes = "udap",
                 // DefaultSystemScopes = "udap"
                 // ForceStateParamOnAuthorizationCode = false (default)
@@ -143,11 +135,11 @@ public class TieredOauthTests
             });
 
             
-            var _oidcProviders = new List<OidcProvider>()
+            var _oidcProviders = new List<UdapIdentityProvider>()
             {
-                new OidcProvider
+                new UdapIdentityProvider
                 {
-                    Scheme = "idpserver2",
+                    Scheme = "udap-tiered",
                     Authority = "template", //TODO: hoping I can remove this template idea and be purely dynamic.
                     ClientId = "client",
                     ClientSecret = "secret",
@@ -157,7 +149,7 @@ public class TieredOauthTests
                 }
             };
             
-            _mockAuthorServerPipeline.OidcProviders = _oidcProviders;
+            _mockAuthorServerPipeline.UdapIdentityProvider = _oidcProviders;
 
 
             using var serviceProvider = services.BuildServiceProvider();
@@ -822,9 +814,9 @@ public class TieredOauthTests
         // response after discovery and registration
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = true; // Need to set the idsrv cookie so calls to /authorize will succeed
         
-        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/idpserver2/signin", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name).Should().BeNull();
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name).Should().BeNull();
         var backChannelChallengeResponse = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
-        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/idpserver2/signin", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name).Should().NotBeNull();
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name).Should().NotBeNull();
 
         backChannelChallengeResponse.StatusCode.Should().Be(HttpStatusCode.Redirect, await backChannelChallengeResponse.Content.ReadAsStringAsync());
         backChannelChallengeResponse.Headers.Location.Should().NotBeNull();
@@ -859,7 +851,7 @@ public class TieredOauthTests
         // _testOutputHelper.WriteLine(authorizeCallbackResult.Headers.Location!.OriginalString);
         authorizeCallbackResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await authorizeCallbackResult.Content.ReadAsStringAsync());
         authorizeCallbackResult.Headers.Location.Should().NotBeNull();
-        authorizeCallbackResult.Headers.Location!.AbsoluteUri.Should().StartWith("https://server/federation/idpserver2/signin?");
+        authorizeCallbackResult.Headers.Location!.AbsoluteUri.Should().StartWith("https://server/federation/udap-tiered/signin?");
 
         var backChannelCode = QueryHelpers.ParseQuery(authorizeCallbackResult.Headers.Location.Query).Single(p => p.Key == "code").Value.ToString();
         backChannelCode.Should().NotBeEmpty();

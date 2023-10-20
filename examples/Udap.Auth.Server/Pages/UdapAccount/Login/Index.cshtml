@@ -91,17 +91,17 @@
         {
             <div class="col-sm-12">
                 <div class="card">
-                    <h2>Sign in with your identity provider</h2>
+                    <h2>Sign in with your organizations identity provider</h2>
                 </div>
                 <div class="card-body">
                     @{
                         var provider = Model.View.TieredProvider;
                     }
-                    <a 
+                    <a class="btn btn-primary"
                         asp-page="/UdapTieredLogin/Challenge"
                         asp-route-scheme="@provider.AuthenticationScheme"
                         asp-route-returnUrl="@(provider.ReturnUrl)">
-                        Sign-in at @provider.DisplayName
+                        @provider.DisplayName
                     </a>
 
                 </div>

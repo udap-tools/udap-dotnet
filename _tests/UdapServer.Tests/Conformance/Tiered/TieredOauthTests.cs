@@ -18,7 +18,6 @@ using System.Text;
 using System.Text.Json;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
-using Duende.IdentityServer.Stores;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
@@ -111,17 +110,11 @@ public class TieredOauthTests
                 // to allow discovery of the IdPBaseUrl
                 //
                 .AddTieredOAuthForTests(options =>
-                {
-                    options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-                    // options.AuthorizationEndpoint = "https://idpserver/connect/authorize";
-                    // options.TokenEndpoint = "https://idpserver/connect/token";
-                    // options.IdPBaseUrl = "https://idpserver";
-                }, 
+                    {
+                        options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+                    },
                     _mockIdPPipeline,
-                    _mockIdPPipeline2); // point backchannel to the IdP
-
-
-            services.AddTieredOAuthDynamicProviderForTests(_mockIdPPipeline, _mockIdPPipeline2);
+                    _mockIdPPipeline2);
 
 
             services.AddAuthorization(); // required for TieredOAuth Testing
@@ -131,23 +124,6 @@ public class TieredOauthTests
             {
                 options.BackchannelHttpHandler = _mockIdPPipeline2.Server?.CreateHandler();
             });
-
-            
-            var oidcProviders = new List<UdapIdentityProvider>()
-            {
-                new()
-                {
-                    Scheme = "udap-tiered",
-                    Authority = "template", //TODO: hoping I can remove this template idea and be purely dynamic.
-                    ClientId = "client",
-                    ClientSecret = "secret",
-                    Type = "udap_oidc",
-                    UsePkce = false,
-                    Scope = "openid email profile"
-                }
-            };
-            
-            _mockAuthorServerPipeline.UdapIdentityProvider = oidcProviders;
 
 
             using var serviceProvider = services.BuildServiceProvider();
@@ -519,9 +495,9 @@ public class TieredOauthTests
         // response after discovery and registration
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = true; // Need to set the idsrv cookie so calls to /authorize will succeed
 
-        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/signin-tieredoauth", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().BeNull();
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().BeNull();
         var backChannelChallengeResponse = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
-        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/signin-tieredoauth", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().NotBeNull();
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().NotBeNull();
         
         backChannelChallengeResponse.StatusCode.Should().Be(HttpStatusCode.Redirect, await backChannelChallengeResponse.Content.ReadAsStringAsync());
         backChannelChallengeResponse.Headers.Location.Should().NotBeNull();
@@ -557,7 +533,7 @@ public class TieredOauthTests
         // _testOutputHelper.WriteLine(authorizeCallbackResult.Headers.Location!.OriginalString);
         authorizeCallbackResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await authorizeCallbackResult.Content.ReadAsStringAsync());
         authorizeCallbackResult.Headers.Location.Should().NotBeNull();
-        authorizeCallbackResult.Headers.Location!.AbsoluteUri.Should().StartWith("https://server/signin-tieredoauth?");
+        authorizeCallbackResult.Headers.Location!.AbsoluteUri.Should().StartWith("https://server/federation/udap-tiered/signin?");
 
         QueryHelpers.ParseQuery(authorizeCallbackResult.Headers.Location.Query).Single(p => p.Key == "code").Value.Should().NotBeEmpty();
 
@@ -574,7 +550,7 @@ public class TieredOauthTests
         _mockAuthorServerPipeline.GetSessionCookie().Should().BeNull();
         _mockAuthorServerPipeline.BrowserClient.GetCookie("https://server", "idsrv").Should().BeNull();
 
-        // Run Auth Server /signin-tieredoauth  This is the Registered scheme callback endpoint
+        // Run Auth Server /federation/udap-tiered/signin  This is the Registered scheme callback endpoint
         // Allow one redirect to run /connect/token.
         //  Sets Cookies: idsrv.external idsrv.session, and idsrv 
         //  Backchannel calls:
@@ -590,7 +566,7 @@ public class TieredOauthTests
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = true;
 
 
-        // "https://server/signin-tieredoauth?..."
+        // "https://server/federation/udap-tiered/signin?..."
         var schemeCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(authorizeCallbackResult.Headers.Location!.AbsoluteUri);
 
 
@@ -770,12 +746,12 @@ public class TieredOauthTests
         queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(clientState);
         queryParams.Single(q => q.Key == "idp").Value.Should().BeEquivalentTo("https://idpserver2?community=udap://idp-community-2");
 
-        var schemes = await _mockAuthorServerPipeline.Resolve<IIdentityProviderStore>().GetAllSchemeNamesAsync();
+        // var schemes = await _mockAuthorServerPipeline.Resolve<IIdentityProviderStore>().GetAllSchemeNamesAsync();
 
 
         var sb = new StringBuilder();
         sb.Append("https://server/externallogin/challenge?"); // built in UdapAccount/Login/Index.cshtml.cs
-        sb.Append("scheme=").Append(schemes.First().Scheme);
+        sb.Append("scheme=").Append(TieredOAuthAuthenticationDefaults.AuthenticationScheme);
         sb.Append("&returnUrl=").Append(Uri.EscapeDataString(returnUrl));
         clientAuthorizeUrl = sb.ToString();
 
@@ -998,18 +974,6 @@ public class TieredOauthTests
         // Todo: Validate claims.  Like missing name and other identity claims.  Maybe add a hl7_identifier
         // Why is idp:TieredOAuth in the returned claims?
         
-    }
-
-    [Fact]
-    public async Task LoadDynamicProvider()
-    {
-        var identityProviderStore = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<IIdentityProviderStore>();
-
-        var dynamicSchemes = (await identityProviderStore.GetAllSchemeNamesAsync())
-            .Where(x => x.Enabled)
-            .Select(x => x.Scheme);
-
-        dynamicSchemes.Count().Should().Be(1);
     }
 
     private async Task<UdapDynamicClientRegistrationDocument?> RegisterClientWithAuthServer()

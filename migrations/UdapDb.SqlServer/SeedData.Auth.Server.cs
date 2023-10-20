@@ -73,27 +73,6 @@ public static class SeedDataAuthServer
 
         var udapContext = serviceScope.ServiceProvider.GetRequiredService<UdapDbContext>();
         await udapContext.Database.MigrateAsync();
-
-
-        //
-        // Load udap dynamic auth provider
-        //
-        if (!configDbContext.IdentityProviders.Any(i => i.Scheme == "udap-tiered"))
-        {
-            await configDbContext.IdentityProviders.AddAsync(
-                new OidcProvider()
-                {
-                    Scheme = "udap-tiered",
-                    Authority = "template",
-                    ClientId = "udap.auth.server",
-                    Type = "udap_oidc",
-                    UsePkce = false,
-                    Scope = "openid email profile"
-                }.ToEntity());
-
-            await configDbContext.SaveChangesAsync();
-        }
-
         
 
         var clientRegistrationStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();

@@ -1,4 +1,12 @@
-using System.Web;
+#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using Duende.IdentityServer;
 using Duende.IdentityServer.Events;
 using Duende.IdentityServer.Models;
@@ -9,10 +17,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.WebUtilities;
-using Serilog.Filters;
-using Udap.Server.Configuration;
-using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace Udap.Auth.Server.Pages.UdapAccount.Login;
 
@@ -23,24 +27,20 @@ public class Index : PageModel
     private readonly TestUserStore _users;
     private readonly IIdentityServerInteractionService _interaction;
     private readonly IEventService _events;
-    private readonly ServerSettings _serverSettings;
     private readonly IAuthenticationSchemeProvider _schemeProvider;
     private readonly IIdentityProviderStore _identityProviderStore;
-    private readonly AuthenticationService _authenticationService;
 
-    public ViewModel View { get; set; }
+    public ViewModel? View { get; set; }
         
     [BindProperty]
-    public InputModel Input { get; set; }
+    public InputModel? Input { get; set; }
         
     public Index(
         IIdentityServerInteractionService interaction,
         IAuthenticationSchemeProvider schemeProvider,
         IIdentityProviderStore identityProviderStore,
-        AuthenticationService authenticationService,
         IEventService events,
-        ServerSettings serverSettings,
-        TestUserStore users = null)
+        TestUserStore users)
     {
         // this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
         _users = users ?? throw new Exception("Please call 'AddTestUsers(TestUsers.Users)' on the IIdentityServerBuilder in Startup or remove the TestUserStore from the AccountController.");
@@ -48,16 +48,14 @@ public class Index : PageModel
         _interaction = interaction;
         _schemeProvider = schemeProvider;
         _identityProviderStore = identityProviderStore;
-        _authenticationService = authenticationService;
         _events = events;
-        _serverSettings = serverSettings;
     }
 
     public async Task<IActionResult> OnGet(string returnUrl)
     {
         await BuildModelAsync(returnUrl);
             
-        if (View.IsExternalLoginOnly)
+        if (View != null && View.IsExternalLoginOnly)
         {
             // we only have one option for logging in and it's an external provider
             return RedirectToPage("/UdapTieredLogin/Challenge", new { scheme = View.ExternalLoginScheme, returnUrl });
@@ -68,6 +66,8 @@ public class Index : PageModel
         
     public async Task<IActionResult> OnPost()
     {
+        if (Input == null) throw new InvalidOperationException("Input is null");
+
         // check if we are in the context of an authorization request
         var context = await _interaction.GetAuthorizationContextAsync(Input.ReturnUrl);
 
@@ -108,7 +108,7 @@ public class Index : PageModel
 
                 // only set explicit expiration here if user chooses "remember me". 
                 // otherwise we rely upon expiration configured in cookie middleware.
-                AuthenticationProperties props = null;
+                AuthenticationProperties? props = null;
                 if (LoginOptions.AllowRememberLogin && Input.RememberLogin)
                 {
                     props = new AuthenticationProperties
@@ -116,15 +116,15 @@ public class Index : PageModel
                         IsPersistent = true,
                         ExpiresUtc = DateTimeOffset.UtcNow.Add(LoginOptions.RememberMeLoginDuration)
                     };
-                };
+                }
 
                 // issue authentication cookie with subject ID and username
-                var isuser = new IdentityServerUser(user.SubjectId)
+                var issuer = new IdentityServerUser(user.SubjectId)
                 {
                     DisplayName = user.Username
                 };
 
-                await HttpContext.SignInAsync(isuser, props);
+                await HttpContext.SignInAsync(issuer, props);
 
                 if (context != null)
                 {
@@ -177,7 +177,7 @@ public class Index : PageModel
         // TODO: Well...  this could be... need to revisit
         if (context?.IdP != null && await _schemeProvider.GetSchemeAsync(context.IdP) != null)
         {
-            var local = context.IdP == Duende.IdentityServer.IdentityServerConstants.LocalIdentityProvider;
+            var local = context.IdP == IdentityServerConstants.LocalIdentityProvider;
 
             // this is meant to short circuit the UI and only trigger the one external IdP
             View = new ViewModel
@@ -185,7 +185,7 @@ public class Index : PageModel
                 EnableLocalLogin = local,
             };
 
-            Input.Username = context?.LoginHint;
+            Input.Username = context.LoginHint ?? string.Empty;
 
             if (!local)
             {
@@ -198,11 +198,12 @@ public class Index : PageModel
         var schemes = await _schemeProvider.GetAllSchemesAsync();
 
         var providers = schemes
-            .Where(x => x.DisplayName != null && x.HandlerType != typeof(TieredOAuthAuthenticationHandler))
+            .Where(x => x.DisplayName != null)
             .Select(x => new ViewModel.ExternalProvider
             {
                 DisplayName = x.DisplayName ?? x.Name,
-                AuthenticationScheme = x.Name
+                AuthenticationScheme = x.Name,
+                ReturnUrl = returnUrl
             }).ToList();
 
 
@@ -225,7 +226,7 @@ public class Index : PageModel
             allowLocal = client.EnableLocalLogin;
             if (client.IdentityProviderRestrictions != null && client.IdentityProviderRestrictions.Any())
             {
-                providers = providers.Where(provider => client.IdentityProviderRestrictions.Contains(provider.AuthenticationScheme)).ToList();
+                providers = providers.Where(provider => client.IdentityProviderRestrictions.Contains(provider.AuthenticationScheme!)).ToList();
             }
         }
 

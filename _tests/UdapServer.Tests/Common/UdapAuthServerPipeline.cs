@@ -39,8 +39,6 @@ using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Server.Configuration.DependencyInjection;
-using Udap.Server.Hosting.DynamicProviders.Oidc;
-using Udap.Server.Models;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using UnitTests.Common;
@@ -77,7 +75,6 @@ public class UdapAuthServerPipeline
 
     public IdentityServerOptions Options { get; set; }
     public List<Client> Clients { get; set; } = new List<Client>();
-    public List<UdapIdentityProvider> UdapIdentityProvider { get; set; } = new List<UdapIdentityProvider>();
     public List<IdentityResource> IdentityScopes { get; set; } = new List<IdentityResource>();
     public List<ApiResource> ApiResources { get; set; } = new List<ApiResource>();
     public List<ApiScope> ApiScopes { get; set; } = new List<ApiScope>();
@@ -195,7 +192,6 @@ public class UdapAuthServerPipeline
             .AddInMemoryIdentityResources(IdentityScopes)
             .AddInMemoryApiResources(ApiResources)
             .AddTestUsers(Users)
-            .AddInMemorIdentityProviders(UdapIdentityProvider)
             .AddDeveloperSigningCredential(persistKey: false);
             
 

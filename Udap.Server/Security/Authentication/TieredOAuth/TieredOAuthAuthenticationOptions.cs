@@ -21,28 +21,29 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions
 
     public TieredOAuthAuthenticationOptions()
     {
-        CallbackPath = TieredOAuthAuthenticationDefaults.CallbackPath;
-        ClientId = "dynamic";
-        ClientSecret = "signed metadata";
-        // AuthorizationEndpoint = TieredOAuthAuthenticationDefaults.AuthorizationEndpoint;
-        // TokenEndpoint = TieredOAuthAuthenticationDefaults.TokenEndpoint;
         SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;
 
         // TODO:  configurable for the non-dynamic AddTieredOAuthForTests call. 
         Scope.Add(OidcConstants.StandardScopes.OpenId);
-        // Scope.Add(UdapConstants.StandardScopes.FhirUser);
         Scope.Add(OidcConstants.StandardScopes.Email);
         Scope.Add(OidcConstants.StandardScopes.Profile);
 
         SecurityTokenValidator = _defaultHandler;
 
         //
-        // Defaults to survive the IIdentityProviderConfigurationValidator
-        // All of these are set during the GET /externallogin/challenge by
-        // placing them in the AuthenticationProperties.Parameters
+        // Properties below are required to survive Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions.Validate(String scheme)
+        //
+        // AuthorizationEndpoint and TokenEndpoint are placed them in the AuthenticationProperties.Parameters
+        // and set during the GET /externallogin/challenge
+        //
+        // ClientSecret is not used
+        // ClientId is set after dynamic registration
         //
         AuthorizationEndpoint = "/connect/authorize";
         TokenEndpoint = "/connect/token";
+        ClientSecret = "signed metadata";
+        ClientId = "temporary";
+        CallbackPath = TieredOAuthAuthenticationDefaults.CallbackPath;
     }
 
     /// <summary>

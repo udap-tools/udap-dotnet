@@ -64,39 +64,38 @@ internal static class HostingExtensions
         builder.Services.Configure<UdapClientOptions>(builder.Configuration.GetSection("UdapClientOptions"));
 
         builder.Services.AddUdapServer(
-            options =>
-            {
-                var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
-                options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
-                options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
-                options.ServerSupport = udapServerOptions.ServerSupport;
-                options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
-                options.LogoRequired = udapServerOptions.LogoRequired;
-            },
-            // udapClientOptions =>
-            // {
-            //     var appSettings = builder.Configuration.GetOption<UdapClientOptions>("UdapClientOptions");
-            //     udapClientOptions.ClientName = "Udap.Auth.SecuredControls";
-            //     udapClientOptions.Contacts = new HashSet<string>
-            //         { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" };
-            //     udapClientOptions.Headers = appSettings.Headers;
-            // },
-            storeOptionAction: options =>
-                _ = provider switch
+                options =>
                 {
-                    "Sqlite" => options.UdapDbContext = b =>
-                        b.UseSqlite(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                    var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
+                    options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
+                    options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
+                    options.ServerSupport = udapServerOptions.ServerSupport;
+                    options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
+                    options.LogoRequired = udapServerOptions.LogoRequired;
+                },
+                // udapClientOptions =>
+                // {
+                //     var appSettings = builder.Configuration.GetOption<UdapClientOptions>("UdapClientOptions");
+                //     udapClientOptions.ClientName = "Udap.Auth.SecuredControls";
+                //     udapClientOptions.Contacts = new HashSet<string>
+                //         { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" };
+                //     udapClientOptions.Headers = appSettings.Headers;
+                // },
+                storeOptionAction: options =>
+                    _ = provider switch
+                    {
+                        "Sqlite" => options.UdapDbContext = b =>
+                            b.UseSqlite(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
-                    "SqlServer" => options.UdapDbContext = b =>
-                        b.UseSqlServer(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                        "SqlServer" => options.UdapDbContext = b =>
+                            b.UseSqlServer(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
-                    _ => throw new Exception($"Unsupported provider: {provider}")
-                })
+                        _ => throw new Exception($"Unsupported provider: {provider}")
+                    })
             .AddUdapResponseGenerators()
-            .AddSmartV2Expander()
-            .AddTieredOAuthDynamicProvider(); 
+            .AddSmartV2Expander();
 
 
 
@@ -145,105 +144,24 @@ internal static class HostingExtensions
             .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
             //TODO remove
-            .AddTestUsers(TestUsers.Users)
-            .AddIdentityProviderStore<UdapIdentityProviderStore>();  // last to register wins. Uhg!
+            .AddTestUsers(TestUsers.Users);
+            // .AddIdentityProviderStore<UdapIdentityProviderStore>();  // last to register wins. Uhg!
 
-            //
-            // Don't cache in this example project.  It can hide bugs such as the dynamic UDAP Tiered OAuth Provider
-            // options properties as the OIDC handshake bounces from machine to machine.  When caching is enabled
-            // TieredOAuthOptions are retained even after the redirect.  This works until you are scaled up.  
-            // So best to not cache so we can catch logic errors in integration testing.
-            //
-            // .AddInMemoryCaching()
-            // .AddIdentityProviderStoreCache<UdapIdentityProviderStore>();   // last to register wins. Uhg!
-
-
-        // if (Environment.GetEnvironmentVariable("GCPDeploy") == "true")
-        // {
-        //     builder.Services.AddAuthentication()
-        //    //
-        //    // By convention the scheme name should match the community name in UdapFileCertStoreManifest
-        //    // to allow discovery of the IdPBaseUrl
-        //    //
-        //    .AddTieredOAuth(options =>
-        //    {
-        //        options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-        //        options.AuthorizationEndpoint = "https://idp1.securedcontrols.net/connect/authorize";
-        //        options.TokenEndpoint = "https://idp1.securedcontrols.net/connect/token";
-        //        options.IdPBaseUrl = "https://idp1.securedcontrols.net";
-        //    })
-        //    .AddTieredOAuth("TieredOAuthProvider2", "UDAP Tiered OAuth (DOTNET-Provider2)", options =>
-        //    {
-        //        options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-        //        options.AuthorizationEndpoint = "https://idp2.securedcontrols.net/connect/authorize";
-        //        options.TokenEndpoint = "https://idp2.securedcontrols.net/connect/token";
-        //        options.CallbackPath = "/signin-tieredoauthprovider2";
-        //        options.IdPBaseUrl = "https://idp2.securedcontrols.net";
-        //    })
-        //    .AddTieredOAuth("OktaForUDAP", "UDAP Tiered OAuth Okta", options =>
-        //    {
-        //        options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-        //        options.AuthorizationEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/authorize";
-        //        options.TokenEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/token";
-        //        options.CallbackPath = "/signin-oktaforudap";
-        //        options.IdPBaseUrl = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7";
-        //    });
         //
-        // }
-        // else
-        // {
-        //     builder.Services.AddAuthentication()
-        //     //
-        //     // By convention the scheme name should match the community name in UdapFileCertStoreManifest
-        //     // to allow discovery of the IdPBaseUrl
-        //     //
-        //     .AddTieredOAuth(options =>
-        //     {
-        //         options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-        //         //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
-        //         options.AuthorizationEndpoint = "https://host.docker.internal:5055/connect/authorize";
-        //         //options.TokenEndpoint = "Get from UDAP metadata
-        //         options.TokenEndpoint = "https://host.docker.internal:5055/connect/token";
-        //         // options.ClientId = "dynamic";
-        //         // options.Events.OnRedirectToAuthorizationEndpoint
-        //         // {
-        //         //     
-        //         // };
-        //         options.IdPBaseUrl = "https://host.docker.internal:5055";
-        //     })
-        //     .AddTieredOAuth("TieredOAuthProvider2", "UDAP Tiered OAuth (DOTNET-Provider2)", options =>
-        //     {
-        //         options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-        //         //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
-        //         options.AuthorizationEndpoint = "https://host.docker.internal:5057/connect/authorize";
-        //         options.TokenEndpoint = "https://host.docker.internal:5057/connect/token";
-        //         //
-        //         // When repeating AddTieredOAuth extension always add set a unique CallbackPath
-        //         // Otherwise the following error will occur: "The oauth state was missing or invalid."
-        //         //
-        //         // Buried in asp.net RemoteAuthenticationHandler.cs the following code decides on what scheme
-        //         // to use during HandleRequestAsync() by the CallbackPath registered
-        //         //
-        //         // deciding code in RemoteAuthenticationHandler.cs:
-        //         //  public virtual Task<bool> ShouldHandleRequestAsync()
-        //         //      => Task.FromResult(Options.CallbackPath == Request.Path);
-        //         //
-        //         options.CallbackPath = "/signin-tieredoauthprovider2";
-        //         options.IdPBaseUrl = "https://host.docker.internal:5057?community=udap://Provider2";
-        //     })
-        //     .AddTieredOAuth("OktaForUDAP", "UDAP Tiered OAuth Okta", options =>
-        //     {
-        //         options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-        //         //TODO Get AuthorizationEndpoint from IdpBaseUrl Udap Metadata
-        //         options.AuthorizationEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/authorize";
-        //         //options.TokenEndpoint = "Get from UDAP metadata
-        //         options.TokenEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/token";
-        //         options.CallbackPath = "/signin-oktaforudap";
-        //         options.IdPBaseUrl = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7";
+        // Don't cache in this example project.  It can hide bugs such as the dynamic UDAP Tiered OAuth Provider
+        // options properties as the OIDC handshake bounces from machine to machine.  When caching is enabled
+        // TieredOAuthOptions are retained even after the redirect.  This works until you are scaled up.  
+        // So best to not cache so we can catch logic errors in integration testing.
         //
-        //     });
-        // }
+        // .AddInMemoryCaching()
+        // .AddIdentityProviderStoreCache<UdapIdentityProviderStore>();   // last to register wins. Uhg!
 
+
+        builder.Services.AddAuthentication()
+            .AddTieredOAuth(options =>
+            {
+                options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+            });
 
         builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
 

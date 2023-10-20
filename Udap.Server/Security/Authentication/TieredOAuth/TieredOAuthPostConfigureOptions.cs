@@ -7,12 +7,10 @@
 // */
 #endregion
 
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
 using Udap.Client.Client;
-using System.Reflection.Metadata;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 
@@ -26,6 +24,7 @@ public class TieredOAuthPostConfigureOptions : IPostConfigureOptions<TieredOAuth
     /// Initializes a new instance of the <see cref="TieredOAuthPostConfigureOptions"/> class.
     /// </summary>
     /// <param name="udapClientMessageHandler"></param>
+    /// <param name="dataProtection"></param>
     public TieredOAuthPostConfigureOptions(UdapClientMessageHandler udapClientMessageHandler, IDataProtectionProvider dataProtection)
     {
         _udapClientMessageHandler = udapClientMessageHandler;
@@ -33,7 +32,7 @@ public class TieredOAuthPostConfigureOptions : IPostConfigureOptions<TieredOAuth
     }
 
     /// <summary>
-    /// Invoked to configure a <typeparamref name="TieredOAuthAuthenticationOptions" /> instance.
+    /// Invoked to configure a <see cref="TieredOAuthAuthenticationOptions" /> instance.
     /// </summary>
     /// <param name="name">The name of the options instance being configured.</param>
     /// <param name="options">The options instance to configured.</param>
@@ -42,15 +41,12 @@ public class TieredOAuthPostConfigureOptions : IPostConfigureOptions<TieredOAuth
         //TODO Register _udapClientMessageHandler events for logging
 
         options.BackchannelHttpHandler = _udapClientMessageHandler;
-        options.SignInScheme = options.SignInScheme;
         options.DataProtectionProvider ??= _dataProtection;
-
-
 
         if (options.StateDataFormat == null)
         {
             var dataProtector = options.DataProtectionProvider.CreateProtector(
-                typeof(TieredOAuthAuthenticationHandler).FullName!, name, "v1");
+                typeof(TieredOAuthAuthenticationHandler).FullName!, name ?? throw new ArgumentNullException(nameof(name)));
             options.StateDataFormat = new PropertiesDataFormat(dataProtector);
         }
 

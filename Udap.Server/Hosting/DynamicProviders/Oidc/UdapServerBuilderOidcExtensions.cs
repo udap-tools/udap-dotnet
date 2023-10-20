@@ -42,10 +42,7 @@ public static class UdapServerBuilderOidcExtensions
         // AddOpenIdConnect helper that we'd normally use statically on the AddAuthentication.
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>());
         builder.Services.TryAddTransient<TieredOAuthAuthenticationHandler>();
-        // builder.Services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
-
-
-
+        
 
         builder.Services.TryAddTransient<HeaderAugmentationHandler>();
         builder.Services.AddHttpClient<IUdapClient, UdapClient>().AddHttpMessageHandler<HeaderAugmentationHandler>();

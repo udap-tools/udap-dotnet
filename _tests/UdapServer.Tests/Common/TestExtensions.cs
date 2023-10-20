@@ -7,17 +7,15 @@
 // */
 #endregion
 
+using System.Diagnostics;
 using Duende.IdentityServer.Configuration;
-using Duende.IdentityServer.Models;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
-using Udap.Model;
 using Udap.Server.Hosting.DynamicProviders.Oidc;
 using Udap.Server.Models;
 using Udap.Server.Security.Authentication.TieredOAuth;
@@ -31,7 +29,8 @@ public static class TestExtensions
     /// </summary>
     /// <param name="builder">The authentication builder.</param>
     /// <param name="configuration">The delegate used to configure the Tiered OAuth options.</param>
-    /// <param name="handler">Inject delegating handler attached to HttpClient</param>
+    /// <param name="pipelineIdp1">Wire httpClient to WebHostBuilder test harness</param>
+    /// <param name="pipelineIdp2">Wire httpClient to WebHostBuilder test harness</param>
     /// <returns>The <see cref="AuthenticationBuilder"/>.</returns>
     public static AuthenticationBuilder AddTieredOAuthForTests(
         this AuthenticationBuilder builder,
@@ -45,6 +44,7 @@ public static class TestExtensions
 
             if (dynamicIdp.Name == "https://idpserver")
             {
+                Debug.Assert(pipelineIdp1.BackChannelClient != null, "pipelineIdp1.BackChannelClient != null");
                 return new UdapClient(
                     pipelineIdp1.BackChannelClient,
                     sp.GetRequiredService<UdapClientDiscoveryValidator>(),
@@ -52,8 +52,9 @@ public static class TestExtensions
                     sp.GetRequiredService<ILogger<UdapClient>>());
             }
 
-            if (dynamicIdp?.Name == "https://idpserver2")
+            if (dynamicIdp.Name == "https://idpserver2")
             {
+                Debug.Assert(pipelineIdp2.BackChannelClient != null, "pipelineIdp2.BackChannelClient != null");
                 return new UdapClient(
                     pipelineIdp2.BackChannelClient,
                     sp.GetRequiredService<UdapClientDiscoveryValidator>(),
@@ -61,7 +62,8 @@ public static class TestExtensions
                     sp.GetRequiredService<ILogger<UdapClient>>());
             }
 
-            return null;
+            throw new ArgumentException(
+                "Must register a DynamicIdp in test with a Name property matching one of the UdapIdentityServerPipeline instances");
         });
 
         builder.Services.TryAddSingleton<UdapClientDiscoveryValidator>();
@@ -85,28 +87,10 @@ public static class TestExtensions
             options.DynamicProviders.AddProviderType<TieredOAuthAuthenticationHandler, TieredOAuthAuthenticationOptions, UdapIdentityProvider>("udap_oidc");
         });
 
-
-
-
-
-
         // this registers the OidcConfigureOptions to build the TieredOAuthAuthenticationOptions from the UdapIdentityProvider data
         services.AddSingleton<IConfigureOptions<TieredOAuthAuthenticationOptions>, UdapOidcConfigureOptions>();
-
-
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>());
-
         services.TryAddTransient<TieredOAuthAuthenticationHandler>();
-
-        
-        
-        //services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
-
-        
-        
-        
-        
-        
         
         services.AddScoped<IUdapClient>(sp =>
         {
@@ -114,6 +98,7 @@ public static class TestExtensions
 
             if (dynamicIdp.Name == "https://idpserver")
             {
+                Debug.Assert(pipelineIdp1.BackChannelClient != null, "pipelineIdp1.BackChannelClient != null");
                 return new UdapClient(
                     pipelineIdp1.BackChannelClient,
                     sp.GetRequiredService<UdapClientDiscoveryValidator>(),
@@ -121,8 +106,9 @@ public static class TestExtensions
                     sp.GetRequiredService<ILogger<UdapClient>>());
             }
 
-            if (dynamicIdp?.Name == "https://idpserver2")
+            if (dynamicIdp.Name == "https://idpserver2")
             {
+                Debug.Assert(pipelineIdp2.BackChannelClient != null, "pipelineIdp2.BackChannelClient != null");
                 return new UdapClient(
                     pipelineIdp2.BackChannelClient,
                     sp.GetRequiredService<UdapClientDiscoveryValidator>(),
@@ -130,7 +116,8 @@ public static class TestExtensions
                     sp.GetRequiredService<ILogger<UdapClient>>());
             }
 
-            return null;
+            throw new ArgumentException(
+                "Must register a DynamicIdp in test with a Name property matching one of the UdapIdentityServerPipeline instances");
         });
 
         services.TryAddSingleton<UdapClientDiscoveryValidator>();

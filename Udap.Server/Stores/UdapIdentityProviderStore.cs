@@ -52,7 +52,7 @@ public class UdapIdentityProviderStore : IIdentityProviderStore
     /// <inheritdoc/>
     public async Task<IEnumerable<IdentityProviderName>> GetAllSchemeNamesAsync()
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapIdentityProviderStore.GetAllSchemeNames");
+        using var activity = Tracing.StoreActivitySource.StartActivity($"{nameof(UdapIdentityProviderStore)}.GetAllSchemeNames");
 
         var query = Context.IdentityProviders.Select(x => new IdentityProviderName
         {
@@ -65,9 +65,9 @@ public class UdapIdentityProviderStore : IIdentityProviderStore
     }
 
     /// <inheritdoc/>
-    public async Task<IdentityProvider> GetBySchemeAsync(string scheme)
+    public async Task<IdentityProvider?> GetBySchemeAsync(string scheme)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapIdentityProviderStore.GetByScheme");
+        using var activity = Tracing.StoreActivitySource.StartActivity($"{nameof(UdapIdentityProviderStore)}.GetByScheme");
         activity?.SetTag(Tracing.Properties.Scheme, scheme);
 
         var idp = (await Context.IdentityProviders.AsNoTracking().Where(x => x.Scheme == scheme)
@@ -76,9 +76,10 @@ public class UdapIdentityProviderStore : IIdentityProviderStore
         if (idp == null) return null;
 
         var result = MapIdp(idp);
+        
         if (result == null)
         {
-            Logger.LogError("Identity provider record found in database, but mapping failed for scheme {scheme} and protocol type {protocol}", idp.Scheme, idp.Type);
+            Logger.LogWarning("Identity provider record found in database, but mapping failed for scheme {scheme} and protocol type {protocol}", idp.Scheme, idp.Type);
         }
 
         return result;
@@ -100,7 +101,7 @@ public class UdapIdentityProviderStore : IIdentityProviderStore
     /// </summary>
     /// <param name="idp"></param>
     /// <returns></returns>
-    protected virtual IdentityProvider MapIdp(Duende.IdentityServer.EntityFramework.Entities.IdentityProvider idp)
+    protected virtual IdentityProvider? MapIdp(Duende.IdentityServer.EntityFramework.Entities.IdentityProvider idp)
     {
         if (idp.Type == "oidc" || idp.Type == "udap_oidc")
         {

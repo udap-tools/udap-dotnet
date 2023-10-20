@@ -90,19 +90,19 @@ public class UdapAuthServerPipeline
     public BrowserClient BrowserClient { get; set; }
     public HttpClient BackChannelClient { get; set; }
 
-    public MockMessageHandler BackChannelMessageHandler { get; set; } = new MockMessageHandler();
-    public MockMessageHandler JwtRequestMessageHandler { get; set; } = new MockMessageHandler();
+    public MockMessageHandler BackChannelMessageHandler { get; set; } = new();
+    public MockMessageHandler JwtRequestMessageHandler { get; set; } = new();
 
     public TestEventService EventService = new TestEventService();
 
-    public event Action<WebHostBuilderContext, IServiceCollection> OnPreConfigureServices = (ctx, services) => { };
-    public event Action<IServiceCollection> OnPostConfigureServices = services => { };
-    public event Action<IApplicationBuilder> OnPreConfigure = app => { };
-    public event Action<IApplicationBuilder> OnPostConfigure = app => { };
+    public event Action<WebHostBuilderContext, IServiceCollection> OnPreConfigureServices = (_, _) => { };
+    public event Action<IServiceCollection> OnPostConfigureServices = _ => { };
+    public event Action<IApplicationBuilder> OnPreConfigure = _ => { };
+    public event Action<IApplicationBuilder> OnPostConfigure = _ => { };
 
-    public Func<HttpContext, Task<bool>> OnFederatedSignout;
+    public Func<HttpContext, Task<bool>>? OnFederatedSignOut;
 
-    public void Initialize(string basePath = null, bool enableLogging = false)
+    public void Initialize(string? basePath = null, bool enableLogging = false)
     {
         var builder = new WebHostBuilder();
         builder.ConfigureServices(ConfigureServices);
@@ -125,7 +125,7 @@ public class UdapAuthServerPipeline
 
         if (enableLogging)
         {
-            builder.ConfigureLogging((ctx, b) =>
+            builder.ConfigureLogging((_, b) =>
             {
                 b.AddConsole(c => c.LogToStandardErrorThreshold = LogLevel.Debug);
                 b.SetMinimumLevel(LogLevel.Trace);
@@ -160,7 +160,7 @@ public class UdapAuthServerPipeline
         services.AddTransient<MockExternalAuthenticationHandler>(svcs =>
         {
             var handler = new MockExternalAuthenticationHandler(svcs.GetRequiredService<IHttpContextAccessor>());
-            if (OnFederatedSignout != null) handler.OnFederatedSignout = OnFederatedSignout;
+            if (OnFederatedSignOut != null) handler.OnFederatedSignout = OnFederatedSignOut;
             return handler;
         });
         
@@ -279,7 +279,7 @@ public class UdapAuthServerPipeline
     public bool LoginWasCalled { get; set; }
     public string LoginReturnUrl { get; set; }
     public AuthorizationRequest LoginRequest { get; set; }
-    public ClaimsPrincipal Subject { get; set; }
+    public ClaimsPrincipal? Subject { get; set; }
 
     private async Task OnRegister(HttpContext ctx)
     {
@@ -321,7 +321,7 @@ public class UdapAuthServerPipeline
 
         // read external identity from the temporary cookie
         var result = await ctx.AuthenticateAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
-        if (result?.Succeeded != true)
+        if (result.Succeeded != true)
         {
             throw new Exception("External authentication error");
         }

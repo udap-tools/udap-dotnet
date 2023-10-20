@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -16,12 +17,10 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.Json;
 using Duende.IdentityServer;
-using Duende.IdentityServer.EntityFramework.Stores;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Stores;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
-using IdentityModel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
@@ -53,14 +52,14 @@ public class TieredOauthTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
 
-    private UdapAuthServerPipeline _mockAuthorServerPipeline = new UdapAuthServerPipeline();
-    private UdapIdentityServerPipeline _mockIdPPipeline = new UdapIdentityServerPipeline();
-    private UdapIdentityServerPipeline _mockIdPPipeline2 = new UdapIdentityServerPipeline("https://idpserver2", "appsettings.Idp2.json");
+    private readonly UdapAuthServerPipeline _mockAuthorServerPipeline = new();
+    private readonly UdapIdentityServerPipeline _mockIdPPipeline = new();
+    private readonly UdapIdentityServerPipeline _mockIdPPipeline2 = new("https://idpserver2", "appsettings.Idp2.json");
     
-    private X509Certificate2 _community1Anchor;
-    private X509Certificate2 _community1IntermediateCert;
-    private X509Certificate2 _community2Anchor;
-    private X509Certificate2 _community2IntermediateCert;
+    private readonly X509Certificate2 _community1Anchor;
+    private readonly X509Certificate2 _community1IntermediateCert;
+    private readonly X509Certificate2 _community2Anchor;
+    private readonly X509Certificate2 _community2IntermediateCert;
 
     public TieredOauthTests(ITestOutputHelper testOutputHelper)
     {
@@ -80,7 +79,7 @@ public class TieredOauthTests
     {
         _mockAuthorServerPipeline.OnPostConfigureServices += s =>
         {
-            s.AddSingleton<ServerSettings>(new ServerSettings
+            s.AddSingleton(new ServerSettings
             {
                 ServerSupport = ServerSupport.Hl7SecurityIG,
                 // DefaultUserScopes = "udap",
@@ -104,7 +103,7 @@ public class TieredOauthTests
             // It was not intended to work with the concept of a dynamic client registration.
             services.AddSingleton(_mockAuthorServerPipeline.Clients);
 
-            services.Configure<UdapFileCertStoreManifest>(builderContext.Configuration.GetSection(Udap.Common.Constants.UDAP_FILE_STORE_MANIFEST));
+            services.Configure<UdapFileCertStoreManifest>(builderContext.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
 
             services.AddAuthentication()
                 //
@@ -121,7 +120,6 @@ public class TieredOauthTests
                     _mockIdPPipeline,
                     _mockIdPPipeline2); // point backchannel to the IdP
 
-                ;
 
             services.AddTieredOAuthDynamicProviderForTests(_mockIdPPipeline, _mockIdPPipeline2);
 
@@ -135,9 +133,9 @@ public class TieredOauthTests
             });
 
             
-            var _oidcProviders = new List<UdapIdentityProvider>()
+            var oidcProviders = new List<UdapIdentityProvider>()
             {
-                new UdapIdentityProvider
+                new()
                 {
                     Scheme = "udap-tiered",
                     Authority = "template", //TODO: hoping I can remove this template idea and be purely dynamic.
@@ -149,7 +147,7 @@ public class TieredOauthTests
                 }
             };
             
-            _mockAuthorServerPipeline.UdapIdentityProvider = _oidcProviders;
+            _mockAuthorServerPipeline.UdapIdentityProvider = oidcProviders;
 
 
             using var serviceProvider = services.BuildServiceProvider();
@@ -186,7 +184,7 @@ public class TieredOauthTests
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new Intermediate
+                        new()
                         {
                             BeginDate = _community1IntermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = _community1IntermediateCert.NotAfter.ToUniversalTime(),
@@ -219,7 +217,7 @@ public class TieredOauthTests
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new Intermediate
+                        new()
                         {
                             BeginDate =  _community2IntermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = _community2IntermediateCert.NotAfter.ToUniversalTime(),
@@ -247,7 +245,7 @@ public class TieredOauthTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new Claim[]
+            Claims = new[]
             {
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
@@ -260,9 +258,9 @@ public class TieredOauthTests
 
     private void BuildUdapIdentityProvider1()
     {
-        _mockIdPPipeline.OnPostConfigureServices += s =>
+        _mockIdPPipeline.OnPostConfigureServices += services =>
         {
-            s.AddSingleton<ServerSettings>(new ServerSettings
+            services.AddSingleton(new ServerSettings
             {
                 ServerSupport = ServerSupport.UDAP,
                 DefaultUserScopes = "udap",
@@ -270,17 +268,16 @@ public class TieredOauthTests
                 // ForceStateParamOnAuthorizationCode = false (default)
                 AlwaysIncludeUserClaimsInIdToken = true
             });
-        };
 
-        _mockIdPPipeline.OnPreConfigureServices += (builderContext, services) =>
-        {
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
             // It was not intended to work with the concept of a dynamic client registration.
             services.AddSingleton(_mockIdPPipeline.Clients);
         };
+        
 
         _mockIdPPipeline.Initialize(enableLogging: true);
+        Debug.Assert(_mockIdPPipeline.BrowserClient != null, "_mockIdPPipeline.BrowserClient != null");
         _mockIdPPipeline.BrowserClient.AllowAutoRedirect = false;
 
         _mockIdPPipeline.Communities.Add(new Community
@@ -301,7 +298,7 @@ public class TieredOauthTests
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new Intermediate
+                        new()
                         {
                             BeginDate =  _community1IntermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = _community1IntermediateCert.NotAfter.ToUniversalTime(),
@@ -325,7 +322,7 @@ public class TieredOauthTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new Claim[]
+            Claims = new[]
             {
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
@@ -340,9 +337,9 @@ public class TieredOauthTests
 
     private void BuildUdapIdentityProvider2()
     {
-        _mockIdPPipeline2.OnPostConfigureServices += s =>
+        _mockIdPPipeline2.OnPostConfigureServices += services =>
         {
-            s.AddSingleton<ServerSettings>(new ServerSettings
+            services.AddSingleton(new ServerSettings
             {
                 ServerSupport = ServerSupport.UDAP,
                 DefaultUserScopes = "udap",
@@ -350,17 +347,17 @@ public class TieredOauthTests
                 // ForceStateParamOnAuthorizationCode = false (default)
                 AlwaysIncludeUserClaimsInIdToken = true
             });
-        };
 
-        _mockIdPPipeline2.OnPreConfigureServices += (builderContext, services) =>
-        {
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
             // It was not intended to work with the concept of a dynamic client registration.
             services.AddSingleton(_mockIdPPipeline2.Clients);
         };
 
+       
+
         _mockIdPPipeline2.Initialize(enableLogging: true);
+        Debug.Assert(_mockIdPPipeline2.BrowserClient != null, "_mockIdPPipeline2.BrowserClient != null");
         _mockIdPPipeline2.BrowserClient.AllowAutoRedirect = false;
 
         _mockIdPPipeline2.Communities.Add(new Community
@@ -381,7 +378,7 @@ public class TieredOauthTests
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new Intermediate
+                        new()
                         {
                             BeginDate =  _community2IntermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = _community2IntermediateCert.NotAfter.ToUniversalTime(),
@@ -405,7 +402,7 @@ public class TieredOauthTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new Claim[]
+            Claims = new[]
             {
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
@@ -425,6 +422,9 @@ public class TieredOauthTests
     [Fact]
     public async Task ClientAuthorize_IdPDiscovery_IdPRegistration_IdPAuthAccess_ClientAuthAccess_Test()
     {
+        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
+        dynamicIdp.Name = _mockIdPPipeline.BaseUrl;
+
         // Register client with auth server
         var resultDocument = await RegisterClientWithAuthServer();
         _mockAuthorServerPipeline.RemoveSessionCookie();
@@ -434,9 +434,6 @@ public class TieredOauthTests
 
         var clientId = resultDocument.ClientId!;
 
-
-        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
-        dynamicIdp.Name = _mockIdPPipeline.BaseUrl;
 
         //////////////////////
         // ClientAuthorize
@@ -522,24 +519,25 @@ public class TieredOauthTests
         // response after discovery and registration
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = true; // Need to set the idsrv cookie so calls to /authorize will succeed
 
-        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/signin-tieredoauth", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name).Should().BeNull();
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/signin-tieredoauth", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().BeNull();
         var backChannelChallengeResponse = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
-        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/signin-tieredoauth", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name).Should().NotBeNull();
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/signin-tieredoauth", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().NotBeNull();
         
         backChannelChallengeResponse.StatusCode.Should().Be(HttpStatusCode.Redirect, await backChannelChallengeResponse.Content.ReadAsStringAsync());
         backChannelChallengeResponse.Headers.Location.Should().NotBeNull();
         backChannelChallengeResponse.Headers.Location!.AbsoluteUri.Should().StartWith("https://idpserver/connect/authorize");
         
         // _testOutputHelper.WriteLine(backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
-        var backChannelClientId = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.ToString();
+        QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.Should().NotBeEmpty();
         var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "state").Value.ToString();
         backChannelState.Should().NotBeNullOrEmpty();
 
 
         var idpClient = _mockIdPPipeline.Clients.Single(c => c.ClientName == "AuthServer Client");
         idpClient.AlwaysIncludeUserClaimsInIdToken.Should().BeTrue();
-        
 
+
+        Debug.Assert(_mockIdPPipeline.BrowserClient != null, "_mockIdPPipeline.BrowserClient != null");
         var backChannelAuthResult = await _mockIdPPipeline.BrowserClient.GetAsync(backChannelChallengeResponse.Headers.Location);
 
         
@@ -561,7 +559,7 @@ public class TieredOauthTests
         authorizeCallbackResult.Headers.Location.Should().NotBeNull();
         authorizeCallbackResult.Headers.Location!.AbsoluteUri.Should().StartWith("https://server/signin-tieredoauth?");
 
-        var backChannelCode = QueryHelpers.ParseQuery(authorizeCallbackResult.Headers.Location.Query).Single(p => p.Key == "code").Value.ToString();
+        QueryHelpers.ParseQuery(authorizeCallbackResult.Headers.Location.Query).Single(p => p.Key == "code").Value.Should().NotBeEmpty();
 
         //
         // Validate backchannel state is the same
@@ -610,8 +608,8 @@ public class TieredOauthTests
         // Check the IdToken in the back channel.  Ensure the HL7_Identifier is in the claims
         //
         // _testOutputHelper.WriteLine(_mockIdPPipeline.IdToken.ToString()); 
-
-        _mockIdPPipeline.IdToken.Claims.Should().Contain(c => c.Type == "hl7_identifier");
+        _mockIdPPipeline.IdToken.Should().NotBeNull();
+        _mockIdPPipeline.IdToken!.Claims.Should().Contain(c => c.Type == "hl7_identifier");
         _mockIdPPipeline.IdToken.Claims.Single(c => c.Type == "hl7_identifier").Value.Should().Be("123");
 
         // Run the authServer  https://server/connect/authorize/callback 
@@ -662,9 +660,7 @@ public class TieredOauthTests
         accessToken.Should().NotBeNull();
         accessToken.IdentityToken.Should().NotBeNull();
         var jwt = new JwtSecurityToken(accessToken.IdentityToken);
-
-        var at = new JwtSecurityToken(accessToken.AccessToken);
-
+        new JwtSecurityToken(accessToken.AccessToken).Should().NotBeNull();
 
         using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
         var formattedStatement = JsonSerializer.Serialize(
@@ -719,6 +715,9 @@ public class TieredOauthTests
     [Fact] //(Skip = "Dynamic Tiered OAuth Provider WIP")]
     public async Task Tiered_OAuth_With_DynamicProvider()
     {
+        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
+        dynamicIdp.Name = _mockIdPPipeline2.BaseUrl;
+
         // Register client with auth server
         var resultDocument = await RegisterClientWithAuthServer();
         _mockAuthorServerPipeline.RemoveSessionCookie();
@@ -728,9 +727,7 @@ public class TieredOauthTests
 
         var clientId = resultDocument.ClientId!;
 
-        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
-        dynamicIdp.Name = _mockIdPPipeline2.BaseUrl;
-
+        
         //////////////////////
         // ClientAuthorize
         //////////////////////
@@ -814,16 +811,16 @@ public class TieredOauthTests
         // response after discovery and registration
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = true; // Need to set the idsrv cookie so calls to /authorize will succeed
         
-        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name).Should().BeNull();
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().BeNull();
         var backChannelChallengeResponse = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
-        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name).Should().NotBeNull();
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin", new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().NotBeNull();
 
         backChannelChallengeResponse.StatusCode.Should().Be(HttpStatusCode.Redirect, await backChannelChallengeResponse.Content.ReadAsStringAsync());
         backChannelChallengeResponse.Headers.Location.Should().NotBeNull();
         backChannelChallengeResponse.Headers.Location!.AbsoluteUri.Should().StartWith("https://idpserver2/connect/authorize");
 
         // _testOutputHelper.WriteLine(backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
-        var backChannelClientId = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.ToString();
+        QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.Should().NotBeEmpty();
         var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "state").Value.ToString();
         backChannelState.Should().NotBeNullOrEmpty();
 
@@ -831,8 +828,8 @@ public class TieredOauthTests
         var idpClient = _mockIdPPipeline2.Clients.Single(c => c.ClientName == "AuthServer Client");
         idpClient.AlwaysIncludeUserClaimsInIdToken.Should().BeTrue();
 
-
-        var backChannelAuthResult = await _mockIdPPipeline2.BrowserClient.GetAsync(backChannelChallengeResponse.Headers.Location);
+        _mockIdPPipeline2.BrowserClient.Should().NotBeNull();
+        var backChannelAuthResult = await _mockIdPPipeline2.BrowserClient!.GetAsync(backChannelChallengeResponse.Headers.Location);
 
 
         backChannelAuthResult.StatusCode.Should().Be(HttpStatusCode.Redirect, await backChannelAuthResult.Content.ReadAsStringAsync());
@@ -902,9 +899,10 @@ public class TieredOauthTests
         //
         // Check the IdToken in the back channel.  Ensure the HL7_Identifier is in the claims
         //
-         _testOutputHelper.WriteLine(_mockIdPPipeline2.IdToken.ToString()); 
+        // _testOutputHelper.WriteLine(_mockIdPPipeline2.IdToken.ToString()); 
 
-        _mockIdPPipeline2.IdToken.Claims.Should().Contain(c => c.Type == "hl7_identifier");
+        _mockIdPPipeline2.IdToken.Should().NotBeNull();
+        _mockIdPPipeline2.IdToken!.Claims.Should().Contain(c => c.Type == "hl7_identifier");
         _mockIdPPipeline2.IdToken.Claims.Single(c => c.Type == "hl7_identifier").Value.Should().Be("123");
 
         // Run the authServer  https://server/connect/authorize/callback 
@@ -955,8 +953,7 @@ public class TieredOauthTests
         accessToken.Should().NotBeNull();
         accessToken.IdentityToken.Should().NotBeNull();
         var jwt = new JwtSecurityToken(accessToken.IdentityToken);
-
-        var at = new JwtSecurityToken(accessToken.AccessToken);
+        new JwtSecurityToken(accessToken.AccessToken).Should().NotBeNull();
 
 
         using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
@@ -1000,23 +997,17 @@ public class TieredOauthTests
         // Todo: Nonce 
         // Todo: Validate claims.  Like missing name and other identity claims.  Maybe add a hl7_identifier
         // Why is idp:TieredOAuth in the returned claims?
-
-
+        
     }
 
     [Fact]
     public async Task LoadDynamicProvider()
     {
         var identityProviderStore = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<IIdentityProviderStore>();
-        
+
         var dynamicSchemes = (await identityProviderStore.GetAllSchemeNamesAsync())
             .Where(x => x.Enabled)
-            .Select(x => new ExternalProvider
-            {
-                AuthenticationScheme = x.Scheme,
-                DisplayName = x.DisplayName,
-                ReturnUrl = "https://code_client/callback"
-            });
+            .Select(x => x.Scheme);
 
         dynamicSchemes.Count().Should().Be(1);
     }
@@ -1065,14 +1056,4 @@ public class TieredOauthTests
 
         return resultDocument;
     }
-}
-
-public class ExternalProvider
-{
-    public string DisplayName { get; set; }
-    public string AuthenticationScheme { get; set; }
-
-    public string ReturnUrl { get; set; }
-
-    public bool IsChosenIdp { get; set; }
 }

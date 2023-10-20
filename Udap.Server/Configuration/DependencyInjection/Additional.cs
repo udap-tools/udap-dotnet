@@ -55,23 +55,5 @@ public static class IdentityServerBuilderExtensionsAdditional
 
         return builder;
     }
-
-    /// <summary>
-    /// Adds the identity provider store cache.
-    /// The TryAddTransient(typeof(T)) call allows to override the Duende IIdentityProviderStore.
-    ///
-    /// Without overriding the default IIdentityProviderStore we will not find the provider type
-    /// of "udap_oidc" in the IdentityProvider database table.
-    /// </summary>
-    /// <param name="builder">The builder.</param>
-    /// <returns></returns>
-    public static IUdapServiceBuilder AddIdentityProviderStore<T>(this IUdapServiceBuilder builder)
-        where T : IIdentityProviderStore
-    {
-        builder.Services.TryAddTransient(typeof(T)); 
-
-        return builder;
-    }
-
 }
 

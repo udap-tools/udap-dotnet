@@ -43,7 +43,7 @@ public class FhirService
             var bundle = new FhirJsonParser().Parse<Bundle>(result);
             var operationOutcome = bundle.Entry.Select(e => e.Resource as OperationOutcome).ToList();
             
-            if (operationOutcome.Any())
+            if (operationOutcome.Any(o => o != null))
             {
                 return new FhirResultModel<List<Patient>>(operationOutcome.First(), response.StatusCode, response.Version);
             }

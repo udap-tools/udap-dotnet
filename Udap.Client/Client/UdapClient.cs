@@ -107,17 +107,17 @@ namespace Udap.Client.Client
                 {
                     _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
 
+                    var logoUrl = _udapClientOptions.TieredOAuthClientLogo;
+
                     var document = UdapDcrBuilderForAuthorizationCode
                         .Create(clientCert)
                         .WithAudience(this.UdapServerMetaData?.RegistrationEndpoint)
                         .WithExpiration(TimeSpan.FromMinutes(5))
                         .WithJwtId()
                         .WithClientName(_udapClientOptions.ClientName)
-                        //Todo get logo from client registration, maybe Client object.  But still nee to retain logo in clientproperties during registration
-                        .WithLogoUri("https://udaped.fhirlabs.net/images/udap-dotnet-auth-server.png")
+                        .WithLogoUri(logoUrl)
                         .WithContacts(_udapClientOptions.Contacts)
-                        .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues
-                            .TokenEndpointAuthMethodValue)
+                        .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                         .WithScope(scopes)
                         .WithResponseTypes(new List<string> { "code" })
                         .WithRedirectUrls(new List<string> { redirectUrl })

@@ -203,7 +203,7 @@ public class RegistrationAndChangeRegistrationTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithLogoUri("https://example.com/logo.png")
+            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"

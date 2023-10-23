@@ -90,7 +90,8 @@ public class TieredOauthTests
                 new UdapClientOptions
                 {
                     ClientName = "AuthServer Client",
-                    Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
+                    Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
+                    TieredOAuthClientLogo = "https://server/udap.logo.48x48.png"
                 })
             );
         };
@@ -249,6 +250,11 @@ public class TieredOauthTests
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
             // It was not intended to work with the concept of a dynamic client registration.
             services.AddSingleton(_mockIdPPipeline.Clients);
+
+            //
+            // Allow logo resolve back to udap.auth server
+            //
+            services.AddSingleton<HttpClient>(sp => _mockAuthorServerPipeline.BrowserClient);
         };
         
 
@@ -328,6 +334,11 @@ public class TieredOauthTests
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
             // It was not intended to work with the concept of a dynamic client registration.
             services.AddSingleton(_mockIdPPipeline2.Clients);
+
+            //
+            // Allow logo resolve back to udap.auth server
+            //
+            services.AddSingleton<HttpClient>(sp => _mockAuthorServerPipeline.BrowserClient);
         };
 
        
@@ -988,7 +999,7 @@ public class TieredOauthTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock tiered test")
-            .WithLogoUri("https://example.com/logo.png")
+            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"

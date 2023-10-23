@@ -269,9 +269,21 @@ public class UdapAuthServerPipeline
             path.Run(async ctx => await OnExternalLoginCallback(ctx,  new Mock<ILogger>().Object));
         });
 
+        app.Map("/udap.logo.48x48.png", path =>
+        {
+            path.Run(ctx => OnLogo(ctx));
+        });
+
         OnPostConfigure(app);
     }
-    
+
+    private Task OnLogo(HttpContext context)
+    {
+       context.Response.ContentType = "image/png";
+       context.Response.StatusCode = (int)HttpStatusCode.OK;
+       return Task.CompletedTask;
+    }
+
     public bool LoginWasCalled { get; set; }
     public string LoginReturnUrl { get; set; }
     public AuthorizationRequest LoginRequest { get; set; }

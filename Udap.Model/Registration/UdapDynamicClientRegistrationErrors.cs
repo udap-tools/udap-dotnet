@@ -38,8 +38,9 @@ public static class UdapDynamicClientRegistrationErrorDescriptions
     public const string ClientNameMissing = "client_name is missing";
     public const string LogoMissing = "logo_uri is missing";
     public const string LogoInvalidUri = "logo_uri is not a valid uri";
-    public const string LogoInvalidFileType = "logo_uri is not a valid file type";
+    public const string LogoInvalidContentType = "logo_uri is not a valid content-type";
     public const string LogoInvalidScheme = "logo_uri is not a valid https schema";
+    public const string LogoCannotBeResolved = "logo_uri cannot be resolved";
     public const string GrantTypeMissing = "grant_types is missing";
     public const string ResponseTypesMissing = "invalid_client_metadata response_types is missing";
 

@@ -16,6 +16,8 @@
 //
 
 using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http;
+using System.Net.Mime;
 using System.Reflection.Metadata;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -28,6 +30,7 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
@@ -46,6 +49,7 @@ namespace Udap.Server.Registration;
 public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistrationValidator
 {
     private readonly TrustChainValidator _trustChainValidator;
+    private readonly HttpClient _httpClient;
     private readonly IReplayCache _replayCache;
     private readonly ILogger _logger;
     private readonly ServerSettings _serverSettings;
@@ -57,6 +61,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
     public UdapDynamicClientRegistrationValidator(
         TrustChainValidator trustChainValidator,
+        HttpClient httpClient,
         IReplayCache replayCache,
         ServerSettings serverSettings,
         IHttpContextAccessor httpContextAccessor,
@@ -65,6 +70,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         ILogger<UdapDynamicClientRegistrationValidator> logger)
     {
         _trustChainValidator = trustChainValidator;
+        _httpClient = httpClient;
         _replayCache = replayCache;
         _serverSettings = serverSettings;
         _httpContextAccessor = httpContextAccessor;
@@ -372,7 +378,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         {
             if (_serverSettings.LogoRequired)
             {
-                if ( ! ValidateLogoUri(document, out UdapDynamicClientRegistrationValidationResult? errorResult))
+                var (successFlag, errorResult) = await ValidateLogoUri(document);
+                if (!successFlag)
                 {
                     return errorResult!;
                 }
@@ -526,10 +533,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
     }
 
-    public bool ValidateLogoUri(UdapDynamicClientRegistrationDocument document,
-        out UdapDynamicClientRegistrationValidationResult? errorResult)
+    public async Task<(bool, UdapDynamicClientRegistrationValidationResult?)> ValidateLogoUri(UdapDynamicClientRegistrationDocument document)
     {
-        errorResult = null;
+        UdapDynamicClientRegistrationValidationResult? errorResult;
 
         if (string.IsNullOrEmpty(document.LogoUri))
         {
@@ -537,32 +543,44 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 UdapDynamicClientRegistrationErrorDescriptions.LogoMissing);
 
-            return false;
+            return (false, errorResult);
         }
 
         if (Uri.TryCreate(document.LogoUri, UriKind.Absolute, out var logoUri))
         {
-            if (!logoUri.OriginalString.EndsWith("png", StringComparison.OrdinalIgnoreCase) &&
-                !logoUri.OriginalString.EndsWith("jpg", StringComparison.OrdinalIgnoreCase) &&
-                !logoUri.OriginalString.EndsWith("gif", StringComparison.OrdinalIgnoreCase))
-            {
-                errorResult = new UdapDynamicClientRegistrationValidationResult(
-                    UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
-                    UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidFileType);
-
-                return false;
-            }
-
             if (!logoUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
             {
                 errorResult = new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                     UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidScheme);
 
-                return false;
+                return (false, errorResult);
             }
+            
+            var response = await _httpClient.GetAsync(logoUri.OriginalString);
+            response.Content.Headers.TryGetValues("Content-Type", out var contentTypes);
+            var contentType = contentTypes?.FirstOrDefault();
 
-           
+            if (response.StatusCode != System.Net.HttpStatusCode.OK)
+            {
+                errorResult = new UdapDynamicClientRegistrationValidationResult(
+                   UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                   UdapDynamicClientRegistrationErrorDescriptions.LogoCannotBeResolved);
+
+                return (false, errorResult);
+            }
+            
+            if (contentType == null ||
+                !contentType.Equals("image/png", StringComparison.OrdinalIgnoreCase) &&
+                !contentType.Equals(MediaTypeNames.Image.Jpeg, StringComparison.OrdinalIgnoreCase) &&
+                !contentType.Equals(MediaTypeNames.Image.Gif, StringComparison.OrdinalIgnoreCase))
+            {
+                errorResult = new UdapDynamicClientRegistrationValidationResult(
+                    UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                    UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidContentType);
+
+                return (false, errorResult);
+            }
         }
         else
         {
@@ -570,10 +588,10 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidUri);
 
-            return false;
+            return (false, errorResult);
         }
 
-        return true;
+        return (true, null);
     }
 
     public async Task<UdapDynamicClientRegistrationValidationResult> ValidateJti(

@@ -25,13 +25,15 @@ public interface IUdapClient : IUdapClientEvents
     Task<UdapDiscoveryDocumentResponse> ValidateResource(
         string baseUrl,
         string? community = null,
-        DiscoveryPolicy? discoveryPolicy = null);
+        DiscoveryPolicy? discoveryPolicy = null,
+        CancellationToken token = default);
 
     Task<UdapDiscoveryDocumentResponse> ValidateResource(
         string baseUrl,
         ITrustAnchorStore? trustAnchorStore,
         string? community = null,
-        DiscoveryPolicy? discoveryPolicy = null);
+        DiscoveryPolicy? discoveryPolicy = null,
+        CancellationToken token = default);
 
     UdapMetadata? UdapDynamicClientRegistrationDocument { get; set; }
     UdapMetadata? UdapServerMetaData { get; set; }
@@ -39,7 +41,8 @@ public interface IUdapClient : IUdapClientEvents
         
     /// <summary>
     /// Register a TieredClient in the Authorization Server.
-    /// Currently it is not SAN and Community aware.  It picks the first SAN.
+    /// Currently it is not SAN aware.  It picks the first SAN.
+    /// To pick a different community the client can add a community query parameter.
     /// </summary>
     /// <param name="redirectUrl"></param>
     /// <param name="certificates"></param>

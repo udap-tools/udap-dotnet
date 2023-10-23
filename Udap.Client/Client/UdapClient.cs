@@ -8,18 +8,12 @@
 #endregion
 
 using System.Net;
-using System.Net.Http;
-using System.Text.Json.Serialization;
-using System.Text.Json;
-using System.Threading.Tasks;
-
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using IdentityModel.Client;
-// using Microsoft.AspNetCore.Authentication.OAuth;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -32,7 +26,10 @@ using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
-using Microsoft.AspNetCore.Authentication.OAuth;
+#if NET7_0_OR_GREATER
+using System.Net.Http.Headers;
+#endif
+// using Microsoft.AspNetCore.Authentication.OAuth;
 
 namespace Udap.Client.Client
 {
@@ -152,7 +149,7 @@ namespace Udap.Client.Client
 #else
                     var content = new StringContent(JsonSerializer.Serialize(requestBody), null, "application/json");
                                         content.Headers.ContentType!.CharSet = string.Empty;
-                    #endif
+#endif
 
                     var response = await _httpClient.PostAsync(this.UdapServerMetaData?.RegistrationEndpoint, content, token);
 
@@ -160,6 +157,12 @@ namespace Udap.Client.Client
                     {
                         var resultDocument =
                             await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>(cancellationToken: token);
+
+                        if (resultDocument == null)
+                        {
+                            resultDocument = new UdapDynamicClientRegistrationDocument();
+                            resultDocument.Add("error", "Unknown error");
+                        }
 
                         return resultDocument;
                     }
@@ -218,12 +221,14 @@ namespace Udap.Client.Client
         /// <param name="trustAnchorStore"></param>
         /// <param name="community"></param>
         /// <param name="discoveryPolicy"></param>
+        /// <param name="token"></param>
         /// <returns></returns>
         public Task<UdapDiscoveryDocumentResponse> ValidateResource(
             string baseUrl,
             ITrustAnchorStore? trustAnchorStore,
             string? community = null,
-            DiscoveryPolicy? discoveryPolicy = null)
+            DiscoveryPolicy? discoveryPolicy = null, 
+            CancellationToken token = default)
         {
             return InternalValidateResource(baseUrl, trustAnchorStore, community, discoveryPolicy);
         }
@@ -234,12 +239,14 @@ namespace Udap.Client.Client
         /// <param name="baseUrl"></param>
         /// <param name="community"></param>
         /// <param name="discoveryPolicy"></param>
+        /// <param name="token"></param>
         /// <returns></returns>
         /// <exception cref="UnauthorizedAccessException"></exception>
         public async Task<UdapDiscoveryDocumentResponse> ValidateResource(
             string baseUrl,
             string? community,
-            DiscoveryPolicy? discoveryPolicy)
+            DiscoveryPolicy? discoveryPolicy,
+            CancellationToken token = default)
         {
             return await InternalValidateResource(baseUrl, null, community, discoveryPolicy);
         }
@@ -248,7 +255,8 @@ namespace Udap.Client.Client
             string baseUrl,
             ITrustAnchorStore? trustAnchorStore,
             string? community,
-            DiscoveryPolicy? discoveryPolicy)
+            DiscoveryPolicy? discoveryPolicy, 
+            CancellationToken token = default)
         {
 
             baseUrl.AssertUri();
@@ -267,7 +275,7 @@ namespace Udap.Client.Client
                         Address = baseUrl,
                         Community = community,
                         Policy = _discoveryPolicy
-                    });
+                    }, cancellationToken: token);
 
                 if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
                 {

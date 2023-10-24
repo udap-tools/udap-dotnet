@@ -196,7 +196,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithLogoUri(string logoUri)
+    public UdapDcrBuilderForClientCredentials WithLogoUri(string? logoUri)
     {
         if (string.IsNullOrEmpty(logoUri))
         {

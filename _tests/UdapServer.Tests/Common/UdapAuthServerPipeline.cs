@@ -656,5 +656,5 @@ public class UdapAuthServerPipeline
 
 public class DynamicIdp
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
 }

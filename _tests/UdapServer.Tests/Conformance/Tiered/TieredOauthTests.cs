@@ -10,8 +10,6 @@
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -20,13 +18,11 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
-using FluentAssertions.Common;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Moq;
@@ -38,7 +34,6 @@ using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
-using Udap.Model.Statement;
 using Udap.Server.Configuration;
 using Udap.Server.Models;
 using Udap.Server.Security.Authentication.TieredOAuth;
@@ -100,7 +95,7 @@ public class TieredOauthTests
             //
             // Allow logo resolve back to udap.auth server
             //
-            services.AddSingleton<HttpClient>(sp => _mockAuthorServerPipeline.BrowserClient);
+            services.AddSingleton<HttpClient>(_ => _mockAuthorServerPipeline.BrowserClient);
         };
 
         _mockAuthorServerPipeline.OnPreConfigureServices += (builderContext, services) =>
@@ -644,11 +639,9 @@ public class TieredOauthTests
             .Build();
 
 
-        var udapClient = new UdapClient(
-                _mockAuthorServerPipeline.BrowserClient,
-                _mockAuthorServerPipeline.Resolve<UdapClientDiscoveryValidator>(),
-                _mockAuthorServerPipeline.Resolve<IOptionsMonitor<UdapClientOptions>>(),
-                _mockAuthorServerPipeline.Resolve<ILogger<UdapClient>>());
+        dynamicIdp.Name = null; // Influence UdapClient resolution in AddTieredOAuthForTests.
+        var udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
+        
 
         var accessToken = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
         accessToken.Should().NotBeNull();
@@ -936,11 +929,8 @@ public class TieredOauthTests
             .Build();
 
 
-        var udapClient = new UdapClient(
-                _mockAuthorServerPipeline.BrowserClient,
-                _mockAuthorServerPipeline.Resolve<UdapClientDiscoveryValidator>(),
-                _mockAuthorServerPipeline.Resolve<IOptionsMonitor<UdapClientOptions>>(),
-                _mockAuthorServerPipeline.Resolve<ILogger<UdapClient>>());
+        dynamicIdp.Name = null; // Influence UdapClient resolution in AddTieredOAuthForTests.
+        var udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
 
         var accessToken = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
         accessToken.Should().NotBeNull();
@@ -1006,12 +996,11 @@ public class TieredOauthTests
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
 
-        var documentResponse = await udapClient.RegisterClientAuthCode(
+        var documentResponse = await udapClient.RegisterAuthCodeClient(
             clientCert,
             "udap openid user/*.read",
             "https://server/udap.logo.48x48.png", 
-            new List<string> { "https://code_client/callback" },
-            CancellationToken.None);
+            new List<string> { "https://code_client/callback" });
 
         documentResponse.GetError().Should().BeNull();
         

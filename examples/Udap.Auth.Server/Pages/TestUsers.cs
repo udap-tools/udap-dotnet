@@ -29,7 +29,7 @@ public class TestUsers
                 new TestUser
                 {
                     SubjectId = "1",
-                    Username = "alice",
+                    Username = "alicenewman@example.com",
                     Password = "alice",
                     Claims =
                     {

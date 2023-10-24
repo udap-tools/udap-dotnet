@@ -55,38 +55,74 @@ public interface IUdapClient : IUdapClientEvents
         CancellationToken token = default);
 
     /// <summary>
-    /// Register a UdapClient in the Authorization Server.
-    /// To pick a different community the client can add a community query parameter.
+    /// Register a UdapClient in the Authorization Server with authorization_code flow.
     /// </summary>
     /// <param name="certificates"></param>
     /// <param name="scopes"></param>
     /// <param name="logo"></param>
     /// <param name="redirectUrl"></param>
+    /// <param name="issuer">If issuer is supplied it will match try to match to a valid URI based subject alternative name from the X509Certificate</param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<UdapDynamicClientRegistrationDocument> RegisterClientAuthCode(
+    Task<UdapDynamicClientRegistrationDocument> RegisterAuthCodeClient(
         IEnumerable<X509Certificate2> certificates,
         string scopes,
-        string? logo,
+        string logo,
         ICollection<string> redirectUrl,
+        string? issuer = null, 
         CancellationToken token = default);
 
     /// <summary>
-    /// Register a UdapClient in the Authorization Server.
-    /// To pick a different community the client can add a community query parameter.
+    /// Register a UdapClient in the Authorization Server with authorization_code flow.
     /// </summary>
     /// <param name="certificate"></param>
     /// <param name="scopes"></param>
-    /// <param name="logo"></param>
+    /// <param name="logo">optional</param>
     /// <param name="redirectUrl"></param>
+    /// <param name="issuer">If issuer is supplied it will match try to match to a valid URI based subject alternative name from the X509Certificate</param>
     /// <param name="token"></param>
     /// <returns></returns>
-    Task<UdapDynamicClientRegistrationDocument> RegisterClientAuthCode(
+    Task<UdapDynamicClientRegistrationDocument> RegisterAuthCodeClient(
         X509Certificate2 certificate,
         string scopes,
-        string? logo,
+        string logo,
         ICollection<string> redirectUrl,
+        string? issuer = null,
         CancellationToken token = default);
+
+    /// <summary>
+    /// Register a UdapClient in the Authorization Server with client_credentials flow.
+    /// </summary>
+    /// <param name="certificates"></param>
+    /// <param name="scopes"></param>
+    /// <param name="logo"></param>
+    /// <param name="issuer">If issuer is supplied it will match try to match to a valid URI based subject alternative name from the X509Certificate</param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<UdapDynamicClientRegistrationDocument> RegisterClientCredentialsClient(
+        IEnumerable<X509Certificate2> certificates,
+        string scopes,
+        string? issuer = null,
+        string? logo = null,
+        CancellationToken token = default);
+
+    /// <summary>
+    /// Register a UdapClient in the Authorization Server with client_credentials flow.
+    /// </summary>
+    /// <param name="certificate"></param>
+    /// <param name="scopes"></param>
+    /// <param name="logo">optional</param>
+    /// <param name="issuer">If issuer is supplied it will match try to match to a valid URI based subject alternative name from the X509Certificate</param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<UdapDynamicClientRegistrationDocument> RegisterClientCredentialsClient(
+        X509Certificate2 certificate,
+        string scopes,
+        string? issuer = null,
+        string? logo = null,
+        CancellationToken token = default);
+
+    Task<TokenResponse> ExchangeCodeForTokenResponse(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
 
     Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
         

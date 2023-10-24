@@ -10,7 +10,7 @@
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="[6.0.23,7.0.12]" />
     <PackageVersion Include="AspNetCoreRateLimit" Version="5.0.0" />
     <PackageVersion Include="Hl7.Fhir.Specification.R4B" Version="5.3.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="[6.0.23,7.0.12]" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="[6.0.23,7.0.13]" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
     <PackageVersion Include="MSTest.TestAdapter" Version="3.1.1" />
     <PackageVersion Include="MSTest.TestFramework" Version="3.1.1" />
@@ -22,7 +22,7 @@
     <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="6.3.5" />
     <PackageVersion Include="IdentityModel.AspNetCore.OAuth2Introspection" Version="6.2.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="7.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="7.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.12" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.12" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />

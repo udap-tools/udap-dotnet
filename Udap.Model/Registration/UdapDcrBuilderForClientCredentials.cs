@@ -25,7 +25,7 @@ namespace Udap.Model.Registration;
 /// </summary>
 public class UdapDcrBuilderForClientCredentials
 {
-    private DateTime _now;
+    private readonly DateTime _now;
     private UdapDynamicClientRegistrationDocument _document;
     private X509Certificate2? _certificate;
 
@@ -75,21 +75,10 @@ public class UdapDcrBuilderForClientCredentials
         return new UdapDcrBuilderForClientCredentials(cert, false);
     }
 
-    //TODO: Safe for multi SubjectAltName scenarios
-    /// <summary>
-    /// Register or update an existing registration by subjectAltName
-    /// </summary>
-    /// <param name="cert"></param>
-    /// <returns></returns>
-    public static UdapDcrBuilderForClientCredentials Create(X509Certificate2 cert, string subjectAltName)
-    {
-        return new UdapDcrBuilderForClientCredentials(cert, false);
-    }
-
+    
     /// <summary>
     /// Register or update an existing registration
     /// </summary>
-    /// <param name="cert"></param>
     /// <returns></returns>
     public static UdapDcrBuilderForClientCredentials Create()
     {
@@ -106,18 +95,7 @@ public class UdapDcrBuilderForClientCredentials
         return new UdapDcrBuilderForClientCredentials(cert, true);
     }
 
-    //TODO: Safe for multi SubjectAltName scenarios
-    /// <summary>
-    /// Cancel an existing registration by subject alt name.
-    /// </summary>
-    /// <param name="cert"></param>
-    /// <param name="subjectAltName"></param>
-    /// <returns></returns>
-    public static UdapDcrBuilderForClientCredentials Cancel(X509Certificate2 cert, string subjectAltName)
-    {
-        return new UdapDcrBuilderForClientCredentials(cert, true);
-    }
-
+    
     /// <summary>
     /// Cancel an existing registration.
     /// </summary>
@@ -131,12 +109,7 @@ public class UdapDcrBuilderForClientCredentials
     /// <summary>
     /// Set at construction time. 
     /// </summary>
-    public DateTime Now {
-        get
-        {
-            return _now;
-        }
-    }
+    public DateTime Now => _now;
 
 #if NET6_0_OR_GREATER
     /// <summary>
@@ -205,7 +178,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithContacts(ICollection<string> contacts)
+    public UdapDcrBuilderForClientCredentials WithContacts(ICollection<string>? contacts)
     {
         _document.Contacts = contacts;
         return this;
@@ -225,12 +198,16 @@ public class UdapDcrBuilderForClientCredentials
 
     public UdapDcrBuilderForClientCredentials WithLogoUri(string logoUri)
     {
-        //TODO: Testing.  And better technique.
+        if (string.IsNullOrEmpty(logoUri))
+        {
+            return this;
+        }
+
         _ = new Uri(logoUri);
+        _document.LogoUri = logoUri;
         return this;
     }
 
-    //TODO: should be able to build with all certs in path.
     public UdapDcrBuilderForClientCredentials WithCertificate(X509Certificate2 certificate)
     {
         _certificate = certificate;

@@ -44,7 +44,6 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     private long _issuedAt;
     private string? _jwtId;
     private string? _clientName;
-    private Uri? _clientUri;
     private ICollection<string>? _redirectUris = new List<string>();
     private string? _logoUri;
     private ICollection<string>? _contacts = new HashSet<string>();
@@ -257,29 +256,34 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         }
     }
 
-    /// <summary>
-    /// Web page providing information about the client.
-    /// See <a aref="https://datatracker.ietf.org/doc/html/rfc7591#section-2"/>
-    /// </summary>
-    [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ClientUri)]
-    public Uri? ClientUri {
-        get
-        {
-            if (_clientUri == null)
-            {
-                if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientUri), UriKind.Absolute, out var value ))
-                {
-                    _clientUri = value;
-                }
-            }
-            return _clientUri;
-        }
-        set
-        {
-            _clientUri = value;
-            if (value != null) this[UdapConstants.RegistrationDocumentValues.ClientUri] = value;
-        }
-    }
+
+    //
+    // Dropping this for now.
+    // If I bring it back read and follow instructions here: https://www.rfc-editor.org/rfc/rfc7591#section-5
+    //
+    // /// <summary>
+    // /// Web page providing information about the client.
+    // /// See <a aref="https://datatracker.ietf.org/doc/html/rfc7591#section-2"/>
+    // /// </summary>
+    // [JsonPropertyName(UdapConstants.RegistrationDocumentValues.ClientUri)]
+    // public Uri? ClientUri {
+    //     get
+    //     {
+    //         if (_clientUri == null)
+    //         {
+    //             if (Uri.TryCreate(GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientUri), UriKind.Absolute, out var value ))
+    //             {
+    //                 _clientUri = value;
+    //             }
+    //         }
+    //         return _clientUri;
+    //     }
+    //     set
+    //     {
+    //         _clientUri = value;
+    //         if (value != null) this[UdapConstants.RegistrationDocumentValues.ClientUri] = value;
+    //     }
+    // }
 
 
     /// <summary>
@@ -539,13 +543,8 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
 
         foreach (Claim claim in claims)
         {
-            if (claim == null)
-            {
-                continue;
-            }
-
-            string jsonClaimType = claim.Type;
-            object jsonClaimValue = claim.ValueType.Equals(ClaimValueTypes.String) ? claim.Value : GetClaimValueUsingValueType(claim);
+            var jsonClaimType = claim.Type;
+            var jsonClaimValue = claim.ValueType.Equals(ClaimValueTypes.String) ? claim.Value : GetClaimValueUsingValueType(claim);
 
             // If there is an existing value, append to it.
             // What to do if the 'ClaimValueType' is not the same.
@@ -704,11 +703,6 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
 
         if (claim.ValueType == JsonClaimValueTypes.JsonNull)
             return string.Empty;
-
-        if (claim.Value == null)
-        {
-            return string.Empty;
-        }
 
         if (claim.ValueType == JsonClaimValueTypes.Json)
             return JsonNode.Parse(claim.Value)!;

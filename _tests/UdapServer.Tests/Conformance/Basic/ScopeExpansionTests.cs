@@ -14,29 +14,27 @@ using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Duende.IdentityServer.Models;
+using Duende.IdentityServer.Test;
 using FluentAssertions;
-using IdentityModel.Client;
 using IdentityModel;
+using IdentityModel.Client;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
+using Udap.Client.Configuration;
+using Udap.Common.Extensions;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Server.Configuration;
+using Udap.Server.Models;
+using Udap.Server.Validation;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
-using Microsoft.AspNetCore.WebUtilities;
-using Udap.Server.Models;
-using Duende.IdentityServer.Test;
-using System.Text;
-using Udap.Client.Configuration;
-using Udap.Common.Extensions;
-using Udap.Server.Validation;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
@@ -45,7 +43,7 @@ namespace UdapServer.Tests.Conformance.Basic;
 public class ScopeExpansionTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipeline = new();
 
     public ScopeExpansionTests(ITestOutputHelper testOutputHelper)
     {
@@ -56,14 +54,14 @@ public class ScopeExpansionTests
 
         _mockPipeline.OnPostConfigureServices += s =>
         {
-            s.AddSingleton<ServerSettings>(new ServerSettings
+            s.AddSingleton(new ServerSettings
             {
                 ServerSupport = ServerSupport.UDAP,
                 DefaultUserScopes = "udap",
                 DefaultSystemScopes = "udap"
             });
 
-            s.AddSingleton<UdapClientOptions>(new UdapClientOptions
+            s.AddSingleton(new UdapClientOptions
             {
                 ClientName = "Mock Client",
                 Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
@@ -101,7 +99,7 @@ public class ScopeExpansionTests
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new Intermediate
+                        new()
                         {
                             BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = intermediateCert.NotAfter.ToUniversalTime(),
@@ -128,7 +126,7 @@ public class ScopeExpansionTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new Claim[]
+            Claims = new[]
             {
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
@@ -164,13 +162,13 @@ public class ScopeExpansionTests
         //
         var now = DateTime.UtcNow;
         var jwtPayload = new JwtPayLoadExtension(
-            resultDocument!.ClientId,
+            resultDocument.ClientId,
             IdentityServerPipeline.TokenEndpoint,
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, resultDocument.ClientId!),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new(JwtClaimTypes.Subject, resultDocument.ClientId!),
+                new(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                new(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
             now.ToUniversalTime(),
@@ -205,13 +203,13 @@ public class ScopeExpansionTests
         //
 
         jwtPayload = new JwtPayLoadExtension(
-            resultDocument!.ClientId,
+            resultDocument.ClientId,
             IdentityServerPipeline.TokenEndpoint,
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, resultDocument.ClientId!),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new(JwtClaimTypes.Subject, resultDocument.ClientId!),
+                new(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                new(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
             now.ToUniversalTime(),
@@ -247,13 +245,13 @@ public class ScopeExpansionTests
         //
 
         jwtPayload = new JwtPayLoadExtension(
-            resultDocument!.ClientId,
+            resultDocument.ClientId,
             IdentityServerPipeline.TokenEndpoint,
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, resultDocument.ClientId!),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new(JwtClaimTypes.Subject, resultDocument.ClientId!),
+                new(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                new(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
             now.ToUniversalTime(),
@@ -285,58 +283,17 @@ public class ScopeExpansionTests
 
         
         //
-        // Again wild card expansion:  TODO
-        //
-
-        // jwtPayload = new JwtPayLoadExtension(
-        //     resultDocument!.ClientId,
-        //     IdentityServerPipeline.TokenEndpoint,
-        //     new List<Claim>()
-        //     {
-        //         new Claim(JwtClaimTypes.Subject, resultDocument.ClientId!),
-        //         new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-        //         new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
-        //         // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
-        //     },
-        //     now.ToUniversalTime(),
-        //     now.AddMinutes(5).ToUniversalTime()
-        // );
-        //
-        // clientAssertion =
-        //     SignedSoftwareStatementBuilder<JwtPayLoadExtension>
-        //         .Create(clientCert, jwtPayload)
-        //         .Build("RS384");
-        //
-        //
-        // clientRequest = new UdapClientCredentialsTokenRequest
-        // {
-        //     Address = IdentityServerPipeline.TokenEndpoint,
-        //     //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
-        //     ClientAssertion = new ClientAssertion()
-        //     {
-        //         Type = OidcConstants.ClientAssertionTypes.JwtBearer,
-        //         Value = clientAssertion
-        //     },
-        //     Udap = UdapConstants.UdapVersionsSupportedValue,
-        //     Scope = "system/Patient.*"
-        // };
-        //
-        // tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
-        //
-        // tokenResponse.Scope.Should().Be("system/Patient.rs", tokenResponse.Raw);
-
-        //
         // Again negative
         //
 
         jwtPayload = new JwtPayLoadExtension(
-            resultDocument!.ClientId,
+            resultDocument.ClientId,
             IdentityServerPipeline.TokenEndpoint,
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, resultDocument.ClientId!),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new(JwtClaimTypes.Subject, resultDocument.ClientId!),
+                new(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                new(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
             now.ToUniversalTime(),
@@ -381,13 +338,13 @@ public class ScopeExpansionTests
 
         var now = DateTime.UtcNow;
         var jwtPayload = new JwtPayLoadExtension(
-            resultDocument!.ClientId,
+            resultDocument.ClientId,
             IdentityServerPipeline.TokenEndpoint,
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, resultDocument.ClientId!),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new(JwtClaimTypes.Subject, resultDocument.ClientId!),
+                new(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                new(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
             now.ToUniversalTime(),
@@ -429,13 +386,13 @@ public class ScopeExpansionTests
 
         var now = DateTime.UtcNow;
         var jwtPayload = new JwtPayLoadExtension(
-            resultDocument!.ClientId,
+            resultDocument.ClientId,
             IdentityServerPipeline.TokenEndpoint,
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, resultDocument.ClientId!),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new(JwtClaimTypes.Subject, resultDocument.ClientId!),
+                new(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                new(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
             now.ToUniversalTime(),
@@ -477,13 +434,13 @@ public class ScopeExpansionTests
 
         var now = DateTime.UtcNow;
         var jwtPayload = new JwtPayLoadExtension(
-            resultDocument!.ClientId,
+            resultDocument.ClientId,
             IdentityServerPipeline.TokenEndpoint,
             new List<Claim>()
             {
-                new Claim(JwtClaimTypes.Subject, resultDocument.ClientId!),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                new(JwtClaimTypes.Subject, resultDocument.ClientId!),
+                new(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+                new(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
                 // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
             },
             now.ToUniversalTime(),
@@ -565,7 +522,7 @@ public class ScopeExpansionTests
         await _mockPipeline.LoginAsync("bob");
 
         var url = _mockPipeline.CreateAuthorizeUrl(
-            clientId: resultDocument!.ClientId!,
+            clientId: resultDocument.ClientId!,
             responseType: "code",
             scope: "openid system/Patient.rs",
             redirectUri: "https://code_client/callback",
@@ -578,8 +535,7 @@ public class ScopeExpansionTests
         response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
 
         response.Headers.Location.Should().NotBeNull();
-        var redirectUri = response.Headers.Location!.AbsoluteUri;
-         response.Headers.Location!.AbsoluteUri.Should().Contain("https://code_client/callback");
+        response.Headers.Location!.AbsoluteUri.Should().Contain("https://code_client/callback");
         // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");

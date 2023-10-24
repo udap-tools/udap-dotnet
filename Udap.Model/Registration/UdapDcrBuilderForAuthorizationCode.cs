@@ -9,7 +9,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
@@ -72,22 +71,10 @@ public class UdapDcrBuilderForAuthorizationCode
     {
         return new UdapDcrBuilderForAuthorizationCode(cert, false);
     }
-
-    //TODO: Safe for multi SubjectAltName scenarios
-    /// <summary>
-    /// Register or update an existing registration by subjectAltName
-    /// </summary>
-    /// <param name="cert"></param>
-    /// <returns></returns>
-    public static UdapDcrBuilderForAuthorizationCode Create(X509Certificate2 cert, string subjectAltName)
-    {
-        return new UdapDcrBuilderForAuthorizationCode(cert, false);
-    }
-
+    
     /// <summary>
     /// Register or update an existing registration
     /// </summary>
-    /// <param name="cert"></param>
     /// <returns></returns>
     public static UdapDcrBuilderForAuthorizationCode Create()
     {
@@ -100,18 +87,6 @@ public class UdapDcrBuilderForAuthorizationCode
     /// <param name="cert"></param>
     /// <returns></returns>
     public static UdapDcrBuilderForAuthorizationCode Cancel(X509Certificate2 cert)
-    {
-        return new UdapDcrBuilderForAuthorizationCode(cert, true);
-    }
-
-    //TODO: Safe for multi SubjectAltName scenarios
-    /// <summary>
-    /// Cancel an existing registration by subject alt name.
-    /// </summary>
-    /// <param name="cert"></param>
-    /// <param name="subjectAltName"></param>
-    /// <returns></returns>
-    public static UdapDcrBuilderForAuthorizationCode Cancel(X509Certificate2 cert, string subjectAltName)
     {
         return new UdapDcrBuilderForAuthorizationCode(cert, true);
     }
@@ -218,15 +193,13 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithLogoUri(string? logoUri)
+    public UdapDcrBuilderForAuthorizationCode WithLogoUri(string logoUri)
     {
-        //TODO: Testing.  And better technique.
         _ = new Uri(logoUri);
         _document.LogoUri = logoUri;
         return this;
     }
 
-    //TODO: should be able to build with all certs in path.
     public UdapDcrBuilderForAuthorizationCode WithCertificate(X509Certificate2 certificate)
     {
         _certificate = certificate;

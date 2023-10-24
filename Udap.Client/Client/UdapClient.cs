@@ -92,93 +92,93 @@ namespace Udap.Client.Client
         {
             if (this.UdapServerMetaData == null)
             {
-                throw new Exception("Tiered OAuth: UdapServerMetaData is null.  Call ValidateResource first.");
+                throw new Exception("Tiered OAuth Client: UdapServerMetaData is null.  Call ValidateResource first.");
             }
 
             try
             {
-                var x509Certificates = certificates.ToList();
-                if (certificates == null || !x509Certificates.Any())
+                var resultDocument = await RegisterAuthCodeFlow(certificates, scopes, _udapClientOptions.TieredOAuthClientLogo, new List<string>{ redirectUrl }, token);
+
+                if(string.IsNullOrEmpty(resultDocument.GetError()))
                 {
-                    throw new Exception("Tiered OAuth: No client certificates provided.");
+                    _logger.LogWarning("Tiered OAuth Client: Unable to register client to {RegistrationEndpoint}", this.UdapServerMetaData?.RegistrationEndpoint);
                 }
 
-                foreach (var clientCert in x509Certificates)
-                {
-                    _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
-
-                    var logoUrl = _udapClientOptions.TieredOAuthClientLogo;
-
-                    var document = UdapDcrBuilderForAuthorizationCode
-                        .Create(clientCert)
-                        .WithAudience(this.UdapServerMetaData?.RegistrationEndpoint)
-                        .WithExpiration(TimeSpan.FromMinutes(5))
-                        .WithJwtId()
-                        .WithClientName(_udapClientOptions.ClientName)
-                        .WithLogoUri(logoUrl)
-                        .WithContacts(_udapClientOptions.Contacts)
-                        .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-                        .WithScope(scopes)
-                        .WithResponseTypes(new List<string> { "code" })
-                        .WithRedirectUrls(new List<string> { redirectUrl })
-                        .Build();
-                    
-
-                    var signedSoftwareStatement =
-                        SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                            .Create(clientCert, document)
-                            .Build();
-
-                    var requestBody = new UdapRegisterRequest
-                    (
-                        signedSoftwareStatement,
-                        UdapConstants.UdapVersionsSupportedValue
-                        // new string[] { }
-                    );
-
-                    // New StringContent constructor taking a MediaTypeHeaderValue to ensure CharSet can be controlled
-                    // by the caller.  
-                    // Good historical conversations.  
-                    // https://github.com/dotnet/runtime/pull/63231
-                    // https://github.com/dotnet/runtime/issues/17036
-                    //
-#if NET7_0_OR_GREATER
-                    var content = new StringContent(
-                        JsonSerializer.Serialize(requestBody),
-                        new MediaTypeHeaderValue("application/json") );
-#else
-                    var content = new StringContent(JsonSerializer.Serialize(requestBody), null, "application/json");
-                                        content.Headers.ContentType!.CharSet = string.Empty;
-#endif
-
-                    var response = await _httpClient.PostAsync(this.UdapServerMetaData?.RegistrationEndpoint, content, token);
-
-                    if (((int)response.StatusCode) < 500)
-                    {
-                        var resultDocument =
-                            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>(cancellationToken: token);
-
-                        if (resultDocument == null)
-                        {
-                            resultDocument = new UdapDynamicClientRegistrationDocument();
-                            resultDocument.Add("error", "Unknown error");
-                        }
-
-                        return resultDocument;
-                    }
-                }
+                return resultDocument;
             }
             catch(Exception ex)
             {
-                _logger.LogError(ex, "Tiered OAuth: Unable to register client to {RegistrationEndpoint}",
+                _logger.LogError(ex, "Tiered OAuth Client: Unable to register client to {RegistrationEndpoint}",
                         this.UdapServerMetaData?.RegistrationEndpoint);
                 throw;
             }
+        }
 
-            
-            _logger.LogWarning("Tiered OAuth: Unable to register client to {RegistrationEndpoint}", this.UdapServerMetaData?.RegistrationEndpoint);
-            // Todo: typed exception? or null return etc...
-            throw new Exception($"Tiered OAuth: Unable to register client to {this.UdapServerMetaData?.RegistrationEndpoint}");
+        /// <summary>
+        /// Register a UdapClient in the Authorization Server.
+        /// To pick a different community the client can add a community query parameter.
+        /// </summary>
+        /// <param name="certificates"></param>
+        /// <param name="scopes"></param>
+        /// <param name="logo"></param>
+        /// <param name="redirectUrl"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<UdapDynamicClientRegistrationDocument> RegisterClientAuthCode(
+            IEnumerable<X509Certificate2> certificates,
+            string scopes,
+            string? logo,
+            ICollection<string> redirectUrl,
+            CancellationToken token = default)
+        {
+            if (this.UdapServerMetaData == null)
+            {
+                throw new Exception("UdapClient: UdapServerMetaData is null.  Call ValidateResource first.");
+            }
+
+            try
+            {
+                var resultDocument = await RegisterAuthCodeFlow(certificates, scopes, logo, redirectUrl, token);
+
+                if (string.IsNullOrEmpty(resultDocument.GetError()))
+                {
+                    _logger.LogWarning("UdapClient: Unable to register client to {RegistrationEndpoint}", this.UdapServerMetaData?.RegistrationEndpoint);
+                }
+
+                return resultDocument;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UdapClient: Unable to register client to {RegistrationEndpoint}",
+                    this.UdapServerMetaData?.RegistrationEndpoint);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Register a UdapClient in the Authorization Server.
+        /// To pick a different community the client can add a community query parameter.
+        /// </summary>
+        /// <param name="certificate"></param>
+        /// <param name="scopes"></param>
+        /// <param name="logo"></param>
+        /// <param name="redirectUrl"></param>
+        /// <param name="token"></param>
+        /// <returns></returns>
+        public async Task<UdapDynamicClientRegistrationDocument> RegisterClientAuthCode(
+            X509Certificate2 certificate, 
+            string scopes,
+            string? logo,
+            ICollection<string> redirectUrl,
+            CancellationToken token = default)
+        {
+            return await this.RegisterClientAuthCode(
+                new List<X509Certificate2> { certificate },
+                scopes, 
+                logo,
+                redirectUrl,
+                token
+            );
         }
 
         /// <summary>
@@ -257,7 +257,7 @@ namespace Udap.Client.Client
             string? community,
             DiscoveryPolicy? discoveryPolicy, 
             CancellationToken token = default)
-        {
+         {
 
             baseUrl.AssertUri();
 
@@ -369,6 +369,94 @@ namespace Udap.Client.Client
                 }
             }
         }
+
+        private async Task<UdapDynamicClientRegistrationDocument> RegisterAuthCodeFlow(
+            IEnumerable<X509Certificate2> certificates, 
+            string scopes, 
+            string? logoUrl,
+            ICollection<string>? redirectUrls,
+            CancellationToken token)
+        {
+            var x509Certificates = certificates.ToList();
+            if (certificates == null || !x509Certificates.Any())
+            {
+                throw new Exception("Tiered OAuth: No client certificates provided.");
+            }
+
+            UdapDynamicClientRegistrationDocument? resultDocument;
+
+            foreach (var clientCert in x509Certificates)
+            {
+                _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
+                
+                var document = UdapDcrBuilderForAuthorizationCode
+                    .Create(clientCert)
+                    .WithAudience(this.UdapServerMetaData?.RegistrationEndpoint)
+                    .WithExpiration(TimeSpan.FromMinutes(5))
+                    .WithJwtId()
+                    .WithClientName(_udapClientOptions.ClientName)
+                    .WithLogoUri(logoUrl)
+                    .WithContacts(_udapClientOptions.Contacts)
+                    .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+                    .WithScope(scopes)
+                    .WithResponseTypes(new List<string> { "code" })
+                    .WithRedirectUrls(redirectUrls)
+                    .Build();
+
+
+                var signedSoftwareStatement =
+                    SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                        .Create(clientCert, document)
+                        .Build();
+
+                var requestBody = new UdapRegisterRequest
+                (
+                    signedSoftwareStatement,
+                    UdapConstants.UdapVersionsSupportedValue
+                // new string[] { }
+                );
+
+                // New StringContent constructor taking a MediaTypeHeaderValue to ensure CharSet can be controlled
+                // by the caller.  
+                // Good historical conversations.  
+                // https://github.com/dotnet/runtime/pull/63231
+                // https://github.com/dotnet/runtime/issues/17036
+                //
+#if NET7_0_OR_GREATER
+                var content = new StringContent(
+                    JsonSerializer.Serialize(requestBody),
+                    new MediaTypeHeaderValue("application/json"));
+#else
+                    var content = new StringContent(JsonSerializer.Serialize(requestBody), null, "application/json");
+                                        content.Headers.ContentType!.CharSet = string.Empty;
+#endif
+
+                var response = await _httpClient.PostAsync(this.UdapServerMetaData?.RegistrationEndpoint, content, token);
+
+                if (((int)response.StatusCode) < 500)
+                {
+                    resultDocument =
+                        await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>(
+                            cancellationToken: token);
+
+                    if (resultDocument == null)
+                    {
+                        resultDocument = new UdapDynamicClientRegistrationDocument();
+                        resultDocument.Add("error", "Unknown error");
+                        resultDocument.Add("error_description", response.StatusCode);
+                    }
+
+                    return resultDocument;
+                }
+            }
+
+            resultDocument = new UdapDynamicClientRegistrationDocument();
+            resultDocument.Add("error", "Unknown error");
+            resultDocument.Add("error_description", "Failed to register with all client certificates");
+
+            return resultDocument;
+        }
+
     }
-    
+
 }

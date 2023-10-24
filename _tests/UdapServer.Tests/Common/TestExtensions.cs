@@ -8,7 +8,6 @@
 #endregion
 
 using System.Diagnostics;
-using Duende.IdentityServer.Configuration;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -16,8 +15,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
-using Udap.Server.Hosting.DynamicProviders.Oidc;
-using Udap.Server.Models;
 using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace UdapServer.Tests.Common;
@@ -35,6 +32,7 @@ public static class TestExtensions
     public static AuthenticationBuilder AddTieredOAuthForTests(
         this AuthenticationBuilder builder,
         Action<TieredOAuthAuthenticationOptions> configuration,
+        UdapAuthServerPipeline authServerPipeline,
         UdapIdentityServerPipeline pipelineIdp1,
         UdapIdentityServerPipeline pipelineIdp2)
     {
@@ -62,8 +60,12 @@ public static class TestExtensions
                     sp.GetRequiredService<ILogger<UdapClient>>());
             }
 
-            throw new ArgumentException(
-                "Must register a DynamicIdp in test with a Name property matching one of the UdapIdentityServerPipeline instances");
+            return new UdapClient(
+                authServerPipeline.BrowserClient,
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                sp.GetRequiredService<ILogger<UdapClient>>());
+            
         });
 
         builder.Services.TryAddSingleton<UdapClientDiscoveryValidator>();

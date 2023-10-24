@@ -20,6 +20,7 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using FluentAssertions.Common;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
@@ -28,6 +29,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Moq;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
@@ -76,9 +78,9 @@ public class TieredOauthTests
 
     private void BuildUdapAuthorizationServer()
     {
-        _mockAuthorServerPipeline.OnPostConfigureServices += s =>
+        _mockAuthorServerPipeline.OnPostConfigureServices += services =>
         {
-            s.AddSingleton(new ServerSettings
+            services.AddSingleton(new ServerSettings
             {
                 ServerSupport = ServerSupport.Hl7SecurityIG,
                 // DefaultUserScopes = "udap",
@@ -86,7 +88,7 @@ public class TieredOauthTests
                 // ForceStateParamOnAuthorizationCode = false (default)
             });
 
-            s.AddSingleton<IOptionsMonitor<UdapClientOptions>>(new OptionsMonitorForTests<UdapClientOptions>(
+            services.AddSingleton<IOptionsMonitor<UdapClientOptions>>(new OptionsMonitorForTests<UdapClientOptions>(
                 new UdapClientOptions
                 {
                     ClientName = "AuthServer Client",
@@ -94,6 +96,11 @@ public class TieredOauthTests
                     TieredOAuthClientLogo = "https://server/udap.logo.48x48.png"
                 })
             );
+
+            //
+            // Allow logo resolve back to udap.auth server
+            //
+            services.AddSingleton<HttpClient>(sp => _mockAuthorServerPipeline.BrowserClient);
         };
 
         _mockAuthorServerPipeline.OnPreConfigureServices += (builderContext, services) =>
@@ -114,6 +121,7 @@ public class TieredOauthTests
                     {
                         options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
                     },
+                    _mockAuthorServerPipeline,
                     _mockIdPPipeline,
                     _mockIdPPipeline2);
 
@@ -409,9 +417,6 @@ public class TieredOauthTests
     [Fact]
     public async Task ClientAuthorize_IdPDiscovery_IdPRegistration_IdPAuthAccess_ClientAuthAccess_Test()
     {
-        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
-        dynamicIdp.Name = _mockIdPPipeline.BaseUrl;
-
         // Register client with auth server
         var resultDocument = await RegisterClientWithAuthServer();
         _mockAuthorServerPipeline.RemoveSessionCookie();
@@ -421,6 +426,8 @@ public class TieredOauthTests
 
         var clientId = resultDocument.ClientId!;
 
+        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
+        dynamicIdp.Name = _mockIdPPipeline.BaseUrl;
 
         //////////////////////
         // ClientAuthorize
@@ -702,9 +709,6 @@ public class TieredOauthTests
     [Fact] //(Skip = "Dynamic Tiered OAuth Provider WIP")]
     public async Task Tiered_OAuth_With_DynamicProvider()
     {
-        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
-        dynamicIdp.Name = _mockIdPPipeline2.BaseUrl;
-
         // Register client with auth server
         var resultDocument = await RegisterClientWithAuthServer();
         _mockAuthorServerPipeline.RemoveSessionCookie();
@@ -714,7 +718,9 @@ public class TieredOauthTests
 
         var clientId = resultDocument.ClientId!;
 
-        
+        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
+        dynamicIdp.Name = _mockIdPPipeline2.BaseUrl;
+
         //////////////////////
         // ClientAuthorize
         //////////////////////
@@ -991,44 +997,24 @@ public class TieredOauthTests
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test");
 
-        // await _mockAuthorServerPipeline.LoginAsync("bob");
+        var udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
 
-        var document = UdapDcrBuilderForAuthorizationCode
-            .Create(clientCert)
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock tiered test")
-            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("udap openid user/*.read")
-            .WithResponseTypes(new List<string> { "code" })
-            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .Build();
+        //
+        // Typically the client would validate a server before proceeding to registration.
+        //
+        udapClient.UdapServerMetaData = new UdapMetadata(new Mock<UdapMetadataOptions>().Object, new Mock<HashSet<string>>().Object)
+            { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+
+        var documentResponse = await udapClient.RegisterClientAuthCode(
+            clientCert,
+            "udap openid user/*.read",
+            "https://server/udap.logo.48x48.png", 
+            new List<string> { "https://code_client/callback" },
+            CancellationToken.None);
+
+        documentResponse.GetError().Should().BeNull();
         
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
-        var requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
-
-        var response = await _mockAuthorServerPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-
-        return resultDocument;
+        return documentResponse;
     }
 }

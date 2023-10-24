@@ -38,11 +38,11 @@ public interface IUdapClient : IUdapClientEvents
     UdapMetadata? UdapDynamicClientRegistrationDocument { get; set; }
     UdapMetadata? UdapServerMetaData { get; set; }
 
-        
+
     /// <summary>
     /// Register a TieredClient in the Authorization Server.
     /// Currently it is not SAN aware.  It picks the first SAN.
-    /// To pick a different community the client can add a community query parameter.
+    /// To pick a different community the client can add a community query parameter to the .
     /// </summary>
     /// <param name="redirectUrl"></param>
     /// <param name="certificates"></param>
@@ -52,6 +52,40 @@ public interface IUdapClient : IUdapClientEvents
     Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(string redirectUrl,
         IEnumerable<X509Certificate2> certificates,
         string scopes,
+        CancellationToken token = default);
+
+    /// <summary>
+    /// Register a UdapClient in the Authorization Server.
+    /// To pick a different community the client can add a community query parameter.
+    /// </summary>
+    /// <param name="certificates"></param>
+    /// <param name="scopes"></param>
+    /// <param name="logo"></param>
+    /// <param name="redirectUrl"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<UdapDynamicClientRegistrationDocument> RegisterClientAuthCode(
+        IEnumerable<X509Certificate2> certificates,
+        string scopes,
+        string? logo,
+        ICollection<string> redirectUrl,
+        CancellationToken token = default);
+
+    /// <summary>
+    /// Register a UdapClient in the Authorization Server.
+    /// To pick a different community the client can add a community query parameter.
+    /// </summary>
+    /// <param name="certificate"></param>
+    /// <param name="scopes"></param>
+    /// <param name="logo"></param>
+    /// <param name="redirectUrl"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
+    Task<UdapDynamicClientRegistrationDocument> RegisterClientAuthCode(
+        X509Certificate2 certificate,
+        string scopes,
+        string? logo,
+        ICollection<string> redirectUrl,
         CancellationToken token = default);
 
     Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);

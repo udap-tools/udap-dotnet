@@ -18,7 +18,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="7.0.13" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="7.0.13" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.13" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.1" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.UserSecrets" Version="7.0.0" />

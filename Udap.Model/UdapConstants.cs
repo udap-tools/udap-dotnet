@@ -7,8 +7,6 @@
 // */
 #endregion
 
-using Udap.Model.UdapAuthenticationExtensions;
-
 namespace Udap.Model;
 
 /// <summary>

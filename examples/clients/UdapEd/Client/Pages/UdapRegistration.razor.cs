@@ -470,7 +470,7 @@ public partial class UdapRegistration
             {
                 if (resultModel.Result.ClientId != null)
                 {
-                    var registration = AppState.ClientRegistrations.SetRegistration(resultModel.Result.ClientId, _udapDcrDocument, Oauth2Flow, AppState.BaseUrl);
+                    var registration = AppState.ClientRegistrations.SetRegistration(resultModel.Result, _udapDcrDocument, Oauth2Flow, AppState.BaseUrl);
                     AppState.ClientRegistrations.SelectedRegistration = registration;
                 }
 

@@ -38,6 +38,13 @@
             <MudText style="float: right;" Typo="Typo.caption"> Thumbprint (sha1) </MudText>
             <MudText style="float: right;" Typo="Typo.body2">@AppState.ClientCertificateInfo?.Thumbprint </MudText>
         </MudItem>
+
+        @if (AppState.ClientCertificateInfo.CertLoaded == CertLoadedEnum.Expired)
+        {
+            <MudItem xs="12">
+                <MudAlert Severity="Severity.Error">Certificate Expired</MudAlert>
+            </MudItem>
+        }
     }
 </MudGrid>
 
@@ -95,6 +102,10 @@
                 break;
             case CertLoadedEnum.InvalidPassword:
                 CertLoadedColor = Color.Warning;
+                await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
+                break;
+            case CertLoadedEnum.Expired:
+                CertLoadedColor = Color.Error;
                 await AppState.SetPropertyAsync(this, nameof(AppState.CertificateLoaded), false);
                 break;
             default:

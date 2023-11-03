@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Udap.Server.Configuration;
 
 namespace Udap.Auth.Server.Pages.Account.Login;
 
@@ -19,7 +18,6 @@ public class Index : PageModel
     private readonly TestUserStore _users;
     private readonly IIdentityServerInteractionService _interaction;
     private readonly IEventService _events;
-    private readonly ServerSettings _serverSettings;
     private readonly IAuthenticationSchemeProvider _schemeProvider;
     private readonly IIdentityProviderStore _identityProviderStore;
 
@@ -33,7 +31,6 @@ public class Index : PageModel
         IAuthenticationSchemeProvider schemeProvider,
         IIdentityProviderStore identityProviderStore,
         IEventService events,
-        ServerSettings serverSettings,
         TestUserStore users = null)
     {
         // this is where you would plug in your own custom identity management library (e.g. ASP.NET Identity)
@@ -43,7 +40,6 @@ public class Index : PageModel
         _schemeProvider = schemeProvider;
         _identityProviderStore = identityProviderStore;
         _events = events;
-        _serverSettings = serverSettings;
     }
 
     public async Task<IActionResult> OnGet(string returnUrl)
@@ -165,8 +161,6 @@ public class Index : PageModel
         };
             
         var context = await _interaction.GetAuthorizationContextAsync(returnUrl);
-
-        // NOTE:: This if statement concerning IdP is not the same as the UDAP IdP.
         if (context?.IdP != null && await _schemeProvider.GetSchemeAsync(context.IdP) != null)
         {
             var local = context.IdP == Duende.IdentityServer.IdentityServerConstants.LocalIdentityProvider;
@@ -188,26 +182,23 @@ public class Index : PageModel
         }
 
         var schemes = await _schemeProvider.GetAllSchemesAsync();
-        
 
         var providers = schemes
             .Where(x => x.DisplayName != null)
             .Select(x => new ViewModel.ExternalProvider
             {
                 DisplayName = x.DisplayName ?? x.Name,
-                AuthenticationScheme = x.Name,
-                ReturnUrl = LoadReturnUrl(x, returnUrl)
+                AuthenticationScheme = x.Name
             }).ToList();
 
-        var dynamicSchemes = (await _identityProviderStore.GetAllSchemeNamesAsync())
+        var dyanmicSchemes = (await _identityProviderStore.GetAllSchemeNamesAsync())
             .Where(x => x.Enabled)
             .Select(x => new ViewModel.ExternalProvider
             {
                 AuthenticationScheme = x.Scheme,
-                DisplayName = x.DisplayName,
-                ReturnUrl = returnUrl
+                DisplayName = x.DisplayName
             });
-        providers.AddRange(dynamicSchemes);
+        providers.AddRange(dyanmicSchemes);
 
 
         var allowLocal = true;
@@ -227,22 +218,5 @@ public class Index : PageModel
             EnableLocalLogin = allowLocal && LoginOptions.AllowLocalLogin,
             ExternalProviders = providers.ToArray()
         };
-    }
-
-    private string LoadReturnUrl(AuthenticationScheme authenticationScheme, string returnUrl)
-    {
-        if (_serverSettings.IdPMappings != null && _serverSettings.IdPMappings.Any())
-        {
-            var idpBaseUrl = _serverSettings.IdPMappings
-                .FirstOrDefault(x => x.Scheme == authenticationScheme.Name)
-                ?.IdpBaseUrl;
-        
-            if(string.IsNullOrEmpty(idpBaseUrl))
-                return returnUrl;
-
-            return $"{returnUrl}&idp={idpBaseUrl}";
-        }
-
-        return returnUrl;
     }
 }

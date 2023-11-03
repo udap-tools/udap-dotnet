@@ -27,10 +27,20 @@ public interface IScopeExpander
     /// <returns>A set of discrete scopes.</returns>
     IEnumerable<string> Expand(IEnumerable<string> scopes);
 
+
+    /// <summary>
+    /// If the a wildcard is present such as a * then the implementation should expand accordingly.
+    /// </summary>
+    /// <param name="clientScopes">Client requested scopes</param>
+    /// <param name="apiScopes">Scopes supported by server</param>
+    /// <returns></returns>
+    IEnumerable<string> WildCardExpand(ICollection<string> clientScopes, ICollection<string> apiScopes);
+
+    
     /// <summary>
     /// Shrinks scope parameters.
     /// </summary>
     /// <param name="scopes"></param>
     /// <returns></returns>
-    IEnumerable<string> Shrink(IEnumerable<string> scopes);
+    IEnumerable<string> Aggregate(IEnumerable<string> scopes);
 }

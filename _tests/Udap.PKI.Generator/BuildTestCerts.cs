@@ -1175,6 +1175,23 @@ namespace Udap.PKI.Generator
                                 $"http://host.docker.internal:5033/certs/{intermediateName}.cer"
                             );
                         }
+
+                        if (issuedName == "fhirLabsApiClientLocalhostCert2")
+                        {
+                            BuildClientCertificate(
+                                intermediateCert,
+                                caCert,
+                                intermediate,
+                                "CN=idpserver2", //issuedDistinguishedName
+                                new List<string>
+                                {
+                                    "https://idpserver2",
+                                },
+                                $"{LocalhostUdapIssued}/idpserver2",
+                                $"{LocalhostCdp}/{intermediateName}.crl",
+                                $"http://host.docker.internal:5033/certs/{intermediateName}.cer"
+                            );
+                        }
                     }
 
 
@@ -1271,12 +1288,13 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/Udap.Identity.Provider/CertStore/issued/{issuedName}.pfx",
                 true);
 
-            // Udap.Server.Tests :: Identity Provider
+            // Udap.Server.Tests :: Identity Provider 1
             if (issuedName == "fhirLabsApiClientLocalhostCert")
             {
                 File.Copy($"{LocalhostUdapIssued}/idpserver.pfx",
                     $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/issued/idpserver.pfx",
                     true);
+
 
                 File.Copy($"{communityStorePath}/{anchorName}.cer",
                     $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/anchors/{anchorName}.cer",
@@ -1286,6 +1304,20 @@ namespace Udap.PKI.Generator
                     true);
             }
 
+            // Udap.Server.Tests :: Identity Provider 2
+            if (issuedName == "fhirLabsApiClientLocalhostCert2")
+            {
+                File.Copy($"{LocalhostUdapIssued}/idpserver2.pfx",
+                    $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/issued/idpserver2.pfx",
+                    true);
+
+                File.Copy($"{communityStorePath}/{anchorName}.cer",
+                    $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/anchors/{anchorName}.cer",
+                    true);
+                File.Copy($"{LocalhostUdapIntermediates}/{intermediateName}.cer",
+                    $"{BaseDir}/../../_tests/UdapServer.Tests/CertStore/intermediates/{intermediateName}.cer",
+                    true);
+            }
 
             // Udap.Identity.Provider.2 :: Second Identity Provider
             if (issuedName == "fhirLabsApiClientLocalhostCert2")

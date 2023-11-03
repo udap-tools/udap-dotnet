@@ -17,7 +17,6 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Events;
 using Duende.IdentityServer.Models;
-using Duende.IdentityServer.ResponseHandling;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
@@ -35,15 +34,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Udap.Auth.Server.Pages;
+using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Registration;
-using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using UnitTests.Common;
-using AuthorizeResponse = IdentityModel.Client.AuthorizeResponse;
 using Constants = Udap.Server.Constants;
 
 namespace UdapServer.Tests.Common;
@@ -89,19 +87,19 @@ public class UdapAuthServerPipeline
     public BrowserClient BrowserClient { get; set; }
     public HttpClient BackChannelClient { get; set; }
 
-    public MockMessageHandler BackChannelMessageHandler { get; set; } = new MockMessageHandler();
-    public MockMessageHandler JwtRequestMessageHandler { get; set; } = new MockMessageHandler();
+    public MockMessageHandler BackChannelMessageHandler { get; set; } = new();
+    public MockMessageHandler JwtRequestMessageHandler { get; set; } = new();
 
     public TestEventService EventService = new TestEventService();
 
-    public event Action<WebHostBuilderContext, IServiceCollection> OnPreConfigureServices = (ctx, services) => { };
-    public event Action<IServiceCollection> OnPostConfigureServices = services => { };
-    public event Action<IApplicationBuilder> OnPreConfigure = app => { };
-    public event Action<IApplicationBuilder> OnPostConfigure = app => { };
+    public event Action<WebHostBuilderContext, IServiceCollection> OnPreConfigureServices = (_, _) => { };
+    public event Action<IServiceCollection> OnPostConfigureServices = _ => { };
+    public event Action<IApplicationBuilder> OnPreConfigure = _ => { };
+    public event Action<IApplicationBuilder> OnPostConfigure = _ => { };
 
-    public Func<HttpContext, Task<bool>> OnFederatedSignout;
+    public Func<HttpContext, Task<bool>>? OnFederatedSignOut;
 
-    public void Initialize(string basePath = null, bool enableLogging = false)
+    public void Initialize(string? basePath = null, bool enableLogging = false)
     {
         var builder = new WebHostBuilder();
         builder.ConfigureServices(ConfigureServices);
@@ -120,11 +118,11 @@ public class UdapAuthServerPipeline
             }
         });
 
-        builder.ConfigureAppConfiguration(configure => configure.AddJsonFile("appsettings.json"));
+        builder.ConfigureAppConfiguration(configure => configure.AddJsonFile("appsettings.Auth.json"));
 
         if (enableLogging)
         {
-            builder.ConfigureLogging((ctx, b) =>
+            builder.ConfigureLogging((_, b) =>
             {
                 b.AddConsole(c => c.LogToStandardErrorThreshold = LogLevel.Debug);
                 b.SetMinimumLevel(LogLevel.Trace);
@@ -146,6 +144,8 @@ public class UdapAuthServerPipeline
         
         OnPreConfigureServices(builder, services);
 
+        services.AddSingleton<DynamicIdp>();
+
         // services.AddAuthentication(opts =>
         // {
         //     opts.AddScheme("external", scheme =>
@@ -157,21 +157,22 @@ public class UdapAuthServerPipeline
         services.AddTransient<MockExternalAuthenticationHandler>(svcs =>
         {
             var handler = new MockExternalAuthenticationHandler(svcs.GetRequiredService<IHttpContextAccessor>());
-            if (OnFederatedSignout != null) handler.OnFederatedSignout = OnFederatedSignout;
+            if (OnFederatedSignOut != null) handler.OnFederatedSignout = OnFederatedSignOut;
             return handler;
         });
         
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object)); 
-        
+                new Mock<ILogger<TrustAnchorFileStore>>().Object));
+
 
         services.AddUdapServer(BaseUrl, "FhirLabsApi")
             .AddUdapInMemoryApiScopes(ApiScopes)
             .AddInMemoryUdapCertificates(Communities)
-            .AddUdapResponseGenerators()
-            .AddSmartV2Expander();
+            .AddUdapResponseGenerators();
+            // .AddTieredOAuthDynamicProvider();
+            //.AddSmartV2Expander();
 
 
         services.AddIdentityServer(options =>
@@ -268,13 +269,25 @@ public class UdapAuthServerPipeline
             path.Run(async ctx => await OnExternalLoginCallback(ctx,  new Mock<ILogger>().Object));
         });
 
+        app.Map("/udap.logo.48x48.png", path =>
+        {
+            path.Run(ctx => OnLogo(ctx));
+        });
+
         OnPostConfigure(app);
     }
-    
+
+    private Task OnLogo(HttpContext context)
+    {
+       context.Response.ContentType = "image/png";
+       context.Response.StatusCode = (int)HttpStatusCode.OK;
+       return Task.CompletedTask;
+    }
+
     public bool LoginWasCalled { get; set; }
     public string LoginReturnUrl { get; set; }
     public AuthorizationRequest LoginRequest { get; set; }
-    public ClaimsPrincipal Subject { get; set; }
+    public ClaimsPrincipal? Subject { get; set; }
 
     private async Task OnRegister(HttpContext ctx)
     {
@@ -292,28 +305,20 @@ public class UdapAuthServerPipeline
         //TODO: factor this code into library code and share with the Challenge.cshtml.cs file
         var interactionService = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
         var returnUrl = ctx.Request.Query["returnUrl"].FirstOrDefault();
-        
-        if (interactionService.IsValidReturnUrl(returnUrl) == false)
-        {
-            throw new Exception("invalid return URL");
-        }
+        var scheme = ctx.Request.Query["scheme"];
+        var udapClient = ctx.RequestServices.GetService<IUdapClient>();
 
-        var scheme = ctx.Request.Query["scheme"].FirstOrDefault();
-        ;
-        var props = new AuthenticationProperties
-        {
-            RedirectUri = "/externallogin/callback",
-
-            Items =
-            {
-                { "returnUrl", returnUrl },
-                { "scheme", scheme },
-            }
-        };
+        var props = await TieredOAuthHelpers.BuildDynamicTieredOAuthOptions(
+            interactionService, 
+            udapClient,
+            scheme.ToString(),
+            "/externallogin/callback",
+            returnUrl);
 
         // When calling ChallengeAsync your handler will be called if it is registered.
-        await ctx.ChallengeAsync(TieredOAuthAuthenticationDefaults.AuthenticationScheme, props);
+        await ctx.ChallengeAsync(scheme, props);
     }
+    
 
     private async Task OnExternalLoginCallback(HttpContext ctx, ILogger logger)
     {
@@ -324,7 +329,7 @@ public class UdapAuthServerPipeline
 
         // read external identity from the temporary cookie
         var result = await ctx.AuthenticateAsync(IdentityServerConstants.ExternalCookieAuthenticationScheme);
-        if (result?.Succeeded != true)
+        if (result.Succeeded != true)
         {
             throw new Exception("External authentication error");
         }
@@ -647,4 +652,9 @@ public class UdapAuthServerPipeline
         queryParams.TryGetValue("state", out var state);
         return state.SingleOrDefault();
     }
+}
+
+public class DynamicIdp
+{
+    public string? Name { get; set; }
 }

@@ -23,4 +23,6 @@ public class TieredClient
 
     public int CommunityId { get; set; }
     public bool Enabled { get; set; }
+
+    public string TokenEndpoint { get; set; }
 }

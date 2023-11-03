@@ -18,7 +18,11 @@ using FluentAssertions;
 using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Moq;
+using Udap.Client.Client;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Configuration;
 using Udap.Common.Models;
@@ -50,20 +54,33 @@ public class ClientCredentialsUdapModeTests
         var anchorCommunity2 = new X509Certificate2("CertStore/anchors/caLocalhostCert2.cer");
         var intermediateCommunity2 = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert2.cer");
 
-        _mockPipeline.OnPostConfigureServices += s =>
+        _mockPipeline.OnPostConfigureServices += services =>
         {
-            s.AddSingleton<ServerSettings>(new ServerSettings
+            services.AddSingleton(new ServerSettings
             {
                 ServerSupport = ServerSupport.UDAP,
                 DefaultUserScopes = "udap",
                 DefaultSystemScopes = "udap"
             });
 
-            s.AddSingleton<UdapClientOptions>(new UdapClientOptions
-            {
-                ClientName = "Mock Client",
-                Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
-            });
+            services.AddSingleton<IOptionsMonitor<UdapClientOptions>>(new OptionsMonitorForTests<UdapClientOptions>(
+                new UdapClientOptions
+                {
+                    ClientName = "Mock Client",
+                    Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
+
+                })
+            );
+
+            //
+            // Ensure IUdapClient uses the TestServer's HttpMessageHandler
+            // Wired up via _mockPipeline.BrowserClient
+            //
+            services.AddScoped<IUdapClient>(sp => new UdapClient(
+                _mockPipeline.BrowserClient,
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                sp.GetRequiredService<ILogger<UdapClient>>()));
 
         };
 
@@ -145,8 +162,8 @@ public class ClientCredentialsUdapModeTests
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockPipeline.IdentityScopes.Add(new IdentityResources.Profile());
-        _mockPipeline.ApiScopes.AddRange(new SmartV2Expander().ExpandToApiScopes("system/Patient.rs"));
-        _mockPipeline.ApiScopes.AddRange(new SmartV2Expander().ExpandToApiScopes(" system/Appointment.rs"));
+        _mockPipeline.ApiScopes.AddRange(new HL7SmartScopeExpander().ExpandToApiScopes("system/Patient.rs"));
+        _mockPipeline.ApiScopes.AddRange(new HL7SmartScopeExpander().ExpandToApiScopes(" system/Appointment.rs"));
     }
 
     [Fact]
@@ -163,48 +180,26 @@ public class ClientCredentialsUdapModeTests
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
-        var document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock test")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.rs")
-            .Build();
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
+        //
+        // Typically the client would validate a server before proceeding to registration.
+        //
+        udapClient.UdapServerMetaData = new UdapMetadata(new Mock<UdapMetadataOptions>().Object, new Mock<HashSet<string>>().Object)
+            { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
-        var requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
 
-        var regResponse = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-
-
-
+        regDocumentResult.GetError().Should().BeNull();
 
         //
         // Get Access Token
         //
         var now = DateTime.UtcNow;
         var jwtPayload = new JwtPayLoadExtension(
-            regDocumentResult!.ClientId,
+            regDocumentResult.ClientId,
             IdentityServerPipeline.TokenEndpoint,
             new List<Claim>()
             {
@@ -248,40 +243,19 @@ public class ClientCredentialsUdapModeTests
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test", 
             X509KeyStorageFlags.Exportable);
 
-        var document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock test")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.rs")
-            .Build();
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .BuildECDSA();
+        //
+        // Typically the client would validate a server before proceeding to registration.
+        //
+        udapClient.UdapServerMetaData = new UdapMetadata(new Mock<UdapMetadataOptions>().Object, new Mock<HashSet<string>>().Object)
+            { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
-        var requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
 
-        var regResponse = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-
-
+        regDocumentResult.GetError().Should().BeNull();
 
 
         //
@@ -335,38 +309,19 @@ public class ClientCredentialsUdapModeTests
         //
         // First Registration
         //
-        var document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock test")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.rs")
-            .Build();
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
+        //
+        // Typically the client would validate a server before proceeding to registration.
+        //
+        udapClient.UdapServerMetaData = new UdapMetadata(new Mock<UdapMetadataOptions>().Object, new Mock<HashSet<string>>().Object)
+            { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
-        var requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
 
-        var regResponse = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        regDocumentResult.GetError().Should().BeNull();
         regDocumentResult!.Scope.Should().Be("system/Patient.rs");
 
         var clientIdWithDefaultSubAltName = regDocumentResult.ClientId;
@@ -374,82 +329,25 @@ public class ClientCredentialsUdapModeTests
         //
         // Second Registration
         //
-        document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock test")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.rs system/Appointment.rs")
-            .Build();
+        regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs system/Appointment.rs");
 
-        signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
+        regDocumentResult.GetError().Should().BeNull();
+        regDocumentResult!.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
 
-        requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
-
-        regResponse = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        regDocumentResult!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
-
-        regDocumentResult!.ClientId.Should().Be(clientIdWithDefaultSubAltName);
+        regDocumentResult.ClientId.Should().Be(clientIdWithDefaultSubAltName);
 
         //
         // Third Registration with different Uri Subject Alt Name from same client certificate
         // expect 201 created because I changed the SAN selected by calling WithIssuer
         //
-
-        document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            .WithIssuer(new Uri("https://fhirlabs.net:7016/fhir/r4"))
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock test")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.rs system/Appointment.rs")
-            .Build();
-
-        signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
-        requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
-
-        regResponse = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        regResponse.StatusCode.Should().Be(HttpStatusCode.Created, await regResponse.Content.ReadAsStringAsync());
-        var regDocumentResultForSelectedSubAltName =
-            await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        regDocumentResultForSelectedSubAltName!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
+        var regDocumentResultForSelectedSubAltName = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs system/Appointment.rs",
+            "https://fhirlabs.net:7016/fhir/r4");
+        
+        regDocumentResultForSelectedSubAltName!.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
         var clientIdWithSelectedSubAltName = regDocumentResultForSelectedSubAltName.ClientId;
         clientIdWithSelectedSubAltName.Should().NotBe(clientIdWithDefaultSubAltName);
 
@@ -457,47 +355,15 @@ public class ClientCredentialsUdapModeTests
         // Fourth Registration with Uri Subject Alt Name from third registration
         // expect 200 OK because I changed scope
         //
-        document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert)
-            .WithIssuer(new Uri("https://fhirlabs.net:7016/fhir/r4"))
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock test")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("system/Patient.rs")
-            .Build();
-
-        signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
-        requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
-
-        regResponse = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        regResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        var regDocumentResultForSelectedSubAltNameSecond =
-            await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        var regDocumentResultForSelectedSubAltNameSecond = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs",
+            "https://fhirlabs.net:7016/fhir/r4");
+        
         regDocumentResultForSelectedSubAltNameSecond!.Scope.Should().Be("system/Patient.rs");
-
-        regDocumentResultForSelectedSubAltNameSecond!.ClientId.Should().Be(clientIdWithSelectedSubAltName);
+        regDocumentResultForSelectedSubAltNameSecond.ClientId.Should().Be(clientIdWithSelectedSubAltName);
 
     }
-
-    
 
    
     [Fact]
@@ -636,7 +502,7 @@ public class ClientCredentialsUdapModeTests
         regResponse.StatusCode.Should().Be(HttpStatusCode.Created, await regResponse.Content.ReadAsStringAsync());
         var regDocumentResultForSelectedSubAltName =
             await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        regDocumentResultForSelectedSubAltName!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
+        regDocumentResultForSelectedSubAltName!.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
         var clientIdWithSelectedSubAltName = regDocumentResultForSelectedSubAltName.ClientId;
         clientIdWithSelectedSubAltName.Should().NotBe(clientIdWithDefaultSubAltName);
 
@@ -696,14 +562,14 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task RegisterTwoCommunitiesWithSameISS_AndCancelOne()
     {
-        var clientCert_1 = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
-        var clientCert_2 = new X509Certificate2("CertStore/issued/fhirLabsApiClientLocalhostCert2.pfx", "udap-test");
+        var clientCert1 = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+        var clientCert2 = new X509Certificate2("CertStore/issued/fhirLabsApiClientLocalhostCert2.pfx", "udap-test");
 
         //
         // Register Client 1 from community "udap://fhirlabs.net"
         //
         var document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert_1)
+            .Create(clientCert1)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
@@ -718,7 +584,7 @@ public class ClientCredentialsUdapModeTests
 
         var signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert_1, document)
+                .Create(clientCert1, document)
                 .Build();
 
         var requestBody = new UdapRegisterRequest
@@ -741,7 +607,7 @@ public class ClientCredentialsUdapModeTests
         // Register Client 2 from community "localhost_fhirlabs_community2"
         //
         document = UdapDcrBuilderForClientCredentials
-            .Create(clientCert_2)
+            .Create(clientCert2)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
@@ -756,7 +622,7 @@ public class ClientCredentialsUdapModeTests
 
         signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert_2, document)
+                .Create(clientCert2, document)
                 .Build();
 
         requestBody = new UdapRegisterRequest
@@ -780,7 +646,7 @@ public class ClientCredentialsUdapModeTests
         // Cancel Registration from community "udap://fhirlabs.net"
         //
         document = UdapDcrBuilderForClientCredentials
-            .Cancel(clientCert_1)
+            .Cancel(clientCert1)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
@@ -795,7 +661,7 @@ public class ClientCredentialsUdapModeTests
 
         signedSoftwareStatement =
             SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert_1, document)
+                .Create(clientCert1, document)
                 .Build();
 
         requestBody = new UdapRegisterRequest
@@ -956,7 +822,7 @@ public class ClientCredentialsUdapModeTests
         regResponse.StatusCode.Should().Be(HttpStatusCode.Created, await regResponse.Content.ReadAsStringAsync());
         var regDocumentResultForSelectedSubAltName =
             await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        regDocumentResultForSelectedSubAltName!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
+        regDocumentResultForSelectedSubAltName!.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
         var clientIdWithSelectedSubAltName = regDocumentResultForSelectedSubAltName.ClientId;
         clientIdWithSelectedSubAltName.Should().NotBe(clientIdWithDefaultSubAltName);
 

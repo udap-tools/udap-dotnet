@@ -20,4 +20,7 @@ public class UdapClientOptions
 
     [JsonPropertyName("Headers")]
     public Dictionary<string, string>? Headers { get; set; }
+
+    [JsonPropertyName("TieredOAuthClientLogo")]
+    public string TieredOAuthClientLogo { get; set; }
 }

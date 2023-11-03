@@ -7,9 +7,12 @@
 // */
 #endregion
 
+using Duende.IdentityServer.Models;
+
 namespace Udap.Server.Validation.Default;
 public class DefaultScopeExpander : IScopeExpander
 {
+
     /// <summary>
     /// Default implementation of IScopeExpander.  It does nothing.
     /// </summary>
@@ -21,11 +24,22 @@ public class DefaultScopeExpander : IScopeExpander
     }
 
     /// <summary>
+    /// If the a wildcard is present such as a * then the implementation should expand accordingly.
+    /// </summary>
+    /// <param name="clientScopes"></param>
+    /// <param name="apiScopes"></param>
+    /// <returns></returns>
+    public IEnumerable<string> WildCardExpand(ICollection<string> clientScopes, ICollection<string> apiScopes)
+    {
+        return clientScopes;
+    }
+
+    /// <summary>
     /// Shrinks scope parameters.
     /// </summary>
     /// <param name="scopes"></param>
     /// <returns></returns>
-    public IEnumerable<string> Shrink(IEnumerable<string> scopes)
+    public IEnumerable<string> Aggregate(IEnumerable<string> scopes)
     {
         return scopes;
     }

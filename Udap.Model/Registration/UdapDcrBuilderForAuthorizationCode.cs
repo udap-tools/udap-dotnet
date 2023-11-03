@@ -14,6 +14,7 @@ using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
+using Udap.Util.Extensions;
 
 namespace Udap.Model.Registration;
 
@@ -72,22 +73,10 @@ public class UdapDcrBuilderForAuthorizationCode
     {
         return new UdapDcrBuilderForAuthorizationCode(cert, false);
     }
-
-    //TODO: Safe for multi SubjectAltName scenarios
-    /// <summary>
-    /// Register or update an existing registration by subjectAltName
-    /// </summary>
-    /// <param name="cert"></param>
-    /// <returns></returns>
-    public static UdapDcrBuilderForAuthorizationCode Create(X509Certificate2 cert, string subjectAltName)
-    {
-        return new UdapDcrBuilderForAuthorizationCode(cert, false);
-    }
-
+    
     /// <summary>
     /// Register or update an existing registration
     /// </summary>
-    /// <param name="cert"></param>
     /// <returns></returns>
     public static UdapDcrBuilderForAuthorizationCode Create()
     {
@@ -100,18 +89,6 @@ public class UdapDcrBuilderForAuthorizationCode
     /// <param name="cert"></param>
     /// <returns></returns>
     public static UdapDcrBuilderForAuthorizationCode Cancel(X509Certificate2 cert)
-    {
-        return new UdapDcrBuilderForAuthorizationCode(cert, true);
-    }
-
-    //TODO: Safe for multi SubjectAltName scenarios
-    /// <summary>
-    /// Cancel an existing registration by subject alt name.
-    /// </summary>
-    /// <param name="cert"></param>
-    /// <param name="subjectAltName"></param>
-    /// <returns></returns>
-    public static UdapDcrBuilderForAuthorizationCode Cancel(X509Certificate2 cert, string subjectAltName)
     {
         return new UdapDcrBuilderForAuthorizationCode(cert, true);
     }
@@ -141,6 +118,27 @@ public class UdapDcrBuilderForAuthorizationCode
 
         return this;
     }
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// If the certificate has more than one uniformResourceIdentifier in the Subject Alternative Name
+    /// extension of the client certificate then this will allow one to be picked.
+    /// </summary>
+    /// <param name="issuer"></param>
+    /// <returns></returns>
+    public UdapDcrBuilderForAuthorizationCode WithIssuer(Uri issuer)
+    {
+        var uriNames = _certificate!.GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI);
+        if (!uriNames.Select(u => u.Item2).Contains(issuer.AbsoluteUri))
+        {
+            throw new Exception($"Certificate does not contain a URI Subject Alternative Name of, {issuer.AbsoluteUri}");
+        }
+        _document.Issuer = issuer.AbsoluteUri;
+        _document.Subject = issuer.AbsoluteUri;
+        return this;
+    }
+
+#endif
 
     public UdapDcrBuilderForAuthorizationCode WithAudience(string? audience)
     {
@@ -182,7 +180,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithClientName(string? clientName)
+    public UdapDcrBuilderForAuthorizationCode WithClientName(string clientName)
     {
         _document.ClientName = clientName;
         return this;
@@ -218,15 +216,13 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithLogoUri(string? logoUri)
+    public UdapDcrBuilderForAuthorizationCode WithLogoUri(string logoUri)
     {
-        //TODO: Testing.  And better technique.
         _ = new Uri(logoUri);
         _document.LogoUri = logoUri;
         return this;
     }
 
-    //TODO: should be able to build with all certs in path.
     public UdapDcrBuilderForAuthorizationCode WithCertificate(X509Certificate2 certificate)
     {
         _certificate = certificate;

@@ -7,7 +7,9 @@
 // */
 #endregion
 
+using Duende.IdentityServer.Hosting.DynamicProviders;
 using Duende.IdentityServer.Services;
+using Duende.IdentityServer.Stores;
 using Duende.IdentityServer.Validation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

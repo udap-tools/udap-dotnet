@@ -81,7 +81,7 @@
     </MudCardContent>
 </MudCard>
 
-@if (_patients != null || _outComeMessage != null)
+@if (_patients != null && _patients.Any() || _outComeMessage != null)
 {
     <MudCard Elevation="3" Style="margin-top: 10px">
         <MudCardContent>

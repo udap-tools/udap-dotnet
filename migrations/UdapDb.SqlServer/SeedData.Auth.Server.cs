@@ -73,6 +73,7 @@ public static class SeedDataAuthServer
 
         var udapContext = serviceScope.ServiceProvider.GetRequiredService<UdapDbContext>();
         await udapContext.Database.MigrateAsync();
+        
 
         var clientRegistrationStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
 
@@ -486,7 +487,6 @@ public static class SeedDataAuthServer
     {
         var apiScopes = configDbContext.ApiScopes
             .Include(s => s.Properties)
-            .Where(s => s.Enabled)
             .Select(s => s)
             .ToList();
 
@@ -501,6 +501,7 @@ public static class SeedDataAuthServer
                 if (apiScope.Name.StartsWith("system/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 
                 apiScope.Properties.Add("udap_prefix", "system");
@@ -525,6 +526,7 @@ public static class SeedDataAuthServer
                 if (apiScope.Name.StartsWith("patient/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 
                 apiScope.Properties.Add("udap_prefix", "user");
@@ -538,7 +540,7 @@ public static class SeedDataAuthServer
             }
         }
 
-        foreach (var scopeName in seedScopes.Where(s => s.StartsWith("patient")))
+        foreach (var scopeName in seedScopes.Where(s => s.StartsWith("patient")).ToList())
         {
             if (!apiScopes.Any(s => s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "patient")))
             {
@@ -548,6 +550,7 @@ public static class SeedDataAuthServer
                 if (apiScope.Name.StartsWith("patient/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 
                 apiScope.Properties.Add("udap_prefix", "patient");

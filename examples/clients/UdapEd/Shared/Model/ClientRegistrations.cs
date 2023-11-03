@@ -21,23 +21,23 @@ public class ClientRegistrations
 
     public Dictionary<string, ClientRegistration?> Registrations { get; set; } = new();
 
-    public ClientRegistration? SetRegistration(string clientId, UdapDynamicClientRegistrationDocument? resultModelResult, Oauth2FlowEnum oauth2Flow, string resourceServer)
+    public ClientRegistration? SetRegistration(RegistrationDocument registrationDocument, UdapDynamicClientRegistrationDocument? resultModelResult, Oauth2FlowEnum oauth2Flow, string resourceServer)
     {
         if (resultModelResult is { Issuer: not null, Audience: not null })
         {
             _clientRegistration = new ClientRegistration
             {
-                ClientId = clientId,
+                ClientId = registrationDocument.ClientId,
                 GrantType = resultModelResult.GrantTypes?.FirstOrDefault(),
                 SubjAltName = resultModelResult.Issuer,
                 UserFlowSelected = oauth2Flow.ToString(),
                 AuthServer = resultModelResult.Audience,
                 ResourceServer = resourceServer,
                 RedirectUri = resultModelResult.RedirectUris,
-                Scope = resultModelResult.Scope
+                Scope = registrationDocument.Scope
             };
 
-            Registrations[clientId] = _clientRegistration;
+            Registrations[registrationDocument.ClientId] = _clientRegistration;
             CleanUpRegistration(_clientRegistration);
 
             return _clientRegistration;

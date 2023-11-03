@@ -142,7 +142,7 @@ public class RegistrationAndChangeRegistrationTests
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockPipeline.IdentityScopes.Add(new IdentityResources.Profile());
         _mockPipeline.ApiScopes.Add(new ApiScope("system/Patient.rs"));
-        _mockPipeline.ApiScopes.Add(new ApiScope(" system/Appointment.rs"));
+        _mockPipeline.ApiScopes.Add(new ApiScope("system/Appointment.rs"));
     }
 
 
@@ -203,7 +203,7 @@ public class RegistrationAndChangeRegistrationTests
             .WithExpiration(TimeSpan.FromMinutes(5))
             .WithJwtId()
             .WithClientName("mock test")
-            .WithLogoUri("https://example.com/logo.png")
+            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
             .WithContacts(new HashSet<string>
             {
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
@@ -234,7 +234,7 @@ public class RegistrationAndChangeRegistrationTests
 
         regResponse.StatusCode.Should().Be(HttpStatusCode.OK, await regResponse.Content.ReadAsStringAsync());
         regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        regDocumentResult!.Scope.Should().Be("system/Patient.rs system/Appointment.rs");
+        regDocumentResult!.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
         regDocumentResult!.ClientId.Should().Be(clientId);
 
         _mockPipeline.Clients.Single().AllowedGrantTypes.Should().NotContain(OidcConstants.GrantTypes.ClientCredentials);

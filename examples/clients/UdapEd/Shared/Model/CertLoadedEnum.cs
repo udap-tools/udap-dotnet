@@ -9,4 +9,4 @@
 
 namespace UdapEd.Shared.Model;
 
-public enum CertLoadedEnum { Negative, Positive, InvalidPassword }
+public enum CertLoadedEnum { Negative, Positive, InvalidPassword, Expired }

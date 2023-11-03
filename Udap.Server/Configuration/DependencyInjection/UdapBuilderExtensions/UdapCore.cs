@@ -15,20 +15,26 @@
 //
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Hosting;
+using Duende.IdentityServer.Models;
 using Duende.IdentityServer.ResponseHandling;
 using IdentityModel;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Model;
 using Udap.Server;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
+using Udap.Server.Hosting.DynamicProviders.Oidc;
 using Udap.Server.Options;
 using Udap.Server.ResponseHandling;
+using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Stores;
 using Udap.Server.Validation;
 using Constants = Udap.Server.Constants;
@@ -95,7 +101,7 @@ public static  class UdapServiceBuilderExtensionsCore
 
     public static IUdapServiceBuilder AddSmartV2Expander(this IUdapServiceBuilder builder)
     {
-        builder.Services.AddScoped<IScopeExpander, SmartV2Expander>();
+        builder.Services.AddScoped<IScopeExpander, HL7SmartScopeExpander>();
         
         return builder;
     }

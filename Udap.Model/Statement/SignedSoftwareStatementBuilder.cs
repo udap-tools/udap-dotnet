@@ -9,13 +9,11 @@
 
 using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using Org.BouncyCastle.Math.EC;
 using Udap.Model.Registration;
 using ECCurve = System.Security.Cryptography.ECCurve;
 
@@ -94,15 +92,14 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
             // https://github.com/dotnet/runtime/issues/77590#issuecomment-1325896560
             // https://stackoverflow.com/a/57330499/6115838
             //
-            byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
+            var encryptedPrivateKeyBytes = key?.ExportEncryptedPkcs8PrivateKey(
                 "ILikePasswords",
                 new PbeParameters(
                     PbeEncryptionAlgorithm.Aes256Cbc,
                     HashAlgorithmName.SHA256,
                     iterationCount: 100_000));
 
-            ecdsa.ImportEncryptedPkcs8PrivateKey("ILikePasswords".AsSpan(), encryptedPrivKeyBytes.AsSpan(),
-                out int bytesRead);
+            ecdsa.ImportEncryptedPkcs8PrivateKey("ILikePasswords".AsSpan(), encryptedPrivateKeyBytes.AsSpan(), out _);
         }
         else
         {

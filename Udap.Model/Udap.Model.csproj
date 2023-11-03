@@ -27,9 +27,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="IdentityModel"  />
+    <PackageReference Include="IdentityModel" />
     <PackageReference Include="Microsoft.Extensions.Options" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt"  />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
 
 
@@ -42,6 +42,23 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Udap.Util\Udap.Util.csproj" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <Reference Include="Duende.IdentityServer.Storage">
+      <HintPath>..\..\..\..\DuendeSoftware\IdentityServer\src\Storage\bin\Debug\net7.0\Duende.IdentityServer.Storage.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageReference Include="Duende.IdentityServer.Storage" />
+  </ItemGroup>
+
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+    <PackageReference Include="Duende.IdentityServer.Storage" />
   </ItemGroup>
 
 </Project>

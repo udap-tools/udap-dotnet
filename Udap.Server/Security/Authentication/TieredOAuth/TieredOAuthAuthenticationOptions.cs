@@ -11,30 +11,39 @@ using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using IdentityModel;
-using Udap.Model;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 
-public class TieredOAuthAuthenticationOptions : OAuthOptions{
+public class TieredOAuthAuthenticationOptions : OAuthOptions
+{
 
     private readonly JwtSecurityTokenHandler _defaultHandler = new JwtSecurityTokenHandler();
 
     public TieredOAuthAuthenticationOptions()
     {
-        CallbackPath = TieredOAuthAuthenticationDefaults.CallbackPath;
-        ClientId = "dynamic";
-        ClientSecret = "signed metadata";
-        // AuthorizationEndpoint = TieredOAuthAuthenticationDefaults.AuthorizationEndpoint;
-        // TokenEndpoint = TieredOAuthAuthenticationDefaults.TokenEndpoint;
         SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;
-        
-        // TODO:  configurable. 
+
+        // TODO:  configurable for the non-dynamic AddTieredOAuthForTests call. 
         Scope.Add(OidcConstants.StandardScopes.OpenId);
-        // Scope.Add(UdapConstants.StandardScopes.FhirUser);
         Scope.Add(OidcConstants.StandardScopes.Email);
         Scope.Add(OidcConstants.StandardScopes.Profile);
 
         SecurityTokenValidator = _defaultHandler;
+
+        //
+        // Properties below are required to survive Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions.Validate(String scheme)
+        //
+        // AuthorizationEndpoint and TokenEndpoint are placed them in the AuthenticationProperties.Parameters
+        // and set during the GET /externallogin/challenge
+        //
+        // ClientSecret is not used
+        // ClientId is set after dynamic registration
+        //
+        AuthorizationEndpoint = "/connect/authorize";
+        TokenEndpoint = "/connect/token";
+        ClientSecret = "signed metadata";
+        ClientId = "temporary";
+        CallbackPath = TieredOAuthAuthenticationDefaults.CallbackPath;
     }
 
     /// <summary>
@@ -54,4 +63,6 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions{
     /// <see cref="http://hl7.org/fhir/us/udap-security/user.html#client-authorization-request-to-data-holder"/>
     /// </summary>
     public string IdPBaseUrl { get; set; }
+
+    public string Community { get; set; }
 }

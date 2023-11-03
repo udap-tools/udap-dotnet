@@ -17,11 +17,6 @@ public class Community
     public string Name { get; set; } = "Default";
 
     /// <summary>
-    /// Used to map an IdP url to the client certificate when registering with the Idp
-    /// </summary>
-    public string? IdPBaseUrl { get; set; }
-
-    /// <summary>
     /// Remote Idp community projection
     /// </summary>
     public string? IdpCommunityName { get; set; }

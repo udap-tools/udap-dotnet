@@ -78,7 +78,7 @@ public static class TieredOAuthAuthenticationExtensions
         Action<TieredOAuthAuthenticationOptions> configuration)
     {
 
-        builder.Services.AddTransient<HeaderAugmentationHandler>();
+        builder.Services.TryAddTransient<HeaderAugmentationHandler>();
         builder.Services.AddHttpClient<IUdapClient, UdapClient>().AddHttpMessageHandler<HeaderAugmentationHandler>();
         
         builder.Services.TryAddSingleton<UdapClientMessageHandler>(sp =>
@@ -91,7 +91,7 @@ public static class TieredOAuthAuthenticationExtensions
 
                 return handler;
             });
-
+        
         builder.Services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
         return builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>(scheme, caption, configuration);
     }

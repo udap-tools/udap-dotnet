@@ -31,15 +31,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
-  <!-- -->
-  <!-- <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'"> -->
-  <!--   <PackageReference Include="System.IdentityModel.Tokens.Jwt" VersionOverride="6.30.1" /> -->
-  <!-- </ItemGroup> -->
-
-  <!-- <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'"> -->
-  <!--   <PackageReference Include="System.IdentityModel.Tokens.Jwt"  /> -->
-  <!-- </ItemGroup> -->
-
+ 
   <ItemGroup>
     <ProjectReference Include="..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />

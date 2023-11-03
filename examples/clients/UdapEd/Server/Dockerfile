@@ -1,6 +1,7 @@
 #See https://aka.ms/containerfastmode to understand how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+ARG TAG_NAME
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 443
@@ -16,7 +17,7 @@ WORKDIR /src
 
 ENV GCPDeploy=true
 #this technique of setting env to control version is not working yet.
-ARG TAG_NAME=0.2.16.3
+ARG TAG_NAME
 ENV TAG_NAME_ENV=$TAG_NAME
 
 COPY ["nuget.config", "."]
@@ -33,7 +34,7 @@ RUN dotnet build "Server/UdapEd.Server.csproj" -c Release  -o /app/build
 
 
 FROM build AS publish
-ARG TAG_NAME=0.2.16.3
+ARG TAG_NAME
 RUN dotnet publish "Server/UdapEd.Server.csproj" --version-suffix 99 -c Release -o /app/publish /p:UseAppHost=false 
 
 FROM base AS final

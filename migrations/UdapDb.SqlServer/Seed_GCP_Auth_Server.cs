@@ -1,13 +1,12 @@
-﻿/*
- Copyright (c) Joseph Shook. All rights reserved.
- Authors:
-    Joseph Shook   Joseph.Shook@Surescripts.com
+﻿#region (c) 2023 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
 
- See LICENSE in the project root for license information.
-*/
-
-
-using System.Linq;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -16,7 +15,6 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
 using Duende.IdentityServer.Models;
-using Hl7.Fhir.Rest;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Udap.Common.Extensions;
@@ -28,7 +26,6 @@ using Udap.Server.Storage.Stores;
 using Udap.Server.Stores;
 using Udap.Util.Extensions;
 using ILogger = Serilog.ILogger;
-using Task = System.Threading.Tasks.Task;
 
 namespace UdapDb;
 
@@ -76,9 +73,9 @@ public static class Seed_GCP_Auth_Server
         var udapContext = serviceScope.ServiceProvider.GetRequiredService<UdapDbContext>();
         await udapContext.Database.MigrateAsync();
 
+
         var clientRegistrationStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
-
-
+        
         if (!udapContext.Communities.Any(c => c.Name == "http://localhost"))
         {
             var community = new Community { Name = "http://localhost" };
@@ -98,9 +95,6 @@ public static class Seed_GCP_Auth_Server
         }
 
         var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-
-
-
         //
         // Anchor surefhirlabs_community
         //
@@ -300,7 +294,6 @@ public static class Seed_GCP_Auth_Server
     {
         var apiScopes = configDbContext.ApiScopes
             .Include(s => s.Properties)
-            .Where(s => s.Enabled)
             .Select(s => s)
             .ToList();
 
@@ -314,6 +307,7 @@ public static class Seed_GCP_Auth_Server
                 if (apiScope.Name.StartsWith("system/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 apiScope.Properties.Add("udap_prefix", "system");
                 apiScope.Properties.Add("smart_version", version.ToString());
@@ -331,6 +325,7 @@ public static class Seed_GCP_Auth_Server
                 if (apiScope.Name.StartsWith("patient/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 apiScope.Properties.Add("udap_prefix", "user");
                 apiScope.Properties.Add("smart_version", version.ToString());
@@ -347,6 +342,7 @@ public static class Seed_GCP_Auth_Server
                 if (apiScope.Name.StartsWith("patient/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
+                    apiScope.Enabled = false;
                 }
                 apiScope.Properties.Add("udap_prefix", "patient");
                 apiScope.Properties.Add("smart_version", version.ToString());

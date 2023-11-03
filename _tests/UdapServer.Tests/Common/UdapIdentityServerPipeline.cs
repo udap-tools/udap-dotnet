@@ -12,24 +12,19 @@
 // See LICENSE in the project root for license information.
 
 
-
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Security.Policy;
 using System.Text.Json;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
-using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
-using Google.Api;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -39,63 +34,93 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
-using Udap.Model;
 using Udap.Server;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
-using Udap.Server.Stores.InMemory;
 
 namespace UdapServer.Tests.Common;
 
 public class UdapIdentityServerPipeline
 {
-    public const string BaseUrl = "https://idpserver";
-    public const string LoginPage = BaseUrl + "/account/login";
-    public const string LogoutPage = BaseUrl + "/account/logout";
-    public const string ConsentPage = BaseUrl + "/account/consent";
-    public const string ErrorPage = BaseUrl + "/home/error";
+    public string BaseUrl => _baseUrl;
+    private readonly string _baseUrl = "https://idpserver";
+    private readonly string? _appSettingsFile;
 
-    public const string DeviceAuthorization = BaseUrl + "/connect/deviceauthorization";
-    public const string DiscoveryEndpoint = BaseUrl + "/.well-known/openid-configuration";
-    public const string DiscoveryKeysEndpoint = BaseUrl + "/.well-known/openid-configuration/jwks";
-    public const string AuthorizeEndpoint = BaseUrl + "/connect/authorize";
-    public const string BackchannelAuthenticationEndpoint = BaseUrl + "/connect/ciba";
-    public const string TokenEndpoint = BaseUrl + "/connect/token";
-    public const string RevocationEndpoint = BaseUrl + "/connect/revocation";
-    public const string UserInfoEndpoint = BaseUrl + "/connect/userinfo";
-    public const string IntrospectionEndpoint = BaseUrl + "/connect/introspect";
-    public const string IdentityTokenValidationEndpoint = BaseUrl + "/connect/identityTokenValidation";
-    public const string EndSessionEndpoint = BaseUrl + "/connect/endsession";
-    public const string EndSessionCallbackEndpoint = BaseUrl + "/connect/endsession/callback";
-    public const string CheckSessionEndpoint = BaseUrl + "/connect/checksession";
-    public const string RegistrationEndpoint = BaseUrl + "/connect/register";
+    public readonly string LoginPage;
+    public readonly string LogoutPage;
+    public readonly string ConsentPage;
+    public readonly string ErrorPage;
+    public readonly string DeviceAuthorization;
+    public readonly string DiscoveryEndpoint;
+    public readonly string DiscoveryKeysEndpoint;
+    public readonly string AuthorizeEndpoint;
+    public readonly string BackchannelAuthenticationEndpoint;
+    public readonly string TokenEndpoint;
+    public readonly string RevocationEndpoint;
+    public readonly string UserInfoEndpoint;
+    public readonly string IntrospectionEndpoint;
+    public readonly string IdentityTokenValidationEndpoint;
+    public readonly string EndSessionEndpoint;
+    public readonly string EndSessionCallbackEndpoint;
+    public readonly string CheckSessionEndpoint;
+    public readonly string RegistrationEndpoint;
+    public readonly string FederatedSignOutPath;
+    public readonly string FederatedSignOutUrl;
 
-    public const string FederatedSignOutPath = "/signout-oidc";
-    public const string FederatedSignOutUrl = BaseUrl + FederatedSignOutPath;
+    public UdapIdentityServerPipeline(string? baseUrl = null, string? appSettingsFile = null)
+    {
+        _baseUrl = baseUrl ?? _baseUrl;
+        _appSettingsFile = appSettingsFile;
+    
+        LoginPage = BaseUrl + "/account/login";
+        LogoutPage = BaseUrl + "/account/logout";
+        ConsentPage = BaseUrl + "/account/consent";
+        ErrorPage = BaseUrl + "/home/error";
 
-    public IdentityServerOptions Options { get; set; }
+        DeviceAuthorization = BaseUrl + "/connect/deviceauthorization";
+        DiscoveryEndpoint = BaseUrl + "/.well-known/openid-configuration";
+        DiscoveryKeysEndpoint = BaseUrl + "/.well-known/openid-configuration/jwks";
+        AuthorizeEndpoint = BaseUrl + "/connect/authorize";
+        BackchannelAuthenticationEndpoint = BaseUrl + "/connect/ciba";
+        TokenEndpoint = BaseUrl + "/connect/token";
+        RevocationEndpoint = BaseUrl + "/connect/revocation";
+        UserInfoEndpoint = BaseUrl + "/connect/userinfo";
+        IntrospectionEndpoint = BaseUrl + "/connect/introspect";
+        IdentityTokenValidationEndpoint = BaseUrl + "/connect/identityTokenValidation";
+        EndSessionEndpoint = BaseUrl + "/connect/endsession";
+        EndSessionCallbackEndpoint = BaseUrl + "/connect/endsession/callback";
+        CheckSessionEndpoint = BaseUrl + "/connect/checksession";
+        RegistrationEndpoint = BaseUrl + "/connect/register";
+        FederatedSignOutPath = "/signout-oidc";
+        FederatedSignOutUrl = BaseUrl + FederatedSignOutPath;
+    }
+
+    
+
+    public IdentityServerOptions? Options { get; set; }
     public List<Client> Clients { get; set; } = new List<Client>();
     public List<IdentityResource> IdentityScopes { get; set; } = new List<IdentityResource>();
     public List<ApiResource> ApiResources { get; set; } = new List<ApiResource>();
     public List<ApiScope> ApiScopes { get; set; } = new List<ApiScope>();
     public List<TestUser> Users { get; set; } = new List<TestUser>();
     public List<Community> Communities { get; set; } = new List<Community>();
-    public TestServer Server { get; set; }
-    public HttpMessageHandler Handler { get; set; }
+    public TestServer? Server { get; set; }
+    public HttpMessageHandler? Handler { get; set; }
 
-    public BrowserClient BrowserClient { get; set; }
-    public HttpClient BackChannelClient { get; set; }
+    public BrowserClient? BrowserClient { get; set; }
+    public HttpClient? BackChannelClient { get; set; }
 
     public MockMessageHandler BackChannelMessageHandler { get; set; } = new MockMessageHandler();
     public MockMessageHandler JwtRequestMessageHandler { get; set; } = new MockMessageHandler();
 
-    public event Action<WebHostBuilderContext, IServiceCollection> OnPreConfigureServices = (ctx, services) => { };
-    public event Action<IServiceCollection> OnPostConfigureServices = services => { };
-    public event Action<IApplicationBuilder> OnPreConfigure = app => { };
-    public event Action<IApplicationBuilder> OnPostConfigure = app => { };
+    public event Action<WebHostBuilderContext, IServiceCollection> OnPreConfigureServices = (_, _) => { };
+    public event Action<IServiceCollection> OnPostConfigureServices = _ => { };
+    public event Action<IApplicationBuilder> OnPreConfigure = _ => { };
+    public event Action<IApplicationBuilder> OnPostConfigure = _ => { };
 
-    public Func<HttpContext, Task<bool>> OnFederatedSignout;
+    public Func<HttpContext, Task<bool>>? OnFederatedSignout;
+   
 
     public void Initialize(string basePath = null, bool enableLogging = false)
     {
@@ -116,7 +141,7 @@ public class UdapIdentityServerPipeline
             }
         });
 
-        builder.ConfigureAppConfiguration(configure => configure.AddJsonFile("appsettings.json"));
+        builder.ConfigureAppConfiguration(configure => configure.AddJsonFile(_appSettingsFile ?? "appsettings.Idp1.json"));
 
         if (enableLogging)
         {
@@ -298,9 +323,9 @@ public class UdapIdentityServerPipeline
     }
     
     public bool LoginWasCalled { get; set; }
-    public string LoginReturnUrl { get; set; }
-    public AuthorizationRequest LoginRequest { get; set; }
-    public ClaimsPrincipal Subject { get; set; }
+    public string? LoginReturnUrl { get; set; }
+    public AuthorizationRequest? LoginRequest { get; set; }
+    public ClaimsPrincipal? Subject { get; set; }
 
     private async Task OnRegister(HttpContext ctx)
     {
@@ -371,7 +396,7 @@ public class UdapIdentityServerPipeline
     }
 
     public bool LogoutWasCalled { get; set; }
-    public LogoutRequest LogoutRequest { get; set; }
+    public LogoutRequest? LogoutRequest { get; set; }
 
     private async Task OnLogout(HttpContext ctx)
     {
@@ -387,8 +412,8 @@ public class UdapIdentityServerPipeline
     }
 
     public bool ConsentWasCalled { get; set; }
-    public AuthorizationRequest ConsentRequest { get; set; }
-    public ConsentResponse ConsentResponse { get; set; }
+    public AuthorizationRequest? ConsentRequest { get; set; }
+    public ConsentResponse? ConsentResponse { get; set; }
 
     private async Task OnConsent(HttpContext ctx)
     {
@@ -418,7 +443,7 @@ public class UdapIdentityServerPipeline
     }
 
     public bool CustomWasCalled { get; set; }
-    public AuthorizationRequest CustomRequest { get; set; }
+    public AuthorizationRequest? CustomRequest { get; set; }
 
     private async Task OnCustom(HttpContext ctx)
     {
@@ -428,13 +453,13 @@ public class UdapIdentityServerPipeline
     }
 
     public bool ErrorWasCalled { get; set; }
-    public ErrorMessage ErrorMessage { get; set; }
-    public IServiceProvider ApplicationServices { get; private set; }
+    public ErrorMessage? ErrorMessage { get; set; }
+    public IServiceProvider? ApplicationServices { get; private set; }
 
     /// <summary>
     /// Record the backchannel Identity Token during Tiered OAuth
     /// </summary>
-    public JwtSecurityToken IdToken { get; set; }
+    public JwtSecurityToken? IdToken { get; set; }
 
     private async Task OnError(HttpContext ctx)
     {

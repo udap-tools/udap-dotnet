@@ -33,39 +33,21 @@ public class UdapDcrBuilderForClientCredentialsUnchecked : UdapDcrBuilderForClie
     {
     }
 
-    /// <inheritdoc />
     public new static UdapDcrBuilderForClientCredentialsUnchecked Create(X509Certificate2 cert)
     {
         return new UdapDcrBuilderForClientCredentialsUnchecked(cert, false);
     }
-
-    //TODO: Safe for multi SubjectAltName scenarios
-    /// <inheritdoc />
-    public new static UdapDcrBuilderForClientCredentialsUnchecked Create(X509Certificate2 cert, string subjectAltName)
-    {
-        return new UdapDcrBuilderForClientCredentialsUnchecked(cert, false);
-    }
-
-    /// <inheritdoc />
+   
     public new static UdapDcrBuilderForClientCredentialsUnchecked Create()
     {
         return new UdapDcrBuilderForClientCredentialsUnchecked(false);
     }
 
-    /// <inheritdoc />
     public new static UdapDcrBuilderForClientCredentialsUnchecked Cancel(X509Certificate2 cert)
     {
         return new UdapDcrBuilderForClientCredentialsUnchecked(cert, true);
     }
-
-    //TODO: Safe for multi SubjectAltName scenarios
-    /// <inheritdoc />
-    public new static UdapDcrBuilderForClientCredentialsUnchecked Cancel(X509Certificate2 cert, string subjectAltName)
-    {
-        return new UdapDcrBuilderForClientCredentialsUnchecked(cert, true);
-    }
-
-    /// <inheritdoc />
+    
     public new static UdapDcrBuilderForClientCredentialsUnchecked Cancel()
     {
         return new UdapDcrBuilderForClientCredentialsUnchecked(true);

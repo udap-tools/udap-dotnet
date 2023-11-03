@@ -7,15 +7,14 @@
 // */
 #endregion
 
-using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using System.Security.Cryptography.X509Certificates;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
@@ -107,6 +106,12 @@ public class RegisterController : Controller
             result.DistinguishedName = certificate.SubjectName.Name;
             result.Thumbprint = certificate.Thumbprint;
             result.CertLoaded = CertLoadedEnum.Positive;
+            
+            if (certificate.NotAfter < DateTime.Now.Date)
+            {
+                result.CertLoaded = CertLoadedEnum.Expired;
+            }
+
             result.SubjectAltNames = certificate
                 .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI)
                 .Select(tuple => tuple.Item2)
@@ -152,6 +157,11 @@ public class RegisterController : Controller
                 result.DistinguishedName = clientCert.SubjectName.Name;
                 result.Thumbprint = clientCert.Thumbprint;
                 result.CertLoaded = CertLoadedEnum.Positive;
+
+                if (clientCert.NotAfter < DateTime.Now.Date)
+                {
+                    result.CertLoaded = CertLoadedEnum.Expired;
+                }
 
                 result.SubjectAltNames = clientCert
                     .GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI)
@@ -201,13 +211,12 @@ public class RegisterController : Controller
 
 
         var document = dcrBuilder
-            //TODO: this only gets the first SubAltName
             .WithAudience(request.Audience)
             .WithExpiration(request.Expiration)
             .WithJwtId(request.JwtId)
             .WithClientName(request.ClientName ?? UdapEdConstants.CLIENT_NAME)
             .WithContacts(request.Contacts)
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithTokenEndpointAuthMethod(RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope(request.Scope ?? string.Empty)
             .Build();
     
@@ -276,11 +285,11 @@ public class RegisterController : Controller
             .WithJwtId(request.JwtId)
             .WithClientName(request.ClientName ?? UdapEdConstants.CLIENT_NAME)
             .WithContacts(request.Contacts)
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithTokenEndpointAuthMethod(RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope(request.Scope ?? string.Empty)
             .WithResponseTypes(request.ResponseTypes)
             .WithRedirectUrls(request.RedirectUris)
-            .WithLogoUri(request.LogoUri ?? "https://udaped.fhirlabs.net/images/hl7/icon-fhir-32.png")//TODO Logo required
+            .WithLogoUri(request.LogoUri ?? "https://udaped.fhirlabs.net/images/hl7/icon-fhir-32.png")
             .Build();
 
         var signedSoftwareStatement =
@@ -342,14 +351,13 @@ public class RegisterController : Controller
         dcrBuilder.Document.Issuer = document.Issuer;
         dcrBuilder.Document.Subject = document.Subject;
 
-        //TODO: this only gets the first SubAltName
         dcrBuilder.WithAudience(document.Audience)
             .WithExpiration(document.Expiration)
             .WithJwtId(document.JwtId)
             .WithClientName(document.ClientName!)
             .WithContacts(document.Contacts)
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope(document.Scope!) ;
+            .WithTokenEndpointAuthMethod(RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope(document.Scope) ;
 
         if (!request.SoftwareStatement.Contains(RegistrationDocumentValues.GrantTypes))
         {
@@ -408,11 +416,11 @@ public class RegisterController : Controller
             .WithJwtId(document.JwtId)
             .WithClientName(document.ClientName!)
             .WithContacts(document.Contacts)
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithTokenEndpointAuthMethod(RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope(document.Scope!)
             .WithResponseTypes(document.ResponseTypes)
             .WithRedirectUrls(document.RedirectUris)
-            .WithLogoUri(document.LogoUri); //TODO Logo required
+            .WithLogoUri(document.LogoUri!);
 
         
 
@@ -442,7 +450,9 @@ public class RegisterController : Controller
             }), 
             new MediaTypeHeaderValue("application/json"));
 
+        //TODO: Centralize all registration in UdapClient.  See RegisterTieredClient
         var response = await _httpClient.PostAsync(request.RegistrationEndpoint, content);
+
 
         if (!response.IsSuccessStatusCode)
         {
@@ -473,7 +483,5 @@ public class RegisterController : Controller
 
             return BadRequest(ex);
         }
-
-        return NotFound();
     }
 }

@@ -110,12 +110,12 @@ public static class HttpClientTokenRequestExtensions
     /// </summary>
     /// <param name="client">The client.</param>
     /// <param name="request">The request.</param>
-    /// <param name="tokenRequest">The cancellation token.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns><see cref="OAuthTokenResponse"/></returns>
     public static async Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(
         this HttpMessageInvoker client, 
         AuthorizationCodeTokenRequest request, 
-        CancellationToken tokenRequest = default)
+        CancellationToken cancellationToken = default)
     {
         var clone = request.Clone();
 
@@ -136,9 +136,9 @@ public static class HttpClientTokenRequestExtensions
         clone.Prepare();
         clone.Method = HttpMethod.Post;
 
-        var response = await client.SendAsync(clone, tokenRequest);
+        var response = await client.SendAsync(clone, cancellationToken);
 
-        var body = await response.Content.ReadAsStringAsync(tokenRequest);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
         return response.IsSuccessStatusCode switch
         {

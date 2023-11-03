@@ -85,6 +85,7 @@
                                 <MudText Align="Align.Right" Color="Color.Tertiary">
                                     Client Token Request
                                 </MudText>
+
                                 <pre>@TokenRequest1</pre>
                                 <pre style="padding-left: 10px">@TokenRequest2</pre>
 
@@ -254,7 +255,7 @@
                 <MudButton ButtonType="ButtonType.Button"
                        Color="Color.Primary"
                        Variant="Variant.Filled"
-                       OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
+                                       OnClick="BuildAccessTokenRequest">Build Access Token Request</MudButton>
               </MudItem>
               <MudItem md="3" sm="6" xs="12">
                   <MudSelect @bind-Value="_signingAlgorithm"

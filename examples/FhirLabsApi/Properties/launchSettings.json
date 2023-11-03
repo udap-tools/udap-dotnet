@@ -4,7 +4,7 @@
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "fhir/r4/.well-known/udap/communities/ashtml",
-      "applicationUrl": "https://localhost:7016;http://localhost:5016",
+      "applicationUrl": "https://host.docker.internal:7016;http://host.docker.internal:5016",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },

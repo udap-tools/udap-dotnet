@@ -19,8 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Duende.IdentityServer" Version="6.3.5" />
-    <PackageReference Include="Duende.IdentityServer.Storage" Version="6.3.5" />
+    <PackageReference Include="Duende.IdentityServer" Version="6.3.7" />
+    <PackageReference Include="Duende.IdentityServer.Storage" Version="6.3.7" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="7.0.14" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.5.1" />

@@ -4,7 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges -->
-    <PackageVersion Include="Duende.IdentityServer.Storage" Version="6.3.5" />
+    <PackageVersion Include="Duende.IdentityServer.Storage" Version="6.3.7" />
     <PackageVersion Include="Google.Cloud.SecretManager.V1" Version="2.1.0" />
     <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.7.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="[6.0.23,7.0.12]" />
@@ -17,7 +17,7 @@
     <PackageVersion Include="IdentityModel" Version="6.2.0" />
     <PackageVersion Include="System.Text.Json" Version="[6.0.7,7.0.3]" />
     <PackageVersion Include="AutoMapper" Version="12.0.1" />
-    <PackageVersion Include="Duende.IdentityServer" Version="6.3.5" />
+    <PackageVersion Include="Duende.IdentityServer" Version="6.3.7" />
     <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="6.3.5" />
     <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="6.3.6" />
     <PackageVersion Include="IdentityModel.AspNetCore.OAuth2Introspection" Version="6.2.0" />

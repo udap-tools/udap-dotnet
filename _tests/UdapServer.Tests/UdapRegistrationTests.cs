@@ -158,7 +158,7 @@ public class UdapApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program
 }
 
 /// <summary>
-/// Full Web tests.  Using <see cref="Udap.Idp"/> web server.
+/// Full Web tests.  Using <see cref="Udap.Auth.Server"/> web server.
 /// </summary>
 [Collection("Udap.Auth.Server")]
 public class UdapServerRegistrationTests : IClassFixture<UdapApiTestFixture>

@@ -67,7 +67,7 @@ builder.Services
         // An example HTML formatter that puts the raw XML on the output
         options.OutputFormatters.Add(new SimpleHtmlFhirOutputFormatter());
         // need this to serialize udap metadata because UseFhirServerController clears OutputFormatters
-        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));        
+        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(JsonSerializerOptions.Default));        
     })
     .AddNewtonsoftJson(options =>
     {

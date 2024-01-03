@@ -134,13 +134,6 @@ public class TieredOauthTests
 
         };  
 
-        _mockAuthorServerPipeline.OnPostConfigure += app =>
-        {
-            app.UseAuthorization(); // required for TieredOAuth Testing
-        };
-
-
-
         _mockAuthorServerPipeline.Initialize(enableLogging: true);
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
         

@@ -39,14 +39,14 @@ public static class UdapConfigurationServiceCollectionExtensions
     /// Remember to supply a IUdapClientRegistrationStore to access the certificate anchors
     /// and storage process for new client registrations.
     /// </summary>
-    /// <param name="services">IServiceCollection</param>
+    /// <param name="builder">IUdapServiceBuilder</param>
     /// <returns></returns>
     public static IUdapServiceBuilder AddUdapServerConfiguration(this IUdapServiceBuilder builder)
     {
         builder.Services.TryAddSingleton<IScopeExpander, DefaultScopeExpander>();
         builder.Services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
 #if NET8_0_OR_GREATER
-        services.TryAddTransient<IClock, DefaultClock>();
+        builder.Services.TryAddTransient<IClock, DefaultClock>();
 #else
         builder.Services.TryAddTransient<IClock, LegacyClock>();
 #endif

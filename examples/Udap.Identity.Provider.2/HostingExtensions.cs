@@ -39,7 +39,8 @@ internal static class HostingExtensions
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         Log.Logger.Debug($"ConnectionString:: {connectionString}");
-        
+
+        builder.Services.AddHttpLogging(o => { });
         builder.Services.AddOptions();
         builder.Services.AddMemoryCache();
         builder.Services.AddHttpContextAccessor();

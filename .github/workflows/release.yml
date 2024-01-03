@@ -16,7 +16,8 @@ jobs:
       with:
         dotnet-version: |
           6.0.x
-          7.0.x           
+          7.0.x  
+          8.0.x
       env:
         NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
     - name: Set VERSION variable from tag

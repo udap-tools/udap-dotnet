@@ -88,7 +88,7 @@ public class TieredOauthTests
                 {
                     ClientName = "AuthServer Client",
                     Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-                    TieredOAuthClientLogo = "https://server/udap.logo.48x48.png"
+                    TieredOAuthClientLogo = "https://server/UDAP Ecosystem Gears.png"
                 })
             );
 
@@ -992,7 +992,7 @@ public class TieredOauthTests
         var documentResponse = await udapClient.RegisterAuthCodeClient(
             clientCert,
             "udap openid user/*.read",
-            "https://server/udap.logo.48x48.png", 
+            "https://server/UDAP Ecosystem Gears.png", 
             new List<string> { "https://code_client/callback" });
 
         documentResponse.GetError().Should().BeNull();

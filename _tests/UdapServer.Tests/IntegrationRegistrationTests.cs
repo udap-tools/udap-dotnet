@@ -182,7 +182,7 @@ namespace UdapServer.Tests
                 client.ClientId = clientId;
 
                 var entity = await context.Clients.SingleOrDefaultAsync(c => c.ClientId == client.ClientId);
-                entity.ToModel().Should().BeNull();
+                entity.Should().BeNull();
 
                 context.Clients.Add(client.ToEntity());
                 await context.SaveChangesAsync();

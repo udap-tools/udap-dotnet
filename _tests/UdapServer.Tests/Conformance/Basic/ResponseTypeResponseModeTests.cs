@@ -99,6 +99,6 @@ public class ResponseTypeResponseModeTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
         var response = await _mockPipeline.BrowserClient.GetAsync(url);
 
-        _mockPipeline.ErrorMessage.Error.Should().Be("unsupported_response_type");
+        _mockPipeline.ErrorMessage.Error.Should().Be("invalid_request");
     }
 }

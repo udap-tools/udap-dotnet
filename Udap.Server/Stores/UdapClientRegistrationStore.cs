@@ -38,7 +38,7 @@ namespace Udap.Server.Stores
             var entity = await _dbContext.Clients
                 .SingleOrDefaultAsync(c => c.ClientId == client.ClientId, token);
 
-            return entity.ToModel();
+            return entity?.ToModel();
         }
 
         

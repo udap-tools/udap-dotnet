@@ -45,11 +45,7 @@ public static class UdapConfigurationServiceCollectionExtensions
     {
         builder.Services.TryAddSingleton<IScopeExpander, DefaultScopeExpander>();
         builder.Services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
-#if NET8_0_OR_GREATER
         builder.Services.TryAddTransient<IClock, DefaultClock>();
-#else
-        builder.Services.TryAddTransient<IClock, LegacyClock>();
-#endif
         builder.Services.TryAddTransient<IUdapDynamicClientRegistrationValidator, UdapDynamicClientRegistrationValidator>();
         builder.Services.TryAddSingleton<TrustChainValidator>();
         

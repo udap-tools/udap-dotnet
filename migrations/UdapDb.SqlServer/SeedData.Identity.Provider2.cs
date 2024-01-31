@@ -18,7 +18,6 @@ using Duende.IdentityServer.EntityFramework.Storage;
 using Duende.IdentityServer.Models;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using Udap.Common.Extensions;
 using Udap.Model;
 using Udap.Server.DbContexts;
 using Udap.Server.Entities;

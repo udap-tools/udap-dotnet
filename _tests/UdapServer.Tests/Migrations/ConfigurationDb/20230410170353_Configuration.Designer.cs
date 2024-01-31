@@ -433,6 +433,9 @@ namespace UdapServer.Tests.Migrations.ConfigurationDb
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("PushedAuthorizationLifetime")
+                        .HasColumnType("int");
+
                     b.Property<int>("RefreshTokenExpiration")
                         .HasColumnType("int");
 
@@ -450,6 +453,9 @@ namespace UdapServer.Tests.Migrations.ConfigurationDb
 
                     b.Property<bool>("RequirePkce")
                         .HasColumnType("INTEGER");
+
+                    b.Property<bool>("RequirePushedAuthorization")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("RequireRequestObject")
                         .HasColumnType("INTEGER");

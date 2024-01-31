@@ -45,20 +45,4 @@
   </ItemGroup>
 
 
-  <ItemGroup>
-    <Reference Include="Duende.IdentityServer.Storage">
-      <HintPath>..\..\..\..\DuendeSoftware\IdentityServer\src\Storage\bin\Debug\net7.0\Duende.IdentityServer.Storage.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
-    <PackageReference Include="Duende.IdentityServer.Storage" />
-  </ItemGroup>
-
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-    <PackageReference Include="Duende.IdentityServer.Storage" />
-  </ItemGroup>
-
 </Project>

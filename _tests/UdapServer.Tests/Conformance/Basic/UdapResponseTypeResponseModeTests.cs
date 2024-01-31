@@ -192,16 +192,13 @@ public class UdapResponseTypeResponseModeTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = false;
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var query = response.Headers.Location?.Query;
         // _testOutputHelper.WriteLine(query);
-        var responseParams = QueryHelpers.ParseQuery(query);
-        responseParams["error"].Should().BeEquivalentTo("invalid_request");
-        responseParams["error_description"].Should().BeEquivalentTo("Missing response_type");
-        responseParams.Count(r => r.Key == "response_type").Should().Be(0);
-        responseParams["scope"].Should().BeEquivalentTo("openid");
-        responseParams["state"].Should().BeEquivalentTo(state);
-        responseParams["nonce"].Should().BeEquivalentTo(nonce);
+        var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
+        errorMessage.Should().NotBeNull();
+        errorMessage!.Error.Should().Be("invalid_request");
+        errorMessage!.ErrorDescription.Should().BeEquivalentTo("Missing response_type");
     }
 
     /// <summary>

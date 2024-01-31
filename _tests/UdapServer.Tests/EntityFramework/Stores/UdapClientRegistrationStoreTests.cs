@@ -11,7 +11,7 @@ using Duende.IdentityServer.Models;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 using Udap.Server;
 using Udap.Server.DbContexts;
 using Udap.Server.Options;
@@ -51,7 +51,7 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
         };
 
         await using var context = new UdapDbContext(options);
-        var store = new UdapClientRegistrationStore(context, new Mock<ILogger<UdapClientRegistrationStore>>().Object);
+        var store = new UdapClientRegistrationStore(context, Substitute.For<ILogger<UdapClientRegistrationStore>>());
         var result = await store.UpsertClient(testClient, default);
         result.Should().BeFalse();
 
@@ -112,7 +112,7 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
         await using (var context = new UdapDbContext(options))
         {
             var store = new UdapClientRegistrationStore(context,
-                new Mock<ILogger<UdapClientRegistrationStore>>().Object);
+                Substitute.For<ILogger<UdapClientRegistrationStore>>());
             var result = await store.UpsertClient(testClient_community1, default);
             result.Should().BeFalse();
 
@@ -125,7 +125,7 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
         // Second Register
         await using (var context = new UdapDbContext(options))
         {
-            var store = new UdapClientRegistrationStore(context, new Mock<ILogger<UdapClientRegistrationStore>>().Object);
+            var store = new UdapClientRegistrationStore(context, Substitute.For<ILogger<UdapClientRegistrationStore>>());
             var result = await store.UpsertClient(testClient_community2, default);
             result.Should().BeFalse();
 
@@ -142,7 +142,7 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
             testClient_community1.AllowedGrantTypes = new List<string>();
 
             var store = new UdapClientRegistrationStore(context,
-                new Mock<ILogger<UdapClientRegistrationStore>>().Object);
+                Substitute.For<ILogger<UdapClientRegistrationStore>>());
             var result = await store.CancelRegistration(testClient_community1, default);
             // result.Should().Be(1);
 

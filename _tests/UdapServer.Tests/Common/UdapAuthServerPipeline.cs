@@ -32,7 +32,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Moq;
+using NSubstitute;
 using Udap.Auth.Server.Pages;
 using Udap.Client.Client;
 using Udap.Common;
@@ -164,7 +164,7 @@ public class UdapAuthServerPipeline
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object));
+                Substitute.For<ILogger<TrustAnchorFileStore>>()));
 
 
         services.AddUdapServer(BaseUrl, "FhirLabsApi")
@@ -266,7 +266,7 @@ public class UdapAuthServerPipeline
 
         app.Map("/externallogin/callback", path =>
         {
-            path.Run(async ctx => await OnExternalLoginCallback(ctx,  new Mock<ILogger>().Object));
+            path.Run(async ctx => await OnExternalLoginCallback(ctx,  Substitute.For<ILogger>()));
         });
 
         app.Map("/UDAP Ecosystem Gears.png", path =>

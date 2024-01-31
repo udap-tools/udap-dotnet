@@ -22,7 +22,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
+using NSubstitute;
 using Udap.Client.Client.Extensions;
 using Udap.Common.Certificates;
 using Udap.Model;
@@ -44,7 +44,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
 
     public HL7ApiTestFixture()
     {
-        SeedData.EnsureSeedData("Data Source=./Udap.Idp.db.HL7;", new Mock<Serilog.ILogger>().Object).GetAwaiter().GetResult();
+        SeedData.EnsureSeedData("Data Source=./Udap.Idp.db.HL7;", Substitute.For<Serilog.ILogger>()).GetAwaiter().GetResult();
     }
 
     protected override IHost CreateHost(IHostBuilder builder)

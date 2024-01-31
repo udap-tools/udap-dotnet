@@ -46,7 +46,7 @@ public class TestFixture
     {
         // SeedData.EnsureSeedData(
         //     "Data Source=host.docker.internal;Initial Catalog=Udap.Idp.db;User ID=udap_user;Password=udap_password1;TrustServerCertificate=True;", 
-        //     new Mock<Serilog.ILogger>().Object);
+        //     Substitute.For<Serilog.ILogger>().Object);
 
         TestConfig = new ConfigurationBuilder()
             .AddUserSecrets<IdServerRegistrationTests>()

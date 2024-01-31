@@ -23,7 +23,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
+using NSubstitute;
 using Udap.Common.Certificates;
 using Udap.Auth.Server;
 using Udap.Model;
@@ -60,7 +60,7 @@ namespace UdapServer.Tests
         /// </summary>
         public async Task InitializeAsync()
         {
-            await SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", new Mock<Serilog.ILogger>().Object);
+            await SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", Substitute.For<Serilog.ILogger>());
 
             // await SeedData();
         }
@@ -333,14 +333,14 @@ namespace UdapServer.Tests
             services.AddScoped<UdapDynamicClientRegistrationEndpoint, UdapDynamicClientRegistrationEndpoint>();
             services.AddSingleton(new ServerSettings());
             
-            var mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+            var mockHttpContextAccessor = Substitute.For<IHttpContextAccessor>();
             var context = new DefaultHttpContext();
             context.Request.Scheme = "http";
             context.Request.Host = new HostString("localhost:5001");
             context.Request.Path = "/connect/register";
-            mockHttpContextAccessor.Setup(_ => _.HttpContext).Returns(context);
+            mockHttpContextAccessor.HttpContext.Returns(context);
             
-            services.AddSingleton<IHttpContextAccessor>(mockHttpContextAccessor.Object);
+            services.AddSingleton<IHttpContextAccessor>(mockHttpContextAccessor);
 
 
             // services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor(){new DefaultHttpContext(){ Request = { Path = "/"}}});

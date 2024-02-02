@@ -24,7 +24,7 @@ using Duende.IdentityServer.Services;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Moq;
+using NSubstitute;
 
 namespace UdapServer.Tests.EntityFramework.Stores;
 
@@ -54,7 +54,7 @@ public class ClientStoreTests : StorageFixture<ClientStoreTests, ConfigurationDb
         // so the actual failure was many lines below where the debugger blows up in FindClientByIdAsync.
         //
 
-        var store = new ClientStore(context, new Mock<ILogger<ClientStore>>().Object, new NoneCancellationTokenProvider());
+        var store = new ClientStore(context, Substitute.For<ILogger<ClientStore>>(), new NoneCancellationTokenProvider());
         var client = await store.FindClientByIdAsync(Guid.NewGuid().ToString());
         client.Should().BeNull();
     }

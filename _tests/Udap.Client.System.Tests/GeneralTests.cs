@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
+using NSubstitute;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Common;
@@ -286,7 +286,7 @@ namespace Udap.Client.System.Tests
             services.AddSingleton<ITrustAnchorStore>(sp =>
                 new TrustAnchorFileStore(
                     sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                    new Mock<ILogger<TrustAnchorFileStore>>().Object));
+                    Substitute.For<ILogger<TrustAnchorFileStore>>()));
 
 
             var sp = services.BuildServiceProvider();

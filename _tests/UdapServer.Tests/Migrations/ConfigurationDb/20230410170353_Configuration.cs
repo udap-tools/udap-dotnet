@@ -109,7 +109,9 @@ namespace UdapServer.Tests.Migrations.ConfigurationDb
                     Created = table.Column<DateTime>(type: "TEXT", nullable: false),
                     Updated = table.Column<DateTime>(type: "TEXT", nullable: true),
                     LastAccessed = table.Column<DateTime>(type: "TEXT", nullable: true),
-                    NonEditable = table.Column<bool>(type: "INTEGER", nullable: false)
+                    NonEditable = table.Column<bool>(type: "INTEGER", nullable: false),
+                    PushedAuthorizationLifetime = table.Column<int>(type: "int", nullable: true),
+                    RequirePushedAuthorization = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {

@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
 using Udap.Model.Registration;
+using UdapEd.Client.Pages;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Discovery;
 
@@ -112,6 +113,8 @@ public class UdapClientState : IAppState
 
     public ClientRegistrations? ClientRegistrations { get; set; }
     public ClientHeaders? ClientHeaders { get; set; }
+
+    public PatientSearchPref? PatientSearchPref { get; set; }
 
     public event Action? StateChanged;
 

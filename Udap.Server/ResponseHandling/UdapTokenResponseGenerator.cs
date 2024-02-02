@@ -35,7 +35,7 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
     /// <param name="logger">The logger.</param>
     public UdapTokenResponseGenerator(
         IProfileService profile, 
-        ISystemClock clock, 
+        IClock clock, 
         ITokenService tokenService, 
         IRefreshTokenService refreshTokenService, 
         IScopeParser scopeParser, 

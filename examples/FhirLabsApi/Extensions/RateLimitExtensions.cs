@@ -1,7 +1,4 @@
-﻿
-#if NET7_0
-
-using System.Net;
+﻿using System.Net;
 using System.Threading.RateLimiting;
 using FhirLabsApi.Models;
 using Microsoft.AspNetCore.RateLimiting;
@@ -58,5 +55,3 @@ public static class RateLimitExtensions
         });
     }
 }
-
-#endif

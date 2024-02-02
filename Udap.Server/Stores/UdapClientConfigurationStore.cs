@@ -31,7 +31,7 @@ public class UdapClientConfigurationStore : IUdapClientConfigurationStore
         var entity = await _dbContext.Clients
             .SingleOrDefaultAsync(c => c.ClientId == client.ClientId, token);
     
-        return entity.ToModel();
+        return entity?.ToModel();
     }
     
     public async Task<IEnumerable<Anchor>> GetAnchors(CancellationToken token = default)

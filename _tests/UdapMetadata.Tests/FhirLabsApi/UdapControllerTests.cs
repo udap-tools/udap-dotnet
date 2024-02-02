@@ -23,7 +23,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
+using NSubstitute;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
@@ -104,7 +104,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-                new Mock<ILogger<TrustAnchorFileStore>>().Object));
+                Substitute.For<ILogger<TrustAnchorFileStore>>()));
 
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
                            X509ChainStatusFlags.Revoked |

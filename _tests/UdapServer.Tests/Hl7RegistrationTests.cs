@@ -22,7 +22,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
+using NSubstitute;
 using Udap.Client.Client.Extensions;
 using Udap.Common.Certificates;
 using Udap.Model;
@@ -44,13 +44,13 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
 
     public HL7ApiTestFixture()
     {
-        SeedData.EnsureSeedData("Data Source=./Udap.Idp.db.HL7;", new Mock<Serilog.ILogger>().Object).GetAwaiter().GetResult();
+        SeedData.EnsureSeedData("Data Source=./Udap.Idp.db.HL7;", Substitute.For<Serilog.ILogger>()).GetAwaiter().GetResult();
     }
 
     protected override IHost CreateHost(IHostBuilder builder)
     {
         Environment.SetEnvironmentVariable("ASPNETCORE_URLS", "http://localhost");
-        //Similar to pushing to the cloud where the docker image runs as localhost:8080 but we want to inform Udap.Idp
+        //Similar to pushing to the cloud where the docker image runs as localhost:8080 but we want to inform Udap.Auth.Server
         //that it is some other https url for settings like aud, register and other metadata published settings.
         Environment.SetEnvironmentVariable("UdapIdpBaseUrl", "http://localhost"); 
         Environment.SetEnvironmentVariable("provider", "Sqlite");
@@ -134,7 +134,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
 }
 
 /// <summary>
-/// Full Web tests.  Using <see cref="Udap.Idp"/> web server.
+/// Full Web tests.  Using <see cref="Udap.Auth.Server"/> web server.
 /// </summary>
 [Collection("Udap.Auth.Server")]
 public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>

@@ -20,12 +20,11 @@ using Duende.IdentityServer.Test;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
+using NSubstitute;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
@@ -88,7 +87,7 @@ public class TieredOauthTests
                 {
                     ClientName = "AuthServer Client",
                     Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-                    TieredOAuthClientLogo = "https://server/udap.logo.48x48.png"
+                    TieredOAuthClientLogo = "https://server/UDAP Ecosystem Gears.png"
                 })
             );
 
@@ -133,13 +132,6 @@ public class TieredOauthTests
             using var serviceProvider = services.BuildServiceProvider();
 
         };  
-
-        _mockAuthorServerPipeline.OnPostConfigure += app =>
-        {
-            app.UseAuthorization(); // required for TieredOAuth Testing
-        };
-
-
 
         _mockAuthorServerPipeline.Initialize(enableLogging: true);
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
@@ -992,14 +984,14 @@ public class TieredOauthTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(new Mock<UdapMetadataOptions>().Object, new Mock<HashSet<string>>().Object)
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
 
         var documentResponse = await udapClient.RegisterAuthCodeClient(
             clientCert,
             "udap openid user/*.read",
-            "https://server/udap.logo.48x48.png", 
+            "https://server/UDAP Ecosystem Gears.png", 
             new List<string> { "https://code_client/callback" });
 
         documentResponse.GetError().Should().BeNull();

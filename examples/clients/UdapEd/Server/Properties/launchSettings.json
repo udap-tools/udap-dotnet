@@ -8,7 +8,6 @@
         "ASPNETCORE_URLS": "https://localhost:7041",
         "MyIp": "0.0.0.0"
       },
-      "dotnetRunMessages": true,
       "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
       "applicationUrl": "https://localhost:7041"
     },
@@ -20,7 +19,6 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "GCPDeploy": "true"
       },
-      "dotnetRunMessages": true,
       "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
       "applicationUrl": "https://host.docker.internal:7041;http://host.docker.internal:5171",
       "hotReloadEnabled": false

@@ -86,6 +86,7 @@
     <MudCard Elevation="3" Style="margin-top: 10px">
         <MudCardContent>
             <MudTable @ref="_table"
+                      @bind-RowsPerPage="AppState.PatientSearchPref.RowsPerPage"
                       T="Patient"
                       Items="@_patients"
                       MultiSelection="true"
@@ -111,7 +112,7 @@
                     <MudTd DataLabel="Identifier">@(new MarkupString(string.Join("<br/> ", context.Identifier.Select(identifier => $"{identifier.System}|{identifier.Value}"))))</MudTd>
                 </RowTemplate>
                 <PagerContent>
-                    <MudTablePager PageSizeOptions="new [] { 50, 100 }"/>
+                    <MudTablePager PageSizeOptions="new[] { 5, 10, 20, 50, 100 }"/>
                 </PagerContent>
 
             </MudTable>
@@ -191,6 +192,7 @@
 
         if (AppState.BaseUrl != null)
         {
+            _model.RowsPerPage = AppState.PatientSearchPref.RowsPerPage;
             var result = await FhirService.SearchPatient(_model);
 
             if (result.UnAuthorized)

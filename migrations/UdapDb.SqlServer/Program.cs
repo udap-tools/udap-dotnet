@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using Duende.IdentityServer.EntityFramework.Storage;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Udap.Server.Options;
@@ -33,6 +34,19 @@ builder.Services.AddUdapDbContext(options =>
     options.UdapDbContext = db => db.UseSqlServer(connStrName,
         sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
 });
+
+
+builder.Services.AddOperationalDbContext(options =>
+{
+    options.ConfigureDbContext = db => db.UseSqlServer(connectionString,
+        sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+});
+builder.Services.AddConfigurationDbContext(options =>
+{
+    options.ConfigureDbContext = db => db.UseSqlServer(connectionString,
+        sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+});
+
 
 var app = builder.Build();
 

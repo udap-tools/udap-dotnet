@@ -21,7 +21,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
+using NSubstitute;
 using Udap.Client.Client;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Configuration;
@@ -185,7 +185,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(new Mock<UdapMetadataOptions>().Object, new Mock<HashSet<string>>().Object)
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -248,7 +248,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(new Mock<UdapMetadataOptions>().Object, new Mock<HashSet<string>>().Object)
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -314,7 +314,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(new Mock<UdapMetadataOptions>().Object, new Mock<HashSet<string>>().Object)
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(

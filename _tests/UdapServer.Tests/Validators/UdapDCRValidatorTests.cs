@@ -8,14 +8,14 @@
 #endregion
 
 using System.Net;
+using System.Reflection;
 using Duende.IdentityServer.Stores;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Moq;
-using Moq.Protected;
+using NSubstitute;
 using Udap.Common.Certificates;
 using Udap.Model;
 using Udap.Model.Registration;
@@ -122,40 +122,37 @@ public class UdapDcrValidatorTests
 
         var serverSettings = new ServerSettings { LogoRequired = false };
 
-        var mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+        var mockHttpContextAccessor = Substitute.For<IHttpContextAccessor>();
         var context = new DefaultHttpContext();
         context.Request.Scheme = "http";
         context.Request.Host = new HostString("localhost:5001");
         context.Request.Path = "/connect/register";
-        mockHttpContextAccessor.Setup(_ => _.HttpContext).Returns(context);
+        mockHttpContextAccessor.HttpContext.Returns(context);
 
         _clock.UtcNowFunc = () => UtcNow;
 
-        var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        mockHandler.Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>()
-            )
-            .ReturnsAsync((HttpRequestMessage request, CancellationToken token) =>
+        var mockHandler = Substitute.For<HttpMessageHandler>();
+
+        mockHandler.GetType().GetMethod("SendAsync", BindingFlags.NonPublic | BindingFlags.Instance)
+            .Invoke(mockHandler, new object[] { Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>()})
+            .Returns(callInfo =>
             {
-                HttpResponseMessage response = new HttpResponseMessage();
+                var response = new HttpResponseMessage();
 
-                return response;
+                return Task.FromResult(response);
             });
-
-        var httpClient = new HttpClient(mockHandler.Object);
+        
+        var httpClient = new HttpClient(mockHandler);
 
         var validator = new UdapDynamicClientRegistrationValidator(
-            new Mock<TrustChainValidator>(new Mock<ILogger<TrustChainValidator>>().Object).Object,
+            Substitute.For<TrustChainValidator>(Substitute.For<ILogger<TrustChainValidator>>()),
             httpClient,
             new TestReplayCache(_clock),
             serverSettings,
-            mockHttpContextAccessor.Object,
+            mockHttpContextAccessor,
             new DefaultScopeExpander(),
-            new Mock<IResourceStore>().Object,
-            new Mock<ILogger<UdapDynamicClientRegistrationValidator>>().Object);
+            Substitute.For<IResourceStore>(),
+            Substitute.For<ILogger<UdapDynamicClientRegistrationValidator>>());
 
     
         var result = await validator.ValidateJti(document, expires);
@@ -223,46 +220,44 @@ public class UdapDcrValidatorTests
 
         var serverSettings = new ServerSettings { LogoRequired = true };
 
-        var mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
+        var mockHttpContextAccessor = Substitute.For<IHttpContextAccessor>();
         var context = new DefaultHttpContext();
         context.Request.Scheme = "http";
         context.Request.Host = new HostString("localhost:5001");
         context.Request.Path = "/connect/register";
-        mockHttpContextAccessor.Setup(_ => _.HttpContext).Returns(context);
+        mockHttpContextAccessor.HttpContext.Returns(context);
         
         validator = new UdapDynamicClientRegistrationValidator(
-            new Mock<TrustChainValidator>(new Mock<ILogger<TrustChainValidator>>().Object).Object,
+            Substitute.For<TrustChainValidator>(Substitute.For<ILogger<TrustChainValidator>>()),
             httpClient,
             new TestReplayCache(_clock),
             serverSettings,
-            mockHttpContextAccessor.Object,
+            mockHttpContextAccessor,
             new DefaultScopeExpander(),
-            new Mock<IResourceStore>().Object,
-            new Mock<ILogger<UdapDynamicClientRegistrationValidator>>().Object);
+            Substitute.For<IResourceStore>(),
+            Substitute.For<ILogger<UdapDynamicClientRegistrationValidator>>());
         return document;
     }
 
     private HttpClient GetHttpClientForLogo(string? contentType)
     {
-        var mockHandler = new Mock<HttpMessageHandler>(MockBehavior.Strict);
-        mockHandler.Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>()
-            )
-            .ReturnsAsync((HttpRequestMessage request, CancellationToken token) =>
+        var mockHandler = Substitute.For<HttpMessageHandler>();
+
+        mockHandler.GetType().GetMethod("SendAsync", BindingFlags.NonPublic | BindingFlags.Instance)
+            .Invoke(mockHandler, new object[] { Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>() })
+            .Returns(callInfo =>
             {
-                HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.OK);
+                var response = new HttpResponseMessage();
+
                 if (contentType != null)
                 {
                     response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
                 }
 
-                return response;
+                return Task.FromResult(response);
             });
 
-        return new HttpClient(mockHandler.Object);
+        return new HttpClient(mockHandler);
     }
 }
 

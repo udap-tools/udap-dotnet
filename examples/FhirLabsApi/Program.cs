@@ -67,7 +67,7 @@ builder.Services
         // An example HTML formatter that puts the raw XML on the output
         options.OutputFormatters.Add(new SimpleHtmlFhirOutputFormatter());
         // need this to serialize udap metadata because UseFhirServerController clears OutputFormatters
-        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(new JsonSerializerOptions()));        
+        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(JsonSerializerOptions.Default));        
     })
     .AddNewtonsoftJson(options =>
     {
@@ -81,19 +81,19 @@ builder.Services
     })
     ;
 
-builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
-
-    .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>
-    {
-        options.Authority = builder.Configuration["Jwt:Authority"];
-        options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
-     
-        
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateAudience = false
-        };
-    });
+// builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
+//
+//     .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>
+//     {
+//         options.Authority = builder.Configuration["Jwt:Authority"];
+//         options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
+//      
+//         
+//         options.TokenValidationParameters = new TokenValidationParameters
+//         {
+//             ValidateAudience = false
+//         };
+//     });
 
 
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
@@ -179,7 +179,7 @@ app.UseUdapMetadataServer();
 
 app.MapFhirSmartAppLaunchController();
 app.MapControllers()
-    .RequireAuthorization()
+    // .RequireAuthorization()
     .RequireRateLimiting(RateLimitExtensions.GetPolicy);
 
 app.Run();

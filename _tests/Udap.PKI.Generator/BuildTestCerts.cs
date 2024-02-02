@@ -853,6 +853,11 @@ namespace Udap.PKI.Generator
 
         }
 
+        [Fact]
+        public void emptyTest()
+        {
+
+        }
         //
         // Community:localhost:: Certificate Store File Constants  Community used for unit tests
         //

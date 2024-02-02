@@ -4,6 +4,7 @@
 @using UdapEd.Client.Services
 @using UdapEd.Shared.Model
 @using System.Collections.Specialized
+@using UdapEd.Client.Pages
 @using UdapEd.Shared.Model.Discovery
 @implements UdapEd.Client.Services.IAppState
 @inject ILocalStorageService LocalStorageService
@@ -256,6 +257,14 @@
     {
         get { return _cliientHeaders ??= new ClientHeaders(); }
         private set => _cliientHeaders = value;
+    }
+
+    private PatientSearchPref? _patientSearchPref;
+
+    public PatientSearchPref PatientSearchPref
+    {
+        get { return _patientSearchPref ??= new PatientSearchPref(); }
+        private set => _patientSearchPref = value;
     }
 
     /// <summary>

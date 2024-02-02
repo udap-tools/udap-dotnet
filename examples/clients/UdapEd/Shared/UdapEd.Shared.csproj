@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
@@ -12,8 +12,8 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Model" Version="0.2.*" />
-    <PackageReference Include="Udap.Common" Version="0.2.*" />
+    <PackageReference Include="Udap.Model" Version="0.3.*" />
+    <PackageReference Include="Udap.Common" Version="0.3.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Razor.Language" Version="6.0.24" />
+    <PackageReference Include="Microsoft.AspNetCore.Razor.Language" Version="6.0.26" />
   </ItemGroup>
 
 

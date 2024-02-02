@@ -19,7 +19,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageVersion Include="Duende.IdentityServer" Version="6.3.3" />
-    <PackageVersion Include="Duende.IdentityServer.Storage" Version="6.3.5" />
+    <PackageVersion Include="Duende.IdentityServer.Storage" Version="6.3.8" />
     <PackageVersion Include="Serilog.AspNetCore" Version="7.0.0" />
   </ItemGroup>
 </Project>

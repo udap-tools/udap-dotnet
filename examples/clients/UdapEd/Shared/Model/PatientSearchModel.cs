@@ -21,6 +21,8 @@ public class PatientSearchModel
     public DateTime? BirthDate { get; set; }
     public string? Id { get; set; }
     public string? Identifier { get; set; }
+
+    public int RowsPerPage { get; set; }
     
 }
 

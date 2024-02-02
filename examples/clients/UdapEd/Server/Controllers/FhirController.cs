@@ -67,6 +67,8 @@ public class FhirController : ControllerBase
         {
             searchParams.Add("birthdate", model.BirthDate.Value.ToString("yyyy-MM-dd"));
         }
+        
+        searchParams.Add("_count", model.RowsPerPage.ToString());
 
         try
         {

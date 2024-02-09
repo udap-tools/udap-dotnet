@@ -18,8 +18,7 @@ steps:
   '--max-instances', '1', 
   '--concurrency', '5', 
   '--set-env-vars', 'GCLOUD_PROJECT=true,GCPDeploy=true,UdapIdpBaseUrl=https://idp1.securedcontrols.net', 
-  '--add-cloudsql-instances', 'udap-idp:us-west1:udap-idp-sqlexpress', 
-  '--vpc-connector', 'udap-idp-conect-us-west1', 
+  '--vpc-connector', 'alloydb-connector', 
   '--vpc-egress', 'private-ranges-only',
   '--ingress', 'internal-and-cloud-load-balancing',
   '--set-secrets', '/secret/udap_idp1_appsettings=udap_idp1_appsettings:latest'  

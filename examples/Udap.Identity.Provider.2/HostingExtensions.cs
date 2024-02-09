@@ -12,11 +12,9 @@ using Duende.IdentityServer.EntityFramework.Stores;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Udap.Common;
-using Udap.Common.Certificates;
 using Udap.Identity.Provider;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
@@ -66,6 +64,10 @@ internal static class HostingExtensions
                             b.UseSqlServer(connectionString,
                                 dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
+                        "Pgsql" => options.UdapDbContext = b =>
+                            b.UseNpgsql(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
                         _ => throw new Exception($"Unsupported provider: {provider}")
                     })
             .AddPrivateFileStore();
@@ -93,6 +95,10 @@ internal static class HostingExtensions
                         b.UseSqlServer(connectionString,
                             dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
+                    "Pgsql" => options.ConfigureDbContext = b =>
+                        b.UseNpgsql(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
                     _ => throw new Exception($"Unsupported provider: {provider}")
                 })
             .AddOperationalStore(options =>
@@ -104,6 +110,10 @@ internal static class HostingExtensions
 
                     "SqlServer" => options.ConfigureDbContext = b =>
                         b.UseSqlServer(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                    
+                    "Pgsql" => options.ConfigureDbContext = b =>
+                        b.UseNpgsql(connectionString,
                             dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                     _ => throw new Exception($"Unsupported provider: {provider}")

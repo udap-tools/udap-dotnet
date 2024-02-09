@@ -93,6 +93,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Auth.Server.Admin", "e
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Auth.Server", "examples\Udap.Auth.Server\Udap.Auth.Server.csproj", "{FD9FBB5C-DBCF-4C1D-9E21-A98485D179E6}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UdapDb.Postgres", "migrations\UdapDb.Postgres\UdapDb.Postgres.csproj", "{C6D703FE-00D9-42D8-9F81-DC113CE84779}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -262,6 +264,12 @@ Global
 		{FD9FBB5C-DBCF-4C1D-9E21-A98485D179E6}.FullDebug|Any CPU.Build.0 = Debug|Any CPU
 		{FD9FBB5C-DBCF-4C1D-9E21-A98485D179E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FD9FBB5C-DBCF-4C1D-9E21-A98485D179E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C6D703FE-00D9-42D8-9F81-DC113CE84779}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6D703FE-00D9-42D8-9F81-DC113CE84779}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C6D703FE-00D9-42D8-9F81-DC113CE84779}.FullDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C6D703FE-00D9-42D8-9F81-DC113CE84779}.FullDebug|Any CPU.Build.0 = Debug|Any CPU
+		{C6D703FE-00D9-42D8-9F81-DC113CE84779}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C6D703FE-00D9-42D8-9F81-DC113CE84779}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -290,6 +298,7 @@ Global
 		{2899E179-2E24-46D7-8AA3-9FFE5AC9BFC5} = {4B854644-1F54-4ECA-9290-A89B91A19FF9}
 		{CF2BC3EC-8B6D-49E4-9C7B-18EF4229F9CF} = {4B854644-1F54-4ECA-9290-A89B91A19FF9}
 		{FD9FBB5C-DBCF-4C1D-9E21-A98485D179E6} = {4B854644-1F54-4ECA-9290-A89B91A19FF9}
+		{C6D703FE-00D9-42D8-9F81-DC113CE84779} = {B73A108B-9163-4463-B755-A0F84344D088}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4C22E2C0-B5D3-497F-BAD0-EB769D6D6CD1}

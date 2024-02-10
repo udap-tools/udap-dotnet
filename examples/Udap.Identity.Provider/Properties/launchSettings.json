@@ -4,11 +4,11 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:5055",
+      "applicationUrl": "https://host.docker.internal:5055",
       "environmentVariables": {
         "GCPDeploy": "false",
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "UdapIdpBaseUrl": "https://localhost:5055"
+        "UdapIdpBaseUrl": "https://host.docker.internal:5055"
       }
     },
     "Docker": {

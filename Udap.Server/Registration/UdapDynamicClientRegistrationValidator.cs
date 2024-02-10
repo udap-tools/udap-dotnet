@@ -663,14 +663,14 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
                clientSecrets.Add(new()
                 {
-                    Expiration = chainElements.First().Certificate.NotAfter,
+                    Expiration = chainElements.First().Certificate.NotAfter.ToUniversalTime(),
                     Type = UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME,
                     Value = jwtSecurityToken.Issuer
                 });
 
                 clientSecrets.Add(new()
                 {
-                    Expiration = chainElements.First().Certificate.NotAfter,
+                    Expiration = chainElements.First().Certificate.NotAfter.ToUniversalTime(),
                     Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY,
                     Value = communityId.ToString()
                 });

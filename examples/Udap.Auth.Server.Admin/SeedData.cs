@@ -105,8 +105,8 @@ public static class SeedData
 
             udapContext.IntermediateCertificates.Add(new Intermediate
             {
-                BeginDate = rootCert.NotBefore,
-                EndDate = rootCert.NotAfter,
+                BeginDate = rootCert.NotBefore.ToUniversalTime(),
+                EndDate = rootCert.NotAfter.ToUniversalTime(),
                 Name = rootCert.Subject,
                 X509Certificate = rootCert.ToPemFormat(),
                 Thumbprint = rootCert.Thumbprint,
@@ -125,8 +125,8 @@ public static class SeedData
         
             udapContext.Anchors.Add(new Anchor
             {
-                BeginDate = anchorLocalhostCert.NotBefore,
-                EndDate = anchorLocalhostCert.NotAfter,
+                BeginDate = anchorLocalhostCert.NotBefore.ToUniversalTime(),
+                EndDate = anchorLocalhostCert.NotAfter.ToUniversalTime(),
                 Name = anchorLocalhostCert.Subject,
                 Community = community,
                 X509Certificate = anchorLocalhostCert.ToPemFormat(),
@@ -147,8 +147,8 @@ public static class SeedData
         
             udapContext.Anchors.Add(new Anchor
             {
-                BeginDate = sureFhirLabsAnchor.NotBefore,
-                EndDate = sureFhirLabsAnchor.NotAfter,
+                BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
+                EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
                 Name = sureFhirLabsAnchor.Subject,
                 Community = commnity,
                 X509Certificate = sureFhirLabsAnchor.ToPemFormat(),

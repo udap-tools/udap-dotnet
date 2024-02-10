@@ -148,6 +148,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 });
         }
 
+        _logger.LogDebug($"Is token valid {validatedToken.IsValid}");
+
         if (!validatedToken.IsValid)
         {
             if (validatedToken.Exception.GetType() == typeof(SecurityTokenNoExpirationException))
@@ -286,7 +288,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             AlwaysIncludeUserClaimsInIdToken = _serverSettings.AlwaysIncludeUserClaimsInIdToken
         };
 
-        
+        _logger.LogDebug($"Validating chain for ClientId: {client.ClientId}. x5c {jwtHeader.X5c}");
+
         if (!ValidateChain(client, jsonWebToken, jwtHeader, intermediateCertificates, anchorCertificates, anchors))
         {
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement}::" +
@@ -309,6 +312,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement,
                 UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate));
         }
+
+        _logger.LogDebug($"Chain Validated {client.ClientId}");
 
         //////////////////////////////
         // validate grant_types
@@ -636,7 +641,6 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         IEnumerable<Anchor> anchors)
     {
         var x5cArray = Getx5c(jwtHeader);
-        
         
         // TODO: no test cases for x5c with intermediate certificates.  
         if (x5cArray != null)

@@ -535,6 +535,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         // validation successful - return client
+        _logger.LogDebug($"Validation success for ClientId: {client.ClientId}");
         return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
     }
 

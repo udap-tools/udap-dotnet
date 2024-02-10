@@ -148,7 +148,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 });
         }
 
-        _logger.LogDebug($"Is token valid {validatedToken.IsValid}");
+        _logger.LogDebug($"Is token valid: {validatedToken.IsValid}");
 
         if (!validatedToken.IsValid)
         {
@@ -340,8 +340,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 }
             }
         }
-        
-        
+
         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
         {
             client.AllowedGrantTypes.Add(OidcConstants.GrantTypes.ClientCredentials);
@@ -536,6 +535,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         // validation successful - return client
         _logger.LogDebug($"Validation success for ClientId: {client.ClientId}");
+
         return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
     }
 
@@ -554,6 +554,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (Uri.TryCreate(document.LogoUri, UriKind.Absolute, out var logoUri))
         {
+            _logger.LogDebug($"Validating logo: {logoUri.OriginalString}");
+
             if (!logoUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
             {
                 errorResult = new UdapDynamicClientRegistrationValidationResult(
@@ -585,6 +587,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                     UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidContentType);
 
+                _logger.LogDebug($"Logo validation failed: {logoUri.OriginalString}");
+
                 return (false, errorResult);
             }
         }
@@ -594,8 +598,12 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidUri);
 
+            _logger.LogDebug($"Logo validation failed: {logoUri.OriginalString}");
+
             return (false, errorResult);
         }
+
+        _logger.LogDebug($"Logo validation succeeded: {logoUri.OriginalString}");
 
         return (true, null);
     }

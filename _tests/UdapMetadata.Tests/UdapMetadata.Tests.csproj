@@ -46,7 +46,7 @@
     <None Update="appsettings.Weather.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="appsettings.json">
+    <None Update="appsettings.FhirLabsApi.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\anchors\caLocalhostCert.cer">

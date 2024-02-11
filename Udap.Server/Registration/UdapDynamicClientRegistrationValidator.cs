@@ -598,7 +598,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidUri);
 
-            _logger.LogDebug($"Logo validation failed: {logoUri.OriginalString}");
+            _logger.LogDebug($"Logo validation failed: {document.LogoUri}");
 
             return (false, errorResult);
         }

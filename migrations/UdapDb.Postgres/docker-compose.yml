@@ -8,7 +8,6 @@ services:
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin1234
-      - POSTGRES_DB=directDb
     ports:
       - "5432:5432"
     restart: "no"
@@ -29,4 +28,4 @@ services:
  
 volumes:
   database-data:
-  pgadmin:w
+  pgadmin:

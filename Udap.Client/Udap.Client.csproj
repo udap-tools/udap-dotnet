@@ -12,7 +12,7 @@
     <Copyright>Copyright © Joseph.Shook@Surescripts.com 2022</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
+    <PackageIcon>UDAP Ecosystem Gears.png</PackageIcon>
     <PackageTags>UDAP;FHIR;HL7</PackageTags>
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
   </PropertyGroup>
@@ -45,7 +45,7 @@
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />
     <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
     <None Include="docs/README.md" Pack="true" PackagePath="\" />
-    <None Include="../artwork/udap.logo.48x48.jpg" Pack="true" PackagePath="\" />
+    <None Include="../artwork/UDAP Ecosystem Gears.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

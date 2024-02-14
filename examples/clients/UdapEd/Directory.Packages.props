@@ -8,7 +8,7 @@
     <Copyright>Copyright © Joseph.Shook@Surescripts.com 2022</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageIcon>udap.logo.48x48.jpg</PackageIcon>
+    <PackageIcon>UDAP Ecosystem Gears.png</PackageIcon>
     <PackageTags>UDAP;FHIR;HL7;X509;</PackageTags>
     <Description>UDAP Learning tool is a part of the UDAP reference implementation for .NET.</Description>
     <TAG_NAME_ENV Condition="'$(TAG_NAME_ENV)' == ''">0.3.0</TAG_NAME_ENV>

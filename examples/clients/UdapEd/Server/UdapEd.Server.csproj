@@ -12,13 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\..\..\artwork\udap.logo.48x48.jpg" Link="udap.logo.48x48.jpg">
-      <PackagePath>\</PackagePath>
-      <Pack>true</Pack>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Duende.IdentityServer" Version="7.0.1" />
     <PackageReference Include="Duende.IdentityServer.Storage" Version="7.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.1" />

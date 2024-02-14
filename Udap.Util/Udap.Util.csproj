@@ -12,14 +12,14 @@
     <Copyright>Copyright © Joseph.Shook@Surescripts.com 2022</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <PackageIcon>UDAP Ecosystem Gears.png</PackageIcon>
+    <PackageIcon>UDAP Ecosystem Gears 48X48.jpg</PackageIcon>
     <PackageTags>UDAP;FHIR;HL7</PackageTags>
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
 
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\artwork\UDAP Ecosystem Gears.png" Link="UDAP Ecosystem Gears.png">
+    <None Include="..\artwork\UDAP Ecosystem Gears 48X48.jpg" Link="UDAP Ecosystem Gears 48X48.jpg">
       <PackagePath>\</PackagePath>
       <Pack>true</Pack>
     </None>
@@ -32,7 +32,7 @@
 
   <ItemGroup>
     <None Include="docs\README.md" Pack="true" PackagePath="\" />
-    <None Include="../artwork/UDAP Ecosystem Gears.png" Pack="true" PackagePath="\" />
+    <None Include="../artwork/UDAP Ecosystem Gears 48X48.jpg" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

@@ -9,7 +9,7 @@
 
 
   <ItemGroup>
-    <None Include="..\..\..\..\artwork\UDAP Ecosystem Gears.png" Link="UDAP Ecosystem Gears.png">
+    <None Include="..\..\..\..\artwork\UDAP Ecosystem Gears 48X48.jpg" Link="UDAP Ecosystem Gears 48X48.jpg">
       <PackagePath>\</PackagePath>
       <Pack>true</Pack>
     </None>

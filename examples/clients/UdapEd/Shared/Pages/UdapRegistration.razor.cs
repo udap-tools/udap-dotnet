@@ -15,13 +15,12 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Udap.Model;
 using Udap.Model.Registration;
-using UdapEd.Client.Services;
-using UdapEd.Client.Shared;
-using UdapEd.Shared;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Registration;
+using UdapEd.Shared.Services;
+using UdapEd.Shared.Shared;
 
-namespace UdapEd.Client.Pages;
+namespace UdapEd.Shared.Pages;
 
 public partial class UdapRegistration
 {

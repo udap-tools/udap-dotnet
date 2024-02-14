@@ -18,11 +18,11 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
 using MudBlazor;
-using UdapEd.Client.Services;
-using UdapEd.Client.Shared;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Services;
+using UdapEd.Shared.Shared;
 
-namespace UdapEd.Client.Pages;
+namespace UdapEd.Shared.Pages;
 
 public partial class UdapDiscovery: IDisposable
 {

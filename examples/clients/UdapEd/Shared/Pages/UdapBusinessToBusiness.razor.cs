@@ -17,15 +17,13 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
 using Udap.Common.Extensions;
 using Udap.Model;
-using UdapEd.Client.Services;
-using UdapEd.Client.Shared;
-using UdapEd.Shared;
 using UdapEd.Shared.Model;
-using JsonExtensions = UdapEd.Shared.JsonExtensions;
+using UdapEd.Shared.Services;
+using UdapEd.Shared.Shared;
 
-namespace UdapEd.Client.Pages;
+namespace UdapEd.Shared.Pages;
 
-public partial class UdapConsumer
+public partial class UdapBusinessToBusiness
 {
     [CascadingParameter]
     public CascadingAppState AppState { get; set; } = null!;
@@ -43,7 +41,6 @@ public partial class UdapConsumer
 
     public bool LegacyMode { get; set; } = false;
 
-    
     private string? TokenRequest1 { get; set; }
     private string? TokenRequest2 { get; set; }
     private string? TokenRequest3 { get; set; }
@@ -238,7 +235,7 @@ public partial class UdapConsumer
             return;
         }
 
-        if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_consumer)
+        if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
         {
             var tokenRequestModel = new AuthorizationCodeTokenRequestModel
             {
@@ -247,6 +244,7 @@ public partial class UdapConsumer
             };
 
             tokenRequestModel.RedirectUrl = NavManager.Uri.RemoveQueryParameters();
+            
 
             if (AppState.LoginCallBackResult?.Code != null)
             {
@@ -339,7 +337,6 @@ public partial class UdapConsumer
 
         sb = new StringBuilder();
         sb.AppendLine($"redirect_uri={NavManager.Uri.RemoveQueryParameters()}");
-        
         sb.Append($"udap={UdapConstants.UdapVersionsSupportedValue}");
         TokenRequest4 = sb.ToString();
         
@@ -352,7 +349,7 @@ public partial class UdapConsumer
             AccessToken = "Loading ...";
             await Task.Delay(150);
 
-            if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_consumer)
+            if (AppState.Oauth2Flow == Oauth2FlowEnum.authorization_code_b2b)
             {
                 if (AppState.AuthorizationCodeTokenRequest == null)
                 {

@@ -12,10 +12,9 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.IdentityModel.Tokens;
-using UdapEd.Client.Services;
-using UdapEd.Shared.Model;
+using UdapEd.Shared.Services;
 
-namespace UdapEd.Client.Shared;
+namespace UdapEd.Shared.Shared;
 
 public partial class SignedJwtViewer
 {

@@ -7,14 +7,13 @@
 // */
 #endregion
 
-using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Model.Access;
 using UdapEd.Shared.Model;
 
-namespace UdapEd.Client.Services;
+namespace UdapEd.Shared.Services;
 
 public class AccessService
 {

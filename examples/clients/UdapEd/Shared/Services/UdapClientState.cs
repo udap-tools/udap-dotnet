@@ -10,14 +10,11 @@
 
 using System.Collections.Specialized;
 using Microsoft.AspNetCore.Components;
-using Microsoft.IdentityModel.Tokens;
-using Udap.Model;
 using Udap.Model.Registration;
-using UdapEd.Client.Pages;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Discovery;
 
-namespace UdapEd.Client.Services;
+namespace UdapEd.Shared.Services;
 
 /// <summary>
 /// Persistence data

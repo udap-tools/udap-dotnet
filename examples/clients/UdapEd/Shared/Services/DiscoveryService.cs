@@ -8,11 +8,12 @@
 #endregion
 
 using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
 using Udap.Model;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Discovery;
 
-namespace UdapEd.Client.Services;
+namespace UdapEd.Shared.Services;
 
 public class DiscoveryService
 {

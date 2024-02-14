@@ -1,12 +1,11 @@
 ﻿@using Microsoft.IdentityModel.Tokens;
 @using Udap.Model.Registration
 @using Udap.Model.Access
-@using UdapEd.Client.Services
 @using UdapEd.Shared.Model
 @using System.Collections.Specialized
-@using UdapEd.Client.Pages
 @using UdapEd.Shared.Model.Discovery
-@implements UdapEd.Client.Services.IAppState
+@using UdapEd.Shared.Services
+@implements UdapEd.Shared.Services.IAppState
 @inject ILocalStorageService LocalStorageService
 
 <CascadingValue Value="this">

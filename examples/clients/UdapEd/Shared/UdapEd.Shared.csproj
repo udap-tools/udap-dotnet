@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -22,14 +22,24 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Remove="Shared\ClientIdSelection.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="..\..\..\..\artwork\udap.logo.48x48.jpg" Link="udap.logo.48x48.jpg">
       <PackagePath>\</PackagePath>
       <Pack>true</Pack>
     </None>
+    <None Include="Shared\ClientIdSelection.razor" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+    <PackageReference Include="BQuery" Version="3.1.0" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Language" Version="6.0.26" />
+    <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="MudBlazor" Version="6.15.0" />
   </ItemGroup>
 
 

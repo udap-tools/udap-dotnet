@@ -9,7 +9,6 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using System.Text;
-using System.Text.Json;
 using IdentityModel;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
@@ -18,13 +17,11 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
 using Udap.Common.Extensions;
 using Udap.Model;
-using UdapEd.Client.Services;
-using UdapEd.Client.Shared;
-using UdapEd.Shared;
 using UdapEd.Shared.Model;
-using JsonExtensions = UdapEd.Shared.JsonExtensions;
+using UdapEd.Shared.Services;
+using UdapEd.Shared.Shared;
 
-namespace UdapEd.Client.Pages;
+namespace UdapEd.Shared.Pages;
 
 public partial class UdapTieredOAuth
 {

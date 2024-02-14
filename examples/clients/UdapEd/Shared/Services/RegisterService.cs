@@ -8,18 +8,16 @@
 #endregion
 
 using System.Net.Http.Json;
-using System.Net.NetworkInformation;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Hl7.Fhir.Rest;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Util.Extensions;
 using UdapEd.Shared.Model;
 using Task = System.Threading.Tasks.Task;
 
-namespace UdapEd.Client.Services;
+namespace UdapEd.Shared.Services;
 
 public class RegisterService
 {

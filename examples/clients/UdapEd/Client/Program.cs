@@ -12,8 +12,8 @@ using BQuery;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
-using UdapEd.Client;
-using UdapEd.Client.Services;
+using UdapEd.Shared;
+using UdapEd.Shared.Services;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");

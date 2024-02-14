@@ -4,7 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.IdentityModel.Tokens;
 
-namespace UdapEd.Client.Pages;
+namespace UdapEd.Shared.Pages;
 
 public partial class IdentityViewer
 {

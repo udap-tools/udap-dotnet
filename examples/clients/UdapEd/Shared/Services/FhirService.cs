@@ -16,7 +16,7 @@ using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 using UdapEd.Shared.Model;
 
-namespace UdapEd.Client.Services;
+namespace UdapEd.Shared.Services;
 
 public class FhirService
 {

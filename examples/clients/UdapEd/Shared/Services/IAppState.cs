@@ -1,12 +1,9 @@
 ﻿using System.Collections.Specialized;
-using Udap.Model;
 using Udap.Model.Registration;
-using UdapEd.Client.Pages;
-using UdapEd.Client.Shared;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Discovery;
 
-namespace UdapEd.Client.Services;
+namespace UdapEd.Shared.Services;
 
 public interface IAppState
 {

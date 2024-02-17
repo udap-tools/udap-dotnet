@@ -30,7 +30,7 @@ public partial class UdapBusinessToBusiness
 
     private ErrorBoundary? ErrorBoundary { get; set; }
 
-    [Inject] AccessService AccessService { get; set; } = null!;
+    [Inject] IAccessService AccessService { get; set; } = null!;
     [Inject] NavigationManager NavManager { get; set; } = null!;
     
     [Inject] private IJSRuntime JSRuntime { get; set; } = null!;

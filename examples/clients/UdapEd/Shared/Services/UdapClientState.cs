@@ -113,6 +113,12 @@ public class UdapClientState : IAppState
 
     public PatientSearchPref? PatientSearchPref { get; set; }
 
+    public Task SetPropertyAsync(ComponentBase caller, string propertyName, object? propertyValue, bool saveChanges = true,
+        bool fhirStateHasChanged = true)
+    {
+        throw new NotImplementedException();
+    }
+
     public event Action? StateChanged;
 
     private void NotifyStateChanged() => StateChanged?.Invoke();

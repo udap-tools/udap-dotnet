@@ -1,10 +1,8 @@
 ﻿@page "/"
-@using System.Xml.Serialization
 @using UdapEd.Shared.Services
-@using UdapEd.Shared.Shared
 @inject HttpClient HttpClient
 @inject IJSRuntime JSRuntime
-@inject DiscoveryService DiscoveryService
+@inject IDiscoveryService DiscoveryService
 
 
 <MudGrid Class="mt-2">
@@ -22,7 +20,7 @@
             <MudCardContent>
                 <div class="ml-4">
                 <ul style="list-style:disc;">
-                    <li>Metadata discovery</li>
+                        <li>Metadata discovery</li>Toolbar
                     <li>Software statement</li>
                     <li>Registration request for client_credential and authorization_code flow</li>
                     <li>Certificate trust validation (metadata todo)</li>
@@ -124,7 +122,7 @@
             <MudCardContent>
                 <MudGrid>
                     <MudItem xs="12">
-                        <img src="/images/udapDiscovery.svg" alt="UDAP Discovery diagram" />
+                        <img src="_content/UdapEd.Shared/images/udapDiscovery.svg" alt="UDAP Discovery diagram" />
                     </MudItem>
                     <MudItem xs="12" sm="4" md="4">
                         <MudCard Class="mb-4">
@@ -142,7 +140,7 @@
                     <MudItem xs="12" sm="8" md="8">
                         <MudCard >
                             <MudCardContent>
-                                <MudImage Src="/images/Discovery_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain" Alt="Screenshot of discovery page." Elevation="25" Class="rounded-lg ma-4"/>
+                                <MudImage Src="_content/UdapEd.Shared/images/Discovery_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain" Alt="Screenshot of discovery page." Elevation="25" Class="rounded-lg ma-4" />
 
                                 <MudText Typo="Typo.subtitle2">
                                     The udap://stage.healthtogo.me/ community name is the default community at https://fhirlabs.net/fhir/r4.
@@ -194,7 +192,7 @@
                     <MudItem xs="12" sm="8" md="8">
                         <MudCard>
                             <MudCardContent>
-                                <MudImage Src="/images/UdapRegCertLoad_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain"  Alt="Screenshot of registration screen" Elevation="25" Class="rounded-lg ma-4" />
+                                <MudImage Src="_content/UdapEd.Shared/images/UdapRegCertLoad_HomePage.png" Fluid="true" ObjectFit="ObjectFit.Contain" Alt="Screenshot of registration screen" Elevation="25" Class="rounded-lg ma-4" />
 
                                 <MudText Typo="Typo.subtitle2">
                                     Use the "Test Cert"" button to load a valid certificate that will work with the "udap://fhirlabs.net/" community.  Note that others could also be using this certificate
@@ -217,12 +215,12 @@
             </MudCardContent>
             <MudCardContent>
                 <MudText Typo="Typo.caption">
-                     <img src="images/hl7/icon-fhir-32.png" class="icon-banner" style="height: 48px; width: 48px; margin-right: 24px"> FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of the contents of this tool by HL7.
+                    <img src="_content/UdapEd.Shared/images/hl7/icon-fhir-32.png" class="icon-banner" style="height: 48px; width: 48px; margin-right: 24px"> FHIR® is the registered trademark of HL7 and is used with the permission of HL7. Use of the FHIR trademark does not constitute endorsement of the contents of this tool by HL7.
                 </MudText>
             </MudCardContent>
             <MudCardContent>
                 <MudText Typo="Typo.caption">
-                     <img src="images/udap/UDAP Ecosystem Gears.png" class="icon-banner" style="height: 48px; width: 48px; margin-right: 24px"> UDAP® and the UDAP gear logo, ecosystem gears, and green lock designs are trademarks of UDAP.org. UDAP Draft Specifications are referenced and displayed in parts of this tool to help the user connect an action to the specification.
+                    <img src="_content/UdapEd.Shared/images/udap/UDAP_Ecosystem_Gears.png" class="icon-banner" style="height: 48px; width: 48px; margin-right: 24px"> UDAP® and the UDAP gear logo, ecosystem gears, and green lock designs are trademarks of UDAP.org. UDAP Draft Specifications are referenced and displayed in parts of this tool to help the user connect an action to the specification.
                 </MudText>
             </MudCardContent>
         </MudCard>

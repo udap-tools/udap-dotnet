@@ -12,8 +12,10 @@ using BQuery;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
+using UdapEd.Client.Services;
 using UdapEd.Shared;
 using UdapEd.Shared.Services;
+
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -29,9 +31,9 @@ builder.Services.AddMudServices();
 builder.Services.AddBlazoredLocalStorage();
 
 builder.Services.AddSingleton<UdapClientState>(); //Singleton in Blazor wasm and Scoped in Blazor Server
-builder.Services.AddScoped<RegisterService>();
-builder.Services.AddScoped<DiscoveryService>();
-builder.Services.AddScoped<AccessService>();
-builder.Services.AddScoped<FhirService>();
+builder.Services.AddScoped<IRegisterService, RegisterService>();
+builder.Services.AddScoped<IDiscoveryService, DiscoveryService>();
+builder.Services.AddScoped<IAccessService, AccessService>();
+builder.Services.AddScoped<IFhirService, FhirService>();
 
 await builder.Build().UseBQuery().RunAsync();

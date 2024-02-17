@@ -18,7 +18,6 @@ using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
-using Udap.Client.Internal;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Common.Models;

@@ -9,13 +9,13 @@
 
 using System.Net.Http.Json;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Services;
 
-namespace UdapEd.Shared.Services;
+namespace UdapEd.Client.Services;
 
-public class AccessService
+public class AccessService : IAccessService
 {
     readonly HttpClient _httpClient;
     private readonly ILogger<AccessService> _logger;

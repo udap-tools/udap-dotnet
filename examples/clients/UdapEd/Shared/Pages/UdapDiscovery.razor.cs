@@ -31,11 +31,11 @@ public partial class UdapDiscovery: IDisposable
     
     ErrorBoundary? ErrorBoundary { get; set; }
     
-    [Inject] DiscoveryService MetadataService { get; set; } = null!;
+    [Inject] IDiscoveryService MetadataService { get; set; } = null!;
 
     [Inject] NavigationManager NavigationManager { get; set; } = null!;
 
-    [Inject] private DiscoveryService DiscoveryService { get; set; } = null!;
+    [Inject] private IDiscoveryService DiscoveryService { get; set; } = null!;
 
     [Inject] private IJSRuntime JsRuntime { get; set; } = null!;
 

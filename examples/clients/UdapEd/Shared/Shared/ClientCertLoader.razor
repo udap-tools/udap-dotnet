@@ -51,7 +51,7 @@
 
 @code {
     
-    [Inject] RegisterService RegisterService { get; set; } = null!;
+    [Inject] IRegisterService RegisterService { get; set; } = null!;
     [CascadingParameter] CascadingAppState AppState { get; set; } = null!;
     [Inject] IDialogService DialogService { get; set; } = null!;
 

@@ -64,4 +64,9 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Shared\UdapEd.Shared.csproj" />
+      <ProjectReference Include="..\..\..\..\Udap.Client\Udap.Client.csproj" />
+    </ItemGroup>
+
 </Project>

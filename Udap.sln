@@ -95,7 +95,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Auth.Server", "example
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UdapDb.Postgres", "migrations\UdapDb.Postgres\UdapDb.Postgres.csproj", "{C6D703FE-00D9-42D8-9F81-DC113CE84779}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UdapEdAppMaui", "examples\clients\UdapEd\UdapEdAppMaui\UdapEdAppMaui.csproj", "{21E694EC-3708-442A-A68D-DCC4F91EA261}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UdapEdAppMaui", "examples\clients\UdapEd\UdapEdAppMaui\UdapEdAppMaui.csproj", "{21E694EC-3708-442A-A68D-DCC4F91EA261}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

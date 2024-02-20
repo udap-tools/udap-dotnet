@@ -13,10 +13,10 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using IdentityModel.Client;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Authentication;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Client.Configuration;
@@ -26,6 +26,7 @@ using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
+
 #if NET7_0_OR_GREATER
 using System.Net.Http.Headers;
 #endif

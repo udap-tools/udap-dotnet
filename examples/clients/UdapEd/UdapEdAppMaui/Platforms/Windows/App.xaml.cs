@@ -15,6 +15,12 @@ public partial class App : MauiWinUIApplication
     /// </summary>
     public App()
     {
+        //
+        // See: https://dotmorten.github.io/WinUIEx/concepts/Maui.html#use-winuiexs-webauthenticator-instead-of-net-mauis
+        //
+        if (WinUIEx.WebAuthenticator.CheckOAuthRedirectionActivation())
+            return;
+
         this.InitializeComponent();
     }
 

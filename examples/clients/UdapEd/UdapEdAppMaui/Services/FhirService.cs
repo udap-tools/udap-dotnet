@@ -14,6 +14,13 @@ using UdapEd.Shared.Services;
 namespace UdapEdAppMaui.Services;
 internal class FhirService : IFhirService
 {
+    readonly HttpClient _httpClient;
+
+    public FhirService(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
     public Task<FhirResultModel<List<Patient>>> SearchPatient(PatientSearchModel model)
     {
         throw new NotImplementedException();

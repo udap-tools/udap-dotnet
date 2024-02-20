@@ -15,10 +15,10 @@
               <MudCardContent>
                   <MudGrid Spacing="1" Justify="Justify.FlexStart" Class="mb-2">
                       
-                      <MudItem md="8" xs="12" >
-                          <ClientIdSelection 
+                      <MudItem md="8" xs="12">
+                          <ClientIdSelection
                               ClientRegistrations="@AppState.ClientRegistrations.Registrations.Where(r => !r.Value.UserFlowSelected.EndsWith("_consumer")).ToImmutableDictionary()"
-                              SelectedRegistration = "@AppState.ClientRegistrations?.SelectedRegistration"
+                              SelectedRegistration="@AppState.ClientRegistrations?.SelectedRegistration"
                               ClientIdSelected="(registration) =>  
 {
     Enum.TryParse(registration.UserFlowSelected, out Oauth2FlowEnum flow);

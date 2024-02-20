@@ -22,14 +22,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Remove="Shared\ClientIdSelection.razor" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Shared\ClientIdSelection.razor" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="AutoMapper" Version="13.0.1" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageReference Include="BQuery" Version="3.1.0" />

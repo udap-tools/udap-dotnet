@@ -11,11 +11,11 @@ using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
 using Udap.Model.Access;
 using Udap.Model.UdapAuthenticationExtensions;
 using UdapEd.Shared;
+using UdapEd.Shared.Extensions;
 using UdapEd.Shared.Mappers;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Services;
@@ -36,10 +36,12 @@ internal class AccessService : IAccessService
     {
         var handler = new HttpClientHandler() { AllowAutoRedirect = false };
         var httpClient = new HttpClient(handler);
+#if ANDROID || IOS || MACCATALYST || WINDOWS
+        var response = await httpClient.GetAsync(authorizeQuery, cancellationToken: default);
+#else
         var response = await httpClient
-            .GetAsync(Base64UrlEncoder
-                .Decode(authorizeQuery), cancellationToken: default);
-
+            .GetAsync(Base64UrlEncoder.Decode(authorizeQuery), cancellationToken: default);
+#endif
         var cookies = response.Headers.SingleOrDefault(header => header.Key == "Set-Cookie").Value;
 
         try
@@ -89,7 +91,7 @@ internal class AccessService : IAccessService
             tokenRequestModel.ClientId,
             tokenRequestModel.TokenEndpointUrl,
             clientCert,
-            tokenRequestModel.RedirectUrl,
+            tokenRequestModel.RedirectUrl?.ToMauiAppScheme(),
             tokenRequestModel.Code);
 
         var tokenRequest = tokenRequestBuilder.Build(tokenRequestModel.LegacyMode, signingAlgorithm);

@@ -84,7 +84,12 @@ public static class MauiProgram
         builder.Services.AddHttpClient<IUdapClient, UdapClient>()
             .AddHttpMessageHandler(sp => new HeaderAugmentationHandler(sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>()));
 
-        
+#if WINDOWS
+        builder.Services.AddSingleton<IExternalWebAuthenticator, WebAuthenticatorForWindows>();
+#else
+        builder.Services.AddSingleton<IExternalWebAuthenticator, WebAuthenticatorForDevice>();
+#endif
+
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
 		builder.Logging.AddDebug();

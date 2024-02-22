@@ -17,5 +17,5 @@ namespace UdapEd.Shared.Services;
 public interface IFhirService
 {
     Task<FhirResultModel<List<Patient>>> SearchPatient(PatientSearchModel model);
-    Task<FhirResultModel<Bundle>> MatchPatient(string parametersJson);
+    Task<FhirResultModel<Hl7.Fhir.Model.Bundle>> MatchPatient(string parametersJson);
 }

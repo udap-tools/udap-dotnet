@@ -21,6 +21,7 @@ using UdapEd.Shared;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Services;
 using Udap.Model.Statement;
+using UdapEd.Shared.Extensions;
 using UdapEd.Shared.Model.Registration;
 
 namespace UdapEdAppMaui.Services;
@@ -144,7 +145,7 @@ internal class RegisterService : IRegisterService
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope(request.Scope ?? string.Empty)
             .WithResponseTypes(request.ResponseTypes)
-            .WithRedirectUrls(request.RedirectUris)
+            .WithRedirectUrls(request.RedirectUris?.ToMauiAppSchemes())
             .WithLogoUri(request.LogoUri ?? "https://udaped.fhirlabs.net/images/hl7/icon-fhir-32.png")
             .Build();
 

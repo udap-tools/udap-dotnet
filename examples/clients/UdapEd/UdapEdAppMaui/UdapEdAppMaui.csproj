@@ -73,7 +73,7 @@
     </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="WinUIEx" Version="2.3.0" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" />
+    <PackageReference Include="WinUIEx" Version="2.3.3" Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0-android'">

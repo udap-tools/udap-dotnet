@@ -1,4 +1,5 @@
 ﻿using System.Collections.Specialized;
+using Microsoft.AspNetCore.Components;
 using Udap.Model.Registration;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Discovery;
@@ -44,4 +45,12 @@ public interface IAppState
     ClientHeaders? ClientHeaders { get; }
 
     PatientSearchPref? PatientSearchPref { get; }
+
+
+    Task SetPropertyAsync(
+        ComponentBase caller,
+        string propertyName,
+        object? propertyValue,
+        bool saveChanges = true,
+        bool fhirStateHasChanged = true);
 }

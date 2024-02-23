@@ -32,6 +32,7 @@ using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Access;
+using Udap.Server.Mappers;
 using Udap.Server.Storage.Stores;
 using Udap.Util.Extensions;
 
@@ -442,8 +443,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         //TODO algorithm selectable.
         var tokenRequest = tokenRequestBuilder.Build();
-        
-        return await _udapClient.ExchangeCodeForAuthTokenResponse(tokenRequest, Context.RequestAborted);
+
+        var authTokenResponse = await _udapClient.ExchangeCodeForAuthTokenResponse(tokenRequest, Context.RequestAborted);
+
+        return  authTokenResponse.ToMSAuthTokenResponse();
     }
 
     /// <inheritdoc />

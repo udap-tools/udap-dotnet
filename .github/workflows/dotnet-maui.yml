@@ -1,0 +1,41 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: .NET
+
+on:
+  push:
+    branches: [ "UdapEdMaui" ]
+  pull_request:
+    branches: [ "UdapEdMaui" ]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: |
+          6.0.x
+          7.0.x
+          8.0.x
+    - name: Install .NET Maui
+      run: dotnet workload install maui
+    - name: Restore dependencies
+      run: dotnet restore Udap.sln
+    - name: Generate PKI
+      run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj
+    - name: Build
+      run: dotnet build -c Release Udap-Maui.sln
+    - name: Test Udap.Common.Tests
+      run: dotnet test -c Release _tests/Udap.Common.Tests/Udap.Common.Tests.csproj --no-build --verbosity normal
+    - name: Test UdapMetadata.Tests
+      run: dotnet test -c Release _tests/UdapMetadata.Tests/UdapMetadata.Tests.csproj --no-build --verbosity normal
+    - name: Test UdapServer.Tests
+      run: dotnet test -c Release _tests/UdapServer.Tests/UdapServer.Tests.csproj --no-build --verbosity normal
+

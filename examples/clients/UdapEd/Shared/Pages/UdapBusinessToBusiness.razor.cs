@@ -15,8 +15,10 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.JSInterop;
+using Microsoft.Maui.Authentication;
 using Udap.Common.Extensions;
 using Udap.Model;
+using UdapEd.Shared.Extensions;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Services;
 using UdapEd.Shared.Shared;
@@ -30,7 +32,11 @@ public partial class UdapBusinessToBusiness
 
     private ErrorBoundary? ErrorBoundary { get; set; }
 
-    [Inject] AccessService AccessService { get; set; } = null!;
+#if ANDROID || IOS || MACCATALYST || WINDOWS
+    [Inject] IExternalWebAuthenticator ExternalWebAuthenticator { get; set; } = null!;
+#endif
+
+    [Inject] IAccessService AccessService { get; set; } = null!;
     [Inject] NavigationManager NavManager { get; set; } = null!;
     
     [Inject] private IJSRuntime JSRuntime { get; set; } = null!;
@@ -121,7 +127,7 @@ public partial class UdapBusinessToBusiness
             State = $"state={CryptoRandom.CreateUniqueId()}",
             ClientId = $"client_id={AppState.ClientRegistrations?.SelectedRegistration?.ClientId}",
             Scope = $"scope={AppState.ClientRegistrations?.SelectedRegistration?.Scope}",
-            RedirectUri = $"redirect_uri={NavManager.Uri.RemoveQueryParameters()}",
+            RedirectUri = $"redirect_uri={NavManager.Uri.RemoveQueryParameters().ToMauiAppScheme()}",
             Aud = $"aud={AppState.BaseUrl}"
         };
 
@@ -204,7 +210,7 @@ public partial class UdapBusinessToBusiness
 
         return uri.Query.Replace("&", "&\r\n");
     }
-    
+
     private void ResetSoftwareStatement()
     {
         TokenRequest1 = string.Empty;
@@ -394,9 +400,45 @@ public partial class UdapBusinessToBusiness
     private async Task LaunchAuthorize()
     {
         BuildAuthorizeLink();
+      
+#if ANDROID || IOS || MACCATALYST || WINDOWS
 
+        var result = await ExternalWebAuthenticator.AuthenticateAsync(AuthCodeRequestLink, NavManager.Uri.RemoveQueryParameters().ToMauiAppScheme());
+
+        var loginCallbackResult = new LoginCallBackResult
+        {
+            Code = result.Properties.GetValueOrDefault("code"),
+            Scope = result.Properties.GetValueOrDefault("scope"),
+            State = result.Properties.GetValueOrDefault("state"),
+            SessionState = result.Properties.GetValueOrDefault("session_state"),
+            Issuer = result.Properties.GetValueOrDefault("iss")
+        };
+        await AppState.SetPropertyAsync(this, nameof(AppState.LoginCallBackResult), loginCallbackResult, true, false);
+
+        var sb = new StringBuilder();
+        foreach (var resultProperty in result.Properties)
+        {
+            sb.AppendLine($"{resultProperty.Key}={resultProperty.Value}");
+        }
+        _webAuthenticorResponseProps = sb.ToString();
+
+#else
         await JSRuntime.InvokeVoidAsync("open", @AuthCodeRequestLink, "_self");
+#endif
+
     }
+
+    public string DeviceLoginCallback(bool reset = false)
+    {
+        if (reset)
+        {
+            return string.Empty;
+        }
+
+        return _webAuthenticorResponseProps;
+    }
+
+    private string _webAuthenticorResponseProps = string.Empty;
 
     private string? GetJwtHeader(string? tokenString)
     {

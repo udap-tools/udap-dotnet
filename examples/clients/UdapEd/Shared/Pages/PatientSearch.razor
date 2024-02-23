@@ -149,8 +149,8 @@
     [CascadingParameter]
     public MainLayout Layout { get; set; } = null!;
 
-    [Inject] FhirService FhirService { get; set; } = null!;
-    [Inject] DiscoveryService DiscoveryService { get; set; } = null!;
+    [Inject] IFhirService FhirService { get; set; } = null!;
+    [Inject] IDiscoveryService DiscoveryService { get; set; } = null!;
 
     private string? _baseUrlOverride = string.Empty;
 

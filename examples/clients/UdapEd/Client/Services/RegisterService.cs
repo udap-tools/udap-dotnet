@@ -15,11 +15,12 @@ using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Util.Extensions;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Services;
 using Task = System.Threading.Tasks.Task;
 
-namespace UdapEd.Shared.Services;
+namespace UdapEd.Client.Services;
 
-public class RegisterService
+public class RegisterService : IRegisterService
 {
     readonly HttpClient _httpClient;
 

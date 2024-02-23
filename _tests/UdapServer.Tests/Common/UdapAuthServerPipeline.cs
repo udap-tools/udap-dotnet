@@ -269,7 +269,7 @@ public class UdapAuthServerPipeline
             path.Run(async ctx => await OnExternalLoginCallback(ctx,  Substitute.For<ILogger>()));
         });
 
-        app.Map("/UDAP Ecosystem Gears.png", path =>
+        app.Map("/UDAP_Ecosystem_Gears.png", path =>
         {
             path.Run(ctx => OnLogo(ctx));
         });

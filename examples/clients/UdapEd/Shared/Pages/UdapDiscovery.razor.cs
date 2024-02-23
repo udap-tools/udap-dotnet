@@ -31,11 +31,11 @@ public partial class UdapDiscovery: IDisposable
     
     ErrorBoundary? ErrorBoundary { get; set; }
     
-    [Inject] DiscoveryService MetadataService { get; set; } = null!;
+    [Inject] IDiscoveryService MetadataService { get; set; } = null!;
 
     [Inject] NavigationManager NavigationManager { get; set; } = null!;
 
-    [Inject] private DiscoveryService DiscoveryService { get; set; } = null!;
+    [Inject] private IDiscoveryService DiscoveryService { get; set; } = null!;
 
     [Inject] private IJSRuntime JsRuntime { get; set; } = null!;
 
@@ -121,12 +121,17 @@ public partial class UdapDiscovery: IDisposable
         var anchorCertificateLoadStatus = await DiscoveryService.AnchorCertificateLoadStatus();
         await AppState.SetPropertyAsync(this, nameof(AppState.AnchorCertificateInfo), anchorCertificateLoadStatus);
         await SetCertLoadedColor(anchorCertificateLoadStatus?.CertLoaded);
-        RunTimer();
+
+        if (Bq.Events != null)
+        {
+            //No background tasks in Maui.  FYI IOS doesn't allow it.
+            RunTimer();
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (Bq.Events != null && firstRender)
         {
             Bq.Events.OnBlur += Events_OnBlur;
             Bq.Events.OnFocusAsync += Events_OnFocus;

@@ -31,7 +31,7 @@ public partial class UdapRegistration
     public MainLayout Layout { get; set; } = null!;
 
     ErrorBoundary? ErrorBoundary { get; set; }
-    [Inject] RegisterService RegisterService { get; set; } = null!;
+    [Inject] IRegisterService RegisterService { get; set; } = null!;
 
     [Inject] NavigationManager NavigationManager { get; set; } = null!;
 

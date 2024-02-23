@@ -6,16 +6,15 @@ name: .NET
 on:
   push:
     # branches: [ "main" ]
-    branches-ignore:
-      - 'develop'
+    branches-ignore: ["UdapEdMaui", "develope"]
   pull_request:
     branches: [ "main" ]
 
 jobs:
   build:
 
-    runs-on: ubuntu-latest
-    timeout-minutes: 7
+    runs-on: linux-latest
+    timeout-minutes: 15
     steps:
     - name: Checkout
       uses: actions/checkout@v3

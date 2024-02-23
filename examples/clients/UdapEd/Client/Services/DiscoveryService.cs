@@ -8,14 +8,14 @@
 #endregion
 
 using System.Net.Http.Json;
-using Microsoft.Extensions.Logging;
 using Udap.Model;
 using UdapEd.Shared.Model;
 using UdapEd.Shared.Model.Discovery;
+using UdapEd.Shared.Services;
 
-namespace UdapEd.Shared.Services;
+namespace UdapEd.Client.Services;
 
-public class DiscoveryService
+public class DiscoveryService : IDiscoveryService
 {
     readonly HttpClient _httpClient;
     private readonly ILogger<DiscoveryService> _logger;
@@ -149,6 +149,20 @@ public class DiscoveryService
         {
             _logger.LogError(ex, "Failed GetCertificateData");
             return null;
+        }
+    }
+
+    public async Task<string> GetFhirLabsCommunityList()
+    {
+        var communityResponse = await _httpClient.GetAsync("Metadata/FhirLabsCommunityList");
+
+        if (communityResponse.IsSuccessStatusCode)
+        {
+            return await communityResponse.Content.ReadAsStringAsync();
+        }
+        else
+        {
+            return "Failed to load https://fhirlabs.net/fhir/r4/.well-known/udap/communities/ashtml";
         }
     }
 }

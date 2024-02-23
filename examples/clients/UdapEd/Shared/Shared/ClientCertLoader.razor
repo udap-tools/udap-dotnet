@@ -51,7 +51,7 @@
 
 @code {
     
-    [Inject] RegisterService RegisterService { get; set; } = null!;
+    [Inject] IRegisterService RegisterService { get; set; } = null!;
     [CascadingParameter] CascadingAppState AppState { get; set; } = null!;
     [Inject] IDialogService DialogService { get; set; } = null!;
 
@@ -63,16 +63,22 @@
         var clientCertificateLoadStatus = await RegisterService.ClientCertificateLoadStatus();
         await AppState.SetPropertyAsync(this, nameof(AppState.ClientCertificateInfo), clientCertificateLoadStatus);
         await SetCertLoadedColor(clientCertificateLoadStatus?.CertLoaded);
-        RunTimer();
+        
+        if (Bq.Events != null)
+        {
+            //No background tasks in Maui.  FYI IOS doesn't allow it.
+            RunTimer();
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (Bq.Events != null && firstRender)
         {
             Bq.Events.OnBlur += Events_OnBlur;
             Bq.Events.OnFocusAsync += Events_OnFocus;
         }
+
         await base.OnAfterRenderAsync(firstRender);
     }
 

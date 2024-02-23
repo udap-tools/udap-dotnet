@@ -46,7 +46,7 @@
     [Parameter]
     public string? JwtHeaderWithx5c { get; set; }
 
-    [Inject] DiscoveryService MetadataService { get; set; } = null!;
+    [Inject] IDiscoveryService MetadataService { get; set; } = null!;
 
     private Dictionary<string, string> _certificateMetadata = new Dictionary<string, string>();
 

@@ -28,11 +28,16 @@ public class ResultModel<T>
         Version = version;
     }
 
+    public ResultModel(string errorMessage)
+    {
+        ErrorMessage = errorMessage;
+    }
+
     public T? Result { get; set; }
 
     public string? ErrorMessage { get; set; }
 
     public HttpStatusCode HttpStatusCode { get; set; }
 
-    public Version Version { get; set; } = default!;
+    public Version? Version { get; set; } = default!;
 }

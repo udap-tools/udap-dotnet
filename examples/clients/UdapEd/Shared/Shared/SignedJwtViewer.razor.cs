@@ -28,7 +28,7 @@ public partial class SignedJwtViewer
     public string? Title { get; set; }
 
     [Inject]
-    public DiscoveryService MetadataService { get; set; } = null!;
+    public IDiscoveryService MetadataService { get; set; } = null!;
 
     private string? _decodedJwt;
 
@@ -47,6 +47,7 @@ public partial class SignedJwtViewer
 
     public async Task BuildAccessTokenRequestVisualForClientCredentials(CancellationToken token)
     {
+        await Task.Delay(1, token);
         if (SignedSoftwareStatement == null)
         {
             _decodedJwt = string.Empty;

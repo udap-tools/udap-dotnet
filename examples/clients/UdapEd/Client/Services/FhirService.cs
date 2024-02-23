@@ -15,10 +15,11 @@ using System.Text.Json;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 using UdapEd.Shared.Model;
+using UdapEd.Shared.Services;
 
-namespace UdapEd.Shared.Services;
+namespace UdapEd.Client.Services;
 
-public class FhirService
+public class FhirService : IFhirService
 {
     readonly HttpClient _httpClient;
 

@@ -43,7 +43,9 @@ public static class MauiProgram
             //     outputTemplate:
             //     "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",
             //     theme: AnsiConsoleTheme.Code)
-
+#if ANDROID
+            .WriteTo.AndroidLog()
+#endif
             .WriteTo.File(file, 
                 flushToDiskInterval: flushInterval,
                 encoding: System.Text.Encoding.UTF8, 
@@ -76,7 +78,7 @@ public static class MauiProgram
         builder.Services.AddScoped<IDiscoveryService, DiscoveryService>();
         builder.Services.AddScoped<IAccessService, AccessService>();
         builder.Services.AddScoped<IFhirService, FhirService>();
-
+        builder.Services.AddScoped<IInfrastructure, Infrastructure>();
 
 
         builder.Services.AddScoped<TrustChainValidator>();

@@ -25,4 +25,6 @@ public interface IDiscoveryService
 
     Task<CertificateViewModel?> GetCertificateData(string? base64EncodedCertificate,
         CancellationToken token);
+
+    Task<string> GetFhirLabsCommunityList();
 }

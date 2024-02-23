@@ -151,4 +151,18 @@ public class DiscoveryService : IDiscoveryService
             return null;
         }
     }
+
+    public async Task<string> GetFhirLabsCommunityList()
+    {
+        var communityResponse = await _httpClient.GetAsync("Metadata/FhirLabsCommunityList");
+
+        if (communityResponse.IsSuccessStatusCode)
+        {
+            return await communityResponse.Content.ReadAsStringAsync();
+        }
+        else
+        {
+            return "Failed to load https://fhirlabs.net/fhir/r4/.well-known/udap/communities/ashtml";
+        }
+    }
 }

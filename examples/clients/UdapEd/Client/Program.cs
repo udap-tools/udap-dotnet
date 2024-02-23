@@ -35,5 +35,6 @@ builder.Services.AddScoped<IRegisterService, RegisterService>();
 builder.Services.AddScoped<IDiscoveryService, DiscoveryService>();
 builder.Services.AddScoped<IAccessService, AccessService>();
 builder.Services.AddScoped<IFhirService, FhirService>();
+builder.Services.AddScoped<IInfrastructure, Infrastructure>();
 
 await builder.Build().UseBQuery().RunAsync();

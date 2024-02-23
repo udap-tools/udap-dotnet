@@ -26,6 +26,10 @@ jobs:
           6.0.x
           7.0.x
           8.0.x
+    - name: Install .NET Maui
+      run: dotnet workload install maui
+    - name: Restore dependencies
+      run: dotnet restore Udap.sln
     - name: Generate PKI
       run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj
     - name: Build

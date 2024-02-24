@@ -23,8 +23,6 @@ jobs:
         source-url: ${{ env.REPOSITORY_URL }}
       env:
         NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-    - name: Workload Restore
-      run: dotnet workload restore examples/clients/UdapEd/Shared/UdapEd.Shared.csproj
     - name: Generate PKI
       run: dotnet test -c Release  _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj 
     - name: Build and Restore dependencies

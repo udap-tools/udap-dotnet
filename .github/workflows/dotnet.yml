@@ -25,8 +25,6 @@ jobs:
           6.0.x
           7.0.x
           8.0.x
-    - name: Workload Restore
-      run: dotnet workload restore examples/clients/UdapEd/Shared/UdapEd.Shared.csproj
     - name: Generate PKI
       run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj
     - name: Build

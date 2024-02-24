@@ -6,7 +6,7 @@ name: .NET
 on:
   push:
     # branches: [ "main" ]
-    branches-ignore: ["UdapEdMaui", "develop"]
+    branches-ignore: ["develop"]
   pull_request:
     branches: [ "main" ]
 

@@ -600,10 +600,6 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/FhirLabsApi/CertStore/issued/fhirlabs.net.client.pfx",
                 true);
 
-            File.Copy($"{SurefhirlabsUdapIssued}/fhirlabs.net.client.pfx",
-                $"{BaseDir}/../../examples/clients/UdapEd/Server/fhirlabs.net.client.pfx",
-                true);
-
             // Copy CA to FhirLabsApi so it can be added to the Docker Container trust store. 
             File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
                 $"{BaseDir}/../../examples/FhirLabsApi/SureFhirLabs_CA.cer",
@@ -612,11 +608,6 @@ namespace Udap.PKI.Generator
             // Copy CA to Udap.Auth.Server so it can be added to the Docker Container trust store. 
             File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
                 $"{BaseDir}/../../examples/Udap.Auth.Server/SureFhirLabs_CA.cer",
-                true);
-
-            // Copy CA to UdapEd so it can be added to the Docker Container trust store. 
-            File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
-                $"{BaseDir}/../../examples/clients/UdapEd/Server/SureFhirLabs_CA.cer",
                 true);
 
             // SubAltName is localhost and host.docker.internal. Udap.Idp server can then be reached from
@@ -636,10 +627,6 @@ namespace Udap.PKI.Generator
 
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
                 $"{BaseDir}/../../examples/Udap.Auth.Server.Admin/host.docker.internal.pfx",
-                true);
-
-            File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
-                $"{BaseDir}/../../examples/clients/UdapEd/Server/host.docker.internal.pfx",
                 true);
         }
 

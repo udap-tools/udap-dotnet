@@ -16,12 +16,12 @@ using Microsoft.EntityFrameworkCore;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Udap.Auth.Server.Pages;
 using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Udap.Server.Security.Authentication.TieredOAuth;
+using Udap.UI.Pages;
 
 namespace Udap.Auth.Server;
 

@@ -36,8 +36,8 @@ internal static class HostingExtensions
 
 
         // TODO: Maybe build a .ProtectKeysWithCertificate extension method for use on GCP to grab the cert from the secret manager.
-        // otherwise the keys are not protected.  This is more of an ASP.NET GCP hosted concern and not a UDAP concern. 
-        // Yes, I would like to revisit this. 
+        // otherwise the keys are not protected.  This is more of a ASP.NET GCP hosted concern an not a UDAP concern. 
+        // Yes, I would like to revisit this.  Would make a good medium article.
         // https://learn.microsoft.com/en-us/aspnet/core/security/data-protection/configuration/overview?view=aspnetcore-6.0#protectkeyswith
         builder.Services.AddDataProtection()
             .PersistKeysToDbContext<UdapDbContext>();

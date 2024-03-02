@@ -27,18 +27,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\artwork\UDAP_Ecosystem_Gears 48X48.jpg" Link="UDAP_Ecosystem_Gears 48X48.jpg">
-      <PackagePath>\</PackagePath>
-      <Pack>true</Pack>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Duende.IdentityServer" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Udap.Server\Udap.Server.csproj" />
+    <None Include="docs\README.md" Pack="true" PackagePath="\" />
+    <None Include="../artwork/UDAP_Ecosystem_Gears 48X48.jpg" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

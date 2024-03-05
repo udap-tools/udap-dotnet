@@ -85,7 +85,7 @@ namespace Udap.Client.Client
         public event Action<string>? TokenError;
 
         //TODO the certs include the private key.  This needs work.  It should be a service or struct that
-        // allows a an abstraction in "Sign" so that a vault or HSM can sign the metadata.
+        // allows an abstraction in "Sign" so that a vault or HSM can sign the metadata.
         public async Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(string redirectUrl,
             IEnumerable<X509Certificate2> certificates,
             string scopes,
@@ -478,6 +478,15 @@ namespace Udap.Client.Client
 #endif
 
                 var response = await _httpClient.PostAsync(this.UdapServerMetaData?.RegistrationEndpoint, content, token);
+
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return new UdapDynamicClientRegistrationDocument
+                    {
+                        { "error", "Not Found(404)" },
+                        { "error_description", $"Registration endpoint not found {this.UdapServerMetaData?.RegistrationEndpoint}" }
+                    };
+                }
 
                 if (((int)response.StatusCode) < 500)
                 {

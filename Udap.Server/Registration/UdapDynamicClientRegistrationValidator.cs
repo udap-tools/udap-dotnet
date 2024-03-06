@@ -178,7 +178,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (_serverSettings.RegistrationJtiRequired)
         {
-            var result = await ValidateJti(document, jsonWebToken.ValidTo);
+            var result = await ValidateJti(document, document.Expiration);
 
             if (result.IsError)
             {
@@ -610,7 +610,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
     public async Task<UdapDynamicClientRegistrationValidationResult> ValidateJti(
         UdapDynamicClientRegistrationDocument document,
-        DateTime validTo)
+        long exp)
     {
         var jti = document.JwtId;
         
@@ -634,10 +634,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
         else
         {
-            await _replayCache.AddAsync(Purpose, jti, validTo.AddMinutes(5));
+            await _replayCache.AddAsync(Purpose, jti, DateTimeOffset.FromUnixTimeSeconds(exp));
         }
-
-
+        
         return new UdapDynamicClientRegistrationValidationResult(string.Empty);
     }
 

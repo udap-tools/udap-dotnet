@@ -115,7 +115,6 @@ internal static class HostingExtensions
             // .AddSigningCredential(new X509Certificate2("./CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test"), UdapConstants.SupportedAlgorithm.RS256)
             // .AddSigningCredential(new X509Certificate2("./CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test"), UdapConstants.SupportedAlgorithm.RS384)
 
-            .AddServerSideSessions()
             .AddConfigurationStore(options =>
                 _ = provider switch
                 {

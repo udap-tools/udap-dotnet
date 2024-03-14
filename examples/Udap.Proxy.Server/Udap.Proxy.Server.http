@@ -1,0 +1,6 @@
+@Udap.Proxy.Server_HostAddress = http://localhost:5109
+
+GET {{Udap.Proxy.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

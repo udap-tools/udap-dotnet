@@ -1362,6 +1362,49 @@ namespace Udap.PKI.Generator
                 true);
         }
 
+
+        [Fact (Skip = "Enabled on desktop when needed.")]
+        public void MakeGFhirLabsCerts()
+        {
+            using var rootCA_localhost = new X509Certificate2($"{LocalhostCertStore}/localhost_fhirlabs_community1/caLocalhostCert.pfx", "udap-test");
+            using var subCA_localhost = new X509Certificate2($"{LocalhostCertStore}/localhost_fhirlabs_community1/intermediates/intermediateLocalhostCert.pfx", "udap-test");
+            
+            //
+            // Build a client cert for the gFhirLabs 
+            //
+            BuildClientCertificate(
+                subCA_localhost,
+                rootCA_localhost,
+                subCA_localhost.GetRSAPrivateKey()!,
+                "CN=fhirlabs.net proxy for gfhirlabs, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                new List<string>
+                {
+                    "https://proxy.fhirlabs.net/v1/projects/udap-idp/locations/us-west1/datasets/gFhirLab/fhirStores/fhirlabs_open/fhir", 
+                    "https://localhost:7074/v1/projects/udap-idp/locations/us-west1/datasets/gFhirLab/fhirStores/fhirlabs_open/fhir"
+                },
+                $"{LocalhostCertStore}localhost_fhirlabs_community1/issued/gfhirlabs.healthcare.client",
+                "http://localhost:5033/crl/intermediateLocalhostCert.crl",
+                "http://localhost:5033/certs/intermediates/intermediateLocalhostCert.cer"
+            );
+
+            //
+            // Build a client cert for the ss UdapLabsFhirStore 
+            //
+            BuildClientCertificate(
+                subCA_localhost,
+                rootCA_localhost,
+                subCA_localhost.GetRSAPrivateKey()!,
+                "CN=proxy for sandbox, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                new List<string>
+                {
+                    "https://localhost:7074/v1/projects/sandbox-348615/locations/us-central1/datasets/UdapLabsFhirDataset/fhirStores/UdapLabsFhirStore/fhir"
+                },
+                $"{LocalhostCertStore}localhost_fhirlabs_community1/issued/sandbox.UdapLabsFhirStore.healthcare.client",
+                "http://localhost:5033/crl/intermediateLocalhostCert.crl",
+                "http://localhost:5033/certs/intermediates/intermediateLocalhostCert.cer"
+            );
+        }
+
         private X509Certificate2 BuildClientCertificate(
             X509Certificate2 intermediateCert,
             X509Certificate2 caCert,

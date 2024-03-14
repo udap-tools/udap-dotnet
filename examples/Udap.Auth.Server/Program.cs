@@ -29,7 +29,7 @@ try
     builder.Host.UseSerilog((ctx, lc) => lc
         .WriteTo.Console(
             outputTemplate:
-            "[{Timestamp:HH:mm:ss} {Level}] {SourceContext} {Message:lj}{NewLine}{Exception}{NewLine}",
+            "[{Timestamp:HH:mm:ss} {Level}][{ThreadId:d}] {SourceContext} {Message:lj} {TraceMessage}{NewLine}{Exception}",
             theme: AnsiConsoleTheme.Code)
         .MinimumLevel.Verbose()
         .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)

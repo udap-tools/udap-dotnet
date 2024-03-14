@@ -463,6 +463,17 @@ public static class SeedDataAuthServer
             await configDbContext.SaveChangesAsync();
         }
 
+        //
+        // launch/Patient
+        //
+        if (configDbContext.IdentityResources.All(i => i.Name != "launch/patient"))
+        {
+            var apiScope = new ApiScope("launch/patient");
+            apiScope.ShowInDiscoveryDocument = false;
+            configDbContext.ApiScopes.Add(apiScope.ToEntity());
+            await configDbContext.SaveChangesAsync();
+        }
+
         var sb = new StringBuilder();
         sb.AppendLine("DO");
         sb.AppendLine("$do$");

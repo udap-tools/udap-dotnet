@@ -22,7 +22,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="MudBlazor" Version="6.17.0" />
+    <PackageReference Include="MudBlazor" Version="6.19.1" />
     <PackageReference Include="System.Net.Http.Json" Version="8.0.0" />
 
     <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />

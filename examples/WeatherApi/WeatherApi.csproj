@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
+    <ProjectReference Include="..\..\Udap.Smart.Metadata\Udap.Smart.Metadata.csproj" />
   </ItemGroup>
 
   <ItemGroup>

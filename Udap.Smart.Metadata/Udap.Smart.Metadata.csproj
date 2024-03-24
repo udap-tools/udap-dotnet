@@ -12,25 +12,28 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageIcon>UDAP_Ecosystem_Gears 48X48.jpg</PackageIcon>
-    <PackageTags>UDAP;FHIR;HL7</PackageTags>
-    <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
+    <PackageTags>SMART;UDAP;FHIR;HL7</PackageTags>
+    <Description>Package is a part of the UDAP reference implementation for .NET.  This package includes a SMART endpoint or controller to a ASP.NET application.</Description>
 
   </PropertyGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
 
-    <PackageReference Include="IdentityModel" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
-    <PackageReference Include="Portable.BouncyCastle" />
   </ItemGroup>
-  
+
+  <ItemGroup>
+    <None Include="..\artwork\UDAP_Ecosystem_Gears 48X48.jpg" Link="UDAP_Ecosystem_Gears 48X48.jpg">
+      <PackagePath>\</PackagePath>
+      <Pack>true</Pack>
+    </None>
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />
-    <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
-    <None Include="docs\README.md" Pack="true" PackagePath="\" />
-    <None Include="../artwork/UDAP_Ecosystem_Gears 48X48.jpg" Pack="true" PackagePath="\" />
+    <ProjectReference Include="..\Udap.Smart.Model\Udap.Smart.Model.csproj" />
   </ItemGroup>
 
 </Project>

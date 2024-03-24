@@ -33,6 +33,9 @@ jobs:
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Server/Udap.Server.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0${VERSION} ./Udap.Client/Udap.Client.csproj    
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=0${VERSION} ./Udap.UI/Udap.UI.csproj
+
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Smart.Model/Udap.Smart.Model.csproj
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Smart.Metadata/Udap.Smart.Metadata.csproj 
     - name: Push
       run: |
         dotnet nuget push ./Udap.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
@@ -43,3 +46,5 @@ jobs:
         dotnet nuget push ./Udap.Client/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
         dotnet nuget push ./Udap.UI/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
       
+        dotnet nuget push ./Udap.Smart.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+        dotnet nuget push ./Udap.Smart.Metadata/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}

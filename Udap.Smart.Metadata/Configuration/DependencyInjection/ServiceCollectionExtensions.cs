@@ -11,6 +11,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Udap.Smart.Metadata;
 using Udap.Smart.Model;
@@ -33,9 +35,23 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Extension method used to register a single <see cref="SmartMetadata"/> or a named <see cref="SmartMetadata"/>.
+    /// This method will look up SMART Metadata from the "SmartMetadata" configuration section of appsettings.
+    /// </summary>
+    /// <param name="builder"></param>
+    /// <param name="namedOption">Named Option.  This feature is anticipated to allow a proxy server implementation to host multiple .well-known/smart-configuration endpoints.</param>
+    /// <returns></returns>
+    public static IHostApplicationBuilder AddSmartMetadata(this IHostApplicationBuilder builder, string? namedOption = null)
+    {
+        builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSection("SmartMetadata"));
+        builder.Services.AddScoped<SmartMetadataEndpoint>(sp => 
+            new SmartMetadataEndpoint(sp.GetService<IOptionsMonitor<SmartMetadata>>(), namedOption));
 
+        return builder;
+    }
 
-     public static IApplicationBuilder UseSmartMetadata(this WebApplication app, string? prefixRoute = null)
+    public static IApplicationBuilder UseSmartMetadata(this WebApplication app, string? prefixRoute = null)
     {
         EnsureMvcControllerUnloads(app);
 

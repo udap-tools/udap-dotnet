@@ -111,8 +111,8 @@ builder.Services.AddUdapMetadataServer(builder.Configuration);
 // builder.Services.Configure<SmartMetadata>("SmartMetadata", builder.Configuration.GetRequiredSection("SmartMetadata"));
 // builder.Services.AddSmartMetadata("SmartMetadata2");
 
-builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSection("SmartMetadata"));
-builder.Services.AddSmartMetadata();
+
+builder.AddSmartMetadata();
 
 
 builder.AddRateLimiting();

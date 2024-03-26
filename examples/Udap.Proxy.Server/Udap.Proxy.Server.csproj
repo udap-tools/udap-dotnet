@@ -21,6 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="CertStore\issued\gfhirlabs.healthcare.client.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

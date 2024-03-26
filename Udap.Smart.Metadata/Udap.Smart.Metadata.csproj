@@ -21,6 +21,8 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
 
     <PackageReference Include="Microsoft.Extensions.Configuration" />
+
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>
 

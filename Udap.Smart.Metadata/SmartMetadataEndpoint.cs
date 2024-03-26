@@ -13,6 +13,9 @@ using Udap.Smart.Model;
 
 namespace Udap.Smart.Metadata;
 
+/// <summary>
+/// See <a href="https://hl7.org/fhir/smart-app-launch/conformance.html">SMART App Launch: Conformance</a>
+/// </summary>
 public class SmartMetadataEndpoint
 {
     private readonly IOptionsMonitor<SmartMetadata>? _smartMetadata;

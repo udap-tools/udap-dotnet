@@ -1384,7 +1384,7 @@ namespace Udap.PKI.Generator
                 },
                 $"{LocalhostCertStore}localhost_fhirlabs_community1/issued/gfhirlabs.healthcare.client",
                 "http://localhost:5033/crl/intermediateLocalhostCert.crl",
-                "http://localhost:5033/certs/intermediates/intermediateLocalhostCert.cer"
+                "http://localhost:5033/certs/intermediateLocalhostCert.cer"
             );
 
             //
@@ -1401,7 +1401,7 @@ namespace Udap.PKI.Generator
                 },
                 $"{LocalhostCertStore}localhost_fhirlabs_community1/issued/sandbox.UdapLabsFhirStore.healthcare.client",
                 "http://localhost:5033/crl/intermediateLocalhostCert.crl",
-                "http://localhost:5033/certs/intermediates/intermediateLocalhostCert.cer"
+                "http://localhost:5033/certs/intermediateLocalhostCert.cer"
             );
         }
 

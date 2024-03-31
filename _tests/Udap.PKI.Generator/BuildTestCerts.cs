@@ -1379,8 +1379,8 @@ namespace Udap.PKI.Generator
                 "CN=fhirlabs.net proxy for gfhirlabs, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string>
                 {
-                    "https://proxy.fhirlabs.net/v1/projects/udap-idp/locations/us-west1/datasets/gFhirLab/fhirStores/fhirlabs_open/fhir", 
-                    "https://localhost:7074/v1/projects/udap-idp/locations/us-west1/datasets/gFhirLab/fhirStores/fhirlabs_open/fhir"
+                    "https://fhirlabs.net/fhir/r4", 
+                    "https://localhost:7074/fhir/r4"
                 },
                 $"{LocalhostCertStore}localhost_fhirlabs_community1/issued/gfhirlabs.healthcare.client",
                 "http://localhost:5033/crl/intermediateLocalhostCert.crl",
@@ -1397,7 +1397,7 @@ namespace Udap.PKI.Generator
                 "CN=proxy for sandbox, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string>
                 {
-                    "https://localhost:7074/v1/projects/sandbox-348615/locations/us-central1/datasets/UdapLabsFhirDataset/fhirStores/UdapLabsFhirStore/fhir"
+                    "https://localhost:7074/sandbox/fhir/"
                 },
                 $"{LocalhostCertStore}localhost_fhirlabs_community1/issued/sandbox.UdapLabsFhirStore.healthcare.client",
                 "http://localhost:5033/crl/intermediateLocalhostCert.crl",

@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>e695d088-90a4-4c0e-95da-9bb9610f64ec</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>..\..</DockerfileContext>
+    <DockerfileContext>.</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,8 +16,15 @@
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
-    <PackageReference Include="Udap.Metadata.Server" />
     <PackageReference Include="Yarp.ReverseProxy" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
+    <PackageReference Include="Udap.Metadata.Server" Version="0.3.*" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
+    <ProjectReference Include="../../Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>

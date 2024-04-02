@@ -164,13 +164,13 @@ public class UdapDcrBuilderForAuthorizationCode
     }
 
     /// <summary>
-    /// Generally one should just let the constructor set IssuedAt
+    /// Generally one should just let the constructor set IssuedAt.  But clients like UdapEd like to have control over settings to produce negative tests.
     /// </summary>
-    /// <param name="issuedAt"></param>
+    /// <param name="secondsSinceEpoch"></param>
     /// <returns></returns>
-    public UdapDcrBuilderForAuthorizationCode OverrideIssuedAt(DateTime issuedAt)
+    public UdapDcrBuilderForAuthorizationCode WithIssuedAt(long secondsSinceEpoch)
     {
-        _document.IssuedAt = EpochTime.GetIntDate(issuedAt.ToUniversalTime());
+        _document.IssuedAt = secondsSinceEpoch;
         return this;
     }
 

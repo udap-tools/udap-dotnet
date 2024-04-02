@@ -1,0 +1,27 @@
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: [ 'build', '-t', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/udap.proxy.server:$TAG_NAME', '--file', './Dockerfile.gcp', '.' ]
+
+# See:: https://cloud.google.com/build/docs/deploying-builds/deploy-cloud-run
+# Push the container image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/udap.proxy.server:$TAG_NAME']
+
+# Deploy container image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args: [
+  'run', 'deploy', 'udap-proxy-server', 
+  '--region', 'us-west1', 
+  '--image', 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/udap.proxy.server:$TAG_NAME', 
+  '--service-account=udap-proxy-server@udap-idp.iam.gserviceaccount.com', 
+  '--max-instances', '1',
+  '--concurrency', '8', 
+  '--set-env-vars', 'GCLOUD_PROJECT=true,GCPDeploy=true',
+  '--set-secrets', '/secret/udapproxyserverappsettings=udapproxyserverappsettings:latest',
+  '--allow-unauthenticated'
+  ]
+
+images:
+- 'us-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/udap.proxy.server:$TAG_NAME'

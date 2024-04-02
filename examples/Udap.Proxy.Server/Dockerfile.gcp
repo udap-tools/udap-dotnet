@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 USER app
 WORKDIR /app
 EXPOSE 8080
-EXPOSE 443  # Only need this if you are testing localy under SSL.
+EXPOSE 443  
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
@@ -13,6 +13,8 @@ WORKDIR /src
 COPY ["Udap.Proxy.Server.csproj", "."]
 RUN dotnet restore "Udap.Proxy.Server.csproj"
 COPY . .
+
+ENV GCPDeploy=true
 
 RUN dotnet build "Udap.Proxy.Server.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
@@ -23,4 +25,6 @@ RUN dotnet publish "./Udap.Proxy.Server.csproj" -c $BUILD_CONFIGURATION -o /app/
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+ENV ASPNETCORE_URLS=http://*:8080
+ENV GCPDeploy=true
 ENTRYPOINT ["dotnet", "Udap.Proxy.Server.dll"]

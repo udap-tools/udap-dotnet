@@ -254,22 +254,22 @@ namespace Udap.PKI.Generator
 
                     #region fhirlabs.net Client (Issued) Certificates
 
-                    string[] numberToWord = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten" };
-
-                    for (int i = 1; i < 10; i++)
-                    {
-                        var word = numberToWord[i - 1];
-
-                        BuildClientCertificate(
-                            intermediateCertWithoutKey,
-                            caCert,
-                            intermediateRSAKey,
-                            $"CN={word}.fhirlabs.net, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                            new List<string> { $"https://{word}.X.fhirlabs.net", $"https://{word}.Y.fhirlabs.net" },
-                            $"{SurefhirlabsUdapIssued}/{word}.fhirlabs.net",
-                            SureFhirLabsIntermediateCrl,
-                            SureFhirLabsIntermediatePublicCertHosted);
-                    }
+                    // string[] numberToWord = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten" };
+                    //
+                    // for (int i = 1; i < 10; i++)
+                    // {
+                    //     var word = numberToWord[i - 1];
+                    //
+                    //     BuildClientCertificate(
+                    //         intermediateCertWithoutKey,
+                    //         caCert,
+                    //         intermediateRSAKey,
+                    //         $"CN={word}.fhirlabs.net, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                    //         new List<string> { $"https://{word}.X.fhirlabs.net", $"https://{word}.Y.fhirlabs.net" },
+                    //         $"{SurefhirlabsUdapIssued}/{word}.fhirlabs.net",
+                    //         SureFhirLabsIntermediateCrl,
+                    //         SureFhirLabsIntermediatePublicCertHosted);
+                    // }
 
                     #endregion
 
@@ -656,16 +656,16 @@ namespace Udap.PKI.Generator
             // Revoked Certificate
             // Run GenerateCrlForFailTests
             //
-            // var revokeCertificate = BuildClientCertificate(
-            //     subCA,
-            //     rootCA,
-            //     subCA.GetRSAPrivateKey()!,
-            //     "CN=fhirlabs.net Revoked Certificate, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-            //     new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
-            //     $"{SurefhirlabsUdapIssued}/fhirlabs.net.revoked.client",
-            //     SureFhirLabsIntermediateCrl,
-            //     true
-            // );
+            BuildClientCertificate(
+                subCA,
+                rootCA,
+                subCA.GetRSAPrivateKey()!,
+                "CN=fhirlabs.net Revoked Certificate, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
+                $"{SurefhirlabsUdapIssued}/fhirlabs.net.revoked.client",
+                SureFhirLabsIntermediateCrl,
+                SureFhirLabsIntermediatePublicCertHosted
+            );
 
             //
             // Iss mismatch To SubjAltName
@@ -840,11 +840,7 @@ namespace Udap.PKI.Generator
 
         }
 
-        [Fact]
-        public void emptyTest()
-        {
-
-        }
+       
         //
         // Community:localhost:: Certificate Store File Constants  Community used for unit tests
         //
@@ -1366,26 +1362,26 @@ namespace Udap.PKI.Generator
         [Fact (Skip = "Enabled on desktop when needed.")]
         public void MakeGFhirLabsCerts()
         {
-            using var rootCA_localhost = new X509Certificate2($"{LocalhostCertStore}/localhost_fhirlabs_community1/caLocalhostCert.pfx", "udap-test");
-            using var subCA_localhost = new X509Certificate2($"{LocalhostCertStore}/localhost_fhirlabs_community1/intermediates/intermediateLocalhostCert.pfx", "udap-test");
+            using var rootCA_localhost = new X509Certificate2($"{LocalhostCertStore}/surefhirlabs_community/SureFhirLabs_CA.pfx", "udap-test");
+            using var subCA_localhost = new X509Certificate2($"{LocalhostCertStore}/surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.pfx", "udap-test");
             
             //
             // Build a client cert for the gFhirLabs 
             //
-            BuildClientCertificate(
-                subCA_localhost,
-                rootCA_localhost,
-                subCA_localhost.GetRSAPrivateKey()!,
-                "CN=fhirlabs.net proxy for gfhirlabs, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                new List<string>
-                {
-                    "https://fhirlabs.net/fhir/r4", 
-                    "https://localhost:7074/fhir/r4"
-                },
-                $"{LocalhostCertStore}localhost_fhirlabs_community1/issued/gfhirlabs.healthcare.client",
-                "http://localhost:5033/crl/intermediateLocalhostCert.crl",
-                "http://localhost:5033/certs/intermediateLocalhostCert.cer"
-            );
+            // BuildClientCertificate(
+            //     subCA_localhost,
+            //     rootCA_localhost,
+            //     subCA_localhost.GetRSAPrivateKey()!,
+            //     "CN=fhirlabs.net proxy for gfhirlabs, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+            //     new List<string>
+            //     {
+            //         "https://fhirlabs.net/fhir/r4", 
+            //         "https://localhost:7074/fhir/r4"
+            //     },
+            //     $"{LocalhostCertStore}surefhirlabs_community/issued/gfhirlabs.healthcare.client",
+            //     "http://crl.fhircerts.net/certs/intermediates/SureFhirLabs_Intermediate.cer",
+            //     "http://crl.fhircerts.net/crl/surefhirlabsIntermediateCrl.crl"
+            // );
 
             //
             // Build a client cert for the ss UdapLabsFhirStore 
@@ -1399,7 +1395,7 @@ namespace Udap.PKI.Generator
                 {
                     "https://localhost:7074/sandbox/fhir/"
                 },
-                $"{LocalhostCertStore}localhost_fhirlabs_community1/issued/sandbox.UdapLabsFhirStore.healthcare.client",
+                $"{LocalhostCertStore}surefhirlabs_community/issued/sandbox.UdapLabsFhirStore.healthcare.client",
                 "http://localhost:5033/crl/intermediateLocalhostCert.crl",
                 "http://localhost:5033/certs/intermediateLocalhostCert.cer"
             );

@@ -145,6 +145,17 @@ public class UdapDcrBuilderForClientCredentials
     }
 
     /// <summary>
+    /// Typically easier to use <see cref="WithExpiration(TimeSpan)"/>
+    /// </summary>
+    /// <param name="secondsSinceEpoch"></param>
+    /// <returns></returns>
+    public UdapDcrBuilderForClientCredentials WithExpiration(long secondsSinceEpoch)
+    {
+        _document.Expiration = secondsSinceEpoch;
+        return this;
+    }
+
+    /// <summary>
     /// Generally one should just let the constructor set IssuedAt.  But clients like UdapEd like to have control over settings to produce negative tests.
     /// </summary>
     /// <param name="secondsSinceEpoch"></param>
@@ -155,17 +166,6 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    /// <summary>
-    /// Generally one should just let the constructor set IssuedAt
-    /// </summary>
-    /// <param name="issuedAt"></param>
-    /// <returns></returns>
-    public UdapDcrBuilderForClientCredentials OverrideIssuedAt(DateTime issuedAt)
-    {
-        _document.IssuedAt = EpochTime.GetIntDate(issuedAt.ToUniversalTime());
-        return this;
-    }
-    
     public UdapDcrBuilderForClientCredentials WithJwtId(string? jwtId = null)
     {
         _document.JwtId = jwtId ?? CryptoRandom.CreateUniqueId();

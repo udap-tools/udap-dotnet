@@ -1,4 +1,4 @@
-#region (c) 2023 Joseph Shook. All rights reserved.
+#region (c) 2024 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -9,12 +9,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
+#if NET6_0_OR_GREATER
 using Udap.Util.Extensions;
+using System.Linq;
+#endif
 
 namespace Udap.Model.Registration;
 

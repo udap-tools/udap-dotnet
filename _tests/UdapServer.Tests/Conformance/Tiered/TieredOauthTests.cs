@@ -79,7 +79,7 @@ public class TieredOauthTests
                 ServerSupport = ServerSupport.Hl7SecurityIG,
                 // DefaultUserScopes = "udap",
                 // DefaultSystemScopes = "udap"
-                // ForceStateParamOnAuthorizationCode = false (default)
+                ForceStateParamOnAuthorizationCode = true //false (default)
             });
 
             services.AddSingleton<IOptionsMonitor<UdapClientOptions>>(new OptionsMonitorForTests<UdapClientOptions>(

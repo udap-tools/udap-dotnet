@@ -48,7 +48,7 @@ internal static class HostingExtensions
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         Log.Logger.Debug($"ConnectionString:: {connectionString}");
 
-        builder.Services.AddHttpLogging(o => { });
+        // builder.Services.AddHttpLogging(o => { });
         builder.Services.AddOptions();
         builder.Services.AddMemoryCache();
         builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
@@ -242,7 +242,7 @@ internal static class HostingExtensions
             });
         }
         
-        app.UseHttpLogging();
+        // app.UseHttpLogging();
 
         if (!args.Any(a => a.Contains("skipRateLimiting")))
         {

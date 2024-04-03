@@ -171,7 +171,9 @@ internal class UdapAuthorizationResponseMiddleware
     {
         var errorMessage = await interactionService.GetErrorContextAsync(errorId);
 
-        if (errorMessage.Error == AuthorizeErrors.UnsupportedResponseType)
+        if (errorMessage.Error == AuthorizeErrors.UnsupportedResponseType
+            || errorMessage is { Error: AuthorizeErrors.InvalidRequest, ErrorDescription: "Missing response_type" }
+            )
         {
             //
             // Include error in redirect

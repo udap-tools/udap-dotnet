@@ -81,7 +81,7 @@ internal class UdapAuthorizationResponseMiddleware
             context.Request.Path.Value.Contains(Constants.ProtocolRoutePaths.Authorize))
         {
             var requestParams = context.Request.Query;
-
+           
             if (requestParams.Any())
             {
                 if (udapServerOptions.ForceStateParamOnAuthorizationCode)
@@ -102,41 +102,45 @@ internal class UdapAuthorizationResponseMiddleware
                         }
                     }
                 }
+            }
 
-                context.Response.OnStarting(async () =>
+            context.Response.OnStarting(async () =>
+            {
+                if (context.Response.StatusCode == (int)HttpStatusCode.Redirect &&
+                    !context.Response.Headers.Location.IsNullOrEmpty()
+                   )
                 {
-                    if (context.Response.StatusCode == (int)HttpStatusCode.Redirect &&
-                        !context.Response.Headers.Location.IsNullOrEmpty()
-                       )
+                    var uri = new Uri(context.Response.Headers.Location!);
+                    var query = uri.Query;
+                    var responseParams = QueryHelpers.ParseQuery(query);
+
+
+                    if (responseParams.TryGetValue(_options.UserInteraction.ErrorIdParameter, out var errorId))
                     {
-                        var uri = new Uri(context.Response.Headers.Location!);
-                        var query = uri.Query;
-                        var responseParams = QueryHelpers.ParseQuery(query);
+                        var requestParamCollection = context.Request.Query.AsNameValueCollection();
+                        var client =
+                            await clients.FindClientByIdAsync(
+                                requestParamCollection.Get(AuthorizeRequest.ClientId));
+                        var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
 
-
-                        if (responseParams.TryGetValue(_options.UserInteraction.ErrorIdParameter, out var errorId))
+                        if (client == null)
                         {
-                            var requestParamCollection = context.Request.Query.AsNameValueCollection();
-                            var client =
-                                await clients.FindClientByIdAsync(
-                                    requestParamCollection.Get(AuthorizeRequest.ClientId));
-                            var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
+                            await RenderErrorResponse(context, interactionService, errorId);
+                            return;
+                        }
 
-                            if (client == null) 
-                            {
-                                await RenderErrorResponse(context, interactionService, errorId);
-                            }
-
-                            if (client != null &&
-                                client.ClientSecrets.Any(cs =>
-                                    cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
-                            {
-                                await RenderErrorResponse(context, interactionService, errorId);
-                            }
+                        if (client != null &&
+                            client.ClientSecrets.Any(cs =>
+                                cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
+                        {
+                            await RenderErrorResponse(context, interactionService, errorId);
+                            return;
                         }
                     }
-                });
-            }
+                }
+
+                _logger.LogTrace($"Why am I here: {string.Join(':', requestParams)}");
+            });
         }
 
         await _next(context);

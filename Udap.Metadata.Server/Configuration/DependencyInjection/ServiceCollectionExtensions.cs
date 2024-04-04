@@ -122,11 +122,11 @@ public static class ServiceCollectionExtensions
 
 
 
-    public static IApplicationBuilder UseUdapMetadataServer(this WebApplication app)
+     public static IApplicationBuilder UseUdapMetadataServer(this WebApplication app, string? prefixRoute = null)
     {
         EnsureMvcControllerUnloads(app);
 
-        app.MapGet($"/{UdapConstants.Discovery.DiscoveryEndpoint}",
+        app.MapGet($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}",
                 async (
                     [FromServices] UdapMetaDataEndpoint endpoint,
                     HttpContext httpContext,
@@ -136,13 +136,13 @@ public static class ServiceCollectionExtensions
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
 
-        app.MapGet($"/{UdapConstants.Discovery.DiscoveryEndpoint}/communities",
+        app.MapGet($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}/communities",
                 ([FromServices] UdapMetaDataEndpoint endpoint) => endpoint.GetCommunities())
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
 
-        app.MapGet($"/{UdapConstants.Discovery.DiscoveryEndpoint}/communities/ashtml",
+        app.MapGet($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}/communities/ashtml",
                 (
                     [FromServices] UdapMetaDataEndpoint endpoint,
                     HttpContext httpContext) => endpoint.GetCommunitiesAsHtml(httpContext))
@@ -153,10 +153,10 @@ public static class ServiceCollectionExtensions
         return app;
     }
 
-    public static IApplicationBuilder UseUdapMetadataServer(this IApplicationBuilder app)
+    public static IApplicationBuilder UseUdapMetadataServer(this IApplicationBuilder app, string? prefixRoute = null)
     {
 
-        app.Map($"/{UdapConstants.Discovery.DiscoveryEndpoint}", path =>
+        app.Map($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}", path =>
         {
             path.Run(async ctx =>
             {

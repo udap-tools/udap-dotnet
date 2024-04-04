@@ -24,6 +24,7 @@ using Newtonsoft.Json.Serialization;
 using Serilog;
 using Udap.Common;
 using Udap.Common.Certificates;
+using Udap.Smart.Model;
 using Constants = Udap.Common.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -81,19 +82,19 @@ builder.Services
     })
     ;
 
-// builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
-//
-//     .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>
-//     {
-//         options.Authority = builder.Configuration["Jwt:Authority"];
-//         options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
-//      
-//         
-//         options.TokenValidationParameters = new TokenValidationParameters
-//         {
-//             ValidateAudience = false
-//         };
-//     });
+builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
+
+    .AddJwtBearer(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer, options =>
+    {
+        options.Authority = builder.Configuration["Jwt:Authority"];
+        options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
+     
+        
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateAudience = false
+        };
+    });
 
 
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
@@ -105,27 +106,35 @@ builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
 
 builder.Services.AddUdapMetadataServer(builder.Configuration);
 
+// SmartMetadata Examples
+// builder.Services.Configure<SmartMetadata>("SmartMetadata2", builder.Configuration.GetRequiredSection("SmartMetadata2"));
+// builder.Services.Configure<SmartMetadata>("SmartMetadata", builder.Configuration.GetRequiredSection("SmartMetadata"));
+// builder.Services.AddSmartMetadata("SmartMetadata2");
+
+
+builder.AddSmartMetadata();
+
 
 builder.AddRateLimiting();
 
-
-builder.Services.AddTransient<FhirSmartAppLaunchConfiguration>(options =>
-{
-    var result = new FhirSmartAppLaunchConfiguration();
-    var authBaseAddress = $"{builder.Configuration["Jwt:Authority"].EnsureEndsWith("/")}connect/";
-    result.authorization_endpoint = $"{authBaseAddress}authorize";
-    result.token_endpoint = $"{authBaseAddress}token";
-
-    result.introspection_endpoint = $"{authBaseAddress}introspect";
-    result.revocation_endpoint = $"{authBaseAddress}revocation";
-    result.token_endpoint_auth_methods_supported = new string[] { "client_secret_basic", "client_secret_post" };
-    result.scopes_supported = new string[] { "openid", "profile", "launch", "patient/*.*", "user/*.*", "system/*.*", "offline_access" };
-    result.response_types_supported = new string[] { "code", "code id_token", "id_token", "refresh_token" };
-    result.capabilities = new string[] { "launch-ehr", "launch-standalone", "client-public", "client-confidential-symmetric" };
-    result.code_challenge_methods_supported = new[] { "S256" };
-
-    return result;
-});
+// From Hl7.Fhir.WebApi (brian)
+// builder.Services.AddTransient<FhirSmartAppLaunchConfiguration>(options =>
+// {
+//     var result = new FhirSmartAppLaunchConfiguration();
+//     var authBaseAddress = $"{builder.Configuration["Jwt:Authority"].EnsureEndsWith("/")}connect/";
+//     result.authorization_endpoint = $"{authBaseAddress}authorize";
+//     result.token_endpoint = $"{authBaseAddress}token";
+//
+//     result.introspection_endpoint = $"{authBaseAddress}introspect";
+//     result.revocation_endpoint = $"{authBaseAddress}revocation";
+//     result.token_endpoint_auth_methods_supported = new string[] { "client_secret_basic", "client_secret_post" };
+//     result.scopes_supported = new string[] { "openid", "profile", "launch", "patient/*.*", "user/*.*", "system/*.*", "offline_access" };
+//     result.response_types_supported = new string[] { "code", "code id_token", "id_token", "refresh_token" };
+//     result.capabilities = new string[] { "launch-ehr", "launch-standalone", "client-public", "client-confidential-symmetric" };
+//     result.code_challenge_methods_supported = new[] { "S256" };
+//
+//     return result;
+// });
 
 
 var app = builder.Build();
@@ -176,10 +185,14 @@ app.UseHttpsRedirection();
 app.UseCors();
 
 app.UseUdapMetadataServer();
+app.UseSmartMetadata();
 
-app.MapFhirSmartAppLaunchController();
+// From Hl7.Fhir.WebApi(brian)
+//app.MapFhirSmartAppLaunchController();
+
+
 app.MapControllers()
-    // .RequireAuthorization()
+    .RequireAuthorization()
     .RequireRateLimiting(RateLimitExtensions.GetPolicy);
 
 app.Run();

@@ -20,6 +20,7 @@ namespace Udap.Server.Mappers
             Mapper = new MapperConfiguration(cfg =>
                 {
                     cfg.AddProfile<CommunityMapperProfile>();
+                    cfg.AddProfile<AnchorMapperProfile>();
                 })
                 .CreateMapper();
         }
@@ -57,25 +58,6 @@ namespace Udap.Server.Mappers
                 .ReverseMap()
                 ;
                 
-            CreateMap<ICollection<Anchor>, ICollection<Common.Models.Anchor>>()
-                 .ConstructUsing(src =>
-                     // var dest = new HashSet<Model.Models.Anchor>();
-                     src.Select(anchor => new Common.Models.Anchor()
-                     {
-                         Id = anchor.Id,
-                         Name = anchor.Name,   
-                         Thumbprint = anchor.Thumbprint,
-                         BeginDate = anchor.BeginDate,
-                         EndDate = anchor.EndDate,
-                         Enabled = anchor.Enabled,
-                         Certificate = anchor.X509Certificate,
-                         Community = anchor.Community.Name,
-                         CommunityId = anchor.CommunityId
-                     }).ToHashSet()
-                 )
-                 .ForAllMembers(opt => opt.Ignore());
-
-
             AllowNullCollections = true;
             
         }

@@ -330,7 +330,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         scopesSupported.Should().NotBeNullOrEmpty();
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        scopesSupported.Count().Should().Be(2);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
+        scopesSupported.Count().Should().Be(4);
     }
 
     [Fact]
@@ -345,7 +347,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         scopesSupported.Should().NotBeNullOrEmpty();
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        scopesSupported.Count().Should().Be(2);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
+        scopesSupported.Count().Should().Be(4);
     }
 
     [Fact]

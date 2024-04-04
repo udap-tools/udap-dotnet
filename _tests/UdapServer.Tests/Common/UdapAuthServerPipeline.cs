@@ -33,7 +33,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using Udap.Auth.Server.Pages;
 using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
@@ -41,6 +40,7 @@ using Udap.Common.Models;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
+using Udap.UI.Pages;
 using UnitTests.Common;
 using Constants = Udap.Server.Constants;
 
@@ -269,7 +269,7 @@ public class UdapAuthServerPipeline
             path.Run(async ctx => await OnExternalLoginCallback(ctx,  Substitute.For<ILogger>()));
         });
 
-        app.Map("/UDAP Ecosystem Gears.png", path =>
+        app.Map("/UDAP_Ecosystem_Gears.png", path =>
         {
             path.Run(ctx => OnLogo(ctx));
         });

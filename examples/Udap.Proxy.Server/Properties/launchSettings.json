@@ -1,0 +1,26 @@
+{
+  "profiles": {
+    "https": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "launchUrl": "index.html",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "AccessToken": "your bearer token"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "https://localhost:7074;https://proxy.fhirlabs.net:7074"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker",
+      "launchBrowser": true,
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/index.html",
+      "environmentVariables": {
+        "ASPNETCORE_URLS": "http://*:8080;https://*:443",
+        "GCPDeploy": "true"
+      },
+      "publishAllPorts": true,
+      "useSSL": true
+    }
+  }
+}

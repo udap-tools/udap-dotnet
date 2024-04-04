@@ -57,7 +57,7 @@ public class UdapForceStateParamFalseTests
         {
             s.AddSingleton<ServerSettings>(new ServerSettings
             {
-                ServerSupport = ServerSupport.UDAP,
+                ServerSupport = ServerSupport.Hl7SecurityIG,
                 DefaultUserScopes = "user/*.read",
                 DefaultSystemScopes = "system/*.read"
                 // ForceStateParamOnAuthorizationCode = false (default)

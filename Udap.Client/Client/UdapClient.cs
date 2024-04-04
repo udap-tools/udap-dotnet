@@ -13,10 +13,10 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using IdentityModel.Client;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Authentication;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Client.Messages;
 using Udap.Client.Configuration;
@@ -26,6 +26,7 @@ using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
+
 #if NET7_0_OR_GREATER
 using System.Net.Http.Headers;
 #endif
@@ -84,7 +85,7 @@ namespace Udap.Client.Client
         public event Action<string>? TokenError;
 
         //TODO the certs include the private key.  This needs work.  It should be a service or struct that
-        // allows a an abstraction in "Sign" so that a vault or HSM can sign the metadata.
+        // allows an abstraction in "Sign" so that a vault or HSM can sign the metadata.
         public async Task<UdapDynamicClientRegistrationDocument> RegisterTieredClient(string redirectUrl,
             IEnumerable<X509Certificate2> certificates,
             string scopes,
@@ -477,6 +478,15 @@ namespace Udap.Client.Client
 #endif
 
                 var response = await _httpClient.PostAsync(this.UdapServerMetaData?.RegistrationEndpoint, content, token);
+
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                {
+                    return new UdapDynamicClientRegistrationDocument
+                    {
+                        { "error", "Not Found(404)" },
+                        { "error_description", $"Registration endpoint not found {this.UdapServerMetaData?.RegistrationEndpoint}" }
+                    };
+                }
 
                 if (((int)response.StatusCode) < 500)
                 {

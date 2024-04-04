@@ -19,54 +19,27 @@ The repository contains components and example uses to support the following ite
 |-------------------------|---|---------------------|--------------------------------------------------------|
 | Udap.Client ||||
 ||UDAP Metadata Validation|✔️| Validates JWT and Certificates.  See [Udap.Client](Udap.Client/docs/README.md) for usage. |
-||Dynamic Client Registration|In process| Functionally DCR exists but it has not been packaged and documented in Udap.Client package.|
-||Access Token |In process| Functionally exists and needs to be packaged and documented in Udap.Client packages |
+||Dynamic Client Registration|✔️| Functionally DCR exists but it has not been packaged and documented in Udap.Client package.|
+||Access Token |✔️| Functionally exists and needs to be packaged and documented in Udap.Client packages |
 ||[hl7-b2b extension](http://hl7.org/fhir/us/udap-security/b2b.html#b2b-authorization-extension-object)|In process|This is hard coded in the UdapEd tool for illustration and to pass registration against Authorization Servers that require it.  It is a required claim when requesting an access token in the client_credentials grant type flow profiles by UDAP Security under HL7 FHIR.  I don't know if it stays here as a feature yet.  I do want to call it out because it is a very meaningful feature of UDAP in the HL7 FHIR use case. |  
 | [Discovery](http://hl7.org/fhir/us/udap-security/discovery.html): UDAP Metadata for Resource Server||||
-| | Udap.Metadata.Server | ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) | Certificate storage is a file strategy.  User can implement their own ICertificateStore.  May add a Entity Framework example and/or HSM in the future.  Checkout the [2023 FHIR® DevDays Tutorial](udap-devdays-2023) to see it in action and the [Udap.Metadata.Server docs](./Udap.Metadata.Server/README.md) |
-|| Udap.Metadata.Vonk.Server | Trial status. Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) | This is based on the same components that build ```Udap.Metadata.Server```.  It can be used as a plugin for the Firely server.  It has been tested on the Community edition.  Readme more in the [docs](./Udap.Metadata.Vonk.Server/README.md)|
-| [Server Dynamic Registration](http://hl7.org/fhir/us/udap-security/registration.html)|| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities).<br />  Notes:  Since this development, the Identity Server has Implemented Dynamic Registration.  We need to revisit this and try to enable UDAP under the new DCR feature.  |  Highly Functional.  The Deployed example FHIR® Server, "FhirLabsApi" is passing all udap.org Server Tests.  I am going to revisit the Client Secrets persistence layer.  Packages are dependent on Duende's Identity Server Nuget Packages. <ul><li>✔️ Registration with 201 created</li><li>✔️ Registration with 200 updated</li><li>✔️ Cancel registration with 200</li><li>✔️ Cancel registration with 404 not found</li></ul> |
+| | Udap.Metadata.Server | ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) | Certificate storage is a file strategy.  User can implement their own ICertificateStore.  May add a Entity Framework example and/or HSM in the future.  Checkout the [2023 FHIR® DevDays Tutorial](udap-devdays-2023) to see it in action and the [Udap.Metadata.Server docs](https://github.com/JoeShook/Udap.Metadata.Vonk.Server/tree/develop) |
+|| Udap.Metadata.Vonk.Server | Trial status. Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities) | This is based on the same components that build ```Udap.Metadata.Server```.  It can be used as a plugin for the Firely server.  It has been tested on the Community edition.  Readme more in the [docs](https://github.com/JoeShook/Udap.Metadata.Vonk.Server/tree/develop)|
+| [Server Dynamic Registration](http://hl7.org/fhir/us/udap-security/registration.html)|| ✔️ Including [Multi Trust Communities](http://hl7.org/fhir/us/udap-security/discovery.html#multiple-trust-communities).  |  Highly Functional.  The Deployed example FHIR® Server, "FhirLabsApi" is passing all udap.org Server Tests.  I am going to revisit the Client Secrets persistence layer.  Packages are dependent on Duende's Identity Server Nuget Packages. <ul><li>✔️ Registration with 201 created</li><li>✔️ Registration with 200 updated</li><li>✔️ Cancel registration with 200</li><li>✔️ Cancel registration with 404 not found</li></ul> <br />Notes:  Since this development, the Identity Server has Implemented Dynamic Registration.  We could revisit this and try to enable UDAP under the new DCR feature. |
 ||Inclusion of Certifications and Endorsements|Started|Some example certification integration tests included from the client side |
 Authorization and Authentication
 | [Consumer-Facing](http://hl7.org/fhir/us/udap-security/consumer.html)|| ✔️ | Functionality same as B2B authorization_code flow.  Client would typically register and or request user/* prefixed scopes  |
 | [Business-to-Business](http://hl7.org/fhir/us/udap-security/b2b.html)|| ✔️ | Works with client_credentials and authorization_code flows. |
 ||JWT Claim Extensions|Started|Some work completed for the B2B Authorization Extension (hl7-b2b) extension within integration tests. }  
-| [Tiered OAuth for User Authentication](http://hl7.org/fhir/us/udap-security/user.html) || Mechanically functional.<br />  Works with hl7_identifier. <br /><br />There is a good integration test called [ClientAuthorize_IdPDiscovery_IdPRegistration_IdPAuthAccess_ClientAuthAccess_Test](/_tests/UdapServer.Tests/Conformance/Tiered/TieredOauthTests.cs). This spins up two in memory instances of Identity Server.  One plays the role of Authorization Server and the other plays the role of Identity Provider.  This test harness is important to quickly test Tiered OAuth without a user interface. I call this test out because going forward we will need to spend some more engineering time deciding if the [TieredOAuthAuthenticationHandler](/Udap.Server/Security/Authentication/TieredOAuth/TieredOAuthAuthenticationHandler.cs) is the final design.  This handler implements the ASP.NET [OAuthHandler](https://github.com/dotnet/aspnetcore/blob/main/src/Security/Authentication/OAuth/src/OAuthHandler.cs) and registered as a scheme.  There is another choice.  We could build the handler based on the [OpenIdConnnect](https://github.com/dotnet/aspnetcore/blob/main/src/Security/Authentication/OpenIdConnect/src/OpenIdConnectHandler.cs) base class.  This is more in line with the Tiered OAuth behavior but a different technique.  OpenIdConnect is more of an event based technique.  When I build this first implementation, I was inspired by other implementations such as this great collection from the [aspnet-contrib](https://github.com/aspnet-contrib) organization, called [AspNet.Security.OpenId.Providers](https://github.com/aspnet-contrib/AspNet.Security.OAuth.Providers).  There is another repository at this organization, called [AspNet.Security.OpenId.Providers](https://github.com/aspnet-contrib/AspNet.Security.OpenId.Providers).  I have not looked too closely at it yet.  One last thing I would like to mention here, the current implementation of adding a trusted IdP to the Authorization Server is static.  The goal is to transition too dynamic.  For example, this code below represents a sample deployed Auth Server capable of auto registering and federating as to these three IdPs. Duende Identity Server supports "Dynamic Providers" in the Enterprise Server.  This licensing is more expensive.  So maybe future development can allow for static or dynamic.  Remember in Tiered OAuth a client should be able to send an idp parameter in an authorization request, thus initiating a dynamic UDAP relationship between authorization server and IdP server.  <br /><br />Disclaimer, I have not examined this whole code base to see whether parts of the components fit in the different [pricing structures](https://duendesoftware.com/products/identityserver#pricing).  The longer I work with this stack of code the more I appreciate the body of work and the enterprise pricing looks very reasonable.  | Beta status
+| [Tiered OAuth for User Authentication](http://hl7.org/fhir/us/udap-security/user.html) || ✔️ | Simply register Tiered OAuth functionality with the code snippet below.  </br></br> There is a good integration test called [ClientAuthorize_IdPDiscovery_IdPRegistration_IdPAuthAccess_ClientAuthAccess_Test](/_tests/UdapServer.Tests/Conformance/Tiered/TieredOauthTests.cs). This spins up two in memory instances of Identity Server.  One plays the role of Authorization Server and the other plays the role of Identity Provider.  This test harness is important to quickly test Tiered OAuth without a user interface.  When I built this first implementation, I was inspired by other implementations such as this great collection from the [aspnet-contrib](https://github.com/aspnet-contrib) organization, called [AspNet.Security.OpenId.Providers](https://github.com/aspnet-contrib/AspNet.Security.OAuth.Providers).  There is another repository at this organization, called [AspNet.Security.OpenId.Providers](https://github.com/aspnet-contrib/AspNet.Security.OpenId.Providers). |
 
 ```csharp
-
 builder.Services.AddAuthentication()
-           //
-           // By convention the scheme name should match the community name in UdapFileCertStoreManifest
-           // to allow discovery of the IdPBaseUrl
-           //
-           .AddTieredOAuth(options =>
-           {
-               options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-               options.AuthorizationEndpoint = "https://idp1.securedcontrols.net/connect/authorize";
-               options.TokenEndpoint = "https://idp1.securedcontrols.net/connect/token";
-               options.IdPBaseUrl = "https://idp1.securedcontrols.net";
-           })
-           .AddTieredOAuth("TieredOAuthProvider2", "UDAP Tiered OAuth (DOTNET-Provider2)", options =>
-           {
-               options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-               options.AuthorizationEndpoint = "https://idp2.securedcontrols.net/connect/authorize";
-               options.TokenEndpoint = "https://idp2.securedcontrols.net/connect/token";
-               options.CallbackPath = "/signin-tieredoauthprovider2";
-               options.IdPBaseUrl = "https://idp2.securedcontrols.net";
-           })
-           .AddTieredOAuth("OktaForUDAP", "UDAP Tiered OAuth Okta", options =>
-           {
-               options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
-               options.AuthorizationEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/authorize";
-               options.TokenEndpoint = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7/v1/token";
-               options.CallbackPath = "/signin-oktaforudap";
-               options.IdPBaseUrl = "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7";
-
-           });
+    .AddTieredOAuth(options =>
+    {
+        options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
+    });
 ```
-
-
 
 ## PKI support
 ### Generate PKI for integration tests
@@ -138,3 +111,7 @@ See [Udap.Auth.Server.Admin](./examples/Auth.Server.Admin/)
 ### UDAP CA UI Tool
 
 This is barely implemented.  The spirit of it is to create a easy to use CA for experimenting in a lab environment.  At this point all the tooling for creating interesting PKI test data for success and failure use cases lives in the Udap.PKI.Generator test project.
+
+### UDAP Proxy Server
+
+Turn your FHIR server into a UDAP secured FHIR server with [Udap.Proxy.Server](/examples/Udap.Proxy.Server).

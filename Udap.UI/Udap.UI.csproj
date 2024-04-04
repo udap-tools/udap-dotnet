@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Authors>Joseph Shook</Authors>
+    <Copyright>Copyright © Joseph.Shook@Surescripts.com 2023</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageIcon>UDAP_Ecosystem_Gears 48X48.jpg</PackageIcon>
+    <PackageTags>UDAP;FHIR;HL7</PackageTags>
+    <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
+
+
+    <AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Duende.IdentityServer" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Udap.Server\Udap.Server.csproj" />
+    <None Include="docs\README.md" Pack="true" PackagePath="\" />
+    <None Include="../artwork/UDAP_Ecosystem_Gears 48X48.jpg" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

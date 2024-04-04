@@ -84,7 +84,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         // This are is for client Dependency injection and Configuration
         //
         var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", false, true)
+            .AddJsonFile("appsettings.FhirLabsApi.json", false, true)
             // .AddUserSecrets<UdapControllerTests>()
             .Build();
 
@@ -340,7 +340,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         signingAlgValuesSupported.Should().NotBeNullOrEmpty();
         signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        signingAlgValuesSupported.Count().Should().Be(2);
+        signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
+        signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
+        signingAlgValuesSupported.Count().Should().Be(4);
     }
 
     [Fact]
@@ -355,7 +357,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         scopesSupported.Should().NotBeNullOrEmpty();
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        scopesSupported.Count().Should().Be(2);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
+        scopesSupported.Count().Should().Be(4);
     }
 
     [Fact]

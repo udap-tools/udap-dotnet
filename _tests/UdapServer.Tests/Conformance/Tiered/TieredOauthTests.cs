@@ -79,7 +79,7 @@ public class TieredOauthTests
                 ServerSupport = ServerSupport.Hl7SecurityIG,
                 // DefaultUserScopes = "udap",
                 // DefaultSystemScopes = "udap"
-                // ForceStateParamOnAuthorizationCode = false (default)
+                ForceStateParamOnAuthorizationCode = true //false (default)
             });
 
             services.AddSingleton<IOptionsMonitor<UdapClientOptions>>(new OptionsMonitorForTests<UdapClientOptions>(
@@ -87,7 +87,7 @@ public class TieredOauthTests
                 {
                     ClientName = "AuthServer Client",
                     Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" },
-                    TieredOAuthClientLogo = "https://server/UDAP Ecosystem Gears.png"
+                    TieredOAuthClientLogo = "https://server/UDAP_Ecosystem_Gears.png"
                 })
             );
 
@@ -991,7 +991,7 @@ public class TieredOauthTests
         var documentResponse = await udapClient.RegisterAuthCodeClient(
             clientCert,
             "udap openid user/*.read",
-            "https://server/UDAP Ecosystem Gears.png", 
+            "https://server/UDAP_Ecosystem_Gears.png", 
             new List<string> { "https://code_client/callback" });
 
         documentResponse.GetError().Should().BeNull();

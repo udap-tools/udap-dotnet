@@ -340,7 +340,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         signingAlgValuesSupported.Should().NotBeNullOrEmpty();
         signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        signingAlgValuesSupported.Count().Should().Be(2);
+        signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
+        signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
+        signingAlgValuesSupported.Count().Should().Be(4);
     }
 
     [Fact]
@@ -355,7 +357,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         scopesSupported.Should().NotBeNullOrEmpty();
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        scopesSupported.Count().Should().Be(2);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
+        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
+        scopesSupported.Count().Should().Be(4);
     }
 
     [Fact]

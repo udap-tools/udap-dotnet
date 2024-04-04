@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Proxy.Server;
 using Yarp.ReverseProxy.Transforms;
 using Google.Apis.Auth.OAuth2;
+using Udap.Smart.Model;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,8 @@ builder.Configuration.AddJsonFile("/secret/udapproxyserverappsettings", true, fa
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSection("SmartMetadata"));
+builder.Services.AddSmartMetadata();
 builder.Services.AddUdapMetadataServer(builder.Configuration);
 
 builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
@@ -53,6 +56,8 @@ builder.Services.AddReverseProxy()
             builderContext.AddRequestTransform(async context =>
             {
                 context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await ResolveAccessToken(builderContext.Route.Metadata));
+
+                // Google Cloud way of passing scopes to the Fhir Server
                 // context.ProxyRequest.Headers.Add("X-Authorization-Scope", "user/Patient.read launch/patient");
                 // context.ProxyRequest.Headers.Add("X-Authorization-Issuer", "securedcontrols.net");       
             });
@@ -86,6 +91,7 @@ app.UseAuthorization();
 
 app.MapReverseProxy();
 
+app.UseSmartMetadata();
 app.UseUdapMetadataServer();
 
 app.Run();
@@ -97,6 +103,7 @@ async Task<string?> ResolveAccessToken(IReadOnlyDictionary<string, string> metad
     {
         if (metadata.ContainsKey("AccessToken"))
         {
+            // You could pass AccessToken as an environment variable
             return builder.Configuration.GetValue<string>(metadata["AccessToken"]);
         }
 

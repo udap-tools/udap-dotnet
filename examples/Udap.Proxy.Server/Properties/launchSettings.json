@@ -5,7 +5,8 @@
       "launchBrowser": true,
       "launchUrl": "index.html",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "AccessToken": "your bearer token"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "https://localhost:7074;https://proxy.fhirlabs.net:7074"

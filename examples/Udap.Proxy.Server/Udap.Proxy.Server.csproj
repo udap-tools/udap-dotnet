@@ -23,10 +23,12 @@
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
     <PackageReference Include="Udap.Metadata.Server" Version="0.3.*" />
+    <PackageReference Include="Udap.Smart.Metadata" Version="0.3.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="../../Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
+    <ProjectReference Include="../../Udap.Smart.Metadata/Udap.Smart.Metadata.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -111,3 +111,7 @@ See [Udap.Auth.Server.Admin](./examples/Auth.Server.Admin/)
 ### UDAP CA UI Tool
 
 This is barely implemented.  The spirit of it is to create a easy to use CA for experimenting in a lab environment.  At this point all the tooling for creating interesting PKI test data for success and failure use cases lives in the Udap.PKI.Generator test project.
+
+### UDAP Proxy Server
+
+Turn your FHIR server into a UDAP secured FHIR server with [Udap.Proxy.Server](/examples/Udap.Proxy.Server).

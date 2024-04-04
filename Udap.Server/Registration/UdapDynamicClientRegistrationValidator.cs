@@ -148,6 +148,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 });
         }
 
+        _logger.LogDebug($"Is token valid: {validatedToken.IsValid}");
+
         if (!validatedToken.IsValid)
         {
             if (validatedToken.Exception.GetType() == typeof(SecurityTokenNoExpirationException))
@@ -176,7 +178,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (_serverSettings.RegistrationJtiRequired)
         {
-            var result = await ValidateJti(document, jsonWebToken.ValidTo);
+            var result = await ValidateJti(document, document.Expiration);
 
             if (result.IsError)
             {
@@ -286,7 +288,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             AlwaysIncludeUserClaimsInIdToken = _serverSettings.AlwaysIncludeUserClaimsInIdToken
         };
 
-        
+        _logger.LogDebug($"Validating chain for ClientId: {client.ClientId}. x5c {jwtHeader.X5c}");
+
         if (!ValidateChain(client, jsonWebToken, jwtHeader, intermediateCertificates, anchorCertificates, anchors))
         {
             _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement}::" +
@@ -309,6 +312,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement,
                 UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate));
         }
+
+        _logger.LogDebug($"Chain Validated {client.ClientId}");
 
         //////////////////////////////
         // validate grant_types
@@ -335,8 +340,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 }
             }
         }
-        
-        
+
         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
         {
             client.AllowedGrantTypes.Add(OidcConstants.GrantTypes.ClientCredentials);
@@ -530,6 +534,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         // validation successful - return client
+        _logger.LogDebug($"Validation success for ClientId: {client.ClientId}");
+
         return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
     }
 
@@ -548,6 +554,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (Uri.TryCreate(document.LogoUri, UriKind.Absolute, out var logoUri))
         {
+            _logger.LogDebug($"Validating logo: {logoUri.OriginalString}");
+
             if (!logoUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
             {
                 errorResult = new UdapDynamicClientRegistrationValidationResult(
@@ -579,6 +587,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                     UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidContentType);
 
+                _logger.LogDebug($"Logo validation failed: {logoUri.OriginalString}");
+
                 return (false, errorResult);
             }
         }
@@ -588,15 +598,19 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidUri);
 
+            _logger.LogDebug($"Logo validation failed: {document.LogoUri}");
+
             return (false, errorResult);
         }
+
+        _logger.LogDebug($"Logo validation succeeded: {logoUri.OriginalString}");
 
         return (true, null);
     }
 
     public async Task<UdapDynamicClientRegistrationValidationResult> ValidateJti(
         UdapDynamicClientRegistrationDocument document,
-        DateTime validTo)
+        long exp)
     {
         var jti = document.JwtId;
         
@@ -620,10 +634,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
         else
         {
-            await _replayCache.AddAsync(Purpose, jti, validTo.AddMinutes(5));
+            await _replayCache.AddAsync(Purpose, jti, DateTimeOffset.FromUnixTimeSeconds(exp));
         }
-
-
+        
         return new UdapDynamicClientRegistrationValidationResult(string.Empty);
     }
 
@@ -636,7 +649,6 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         IEnumerable<Anchor> anchors)
     {
         var x5cArray = Getx5c(jwtHeader);
-        
         
         // TODO: no test cases for x5c with intermediate certificates.  
         if (x5cArray != null)
@@ -663,14 +675,14 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
                clientSecrets.Add(new()
                 {
-                    Expiration = chainElements.First().Certificate.NotAfter,
+                    Expiration = chainElements.First().Certificate.NotAfter.ToUniversalTime(),
                     Type = UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME,
                     Value = jwtSecurityToken.Issuer
                 });
 
                 clientSecrets.Add(new()
                 {
-                    Expiration = chainElements.First().Certificate.NotAfter,
+                    Expiration = chainElements.First().Certificate.NotAfter.ToUniversalTime(),
                     Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY,
                     Value = communityId.ToString()
                 });

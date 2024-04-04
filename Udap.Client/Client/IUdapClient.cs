@@ -9,8 +9,8 @@
 
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel.Client;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Authentication;
 using Udap.Client.Client.Messages;
 using Udap.Common.Certificates;
 using Udap.Model;

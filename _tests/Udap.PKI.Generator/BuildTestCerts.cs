@@ -254,22 +254,22 @@ namespace Udap.PKI.Generator
 
                     #region fhirlabs.net Client (Issued) Certificates
 
-                    string[] numberToWord = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten" };
-
-                    for (int i = 1; i < 10; i++)
-                    {
-                        var word = numberToWord[i - 1];
-
-                        BuildClientCertificate(
-                            intermediateCertWithoutKey,
-                            caCert,
-                            intermediateRSAKey,
-                            $"CN={word}.fhirlabs.net, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                            new List<string> { $"https://{word}.X.fhirlabs.net", $"https://{word}.Y.fhirlabs.net" },
-                            $"{SurefhirlabsUdapIssued}/{word}.fhirlabs.net",
-                            SureFhirLabsIntermediateCrl,
-                            SureFhirLabsIntermediatePublicCertHosted);
-                    }
+                    // string[] numberToWord = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten" };
+                    //
+                    // for (int i = 1; i < 10; i++)
+                    // {
+                    //     var word = numberToWord[i - 1];
+                    //
+                    //     BuildClientCertificate(
+                    //         intermediateCertWithoutKey,
+                    //         caCert,
+                    //         intermediateRSAKey,
+                    //         $"CN={word}.fhirlabs.net, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                    //         new List<string> { $"https://{word}.X.fhirlabs.net", $"https://{word}.Y.fhirlabs.net" },
+                    //         $"{SurefhirlabsUdapIssued}/{word}.fhirlabs.net",
+                    //         SureFhirLabsIntermediateCrl,
+                    //         SureFhirLabsIntermediatePublicCertHosted);
+                    // }
 
                     #endregion
 
@@ -600,10 +600,6 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/FhirLabsApi/CertStore/issued/fhirlabs.net.client.pfx",
                 true);
 
-            File.Copy($"{SurefhirlabsUdapIssued}/fhirlabs.net.client.pfx",
-                $"{BaseDir}/../../examples/clients/UdapEd/Server/fhirlabs.net.client.pfx",
-                true);
-
             // Copy CA to FhirLabsApi so it can be added to the Docker Container trust store. 
             File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
                 $"{BaseDir}/../../examples/FhirLabsApi/SureFhirLabs_CA.cer",
@@ -612,11 +608,6 @@ namespace Udap.PKI.Generator
             // Copy CA to Udap.Auth.Server so it can be added to the Docker Container trust store. 
             File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
                 $"{BaseDir}/../../examples/Udap.Auth.Server/SureFhirLabs_CA.cer",
-                true);
-
-            // Copy CA to UdapEd so it can be added to the Docker Container trust store. 
-            File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
-                $"{BaseDir}/../../examples/clients/UdapEd/Server/SureFhirLabs_CA.cer",
                 true);
 
             // SubAltName is localhost and host.docker.internal. Udap.Idp server can then be reached from
@@ -636,10 +627,6 @@ namespace Udap.PKI.Generator
 
             File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
                 $"{BaseDir}/../../examples/Udap.Auth.Server.Admin/host.docker.internal.pfx",
-                true);
-
-            File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
-                $"{BaseDir}/../../examples/clients/UdapEd/Server/host.docker.internal.pfx",
                 true);
         }
 
@@ -669,16 +656,16 @@ namespace Udap.PKI.Generator
             // Revoked Certificate
             // Run GenerateCrlForFailTests
             //
-            // var revokeCertificate = BuildClientCertificate(
-            //     subCA,
-            //     rootCA,
-            //     subCA.GetRSAPrivateKey()!,
-            //     "CN=fhirlabs.net Revoked Certificate, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-            //     new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
-            //     $"{SurefhirlabsUdapIssued}/fhirlabs.net.revoked.client",
-            //     SureFhirLabsIntermediateCrl,
-            //     true
-            // );
+            BuildClientCertificate(
+                subCA,
+                rootCA,
+                subCA.GetRSAPrivateKey()!,
+                "CN=fhirlabs.net Revoked Certificate, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
+                $"{SurefhirlabsUdapIssued}/fhirlabs.net.revoked.client",
+                SureFhirLabsIntermediateCrl,
+                SureFhirLabsIntermediatePublicCertHosted
+            );
 
             //
             // Iss mismatch To SubjAltName
@@ -853,11 +840,7 @@ namespace Udap.PKI.Generator
 
         }
 
-        [Fact]
-        public void emptyTest()
-        {
-
-        }
+       
         //
         // Community:localhost:: Certificate Store File Constants  Community used for unit tests
         //
@@ -1373,6 +1356,49 @@ namespace Udap.PKI.Generator
             File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",
                 $"{BaseDir}/../../examples/Udap.Auth.Server/CertStore/issued/{issuedName}.pfx",
                 true);
+        }
+
+
+        [Fact (Skip = "Enabled on desktop when needed.")]
+        public void MakeGFhirLabsCerts()
+        {
+            using var rootCA_localhost = new X509Certificate2($"{LocalhostCertStore}/surefhirlabs_community/SureFhirLabs_CA.pfx", "udap-test");
+            using var subCA_localhost = new X509Certificate2($"{LocalhostCertStore}/surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.pfx", "udap-test");
+            
+            //
+            // Build a client cert for the gFhirLabs 
+            //
+            // BuildClientCertificate(
+            //     subCA_localhost,
+            //     rootCA_localhost,
+            //     subCA_localhost.GetRSAPrivateKey()!,
+            //     "CN=fhirlabs.net proxy for gfhirlabs, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+            //     new List<string>
+            //     {
+            //         "https://fhirlabs.net/fhir/r4", 
+            //         "https://localhost:7074/fhir/r4"
+            //     },
+            //     $"{LocalhostCertStore}surefhirlabs_community/issued/gfhirlabs.healthcare.client",
+            //     "http://crl.fhircerts.net/certs/intermediates/SureFhirLabs_Intermediate.cer",
+            //     "http://crl.fhircerts.net/crl/surefhirlabsIntermediateCrl.crl"
+            // );
+
+            //
+            // Build a client cert for the ss UdapLabsFhirStore 
+            //
+            BuildClientCertificate(
+                subCA_localhost,
+                rootCA_localhost,
+                subCA_localhost.GetRSAPrivateKey()!,
+                "CN=proxy for sandbox, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                new List<string>
+                {
+                    "https://localhost:7074/sandbox/fhir/"
+                },
+                $"{LocalhostCertStore}surefhirlabs_community/issued/sandbox.UdapLabsFhirStore.healthcare.client",
+                "http://localhost:5033/crl/intermediateLocalhostCert.crl",
+                "http://localhost:5033/certs/intermediateLocalhostCert.cer"
+            );
         }
 
         private X509Certificate2 BuildClientCertificate(

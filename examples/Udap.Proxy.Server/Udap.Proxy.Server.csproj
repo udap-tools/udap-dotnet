@@ -1,0 +1,82 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>e695d088-90a4-4c0e-95da-9bb9610f64ec</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <DockerfileRunArguments>-p "7074:443" </DockerfileRunArguments>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Auth" Version="1.67.0" />
+    <PackageReference Include="LazyCache" Version="2.4.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.5.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.0" />
+    <PackageReference Include="Yarp.ReverseProxy" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
+    <PackageReference Include="Udap.Metadata.Server" Version="0.3.*" />
+    <PackageReference Include="Udap.Smart.Metadata" Version="0.3.*" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
+    <ProjectReference Include="../../Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
+    <ProjectReference Include="../../Udap.Smart.Metadata/Udap.Smart.Metadata.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="CertStore\issued\fhirlabs.net.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.ecdsa.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.expired.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.mismatchBaseUrl.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.mismatchSan.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.revoked.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirlabs.net.untrusted.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\fhirLabsApiClientLocalhostCert.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\gfhirlabs.healthcare.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\idp1.securedcontrols.net.server.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\idp2.securedcontrols.net.server.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\sandbox.UdapLabsFhirStore.healthcare.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\touchstone.aegis.net.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\udap-sandbox-surescripts-2.p12">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="CertStore\issued\WeatherApiClient.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

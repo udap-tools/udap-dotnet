@@ -67,6 +67,10 @@ internal static class HostingExtensions
                             b.UseSqlServer(connectionString,
                                 dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
+                        "Pgsql" => options.UdapDbContext = b =>
+                            b.UseNpgsql(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
                         _ => throw new Exception($"Unsupported provider: {provider}")
                     })
             .AddPrivateFileStore();
@@ -98,6 +102,11 @@ internal static class HostingExtensions
                         b.UseSqlServer(connectionString,
                             dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
+
+                    "Pgsql" => options.ConfigureDbContext = b =>
+                        b.UseNpgsql(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
                     _ => throw new Exception($"Unsupported provider: {provider}")
                 })
             .AddOperationalStore(options =>
@@ -109,6 +118,10 @@ internal static class HostingExtensions
 
                     "SqlServer" => options.ConfigureDbContext = b =>
                         b.UseSqlServer(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    "Pgsql" => options.ConfigureDbContext = b =>
+                        b.UseNpgsql(connectionString,
                             dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                     _ => throw new Exception($"Unsupported provider: {provider}")

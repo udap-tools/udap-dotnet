@@ -37,12 +37,12 @@ public class UdapAdminAnchorValidator : IUdapCertificateValidator<Anchor>
 
         var cert = X509Certificate2.CreateFromPem(anchor.X509Certificate);
 
-        if (anchor.BeginDate != cert.NotBefore)
+        if (anchor.BeginDate != cert.NotBefore.ToUniversalTime())
         {
             throw new Exception("Invalid begin date.");
         }
 
-        if (anchor.EndDate != cert.NotAfter)
+        if (anchor.EndDate != cert.NotAfter.ToUniversalTime())
         {
             throw new Exception("Invalid end date.");
         }
@@ -62,12 +62,12 @@ public class UdapAdminRootCertificateValidator : IUdapCertificateValidator<Inter
 
         var cert = X509Certificate2.CreateFromPem(intermediates.X509Certificate);
 
-        if (intermediates.BeginDate != cert.NotBefore)
+        if (intermediates.BeginDate != cert.NotBefore.ToUniversalTime())
         {
             throw new Exception("Invalid begin date.");
         }
 
-        if (intermediates.EndDate != cert.NotAfter)
+        if (intermediates.EndDate != cert.NotAfter.ToUniversalTime())
         {
             throw new Exception("Invalid end date.");
         }

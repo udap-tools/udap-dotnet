@@ -44,7 +44,10 @@ public static class HostingExtensions
             // options.UdapDbContext = b => b.UseSqlite(connectionString)
             //     .LogTo(Console.WriteLine, LogLevel.Information);
 
-            options.UdapDbContext = b => b.UseSqlServer(connectionString)
+            // options.UdapDbContext = b => b.UseSqlServer(connectionString)
+            //     .LogTo(Console.WriteLine, LogLevel.Information);
+
+            options.UdapDbContext = b => b.UseNpgsql(connectionString)
                 .LogTo(Console.WriteLine, LogLevel.Information);
         });
 

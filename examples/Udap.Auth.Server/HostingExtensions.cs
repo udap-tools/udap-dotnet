@@ -10,23 +10,18 @@
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
 using Duende.IdentityServer.EntityFramework.Stores;
-using Google.Api;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Udap.Auth.Server.Pages;
 using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Server.Configuration;
-using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
-using Udap.Server.Hosting.DynamicProviders.Oidc;
 using Udap.Server.Security.Authentication.TieredOAuth;
-using Udap.Server.Stores;
+using Udap.UI.Pages;
 
 namespace Udap.Auth.Server;
 
@@ -41,19 +36,23 @@ internal static class HostingExtensions
 
 
         // TODO: Maybe build a .ProtectKeysWithCertificate extension method for use on GCP to grab the cert from the secret manager.
-        // otherwise the keys are not protected.  This is more of a ASP.NET GCP hosted concern an not a UDAP concern. 
-        // Yes, I would like to revisit this.  Would make a good medium article.
+        // otherwise the keys are not protected.  This is more of an ASP.NET GCP hosted concern and not a UDAP concern. 
+        // Yes, I would like to revisit this. 
         // https://learn.microsoft.com/en-us/aspnet/core/security/data-protection/configuration/overview?view=aspnetcore-6.0#protectkeyswith
         builder.Services.AddDataProtection()
             .PersistKeysToDbContext<UdapDbContext>();
         
 
-        var provider = builder.Configuration.GetValue("provider", "SqlServer");
+        var provider = builder.Configuration.GetValue("provider", "Pgsql");
 
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         Log.Logger.Debug($"ConnectionString:: {connectionString}");
 
-        builder.Services.AddHttpLogging(o => { });
+        builder.Services.AddHttpLogging(o =>
+        {
+            o.ResponseHeaders.Add(ForwardedHeadersDefaults.XForwardedProtoHeaderName);
+        });
+
         builder.Services.AddOptions();
         builder.Services.AddMemoryCache();
         builder.Services.Configure<IpRateLimitOptions>(builder.Configuration.GetSection("IpRateLimiting"));
@@ -94,6 +93,10 @@ internal static class HostingExtensions
                             b.UseSqlServer(connectionString,
                                 dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
+                        "Pgsql" => options.UdapDbContext = b =>
+                            b.UseNpgsql(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
                         _ => throw new Exception($"Unsupported provider: {provider}")
                     })
             .AddUdapResponseGenerators()
@@ -111,11 +114,11 @@ internal static class HostingExtensions
                 options.UserInteraction.LoginUrl = "/udapaccount/login";
                 options.UserInteraction.LogoutUrl = "/udapaccount/logout";
                 // options.KeyManagement.Enabled = false;
+                options.InputLengthRestrictions.Scope = 7000;
             })
             // .AddSigningCredential(new X509Certificate2("./CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test"), UdapConstants.SupportedAlgorithm.RS256)
             // .AddSigningCredential(new X509Certificate2("./CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test"), UdapConstants.SupportedAlgorithm.RS384)
 
-            .AddServerSideSessions()
             .AddConfigurationStore(options =>
                 _ = provider switch
                 {
@@ -125,6 +128,10 @@ internal static class HostingExtensions
 
                     "SqlServer" => options.ConfigureDbContext = b =>
                         b.UseSqlServer(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    "Pgsql" => options.ConfigureDbContext = b =>
+                        b.UseNpgsql(connectionString,
                             dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                     _ => throw new Exception($"Unsupported provider: {provider}")
@@ -138,6 +145,10 @@ internal static class HostingExtensions
 
                     "SqlServer" => options.ConfigureDbContext = b =>
                         b.UseSqlServer(connectionString,
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                    "Pgsql" => options.ConfigureDbContext = b =>
+                        b.UseNpgsql(connectionString,
                             dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                     _ => throw new Exception($"Unsupported provider: {provider}")

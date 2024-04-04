@@ -11,6 +11,7 @@ using System.Net;
 using System.Reflection;
 using Duende.IdentityServer.Stores;
 using FluentAssertions;
+using FluentAssertions.Common;
 using IdentityModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -155,21 +156,21 @@ public class UdapDcrValidatorTests
             Substitute.For<ILogger<UdapDynamicClientRegistrationValidator>>());
 
     
-        var result = await validator.ValidateJti(document, expires);
+        var result = await validator.ValidateJti(document, EpochTime.GetIntDate(expires));
 
         result.Should().NotBeNull();
         result.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         result.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.InvalidJti}");
 
         document.JwtId = string.Empty;
-        result = await validator.ValidateJti(document, expires);
+        result = await validator.ValidateJti(document, EpochTime.GetIntDate(expires));
 
         result.Should().NotBeNull();
         result.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         result.ErrorDescription.Should().Be($"{UdapDynamicClientRegistrationErrorDescriptions.InvalidJti}");
         
         document.JwtId = "   ";
-        result = await validator.ValidateJti(document, expires);
+        result = await validator.ValidateJti(document, EpochTime.GetIntDate(expires));
 
         result.Should().NotBeNull();
         result.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
@@ -181,11 +182,11 @@ public class UdapDcrValidatorTests
         //
 
         document.JwtId = CryptoRandom.CreateUniqueId();
-        result = await validator.ValidateJti(document, expires);
+        result = await validator.ValidateJti(document, EpochTime.GetIntDate(expires));
         result.Should().NotBeNull();
         result.Error.Should().BeEmpty(result.Error);
 
-        result = await validator.ValidateJti(document, expires);
+        result = await validator.ValidateJti(document, EpochTime.GetIntDate(expires));
 
         result.Should().NotBeNull();
         result!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);

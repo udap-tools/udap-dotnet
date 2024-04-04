@@ -29,7 +29,7 @@ try
     builder.Host.UseSerilog((ctx, lc) => lc
         .WriteTo.Console(
             outputTemplate:
-            "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",
+            "[{Timestamp:HH:mm:ss} {Level}][{ThreadId:d}] {SourceContext} {Message:lj} {TraceMessage}{NewLine}{Exception}",
             theme: AnsiConsoleTheme.Code)
         .MinimumLevel.Verbose()
         .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -37,7 +37,8 @@ try
         .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
         .MinimumLevel.Override("System", LogEventLevel.Warning)
         .MinimumLevel.Override("Microsoft.AspNetCore.Authentication", LogEventLevel.Information)
-        .Enrich.FromLogContext(), 
+        .Enrich.FromLogContext()
+        .Enrich.WithThreadId(), 
         true);
 
     // builder.Host.UseSerilog((ctx, lc) => lc

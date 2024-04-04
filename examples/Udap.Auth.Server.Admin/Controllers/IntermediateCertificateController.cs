@@ -36,7 +36,7 @@ public class IntermediateCertificateController : ControllerBase
 
         if (!entitities.Any())
         {
-            return NotFound();
+            return new List<Intermediate>();
         }
 
         var communities = entitities.Select(e => e.ToModel());

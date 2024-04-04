@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using Google.Cloud.SecretManager.V1;
 using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;

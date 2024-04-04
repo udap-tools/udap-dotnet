@@ -1,0 +1,60 @@
+{
+  "profiles": {
+    "Local_Auth_Migrate": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "AuthProviderLocal": "true",
+        "ConnStrName": "DefaultConnection"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "Local_Idp1_Migrate": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "db_identity_provider",
+        "IdentityProvider": "true"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "Local_Idp2_Migrate": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "db_identity_provider2",
+        "IdentityProvider": "true"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "GCP_Auth_Migrate": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "gcp_alloydb"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "GCP_Idp1_Migrate": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "gcp_alloydb_Idp1"
+      },
+      "dotnetRunMessages": true
+    },
+
+    "GCP_Idp2_Migrate": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ConnStrName": "gcp_alloydb_Idp2"
+      },
+      "dotnetRunMessages": true
+    }
+  }
+}

@@ -138,8 +138,6 @@ internal class UdapAuthorizationResponseMiddleware
                         }
                     }
                 }
-
-                _logger.LogTrace($"Why am I here: {string.Join(':', requestParams)}");
             });
         }
 

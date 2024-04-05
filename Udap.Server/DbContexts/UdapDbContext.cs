@@ -7,10 +7,13 @@
 // */
 #endregion
 
+using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Entities;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using System.Reflection.Emit;
+using Duende.IdentityServer.EntityFramework.Extensions;
 using Udap.Server.Entities;
 using Udap.Server.Extensions;
 using Udap.Server.Options;
@@ -136,7 +139,129 @@ public class UdapDbContext<TContext> : DbContext, IUdapDbAdminContext, IUdapDbCo
             modelBuilder.Entity<ClientScope>().ToTable("ClientScopes");
         }
 
+
         base.OnModelCreating(modelBuilder);
+
+        if (Database.ProviderName == "Npgsql.EntityFrameworkCore.PostgreSQL")
+        {
+            modelBuilder.HasDefaultSchema("udap");
+
+            foreach (var entity in modelBuilder.Model.GetEntityTypes())
+            {
+                // Replace table names
+                entity.SetTableName(entity.GetTableName()?.ToSnakeCase());
+
+                // Replace column names            
+                foreach (var property in entity.GetProperties())
+                {
+                    property.SetColumnName(property.GetColumnName().ToSnakeCase());
+                }
+
+                foreach (var key in entity.GetKeys())
+                {
+                    key.SetName(key.GetName()?.ToSnakeCase());
+                }
+
+                foreach (var key in entity.GetForeignKeys())
+                {
+                    key.SetConstraintName(key.GetConstraintName()?.ToSnakeCase());
+                }
+
+                foreach (var index in entity.GetIndexes())
+                {
+                    index.SetDatabaseName(index.GetDatabaseName()?.ToSnakeCase());
+                }
+            }
+        }
+    }
+
+}
+
+/// <summary>
+/// Override naming conventions of the base ConfigurationDbContext during OnModelCreating
+/// </summary>
+public class NpgsqlConfigurationDbContext : ConfigurationDbContext<NpgsqlConfigurationDbContext>
+{
+    public NpgsqlConfigurationDbContext(DbContextOptions<NpgsqlConfigurationDbContext> options) : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.HasDefaultSchema("udap");
+
+        foreach (var entity in modelBuilder.Model.GetEntityTypes())
+        {
+            // Replace table names
+            entity.SetTableName(entity.GetTableName()?.ToSnakeCase());
+
+            // Replace column names            
+            foreach (var property in entity.GetProperties())
+            {
+                property.SetColumnName(property.GetColumnName().ToSnakeCase());
+            }
+
+            foreach (var key in entity.GetKeys())
+            {
+                key.SetName(key.GetName()?.ToSnakeCase());
+            }
+
+            foreach (var key in entity.GetForeignKeys())
+            {
+                key.SetConstraintName(key.GetConstraintName()?.ToSnakeCase());
+            }
+
+            foreach (var index in entity.GetIndexes())
+            {
+                index.SetDatabaseName(index.GetDatabaseName()?.ToSnakeCase());
+            }
+        }
     }
 }
 
+
+/// <summary>
+/// Override naming conventions of the base PersistedGrantDbContext during OnModelCreating
+/// </summary>
+public class NpgsqlPersistedGrantDbContext : PersistedGrantDbContext<NpgsqlPersistedGrantDbContext>
+{
+    public NpgsqlPersistedGrantDbContext(DbContextOptions<NpgsqlPersistedGrantDbContext> options) : base(options)
+    {
+    }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.HasDefaultSchema("udap");
+
+        foreach (var entity in modelBuilder.Model.GetEntityTypes())
+        {
+            // Replace table names
+            entity.SetTableName(entity.GetTableName()?.ToSnakeCase());
+
+            // Replace column names            
+            foreach (var property in entity.GetProperties())
+            {
+                property.SetColumnName(property.GetColumnName().ToSnakeCase());
+            }
+
+            foreach (var key in entity.GetKeys())
+            {
+                key.SetName(key.GetName()?.ToSnakeCase());
+            }
+
+            foreach (var key in entity.GetForeignKeys())
+            {
+                key.SetConstraintName(key.GetConstraintName()?.ToSnakeCase());
+            }
+
+            foreach (var index in entity.GetIndexes())
+            {
+                index.SetDatabaseName(index.GetDatabaseName()?.ToSnakeCase());
+            }
+        }
+    }
+}

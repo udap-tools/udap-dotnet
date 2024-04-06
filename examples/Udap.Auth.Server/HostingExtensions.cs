@@ -136,7 +136,8 @@ internal static class HostingExtensions
             }
             else
             {
-                identityServer.AddConfigurationStore<ConfigurationDbContext>(options =>
+                identityServer
+                    .AddConfigurationStore<ConfigurationDbContext>(options =>
                         _ = provider switch
                         {
                             "Sqlite" => options.ConfigureDbContext = b =>
@@ -145,10 +146,6 @@ internal static class HostingExtensions
 
                             "SqlServer" => options.ConfigureDbContext = b =>
                                 b.UseSqlServer(connectionString,
-                                    dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                            "Pgsql" => options.ConfigureDbContext = b =>
-                                b.UseNpgsql(connectionString,
                                     dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                             _ => throw new Exception($"Unsupported provider: {provider}")
@@ -162,10 +159,6 @@ internal static class HostingExtensions
 
                             "SqlServer" => options.ConfigureDbContext = b =>
                                 b.UseSqlServer(connectionString,
-                                    dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                            "Pgsql" => options.ConfigureDbContext = b =>
-                                b.UseNpgsql(connectionString,
                                     dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
                             _ => throw new Exception($"Unsupported provider: {provider}")

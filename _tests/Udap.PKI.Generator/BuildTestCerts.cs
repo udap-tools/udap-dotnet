@@ -1359,7 +1359,7 @@ namespace Udap.PKI.Generator
         }
 
 
-        [Fact]// (Skip = "Enabled on desktop when needed.")]
+        [Fact (Skip = "Enabled on desktop when needed.")]
         public void MakeGFhirLabsCerts()
         {
             using var rootCA_localhost = new X509Certificate2($"{LocalhostCertStore}/surefhirlabs_community/SureFhirLabs_CA.pfx", "udap-test");

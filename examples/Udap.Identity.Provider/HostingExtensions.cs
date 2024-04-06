@@ -85,48 +85,68 @@ internal static class HostingExtensions
 
         builder.Services.AddUdapMetadataServer(builder.Configuration);
 
-        builder.Services.AddIdentityServer(options =>
+        var identityServer = builder.Services.AddIdentityServer(options =>
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
                 options.EmitStaticAudienceClaim = true;
             })
-            .AddServerSideSessions()
-            .AddConfigurationStore(options =>
-                _ = provider switch
-                {
-                    "Sqlite" => options.ConfigureDbContext = b =>
-                        b.UseSqlite(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+            .AddServerSideSessions();
 
-                    "SqlServer" => options.ConfigureDbContext = b =>
-                        b.UseSqlServer(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-
-                    "Pgsql" => options.ConfigureDbContext = b =>
+        if (provider == "Pgsql")
+        {
+            identityServer
+                .AddConfigurationStore<NpgsqlConfigurationDbContext>(options =>
+                    options.ConfigureDbContext = b =>
                         b.UseNpgsql(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                    _ => throw new Exception($"Unsupported provider: {provider}")
-                })
-            .AddOperationalStore(options =>
-                _ = provider switch
-                {
-                    "Sqlite" => options.ConfigureDbContext = b =>
-                        b.UseSqlite(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                    "SqlServer" => options.ConfigureDbContext = b =>
-                        b.UseSqlServer(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                    "Pgsql" => options.ConfigureDbContext = b =>
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName))
+                )
+                .AddOperationalStore<NpgsqlPersistedGrantDbContext>(options =>
+                    options.ConfigureDbContext = b =>
                         b.UseNpgsql(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName))
+                );
+        }
+        else
+        {
+            identityServer
+                .AddConfigurationStore(options =>
+                    _ = provider switch
+                    {
+                        "Sqlite" => options.ConfigureDbContext = b =>
+                            b.UseSqlite(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
-                    _ => throw new Exception($"Unsupported provider: {provider}")
-                })
+                        "SqlServer" => options.ConfigureDbContext = b =>
+                            b.UseSqlServer(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
+
+                        "Pgsql" => options.ConfigureDbContext = b =>
+                            b.UseNpgsql(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                        _ => throw new Exception($"Unsupported provider: {provider}")
+                    })
+                .AddOperationalStore(options =>
+                    _ = provider switch
+                    {
+                        "Sqlite" => options.ConfigureDbContext = b =>
+                            b.UseSqlite(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                        "SqlServer" => options.ConfigureDbContext = b =>
+                            b.UseSqlServer(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                        "Pgsql" => options.ConfigureDbContext = b =>
+                            b.UseNpgsql(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                        _ => throw new Exception($"Unsupported provider: {provider}")
+                    });
+        }
+
+        identityServer
             .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
             //TODO remove

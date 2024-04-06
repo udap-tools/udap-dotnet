@@ -45,16 +45,7 @@ internal static class HostingExtensions
         builder.Services.AddRazorPages();
 
         builder.Services.AddUdapServerAsIdentityProvider(
-                options =>
-                {
-                    var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
-                    builder.Services.Configure<ServerSettings>(builder.Configuration);
-                    options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
-                    options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
-                    options.ServerSupport = udapServerOptions.ServerSupport;
-                    options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
-                    options.AlwaysIncludeUserClaimsInIdToken = udapServerOptions.AlwaysIncludeUserClaimsInIdToken;
-                },
+                null,
                 options =>
                     _ = provider switch
                     {

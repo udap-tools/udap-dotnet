@@ -39,7 +39,8 @@ public class TestUsers
                         new Claim(JwtClaimTypes.Email, "AliceSmith@email.com"),
                         new Claim(JwtClaimTypes.EmailVerified, "true", ClaimValueTypes.Boolean),
                         new Claim(JwtClaimTypes.WebSite, "http://alice.com"),
-                        new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json)
+                        new Claim(JwtClaimTypes.Address, JsonSerializer.Serialize(address), IdentityServerConstants.ClaimValueTypes.Json),
+                        new Claim("hl7_identifier", "123e4567-e89b-12d3-a456-426614174000a")
                     }
                 },
                 new TestUser

@@ -60,7 +60,8 @@ public class UdapResponseTypeResponseModeTests
                 ServerSupport = ServerSupport.Hl7SecurityIG,
                 DefaultUserScopes = "user/*.read",
                 DefaultSystemScopes = "system/*.read",
-                ForceStateParamOnAuthorizationCode = true
+                ForceStateParamOnAuthorizationCode = true,
+                RequireConsent = false
             });
 
             s.AddSingleton<UdapClientOptions>(new UdapClientOptions

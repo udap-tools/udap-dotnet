@@ -58,7 +58,8 @@ public class ScopeExpansionTests
             {
                 ServerSupport = ServerSupport.UDAP,
                 DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap"
+                DefaultSystemScopes = "udap",
+                RequireConsent = false
             });
 
             s.AddSingleton(new UdapClientOptions

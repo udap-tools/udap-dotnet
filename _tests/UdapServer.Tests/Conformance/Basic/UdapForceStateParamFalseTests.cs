@@ -59,8 +59,9 @@ public class UdapForceStateParamFalseTests
             {
                 ServerSupport = ServerSupport.Hl7SecurityIG,
                 DefaultUserScopes = "user/*.read",
-                DefaultSystemScopes = "system/*.read"
+                DefaultSystemScopes = "system/*.read",
                 // ForceStateParamOnAuthorizationCode = false (default)
+                RequireConsent = false
             });
 
             s.AddSingleton<UdapClientOptions>(new UdapClientOptions

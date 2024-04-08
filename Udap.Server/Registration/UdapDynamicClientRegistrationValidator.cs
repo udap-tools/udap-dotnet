@@ -380,14 +380,18 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //
         if (client.AllowedGrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
         {
+            var (successFlag, errorResult) = await ValidateLogoUri(document);
+
             if (_serverSettings.LogoRequired)
             {
-                var (successFlag, errorResult) = await ValidateLogoUri(document);
                 if (!successFlag)
                 {
                     return errorResult!;
                 }
+            }
 
+            if (successFlag)
+            {
                 client.LogoUri = document.LogoUri;
             }
 

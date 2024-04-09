@@ -79,6 +79,8 @@ namespace Udap.Server.Stores
                 existingClient.AllowedGrantTypes = client.ToEntity().AllowedGrantTypes;
                 existingClient.AllowOfflineAccess = client.AllowOfflineAccess;
                 existingClient.RequirePkce = client.RequirePkce;
+                existingClient.LogoUri = client.LogoUri;
+
                 await _dbContext.SaveChangesAsync(token);
                 _logger.LogInformation("Updated client: {Id}", existingClient.Id);
                 return true;

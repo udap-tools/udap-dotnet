@@ -90,11 +90,13 @@ public class ResponseTypeResponseModeTests
 
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: "code_client",
-            responseType: null, // missing
+            responseType: "removeMe", // missing
             scope: "openid",
             redirectUri: "https://code_client/callback",
             state: state,
             nonce: nonce);
+        
+        url = url.Replace("response_type=removeMe", "");
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
         var response = await _mockPipeline.BrowserClient.GetAsync(url);

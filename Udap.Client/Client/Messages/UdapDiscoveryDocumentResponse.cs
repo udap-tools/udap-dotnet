@@ -78,10 +78,10 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     public string? RegistrationEndpoint => TryGetString(UdapConstants.Discovery.RegistrationEndpoint);
 
     // generic
-    public JsonElement TryGetValue(string name) => Json.TryGetValue(name);
-    public string? TryGetString(string name) => Json.TryGetString(name);
-    public bool? TryGetBoolean(string name) => Json.TryGetBoolean(name);
-    public IEnumerable<string> TryGetStringArray(string name) => Json.TryGetStringArray(name);
+    public JsonElement? TryGetValue(string name) => Json?.TryGetValue(name);
+    public string? TryGetString(string name) => Json?.TryGetString(name);
+    public bool? TryGetBoolean(string name) => Json?.TryGetBoolean(name);
+    public IEnumerable<string>? TryGetStringArray(string name) => Json?.TryGetStringArray(name);
 
     private string Validate(DiscoveryPolicy policy)
     {
@@ -97,10 +97,13 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
             }
         }
 
-        var error = ValidateEndpoints(Json, policy);
-        if (error.IsPresent())
+        if (Json.HasValue)
         {
-            return error;
+            var error = ValidateEndpoints(Json.Value, policy);
+            if (error.IsPresent())
+            {
+                return error;
+            }
         }
 
         return string.Empty;

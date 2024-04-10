@@ -184,11 +184,13 @@ public class UdapResponseTypeResponseModeTests
 
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
-            //responseType: null!, // missing
+            responseType: "removeMe", // missing
             scope: "openid",
             redirectUri: "https://code_client/callback",
             state: state,
             nonce: nonce);
+
+        url = url.Replace("response_type=removeMe", "");
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = false;
         response = await _mockPipeline.BrowserClient.GetAsync(url);

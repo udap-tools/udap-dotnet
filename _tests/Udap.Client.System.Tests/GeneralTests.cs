@@ -183,7 +183,7 @@ namespace Udap.Client.System.Tests
             // var discoJsonFormatted = JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
             //_testOutputHelper.WriteLine(discoJsonFormatted);
 
-            var metadata = disco.Json.Deserialize<UdapMetadata>();
+            var metadata = disco.Json?.Deserialize<UdapMetadata>();
             var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
             var tokenHeader = jwt.Header;
             // _testOutputHelper.WriteLine(tokenHeader.X5c);
@@ -234,7 +234,7 @@ namespace Udap.Client.System.Tests
             // var discoJsonFormatted = JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
             // _testOutputHelper.WriteLine(discoJsonFormatted);
 
-            var metadata = disco.Json.Deserialize<UdapMetadata>();
+            var metadata = disco.Json?.Deserialize<UdapMetadata>();
 
             var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
             var tokenHeader = jwt.Header;

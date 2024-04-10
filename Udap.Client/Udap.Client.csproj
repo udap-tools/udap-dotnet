@@ -15,6 +15,7 @@
     <PackageIcon>UDAP_Ecosystem_Gears 48X48.jpg</PackageIcon>
     <PackageTags>UDAP;FHIR;HL7</PackageTags>
     <Description>Package is a part of the UDAP reference implementation for .NET.</Description>
+
   </PropertyGroup>
 
 
@@ -25,19 +26,12 @@
   </ItemGroup>
 
 
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+  <ItemGroup >
     <PackageReference Include="IdentityModel" />
-    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
-    <PackageReference Include="IdentityModel" />
-    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
   </ItemGroup>
 
 
-   <!-- <ItemGroup>  -->
+  <!-- <ItemGroup>  -->
    <!--   <FrameworkReference Include="Microsoft.AspNetCore.App" />  -->
    <!-- </ItemGroup>  -->
 

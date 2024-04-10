@@ -105,7 +105,7 @@ public class UdapClientMessageHandler : DelegatingHandler, IUdapClientEvents
 
         if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
         {
-            _clientDiscoveryValidator.UdapServerMetaData = disco.Json.Deserialize<UdapMetadata>();
+            _clientDiscoveryValidator.UdapServerMetaData = disco.Json?.Deserialize<UdapMetadata>();
             _logger.LogDebug(_clientDiscoveryValidator.UdapServerMetaData?.SerializeToJson());
 
             if (!await _clientDiscoveryValidator.ValidateJwtToken(_clientDiscoveryValidator.UdapServerMetaData!, baseUrl!))

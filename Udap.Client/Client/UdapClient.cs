@@ -314,7 +314,7 @@ namespace Udap.Client.Client
 
                 if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
                 {
-                    UdapServerMetaData = disco.Json.Deserialize<UdapMetadata>();
+                    UdapServerMetaData = disco.Json?.Deserialize<UdapMetadata>();
                     _logger.LogDebug(UdapServerMetaData?.SerializeToJson());
 
                     if (!await _clientDiscoveryValidator.ValidateJwtToken(UdapServerMetaData!, baseUrl))

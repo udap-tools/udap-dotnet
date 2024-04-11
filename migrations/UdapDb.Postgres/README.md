@@ -14,13 +14,13 @@ for many environments.  So from Visual Studio you can choose the appropriate env
 
  - #### ConfigurationDbContext
 
- ``` dotnet dotnet-ef migrations add ConfigurationDB_Initial  -c ConfigurationDbContext -o Migrations/ConfigurationDb   -- --provider=Pgsql ```
- ``` dotnet dotnet-ef migrations script -c ConfigurationDbContext -o Migrations/ConfigurationDb.sql ```
+ ``` dotnet dotnet-ef migrations add ConfigurationDB_Initial  -c NpgsqlConfigurationDbContext -o Migrations/ConfigurationDb   -- --provider=Pgsql ```
+ ``` dotnet dotnet-ef migrations script -c NpgsqlConfigurationDbContext -o Migrations/ConfigurationDb.sql ```
 
  - #### PersistedGrantDbContext
 
-   ``` dotnet dotnet-ef migrations add PersistedGrantDb_Initial  -c PersistedGrantDbContext -o Migrations/PersistedGrantDb   -- --provider=Pgsql ```
-   ``` dotnet dotnet-ef migrations script -c PersistedGrantDbContext -o Migrations/PersistedGrantDb.sql ```
+   ``` dotnet dotnet-ef migrations add PersistedGrantDb_Initial  -c NpgsqlPersistedGrantDbContext -o Migrations/PersistedGrantDb   -- --provider=Pgsql ```
+   ``` dotnet dotnet-ef migrations script -c NpgsqlPersistedGrantDbContext -o Migrations/PersistedGrantDb.sql ```
 
 - #### UdapDbContext
 

@@ -89,7 +89,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         
         
         // Get signed payload and compare registration_endpoint
-        var metadata = disco.Json.Deserialize<UdapMetadata>();
+        var metadata = disco.Json?.Deserialize<UdapMetadata>();
         metadata.Should().NotBeNull();
 
         var tokenHandler = new JsonWebTokenHandler();
@@ -265,7 +265,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
 
         // Get signed payload and compare registration_endpoint
-        var metadata = disco.Json.Deserialize<UdapMetadata>();
+        var metadata = disco.Json?.Deserialize<UdapMetadata>();
         metadata.Should().NotBeNull();
 
         var tokenHandler = new JsonWebTokenHandler();
@@ -688,7 +688,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // Get signed payload and compare registration_endpoint
 
 
-        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
+        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json!.Value);
         var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
@@ -909,7 +909,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // Get signed payload and compare registration_endpoint
 
 
-        var metadata = disco.Json.Deserialize<UdapMetadata>();
+        var metadata = disco.Json?.Deserialize<UdapMetadata>();
         var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
@@ -1134,7 +1134,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // Get signed payload and compare registration_endpoint
 
 
-        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
+        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json!.Value);
         var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
@@ -1376,7 +1376,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // Get signed payload and compare registration_endpoint
 
 
-        var metadata = disco.Json.Deserialize<UdapMetadata>();
+        var metadata = disco.Json?.Deserialize<UdapMetadata>();
         var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
@@ -1555,7 +1555,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         
 
         // Get signed payload and compare registration_endpoint
-        var metadata = disco.Json.Deserialize<UdapMetadata>();
+        var metadata = disco.Json?.Deserialize<UdapMetadata>();
         metadata.Should().NotBeNull();
 
         // Update JwtSecurityToken to JsonWebTokenHandler
@@ -1761,7 +1761,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // Get signed payload and compare registration_endpoint
 
 
-        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
+        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json!.Value);
         var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 
@@ -1975,7 +1975,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // Get signed payload and compare registration_endpoint
 
 
-        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json);
+        var metadata = JsonSerializer.Deserialize<UdapMetadata>(disco.Json!.Value);
         var jwt = new JwtSecurityToken(metadata!.SignedMetadata);
         var tokenHeader = jwt.Header;
 

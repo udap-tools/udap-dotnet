@@ -48,12 +48,12 @@ public static class SeedDataIdentityProvider
 
         services.AddLogging(c => c.AddSerilog());
 
-        services.AddOperationalDbContext(options =>
+        services.AddOperationalDbContext<NpgsqlPersistedGrantDbContext>(options =>
         {
             options.ConfigureDbContext = db => db.UseNpgsql(connectionString,
                 sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
         });
-        services.AddConfigurationDbContext(options =>
+        services.AddConfigurationDbContext<NpgsqlConfigurationDbContext>(options =>
         {
             options.ConfigureDbContext = db => db.UseNpgsql(connectionString,
                 sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
@@ -69,8 +69,8 @@ public static class SeedDataIdentityProvider
         await using var serviceProvider = services.BuildServiceProvider();
         using var serviceScope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope();
 
-        await serviceScope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.MigrateAsync();
-        var configDbContext = serviceScope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
+        await serviceScope.ServiceProvider.GetRequiredService<NpgsqlPersistedGrantDbContext>().Database.MigrateAsync();
+        var configDbContext = serviceScope.ServiceProvider.GetRequiredService<NpgsqlConfigurationDbContext>();
         await configDbContext.Database.MigrateAsync();
 
         var udapContext = serviceScope.ServiceProvider.GetRequiredService<UdapDbContext>();

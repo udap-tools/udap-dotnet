@@ -45,6 +45,8 @@ public class ServerSettings
 
     
     public bool AlwaysIncludeUserClaimsInIdToken { get; set; }
+
+    public bool RequireConsent { get; set; } = true;
 }
 
 

@@ -1368,37 +1368,37 @@ namespace Udap.PKI.Generator
             //
             // Build a client cert for the gFhirLabs 
             //
-            // BuildClientCertificate(
-            //     subCA_localhost,
-            //     rootCA_localhost,
-            //     subCA_localhost.GetRSAPrivateKey()!,
-            //     "CN=fhirlabs.net proxy for gfhirlabs, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-            //     new List<string>
-            //     {
-            //         "https://fhirlabs.net/fhir/r4", 
-            //         "https://localhost:7074/fhir/r4"
-            //     },
-            //     $"{LocalhostCertStore}surefhirlabs_community/issued/gfhirlabs.healthcare.client",
-            //     "http://crl.fhircerts.net/certs/intermediates/SureFhirLabs_Intermediate.cer",
-            //     "http://crl.fhircerts.net/crl/surefhirlabsIntermediateCrl.crl"
-            // );
-
-            //
-            // Build a client cert for the ss UdapLabsFhirStore 
-            //
             BuildClientCertificate(
                 subCA_localhost,
                 rootCA_localhost,
                 subCA_localhost.GetRSAPrivateKey()!,
-                "CN=proxy for sandbox, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                "CN=fhirlabs.net proxy for gfhirlabs, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string>
                 {
-                    "https://localhost:7074/sandbox/fhir/"
+                    "https://fhirlabs.net/fhir/r4", 
+                    "https://localhost:7074/fhir/r4"
                 },
-                $"{LocalhostCertStore}surefhirlabs_community/issued/sandbox.UdapLabsFhirStore.healthcare.client",
-                "http://localhost:5033/crl/intermediateLocalhostCert.crl",
-                "http://localhost:5033/certs/intermediateLocalhostCert.cer"
+                $"{LocalhostCertStore}surefhirlabs_community/issued/gfhirlabs.healthcare.client",
+                "http://crl.fhircerts.net/crl/surefhirlabsIntermediateCrl.crl",
+                "http://crl.fhircerts.net/certs/intermediates/SureFhirLabs_Intermediate.cer"
             );
+
+            //
+            // Build a client cert for the ss UdapLabsFhirStore 
+            //
+            // BuildClientCertificate(
+            //     subCA_localhost,
+            //     rootCA_localhost,
+            //     subCA_localhost.GetRSAPrivateKey()!,
+            //     "CN=proxy for sandbox, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+            //     new List<string>
+            //     {
+            //         "https://localhost:7074/sandbox/fhir/"
+            //     },
+            //     $"{LocalhostCertStore}surefhirlabs_community/issued/sandbox.UdapLabsFhirStore.healthcare.client",
+            //     "http://localhost:5033/crl/intermediateLocalhostCert.crl",
+            //     "http://localhost:5033/certs/intermediateLocalhostCert.cer"
+            // );
         }
 
         private X509Certificate2 BuildClientCertificate(

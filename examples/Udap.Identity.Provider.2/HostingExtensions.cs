@@ -45,14 +45,7 @@ internal static class HostingExtensions
         builder.Services.AddRazorPages();
 
         builder.Services.AddUdapServerAsIdentityProvider(
-                options =>
-                {
-                    var udapServerOptions = builder.Configuration.GetOption<ServerSettings>("ServerSettings");
-                    options.DefaultSystemScopes = udapServerOptions.DefaultSystemScopes;
-                    options.DefaultUserScopes = udapServerOptions.DefaultUserScopes;
-                    options.ServerSupport = udapServerOptions.ServerSupport;
-                    options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
-                },
+                null,
                 options =>
                     _ = provider switch
                     {
@@ -76,49 +69,68 @@ internal static class HostingExtensions
         builder.Services.AddUdapMetadataServer(builder.Configuration);
 
 
-        builder.Services.AddIdentityServer(options =>
-            {
-                // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
-                options.EmitStaticAudienceClaim = true;
-                options.InputLengthRestrictions.Scope =
-                    7000; //TODO: Very large!  Again I need to solve the policy/community/certification concept
-            })
-            .AddServerSideSessions()
-            .AddConfigurationStore(options =>
-                _ = provider switch
-                {
-                    "Sqlite" => options.ConfigureDbContext = b =>
-                        b.UseSqlite(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+        var identityServer = builder.Services.AddIdentityServer(options =>
+        {
+            // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
+            options.EmitStaticAudienceClaim = true;
+        })
+            .AddServerSideSessions();
 
-                    "SqlServer" => options.ConfigureDbContext = b =>
-                        b.UseSqlServer(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                    "Pgsql" => options.ConfigureDbContext = b =>
+        if (provider == "Pgsql")
+        {
+            identityServer
+                .AddConfigurationStore<NpgsqlConfigurationDbContext>(options =>
+                    options.ConfigureDbContext = b =>
                         b.UseNpgsql(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                    _ => throw new Exception($"Unsupported provider: {provider}")
-                })
-            .AddOperationalStore(options =>
-                _ = provider switch
-                {
-                    "Sqlite" => options.ConfigureDbContext = b =>
-                        b.UseSqlite(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                    "SqlServer" => options.ConfigureDbContext = b =>
-                        b.UseSqlServer(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-                    
-                    "Pgsql" => options.ConfigureDbContext = b =>
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName))
+                )
+                .AddOperationalStore<NpgsqlPersistedGrantDbContext>(options =>
+                    options.ConfigureDbContext = b =>
                         b.UseNpgsql(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName))
+                );
+        }
+        else
+        {
+            identityServer
+                .AddConfigurationStore(options =>
+                    _ = provider switch
+                    {
+                        "Sqlite" => options.ConfigureDbContext = b =>
+                            b.UseSqlite(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
-                    _ => throw new Exception($"Unsupported provider: {provider}")
-                })
+                        "SqlServer" => options.ConfigureDbContext = b =>
+                            b.UseSqlServer(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
+
+                        "Pgsql" => options.ConfigureDbContext = b =>
+                            b.UseNpgsql(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                        _ => throw new Exception($"Unsupported provider: {provider}")
+                    })
+                .AddOperationalStore(options =>
+                    _ = provider switch
+                    {
+                        "Sqlite" => options.ConfigureDbContext = b =>
+                            b.UseSqlite(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                        "SqlServer" => options.ConfigureDbContext = b =>
+                            b.UseSqlServer(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                        "Pgsql" => options.ConfigureDbContext = b =>
+                            b.UseNpgsql(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+
+                        _ => throw new Exception($"Unsupported provider: {provider}")
+                    });
+        }
+
+        identityServer
             .AddResourceStore<ResourceStore>()
             .AddClientStore<ClientStore>()
             //TODO remove

@@ -10,6 +10,7 @@
 using Duende.IdentityServer.EntityFramework.Storage;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using Udap.Server.DbContexts;
 using Udap.Server.Options;
 using UdapDb;
 
@@ -29,22 +30,24 @@ var connectionString = builder.Configuration.GetConnectionString(connStrName);
 
 builder.Services.AddSingleton(new UdapConfigurationStoreOptions());
 
+
 builder.Services.AddUdapDbContext(options =>
 {
-    options.UdapDbContext = db => db.UseNpgsql(connStrName,
-        sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+    options.UdapDbContext = db => db
+        .UseNpgsql(connStrName, sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
 });
 
 
-builder.Services.AddOperationalDbContext(options =>
+builder.Services.AddOperationalDbContext<NpgsqlPersistedGrantDbContext>(options =>
 {
-    options.ConfigureDbContext = db => db.UseNpgsql(connectionString,
-        sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+    options.ConfigureDbContext = db => db
+        .UseNpgsql(connectionString, sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
 });
-builder.Services.AddConfigurationDbContext(options =>
+
+builder.Services.AddConfigurationDbContext<NpgsqlConfigurationDbContext>(options =>
 {
-    options.ConfigureDbContext = db => db.UseNpgsql(connectionString,
-        sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+    options.ConfigureDbContext = db => db
+        .UseNpgsql(connectionString, sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
 });
 
 

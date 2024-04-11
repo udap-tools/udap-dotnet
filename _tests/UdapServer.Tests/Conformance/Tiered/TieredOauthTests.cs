@@ -79,7 +79,8 @@ public class TieredOauthTests
                 ServerSupport = ServerSupport.Hl7SecurityIG,
                 // DefaultUserScopes = "udap",
                 // DefaultSystemScopes = "udap"
-                ForceStateParamOnAuthorizationCode = true //false (default)
+                ForceStateParamOnAuthorizationCode = true, //false (default)
+                RequireConsent = false
             });
 
             services.AddSingleton<IOptionsMonitor<UdapClientOptions>>(new OptionsMonitorForTests<UdapClientOptions>(
@@ -238,7 +239,8 @@ public class TieredOauthTests
                 DefaultUserScopes = "udap",
                 DefaultSystemScopes = "udap",
                 // ForceStateParamOnAuthorizationCode = false (default)
-                AlwaysIncludeUserClaimsInIdToken = true
+                AlwaysIncludeUserClaimsInIdToken = true,
+                RequireConsent = false
             });
 
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
@@ -322,7 +324,8 @@ public class TieredOauthTests
                 DefaultUserScopes = "udap",
                 DefaultSystemScopes = "udap",
                 // ForceStateParamOnAuthorizationCode = false (default)
-                AlwaysIncludeUserClaimsInIdToken = true
+                AlwaysIncludeUserClaimsInIdToken = true,
+                RequireConsent = false
             });
 
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore

@@ -9,6 +9,7 @@
 
 using AspNetCoreRateLimit;
 using Duende.IdentityServer;
+using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Stores;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -73,6 +74,7 @@ internal static class HostingExtensions
                     options.ServerSupport = udapServerOptions.ServerSupport;
                     options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
                     options.LogoRequired = udapServerOptions.LogoRequired;
+                    options.RequireConsent = udapServerOptions.RequireConsent;
                 },
                 // udapClientOptions =>
                 // {
@@ -107,7 +109,7 @@ internal static class HostingExtensions
         builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
 
 
-        builder.Services.AddIdentityServer(options =>
+        var identityServer = builder.Services.AddIdentityServer(options =>
             {
                 // https://docs.duendesoftware.com/identityserver/v6/fundamentals/resources/api_scopes#authorization-based-on-scopes
                 options.EmitStaticAudienceClaim = true;
@@ -115,50 +117,61 @@ internal static class HostingExtensions
                 options.UserInteraction.LogoutUrl = "/udapaccount/logout";
                 // options.KeyManagement.Enabled = false;
                 options.InputLengthRestrictions.Scope = 7000;
-            })
+            });
             // .AddSigningCredential(new X509Certificate2("./CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test"), UdapConstants.SupportedAlgorithm.RS256)
             // .AddSigningCredential(new X509Certificate2("./CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test"), UdapConstants.SupportedAlgorithm.RS384)
 
-            .AddConfigurationStore(options =>
-                _ = provider switch
-                {
-                    "Sqlite" => options.ConfigureDbContext = b =>
-                        b.UseSqlite(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+            if (provider == "Pgsql")
+            {
+                identityServer
+                    .AddConfigurationStore<NpgsqlConfigurationDbContext>(options =>
+                        options.ConfigureDbContext = b =>
+                            b.UseNpgsql(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName))
+                    )
+                    .AddOperationalStore<NpgsqlPersistedGrantDbContext>(options =>
+                        options.ConfigureDbContext = b =>
+                            b.UseNpgsql(connectionString,
+                                dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName))
+                    );
+            }
+            else
+            {
+                identityServer
+                    .AddConfigurationStore<ConfigurationDbContext>(options =>
+                        _ = provider switch
+                        {
+                            "Sqlite" => options.ConfigureDbContext = b =>
+                                b.UseSqlite(connectionString,
+                                    dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
-                    "SqlServer" => options.ConfigureDbContext = b =>
-                        b.UseSqlServer(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                            "SqlServer" => options.ConfigureDbContext = b =>
+                                b.UseSqlServer(connectionString,
+                                    dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
-                    "Pgsql" => options.ConfigureDbContext = b =>
-                        b.UseNpgsql(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                            _ => throw new Exception($"Unsupported provider: {provider}")
+                        })
+                    .AddOperationalStore<PersistedGrantDbContext>(options =>
+                        _ = provider switch
+                        {
+                            "Sqlite" => options.ConfigureDbContext = b =>
+                                b.UseSqlite(connectionString,
+                                    dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
-                    _ => throw new Exception($"Unsupported provider: {provider}")
-                })
-            .AddOperationalStore(options =>
-                _ = provider switch
-                {
-                    "Sqlite" => options.ConfigureDbContext = b =>
-                        b.UseSqlite(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                            "SqlServer" => options.ConfigureDbContext = b =>
+                                b.UseSqlServer(connectionString,
+                                    dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
 
-                    "SqlServer" => options.ConfigureDbContext = b =>
-                        b.UseSqlServer(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
+                            _ => throw new Exception($"Unsupported provider: {provider}")
+                        });
+            }
 
-                    "Pgsql" => options.ConfigureDbContext = b =>
-                        b.UseNpgsql(connectionString,
-                            dbOpts => dbOpts.MigrationsAssembly(typeof(Program).Assembly.FullName)),
-
-                    _ => throw new Exception($"Unsupported provider: {provider}")
-                })
-
-            .AddResourceStore<ResourceStore>()
-            .AddClientStore<ClientStore>()
-            //TODO remove
-            .AddTestUsers(TestUsers.Users);
-            // .AddIdentityProviderStore<UdapIdentityProviderStore>();  // last to register wins. Uhg!
+            identityServer
+                .AddResourceStore<ResourceStore>()
+                .AddClientStore<ClientStore>()
+                //TODO remove
+                .AddTestUsers(TestUsers.Users);
+                // .AddIdentityProviderStore<UdapIdentityProviderStore>();  // last to register wins. Uhg!
 
         //
         // Don't cache in this example project.  It can hide bugs such as the dynamic UDAP Tiered OAuth Provider

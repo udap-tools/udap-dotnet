@@ -285,7 +285,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         {
             //TODO: Maybe inject a component to generate the clientID so a user can use their own technique.
             ClientId = CryptoRandom.CreateUniqueId(),
-            AlwaysIncludeUserClaimsInIdToken = _serverSettings.AlwaysIncludeUserClaimsInIdToken
+            AlwaysIncludeUserClaimsInIdToken = _serverSettings.AlwaysIncludeUserClaimsInIdToken,
+            RequireConsent = _serverSettings.RequireConsent
         };
 
         _logger.LogDebug($"Validating chain for ClientId: {client.ClientId}. x5c {jwtHeader.X5c}");
@@ -380,14 +381,18 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //
         if (client.AllowedGrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
         {
+            var (successFlag, errorResult) = await ValidateLogoUri(document);
+
             if (_serverSettings.LogoRequired)
             {
-                var (successFlag, errorResult) = await ValidateLogoUri(document);
                 if (!successFlag)
                 {
                     return errorResult!;
                 }
+            }
 
+            if (successFlag)
+            {
                 client.LogoUri = document.LogoUri;
             }
 

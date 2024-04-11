@@ -17,7 +17,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.1")
+                .HasDefaultSchema("udap")
+                .HasAnnotation("ProductVersion", "8.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -26,169 +27,223 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AbsoluteRefreshTokenLifetime")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("absolute_refresh_token_lifetime");
 
                     b.Property<int>("AccessTokenLifetime")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("access_token_lifetime");
 
                     b.Property<int>("AccessTokenType")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("access_token_type");
 
                     b.Property<bool>("AllowAccessTokensViaBrowser")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_access_tokens_via_browser");
 
                     b.Property<bool>("AllowOfflineAccess")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_offline_access");
 
                     b.Property<bool>("AllowPlainTextPkce")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_plain_text_pkce");
 
                     b.Property<bool>("AllowRememberConsent")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_remember_consent");
 
                     b.Property<string>("AllowedIdentityTokenSigningAlgorithms")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("allowed_identity_token_signing_algorithms");
 
                     b.Property<bool>("AlwaysIncludeUserClaimsInIdToken")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("always_include_user_claims_in_id_token");
 
                     b.Property<bool>("AlwaysSendClientClaims")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("always_send_client_claims");
 
                     b.Property<int>("AuthorizationCodeLifetime")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("authorization_code_lifetime");
 
                     b.Property<bool>("BackChannelLogoutSessionRequired")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("back_channel_logout_session_required");
 
                     b.Property<string>("BackChannelLogoutUri")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("back_channel_logout_uri");
 
                     b.Property<int?>("CibaLifetime")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("ciba_lifetime");
 
                     b.Property<string>("ClientClaimsPrefix")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("client_claims_prefix");
 
                     b.Property<string>("ClientId")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("client_id");
 
                     b.Property<string>("ClientName")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("client_name");
 
                     b.Property<string>("ClientUri")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("client_uri");
 
                     b.Property<int?>("ConsentLifetime")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("consent_lifetime");
 
                     b.Property<bool?>("CoordinateLifetimeWithUserSession")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("coordinate_lifetime_with_user_session");
 
                     b.Property<DateTime>("Created")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created");
 
                     b.Property<TimeSpan>("DPoPClockSkew")
-                        .HasColumnType("interval");
+                        .HasColumnType("interval")
+                        .HasColumnName("dpo_pclock_skew");
 
                     b.Property<int>("DPoPValidationMode")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("dpo_pvalidation_mode");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("description");
 
                     b.Property<int>("DeviceCodeLifetime")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("device_code_lifetime");
 
                     b.Property<bool>("EnableLocalLogin")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("enable_local_login");
 
                     b.Property<bool>("Enabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
 
                     b.Property<bool>("FrontChannelLogoutSessionRequired")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("front_channel_logout_session_required");
 
                     b.Property<string>("FrontChannelLogoutUri")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("front_channel_logout_uri");
 
                     b.Property<int>("IdentityTokenLifetime")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("identity_token_lifetime");
 
                     b.Property<bool>("IncludeJwtId")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("include_jwt_id");
 
                     b.Property<string>("InitiateLoginUri")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("initiate_login_uri");
 
                     b.Property<DateTime?>("LastAccessed")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_accessed");
 
                     b.Property<string>("LogoUri")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("logo_uri");
 
                     b.Property<bool>("NonEditable")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("non_editable");
 
                     b.Property<string>("PairWiseSubjectSalt")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("pair_wise_subject_salt");
 
                     b.Property<int?>("PollingInterval")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("polling_interval");
 
                     b.Property<string>("ProtocolType")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("protocol_type");
 
                     b.Property<int?>("PushedAuthorizationLifetime")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("pushed_authorization_lifetime");
 
                     b.Property<int>("RefreshTokenExpiration")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("refresh_token_expiration");
 
                     b.Property<int>("RefreshTokenUsage")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("refresh_token_usage");
 
                     b.Property<bool>("RequireClientSecret")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("require_client_secret");
 
                     b.Property<bool>("RequireConsent")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("require_consent");
 
                     b.Property<bool>("RequireDPoP")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("require_dpo_p");
 
                     b.Property<bool>("RequirePkce")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("require_pkce");
 
                     b.Property<bool>("RequirePushedAuthorization")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("require_pushed_authorization");
 
                     b.Property<bool>("RequireRequestObject")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("require_request_object");
 
                     b.Property<int>("SlidingRefreshTokenLifetime")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("sliding_refresh_token_lifetime");
 
                     b.Property<bool>("UpdateAccessTokenClaimsOnRefresh")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("update_access_token_claims_on_refresh");
 
                     b.Property<DateTime?>("Updated")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated");
 
                     b.Property<string>("UserCodeType")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("user_code_type");
 
                     b.Property<int?>("UserSsoLifetime")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("user_sso_lifetime");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_clients");
 
-                    b.ToTable("Clients", null, t =>
+                    b.ToTable("clients", "udap", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -198,24 +253,30 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("client_id");
 
                     b.Property<string>("Type")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("type");
 
                     b.Property<string>("Value")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("value");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_client_claims");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("ix_client_claims_client_id");
 
-                    b.ToTable("ClientClaims", null, t =>
+                    b.ToTable("client_claims", "udap", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -225,21 +286,26 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("client_id");
 
                     b.Property<string>("Origin")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("origin");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_client_cors_origins");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("ix_client_cors_origins_client_id");
 
-                    b.ToTable("ClientCorsOrigins", null, t =>
+                    b.ToTable("client_cors_origins", "udap", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -249,21 +315,26 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("client_id");
 
                     b.Property<string>("GrantType")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("grant_type");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_client_grant_types");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("ix_client_grant_types_client_id");
 
-                    b.ToTable("ClientGrantTypes", null, t =>
+                    b.ToTable("client_grant_types", "udap", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -273,21 +344,26 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("client_id");
 
                     b.Property<string>("Provider")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("provider");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_client_id_prestrictions");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("ix_client_id_prestrictions_client_id");
 
-                    b.ToTable("ClientIdPRestrictions", null, t =>
+                    b.ToTable("client_id_prestrictions", "udap", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -297,21 +373,26 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("client_id");
 
                     b.Property<string>("PostLogoutRedirectUri")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("post_logout_redirect_uri");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_client_post_logout_redirect_uris");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("ix_client_post_logout_redirect_uris_client_id");
 
-                    b.ToTable("ClientPostLogoutRedirectUris", null, t =>
+                    b.ToTable("client_post_logout_redirect_uris", "udap", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -321,24 +402,30 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("client_id");
 
                     b.Property<string>("Key")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("key");
 
                     b.Property<string>("Value")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("value");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_client_properties");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("ix_client_properties_client_id");
 
-                    b.ToTable("ClientProperties", null, t =>
+                    b.ToTable("client_properties", "udap", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -348,21 +435,26 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("client_id");
 
                     b.Property<string>("RedirectUri")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("redirect_uri");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_client_redirect_uris");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("ix_client_redirect_uris_client_id");
 
-                    b.ToTable("ClientRedirectUris", null, t =>
+                    b.ToTable("client_redirect_uris", "udap", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -372,21 +464,26 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("client_id");
 
                     b.Property<string>("Scope")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("scope");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_client_scopes");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("ix_client_scopes_client_id");
 
-                    b.ToTable("ClientScopes", null, t =>
+                    b.ToTable("client_scopes", "udap", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -396,33 +493,42 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("ClientId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("client_id");
 
                     b.Property<DateTime>("Created")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("description");
 
                     b.Property<DateTime?>("Expiration")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expiration");
 
                     b.Property<string>("Type")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("type");
 
                     b.Property<string>("Value")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("value");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_client_secrets");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("ClientId")
+                        .HasDatabaseName("ix_client_secrets_client_id");
 
-                    b.ToTable("ClientSecrets", null, t =>
+                    b.ToTable("client_secrets", "udap", t =>
                         {
                             t.ExcludeFromMigrations();
                         });
@@ -432,217 +538,269 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("FriendlyName")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("friendly_name");
 
                     b.Property<string>("Xml")
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("xml");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_data_protection_keys");
 
-                    b.ToTable("DataProtectionKeys");
+                    b.ToTable("data_protection_keys", "udap");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.Anchor", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("BeginDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("begin_date");
 
                     b.Property<int>("CommunityId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("community_id");
 
                     b.Property<bool>("Enabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("end_date");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("name");
 
                     b.Property<string>("Thumbprint")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("thumbprint");
 
                     b.Property<string>("X509Certificate")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("x509_certificate");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_udap_anchors");
 
-                    b.HasIndex("CommunityId");
+                    b.HasIndex("CommunityId")
+                        .HasDatabaseName("ix_udap_anchors_community_id");
 
-                    b.ToTable("UdapAnchors", (string)null);
+                    b.ToTable("udap_anchors", "udap");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.AnchorCertification", b =>
                 {
                     b.Property<int>("AnchorId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("anchor_id");
 
                     b.Property<int>("CertificationId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("certification_id");
 
-                    b.HasKey("AnchorId", "CertificationId");
+                    b.HasKey("AnchorId", "CertificationId")
+                        .HasName("pk_udap_anchor_certification");
 
-                    b.HasIndex("CertificationId");
+                    b.HasIndex("CertificationId")
+                        .HasDatabaseName("ix_udap_anchor_certification_certification_id");
 
-                    b.ToTable("UdapAnchorCertification", (string)null);
+                    b.ToTable("udap_anchor_certification", "udap");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.Certification", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int?>("CommunityId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("community_id");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_udap_certifications");
 
-                    b.HasIndex("CommunityId");
+                    b.HasIndex("CommunityId")
+                        .HasDatabaseName("ix_udap_certifications_community_id");
 
-                    b.ToTable("UdapCertifications", (string)null);
+                    b.ToTable("udap_certifications", "udap");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.Community", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Default")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("default");
 
                     b.Property<bool>("Enabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_udap_communities");
 
-                    b.ToTable("UdapCommunities", (string)null);
+                    b.ToTable("udap_communities", "udap");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.CommunityCertification", b =>
                 {
                     b.Property<int>("CommunityId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("community_id");
 
                     b.Property<int>("CertificationId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("certification_id");
 
-                    b.HasKey("CommunityId", "CertificationId");
+                    b.HasKey("CommunityId", "CertificationId")
+                        .HasName("pk_udap_community_certification");
 
-                    b.HasIndex("CertificationId");
+                    b.HasIndex("CertificationId")
+                        .HasDatabaseName("ix_udap_community_certification_certification_id");
 
-                    b.ToTable("UdapCommunityCertification", (string)null);
+                    b.ToTable("udap_community_certification", "udap");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.Intermediate", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("AnchorId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("anchor_id");
 
                     b.Property<DateTime>("BeginDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("begin_date");
 
                     b.Property<bool>("Enabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("end_date");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("name");
 
                     b.Property<string>("Thumbprint")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("thumbprint");
 
                     b.Property<string>("X509Certificate")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("x509_certificate");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_udap_intermediate_certificates");
 
-                    b.HasIndex("AnchorId");
+                    b.HasIndex("AnchorId")
+                        .HasDatabaseName("ix_udap_intermediate_certificates_anchor_id");
 
-                    b.ToTable("UdapIntermediateCertificates", (string)null);
+                    b.ToTable("udap_intermediate_certificates", "udap");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.TieredClient", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ClientId")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("client_id");
 
                     b.Property<string>("ClientName")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("client_name");
 
                     b.Property<string>("ClientUriSan")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("client_uri_san");
 
                     b.Property<int>("CommunityId")
-                        .HasColumnType("integer");
+                        .HasColumnType("integer")
+                        .HasColumnName("community_id");
 
                     b.Property<bool>("Enabled")
-                        .HasColumnType("boolean");
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled");
 
                     b.Property<string>("IdPBaseUrl")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("id_pbase_url");
 
                     b.Property<string>("RedirectUri")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("redirect_uri");
 
                     b.Property<string>("TokenEndpoint")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("text")
+                        .HasColumnName("token_endpoint");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_tiered_clients");
 
-                    b.ToTable("TieredClients");
+                    b.ToTable("tiered_clients", "udap");
                 });
 
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ClientClaim", b =>
@@ -651,7 +809,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("Claims")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_client_claims_clients_client_id");
 
                     b.Navigation("Client");
                 });
@@ -662,7 +821,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("AllowedCorsOrigins")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_client_cors_origins_clients_client_id");
 
                     b.Navigation("Client");
                 });
@@ -673,7 +833,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("AllowedGrantTypes")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_client_grant_types_clients_client_id");
 
                     b.Navigation("Client");
                 });
@@ -684,7 +845,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("IdentityProviderRestrictions")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_client_id_prestrictions_clients_client_id");
 
                     b.Navigation("Client");
                 });
@@ -695,7 +857,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("PostLogoutRedirectUris")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_client_post_logout_redirect_uris_clients_client_id");
 
                     b.Navigation("Client");
                 });
@@ -706,7 +869,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("Properties")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_client_properties_clients_client_id");
 
                     b.Navigation("Client");
                 });
@@ -717,7 +881,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("RedirectUris")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_client_redirect_uris_clients_client_id");
 
                     b.Navigation("Client");
                 });
@@ -728,7 +893,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("AllowedScopes")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_client_scopes_clients_client_id");
 
                     b.Navigation("Client");
                 });
@@ -739,7 +905,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("ClientSecrets")
                         .HasForeignKey("ClientId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_client_secrets_clients_client_id");
 
                     b.Navigation("Client");
                 });
@@ -751,7 +918,7 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .HasForeignKey("CommunityId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("FK_Anchor_Communities");
+                        .HasConstraintName("fk_anchor_communities");
 
                     b.Navigation("Community");
                 });
@@ -762,13 +929,13 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("AnchorCertifications")
                         .HasForeignKey("AnchorId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_AnchorCertification_Anchor");
+                        .HasConstraintName("fk_anchor_certification_anchor");
 
                     b.HasOne("Udap.Server.Entities.Certification", "Certification")
                         .WithMany("AnchorCertifications")
                         .HasForeignKey("CertificationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_AnchorCertification_Certification");
+                        .HasConstraintName("fk_anchor_certification_certification");
 
                     b.Navigation("Anchor");
 
@@ -779,7 +946,8 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                 {
                     b.HasOne("Udap.Server.Entities.Community", null)
                         .WithMany("Certifications")
-                        .HasForeignKey("CommunityId");
+                        .HasForeignKey("CommunityId")
+                        .HasConstraintName("fk_udap_certifications_udap_communities_community_id");
                 });
 
             modelBuilder.Entity("Udap.Server.Entities.CommunityCertification", b =>
@@ -788,12 +956,12 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("CommunityCertifications")
                         .HasForeignKey("CertificationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_CommunityCertification_Certification");
+                        .HasConstraintName("fk_community_certification_certification");
 
                     b.HasOne("Udap.Server.Entities.Community", "Community")
                         .WithMany("CommunityCertifications")
                         .HasForeignKey("CommunityId")
-                        .HasConstraintName("FK_CommunityCertification_Community");
+                        .HasConstraintName("fk_community_certification_community");
 
                     b.Navigation("Certification");
 
@@ -806,7 +974,7 @@ namespace UdapDb.Postgres.Migrations.UdapDb
                         .WithMany("Intermediates")
                         .HasForeignKey("AnchorId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .HasConstraintName("FK_IntermediateCertificate_Anchor");
+                        .HasConstraintName("fk_intermediate_certificate_anchor");
 
                     b.Navigation("Anchor");
                 });

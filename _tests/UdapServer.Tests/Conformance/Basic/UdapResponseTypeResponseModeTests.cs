@@ -57,7 +57,6 @@ public class UdapResponseTypeResponseModeTests
         {
             s.AddSingleton<ServerSettings>(new ServerSettings
             {
-                ServerSupport = ServerSupport.Hl7SecurityIG,
                 DefaultUserScopes = "user/*.read",
                 DefaultSystemScopes = "system/*.read",
                 ForceStateParamOnAuthorizationCode = true,

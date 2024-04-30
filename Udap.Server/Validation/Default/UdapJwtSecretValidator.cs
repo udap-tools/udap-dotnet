@@ -19,6 +19,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Model;
 using Udap.Server.Configuration;
 using Udap.Server.Extensions;
 using Udap.Server.Storage.Stores;
@@ -64,7 +65,6 @@ public class UdapJwtSecretValidator : ISecretValidator
     }
 
 
-    //Todo: Write replay unit tests
     //Todo: Write workflow diagrams to describe this process
 
     /// <summary>Validates a secret</summary>
@@ -107,11 +107,11 @@ public class UdapJwtSecretValidator : ISecretValidator
 
         if (certChainList != null && !certChainList.Any())
         {
-            _logger.LogError("There are no anchors available to validate client assertion.");
+            _logger.LogError($"There are no anchors available to validate client assertion for cient_id: {parsedSecret.Id}");
 
             return fail;
         }
-
+        
         var validAudiences = new[]
         {
                 // token endpoint URL
@@ -122,11 +122,10 @@ public class UdapJwtSecretValidator : ISecretValidator
         }.Distinct();
 
         var tokenHandler = new JsonWebTokenHandler() { MaximumTokenSizeInBytes = _options.InputLengthRestrictions.Jwt };
-        var jsonWebToken = tokenHandler.ReadJsonWebToken(jwtTokenString);
-
+        
         var tokenValidationParameters = new TokenValidationParameters
         {
-            IssuerSigningKeys = await parsedSecret.GetUdapKeysAsync(),
+            IssuerSigningKeys = parsedSecret.GetUdapKeys(),
             ValidateIssuerSigningKey = true,
 
             ValidIssuer = parsedSecret.Id,
@@ -138,47 +137,43 @@ public class UdapJwtSecretValidator : ISecretValidator
             RequireSignedTokens = true,
             RequireExpirationTime = true,
 
-            ValidAlgorithms = new[] { jsonWebToken!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) },
+            ValidAlgorithms =  new[] { 
+                UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384,
+                UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384 },
 
             ClockSkew = TimeSpan.FromMinutes(5),
 
-            // ValidateSignatureLast = true
+            ValidateSignatureLast = true
         };
-
-        
-        if (_serverSettings.ServerSupport == ServerSupport.UDAP)
-        {
-            
-            tokenValidationParameters.IssuerValidator = (issuer, token, parameters) =>
-            {
-                if (issuer != null && jsonWebToken.Claims.FirstOrDefault(c => c.Issuer == issuer) != null)
-                {
-                    return issuer;
-                }
-
-                return null;
-            };
-        }
-        
         
         var result = tokenHandler.ValidateToken(jwtTokenString, tokenValidationParameters);
         
         if (!result.IsValid)
         {
             _logger.LogError(result.Exception, "JWT token validation error");
-            
+
+            var jsonWebToken = tokenHandler.ReadJsonWebToken(jwtTokenString);
+
+            if (!jsonWebToken!.TryGetHeaderValue(JwtHeaderParameterNames.Alg, out string _))
+            {
+                _logger.LogError($"Missing jwt x5c claim in header for client_id: {parsedSecret.Id}");
+            }
+
+            if (!jsonWebToken!.TryGetHeaderValue(JwtHeaderParameterNames.X5c, out string _))
+            {
+                _logger.LogError($"Missing jwt x5c claim in header for client_id: {parsedSecret.Id}");
+            }
+
             return fail;
         }
 
         var jwtToken = (JsonWebToken)result.SecurityToken;
 
-        if (_serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG)
+        
+        if (jwtToken.Subject != jwtToken.Issuer)
         {
-            if (jwtToken.Subject != jwtToken.Issuer)
-            {
-                _logger.LogError("Both 'sub' and 'iss' in the client assertion token must have a value of client_id.");
-                return fail;
-            }
+            _logger.LogError("Both 'sub' and 'iss' in the client assertion token must have a value of client_id.");
+            return fail;
         }
             
 

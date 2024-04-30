@@ -43,7 +43,7 @@ internal class UdapScopeEnrichmentMiddleware
         IClientStore clients,
         IIdentityServerInteractionService interactionService)
     {
-        if (_udapServerOptions.ServerSupport == ServerSupport.UDAP &&
+        if (
             context.Request.Path.Value != null &&
             context.Request.Path.Value.Contains(Constants.ProtocolRoutePaths.Token))
         {

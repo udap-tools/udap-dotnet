@@ -37,16 +37,15 @@
     <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Condition="'$(GCPDeploy)' == 'true'"> -->
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
     <PackageReference Include="Udap.Server" Version="0.3.37.0" />
     <PackageReference Include="Udap.UI" Version="0.3.37.0" />
   </ItemGroup>
 
-  <!-- <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' "> -->
-  <!--   <ProjectReference Include="../../Udap.Server/Udap.Server.csproj" /> -->
-  <!--   <ProjectReference Include="../../Udap.UI/Udap.UI.csproj" /> -->
-  <!-- </ItemGroup> -->
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
+    <ProjectReference Include="../../Udap.Server/Udap.Server.csproj" />
+    <ProjectReference Include="../../Udap.UI/Udap.UI.csproj" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Update="nuget.config">

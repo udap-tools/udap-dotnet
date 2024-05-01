@@ -22,6 +22,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net.Http;
+using Hl7.Fhir.Utility;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
@@ -126,7 +127,7 @@ public static class ServiceCollectionExtensions
     {
         EnsureMvcControllerUnloads(app);
 
-        app.MapGet($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}",
+        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}",
                 async (
                     [FromServices] UdapMetaDataEndpoint endpoint,
                     HttpContext httpContext,
@@ -156,7 +157,7 @@ public static class ServiceCollectionExtensions
     public static IApplicationBuilder UseUdapMetadataServer(this IApplicationBuilder app, string? prefixRoute = null)
     {
 
-        app.Map($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}", path =>
+        app.Map($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}", path =>
         {
             path.Run(async ctx =>
             {

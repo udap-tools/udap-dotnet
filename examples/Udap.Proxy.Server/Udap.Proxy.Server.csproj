@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <!-- <UserSecretsId>e695d088-90a4-4c0e-95da-9bb9610f64ec</UserSecretsId> -->
+    <UserSecretsId>e695d088-90a4-4c0e-95da-9bb9610f64ec</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>

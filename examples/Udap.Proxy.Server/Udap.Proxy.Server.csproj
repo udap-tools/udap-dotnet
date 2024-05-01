@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>e695d088-90a4-4c0e-95da-9bb9610f64ec</UserSecretsId>
+    <!-- <UserSecretsId>e695d088-90a4-4c0e-95da-9bb9610f64ec</UserSecretsId> -->
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
@@ -17,7 +17,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
     <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.5.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
+    <PackageReference Include="Npgsql" Version="8.0.2" />
     <PackageReference Include="Yarp.ReverseProxy" Version="2.1.0" />
+    <PackageReference Include="ZiggyCreatures.FusionCache" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
@@ -74,6 +76,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\WeatherApiClient.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="host.docker.internal.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -11,8 +11,11 @@ using Hl7.Fhir.Rest;
 using Hl7.Fhir.Serialization;
 using Hl7.Fhir.Model;
 using System;
+using Microsoft.IdentityModel.JsonWebTokens;
 using ZiggyCreatures.Caching.Fusion;
 using Task = System.Threading.Tasks.Task;
+using System.IdentityModel.Tokens.Jwt;
+using Udap.Util.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -69,11 +72,26 @@ builder.Services.AddReverseProxy()
         {
             builderContext.AddRequestTransform(async context =>
             {
-                context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await ResolveAccessToken(builderContext.Route.Metadata));
+                var resolveAccessToken = await ResolveAccessToken(builderContext.Route.Metadata);
+                context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resolveAccessToken);
+                
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var jsonToken = tokenHandler.ReadJwtToken(context.HttpContext.Request.Headers.Authorization.ToString().Replace("Bearer", "").Trim());
+                var scopes = jsonToken?.Claims.Where(c => c.Type == "scope");
+                var iss = jsonToken.Claims.Where(c => c.Type == "iss");
+                // var sub = jsonToken.Claims.Where(c => c.Type == "sub"); // figure out what subject should be for GCP
 
                 // Google Cloud way of passing scopes to the Fhir Server
-                // context.ProxyRequest.Headers.Add("X-Authorization-Scope", "user/Patient.read launch/patient");
-                // context.ProxyRequest.Headers.Add("X-Authorization-Issuer", "securedcontrols.net");       
+                var spaceSeparatedString = scopes?.Select(s => s.Value)
+                    .Where(s => s != "udap") //gcp doesn't know udap  Need better filter to block unknown scopes
+                    .ToSpaceSeparatedString();
+                //logger
+                Console.WriteLine(spaceSeparatedString);
+
+                context.ProxyRequest.Headers.Add("X-Authorization-Scope", spaceSeparatedString);
+                context.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault().Value);
+                // context.ProxyRequest.Headers.Add("X-Authorization-Subject", sub.SingleOrDefault().Value);
             });
         }
 

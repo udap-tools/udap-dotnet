@@ -136,13 +136,13 @@ public static class ServiceCollectionExtensions
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
 
-        app.MapGet($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}/communities",
+        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}/communities",
                 ([FromServices] UdapMetaDataEndpoint endpoint) => endpoint.GetCommunities())
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
 
-        app.MapGet($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}/communities/ashtml",
+        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}/communities/ashtml",
                 (
                     [FromServices] UdapMetaDataEndpoint endpoint,
                     HttpContext httpContext) => endpoint.GetCommunitiesAsHtml(httpContext))

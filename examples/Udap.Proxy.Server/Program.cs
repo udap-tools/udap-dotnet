@@ -15,6 +15,9 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using ZiggyCreatures.Caching.Fusion;
 using Task = System.Threading.Tasks.Task;
 using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Mvc;
+using Udap.Metadata.Server;
+using Udap.Model;
 using Udap.Util.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -76,22 +79,7 @@ builder.Services.AddReverseProxy()
                 context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resolveAccessToken);
                 
 
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var jsonToken = tokenHandler.ReadJwtToken(context.HttpContext.Request.Headers.Authorization.ToString().Replace("Bearer", "").Trim());
-                var scopes = jsonToken?.Claims.Where(c => c.Type == "scope");
-                var iss = jsonToken.Claims.Where(c => c.Type == "iss");
-                // var sub = jsonToken.Claims.Where(c => c.Type == "sub"); // figure out what subject should be for GCP
-
-                // Google Cloud way of passing scopes to the Fhir Server
-                var spaceSeparatedString = scopes?.Select(s => s.Value)
-                    .Where(s => s != "udap") //gcp doesn't know udap  Need better filter to block unknown scopes
-                    .ToSpaceSeparatedString();
-                //logger
-                Console.WriteLine(spaceSeparatedString);
-
-                context.ProxyRequest.Headers.Add("X-Authorization-Scope", spaceSeparatedString);
-                context.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault().Value);
-                // context.ProxyRequest.Headers.Add("X-Authorization-Subject", sub.SingleOrDefault().Value);
+                SetProxyHeaders(context);
             });
         }
 
@@ -116,23 +104,20 @@ builder.Services.AddReverseProxy()
                 responseContext.SuppressResponseBody = true;
                 var cache = responseContext.HttpContext.RequestServices.GetRequiredService<IFusionCache>();
                 var bytes = await cache.GetOrSetAsync("metadata", _ => GetFhirMetadata(responseContext, builder));
-
+                
                 // Change Content-Length to match the modified body, or remove it.
                 responseContext.HttpContext.Response.ContentLength = bytes?.Length;
+                
                 // Response headers are copied before transforms are invoked, update any needed headers on the HttpContext.Response.
                 await responseContext.HttpContext.Response.Body.WriteAsync(bytes);
             }
-        });
-
-        builderContext.AddResponseTransform(async responseContext =>
-        {
-            if (responseContext.HttpContext.Request.Path != "/fhir/r4/metadata" && responseContext.HttpContext.Request.Path.StartsWithSegments("/fhir/r4/"));
+            else if (responseContext.HttpContext.Request.Path.StartsWithSegments("/fhir/r4/"))
             {
+                responseContext.SuppressResponseBody = true;
                 var stream = await responseContext.ProxyResponse!.Content.ReadAsStreamAsync();
                 using var reader = new StreamReader(stream);
                 // TODO: size limits, timeouts
                 var body = await reader.ReadToEndAsync();
-                responseContext.SuppressResponseBody = true;
 
                 var finalBytes = Encoding.UTF8.GetBytes(body.Replace($"\"url\": \"{builder.Configuration["FhirUrlProxy:Back"]}",
                     $"\"url\": \"{builder.Configuration["FhirUrlProxy:Front"]}"));
@@ -236,4 +221,36 @@ async Task<byte[]?> GetFhirMetadata(ResponseTransformContext responseTransformCo
     }
 
     return null;
+}
+
+void SetProxyHeaders(RequestTransformContext requestTransformContext)
+{
+    if (!requestTransformContext.HttpContext.Request.Headers.Authorization.Any())
+    {
+        return;
+    }
+
+    var bearerToken = requestTransformContext.HttpContext.Request.Headers.Authorization.First();
+    
+    if (bearerToken == null)
+    {
+        return;
+    }
+    
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var jsonToken = tokenHandler.ReadJwtToken(requestTransformContext.HttpContext.Request.Headers.Authorization.First()?.Replace("Bearer", "").Trim());
+    var scopes = jsonToken?.Claims.Where(c => c.Type == "scope");
+    var iss = jsonToken.Claims.Where(c => c.Type == "iss");
+    // var sub = jsonToken.Claims.Where(c => c.Type == "sub"); // figure out what subject should be for GCP
+
+    // Google Cloud way of passing scopes to the Fhir Server
+    var spaceSeparatedString = scopes?.Select(s => s.Value)
+        .Where(s => s != "udap") //gcp doesn't know udap  Need better filter to block unknown scopes
+        .ToSpaceSeparatedString();
+    //logger
+    Console.WriteLine(spaceSeparatedString);
+
+    requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Scope", spaceSeparatedString);
+    requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault().Value);
+    // context.ProxyRequest.Headers.Add("X-Authorization-Subject", sub.SingleOrDefault().Value);
 }

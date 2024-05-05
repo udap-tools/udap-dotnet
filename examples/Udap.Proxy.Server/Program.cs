@@ -78,7 +78,6 @@ builder.Services.AddReverseProxy()
                 var resolveAccessToken = await ResolveAccessToken(builderContext.Route.Metadata);
                 context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resolveAccessToken);
                 
-
                 SetProxyHeaders(context);
             });
         }
@@ -86,13 +85,15 @@ builder.Services.AddReverseProxy()
         // Use the default credentials.  Primary usage: running in Cloud Run under a specific service account
         if (builderContext.Route.Metadata != null && (builderContext.Route.Metadata.TryGetValue("ADC", out string? adc)))
         {
-            if (adc == "True")
+            if (adc.Equals("True", StringComparison.OrdinalIgnoreCase))
             {
                 builderContext.AddRequestTransform(async context =>
                 {
                     var googleCredentials = GoogleCredential.GetApplicationDefault();
                     string accessToken = await googleCredentials.UnderlyingCredential.GetAccessTokenForRequestAsync();
                     context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                    SetProxyHeaders(context);
                 });
             }
         }
@@ -237,7 +238,12 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
     {
         return;
     }
-    
+
+    foreach (var requestHeader in requestTransformContext.HttpContext.Request.Headers)
+    {
+        Console.WriteLine(requestHeader.Value);
+    }
+
     var tokenHandler = new JwtSecurityTokenHandler();
     var jsonToken = tokenHandler.ReadJwtToken(requestTransformContext.HttpContext.Request.Headers.Authorization.First()?.Replace("Bearer", "").Trim());
     var scopes = jsonToken?.Claims.Where(c => c.Type == "scope");
@@ -248,9 +254,7 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
     var spaceSeparatedString = scopes?.Select(s => s.Value)
         .Where(s => s != "udap") //gcp doesn't know udap  Need better filter to block unknown scopes
         .ToSpaceSeparatedString();
-    //logger
-    Console.WriteLine(spaceSeparatedString);
-
+    
     requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Scope", spaceSeparatedString);
     requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault().Value);
     // context.ProxyRequest.Headers.Add("X-Authorization-Subject", sub.SingleOrDefault().Value);

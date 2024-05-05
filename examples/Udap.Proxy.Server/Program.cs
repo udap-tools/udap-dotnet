@@ -111,7 +111,8 @@ builder.Services.AddReverseProxy()
                 // Response headers are copied before transforms are invoked, update any needed headers on the HttpContext.Response.
                 await responseContext.HttpContext.Response.Body.WriteAsync(bytes);
             }
-            else if (responseContext.HttpContext.Request.Path.StartsWithSegments("/fhir/r4/"))
+            else if (responseContext.HttpContext.Request.Path.HasValue && 
+                     responseContext.HttpContext.Request.Path.Value.StartsWith("/fhir/r4/", StringComparison.OrdinalIgnoreCase))
             {
                 responseContext.SuppressResponseBody = true;
                 var stream = await responseContext.ProxyResponse!.Content.ReadAsStreamAsync();
@@ -122,7 +123,7 @@ builder.Services.AddReverseProxy()
                 var finalBytes = Encoding.UTF8.GetBytes(body.Replace($"\"url\": \"{builder.Configuration["FhirUrlProxy:Back"]}",
                     $"\"url\": \"{builder.Configuration["FhirUrlProxy:Front"]}"));
                 responseContext.HttpContext.Response.ContentLength = finalBytes.Length;
-
+                
                 await responseContext.HttpContext.Response.Body.WriteAsync(finalBytes);
             }
         });

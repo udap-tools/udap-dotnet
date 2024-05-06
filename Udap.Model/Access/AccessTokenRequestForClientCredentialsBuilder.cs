@@ -91,21 +91,13 @@ public  class AccessTokenRequestForClientCredentialsBuilder
     }
 
     /// <summary>
-    /// Legacy refers to the current udap.org/UDAPTestTool behavior as documented in
-    /// udap.org profiles.  The HL7 Security IG has the following constraint to make it
-    /// more friendly with OIDC and SMART launch frameworks.
-    /// sub == iss == client_id
-    /// Where as the Legacy is the following behavior
-    /// sub == iis == SubAlt Name
+    /// Build an <see cref="UdapClientCredentialsTokenRequest"/>
     /// </summary>
-    /// <param name="legacy"></param>
     /// <param name="algorithm"></param>
     /// <returns></returns>
-    public UdapClientCredentialsTokenRequest Build(
-        bool legacy = false, 
-        string? algorithm = UdapConstants.SupportedAlgorithm.RS256)
+    public UdapClientCredentialsTokenRequest Build(string? algorithm = UdapConstants.SupportedAlgorithm.RS256)
     {
-        var clientAssertion = BuildClientAssertion(algorithm, legacy);
+        var clientAssertion = BuildClientAssertion(algorithm);
 
         return new UdapClientCredentialsTokenRequest
         {
@@ -122,34 +114,18 @@ public  class AccessTokenRequestForClientCredentialsBuilder
     }
     
 
-    private string BuildClientAssertion(string algorithm, bool legacy = false)
+    private string BuildClientAssertion(string algorithm)
     {
         JwtPayLoadExtension jwtPayload;
-
-        if (legacy)
-        {
-            //udap.org profile
-            jwtPayload = new JwtPayLoadExtension(
-                _certificate.GetNameInfo(X509NameType.UrlName,
-                    false), //TODO:: Let user pick the subject alt name.  Create will need extra param.
-                _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
-                _claims,
-                _now,
-                _now.AddMinutes(5)
-            );
-        }
-
-        else
-        {
-            //HL7 FHIR IG profile
-            jwtPayload = new JwtPayLoadExtension(
-                _clientId, //TODO:: Let user pick the subject alt name.  Create will need extra param.
-                _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
-                _claims,
-                _now,
-                _now.AddMinutes(5)
-            );
-        }
+        
+        //HL7 FHIR IG profile
+        jwtPayload = new JwtPayLoadExtension(
+            _clientId, //TODO:: Let user pick the subject alt name.  Create will need extra param.
+            _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
+            _claims,
+            _now,
+            _now.AddMinutes(5)
+        );
 
         if (_extensions != null)
         {

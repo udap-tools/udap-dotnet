@@ -16,10 +16,12 @@ using System.Text.Json;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using FluentAssertions.Common;
 using IdentityModel;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client.Client.Extensions;
 using Udap.Client.Configuration;
@@ -52,23 +54,22 @@ public class ScopeExpansionTests
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
 
-        _mockPipeline.OnPostConfigureServices += s =>
+        _mockPipeline.OnPostConfigureServices += services =>
         {
-            s.AddSingleton(new ServerSettings
+            services.AddSingleton(sp =>
             {
-                ServerSupport = ServerSupport.UDAP,
-                DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap",
-                RequireConsent = false
+                var serverSettings = sp.GetRequiredService<IOptions<ServerSettings>>().Value;
+                serverSettings.RequireConsent = false;
+                return serverSettings;
             });
 
-            s.AddSingleton(new UdapClientOptions
+            services.AddSingleton(new UdapClientOptions
             {
                 ClientName = "Mock Client",
                 Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
             });
-            
-            s.AddScoped<IScopeExpander, HL7SmartScopeExpander>();
+
+            services.AddScoped<IScopeExpander, HL7SmartScopeExpander>();
         };
 
         _mockPipeline.OnPreConfigureServices += (_, s) =>

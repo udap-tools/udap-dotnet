@@ -13,9 +13,9 @@ using Microsoft.Extensions.Configuration;
 namespace Udap.Server.Configuration;
 public class ServerSettings
 {
-    [JsonPropertyName("ServerSupport")]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public ServerSupport ServerSupport { get; set; }
+    // [JsonPropertyName("ServerSupport")]
+    // [JsonConverter(typeof(JsonStringEnumConverter))]
+    // public ServerSupport ServerSupport { get; set; }
 
     [JsonPropertyName("DefaultSystemScopes")]
     public string? DefaultSystemScopes { get; set; }
@@ -38,7 +38,7 @@ public class ServerSettings
     /// <summary>
     /// Indicate if the IdentityServer can act as a UDAP enabled IdP.
     /// </summary>
-    [JsonPropertyName("TieredIdp")] 
+    [JsonIgnore] 
     public bool TieredIdp { get; set; } = false;
 
     [JsonPropertyName("LogoRequired")]

@@ -8,8 +8,10 @@ using System.Text.Json;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using FluentAssertions.Common;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
@@ -37,17 +39,11 @@ public class HealthGorillaTests
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
 
-        _mockPipeline.OnPostConfigureServices += s =>
+        _mockPipeline.OnPostConfigureServices += services =>
         {
-            s.AddSingleton<ServerSettings>(new ServerSettings
-            {
-                ServerSupport = ServerSupport.UDAP,
-                DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap",
-                ForceStateParamOnAuthorizationCode = true
-            });
-
-            s.AddSingleton<UdapClientOptions>(new UdapClientOptions
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<ServerSettings>>().Value);
+            
+            services.AddSingleton<UdapClientOptions>(new UdapClientOptions
             {
                 ClientName = "Mock Client",
                 Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }

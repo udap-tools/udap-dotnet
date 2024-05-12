@@ -75,9 +75,6 @@ public class TieredOauthTests
         {
             services.AddSingleton(new ServerSettings
             {
-                ServerSupport = ServerSupport.Hl7SecurityIG,
-                // DefaultUserScopes = "udap",
-                // DefaultSystemScopes = "udap"
                 ForceStateParamOnAuthorizationCode = true, //false (default)
                 RequireConsent = false
             });
@@ -244,16 +241,19 @@ public class TieredOauthTests
     {
         _mockIdPPipeline.OnPostConfigureServices += services =>
         {
-            services.AddSingleton(new ServerSettings
-            {
-                ServerSupport = ServerSupport.UDAP,
-                DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap",
-                // ForceStateParamOnAuthorizationCode = false (default)
-                AlwaysIncludeUserClaimsInIdToken = true,
-                RequireConsent = false,
-                TieredIdp = true
-            });
+            services.AddSingleton(
+                sp =>
+                {
+                    var serverSettings = sp.GetService<IOptions<ServerSettings>>().Value; // must resolve to trigger the post config at TieredIdpServerSettings
+                    serverSettings.DefaultUserScopes = "udap";
+                    serverSettings.DefaultSystemScopes = "udap";
+                    // ForceStateParamOnAuthorizationCode = false (default)
+                    serverSettings.AlwaysIncludeUserClaimsInIdToken = true;
+                    serverSettings.RequireConsent = false;
+                    
+                    return serverSettings;
+                });
+           
 
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
@@ -330,15 +330,19 @@ public class TieredOauthTests
     {
         _mockIdPPipeline2.OnPostConfigureServices += services =>
         {
-            services.AddSingleton(new ServerSettings
-            {
-                ServerSupport = ServerSupport.UDAP,
-                DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap",
-                // ForceStateParamOnAuthorizationCode = false (default)
-                AlwaysIncludeUserClaimsInIdToken = true,
-                RequireConsent = false
-            });
+            services.AddSingleton(
+                sp =>
+                {
+                    var serverSettings = sp.GetService<IOptions<ServerSettings>>().Value;
+                    serverSettings.DefaultUserScopes = "udap";
+                    serverSettings.DefaultSystemScopes = "udap";
+                    // ForceStateParamOnAuthorizationCode = false (default)
+                    serverSettings.AlwaysIncludeUserClaimsInIdToken = true;
+                    serverSettings.RequireConsent = false;
+
+                    return serverSettings;
+                });
+            
 
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.

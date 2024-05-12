@@ -89,7 +89,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
     {
         using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
 
-        _logger.LogDebug($"Start client validation with Server Support Type {_serverSettings.ServerSupport}");
+        // _logger.LogDebug($"Start client validation with Server Support Type {_serverSettings.ServerSupport}");
 
 
         var tokenHandler = new JsonWebTokenHandler();
@@ -452,7 +452,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //////////////////////////////
         
         if (client.AllowedGrantTypes.Count != 0 && //Cancel Registration
-            _serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG && 
+            // _serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG && 
             (document.Scope == null || !document.Scope.Any()))
         {
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
@@ -474,30 +474,31 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //
         // Also there should be a better way to do this.  It will repeat many scope entries per client.
         //
-        if (_serverSettings.ServerSupport == ServerSupport.UDAP)
-        {
-            if (string.IsNullOrWhiteSpace(document.Scope))
-            {
-                IEnumerable<string>? scopes = null;
-
-                if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
-                {
-                    scopes = _serverSettings.DefaultSystemScopes?.FromSpaceSeparatedString();
-                }
-                else if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
-                {
-                    scopes = _serverSettings.DefaultUserScopes?.FromSpaceSeparatedString();
-                }
-
-                if (scopes != null)
-                {
-                    foreach (var scope in scopes)
-                    {
-                        client?.AllowedScopes.Add(scope);
-                    }
-                }
-            }
-        }
+        // TODO: Remove when we prove we no longer need legacy UDAP server support
+        // if (_serverSettings.ServerSupport == ServerSupport.UDAP)
+        // {
+        //     if (string.IsNullOrWhiteSpace(document.Scope))
+        //     {
+        //         IEnumerable<string>? scopes = null;
+        //
+        //         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
+        //         {
+        //             scopes = _serverSettings.DefaultSystemScopes?.FromSpaceSeparatedString();
+        //         }
+        //         else if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
+        //         {
+        //             scopes = _serverSettings.DefaultUserScopes?.FromSpaceSeparatedString();
+        //         }
+        //
+        //         if (scopes != null)
+        //         {
+        //             foreach (var scope in scopes)
+        //             {
+        //                 client?.AllowedScopes.Add(scope);
+        //             }
+        //         }
+        //     }
+        // }
         if (document.Scope != null && document.Any())
         {
             var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);

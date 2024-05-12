@@ -34,7 +34,13 @@ public class ServerSettings
     /// </summary>
     [JsonPropertyName("ForceStateParamOnAuthorizationCode")]
     public bool ForceStateParamOnAuthorizationCode { get; set; } = false;
-    
+
+    /// <summary>
+    /// Indicate if the IdentityServer can act as a UDAP enabled IdP.
+    /// </summary>
+    [JsonPropertyName("TieredIdp")] 
+    public bool TieredIdp { get; set; } = false;
+
     [JsonPropertyName("LogoRequired")]
     public bool LogoRequired { get; set; } = true;
 

@@ -88,10 +88,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         )
     {
         using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
-
-        // _logger.LogDebug($"Start client validation with Server Support Type {_serverSettings.ServerSupport}");
-
-
+        
         var tokenHandler = new JsonWebTokenHandler();
         var jsonWebToken = tokenHandler.ReadJsonWebToken(request.SoftwareStatement);
         var jwtHeader = JwtHeader.Base64UrlDeserialize(jsonWebToken.EncodedHeader);
@@ -452,53 +449,13 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //////////////////////////////
         
         if (client.AllowedGrantTypes.Count != 0 && //Cancel Registration
-            // _serverSettings.ServerSupport == ServerSupport.Hl7SecurityIG && 
             (document.Scope == null || !document.Scope.Any()))
         {
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 "scope is required"));
         }
-
-        // Enrich Scopes:  Todo: inject a ScopeEnricher
         
-        // TODO: Need a policy engine for various things.  UDAP ServerMode allows and empty scope during registration.
-        // So some kind of policy linked to maybe issued certificate certification and/or community or something
-        // There are a lot of choices left up to a community.  The HL7 ServerMode requires scopes to be sent during registration.
-        // This doesn't mean the problem is easier it just means  we could filter down during registration even if policy
-        // allowed for a broader list of scopes.
-        // Below I use ServerSettings from appsettings.  This basically says that server is either UDAP or HL7 mode.  Well
-        // sort of.  The code is only trying to pass udap.org tests and survive a HL7 connect-a-thon. By putting the logic in
-        // a policy engine we can have one server UDAP and Hl7 Mode or whatever the policy engine allows.  
-
-        //
-        // Also there should be a better way to do this.  It will repeat many scope entries per client.
-        //
-        // TODO: Remove when we prove we no longer need legacy UDAP server support
-        // if (_serverSettings.ServerSupport == ServerSupport.UDAP)
-        // {
-        //     if (string.IsNullOrWhiteSpace(document.Scope))
-        //     {
-        //         IEnumerable<string>? scopes = null;
-        //
-        //         if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.ClientCredentials))
-        //         {
-        //             scopes = _serverSettings.DefaultSystemScopes?.FromSpaceSeparatedString();
-        //         }
-        //         else if (document.GrantTypes != null && document.GrantTypes.Contains(OidcConstants.GrantTypes.AuthorizationCode))
-        //         {
-        //             scopes = _serverSettings.DefaultUserScopes?.FromSpaceSeparatedString();
-        //         }
-        //
-        //         if (scopes != null)
-        //         {
-        //             foreach (var scope in scopes)
-        //             {
-        //                 client?.AllowedScopes.Add(scope);
-        //             }
-        //         }
-        //     }
-        // }
         if (document.Scope != null && document.Any())
         {
             var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);

@@ -1336,17 +1336,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     }
 
 
-
-    //
-    // IDP Server must be running in ServerSupport mode of ServerSupport.UDAP for this to fail and pass the test.
-    // See part of test where getting Access Token
-    // var jwtPayload = new JwtPayload(
-    //    result.Issuer,
-    //
-    // vs normal 
-    //
-    // var jwtPayload = new JwtPayload(
-    //   result.ClientId,
     //
     // If you want Udap.Idp to run in UDAP mode the use "ASPNETCORE_ENVIRONMENT": "Production" to launch. Or
     // however you get the serer to pickup appsettings.Production.json

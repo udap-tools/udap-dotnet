@@ -17,7 +17,6 @@
       "environmentVariables": {
         "GCPDeploy": "false",
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ServerSettings:ServerSupport": "UDAP",
         "ServerSettings:DefaultSystemScopes": "udap system.cruds system/*.rs",
         "ServerSettings:DefaultUserScopes": "udap user.cruds",
         "ServerSettings:ForceStateParamOnAuthorizationCode": "true",
@@ -32,7 +31,6 @@
       "environmentVariables": {
         "GCPDeploy": "true",
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ServerSettings:ServerSupport": "UDAP",
         "ServerSettings:DefaultSystemScopes": "udap system.cruds",
         "ServerSettings:DefaultUserScopes": "udap user.cruds",
         "UdapIdpBaseUrl": "https://host.docker.internal:5002"

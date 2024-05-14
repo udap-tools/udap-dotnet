@@ -40,19 +40,18 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
     // we could add more builder methods
     //
 
-    public string Build(string? algorithm = UdapConstants.SupportedAlgorithm.RS256)
+    public string Build(string? algorithm = null)
     {
-        algorithm ??= UdapConstants.SupportedAlgorithm.RS256;
-
 #if NET5_0_OR_GREATER
         //
         // Short circuit to ECDSA
         //
         if (_certificate.GetECDsaPublicKey() != null)
         {
-            return BuildECDSA();
+            return BuildECDSA(algorithm);
         }
 #endif
+        algorithm ??= UdapConstants.SupportedAlgorithm.RS256;
         var securityKey = new X509SecurityKey(_certificate);
         var signingCredentials = new SigningCredentials(securityKey, algorithm);
 
@@ -75,11 +74,9 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
 
 #if NET5_0_OR_GREATER
 
-    public string BuildECDSA(string? algorithm = UdapConstants.SupportedAlgorithm.ES384)
+    public string BuildECDSA(string? algorithm = null)
     {
-
-        algorithm ??= UdapConstants.SupportedAlgorithm.ES384;
-
+        algorithm ??= UdapConstants.SupportedAlgorithm.ES256;
         var key = _certificate.GetECDsaPrivateKey();
         using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP384);
 

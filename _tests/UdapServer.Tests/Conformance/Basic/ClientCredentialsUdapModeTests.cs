@@ -7,15 +7,15 @@
 // */
 #endregion
 
+
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Duende.IdentityServer.Models;
-using Duende.IdentityServer.Validation;
 using FluentAssertions;
 using IdentityModel;
 using IdentityModel.Client;
@@ -39,6 +39,7 @@ using Udap.Server.Validation;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
+using JwtHeaderParameterNames = Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
@@ -581,6 +582,9 @@ public class ClientCredentialsUdapModeTests
             SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(clientCert, jwtPayload)
                 .BuildECDSA();
+        
+        var jwt = new JwtSecurityToken(clientAssertion);
+        jwt.Header.Alg.Should().Be(UdapConstants.SupportedAlgorithm.ES256);
 
         var clientRequest = new UdapClientCredentialsTokenRequest
         {
@@ -597,6 +601,73 @@ public class ClientCredentialsUdapModeTests
 
         var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
         
+        tokenResponse.Scope.Should().Be("system/Patient.rs", tokenResponse.Raw);
+
+    }
+
+    [Fact]
+    public async Task GetAccessTokenECDSA_ES384()
+    {
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test",
+            X509KeyStorageFlags.Exportable);
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+
+        //
+        // Typically the client would validate a server before proceeding to registration.
+        //
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
+
+        regDocumentResult.GetError().Should().BeNull();
+
+
+        //
+        // Get Access Token
+        //
+        var now = DateTime.UtcNow;
+        var jwtPayload = new JwtPayLoadExtension(
+            regDocumentResult!.ClientId,
+            IdentityServerPipeline.TokenEndpoint,
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, regDocumentResult.ClientId!),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(),
+                    ClaimValueTypes.Integer),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+            },
+            now.ToUniversalTime(),
+            now.AddMinutes(5).ToUniversalTime()
+        );
+
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .BuildECDSA(UdapConstants.SupportedAlgorithm.ES384);
+        
+        var jwt = new JwtSecurityToken(clientAssertion);
+        jwt.Header.Alg.Should().Be(UdapConstants.SupportedAlgorithm.ES384);
+
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = IdentityServerPipeline.TokenEndpoint,
+            //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.rs"
+        };
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
         tokenResponse.Scope.Should().Be("system/Patient.rs", tokenResponse.Raw);
 
     }

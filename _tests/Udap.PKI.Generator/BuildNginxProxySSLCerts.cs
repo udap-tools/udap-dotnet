@@ -176,8 +176,31 @@ public class BuildNginxProxySSLCerts : CertificateBase
         };
     }
 
+
+    public static IEnumerable<object[]> Hl7SRI()
+    {
+        yield return new object[]
+        {
+            "CN=identity-matching.fast.hl7.org", //DistinguishedName
+            "identity-matching.fast.hl7.org" //SubjAltName
+        };
+
+        yield return new object[]
+        {
+            "CN=national-directory.fast.hl7.org", //DistinguishedName
+            "national-directory.fast.hl7.org" //SubjAltName
+        };
+
+        yield return new object[]
+        {
+            "CN=udap-security.fast.hl7.org", //DistinguishedName
+            "udap-security.fast.hl7.org" //SubjAltName
+        };
+    }
+
     [Theory(Skip = "Enabled on desktop when needed.")]
     [MemberData(nameof(SSLProxyCerts))]
+    [MemberData(nameof(Hl7SRI))]
     public void MakeIdentityProviderCertificates(string dn, string san)
     {
         using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/ngnix-proxy-TestCA.pfx", "udap-test");
@@ -191,6 +214,8 @@ public class BuildNginxProxySSLCerts : CertificateBase
             $"{SureFhirLabsCertStore}/ssl/{san}"
         );
     }
+
+
 
 
     private X509Certificate2 BuildSslCertificate(

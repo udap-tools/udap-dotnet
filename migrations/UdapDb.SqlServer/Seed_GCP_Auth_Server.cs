@@ -242,10 +242,10 @@ public static class Seed_GCP_Auth_Server
         //
         // udap
         //
-        if (configDbContext.IdentityResources.All(i => i.Name != UdapConstants.StandardScopes.Udap))
+        if (configDbContext.ApiScopes.All(i => i.Name != UdapConstants.StandardScopes.Udap))
         {
-            var udapIdentity = new UdapIdentityResources.Udap();
-            configDbContext.IdentityResources.Add(udapIdentity.ToEntity());
+            var udapIdentity = new UdapApiScopes.Udap();
+            configDbContext.ApiScopes.Add(udapIdentity.ToEntity());
 
             await configDbContext.SaveChangesAsync();
         }
@@ -322,7 +322,7 @@ public static class Seed_GCP_Auth_Server
             {
                 var apiScope = new ApiScope(scopeName);
                 apiScope.ShowInDiscoveryDocument = false;
-                if (apiScope.Name.StartsWith("patient/*."))
+                if (apiScope.Name.StartsWith("user/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
                     apiScope.Enabled = false;

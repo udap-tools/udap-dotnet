@@ -48,19 +48,22 @@ public static class Seed_GCP_Auth_Server
         services.AddOperationalDbContext<NpgsqlPersistedGrantDbContext>(options =>
         {
             options.ConfigureDbContext = db => db.UseNpgsql(connectionString,
-                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName)
+                    .MigrationsHistoryTable("__migrations_history", "udap"));
         });
         services.AddConfigurationDbContext<NpgsqlConfigurationDbContext>(options =>
         {
             options.ConfigureDbContext = db => db.UseNpgsql(connectionString,
-                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName)
+                    .MigrationsHistoryTable("__migrations_history", "udap"));
         });
 
         services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
         services.AddUdapDbContext(options =>
         {
             options.UdapDbContext = db => db.UseNpgsql(connectionString,
-                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(Program).Assembly.FullName)
+                    .MigrationsHistoryTable("__migrations_history", "udap"));
         });
 
         await using var serviceProvider = services.BuildServiceProvider();
@@ -75,12 +78,12 @@ public static class Seed_GCP_Auth_Server
 
 
         var clientRegistrationStore = serviceScope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
-        
-        if (!udapContext.Communities.Any(c => c.Name == "http://localhost"))
+
+        if (!udapContext.Communities.Any(c => c.Name == "udap://stage.healthtogo.me/"))
         {
-            var community = new Community { Name = "http://localhost" };
+            var community = new Community { Name = "udap://stage.healthtogo.me/" };
             community.Enabled = true;
-            community.Default = false;
+            community.Default = true;
             udapContext.Communities.Add(community);
             await udapContext.SaveChangesAsync();
         }
@@ -89,7 +92,7 @@ public static class Seed_GCP_Auth_Server
         {
             var community = new Community { Name = "udap://fhirlabs.net/" };
             community.Enabled = true;
-            community.Default = true;
+            community.Default = false;
             udapContext.Communities.Add(community);
             await udapContext.SaveChangesAsync();
         }
@@ -156,55 +159,31 @@ public static class Seed_GCP_Auth_Server
 
 
         //
-        // Anchor localhost_community
+        // Anchor for Community udap://stage.healthtogo.me/
         //
-        var anchorLocalhostCert = new X509Certificate2(
-            Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community1/caLocalhostCert.cer"));
+        var emrDirectTestCA = new X509Certificate2(
+            Path.Combine(assemblyPath!, certStoreBasePath, "EmrDirect/EMRDirectTestCA.crt"));
 
-        if ((await clientRegistrationStore.GetAnchors("http://localhost"))
-            .All(a => a.Thumbprint != anchorLocalhostCert.Thumbprint))
+        if ((await clientRegistrationStore.GetAnchors("udap://stage.healthtogo.me/"))
+            .All(a => a.Thumbprint != emrDirectTestCA.Thumbprint))
         {
-            var community = udapContext.Communities.Single(c => c.Name == "http://localhost");
-            var anchor = new Anchor
+            var community = udapContext.Communities.Single(c => c.Name == "udap://stage.healthtogo.me/");
+
+            anchor = new Anchor
             {
-                BeginDate = anchorLocalhostCert.NotBefore.ToUniversalTime(),
-                EndDate = anchorLocalhostCert.NotAfter.ToUniversalTime(),
-                Name = anchorLocalhostCert.Subject,
+                BeginDate = emrDirectTestCA.NotBefore.ToUniversalTime(),
+                EndDate = emrDirectTestCA.NotAfter.ToUniversalTime(),
+                Name = emrDirectTestCA.Subject,
                 Community = community,
-                X509Certificate = anchorLocalhostCert.ToPemFormat(),
-                Thumbprint = anchorLocalhostCert.Thumbprint,
+                X509Certificate = emrDirectTestCA.ToPemFormat(),
+                Thumbprint = emrDirectTestCA.Thumbprint,
                 Enabled = true
             };
+
             udapContext.Anchors.Add(anchor);
-
             await udapContext.SaveChangesAsync();
-
-            //
-            // Intermediate surefhirlabs_community
-            //
-            var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
-
-            intermediateCert = new X509Certificate2(
-                Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community1/intermediates/intermediateLocalhostCert.cer"));
-
-            if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
-                    .All(r => r.Thumbprint != intermediateCert.Thumbprint))
-            {
-
-                udapContext.IntermediateCertificates.Add(new Intermediate
-                {
-                    BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
-                    EndDate = intermediateCert.NotAfter.ToUniversalTime(),
-                    Name = intermediateCert.Subject,
-                    X509Certificate = intermediateCert.ToPemFormat(),
-                    Thumbprint = intermediateCert.Thumbprint,
-                    Enabled = true,
-                    Anchor = anchor
-                });
-
-                await udapContext.SaveChangesAsync();
-            }
         }
+
 
         Func<string, bool> treatmentSpecification = r => r is "Patient" or "AllergyIntolerance" or "Condition" or "Encounter";
 
@@ -242,10 +221,10 @@ public static class Seed_GCP_Auth_Server
         //
         // udap
         //
-        if (configDbContext.IdentityResources.All(i => i.Name != UdapConstants.StandardScopes.Udap))
+        if (configDbContext.ApiScopes.All(i => i.Name != UdapConstants.StandardScopes.Udap))
         {
-            var udapIdentity = new UdapIdentityResources.Udap();
-            configDbContext.IdentityResources.Add(udapIdentity.ToEntity());
+            var udapIdentity = new UdapApiScopes.Udap();
+            configDbContext.ApiScopes.Add(udapIdentity.ToEntity());
 
             await configDbContext.SaveChangesAsync();
         }
@@ -308,7 +287,7 @@ public static class Seed_GCP_Auth_Server
             {
                 var apiScope = new ApiScope(scopeName);
                 apiScope.ShowInDiscoveryDocument = false;
-                if (apiScope.Name.StartsWith("patient/*."))
+                if (apiScope.Name.StartsWith("user/*."))
                 {
                     apiScope.ShowInDiscoveryDocument = true;
                     apiScope.Enabled = false;

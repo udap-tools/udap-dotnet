@@ -122,7 +122,7 @@ public class ScopeExpansionTests
 
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
-        _mockPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
+        _mockPipeline.ApiScopes.Add(new UdapApiScopes.Udap());
 
         _mockPipeline.Users.Add(new TestUser
         {

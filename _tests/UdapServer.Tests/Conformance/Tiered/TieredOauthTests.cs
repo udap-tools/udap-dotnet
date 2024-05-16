@@ -218,7 +218,7 @@ public class TieredOauthTests
 
         _mockAuthorServerPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockAuthorServerPipeline.IdentityScopes.Add(new IdentityResources.Profile());
-        _mockAuthorServerPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
+        _mockAuthorServerPipeline.ApiScopes.Add(new UdapApiScopes.Udap());
 
         _mockAuthorServerPipeline.ApiScopes.Add(new ApiScope("user/*.read"));
 
@@ -305,7 +305,7 @@ public class TieredOauthTests
 
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.Profile());
-        _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
+        _mockIdPPipeline.ApiScopes.Add(new UdapApiScopes.Udap());
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.Email());
         _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.FhirUser());
 
@@ -395,7 +395,7 @@ public class TieredOauthTests
 
         _mockIdPPipeline2.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockIdPPipeline2.IdentityScopes.Add(new UdapIdentityResources.Profile());
-        _mockIdPPipeline2.IdentityScopes.Add(new UdapIdentityResources.Udap());
+        _mockIdPPipeline2.ApiScopes.Add(new UdapApiScopes.Udap());
         _mockIdPPipeline2.IdentityScopes.Add(new IdentityResources.Email());
         _mockIdPPipeline2.IdentityScopes.Add(new UdapIdentityResources.FhirUser());
 
@@ -446,7 +446,8 @@ public class TieredOauthTests
         // Data Holder's Auth Server validates Identity Provider's Server software statement
 
         var clientState = Guid.NewGuid().ToString();
-        
+
+        // Builds https://server/connect/authorize plus query params
         var clientAuthorizeUrl = _mockAuthorServerPipeline.CreateAuthorizeUrl(
             clientId: clientId,
             responseType: "code",

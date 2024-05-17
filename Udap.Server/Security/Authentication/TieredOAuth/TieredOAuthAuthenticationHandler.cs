@@ -456,6 +456,14 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         
         var idpParam = (requestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
         var scope = (requestParams.GetValues("scope") ?? throw new InvalidOperationException()).First();
+
+        var udap = scope.FromSpaceSeparatedString().FirstOrDefault(s => s == UdapConstants.StandardScopes.Udap);
+
+        if (udap == null)
+        {
+            throw new Exception("Missing required udap scope from client for Tiered OAuth");
+        }
+
         var clientRedirectUrl = (requestParams.GetValues("redirect_uri") ?? throw new InvalidOperationException()).Last();
         var updateRegistration = requestParams.GetValues("update_registration")?.Last();
 

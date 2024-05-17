@@ -28,6 +28,7 @@ using Udap.Server.DbContexts;
 using Udap.Server.Mappers;
 using Udap.Server.Options;
 using Udap.Server.ResponseHandling;
+using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Stores;
 using Udap.Server.Validation;
 using static Udap.Server.Constants;
@@ -166,6 +167,7 @@ public static class UdapServerServiceCollectionExtensions
             services.Configure(setupAction);
         }
 
+        builder.Services.TryAddSingleton<IPostConfigureOptions<ServerSettings>, TieredIdpServerSettings>();
         builder.AddUdapSigningCredentials();
         services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
         builder.AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl);

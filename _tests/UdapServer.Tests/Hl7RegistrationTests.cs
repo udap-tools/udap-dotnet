@@ -93,8 +93,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
         
         var overrideSettings = new Dictionary<string, string>
         {
-            { "ConnectionStrings:DefaultConnection", "Data Source=Udap.Idp.db.HL7;" },
-            { "ServerSettings:ServerSupport", "Hl7SecurityIG" }
+            { "ConnectionStrings:DefaultConnection", "Data Source=Udap.Idp.db.HL7;" }
         };
 
         builder.ConfigureHostConfiguration(b => b.AddInMemoryCollection(overrideSettings!));

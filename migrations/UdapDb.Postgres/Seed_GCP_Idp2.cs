@@ -238,10 +238,10 @@ public static class Seed_GCP_Idp2
         //
         // udap
         //
-        if (configDbContext.IdentityResources.All(i => i.Name != UdapConstants.StandardScopes.Udap))
+        if (configDbContext.ApiScopes.All(i => i.Name != UdapConstants.StandardScopes.Udap))
         {
-            var udapIdentity = new UdapIdentityResources.Udap();
-            configDbContext.IdentityResources.Add(udapIdentity.ToEntity());
+            var udapIdentity = new UdapApiScopes.Udap();
+            configDbContext.ApiScopes.Add(udapIdentity.ToEntity());
 
             await configDbContext.SaveChangesAsync();
         }

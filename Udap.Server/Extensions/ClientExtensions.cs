@@ -63,10 +63,13 @@ public static class ClientExtensions
         return null;
     }
 
-    public static Task<List<SecurityKey>> GetUdapKeysAsync(this ParsedSecret secret)
+    public static IEnumerable<SecurityKey>? GetUdapKeys(this ParsedSecret secret)
     {
         var jsonWebToken = new JsonWebToken(secret.Credential as string);
-        var x5cArray = jsonWebToken.GetHeaderValue<List<string>>("x5c");
+        if (!jsonWebToken.TryGetHeaderValue<List<string>>("x5c", out var x5cArray))
+        {
+            return null;
+        }
 
         var certificates = x5cArray
             .Select(s => new X509Certificate2(Convert.FromBase64String(s.ToString())))
@@ -81,13 +84,17 @@ public static class ClientExtensions
             })
             .ToList();
         
-        return Task.FromResult(certificates);
+        return certificates;
     }
 
-    public static X509Certificate2 GetUdapEndCertAsync(this ParsedSecret secret)
+    public static X509Certificate2? GetUdapEndCertAsync(this ParsedSecret secret)
     {
         var jsonWebToken = new JsonWebToken(secret.Credential as string);
-        var x5cArray = jsonWebToken.GetHeaderValue<List<string>>("x5c");
+        
+        if(!jsonWebToken.TryGetHeaderValue<List<string>>("x5c", out var x5cArray))
+        {
+            return null;
+        }
 
         return new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
     }

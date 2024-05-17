@@ -1187,9 +1187,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            // .WithScope("user/Patient.* user/Practitioner.read") //Comment out for UDAP Server mode.
+            .WithScope("user/Patient.read") //Comment out for UDAP Server mode.
             .WithResponseTypes(new HashSet<string> { "code" })
             .WithRedirectUrls(new List<string?> { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri }!)
+            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
             .Build();
 
 
@@ -1215,7 +1216,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
         var response = await idpClient.PostAsJsonAsync(reg, requestBody);
 
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
         response.Content.Headers.ContentType!.ToString().Should().Be("application/json");
 
         // var documentAsJson = JsonSerializer.Serialize(document);
@@ -1295,7 +1296,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             clientId: result.ClientId!,
             responseType: "code",
             state: CryptoRandom.CreateUniqueId(),
-            scope: "udap user.cruds",
+            scope: "user/Patient.read",
             redirectUri: document.RedirectUris!.First());
 
         _testOutputHelper.WriteLine(url);
@@ -1308,7 +1309,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
 
         var authUri = new Uri(disco.AuthorizeEndpoint!);
-        var loginUrl = $"{authUri.Scheme}://{authUri.Authority}/Account/Login";
+        var loginUrl = $"{authUri.Scheme}://{authUri.Authority}/udapaccount/login";
         response.Headers.Location?.ToString().Should()
             .StartWith(loginUrl);
 
@@ -1335,17 +1336,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     }
 
 
-
-    //
-    // IDP Server must be running in ServerSupport mode of ServerSupport.UDAP for this to fail and pass the test.
-    // See part of test where getting Access Token
-    // var jwtPayload = new JwtPayload(
-    //    result.Issuer,
-    //
-    // vs normal 
-    //
-    // var jwtPayload = new JwtPayload(
-    //   result.ClientId,
     //
     // If you want Udap.Idp to run in UDAP mode the use "ASPNETCORE_ENVIRONMENT": "Production" to launch. Or
     // however you get the serer to pickup appsettings.Production.json

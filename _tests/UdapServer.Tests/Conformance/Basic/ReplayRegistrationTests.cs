@@ -45,7 +45,6 @@ public class ReplayRegistrationTests
         {
             s.AddSingleton<ServerSettings>(new ServerSettings
             {
-                ServerSupport = ServerSupport.UDAP,
                 DefaultUserScopes = "udap",
                 DefaultSystemScopes = "udap",
                 ForceStateParamOnAuthorizationCode = true
@@ -64,7 +63,6 @@ public class ReplayRegistrationTests
         {
             s.AddSingleton<ServerSettings>(new ServerSettings
             {
-                ServerSupport = ServerSupport.UDAP,
                 DefaultUserScopes = "udap",
                 DefaultSystemScopes = "udap",
                 ForceStateParamOnAuthorizationCode = true,

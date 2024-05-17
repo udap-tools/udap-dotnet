@@ -7,6 +7,18 @@ using Udap.Proxy.Server;
 using Yarp.ReverseProxy.Transforms;
 using Google.Apis.Auth.OAuth2;
 using Udap.Smart.Model;
+using Hl7.Fhir.Rest;
+using Hl7.Fhir.Serialization;
+using Hl7.Fhir.Model;
+using System;
+using Microsoft.IdentityModel.JsonWebTokens;
+using ZiggyCreatures.Caching.Fusion;
+using Task = System.Threading.Tasks.Task;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Mvc;
+using Udap.Metadata.Server;
+using Udap.Model;
+using Udap.Util.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +31,14 @@ builder.Services.AddControllersWithViews();
 builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSection("SmartMetadata"));
 builder.Services.AddSmartMetadata();
 builder.Services.AddUdapMetadataServer(builder.Configuration);
+builder.Services.AddFusionCache()
+    .WithDefaultEntryOptions(new FusionCacheEntryOptions
+    {
+        Duration = TimeSpan.FromMinutes(10),
+        FactorySoftTimeout = TimeSpan.FromMilliseconds(100),
+        AllowTimedOutFactoryBackgroundCompletion = true,
+        FailSafeMaxDuration = TimeSpan.FromHours(12)
+    });
 
 builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.AuthorizationHeaderBearer)
 
@@ -26,7 +46,7 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
     {
         options.Authority = builder.Configuration["Jwt:Authority"];
         options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
-        
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = false
@@ -45,37 +65,69 @@ builder.Services.AddReverseProxy()
     .ConfigureHttpClient((context, handler) =>
     {
         // this is required to decompress automatically.  *******   troubleshooting only   *******
-        handler.AutomaticDecompression = System.Net.DecompressionMethods.All; 
+        handler.AutomaticDecompression = System.Net.DecompressionMethods.All;
     })
     .AddTransforms(builderContext =>
     {
         // Conditionally add a transform for routes that require auth.
-        if (builderContext.Route.Metadata != null && 
+        if (builderContext.Route.Metadata != null &&
             (builderContext.Route.Metadata.ContainsKey("GCPKeyResolve") || builderContext.Route.Metadata.ContainsKey("AccessToken")))
         {
             builderContext.AddRequestTransform(async context =>
             {
-                context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", await ResolveAccessToken(builderContext.Route.Metadata));
-
-                // Google Cloud way of passing scopes to the Fhir Server
-                // context.ProxyRequest.Headers.Add("X-Authorization-Scope", "user/Patient.read launch/patient");
-                // context.ProxyRequest.Headers.Add("X-Authorization-Issuer", "securedcontrols.net");       
+                var resolveAccessToken = await ResolveAccessToken(builderContext.Route.Metadata);
+                context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", resolveAccessToken);
+                
+                SetProxyHeaders(context);
             });
         }
 
         // Use the default credentials.  Primary usage: running in Cloud Run under a specific service account
         if (builderContext.Route.Metadata != null && (builderContext.Route.Metadata.TryGetValue("ADC", out string? adc)))
         {
-            if(adc == "True")
+            if (adc.Equals("True", StringComparison.OrdinalIgnoreCase))
             {
                 builderContext.AddRequestTransform(async context =>
                 {
                     var googleCredentials = GoogleCredential.GetApplicationDefault();
                     string accessToken = await googleCredentials.UnderlyingCredential.GetAccessTokenForRequestAsync();
                     context.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                    SetProxyHeaders(context);
                 });
             }
         }
+
+        builderContext.AddResponseTransform(async responseContext =>
+        {
+            if (responseContext.HttpContext.Request.Path == "/fhir/r4/metadata")
+            {
+                responseContext.SuppressResponseBody = true;
+                var cache = responseContext.HttpContext.RequestServices.GetRequiredService<IFusionCache>();
+                var bytes = await cache.GetOrSetAsync("metadata", _ => GetFhirMetadata(responseContext, builder));
+                
+                // Change Content-Length to match the modified body, or remove it.
+                responseContext.HttpContext.Response.ContentLength = bytes?.Length;
+                
+                // Response headers are copied before transforms are invoked, update any needed headers on the HttpContext.Response.
+                await responseContext.HttpContext.Response.Body.WriteAsync(bytes);
+            }
+            else if (responseContext.HttpContext.Request.Path.HasValue && 
+                     responseContext.HttpContext.Request.Path.Value.StartsWith("/fhir/r4/", StringComparison.OrdinalIgnoreCase))
+            {
+                responseContext.SuppressResponseBody = true;
+                var stream = await responseContext.ProxyResponse!.Content.ReadAsStreamAsync();
+                using var reader = new StreamReader(stream);
+                // TODO: size limits, timeouts
+                var body = await reader.ReadToEndAsync();
+
+                var finalBytes = Encoding.UTF8.GetBytes(body.Replace($"\"url\": \"{builder.Configuration["FhirUrlProxy:Back"]}",
+                    $"\"url\": \"{builder.Configuration["FhirUrlProxy:Front"]}"));
+                responseContext.HttpContext.Response.ContentLength = finalBytes.Length;
+                
+                await responseContext.HttpContext.Response.Body.WriteAsync(finalBytes);
+            }
+        });
     });
 
 var app = builder.Build();
@@ -92,7 +144,7 @@ app.UseAuthorization();
 app.MapReverseProxy();
 
 app.UseSmartMetadata();
-app.UseUdapMetadataServer();
+app.UseUdapMetadataServer("fhir/r4"); // Ensure metadata can only be called from this base URL.
 
 app.Run();
 
@@ -123,7 +175,7 @@ async Task<string?> ResolveAccessToken(IReadOnlyDictionary<string, string> metad
     catch (Exception ex)
     {
         Console.WriteLine(ex); //todo: Logger
-        
+
         return string.Empty;
     }
 
@@ -133,4 +185,77 @@ async Task<string?> ResolveAccessToken(IReadOnlyDictionary<string, string> metad
 async Task<string> UdapMedatData(string s)
 {
     return s;
+}
+
+async Task<byte[]?> GetFhirMetadata(ResponseTransformContext responseTransformContext,
+    WebApplicationBuilder webApplicationBuilder)
+{
+    var stream = await responseTransformContext.ProxyResponse.Content.ReadAsStreamAsync();
+    using var reader = new StreamReader(stream);
+    var body = await reader.ReadToEndAsync();
+
+    if (!string.IsNullOrEmpty(body))
+    {
+        var capStatement = await new FhirJsonParser().ParseAsync<CapabilityStatement>(body);
+        var securityComponent = new CapabilityStatement.SecurityComponent();
+
+        securityComponent.Service.Add(
+            new CodeableConcept("http://fhir.udap.org/CodeSystem/capability-rest-security-service",
+                "UDAP",
+                "OAuth2 using UDAP profile (see http://www.udap.org)"));
+
+        //
+        // https://build.fhir.org/ig/HL7/fhir-extensions/StructureDefinition-oauth-uris.html
+        //
+        var oauthUrlExtensions = new Extension();
+        var securityExtension = new Extension("http://fhir-registry.smarthealthit.org/StructureDefinition/oauth-uris", oauthUrlExtensions);
+        securityExtension.Extension.Add(new Extension() { Url = "token", Value = new FhirUri(webApplicationBuilder.Configuration["Jwt:Token"]) });
+        securityExtension.Extension.Add(new Extension() { Url = "authorize", Value = new FhirUri(webApplicationBuilder.Configuration["Jwt:Authorize"]) });
+        securityExtension.Extension.Add(new Extension() { Url = "register", Value = new FhirUri(webApplicationBuilder.Configuration["Jwt:Register"]) });
+        securityExtension.Extension.Add(new Extension() { Url = "manage", Value = new FhirUri(webApplicationBuilder.Configuration["Jwt:Manage"]) });
+        securityComponent.Extension.Add(securityExtension);
+        capStatement.Rest.First().Security = securityComponent;
+
+        body = new FhirJsonSerializer().SerializeToString(capStatement);
+        var bytes = Encoding.UTF8.GetBytes(body);
+        
+        return bytes;
+    }
+
+    return null;
+}
+
+void SetProxyHeaders(RequestTransformContext requestTransformContext)
+{
+    if (!requestTransformContext.HttpContext.Request.Headers.Authorization.Any())
+    {
+        return;
+    }
+
+    var bearerToken = requestTransformContext.HttpContext.Request.Headers.Authorization.First();
+    
+    if (bearerToken == null)
+    {
+        return;
+    }
+
+    foreach (var requestHeader in requestTransformContext.HttpContext.Request.Headers)
+    {
+        Console.WriteLine(requestHeader.Value);
+    }
+
+    var tokenHandler = new JwtSecurityTokenHandler();
+    var jsonToken = tokenHandler.ReadJwtToken(requestTransformContext.HttpContext.Request.Headers.Authorization.First()?.Replace("Bearer", "").Trim());
+    var scopes = jsonToken?.Claims.Where(c => c.Type == "scope");
+    var iss = jsonToken.Claims.Where(c => c.Type == "iss");
+    // var sub = jsonToken.Claims.Where(c => c.Type == "sub"); // figure out what subject should be for GCP
+
+    // Google Cloud way of passing scopes to the Fhir Server
+    var spaceSeparatedString = scopes?.Select(s => s.Value)
+        .Where(s => s != "udap") //gcp doesn't know udap  Need better filter to block unknown scopes
+        .ToSpaceSeparatedString();
+    
+    requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Scope", spaceSeparatedString);
+    requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault().Value);
+    // context.ProxyRequest.Headers.Add("X-Authorization-Subject", sub.SingleOrDefault().Value);
 }

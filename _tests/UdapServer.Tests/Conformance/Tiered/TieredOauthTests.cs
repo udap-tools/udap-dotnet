@@ -13,11 +13,14 @@ using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Web;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
+using FluentAssertions.Common;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.WebUtilities;
@@ -64,21 +67,14 @@ public class TieredOauthTests
 
         _community2Anchor = new X509Certificate2("CertStore/anchors/caLocalhostCert2.cer");
         _community2IntermediateCert = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert2.cer");
-            
-        BuildUdapAuthorizationServer();
-        BuildUdapIdentityProvider1();
-        BuildUdapIdentityProvider2();
-    }
+            }
 
-    private void BuildUdapAuthorizationServer()
+    private void BuildUdapAuthorizationServer(List<string>? tieredOAuthScopes = null)
     {
         _mockAuthorServerPipeline.OnPostConfigureServices += services =>
         {
             services.AddSingleton(new ServerSettings
             {
-                ServerSupport = ServerSupport.Hl7SecurityIG,
-                // DefaultUserScopes = "udap",
-                // DefaultSystemScopes = "udap"
                 ForceStateParamOnAuthorizationCode = true, //false (default)
                 RequireConsent = false
             });
@@ -96,6 +92,18 @@ public class TieredOauthTests
             // Allow logo resolve back to udap.auth server
             //
             services.AddSingleton<HttpClient>(_ => _mockAuthorServerPipeline.BrowserClient);
+
+            if (tieredOAuthScopes != null)
+            {
+                services.ConfigureAll<TieredOAuthAuthenticationOptions>(options =>
+                {
+                    options.Scope.Clear();
+                    foreach (var tieredOAuthScope in tieredOAuthScopes)
+                    {
+                        options.Scope.Add(tieredOAuthScope);
+                    }
+                });
+            }
         };
 
         _mockAuthorServerPipeline.OnPreConfigureServices += (builderContext, services) =>
@@ -210,7 +218,7 @@ public class TieredOauthTests
 
         _mockAuthorServerPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockAuthorServerPipeline.IdentityScopes.Add(new IdentityResources.Profile());
-        _mockAuthorServerPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
+        _mockAuthorServerPipeline.ApiScopes.Add(new UdapApiScopes.Udap());
 
         _mockAuthorServerPipeline.ApiScopes.Add(new ApiScope("user/*.read"));
 
@@ -233,15 +241,19 @@ public class TieredOauthTests
     {
         _mockIdPPipeline.OnPostConfigureServices += services =>
         {
-            services.AddSingleton(new ServerSettings
-            {
-                ServerSupport = ServerSupport.UDAP,
-                DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap",
-                // ForceStateParamOnAuthorizationCode = false (default)
-                AlwaysIncludeUserClaimsInIdToken = true,
-                RequireConsent = false
-            });
+            services.AddSingleton(
+                sp =>
+                {
+                    var serverSettings = sp.GetService<IOptions<ServerSettings>>().Value; // must resolve to trigger the post config at TieredIdpServerSettings
+                    serverSettings.DefaultUserScopes = "udap";
+                    serverSettings.DefaultSystemScopes = "udap";
+                    // ForceStateParamOnAuthorizationCode = false (default)
+                    serverSettings.AlwaysIncludeUserClaimsInIdToken = true;
+                    serverSettings.RequireConsent = false;
+                    
+                    return serverSettings;
+                });
+           
 
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
@@ -293,7 +305,7 @@ public class TieredOauthTests
 
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.Profile());
-        _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.Udap());
+        _mockIdPPipeline.ApiScopes.Add(new UdapApiScopes.Udap());
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.Email());
         _mockIdPPipeline.IdentityScopes.Add(new UdapIdentityResources.FhirUser());
 
@@ -318,15 +330,19 @@ public class TieredOauthTests
     {
         _mockIdPPipeline2.OnPostConfigureServices += services =>
         {
-            services.AddSingleton(new ServerSettings
-            {
-                ServerSupport = ServerSupport.UDAP,
-                DefaultUserScopes = "udap",
-                DefaultSystemScopes = "udap",
-                // ForceStateParamOnAuthorizationCode = false (default)
-                AlwaysIncludeUserClaimsInIdToken = true,
-                RequireConsent = false
-            });
+            services.AddSingleton(
+                sp =>
+                {
+                    var serverSettings = sp.GetService<IOptions<ServerSettings>>().Value;
+                    serverSettings.DefaultUserScopes = "udap";
+                    serverSettings.DefaultSystemScopes = "udap";
+                    // ForceStateParamOnAuthorizationCode = false (default)
+                    serverSettings.AlwaysIncludeUserClaimsInIdToken = true;
+                    serverSettings.RequireConsent = false;
+
+                    return serverSettings;
+                });
+            
 
             // This registers Clients as List<Client> so downstream I can pick it up in InMemoryUdapClientRegistrationStore
             // Duende's AddInMemoryClients extension registers as IEnumerable<Client> and is used in InMemoryClientStore as readonly.
@@ -379,7 +395,7 @@ public class TieredOauthTests
 
         _mockIdPPipeline2.IdentityScopes.Add(new IdentityResources.OpenId());
         _mockIdPPipeline2.IdentityScopes.Add(new UdapIdentityResources.Profile());
-        _mockIdPPipeline2.IdentityScopes.Add(new UdapIdentityResources.Udap());
+        _mockIdPPipeline2.ApiScopes.Add(new UdapApiScopes.Udap());
         _mockIdPPipeline2.IdentityScopes.Add(new IdentityResources.Email());
         _mockIdPPipeline2.IdentityScopes.Add(new UdapIdentityResources.FhirUser());
 
@@ -407,6 +423,10 @@ public class TieredOauthTests
     [Fact]
     public async Task ClientAuthorize_IdPDiscovery_IdPRegistration_IdPAuthAccess_ClientAuthAccess_Test()
     {
+        BuildUdapAuthorizationServer();
+        BuildUdapIdentityProvider1();
+        
+
         // Register client with auth server
         var resultDocument = await RegisterClientWithAuthServer();
         _mockAuthorServerPipeline.RemoveSessionCookie();
@@ -426,7 +446,8 @@ public class TieredOauthTests
         // Data Holder's Auth Server validates Identity Provider's Server software statement
 
         var clientState = Guid.NewGuid().ToString();
-        
+
+        // Builds https://server/connect/authorize plus query params
         var clientAuthorizeUrl = _mockAuthorServerPipeline.CreateAuthorizeUrl(
             clientId: clientId,
             responseType: "code",
@@ -515,8 +536,7 @@ public class TieredOauthTests
         QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.Should().NotBeEmpty();
         var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "state").Value.ToString();
         backChannelState.Should().NotBeNullOrEmpty();
-
-
+        
         var idpClient = _mockIdPPipeline.Clients.Single(c => c.ClientName == "AuthServer Client");
         idpClient.AlwaysIncludeUserClaimsInIdToken.Should().BeTrue();
 
@@ -697,6 +717,9 @@ public class TieredOauthTests
     [Fact] //(Skip = "Dynamic Tiered OAuth Provider WIP")]
     public async Task Tiered_OAuth_With_DynamicProvider()
     {
+        BuildUdapAuthorizationServer();
+        BuildUdapIdentityProvider2();
+
         // Register client with auth server
         var resultDocument = await RegisterClientWithAuthServer();
         _mockAuthorServerPipeline.RemoveSessionCookie();
@@ -976,6 +999,245 @@ public class TieredOauthTests
         // Todo: Validate claims.  Like missing name and other identity claims.  Maybe add a hl7_identifier
         // Why is idp:TieredOAuth in the returned claims?
         
+    }
+
+
+    /// <summary>
+    /// During Tiered OAuth between the client and data holder the udap scope is required 
+    /// Client call to /authorize? should request with udap scope.
+    /// Without it the idp is undefined according to https://hl7.org/fhir/us/udap-security/user.html#client-authorization-request-to-data-holder
+    /// </summary>
+    /// <returns></returns>
+    [Fact]
+    public async Task ClientAuthorize_Missing_udap_scope_between_client_and_dataholder_Test()
+    {
+        BuildUdapAuthorizationServer();
+        BuildUdapIdentityProvider1();
+
+        // Register client with auth server
+        var resultDocument = await RegisterClientWithAuthServer();
+        _mockAuthorServerPipeline.RemoveSessionCookie();
+        _mockAuthorServerPipeline.RemoveLoginCookie();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        var clientId = resultDocument.ClientId!;
+
+        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
+        dynamicIdp.Name = _mockIdPPipeline.BaseUrl;
+
+        //////////////////////
+        // ClientAuthorize
+        //////////////////////
+
+        // Data Holder's Auth Server validates Identity Provider's Server software statement
+
+        var clientState = Guid.NewGuid().ToString();
+
+        var clientAuthorizeUrl = _mockAuthorServerPipeline.CreateAuthorizeUrl(
+            clientId: clientId,
+            responseType: "code",
+            scope: "openid user/*.read",
+            redirectUri: "https://code_client/callback",
+            state: clientState,
+            extra: new
+            {
+                idp = "https://idpserver"
+            });
+
+        _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
+        // The BrowserHandler.cs will normally set the cookie to indicate user signed in.
+        // We want to skip that and get a redirect to the login page
+        _mockAuthorServerPipeline.BrowserClient.AllowCookies = false;
+        var response = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location!.AbsoluteUri.Should().Contain("https://server/Account/Login");
+        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+        queryParams.Should().Contain(p => p.Key == "ReturnUrl");
+        queryParams.Should().NotContain(p => p.Key == "code");
+        queryParams.Should().NotContain(p => p.Key == "state");
+
+
+        // Pull the inner query params from the ReturnUrl
+        var returnUrl = queryParams.Single(p => p.Key == "ReturnUrl").Value.ToString();
+        returnUrl.Should().StartWith("/connect/authorize/callback?");
+        queryParams = QueryHelpers.ParseQuery(returnUrl);
+        queryParams.Single(q => q.Key == "scope").Value.ToString().Should().Contain("openid user/*.read");
+        queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(clientState);
+        queryParams.Single(q => q.Key == "idp").Value.Should().BeEquivalentTo("https://idpserver");
+
+        var schemes = await _mockAuthorServerPipeline.Resolve<IAuthenticationSchemeProvider>().GetAllSchemesAsync();
+
+        var sb = new StringBuilder();
+        sb.Append("https://server/externallogin/challenge?"); // built in UdapAccount/Login/Index.cshtml.cs
+        sb.Append("scheme=").Append(schemes.First().Name);
+        sb.Append("&returnUrl=").Append(Uri.EscapeDataString(returnUrl));
+        clientAuthorizeUrl = sb.ToString();
+        
+
+        // response after discovery and registration
+        _mockAuthorServerPipeline.BrowserClient.AllowCookies = true; // Need to set the idsrv cookie so calls to /authorize will succeed
+
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin",
+            new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().BeNull();
+
+       var exception = await Assert.ThrowsAsync<Exception>(() => _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl));
+       exception.Message.Should().Be("Missing required udap scope from client for Tiered OAuth");
+    }
+
+
+    /// <summary>
+    /// During Tiered OAuth between data holder and IdP the openid and udap scope are required 
+    /// Client call to /authorize? should request with udap scope.
+    /// https://hl7.org/fhir/us/udap-security/user.html#data-holder-authentication-request-to-idp
+    /// </summary>
+    /// <returns></returns>
+    [Theory]
+    [InlineData(new object[] { new string[] { "openid", "email", "profile"}})]
+    [InlineData(new object[] { new string[] { "udap", "email", "profile" } })]
+    public async Task ClientAuthorize_Missing_udap_or_idp_scope_between_dataholder_and_IdP_Test(string[] scopes)
+    {
+        // var scopes = new List<string>() { "email", "profile" };
+        BuildUdapAuthorizationServer(scopes.ToList());
+        BuildUdapIdentityProvider1();
+
+        // Register client with auth server
+        var resultDocument = await RegisterClientWithAuthServer();
+        _mockAuthorServerPipeline.RemoveSessionCookie();
+        _mockAuthorServerPipeline.RemoveLoginCookie();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        var clientId = resultDocument.ClientId!;
+
+        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
+        dynamicIdp.Name = _mockIdPPipeline.BaseUrl;
+
+        //////////////////////
+        // ClientAuthorize
+        //////////////////////
+
+        // Data Holder's Auth Server validates Identity Provider's Server software statement
+
+        var clientState = Guid.NewGuid().ToString();
+
+        var clientAuthorizeUrl = _mockAuthorServerPipeline.CreateAuthorizeUrl(
+            clientId: clientId,
+            responseType: "code",
+            scope: "udap openid user/*.read",
+            redirectUri: "https://code_client/callback",
+            state: clientState,
+            extra: new
+            {
+                idp = "https://idpserver"
+            });
+
+        _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
+        // The BrowserHandler.cs will normally set the cookie to indicate user signed in.
+        // We want to skip that and get a redirect to the login page
+        _mockAuthorServerPipeline.BrowserClient.AllowCookies = false;
+        var response = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location!.AbsoluteUri.Should().Contain("https://server/Account/Login");
+        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+        queryParams.Should().Contain(p => p.Key == "ReturnUrl");
+        queryParams.Should().NotContain(p => p.Key == "code");
+        queryParams.Should().NotContain(p => p.Key == "state");
+        
+
+        // Pull the inner query params from the ReturnUrl
+        var returnUrl = queryParams.Single(p => p.Key == "ReturnUrl").Value.ToString();
+        returnUrl.Should().StartWith("/connect/authorize/callback?");
+        queryParams = QueryHelpers.ParseQuery(returnUrl);
+        queryParams.Single(q => q.Key == "scope").Value.ToString().Should().Contain("udap openid user/*.read");
+        queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(clientState);
+        queryParams.Single(q => q.Key == "idp").Value.Should().BeEquivalentTo("https://idpserver");
+
+        var schemes = await _mockAuthorServerPipeline.Resolve<IAuthenticationSchemeProvider>().GetAllSchemesAsync();
+
+        var sb = new StringBuilder();
+        sb.Append("https://server/externallogin/challenge?"); // built in UdapAccount/Login/Index.cshtml.cs
+        sb.Append("scheme=").Append(schemes.First().Name);
+        sb.Append("&returnUrl=").Append(Uri.EscapeDataString(returnUrl));
+        clientAuthorizeUrl = sb.ToString();
+
+
+
+        //////////////////////////////////
+        //
+        // IdPDiscovery
+        // IdPRegistration
+        // IdPAuthAccess
+        //
+        //////////////////////////////////
+
+
+        // Auto Dynamic registration between Auth Server and Identity Provider happens here.
+        // /Challenge?
+        //      ctx.ChallengeAsync -> launch registered scheme.  In this case the TieredOauthAuthenticationHandler
+        //         see: OnExternalLoginChallenge and Challenge(props, scheme) in ExternalLogin/Challenge.cshtml.cs or UdapTieredLogin/Challenge.cshtml.cs
+        //      Backchannel
+        //          Discovery
+        //          Auto registration
+        //          externalloging/challenge or in the Udap implementation it is the UdapAccount/Login/Index.cshtml.cs.  XSRF cookie is set here.
+
+        // *** We are here after the request to the IdPs /authorize  call.  If the client is registered already then Discovery and Reg is skipped ***
+        //
+        //          Authentication request (/authorize?)
+        //            User logs in at IdP
+        //          Authentication response
+        //          Token request
+        //          Data Holder incorporates user input into authorization decision
+        //
+
+
+
+        // response after discovery and registration
+        _mockAuthorServerPipeline.BrowserClient.AllowCookies =
+            true; // Need to set the idsrv cookie so calls to /authorize will succeed
+
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin",
+            new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().BeNull();
+        var backChannelChallengeResponse = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
+        _mockAuthorServerPipeline.BrowserClient.GetXsrfCookie("https://server/federation/udap-tiered/signin",
+            new TieredOAuthAuthenticationOptions().CorrelationCookie.Name!).Should().NotBeNull();
+
+        backChannelChallengeResponse.StatusCode.Should().Be(HttpStatusCode.Redirect,
+            await backChannelChallengeResponse.Content.ReadAsStringAsync());
+        backChannelChallengeResponse.Headers.Location.Should().NotBeNull();
+        backChannelChallengeResponse.Headers.Location!.AbsoluteUri.Should()
+            .StartWith("https://idpserver/connect/authorize");
+
+        // _testOutputHelper.WriteLine(backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
+        QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id")
+            .Value.Should().NotBeEmpty();
+        var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query)
+            .Single(p => p.Key == "state").Value.ToString();
+        backChannelState.Should().NotBeNullOrEmpty();
+
+        var idpClient = _mockIdPPipeline.Clients.Single(c => c.ClientName == "AuthServer Client");
+        idpClient.AlwaysIncludeUserClaimsInIdToken.Should().BeTrue();
+
+
+        Debug.Assert(_mockIdPPipeline.BrowserClient != null, "_mockIdPPipeline.BrowserClient != null");
+        var backChannelAuthResult =
+            await _mockIdPPipeline.BrowserClient.GetAsync(backChannelChallengeResponse.Headers.Location);
+        _testOutputHelper.WriteLine(HttpUtility.UrlDecode(backChannelAuthResult.Headers.Location.Query));
+
+        backChannelAuthResult.StatusCode.Should().Be(HttpStatusCode.Redirect,
+            await backChannelAuthResult.Content.ReadAsStringAsync());
+        backChannelAuthResult.Headers.Location.Should().NotBeNull();
+        backChannelAuthResult.Headers.Location!.AbsoluteUri.Should()
+            .StartWith("https://server/federation/udap-tiered/signin"); //signin callback scheme
+
+        var responseParams = QueryHelpers.ParseQuery(backChannelAuthResult.Headers.Location.Query);
+        responseParams["error"].Should().BeEquivalentTo("invalid_request");
+        responseParams["error_description"].Should().BeEquivalentTo("Missing udap and/or openid scope between data holder and IdP");
+        responseParams["scope"].Should().BeEquivalentTo(scopes.ToSpaceSeparatedString());
     }
 
     private async Task<UdapDynamicClientRegistrationDocument?> RegisterClientWithAuthServer()

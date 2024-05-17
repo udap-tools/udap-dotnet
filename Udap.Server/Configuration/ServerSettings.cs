@@ -13,10 +13,6 @@ using Microsoft.Extensions.Configuration;
 namespace Udap.Server.Configuration;
 public class ServerSettings
 {
-    [JsonPropertyName("ServerSupport")]
-    [JsonConverter(typeof(JsonStringEnumConverter))]
-    public ServerSupport ServerSupport { get; set; }
-
     [JsonPropertyName("DefaultSystemScopes")]
     public string? DefaultSystemScopes { get; set; }
 
@@ -34,7 +30,13 @@ public class ServerSettings
     /// </summary>
     [JsonPropertyName("ForceStateParamOnAuthorizationCode")]
     public bool ForceStateParamOnAuthorizationCode { get; set; } = false;
-    
+
+    /// <summary>
+    /// Indicate if the IdentityServer can act as a UDAP enabled IdP.
+    /// </summary>
+    [JsonIgnore] 
+    public bool TieredIdp { get; set; } = false;
+
     [JsonPropertyName("LogoRequired")]
     public bool LogoRequired { get; set; } = true;
 
@@ -49,12 +51,6 @@ public class ServerSettings
     public bool RequireConsent { get; set; } = true;
 }
 
-
-public enum ServerSupport
-{
-    UDAP = 0,
-    Hl7SecurityIG = 1
-}
 
 public static class ConfigurationExtension
 {

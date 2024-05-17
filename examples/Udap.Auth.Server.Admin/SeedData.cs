@@ -168,7 +168,6 @@ public static class SeedData
         }
 
         var apiScopes = configDbContext.ApiScopes
-            .Where(s => s.Enabled)
             .Select(s => s.Name)
             .ToList();
 

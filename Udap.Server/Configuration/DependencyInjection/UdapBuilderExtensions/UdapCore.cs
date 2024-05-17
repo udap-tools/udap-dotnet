@@ -116,7 +116,7 @@ public static  class UdapServiceBuilderExtensionsCore
 
     public static IUdapServiceBuilder AddPrivateFileStore(this IUdapServiceBuilder builder, string? resourceServerName = null)
     {
-        builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
+        builder.Services.TryAddSingleton<IPrivateCertificateStore>(sp =>
             new IssuedCertificateStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
                 sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),

@@ -21,7 +21,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.Net.Http;
+using Hl7.Fhir.Utility;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
@@ -126,7 +126,7 @@ public static class ServiceCollectionExtensions
     {
         EnsureMvcControllerUnloads(app);
 
-        app.MapGet($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}",
+        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}",
                 async (
                     [FromServices] UdapMetaDataEndpoint endpoint,
                     HttpContext httpContext,
@@ -136,13 +136,13 @@ public static class ServiceCollectionExtensions
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
 
-        app.MapGet($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}/communities",
+        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}/communities",
                 ([FromServices] UdapMetaDataEndpoint endpoint) => endpoint.GetCommunities())
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
 
-        app.MapGet($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}/communities/ashtml",
+        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}/communities/ashtml",
                 (
                     [FromServices] UdapMetaDataEndpoint endpoint,
                     HttpContext httpContext) => endpoint.GetCommunitiesAsHtml(httpContext))
@@ -156,7 +156,7 @@ public static class ServiceCollectionExtensions
     public static IApplicationBuilder UseUdapMetadataServer(this IApplicationBuilder app, string? prefixRoute = null)
     {
 
-        app.Map($"/{prefixRoute}{UdapConstants.Discovery.DiscoveryEndpoint}", path =>
+        app.Map($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}", path =>
         {
             path.Run(async ctx =>
             {

@@ -56,8 +56,11 @@ public static class UdapIdentityResources
             UserClaims.Add(UdapConstants.JwtClaimTypes.Hl7Identifier);
         }
     }
+}
 
-    public class Udap : IdentityResource
+public static class UdapApiScopes
+{
+    public class Udap : ApiScope
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Udap"/> class.

@@ -12,22 +12,26 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Google.Apis.Auth" Version="1.67.0" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
     <PackageReference Include="LazyCache" Version="2.4.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
-    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.5.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.5" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="7.5.2" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
+    <PackageReference Include="Npgsql" Version="8.0.3" />
     <PackageReference Include="Yarp.ReverseProxy" Version="2.1.0" />
+    <PackageReference Include="ZiggyCreatures.FusionCache" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
     <PackageReference Include="Udap.Metadata.Server" Version="0.3.*" />
     <PackageReference Include="Udap.Smart.Metadata" Version="0.3.*" />
+    <PackageReference Include="Udap.Util" Version="0.3.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="../../Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
     <ProjectReference Include="../../Udap.Smart.Metadata/Udap.Smart.Metadata.csproj" />
+    <ProjectReference Include="../../Udap.Util/Udap.Util.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -74,6 +78,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\WeatherApiClient.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="host.docker.internal.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

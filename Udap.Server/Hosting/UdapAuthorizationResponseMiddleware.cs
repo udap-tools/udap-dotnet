@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Udap.Server.Configuration;
+using Udap.Util.Extensions;
 using static IdentityModel.OidcConstants;
 
 namespace Udap.Server.Hosting;
@@ -81,7 +82,7 @@ internal class UdapAuthorizationResponseMiddleware
             context.Request.Path.Value.Contains(Constants.ProtocolRoutePaths.Authorize))
         {
             var requestParams = context.Request.Query;
-           
+
             if (requestParams.Any())
             {
                 if (udapServerOptions.ForceStateParamOnAuthorizationCode)
@@ -90,7 +91,7 @@ internal class UdapAuthorizationResponseMiddleware
                     {
                         var client =
                             await clients.FindClientByIdAsync(
-                                requestParams.AsNameValueCollection().Get(AuthorizeRequest.ClientId));
+                                requestParams.AsNameValueCollection().Get(AuthorizeRequest.ClientId) ?? string.Empty);
 
                         if (client != null &&
                             client.ClientSecrets.Any(cs =>
@@ -98,6 +99,37 @@ internal class UdapAuthorizationResponseMiddleware
                         {
                             await RenderMissingStateErrorResponse(context);
                             _logger.LogInformation($"{nameof(UdapAuthorizationResponseMiddleware)} executed");
+
+                            return;
+                        }
+                    }
+                }
+
+                //
+                // During Tiered OAuth from data holder to IdP the udap and idp scopes are required 
+                // https://hl7.org/fhir/us/udap-security/user.html#data-holder-authentication-request-to-idp
+                //
+                if (udapServerOptions.TieredIdp)
+                {
+                    var requestParamCollection = context.Request.Query.AsNameValueCollection();
+                    var client =
+                        await clients.FindClientByIdAsync(
+                            requestParamCollection.Get(AuthorizeRequest.ClientId) ?? string.Empty);
+                    var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
+                    
+                    var scopes = scope?.FromSpaceSeparatedString();
+                    var udap = (scopes ?? new string[] { }).FirstOrDefault(s => s == "udap");
+                    var openid = (scopes ?? new string[] { }).FirstOrDefault(s => s == "openid");
+
+                    if (client != null &&
+                        client.ClientSecrets.Any(cs =>
+                            cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
+                    {
+                        if (udap.IsNullOrEmpty() || openid.IsNullOrEmpty())
+                        {
+                            await RenderRequiredScopeErrorResponse(context);
+                            _logger.LogInformation($"{nameof(UdapAuthorizationResponseMiddleware)} executed");
+
                             return;
                         }
                     }
@@ -121,7 +153,7 @@ internal class UdapAuthorizationResponseMiddleware
                         var client =
                             await clients.FindClientByIdAsync(
                                 requestParamCollection.Get(AuthorizeRequest.ClientId));
-                        var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
+                        
 
                         if (client == null)
                         {
@@ -143,6 +175,25 @@ internal class UdapAuthorizationResponseMiddleware
 
         await _next(context);
     }
+
+    private Task RenderRequiredScopeErrorResponse(HttpContext context)
+    {
+        if (context.Request.Query.TryGetValue(
+                AuthorizeRequest.RedirectUri,
+                out StringValues redirectUri))
+        {
+            var url = BuildRedirectUrl(
+                context,
+                redirectUri,
+                AuthorizeErrors.InvalidRequest,
+                "Missing udap and/or openid scope between data holder and IdP");
+
+            context.Response.Redirect(url);
+        }
+
+        return Task.CompletedTask;
+    }
+
 
     private Task RenderMissingStateErrorResponse(HttpContext context)
     {

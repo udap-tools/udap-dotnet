@@ -18,16 +18,7 @@
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5253"     
-    },
-    "SecuredControls": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "sslPort": 5002,
-      "applicationUrl": "https://admin.securedcontrols.net:5002"
-    },
+    },   
     "/seed": {
       "commandName": "Project",
       "commandLineArgs": "/seed ../../../../../_tests/Udap.PKI.Generator/certstores",

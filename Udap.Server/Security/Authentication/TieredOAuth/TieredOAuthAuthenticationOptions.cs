@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using IdentityModel;
+using Udap.Model;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 
@@ -24,6 +25,7 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions
         SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;
 
         // TODO:  configurable for the non-dynamic AddTieredOAuthForTests call. 
+        Scope.Add(UdapConstants.StandardScopes.Udap);
         Scope.Add(OidcConstants.StandardScopes.OpenId);
         Scope.Add(OidcConstants.StandardScopes.Email);
         Scope.Add(OidcConstants.StandardScopes.Profile);

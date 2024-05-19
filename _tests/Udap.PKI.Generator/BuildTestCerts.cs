@@ -1402,12 +1402,28 @@ namespace Udap.PKI.Generator
         }
 
 
-        [Fact]//(Skip = "Enabled on desktop when needed.")]
+        [Fact(Skip = "Enabled on desktop when needed.")]
         public void BuildOptumClientCertificateForBrett()
         {
             using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
             using var subCA = new X509Certificate2($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx",
                 "udap-test");
+
+            //
+            // Expired Certtificate
+            //
+            // BuildClientCertificate(
+            //     subCA,
+            //     rootCA,
+            //     subCA.GetRSAPrivateKey()!,
+            //     "CN=Brett Stringham, OU=UDAP Open Source Developers, O=Optum, L=Kaysville, S=UT, C=US",
+            //     new List<string> { "https://demo.cyberignition.io/fhir/r4/dev" },
+            //     $"{SurefhirlabsUdapIssued}/Optum.Brett.client.expired",
+            //     SureFhirLabsIntermediateCrl,
+            //     SureFhirLabsIntermediatePublicCertHosted,
+            //     subCA.NotBefore, // Remember, you can not set this to before the issuing certificate
+            //     DateTimeOffset.UtcNow.AddDays(-1)
+            // );
 
             BuildClientCertificate(
                 subCA,
@@ -1417,9 +1433,7 @@ namespace Udap.PKI.Generator
                 new List<string> { "https://demo.cyberignition.io/fhir/r4/dev" },
                 $"{SurefhirlabsUdapIssued}/Optum.Brett.client",
                 SureFhirLabsIntermediateCrl,
-                SureFhirLabsIntermediatePublicCertHosted,
-                subCA.NotBefore, // Remember, you can not set this to before the issuing certificate
-                DateTimeOffset.UtcNow.AddDays(-1)
+                SureFhirLabsIntermediatePublicCertHosted
             );
         }
 

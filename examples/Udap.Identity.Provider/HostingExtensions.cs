@@ -55,6 +55,7 @@ internal static class HostingExtensions
                     options.LogoRequired = udapServerOptions.LogoRequired;
                     options.AlwaysIncludeUserClaimsInIdToken = udapServerOptions.AlwaysIncludeUserClaimsInIdToken;
                     options.RequireConsent = udapServerOptions.RequireConsent;
+                    options.AllowRememberConsent = udapServerOptions.AllowRememberConsent;
                 },
                 options =>
                     _ = provider switch

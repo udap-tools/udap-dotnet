@@ -283,7 +283,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             //TODO: Maybe inject a component to generate the clientID so a user can use their own technique.
             ClientId = CryptoRandom.CreateUniqueId(),
             AlwaysIncludeUserClaimsInIdToken = _serverSettings.AlwaysIncludeUserClaimsInIdToken,
-            RequireConsent = _serverSettings.RequireConsent
+            RequireConsent = _serverSettings.RequireConsent,
+            AllowRememberConsent = _serverSettings.AllowRememberConsent
         };
 
         _logger.LogDebug($"Validating chain for ClientId: {client.ClientId}. x5c {jwtHeader.X5c}");

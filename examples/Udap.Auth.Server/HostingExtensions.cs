@@ -74,6 +74,7 @@ internal static class HostingExtensions
                     options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
                     options.LogoRequired = udapServerOptions.LogoRequired;
                     options.RequireConsent = udapServerOptions.RequireConsent;
+                    options.AllowRememberConsent = udapServerOptions.AllowRememberConsent;
                 },
                 // udapClientOptions =>
                 // {

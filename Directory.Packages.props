@@ -48,7 +48,7 @@
     <PackageVersion Include="Serilog.AspNetCore" Version="[6.1.0,7.0.0]" />
     <PackageVersion Include="Serilog.Extensions.Logging" Version="[3.1.0,7.0.0]" />
     <PackageVersion Include="Portable.BouncyCastle" Version="1.9.0" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="7.5.2" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="7.6.0" />
     <PackageVersion Include="Udap.Metadata.Server" Version="0.3.24" />
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.1.0" />
   </ItemGroup>

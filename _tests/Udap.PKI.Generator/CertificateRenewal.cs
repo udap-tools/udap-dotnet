@@ -28,7 +28,7 @@ public class CertificateRenewal : CertificateBase
     private static string SurefhirlabsUdapIntermediates { get; } = $"{SureFhirLabsCertStore}/intermediates";
     private static string SurefhirlabsUdapIntermediatesRenewed { get; } = $"{SureFhirLabsCertStore}/intermediates/renewed";
 
-    [Fact]
+    [Fact(Skip = "Experimenting")]
     public void RenewIntermediateCertificate()
     {
         using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");

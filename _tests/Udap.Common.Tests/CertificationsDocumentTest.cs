@@ -24,6 +24,16 @@ using System.Text.Json.Serialization;
 using IdentityModel;
 using Claim = System.Security.Claims.Claim;
 using System.Reflection.Emit;
+using Firely.Fhir.Packages;
+using Hl7.Fhir.FhirPath;
+using Hl7.Fhir.Introspection;
+using Hl7.Fhir.Specification.Source;
+using Hl7.Fhir.Specification.Terminology;
+using Hl7.Fhir.Utility;
+using Hl7.Fhir.Rest;
+using Hl7.Fhir.Specification;
+using System.Net.Http;
+using System;
 
 
 namespace Udap.Common.Tests
@@ -35,6 +45,130 @@ namespace Udap.Common.Tests
         public CertificationsDocumentTest(ITestOutputHelper testOutputHelper)
         {
             _testOutputHelper = testOutputHelper;
+        }
+
+        [Fact(Skip = "Experimenting")]
+        public async Task GetCodeSystem()
+        {
+            var settings = new FhirClientSettings
+            {
+                PreferredFormat = ResourceFormat.Json,
+                VerifyFhirVersion = false
+            };
+
+
+            var fhirClient = new FhirClient("https://tx.fhir.org/r4/", settings);
+
+            fhirClient.Settings.PreferredFormat = ResourceFormat.Json;
+            var codeSystem = await fhirClient.ReadAsync<Hl7.Fhir.Model.CodeSystem>("https://tx.fhir.org/r4/CodeSystem/v2-0203");
+            var codeSystemJson = await new FhirJsonSerializer().SerializeToStringAsync(codeSystem);
+        }
+
+        [Fact(Skip = "Experimenting")]
+        public async Task FhirTermTest()
+        {
+            IAsyncResourceResolver _resolver = new FhirPackageSource(ModelInfo.ModelInspector, @"C:\temp\IdentityMatchingIG\hl7.fhir.us.identity-matching-2.0.0-draft.tgz");
+            var termService = new LocalTerminologyService(resolver: _resolver, new ValueSetExpanderSettings(){IncludeDesignations = true});
+            var p = new ExpandParameters()
+                .WithValueSet(url: "http://hl7.org/fhir/us/identity-matching/ValueSet/Identity-Identifier-vs");
+                
+            var joe = await termService.Expand(p);
+            _testOutputHelper.WriteLine(JsonSerializer.Serialize(joe, new JsonSerializerOptions(){WriteIndented = true}));
+            _testOutputHelper.WriteLine("Goodbye Joe");
+        }
+
+        private const string PACKAGESERVER = "http://packages.simplifier.net";
+        private const string IDENTITY_MATCHING = "hl7.fhir.us.identity-matching@1.0.0";
+
+        [Fact(Skip = "Experimenting")]
+        public async Task FhirTermExternalTest()
+        {
+            FhirPackageSource _clientResolver = new(new ModelInspector(FhirRelease.R4), PACKAGESERVER, new string[] { "hl7.fhir.r4.core@4.0.1", "hl7.fhir.r4.expansions@4.0.1", IDENTITY_MATCHING });
+            var termService = new LocalTerminologyService(resolver: _clientResolver);
+            var p = new ExpandParameters().WithValueSet(url: "http://hl7.org/fhir/us/identity-matching/ValueSet/Identity-Identifier-vs");
+            var joe = await termService.Expand(p);
+            _testOutputHelper.WriteLine(JsonSerializer.Serialize(joe, new JsonSerializerOptions() { WriteIndented = true }));
+            _testOutputHelper.WriteLine("Goodbye Joe");
+        }
+
+        public class InternalResolver : IAsyncResourceResolver
+        {
+            /// <summary>Find a resource based on its relative or absolute uri.</summary>
+            /// <param name="uri">A resource uri.</param>
+            public Task<Resource> ResolveByUriAsync(string uri)
+            {
+                throw new NotImplementedException();
+            }
+
+            /// <summary>Find a (conformance) resource based on its canonical uri.</summary>
+            /// <param name="uri">The canonical url of a (conformance) resource.</param>
+            public Task<Resource> ResolveByCanonicalUriAsync(string uri)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public class InternalTerminologyService : ITerminologyService
+        {
+            private static readonly SemaphoreSlim _semaphore = new(1, 1);
+
+            private readonly IAsyncResourceResolver _resolver;
+            private readonly ValueSetExpander _expander;
+
+            public InternalTerminologyService(IAsyncResourceResolver resolver, ValueSetExpanderSettings? expanderSettings = null)
+            {
+                _resolver = resolver ?? throw Error.ArgumentNull(nameof(resolver));
+
+                var settings = expanderSettings ?? ValueSetExpanderSettings.CreateDefault();
+                settings.ValueSetSource ??= resolver;
+
+                _expander = new ValueSetExpander(settings);
+            }
+
+            ///<inheritdoc />
+            public async Task<Resource> Expand(Parameters parameters, string id = null, bool useGet = false)
+            {
+                var joe = await _resolver.FindValueSetAsync(id);
+                return null;
+                // throw new NotImplementedException();
+                // return await Endpoint.InstanceOperationAsync(constructUri<ValueSet>(id), RestOperation.EXPAND_VALUESET, parameters, useGet).ConfigureAwait(false);
+            }
+
+            ///<inheritdoc />
+            public Task<Parameters> ValueSetValidateCode(Parameters parameters, string id = null, bool useGet = false)
+            {
+                throw new NotImplementedException();
+            }
+
+            ///<inheritdoc />
+            public Task<Parameters> Subsumes(Parameters parameters, string id = null, bool useGet = false)
+            {
+                throw new NotImplementedException();
+            }
+
+            ///<inheritdoc />
+            public Task<Parameters> CodeSystemValidateCode(Parameters parameters, string id = null, bool useGet = false)
+            {
+                throw new NotImplementedException();
+            }
+
+            ///<inheritdoc />
+            public Task<Parameters> Lookup(Parameters parameters, bool useGet = false)
+            {
+                throw new NotImplementedException();
+            }
+
+            ///<inheritdoc />
+            public Task<Parameters> Translate(Parameters parameters, string id = null, bool useGet = false)
+            {
+                throw new NotImplementedException();
+            }
+
+            ///<inheritdoc />
+            public Task<Resource> Closure(Parameters parameters, bool useGet = false)
+            {
+                throw new NotImplementedException();
+            }
         }
 
         [Fact]

@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Firely.Fhir.Packages" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Hl7.Fhir.R4B" />
     <PackageReference Include="Microsoft.Data.SqlClient" />

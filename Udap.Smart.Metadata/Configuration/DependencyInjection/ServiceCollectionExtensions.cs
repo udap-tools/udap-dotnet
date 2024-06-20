@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using Hl7.Fhir.Utility;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +15,7 @@ using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Udap.Common.Extensions;
 using Udap.Smart.Metadata;
 using Udap.Smart.Model;
 
@@ -55,7 +57,7 @@ public static class ServiceCollectionExtensions
     {
         EnsureMvcControllerUnloads(app);
 
-        app.MapGet($"/{prefixRoute}{SmartConstants.Discovery.DiscoveryEndpoint}",
+        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{SmartConstants.Discovery.DiscoveryEndpoint}",
                 async ([FromServices] SmartMetadataEndpoint endpoint) => await endpoint.Process())
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK)

@@ -1,4 +1,4 @@
-#region (c) 2022 Joseph Shook. All rights reserved.
+#region (c) 2024 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,33 +7,28 @@
 // */
 #endregion
 
-using Hl7.Fhir.Model;
-using Hl7.Fhir.Serialization;
-using Udap.Model.Registration;
-using Xunit.Abstractions;
-using Task = System.Threading.Tasks.Task;
-
-using System.Security.Cryptography;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using IdentityModel;
-using Claim = System.Security.Claims.Claim;
-using System.Reflection.Emit;
 using Firely.Fhir.Packages;
-using Hl7.Fhir.FhirPath;
 using Hl7.Fhir.Introspection;
+using Hl7.Fhir.Model;
+using Hl7.Fhir.Rest;
+using Hl7.Fhir.Serialization;
+using Hl7.Fhir.Specification;
 using Hl7.Fhir.Specification.Source;
 using Hl7.Fhir.Specification.Terminology;
 using Hl7.Fhir.Utility;
-using Hl7.Fhir.Rest;
-using Hl7.Fhir.Specification;
-using System.Net.Http;
-using System;
+using IdentityModel;
+using Microsoft.IdentityModel.Tokens;
+using Udap.Model.Registration;
+using Xunit.Abstractions;
+using Task = System.Threading.Tasks.Task;
+using Claim = System.Security.Claims.Claim;
 
 
 namespace Udap.Common.Tests

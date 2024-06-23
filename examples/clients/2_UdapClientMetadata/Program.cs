@@ -30,6 +30,7 @@ class Program
                     services.Configure<UdapFileCertStoreManifest>(context.Configuration.GetSection("UdapFileCertStoreManifest"));
                     services.AddSingleton<ITrustAnchorStore, TrustAnchorFileStore>();
                     services.AddScoped<TrustChainValidator>();
+                    services.AddSingleton<UdapClientDiscoveryValidator>();
                     services.AddHttpClient<IUdapClient, UdapClient>();
                 });
             })

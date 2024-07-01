@@ -45,7 +45,7 @@
         {
             <MudTd DataLabel="Name">@context.Name</MudTd>
         }
-        <MudTd DataLabel="Enabled"><MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" /></MudTd>
+        <MudTd DataLabel="Enabled"><MudSwitch @bind-Value="@context.Enabled" Color="Color.Primary" /></MudTd>
         <MudTd DataLabel="Anchors">
             <span class="ma-6">@context.RootCertificates.Count()</span>
             <span >
@@ -125,7 +125,7 @@
             <MudTextField @bind-Value="@context.Name" Required />
         </MudTd>
         <MudTd DataLabel="Enabled">
-          <MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" />
+          <MudSwitch @bind-Value="@context.Enabled" Color="Color.Primary" />
         </MudTd>
     </RowEditingTemplate>
     <PagerContent>

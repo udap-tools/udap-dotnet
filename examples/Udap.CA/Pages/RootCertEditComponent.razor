@@ -46,7 +46,7 @@
               {
                   <MudTd DataLabel="Subject">@context.Name</MudTd>
               }
-              <MudTd DataLabel="Enabled"><MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" /></MudTd>
+                <MudTd DataLabel="Enabled"><MudSwitch @bind-Value="@context.Enabled" Color="Color.Primary" /></MudTd>
               <MudTd DataLabel="Certificate">@context.Certificate?.GetNameInfo(X509NameType.SimpleName, false) </MudTd>
               <MudTd DataLabel="Certificate">@context.Thumbprint </MudTd>
               <MudTd @onclick:stopPropagation="true" Style="">
@@ -65,7 +65,7 @@
           </RowTemplate>
           <RowEditingTemplate>
               <MudTd DataLabel="Enabled">
-                  <MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" />
+                  <MudSwitch @bind-Value = "@context.Enabled" Color="Color.Primary" />
               </MudTd>
               <MudTd DataLabel="Thumbprint">@context.Thumbprint</MudTd>
               <MudTd DataLable="Certificate">
@@ -89,7 +89,7 @@
         <MudForm Model="@RootCertificateRowInEdit" @ref="@_rootCertForm" ValidationDelay="0" >
             <MudCardContent>
                 <MudTextField Label="Subject (X.500)" @bind-Value="RootCertificateRowInEdit.Name" For="@(() => RootCertificateRowInEdit.Name)"/>
-              <MudSwitch @bind-Checked="RootCertificateRowInEdit.Enabled" For="@(() => RootCertificateRowInEdit.Enabled)" />
+              <MudSwitch @bind-Value="RootCertificateRowInEdit.Enabled" For="@(() => RootCertificateRowInEdit.Enabled)" />
                 <MudDatePicker Label="Begin Date" Editable="true"
                              Mask="@(new DateMask("MM/dd/yyyy"))" DateFormat="MM/dd/yyyy" Placeholder="en-US Date"
                              @bind-Date="RootCertificateRowInEdit.BeginDate"/>

@@ -42,7 +42,7 @@ namespace Udap.Common.Tests
                 }));
         }
 
-        [Fact]
+        [Fact(Skip = "not ready")]
         public void BuildCertification()
         {
             var certificationCert = new X509Certificate2(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");

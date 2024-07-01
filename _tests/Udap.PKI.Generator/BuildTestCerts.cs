@@ -9,13 +9,10 @@
 
 using System.Reflection;
 using System.Resources;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Configuration;
-using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto.Operators;
 using Org.BouncyCastle.Math;
@@ -31,7 +28,7 @@ namespace Udap.PKI.Generator
 {
 
     [Collection("Udap.PKI.Generator")]
-    public class MakeCa : CertificateBase
+    public class BuildTestCerts : CertificateBase
     {
         private readonly ITestOutputHelper _testOutputHelper;
 
@@ -66,8 +63,8 @@ namespace Udap.PKI.Generator
         private static string SureFhirLabsCaPublicCertHosted { get; } = $"http://crl.fhircerts.net/certs/SureFhirLabs_CA.cer";
         private static string SureFhirLabsIntermediatePublicCertHosted { get; } = "http://crl.fhircerts.net/certs/intermediates/SureFhirLabs_Intermediate.cer";
 
-        private static string SurefhirlabsUdapIntermediates { get; } = $"{SureFhirLabsCertStore}/intermediates";
-        private static string SurefhirlabsUdapIssued { get; } = $"{SureFhirLabsCertStore}/issued";
+        private static string SureFhirlabsUdapIntermediates { get; } = $"{SureFhirLabsCertStore}/intermediates";
+        private static string SureFhirlabsUdapIssued { get; } = $"{SureFhirLabsCertStore}/issued";
 
 
         private static string SureFhirLabsSslWeatherApi { get; } = $"{BaseDir}/certstores/Kestrel/WeatherApi";
@@ -78,18 +75,14 @@ namespace Udap.PKI.Generator
         private static string FhirLabsCertStore { get; } = "certstores/FhirLabs";
         private static string FhirLabsUdapIntermediates { get; } = $"{FhirLabsCertStore}/intermediates";
         private static string FhirLabsUdapIssued { get; } = $"{FhirLabsCertStore}/issued";
-
-        private string DefaultPKCS12Password { get; set; }
-
-        public MakeCa(ITestOutputHelper testOutputHelper)
+        
+        public BuildTestCerts(ITestOutputHelper testOutputHelper)
         {
             _testOutputHelper = testOutputHelper;
 
             IConfiguration config = new ConfigurationBuilder()
                 .AddUserSecrets<SecretSettings>()
                 .Build();
-
-            DefaultPKCS12Password = config["CertPassword"];
         }
 
         /// <summary>
@@ -181,15 +174,11 @@ namespace Udap.PKI.Generator
                     intermediateReq.CertificateExtensions.Add(x509Extension);
 
                     var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
-                    authorityInfoAccessBuilder.AdCertificateAuthorityIssuerUri(new Uri(SureFhirLabsCaPublicCertHosted));
+                    authorityInfoAccessBuilder.AddCertificateAuthorityIssuerUri(new Uri(SureFhirLabsCaPublicCertHosted));
                     var aiaExtension = authorityInfoAccessBuilder.Build();
                     intermediateReq.CertificateExtensions.Add(aiaExtension);
 
 
-                    //
-                    // UDAP client certificate for simple ASP.NET WebApi project
-                    // weatherapi.lab
-                    //
                     using var intermediateCertWithoutKey = intermediateReq.Create(
                         caCert,
                         DateTimeOffset.UtcNow.AddDays(-1),
@@ -197,16 +186,16 @@ namespace Udap.PKI.Generator
                         new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16)));
                     var intermediateCertWithKey = intermediateCertWithoutKey.CopyWithPrivateKey(intermediateRSAKey);
 
-                    SurefhirlabsUdapIntermediates.EnsureDirectoryExists();
+                    SureFhirlabsUdapIntermediates.EnsureDirectoryExists();
                     var intermediateBytes = intermediateCertWithKey.Export(X509ContentType.Pkcs12, "udap-test");
-                    File.WriteAllBytes($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", intermediateBytes);
+                    File.WriteAllBytes($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", intermediateBytes);
                     char[] intermediatePem = PemEncoding.Write("CERTIFICATE", intermediateCertWithoutKey.RawData);
-                    File.WriteAllBytes($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.cer", intermediatePem.Select(c => (byte)c).ToArray());
+                    File.WriteAllBytes($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.cer", intermediatePem.Select(c => (byte)c).ToArray());
                     UpdateWindowsMachineStore(intermediateCertWithoutKey);
 
                     #endregion
 
-                    SurefhirlabsUdapIssued.EnsureDirectoryExists();
+                    SureFhirlabsUdapIssued.EnsureDirectoryExists();
 
                     #region weatherapi.lab Client (Issued) Certificates
 
@@ -216,7 +205,7 @@ namespace Udap.PKI.Generator
                         intermediateRSAKey,
                         "CN=weatherapi.lab, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                         new List<string> { "https://weatherapi.lab:5021/fhir" },
-                        $"{SurefhirlabsUdapIssued}/WeatherApiClient",
+                        $"{SureFhirlabsUdapIssued}/WeatherApiClient",
                         SureFhirLabsIntermediateCrl,
                         SureFhirLabsIntermediatePublicCertHosted);
 
@@ -230,7 +219,7 @@ namespace Udap.PKI.Generator
                         intermediateRSAKey,
                         "CN=fhirlabs.net, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                         new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
-                        $"{SurefhirlabsUdapIssued}/fhirlabs.net.client",
+                        $"{SureFhirlabsUdapIssued}/fhirlabs.net.client",
                         SureFhirLabsIntermediateCrl,
                         SureFhirLabsIntermediatePublicCertHosted
                     );
@@ -245,7 +234,7 @@ namespace Udap.PKI.Generator
                         intermediateRSAKey,
                         "CN=touchstone.aegis.net, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                         new List<string> { "https://touchstone.aegis.net", "https://touchstone.aegis.net:56040" },
-                        $"{SurefhirlabsUdapIssued}/touchstone.aegis.net",
+                        $"{SureFhirlabsUdapIssued}/touchstone.aegis.net",
                         SureFhirLabsIntermediateCrl,
                         SureFhirLabsIntermediatePublicCertHosted
                     );
@@ -283,7 +272,7 @@ namespace Udap.PKI.Generator
                         intermediateRSAKey,
                         "CN=fhirlabs.net ECDSA, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                         new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
-                        $"{SurefhirlabsUdapIssued}/fhirlabs.net.ecdsa.client",
+                        $"{SureFhirlabsUdapIssued}/fhirlabs.net.ecdsa.client",
                         SureFhirLabsIntermediateCrl,
                         SureFhirLabsIntermediatePublicCertHosted
                     );
@@ -596,7 +585,7 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/FhirLabsApi/fhirlabs.net.pfx",
                 true);
 
-            File.Copy($"{SurefhirlabsUdapIssued}/fhirlabs.net.client.pfx",
+            File.Copy($"{SureFhirlabsUdapIssued}/fhirlabs.net.client.pfx",
                 $"{BaseDir}/../../examples/FhirLabsApi/CertStore/issued/fhirlabs.net.client.pfx",
                 true);
 
@@ -634,7 +623,7 @@ namespace Udap.PKI.Generator
         public void MakeNegativeTestCertsForFhirLabsReferenceImplementationServer()
         {
             using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
-            using var subCA = new X509Certificate2($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test");
+            using var subCA = new X509Certificate2($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test");
 
             //
             // Expired certificate
@@ -645,7 +634,7 @@ namespace Udap.PKI.Generator
                 subCA.GetRSAPrivateKey()!,
                 "CN=fhirlabs.net Expired Certificate, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
-                $"{SurefhirlabsUdapIssued}/fhirlabs.net.expired.client",
+                $"{SureFhirlabsUdapIssued}/fhirlabs.net.expired.client",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted,
                 subCA.NotBefore, // Remember, you can not set this to before the issuing certificate
@@ -662,7 +651,7 @@ namespace Udap.PKI.Generator
                 subCA.GetRSAPrivateKey()!,
                 "CN=fhirlabs.net Revoked Certificate, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
-                $"{SurefhirlabsUdapIssued}/fhirlabs.net.revoked.client",
+                $"{SureFhirlabsUdapIssued}/fhirlabs.net.revoked.client",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
             );
@@ -676,7 +665,7 @@ namespace Udap.PKI.Generator
                 subCA.GetRSAPrivateKey()!,
                 "CN=fhirlabs.net mismatch SAN, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://san.mismatch.fhirlabs.net/fhir/r4" },
-                $"{SurefhirlabsUdapIssued}/fhirlabs.net.mismatchSan.client",
+                $"{SureFhirlabsUdapIssued}/fhirlabs.net.mismatchSan.client",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
             );
@@ -691,7 +680,7 @@ namespace Udap.PKI.Generator
                 subCA.GetRSAPrivateKey()!,
                 "CN=fhirlabs.net mismatch SAN, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
-                $"{SurefhirlabsUdapIssued}/fhirlabs.net.mismatchBaseUrl.client",
+                $"{SureFhirlabsUdapIssued}/fhirlabs.net.mismatchBaseUrl.client",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
             );
@@ -709,7 +698,7 @@ namespace Udap.PKI.Generator
                 subCA_localhost.GetRSAPrivateKey()!,
                 "CN=fhirlabs.net untrusted, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://fhirlabs.net/fhir/r4" },
-                $"{SurefhirlabsUdapIssued}/fhirlabs.net.untrusted.client",
+                $"{SureFhirlabsUdapIssued}/fhirlabs.net.untrusted.client",
                 "http://localhost/crl/localhost.crl"
             );
         }
@@ -719,7 +708,7 @@ namespace Udap.PKI.Generator
         public void MakeIdentityProviderCertificates()
         {
             using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
-            using var subCA = new X509Certificate2($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx",
+            using var subCA = new X509Certificate2($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx",
                 "udap-test");
 
 
@@ -733,12 +722,12 @@ namespace Udap.PKI.Generator
                 subCA.GetRSAPrivateKey()!,
                 "CN=IdP1 Server, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://idp1.securedcontrols.net", "https://localhost:5055" },
-                $"{SurefhirlabsUdapIssued}/idp1.securedcontrols.net.server",
+                $"{SureFhirlabsUdapIssued}/idp1.securedcontrols.net.server",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
             );
 
-            File.Copy($"{SurefhirlabsUdapIssued}/idp1.securedcontrols.net.server.pfx",
+            File.Copy($"{SureFhirlabsUdapIssued}/idp1.securedcontrols.net.server.pfx",
                 $"{BaseDir}/../../examples/Udap.Identity.Provider/CertStore/issued/idp1.securedcontrols.net.server.pfx",
                 true);
 
@@ -751,12 +740,12 @@ namespace Udap.PKI.Generator
                 subCA.GetRSAPrivateKey()!,
                 "CN=IdP2 Server, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 new List<string> { "https://idp2.securedcontrols.net", "https://localhost:5057" },
-                $"{SurefhirlabsUdapIssued}/idp2.securedcontrols.net.server",
+                $"{SureFhirlabsUdapIssued}/idp2.securedcontrols.net.server",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
             );
 
-            File.Copy($"{SurefhirlabsUdapIssued}/idp2.securedcontrols.net.server.pfx",
+            File.Copy($"{SureFhirlabsUdapIssued}/idp2.securedcontrols.net.server.pfx",
                 $"{BaseDir}/../../examples/Udap.Identity.Provider.2/CertStore/issued/idp2.securedcontrols.net.server.pfx",
                 true);
 
@@ -777,9 +766,9 @@ namespace Udap.PKI.Generator
         [Fact (Skip = "Enabled on desktop when needed.  Actually I performed the work around in SignedSoftwareStatementBuilder<T>.BuildECDSA")]
         public void GenerateCrlForFailTests()
         {
-            var subCA = new X509Certificate2($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test", X509KeyStorageFlags.Exportable);
+            var subCA = new X509Certificate2($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test", X509KeyStorageFlags.Exportable);
             var revokeCertificate =
-                new X509Certificate2($"{SurefhirlabsUdapIssued}/fhirlabs.net.revoked.client.pfx", "udap-test");
+                new X509Certificate2($"{SureFhirlabsUdapIssued}/fhirlabs.net.revoked.client.pfx", "udap-test");
 
             var x509CrlParser = new X509CrlParser();
             X509Crl? x509Crl = null;
@@ -1406,7 +1395,7 @@ namespace Udap.PKI.Generator
         public void BuildOptumClientCertificateForBrett()
         {
             using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
-            using var subCA = new X509Certificate2($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx",
+            using var subCA = new X509Certificate2($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx",
                 "udap-test");
 
             //
@@ -1431,7 +1420,7 @@ namespace Udap.PKI.Generator
                 subCA.GetRSAPrivateKey()!,
                 "CN=Brett Stringham, OU=UDAP Open Source Developers, O=Optum, L=Kaysville, S=UT, C=US",
                 new List<string> { "https://demo.cyberignition.io/fhir/r4/dev" },
-                $"{SurefhirlabsUdapIssued}/Optum.Brett.client",
+                $"{SureFhirlabsUdapIssued}/Optum.Brett.client",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
             );
@@ -1503,7 +1492,7 @@ namespace Udap.PKI.Generator
             if (buildAIAExtensionsPath != null)
             {
                 var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
-                authorityInfoAccessBuilder.AdCertificateAuthorityIssuerUri(new Uri(buildAIAExtensionsPath));
+                authorityInfoAccessBuilder.AddCertificateAuthorityIssuerUri(new Uri(buildAIAExtensionsPath));
                 var aiaExtension = authorityInfoAccessBuilder.Build();
                 clientCertRequest.CertificateExtensions.Add(aiaExtension);
             }
@@ -1596,7 +1585,7 @@ namespace Udap.PKI.Generator
             if (buildAIAExtensionsPath != null)
             {
                 var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
-                authorityInfoAccessBuilder.AdCertificateAuthorityIssuerUri(new Uri(buildAIAExtensionsPath));
+                authorityInfoAccessBuilder.AddCertificateAuthorityIssuerUri(new Uri(buildAIAExtensionsPath));
                 var aiaExtension = authorityInfoAccessBuilder.Build();
                 clientCertRequest.CertificateExtensions.Add(aiaExtension);
             }

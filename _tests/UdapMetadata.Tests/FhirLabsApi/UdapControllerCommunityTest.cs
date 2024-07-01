@@ -599,12 +599,9 @@ public async Task ValidateChainWithMyAnchorAndIntermediateTest()
 public async Task ValidateChainWithMyAnchorTest()
 {
         //
-        // This are is for client Dependency injection and Configuration
+        // This is for client Dependency injection and Configuration
         //<TrustChainValidator>
-        var configuration = new ConfigurationBuilder()
-            .AddJsonFile("appsettings.json", false, true)
-            // .AddUserSecrets<UdapControllerTests>()
-            .Build();
+        var configuration = new ConfigurationBuilder().Build();
 
         //
         // Important to test UdapClient with DI because we want to take advantage of DotNet DI and the HttpClientFactory

@@ -100,10 +100,10 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     }
 
     /// <summary>
-/// Issuer of the JWT -- unique identifying client URI. This SHALL match the value of a
-/// uniformResourceIdentifier entry in the Subject Alternative Name extension of the client's
-/// certificate included in the x5c JWT header
-/// </summary>
+    /// Issuer of the JWT -- unique identifying client URI. This SHALL match the value of a
+    /// uniformResourceIdentifier entry in the Subject Alternative Name extension of the client's
+    /// certificate included in the x5c JWT header
+    /// </summary>
     [JsonPropertyName(UdapConstants.RegistrationDocumentValues.Issuer)]
     public string? Issuer
     {

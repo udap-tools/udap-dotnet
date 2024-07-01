@@ -44,7 +44,7 @@ using static Udap.Model.UdapConstants;
 namespace Udap.Server.Registration;
 
 /// <summary>
-/// UDAP or HL7 UDAP Validator?  TODO: finish this
+/// UDAP Validator
 /// </summary>
 public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistrationValidator
 {

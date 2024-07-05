@@ -1,32 +1,26 @@
-#region (c) 2024 Joseph Shook. All rights reserved.
-// /*
-//  Authors:
-//     Joseph Shook   Joseph.Shook@Surescripts.com
-// 
-//  See LICENSE in the project root for license information.
-// */
-#endregion
-
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Configuration;
-using Org.BouncyCastle.Crypto.Operators;
-using Org.BouncyCastle.Security;
-using Org.BouncyCastle.X509;
-using Org.BouncyCastle.X509.Extension;
+using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
+using System.Formats.Asn1;
 using static Udap.Common.Standard.ObjectIdentifiers.UdapExperimental;
+using Org.BouncyCastle.Asn1.X509;
+using Org.BouncyCastle.Crypto.Operators;
+using Org.BouncyCastle.Math;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.X509.Extension;
+using Org.BouncyCastle.X509;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
 namespace Udap.PKI.Generator;
 
 [Collection("Udap.PKI.Generator")]
-public class BuildCertificationsCerts : CertificateBase
+public class BuildMtlsCerts : CertificateBase
 {
     private readonly ITestOutputHelper _testOutputHelper;
 
-    public BuildCertificationsCerts(ITestOutputHelper testOutputHelper)
+    public BuildMtlsCerts(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
 
@@ -36,50 +30,43 @@ public class BuildCertificationsCerts : CertificateBase
     }
 
     //
-    // Community:SureFhirCertificationLabs:: Certificate Store File Constants
+    // Community:SureFhirmTLS:: Certificate Store File Constants
     //
-    private static string SureFhirCertificationLabsCertStore
+    private static string SureFhirmTLSCertStore
     {
         get
         {
             var baseDir = BaseDir;
 
-            return $"{baseDir}/certstores/SurefhirCertificationLabs_Community";
+            return $"{baseDir}/certstores/Surefhir_mTLS";
         }
     }
+    private static string SurefhirlabsCrl { get; } = $"{SureFhirmTLSCertStore}/crl";
 
-    private static string SurefhirlabsCrl { get; } = $"{SureFhirCertificationLabsCertStore}/crl";
-    private static string SureFhirCertificationLabsRootPkcsFileCrl { get; } = "SureFhirCertificationLabsRootCrl.crl";
-    private static string sureFhirIntermediateCrlFilename = $"{SurefhirlabsCrl}/{SureFhirCertificationLabsRootPkcsFileCrl}";
-    private static string SureFhirCertificationLabsIntermediatePkcsFileCrl { get; } = "SureFhirCertificationLabsIntermediateCrl.crl";
-    private static string sureFhirClientCrlFilename = $"{SurefhirlabsCrl}/{SureFhirCertificationLabsIntermediatePkcsFileCrl}";
-    private static string SureFhirCertificationLabsRootCrl { get; } = $"http://crl.fhircerts.net/crl/{SureFhirCertificationLabsRootPkcsFileCrl}";
-    private static string SureFhirCertificationLabsIntermediateCrl { get; } = $"http://crl.fhircerts.net/crl/{SureFhirCertificationLabsIntermediatePkcsFileCrl}";
-    private static string SureFhirCertificationLabsCaPublicCertHosted { get; } = $"http://crl.fhircerts.net/certs/SureFhirCertificationLabs_CA.cer";
-    private static string SureFhirCertificationLabsIntermediatePublicCertHosted { get; } = "http://crl.fhircerts.net/certs/intermediates/SureFhirCertificationLabs_Intermediate.cer";
-    private static string SureFhirCertificationLabsUdapIntermediates { get; } = $"{SureFhirCertificationLabsCertStore}/intermediates";
-    private static string SureFhirCertificationLabsUdapIssued { get; } = $"{SureFhirCertificationLabsCertStore}/issued";
 
-    /// <summary>
-    /// 
-    /// default community uri = udap://fhirlabs.net
-    ///
-    /// </summary>
+    private static string SureFhirmTLSRootPkcsFileCrl { get; } = "SureFhirmTLSRootCrl.crl";
+    private static string sureFhirIntermediateCrlFilename = $"{SurefhirlabsCrl}/{SureFhirmTLSRootPkcsFileCrl}";
+    private static string SureFhirmTLSIntermediatePkcsFileCrl { get; } = "SureFhirmTLSIntermediateCrl.crl";
+    private static string sureFhirClientCrlFilename = $"{SurefhirlabsCrl}/{SureFhirmTLSIntermediatePkcsFileCrl}";
+    private static string SureFhirmTLSRootCrl { get; } = $"http://crl.fhircerts.net/crl/{SureFhirmTLSRootPkcsFileCrl}";
+    private static string SureFhirmTLSIntermediateCrl { get; } = $"http://crl.fhircerts.net/crl/{SureFhirmTLSIntermediatePkcsFileCrl}";
+    
+    private static string SureFhirmTLSCaPublicCertHosted { get; } = $"http://crl.fhircerts.net/certs/SureFhirmTLS_CA.cer";
+    private static string SureFhirmTLSIntermediatePublicCertHosted { get; } = "http://crl.fhircerts.net/certs/intermediates/SureFhirmTLS_Intermediate.cer";
+    private static string SureFhirmTLSIntermediates { get; } = $"{SureFhirmTLSCertStore}/intermediates";
+    private static string SureFhirmTLSIssued { get; } = $"{SureFhirmTLSCertStore}/issued";
+
+    
     [Fact]
-    public void MakeCaWithIntermediateForCertificationAndEndorsements()
+    public void Make_mTLS()
     {
-        Console.WriteLine("*************************************");
-        Console.WriteLine(BaseDir);
-        Console.WriteLine("*************************************");
-
-
         #region SureFhir CA
 
         using (RSA parentRSAKey = RSA.Create(4096))
         using (RSA intermediateRSAKey = RSA.Create(4096))
         {
             var parentReq = new CertificateRequest(
-                "CN=SureFhirCertification-CA, OU=Root, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                "CN=SureFhirmTLS-CA, OU=Root, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                 parentRSAKey,
                 HashAlgorithmName.SHA256,
                 RSASignaturePadding.Pkcs1);
@@ -91,17 +78,7 @@ public class BuildCertificationsCerts : CertificateBase
                 new X509KeyUsageExtension(
                     X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.KeyCertSign,
                     true));
-
-            parentReq.CertificateExtensions.Add(
-                new X509EnhancedKeyUsageExtension(
-                    new OidCollection
-                    {
-                        new Oid("1.3.6.1.5.5.7.3.2"), // TLS Client auth
-                        new Oid("1.3.6.1.5.5.7.3.1"), // TLS Server auth
-                        new Oid("1.3.6.1.5.5.7.3.8") // Time Stamping
-                    },
-                    true));
-
+            
             parentReq.CertificateExtensions.Add(
                 new X509SubjectKeyIdentifierExtension(parentReq.PublicKey, false));
 
@@ -110,11 +87,11 @@ public class BuildCertificationsCerts : CertificateBase
                        DateTimeOffset.UtcNow.AddYears(10)))
             {
                 var parentBytes = caCert.Export(X509ContentType.Pkcs12, "udap-test");
-                SureFhirCertificationLabsCertStore.EnsureDirectoryExists();
-                File.WriteAllBytes($"{SureFhirCertificationLabsCertStore}/SureFhirCertificationLabs_CA.pfx",
+                SureFhirmTLSCertStore.EnsureDirectoryExists();
+                File.WriteAllBytes($"{SureFhirmTLSCertStore}/SureFhirmTLS_CA.pfx",
                     parentBytes);
                 char[] caPem = PemEncoding.Write("CERTIFICATE", caCert.RawData);
-                File.WriteAllBytes($"{SureFhirCertificationLabsCertStore}/SureFhirCertificationLabs_CA.cer",
+                File.WriteAllBytes($"{SureFhirmTLSCertStore}/SureFhirmTLS_CA.cer",
                     caPem.Select(c => (byte)c).ToArray());
                 UpdateWindowsMachineStore(caCert);
 
@@ -123,7 +100,7 @@ public class BuildCertificationsCerts : CertificateBase
                 #region SureFireLabs Intermediate
 
                 var intermediateReq = new CertificateRequest(
-                    "CN=SureFhirCertification-Intermediate, OU=Intermediate, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                    "CN=SureFhirmTLS-Intermediate, OU=Intermediate, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                     intermediateRSAKey,
                     HashAlgorithmName.SHA256,
                     RSASignaturePadding.Pkcs1);
@@ -141,19 +118,11 @@ public class BuildCertificationsCerts : CertificateBase
                     new X509SubjectKeyIdentifierExtension(intermediateReq.PublicKey, false));
 
                 AddAuthorityKeyIdentifier(caCert, intermediateReq, _testOutputHelper);
-                intermediateReq.CertificateExtensions.Add(MakeCdp(SureFhirCertificationLabsRootCrl));
-
-
-
-                var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-                subAltNameBuilder.AddUri(
-                    new Uri("udap://fhirlabs.net")); // embedding a community uri in intermediate cert
-                var x509Extension = subAltNameBuilder.Build();
-                intermediateReq.CertificateExtensions.Add(x509Extension);
-
+                intermediateReq.CertificateExtensions.Add(MakeCdp(SureFhirmTLSRootCrl));
+                
                 var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
                 authorityInfoAccessBuilder.AddCertificateAuthorityIssuerUri(
-                    new Uri(SureFhirCertificationLabsCaPublicCertHosted));
+                    new Uri(SureFhirmTLSCaPublicCertHosted));
                 var aiaExtension = authorityInfoAccessBuilder.Build();
                 intermediateReq.CertificateExtensions.Add(aiaExtension);
 
@@ -165,32 +134,42 @@ public class BuildCertificationsCerts : CertificateBase
                     new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16)));
                 var intermediateCertWithKey = intermediateCertWithoutKey.CopyWithPrivateKey(intermediateRSAKey);
 
-                SureFhirCertificationLabsUdapIntermediates.EnsureDirectoryExists();
+                SureFhirmTLSIntermediates.EnsureDirectoryExists();
                 var intermediateBytes = intermediateCertWithKey.Export(X509ContentType.Pkcs12, "udap-test");
                 File.WriteAllBytes(
-                    $"{SureFhirCertificationLabsUdapIntermediates}/SureFhirCertificationLabs_Intermediate.pfx",
+                    $"{SureFhirmTLSIntermediates}/SureFhirmTLS_Intermediate.pfx",
                     intermediateBytes);
                 char[] intermediatePem = PemEncoding.Write("CERTIFICATE", intermediateCertWithoutKey.RawData);
                 File.WriteAllBytes(
-                    $"{SureFhirCertificationLabsUdapIntermediates}/SureFhirCertificationLabs_Intermediate.cer",
+                    $"{SureFhirmTLSIntermediates}/SureFhirmTLS_Intermediate.cer",
                     intermediatePem.Select(c => (byte)c).ToArray());
                 UpdateWindowsMachineStore(intermediateCertWithoutKey);
 
                 #endregion
 
-                SureFhirCertificationLabsUdapIssued.EnsureDirectoryExists();
+                SureFhirmTLSIssued.EnsureDirectoryExists();
 
-                #region Administration Certification
+                #region mTLS Certificates
 
-                BuildClientCertificationCertificate(
+                BuildClientmTLSCertificate(
                     intermediateCertWithoutKey,
                     caCert,
                     intermediateRSAKey,
-                    "CN=FhirLabs Administrator, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                    $"{SureFhirCertificationLabsUdapIssued}/FhirLabsAdminCertification",
-                    SureFhirCertificationLabsIntermediateCrl,
-                    null, //No Subject Alt Name
-                    SureFhirCertificationLabsIntermediatePublicCertHosted);
+                    "CN=client/emailAddress=support@fhirlabs.net, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                    $"{SureFhirmTLSIssued}/FhirLabs_mTLS_Client",
+                    SureFhirmTLSIntermediateCrl,
+                    new List<string> { "mTLS.fhirlabs.net", "localhost" },
+                    SureFhirmTLSIntermediatePublicCertHosted);
+
+                BuildServermTLSCertificate(
+                    intermediateCertWithoutKey,
+                    caCert,
+                    intermediateRSAKey,
+                    "CN=server/emailAddress=support@fhirlabs.net, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                    $"{SureFhirmTLSIssued}/FhirLabs_mTLS_Server",
+                    SureFhirmTLSIntermediateCrl,
+                    new List<string> { "udaped.fhirlabs.net", "localhost" },
+                    SureFhirmTLSIntermediatePublicCertHosted);
 
                 #endregion
 
@@ -268,8 +247,8 @@ public class BuildCertificationsCerts : CertificateBase
         }
     }
 
-
-    private X509Certificate2 BuildClientCertificationCertificate(
+    
+    private X509Certificate2 BuildClientmTLSCertificate(
             X509Certificate2 intermediateCert,
             X509Certificate2 caCert,
             RSA intermediateKey,
@@ -310,7 +289,15 @@ public class BuildCertificationsCerts : CertificateBase
 
         clientCertRequest.CertificateExtensions.Add(
             new X509KeyUsageExtension(
-                X509KeyUsageFlags.DigitalSignature,
+                X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment,
+                true));
+
+        clientCertRequest.CertificateExtensions.Add(
+            new X509EnhancedKeyUsageExtension(
+                new OidCollection
+                {
+                    new Oid("1.3.6.1.5.5.7.3.2"), // TLS Client auth
+                },
                 true));
 
         clientCertRequest.CertificateExtensions.Add(
@@ -328,19 +315,12 @@ public class BuildCertificationsCerts : CertificateBase
             var subAltNameBuilder = new SubjectAlternativeNameBuilder();
             foreach (var subjectAltName in subjectAltNames)
             {
-                subAltNameBuilder.AddUri(new Uri(subjectAltName)); //Same as iss claim
+                subAltNameBuilder.AddDnsName(subjectAltName);
             }
             var x509Extension = subAltNameBuilder.Build();
             clientCertRequest.CertificateExtensions.Add(x509Extension);
         }
 
-        var certificatePolicyBuilder = new CertificatePolicyBuilder();
-        certificatePolicyBuilder.AddPolicyOid(UdapAccessControl.General.Admin); 
-        // certificatePolicyBuilder.AddPolicyOid("1.3.6.1.4.1.12345.1.2");
-        certificatePolicyBuilder.AddPolicyOid("1.3.6.1.4.1.123456.1.2", "https://acme.local/cps");  // Some private policy
-        var policyExtension = certificatePolicyBuilder.Build();
-        clientCertRequest.CertificateExtensions.Add(policyExtension);
-        
 
         if (buildAIAExtensionsPath != null)
         {
@@ -373,4 +353,109 @@ public class BuildCertificationsCerts : CertificateBase
         return clientCert;
     }
 
+    private X509Certificate2 BuildServermTLSCertificate(
+           X509Certificate2 intermediateCert,
+           X509Certificate2 caCert,
+           RSA intermediateKey,
+           string distinguishedName,
+           string clientCertFilePath,
+           string? crl,
+           List<string>? subjectAltNames = null,
+           string? buildAIAExtensionsPath = null,
+           DateTimeOffset notBefore = default,
+           DateTimeOffset notAfter = default)
+    {
+
+        if (notBefore == default)
+        {
+            notBefore = DateTimeOffset.UtcNow;
+        }
+
+        if (notAfter == default)
+        {
+            notAfter = DateTimeOffset.UtcNow.AddYears(2);
+        }
+
+
+        var intermediateCertWithKey = intermediateCert.HasPrivateKey ?
+            intermediateCert :
+            intermediateCert.CopyWithPrivateKey(intermediateKey);
+
+        using RSA rsaKey = RSA.Create(2048);
+
+        var clientCertRequest = new CertificateRequest(
+            distinguishedName,
+            rsaKey,
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1);
+
+        clientCertRequest.CertificateExtensions.Add(
+            new X509BasicConstraintsExtension(false, false, 0, true));
+
+        clientCertRequest.CertificateExtensions.Add(
+            new X509KeyUsageExtension(
+                X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment,
+                true));
+
+        clientCertRequest.CertificateExtensions.Add(
+            new X509EnhancedKeyUsageExtension(
+                new OidCollection
+                {
+                    new Oid("1.3.6.1.5.5.7.3.1"), // TLS Server auth
+                },
+                true));
+
+        clientCertRequest.CertificateExtensions.Add(
+            new X509SubjectKeyIdentifierExtension(clientCertRequest.PublicKey, false));
+
+        AddAuthorityKeyIdentifier(intermediateCert, clientCertRequest, _testOutputHelper);
+
+        if (crl != null)
+        {
+            clientCertRequest.CertificateExtensions.Add(MakeCdp(crl));
+        }
+
+        if (subjectAltNames != null)
+        {
+            var subAltNameBuilder = new SubjectAlternativeNameBuilder();
+            foreach (var subjectAltName in subjectAltNames)
+            {
+                subAltNameBuilder.AddDnsName(subjectAltName);
+            }
+            var x509Extension = subAltNameBuilder.Build();
+            clientCertRequest.CertificateExtensions.Add(x509Extension);
+        }
+
+
+
+        if (buildAIAExtensionsPath != null)
+        {
+            var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
+            authorityInfoAccessBuilder.AddCertificateAuthorityIssuerUri(new Uri(buildAIAExtensionsPath));
+            var aiaExtension = authorityInfoAccessBuilder.Build();
+            clientCertRequest.CertificateExtensions.Add(aiaExtension);
+        }
+
+        var clientCert = clientCertRequest.Create(
+            intermediateCertWithKey,
+            notBefore,
+            notAfter,
+            new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16)));
+        // Do something with these certs, like export them to PFX,
+        // or add them to an X509Store, or whatever.
+        var clientCertWithKey = clientCert.CopyWithPrivateKey(rsaKey);
+
+
+        var certPackage = new X509Certificate2Collection();
+        certPackage!.Add(clientCertWithKey);
+        certPackage.Add(new X509Certificate2(intermediateCert.Export(X509ContentType.Cert)));
+        certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
+
+        var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
+        File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes!);
+        var clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
+        File.WriteAllBytes($"{clientCertFilePath}.cer", clientPem.Select(c => (byte)c).ToArray());
+
+        return clientCert;
+    }
 }

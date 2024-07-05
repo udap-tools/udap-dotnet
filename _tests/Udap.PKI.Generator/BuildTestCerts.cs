@@ -21,7 +21,6 @@ using Org.BouncyCastle.X509;
 using Org.BouncyCastle.X509.Extension;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
-using X509Extension = System.Security.Cryptography.X509Certificates.X509Extension;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
 namespace Udap.PKI.Generator
@@ -199,7 +198,7 @@ namespace Udap.PKI.Generator
 
                     #region weatherapi.lab Client (Issued) Certificates
 
-                    BuildClientCertificate(
+                    BuildUdapClientCertificate(
                         intermediateCertWithoutKey,
                         caCert,
                         intermediateRSAKey,
@@ -213,7 +212,7 @@ namespace Udap.PKI.Generator
 
                     #region fhirlabs.net Client (Issued) Certificates
 
-                    BuildClientCertificate(
+                    BuildUdapClientCertificate(
                         intermediateCertWithoutKey,
                         caCert,
                         intermediateRSAKey,
@@ -228,7 +227,7 @@ namespace Udap.PKI.Generator
 
                     #region touchstone.aegis.net Client (Issued) Certificates
 
-                    BuildClientCertificate(
+                    BuildUdapClientCertificate(
                         intermediateCertWithoutKey,
                         caCert,
                         intermediateRSAKey,
@@ -628,7 +627,7 @@ namespace Udap.PKI.Generator
             //
             // Expired certificate
             //
-            BuildClientCertificate(
+            BuildUdapClientCertificate(
                 subCA,
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
@@ -645,7 +644,7 @@ namespace Udap.PKI.Generator
             // Revoked Certificate
             // Run GenerateCrlForFailTests
             //
-            BuildClientCertificate(
+            BuildUdapClientCertificate(
                 subCA,
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
@@ -659,7 +658,7 @@ namespace Udap.PKI.Generator
             //
             // Iss mismatch To SubjAltName
             //
-            BuildClientCertificate(
+            BuildUdapClientCertificate(
                 subCA,
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
@@ -674,7 +673,7 @@ namespace Udap.PKI.Generator
             // Iss and san does not match BaseUrl.
             // This is a valid cert for fhirlabs.net.  But I can't reload the same cert twice in two communities, so I generate another.
             //
-            BuildClientCertificate(
+            BuildUdapClientCertificate(
                 subCA,
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
@@ -692,7 +691,7 @@ namespace Udap.PKI.Generator
             //
             // Untrusted Use Case:  the CA is not published.
             //
-            BuildClientCertificate(
+            BuildUdapClientCertificate(
                 subCA_localhost,
                 rootCA_localhost,
                 subCA_localhost.GetRSAPrivateKey()!,
@@ -716,7 +715,7 @@ namespace Udap.PKI.Generator
             //
             // Identity Provider 1, server signing cert
             //
-            BuildClientCertificate(
+            BuildUdapClientCertificate(
                 subCA,
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
@@ -734,7 +733,7 @@ namespace Udap.PKI.Generator
             //
             // Identity Provider 2, server signing cert
             //
-            BuildClientCertificate(
+            BuildUdapClientCertificate(
                 subCA,
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
@@ -1125,7 +1124,7 @@ namespace Udap.PKI.Generator
                     }
                     else
                     {
-                        BuildClientCertificate(
+                        BuildUdapClientCertificate(
                             intermediateCert,
                             caCert,
                             intermediate,
@@ -1138,7 +1137,7 @@ namespace Udap.PKI.Generator
 
                         if (issuedName == "fhirLabsApiClientLocalhostCert")
                         {
-                            BuildClientCertificate(
+                            BuildUdapClientCertificate(
                                 intermediateCert,
                                 caCert,
                                 intermediate,
@@ -1155,7 +1154,7 @@ namespace Udap.PKI.Generator
 
                         if (issuedName == "fhirLabsApiClientLocalhostCert2")
                         {
-                            BuildClientCertificate(
+                            BuildUdapClientCertificate(
                                 intermediateCert,
                                 caCert,
                                 intermediate,
@@ -1357,7 +1356,7 @@ namespace Udap.PKI.Generator
             //
             // Build a client cert for the gFhirLabs 
             //
-            BuildClientCertificate(
+            BuildUdapClientCertificate(
                 subCA_localhost,
                 rootCA_localhost,
                 subCA_localhost.GetRSAPrivateKey()!,
@@ -1414,7 +1413,7 @@ namespace Udap.PKI.Generator
             //     DateTimeOffset.UtcNow.AddDays(-1)
             // );
 
-            BuildClientCertificate(
+            BuildUdapClientCertificate(
                 subCA,
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
@@ -1426,7 +1425,7 @@ namespace Udap.PKI.Generator
             );
         }
 
-        private X509Certificate2 BuildClientCertificate(
+        private X509Certificate2 BuildUdapClientCertificate(
             X509Certificate2 intermediateCert,
             X509Certificate2 caCert,
             RSA intermediateKey,

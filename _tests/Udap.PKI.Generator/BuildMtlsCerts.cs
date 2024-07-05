@@ -25,7 +25,7 @@ public class BuildMtlsCerts : CertificateBase
         _testOutputHelper = testOutputHelper;
 
         IConfiguration config = new ConfigurationBuilder()
-            .AddUserSecrets<SecretSettings>()
+            .AddUserSecrets<SecretSettings>() 
             .Build();
     }
 

@@ -155,10 +155,10 @@ public class BuildMtlsCerts : CertificateBase
                     intermediateCertWithoutKey,
                     caCert,
                     intermediateRSAKey,
-                    "CN=client/emailAddress=support@fhirlabs.net, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                    "E=Joseph.Shook@fhirlabs.net, CN=Joseph.Shook, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                     $"{SureFhirmTLSIssued}/FhirLabs_mTLS_Client",
                     SureFhirmTLSIntermediateCrl,
-                    new List<string> { "mTLS.fhirlabs.net", "localhost" },
+                    new List<string> { "joseph.shook@fhirlabs.net" },
                     SureFhirmTLSIntermediatePublicCertHosted);
 
                 BuildServermTLSCertificate(
@@ -277,7 +277,7 @@ public class BuildMtlsCerts : CertificateBase
             intermediateCert.CopyWithPrivateKey(intermediateKey);
 
         using RSA rsaKey = RSA.Create(2048);
-
+        
         var clientCertRequest = new CertificateRequest(
             distinguishedName,
             rsaKey,
@@ -315,7 +315,7 @@ public class BuildMtlsCerts : CertificateBase
             var subAltNameBuilder = new SubjectAlternativeNameBuilder();
             foreach (var subjectAltName in subjectAltNames)
             {
-                subAltNameBuilder.AddDnsName(subjectAltName);
+                subAltNameBuilder.AddEmailAddress(subjectAltName);
             }
             var x509Extension = subAltNameBuilder.Build();
             clientCertRequest.CertificateExtensions.Add(x509Extension);
@@ -349,6 +349,7 @@ public class BuildMtlsCerts : CertificateBase
         File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes!);
         var clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
         File.WriteAllBytes($"{clientCertFilePath}.cer", clientPem.Select(c => (byte)c).ToArray());
+        File.WriteAllText($"{clientCertFilePath}.key", rsaKey.ExportRSAPrivateKeyPem());
 
         return clientCert;
     }

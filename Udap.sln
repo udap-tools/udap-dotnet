@@ -87,6 +87,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Smart.Metadata", "Udap
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Smart.Model", "Udap.Smart.Model\Udap.Smart.Model.csproj", "{DD9B2367-11A6-448C-B733-F5F436A0AA87}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mTLS.Proxy.Server", "examples\mTLS.Proxy.Server\mTLS.Proxy.Server.csproj", "{C984A7E5-A33B-4D9F-9467-697DB715E8D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -268,6 +270,12 @@ Global
 		{DD9B2367-11A6-448C-B733-F5F436A0AA87}.FullDebug|Any CPU.Build.0 = Debug|Any CPU
 		{DD9B2367-11A6-448C-B733-F5F436A0AA87}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD9B2367-11A6-448C-B733-F5F436A0AA87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C984A7E5-A33B-4D9F-9467-697DB715E8D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C984A7E5-A33B-4D9F-9467-697DB715E8D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C984A7E5-A33B-4D9F-9467-697DB715E8D2}.FullDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C984A7E5-A33B-4D9F-9467-697DB715E8D2}.FullDebug|Any CPU.Build.0 = Debug|Any CPU
+		{C984A7E5-A33B-4D9F-9467-697DB715E8D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C984A7E5-A33B-4D9F-9467-697DB715E8D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -294,6 +302,7 @@ Global
 		{FD9FBB5C-DBCF-4C1D-9E21-A98485D179E6} = {4B854644-1F54-4ECA-9290-A89B91A19FF9}
 		{C6D703FE-00D9-42D8-9F81-DC113CE84779} = {B73A108B-9163-4463-B755-A0F84344D088}
 		{BC032973-A216-483C-8C5B-C7B5D9EB0D19} = {4B854644-1F54-4ECA-9290-A89B91A19FF9}
+		{C984A7E5-A33B-4D9F-9467-697DB715E8D2} = {4B854644-1F54-4ECA-9290-A89B91A19FF9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {4C22E2C0-B5D3-497F-BAD0-EB769D6D6CD1}

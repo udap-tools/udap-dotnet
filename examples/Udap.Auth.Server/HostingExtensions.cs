@@ -253,7 +253,11 @@ internal static class HostingExtensions
         {
             app.Use(async (ctx, next) =>
             {
-                ctx.Request.Scheme = ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedProtoHeaderName];
+                var header = ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedProtoHeaderName].FirstOrDefault();
+                if (header != null)
+                {
+                    ctx.Request.Scheme = header;
+                }
 
                 await next();
             });

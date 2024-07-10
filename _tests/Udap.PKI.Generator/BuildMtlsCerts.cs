@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using System.Formats.Asn1;
+using System.Text;
 using static Udap.Common.Standard.ObjectIdentifiers.UdapExperimental;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Crypto.Operators;
@@ -87,6 +88,7 @@ public class BuildMtlsCerts : CertificateBase
                        DateTimeOffset.UtcNow.AddYears(10)))
             {
                 var parentBytes = caCert.Export(X509ContentType.Pkcs12, "udap-test");
+
                 SureFhirmTLSCertStore.EnsureDirectoryExists();
                 File.WriteAllBytes($"{SureFhirmTLSCertStore}/SureFhirmTLS_CA.pfx",
                     parentBytes);
@@ -94,6 +96,10 @@ public class BuildMtlsCerts : CertificateBase
                 File.WriteAllBytes($"{SureFhirmTLSCertStore}/SureFhirmTLS_CA.cer",
                     caPem.Select(c => (byte)c).ToArray());
                 UpdateWindowsMachineStore(caCert);
+
+                var pemCert = File.ReadAllText($"{SureFhirmTLSCertStore}/SureFhirmTLS_CA.cer");
+                File.WriteAllText($"{SureFhirmTLSCertStore}/SureFhirmTLS_CA_SingleLine.cer",
+                    pemCert.ReplaceLineEndings("\\n"));
 
                 #endregion
 
@@ -145,6 +151,10 @@ public class BuildMtlsCerts : CertificateBase
                     intermediatePem.Select(c => (byte)c).ToArray());
                 UpdateWindowsMachineStore(intermediateCertWithoutKey);
 
+                var intermediateCert = File.ReadAllText($"{SureFhirmTLSIntermediates}/SureFhirmTLS_Intermediate.cer");
+                File.WriteAllText($"{SureFhirmTLSIntermediates}/SureFhirmTLS_Intermediate_SingleLine.cer",
+                    intermediateCert.ReplaceLineEndings("\\n"));
+
                 #endregion
 
                 SureFhirmTLSIssued.EnsureDirectoryExists();
@@ -168,7 +178,7 @@ public class BuildMtlsCerts : CertificateBase
                     "CN=server/emailAddress=support@fhirlabs.net, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
                     $"{SureFhirmTLSIssued}/FhirLabs_mTLS_Server",
                     SureFhirmTLSIntermediateCrl,
-                    new List<string> { "udaped.fhirlabs.net", "localhost" },
+                    new List<string> { "mtls.fhirlabs.net", "localhost" },
                     SureFhirmTLSIntermediatePublicCertHosted);
 
                 #endregion
@@ -456,6 +466,7 @@ public class BuildMtlsCerts : CertificateBase
         File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes!);
         var clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
         File.WriteAllBytes($"{clientCertFilePath}.cer", clientPem.Select(c => (byte)c).ToArray());
+        File.WriteAllText($"{clientCertFilePath}.key", rsaKey.ExportRSAPrivateKeyPem());
 
         return clientCert;
     }

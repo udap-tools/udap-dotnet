@@ -13,6 +13,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Authentication.Certificate;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using mTLS.Proxy.Server;
 using Serilog;
@@ -34,7 +35,7 @@ builder.Services.AddSerilog((services, lc) => lc
         theme: TemplateTheme.Code)));
 
 // Mount Cloud Secrets
-builder.Configuration.AddJsonFile("/secret/mtlsproxyserverappsettings", true, false);
+builder.Configuration.AddJsonFile("/secret/mtls_proxy_server_appsettings", true, false);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -48,45 +49,56 @@ builder.Services.AddFusionCache()
         FailSafeMaxDuration = TimeSpan.FromHours(12)
     });
 
-builder.WebHost.ConfigureKestrel((context, serverOptions) =>
+if (builder.Configuration["BehindLoadBalancer"] == null)
 {
-    serverOptions.ConfigureHttpsDefaults(options =>
+    builder.Services.AddAuthorization(options =>
     {
-        options.ServerCertificate = new X509Certificate2(
-            builder.Configuration["mTLS_Server_Certificate"]!,
-            builder.Configuration["mTLS_Server_Certificate_creds"]);
-        options.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
+        options.AddPolicy("mTLS_Policy", policy =>
+            policy.RequireAuthenticatedUser());
     });
-});
 
-builder.Services.AddSingleton<ICertificateValidator, CertificateValidator>();
-builder.Services.AddAuthentication(CertificateAuthenticationDefaults.AuthenticationScheme)
-    .AddCertificate(options =>
+    builder.WebHost.ConfigureKestrel((context, serverOptions) =>
     {
-        options.ChainTrustValidationMode = X509ChainTrustMode.CustomRootTrust;
-        options.CustomTrustStore.Clear();
-        options.CustomTrustStore.AddRange(new X509Certificate2Collection() { new X509Certificate2("SureFhirmTLS_Intermediate.cer"), new X509Certificate2("SureFhirmTLS_CA.cer") });
-        options.AllowedCertificateTypes = CertificateTypes.Chained;
-        options.RevocationMode = X509RevocationMode.Online;
-       
-        options.Events = new CertificateAuthenticationEvents
+        serverOptions.ConfigureHttpsDefaults(options =>
         {
-            OnCertificateValidated = context =>
-            {
-                var validationService = context.HttpContext.RequestServices.GetRequiredService<ICertificateValidator>();
-                if (validationService.Validate(context.ClientCertificate))
-                {
-                    context.Success();
-                }
-                else
-                {
-                    context.Fail("Invalid certificate");
-                }
-                return Task.CompletedTask;
-            }
-        };
+            options.ServerCertificate = new X509Certificate2(
+                builder.Configuration["mTLS_Server_Certificate"]!,
+                builder.Configuration["mTLS_Server_Certificate_creds"]);
+            options.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
+        });
     });
 
+    builder.Services.AddSingleton<ICertificateValidator, CertificateValidator>();
+    builder.Services.AddAuthentication(CertificateAuthenticationDefaults.AuthenticationScheme)
+        .AddCertificate(options =>
+        {
+            options.ChainTrustValidationMode = X509ChainTrustMode.CustomRootTrust;
+            options.CustomTrustStore.Clear();
+            options.CustomTrustStore.AddRange(new X509Certificate2Collection()
+                { new X509Certificate2("SureFhirmTLS_Intermediate.cer"), new X509Certificate2("SureFhirmTLS_CA.cer") });
+            options.AllowedCertificateTypes = CertificateTypes.Chained;
+            options.RevocationMode = X509RevocationMode.Online;
+
+            options.Events = new CertificateAuthenticationEvents
+            {
+                OnCertificateValidated = context =>
+                {
+                    var validationService =
+                        context.HttpContext.RequestServices.GetRequiredService<ICertificateValidator>();
+                    if (validationService.Validate(context.ClientCertificate))
+                    {
+                        context.Success();
+                    }
+                    else
+                    {
+                        context.Fail("Invalid certificate");
+                    }
+
+                    return Task.CompletedTask;
+                }
+            };
+        });
+}
 
 
 builder.Services.AddReverseProxy()
@@ -161,10 +173,24 @@ var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 
+if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
+{
+    app.Use(async (ctx, next) =>
+    {
+        var header = ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedProtoHeaderName].FirstOrDefault();
+        if (header != null)
+        {
+            ctx.Request.Scheme = header;
+        }
+
+        await next();
+    });
+}
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Cannot enabled this when deployed to GCP.  Always an HTTP port 8080 behind load balancer.
 
 // Write streamlined request completion events, instead of the more verbose ones from the framework.
 // To use the default framework request logging instead, remove this line and set the "Microsoft"
@@ -180,6 +206,7 @@ var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
 };
+
 
 app.MapGet("/weatherforecast", () =>
 {

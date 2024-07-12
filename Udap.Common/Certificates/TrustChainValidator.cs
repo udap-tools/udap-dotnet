@@ -171,7 +171,7 @@ namespace Udap.Common.Certificates
                 // Again more to test here.
                 //
 
-                var chainBuilder = new X509Chain();
+                using var chainBuilder = new X509Chain();
 
                 if (!roots.IsNullOrEmpty())
                 {

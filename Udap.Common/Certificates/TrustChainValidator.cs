@@ -139,7 +139,6 @@ namespace Udap.Common.Certificates
             }
 
             // Let's avoid complex state and/or race conditions by making copies of these collections.
-            // Then the delegates should be safe for parallel invocation (provided they are given distinct inputs, which they are).
             X509Certificate2Collection roots = new X509Certificate2Collection(anchorCertificates); 
             X509Certificate2Collection intermeds = null;
 
@@ -147,6 +146,9 @@ namespace Udap.Common.Certificates
             {
                 intermeds = new X509Certificate2Collection(intermediateCertificates);
             }
+
+            intermediateCertificates = null;
+            anchorCertificates = null;
 
             // if there are no anchors we should always fail
             if (roots.IsNullOrEmpty())

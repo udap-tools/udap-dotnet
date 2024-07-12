@@ -66,13 +66,13 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     private readonly IServiceProvider _serviceProvider;
     
 
-    public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper output, ITestOutputHelper testOutputHelper)
+    public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper testOutputHelper)
     {
         //
         // Tests json once
         //
         if (fixture == null) throw new ArgumentNullException(nameof(fixture));
-        fixture.Output = output;
+        fixture.Output = testOutputHelper;
         _fixture = fixture;
 
 

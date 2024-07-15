@@ -166,6 +166,28 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
     [Fact]
+    public async Task ValidateChainWithCommunityInUrlTest()
+    {
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+        udapClient.Problem += _diagnosticsValidator.OnChainProblem;
+
+        var disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4/.well-known/udap?community=udap://Provider2");
+
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+
+        disco = await udapClient.ValidateResource(
+            _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4",
+            "udap://Provider2");
+
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.ProblemCalled.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ValidateChainEcdsaTest()
     {
         var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();

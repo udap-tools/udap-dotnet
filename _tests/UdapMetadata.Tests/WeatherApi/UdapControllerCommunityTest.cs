@@ -229,6 +229,21 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
     }
 
     [Fact]
+    public async Task ValidateChainWithCommunityInUrlTest()
+    {
+        var udapClient = _serviceProvider.GetRequiredService<IUdapClient>();
+        udapClient.Problem += _diagnosticsChainValidator.OnChainProblem;
+
+        var baseAddressAbsoluteUri = _fixture.CreateClient().BaseAddress?.AbsoluteUri;
+        baseAddressAbsoluteUri.Should().NotBeNull();
+        var disco = await udapClient.ValidateResource(baseAddressAbsoluteUri! + ".well-known/udap?community=udap://weatherapi2/");
+
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsChainValidator.Called.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ValidateChainOffLineRevocationTest()
     {
         //

@@ -1,4 +1,4 @@
-﻿#region (c) 2023 Joseph Shook. All rights reserved.
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,34 +7,26 @@
 // */
 #endregion
 
-
-
 //
 // See reason for Microsoft.Extensions.DependencyInjection namespace
 // here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
 //
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Hosting;
-using Duende.IdentityServer.Models;
 using Duende.IdentityServer.ResponseHandling;
 using IdentityModel;
-using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
-using Udap.Model;
 using Udap.Server;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
-using Udap.Server.Hosting.DynamicProviders.Oidc;
 using Udap.Server.Options;
 using Udap.Server.ResponseHandling;
-using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Stores;
 using Udap.Server.Validation;
 using Constants = Udap.Server.Constants;

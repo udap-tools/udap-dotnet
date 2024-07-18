@@ -140,7 +140,7 @@ namespace Udap.Common.Certificates
 
             // Let's avoid complex state and/or race conditions by making copies of these collections.
             X509Certificate2Collection roots = new X509Certificate2Collection(anchorCertificates); 
-            X509Certificate2Collection intermeds = null;
+            X509Certificate2Collection? intermeds = null;
 
             if (intermediateCertificates != null)
             {

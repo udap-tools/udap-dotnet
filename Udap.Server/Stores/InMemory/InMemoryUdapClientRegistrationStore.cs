@@ -9,8 +9,10 @@
 
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography.X509Certificates;
+using Duende.IdentityServer.Models;
 using Udap.Common;
 using Udap.Common.Models;
+using Udap.Server.Extensions;
 using Udap.Server.Storage.Stores;
 
 namespace Udap.Server.Stores.InMemory;
@@ -272,5 +274,34 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             .SingleOrDefault();
 
         return Task.FromResult<int?>(id);
+    }
+
+    public Task<ICollection<Secret>?> RolloverClientSecrets(ParsedSecret secret, CancellationToken token = default)
+    {
+        var rolled = false;
+        using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.RolloverClientSecrets");
+        activity?.SetTag(Tracing.Properties.ClientId, secret.Id);
+
+        var client = _clients.SingleOrDefault(c => c.ClientId == secret.Id);
+
+        if (client != null)
+        {
+            var endCertificate = secret.GetUdapEndCert();
+
+            if (endCertificate != null && endCertificate.NotBefore < DateTime.Now.ToUniversalTime()
+                                       && endCertificate.NotAfter > DateTime.Now.ToUniversalTime())
+            {
+                foreach (var clientSecret in client.ClientSecrets.Where(cs =>
+                             cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME ||
+                             cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY))
+                {
+                    clientSecret.Expiration = endCertificate.NotAfter.ToUniversalTime();
+                    rolled = true;
+                }
+            }
+        }
+
+        activity?.SetTag("Rolled", rolled);
+        return Task.FromResult(client?.ClientSecrets);
     }
 }

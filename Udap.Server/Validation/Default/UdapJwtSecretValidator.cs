@@ -93,25 +93,6 @@ public class UdapJwtSecretValidator : ISecretValidator
             return fail;
         }
 
-        IList<X509Certificate2>? certChainList;
-
-        try
-        {
-            certChainList = await secrets.GetUdapChainsAsync(_clientStore);
-        }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "Could not parse secrets");
-            return fail;
-        }
-
-        if (certChainList != null && !certChainList.Any())
-        {
-            _logger.LogError($"There are no anchors available to validate client assertion for cient_id: {parsedSecret.Id}");
-
-            return fail;
-        }
-        
         var validAudiences = new[]
         {
                 // token endpoint URL
@@ -201,12 +182,44 @@ public class UdapJwtSecretValidator : ISecretValidator
             await _replayCache.AddAsync(Purpose, jti, exp.AddMinutes(5));
         }
 
+        IList<X509Certificate2>? certChainList;
+
+        try
+        {
+            var secretList = secrets.ToList();
+            certChainList = await secretList.GetUdapChainsAsync(_clientStore);
+
+            if (certChainList == null && !secretList.Any())
+            {
+                var rolledSecrets = await _clientStore.RolloverClientSecrets(parsedSecret);
+                if (rolledSecrets == null || !rolledSecrets.Any())
+                {
+                    _logger.LogWarning($"Could not roll secrete for client id: {parsedSecret.Id}");
+                }
+                else{
+                    certChainList = await rolledSecrets.GetUdapChainsAsync(_clientStore);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e, "Could not resolve secrets");
+            return fail;
+        }
+
+        if (certChainList == null || !certChainList.Any())
+        {
+            _logger.LogError($"There are no anchors available to validate client assertion for cient_id: {parsedSecret.Id}");
+
+            return fail;
+        }
+
         //
         // PKI chain validation, including CRL checking
         //
         if (_trustChainValidator.IsTrustedCertificate(
                 parsedSecret.Id,
-                parsedSecret.GetUdapEndCertAsync(),
+                parsedSecret.GetUdapEndCert()!,
                 new X509Certificate2Collection(certChainList.ToArray()),
                 new X509Certificate2Collection(certChainList.ToRootCertArray()),
                 out X509ChainElementCollection? _,

@@ -44,8 +44,7 @@ public static class ClientExtensions
         var enumerable = secrets as Secret[] ?? secrets.ToArray();
 
         if (enumerable
-            .Any(s => s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
-                      s.Expiration > DateTime.Now.ToUniversalTime()))
+            .Any(s => s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
         {
             var communityId = enumerable.SingleOrDefault(s =>
                     s.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY)
@@ -62,7 +61,7 @@ public static class ClientExtensions
 
         return null;
     }
-
+    
     public static IEnumerable<SecurityKey>? GetUdapKeys(this ParsedSecret secret)
     {
         var jsonWebToken = new JsonWebToken(secret.Credential as string);
@@ -87,7 +86,7 @@ public static class ClientExtensions
         return certificates;
     }
 
-    public static X509Certificate2? GetUdapEndCertAsync(this ParsedSecret secret)
+    public static X509Certificate2? GetUdapEndCert(this ParsedSecret secret)
     {
         var jsonWebToken = new JsonWebToken(secret.Credential as string);
         

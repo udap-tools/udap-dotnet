@@ -284,7 +284,9 @@ namespace Udap.Server.Stores
             using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.RolloverClientSecrets");
             activity?.SetTag(Tracing.Properties.ClientId, secret.Id);
 
-            var entity = await _dbContext.Clients.SingleOrDefaultAsync(c => c.ClientId == secret.Id);
+            var entity = await _dbContext.Clients
+                .Include(c => c.ClientSecrets)
+                .SingleOrDefaultAsync(c => c.ClientId == secret.Id, cancellationToken: token);
 
             if (entity != null)
             {
@@ -294,17 +296,18 @@ namespace Udap.Server.Stores
                                           && endCertificate.NotAfter > DateTime.Now.ToUniversalTime())
                 {
                     foreach (var clientSecret in entity.ClientSecrets.Where(cs =>
-                                              cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
+                                              cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME ||
+                                              cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY))
                     {
                         clientSecret.Expiration = endCertificate.NotAfter.ToUniversalTime();
                         rolled = true;
                     }
                 }
+
+                await _dbContext.SaveChangesAsync(token);
             }
 
             activity?.SetTag("Rolled", rolled);
-            await _dbContext.SaveChangesAsync(token);
-
             return entity.ToModel().ClientSecrets;
         }
 

@@ -50,6 +50,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UdapDb.SqlServer", "migrations\UdapDb.SqlServer\UdapDb.SqlServer.csproj", "{0B925B7B-4E10-41CB-B6F9-708E134674CE}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "clients", "clients", "{2D52ACC2-6D22-4C31-A90C-505D04980EEF}"
+	ProjectSection(SolutionItems) = preProject
+		examples\clients\nuget.config = examples\clients\nuget.config
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Model", "Udap.Model\Udap.Model.csproj", "{25BD1FD4-5AB2-403C-81C1-36640CED1CF8}"
 EndProject
@@ -87,7 +90,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Smart.Metadata", "Udap
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Smart.Model", "Udap.Smart.Model\Udap.Smart.Model.csproj", "{DD9B2367-11A6-448C-B733-F5F436A0AA87}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "mTLS.Proxy.Server", "examples\mTLS.Proxy.Server\mTLS.Proxy.Server.csproj", "{C984A7E5-A33B-4D9F-9467-697DB715E8D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "mTLS.Proxy.Server", "examples\mTLS.Proxy.Server\mTLS.Proxy.Server.csproj", "{C984A7E5-A33B-4D9F-9467-697DB715E8D2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

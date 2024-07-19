@@ -74,6 +74,7 @@ internal static class HostingExtensions
                     options.ForceStateParamOnAuthorizationCode = udapServerOptions.ForceStateParamOnAuthorizationCode;
                     options.LogoRequired = udapServerOptions.LogoRequired;
                     options.RequireConsent = udapServerOptions.RequireConsent;
+                    options.AllowRememberConsent = udapServerOptions.AllowRememberConsent;
                 },
                 // udapClientOptions =>
                 // {
@@ -252,7 +253,11 @@ internal static class HostingExtensions
         {
             app.Use(async (ctx, next) =>
             {
-                ctx.Request.Scheme = ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedProtoHeaderName];
+                var header = ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedProtoHeaderName].FirstOrDefault();
+                if (header != null)
+                {
+                    ctx.Request.Scheme = header;
+                }
 
                 await next();
             });

@@ -2,7 +2,7 @@
   "profiles": {
     "1_UdapClientMetadata": {
       "commandName": "Project",
-      "commandLineArgs": "--baseUrl https://fhirlabs.net/fhir/r4 --trustAnchor \"C:\\SureFhirLabs_CA.cer\" --community \"udap://fhirlabs.net/\""
+      "commandLineArgs": "--baseUrl https://fhirlabs.net/fhir/r4 --trustAnchor \"./SureFhirLabs_CA.cer\" --community \"udap://fhirlabs.net/\""
     }
   }
 }

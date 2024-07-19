@@ -8,6 +8,7 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -52,6 +53,13 @@ public class UdapCertificationAndEndorsementDocument : ISoftwareStatementSeriali
     /// </summary>
     [JsonPropertyName(UdapConstants.CertificationAndEndorsementDocumentValues.Subject)]
     public string? Subject { get; set; }
+
+    /// <summary>
+    /// string, registration endpoint URL of Authorization Server (optional, single valued or array).
+    /// If absent, this certification is intended for all audiences.
+    /// </summary>
+    [JsonPropertyName(UdapConstants.CertificationAndEndorsementDocumentValues.Audience)]
+    public string? Audience { get; set; }
 
     /// <summary>
     /// number, expiration time (max 3 years, must not expire after certificate).
@@ -117,7 +125,7 @@ public class UdapCertificationAndEndorsementDocument : ISoftwareStatementSeriali
     /// true if this certification represents an endorsement of the Client App by the issuer.
     /// </summary>
     [JsonPropertyName(UdapConstants.CertificationAndEndorsementDocumentValues.IsEndorsement)]
-    public bool? IsEndorsement { get; set; }
+    public bool? IsEndorsement { get; set; } = false;
 
     /// <summary>
     /// string (optional)
@@ -179,7 +187,7 @@ public class UdapCertificationAndEndorsementDocument : ISoftwareStatementSeriali
     /// so that AS operator can contact client app developer
     /// </summary>
     [JsonPropertyName(UdapConstants.CertificationAndEndorsementDocumentValues.Contacts)]
-    public string[]? Contacts { get; set; }
+    public ICollection<string>? Contacts { get; set; }
 
     /// <summary>
     /// string, for SMART app launch with EHR launch flow, requires scope includes launch
@@ -203,27 +211,27 @@ public class UdapCertificationAndEndorsementDocument : ISoftwareStatementSeriali
     /// contain any wildcard symbols, even if the certification includes a wildcard symbol.
     /// </summary>
     [JsonPropertyName(UdapConstants.CertificationAndEndorsementDocumentValues.RedirectUris)]
-    public string[]? RedirectUris { get; set; }
+    public ICollection<string>? RedirectUris { get; set; }
 
     /// <summary>
     /// array of strings of the form ip, ip1-ip2, or ip/CIDR (optional); origin IP to connect 
     /// to token endpoint, e.g. ["198.51.100.0/24", "203.0.113.55"]
     /// </summary>
     [JsonPropertyName(UdapConstants.CertificationAndEndorsementDocumentValues.IpAllowed)]
-    public string[]? IpAllowed { get; set; }
+    public ICollection<string>? IpAllowed { get; set; }
 
     /// <summary>
     /// array of strings, as per RFC 7591; e.g. authorization_code, refresh_token, 
     /// client_credentials (optional)
     /// </summary>
     [JsonPropertyName(UdapConstants.CertificationAndEndorsementDocumentValues.GrantTypes)]
-    public string[]? GrantTypes { get; set; }
+    public ICollection<string>? GrantTypes { get; set; }
 
     /// <summary>
     /// array of strings, as per RFC 7591; code (omit for client_credentials) (optional)
     /// </summary>
     [JsonPropertyName(UdapConstants.CertificationAndEndorsementDocumentValues.ResponseTypes)]
-    public string[]? ResponseTypes { get; set; }
+    public ICollection<string>? ResponseTypes { get; set; }
 
     /// <summary>
     /// string containing space separate list of permitted scopes, as per RFC 7591; optional

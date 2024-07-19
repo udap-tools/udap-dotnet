@@ -402,7 +402,126 @@ namespace UdapServer.Tests
 
 
         }
-        
+
+        [Fact]
+        public async Task GoodCertificationsRegistrationStore()
+        {
+            var services = new ServiceCollection();
+
+            //
+            // Certificate revocation is offline for unit tests.
+            //
+            var problemFlags = X509ChainStatusFlags.NotTimeValid |
+                               X509ChainStatusFlags.Revoked |
+                               X509ChainStatusFlags.NotSignatureValid |
+                               X509ChainStatusFlags.InvalidBasicConstraints |
+                               X509ChainStatusFlags.CtlNotTimeValid |
+                               // X509ChainStatusFlags.OfflineRevocation |
+                               X509ChainStatusFlags.CtlNotSignatureValid;
+
+            services.AddSingleton(new TrustChainValidator(
+                new X509ChainPolicy()
+                {
+                    DisableCertificateDownloads = true,
+                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                },
+                problemFlags,
+                _testOutputHelper.ToLogger<TrustChainValidator>()));
+
+
+            var builder = services.AddUdapServerBuilder();
+            builder.AddUdapServerConfiguration()
+                .AddUdapInMemoryApiScopes(new List<ApiScope>() { new ApiScope("system/Practitioner.read") });
+
+            services.AddIdentityServer();
+
+
+            services.AddUdapDbContext<UdapDbContext>(options =>
+            {
+                // options.ConfigureDbContext = b =>
+                //     b.UseInMemoryDatabase(_databaseName, new InMemoryDatabaseRoot());
+                options.UdapDbContext = b =>
+                    b.UseSqlite($@"Data Source=Udap.Idp.db.{_databaseName};",
+                        o => o.MigrationsAssembly(typeof(Program).Assembly.FullName));
+            });
+
+            services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
+            services.AddScoped<UdapDynamicClientRegistrationEndpoint, UdapDynamicClientRegistrationEndpoint>();
+            services.AddSingleton(new ServerSettings());
+
+            var mockHttpContextAccessor = Substitute.For<IHttpContextAccessor>();
+            var context = new DefaultHttpContext();
+            context.Request.Scheme = "http";
+            context.Request.Host = new HostString("localhost:5001");
+            context.Request.Path = "/connect/register";
+            mockHttpContextAccessor.HttpContext.Returns(context);
+
+            services.AddSingleton<IHttpContextAccessor>(mockHttpContextAccessor);
+
+
+            // services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor(){new DefaultHttpContext(){ Request = { Path = "/"}}});
+
+            var sp = services.BuildServiceProvider();
+
+            var validator = sp.GetRequiredService<IUdapDynamicClientRegistrationValidator>();
+
+
+            var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "weatherApiClientLocalhostCert1.pfx");
+            var clientCert = new X509Certificate2(cert, "udap-test");
+            var now = DateTime.UtcNow;
+            var jwtId = CryptoRandom.CreateUniqueId();
+
+            var document = new UdapDynamicClientRegistrationDocument
+            {
+                Issuer = "http://localhost/",
+                Subject = "http://localhost/",
+                Audience = "http://localhost:5001/connect/register",
+                Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
+                IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+                JwtId = jwtId,
+                ClientName = "udapTestClient",
+                Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+                GrantTypes = new HashSet<string> { "client_credentials" },
+                ResponseTypes = new HashSet<string> { "authorization_code" },
+                TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+                Scope = "system/Practitioner.read"
+            };
+
+            var signedSoftwareStatement =
+                SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                    .Create(clientCert, document)
+                    .Build();
+
+            // var certifications = new UdapCertificationAndEndorsementDocument("TestCertification");
+            // certifications
+
+
+
+            var requestBody = new UdapRegisterRequest
+            (
+                signedSoftwareStatement,
+                 UdapConstants.UdapVersionsSupportedValue
+            );
+
+            document.ClientId.Should().BeNull();
+
+            var store = sp.GetRequiredService<IUdapClientRegistrationStore>();
+            var communityAnchors = await store.GetAnchorsCertificates("http://localhost");
+            var anchors = await store.GetAnchors("http://localhost");
+            var intermediateCerts = new X509Certificate2Collection(anchors.First().Intermediates
+                .Select(s => X509Certificate2.CreateFromPem(s.Certificate)).ToArray());
+
+            var result = await validator.ValidateAsync(
+                requestBody,
+                intermediateCerts,
+                communityAnchors,
+                anchors);
+
+            result.IsError.Should().BeFalse($"{result.Error} : {result.ErrorDescription}");
+            result.Document.Should().BeEquivalentTo(document);
+
+
+        }
         /// <summary>
         /// Issuer of the JWT -- unique identifying client URI. This SHALL match the value of a
         /// uniformResourceIdentifier entry in the Subject Alternative Name extension of the client's

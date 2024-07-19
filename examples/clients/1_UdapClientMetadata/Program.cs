@@ -29,6 +29,7 @@ class Program
                 host.ConfigureServices(services =>
                 {
                     services.AddScoped<TrustChainValidator>();
+                    services.AddSingleton<UdapClientDiscoveryValidator>();
                     services.AddHttpClient<IUdapClient, UdapClient>();
                     
                 });

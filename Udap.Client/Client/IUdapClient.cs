@@ -21,7 +21,6 @@ namespace Udap.Client.Client;
 
 public interface IUdapClient : IUdapClientEvents
 {
-    //TODO Cancellation Token add...
     Task<UdapDiscoveryDocumentResponse> ValidateResource(
         string baseUrl,
         string? community = null,
@@ -41,7 +40,7 @@ public interface IUdapClient : IUdapClientEvents
 
     /// <summary>
     /// Register a TieredClient in the Authorization Server.
-    /// Currently it is not SAN aware.  It picks the first SAN.
+    /// Currently, it is not SAN aware.  It picks the first SAN.
     /// To pick a different community the client can add a community query parameter to the .
     /// </summary>
     /// <param name="redirectUrl"></param>

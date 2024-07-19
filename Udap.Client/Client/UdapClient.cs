@@ -22,6 +22,7 @@ using Udap.Client.Client.Messages;
 using Udap.Client.Configuration;
 using Udap.Client.Extensions;
 using Udap.Common.Certificates;
+using Udap.Common.Extensions;
 using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
@@ -316,6 +317,12 @@ namespace Udap.Client.Client
                 {
                     UdapServerMetaData = disco.Json?.Deserialize<UdapMetadata>();
                     _logger.LogDebug(UdapServerMetaData?.SerializeToJson());
+
+                    if (baseUrl.Contains(UdapConstants.Discovery.DiscoveryEndpoint))
+                    {
+                        var i = baseUrl.IndexOf(UdapConstants.Discovery.DiscoveryEndpoint, StringComparison.Ordinal);
+                        baseUrl = baseUrl.Substring(0, i).RemoveTrailingSlash();
+                    }
 
                     if (!await _clientDiscoveryValidator.ValidateJwtToken(UdapServerMetaData!, baseUrl))
                     {

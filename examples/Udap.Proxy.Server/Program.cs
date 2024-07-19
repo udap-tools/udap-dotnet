@@ -1,26 +1,39 @@
-using IdentityModel;
-using System.Net;
+#region (c) 2024 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Text;
-using Microsoft.IdentityModel.Tokens;
-using Udap.Proxy.Server;
-using Yarp.ReverseProxy.Transforms;
 using Google.Apis.Auth.OAuth2;
-using Udap.Smart.Model;
-using Hl7.Fhir.Rest;
-using Hl7.Fhir.Serialization;
 using Hl7.Fhir.Model;
-using System;
-using Microsoft.IdentityModel.JsonWebTokens;
-using ZiggyCreatures.Caching.Fusion;
-using Task = System.Threading.Tasks.Task;
-using System.IdentityModel.Tokens.Jwt;
-using Microsoft.AspNetCore.Mvc;
-using Udap.Metadata.Server;
-using Udap.Model;
+using Hl7.Fhir.Serialization;
+using IdentityModel;
+using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using Serilog.Templates;
+using Serilog.Templates.Themes;
+using Udap.Proxy.Server;
+using Udap.Smart.Model;
 using Udap.Util.Extensions;
+using Yarp.ReverseProxy.Transforms;
+using ZiggyCreatures.Caching.Fusion;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddSerilog((services, lc) => lc
+    .ReadFrom.Configuration(builder.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(new ExpressionTemplate(
+        // Include trace and span ids when present.
+        "[{@t:HH:mm:ss} {@l:u3}{#if @tr is not null} ({substring(@tr,0,4)}:{substring(@sp,0,4)}){#end}] {@m}\n{@x}",
+        theme: TemplateTheme.Code)));
 
 // Mount Cloud Secrets
 builder.Configuration.AddJsonFile("/secret/udapproxyserverappsettings", true, false);
@@ -112,11 +125,19 @@ builder.Services.AddReverseProxy()
                 // Response headers are copied before transforms are invoked, update any needed headers on the HttpContext.Response.
                 await responseContext.HttpContext.Response.Body.WriteAsync(bytes);
             }
+
+            //
+            // Rewrite resource URLs
+            //
             else if (responseContext.HttpContext.Request.Path.HasValue && 
                      responseContext.HttpContext.Request.Path.Value.StartsWith("/fhir/r4/", StringComparison.OrdinalIgnoreCase))
             {
                 responseContext.SuppressResponseBody = true;
                 var stream = await responseContext.ProxyResponse!.Content.ReadAsStreamAsync();
+
+                Console.WriteLine($"RESPONSE CODE: {responseContext.ProxyResponse.StatusCode}");
+                
+                
                 using var reader = new StreamReader(stream);
                 // TODO: size limits, timeouts
                 var body = await reader.ReadToEndAsync();
@@ -137,13 +158,17 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
+// Write streamlined request completion events, instead of the more verbose ones from the framework.
+// To use the default framework request logging instead, remove this line and set the "Microsoft"
+// level in appsettings.json to "Information".
+app.UseSerilogRequestLogging();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapReverseProxy();
 
-app.UseSmartMetadata();
+app.UseSmartMetadata("fhir/r4");
 app.UseUdapMetadataServer("fhir/r4"); // Ensure metadata can only be called from this base URL.
 
 app.Run();
@@ -250,6 +275,11 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
     var iss = jsonToken.Claims.Where(c => c.Type == "iss");
     // var sub = jsonToken.Claims.Where(c => c.Type == "sub"); // figure out what subject should be for GCP
 
+
+    // Never let the requester set this header.
+    requestTransformContext.ProxyRequest.Headers.Remove("X-Authorization-Scope");
+    requestTransformContext.ProxyRequest.Headers.Remove("X-Authorization-Issuer");
+ 
     // Google Cloud way of passing scopes to the Fhir Server
     var spaceSeparatedString = scopes?.Select(s => s.Value)
         .Where(s => s != "udap") //gcp doesn't know udap  Need better filter to block unknown scopes

@@ -241,6 +241,86 @@ public class ClientCredentialsUdapModeTests
 
     }
 
+
+
+    [Fact]
+    public async Task GetAccessToken_Rollover_Expired_Secret()
+    {
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+
+        //
+        // Typically the client would validate a server before proceeding to registration.
+        //
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
+
+        regDocumentResult.GetError().Should().BeNull();
+
+        //
+        // Now lets set the Client Secret entry in the database to an expired entry.
+        //
+        var client = _mockPipeline.Clients.Single(c => c.ClientId == regDocumentResult.ClientId);
+        foreach (var secret in client.ClientSecrets)
+        {
+            secret.Expiration = DateTime.Now + TimeSpan.FromDays(-1);
+        }
+
+        //
+        // Get Access Token
+        //
+        var now = DateTime.UtcNow;
+        var jwtPayload = new JwtPayLoadExtension(
+            regDocumentResult.ClientId,
+            IdentityServerPipeline.TokenEndpoint,
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, regDocumentResult.ClientId!),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(),
+                    ClaimValueTypes.Integer),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+                // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+            },
+            now.ToUniversalTime(),
+            now.AddMinutes(5).ToUniversalTime()
+        );
+
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build("RS384");
+
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = IdentityServerPipeline.TokenEndpoint,
+            //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.rs"
+        };
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        tokenResponse.Scope.Should().Be("system/Patient.rs", tokenResponse.Raw);
+
+        client = _mockPipeline.Clients.Single(c => c.ClientId == regDocumentResult.ClientId);
+        foreach (var secret in client.ClientSecrets)
+        {
+            _testOutputHelper.WriteLine(secret.Expiration.ToString());
+        }
+    }
+
+
+
     [Fact]
     public async Task GetAccessToken_Without_algorithm()
     {
@@ -1308,4 +1388,6 @@ public class ClientCredentialsUdapModeTests
         errorResult.ErrorDescription.Should().Be("software_statement replayed");
         
     }
+
+
 }

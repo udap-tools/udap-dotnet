@@ -137,9 +137,21 @@ namespace Udap.Common.Certificates
             {
                 throw new ArgumentNullException(nameof(certificate));
             }
-            
+
+            // Let's avoid complex state and/or race conditions by making copies of these collections.
+            X509Certificate2Collection roots = new X509Certificate2Collection(anchorCertificates); 
+            X509Certificate2Collection? intermeds = null;
+
+            if (intermediateCertificates != null)
+            {
+                intermeds = new X509Certificate2Collection(intermediateCertificates);
+            }
+
+            intermediateCertificates = null;
+            anchorCertificates = null;
+
             // if there are no anchors we should always fail
-            if (anchorCertificates.IsNullOrEmpty())
+            if (roots.IsNullOrEmpty())
             {
                 this.NotifyUntrusted(certificate);
                 return false;
@@ -159,19 +171,19 @@ namespace Udap.Common.Certificates
                 // Again more to test here.
                 //
 
-                var chainBuilder = new X509Chain();
+                using var chainBuilder = new X509Chain();
 
-                if (!anchorCertificates.IsNullOrEmpty())
+                if (!roots.IsNullOrEmpty())
                 {
                     chainPolicy.CustomTrustStore.Clear();
                     chainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-                    chainPolicy.CustomTrustStore.AddRange(anchorCertificates);
+                    chainPolicy.CustomTrustStore.AddRange(roots);
                 }
 
                 chainBuilder.ChainPolicy = chainPolicy;
-                if (intermediateCertificates != null)
+                if (intermeds != null)
                 {
-                    chainBuilder.ChainPolicy.ExtraStore.AddRange(intermediateCertificates!);
+                    chainBuilder.ChainPolicy.ExtraStore.AddRange(intermeds!);
                 }
                 var result = chainBuilder.Build(certificate);
 
@@ -191,7 +203,7 @@ namespace Udap.Common.Certificates
                 // walk the chain starting at the leaf and see if we hit any issues before the anchor
                 foreach (var chainElement in chainElements)
                 {
-                    bool isAnchor = anchorCertificates?.FindByThumbprint(chainElement.Certificate.Thumbprint) != null;
+                    bool isAnchor = roots?.FindByThumbprint(chainElement.Certificate.Thumbprint) != null;
 
                     if (this.ChainElementHasProblems(chainElement))
                     {

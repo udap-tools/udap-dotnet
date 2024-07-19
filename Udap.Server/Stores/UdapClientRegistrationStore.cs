@@ -11,13 +11,19 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Duende.IdentityServer.EntityFramework.Entities;
 using Duende.IdentityServer.EntityFramework.Mappers;
+using Duende.IdentityServer.Models;
+using Hl7.Fhir.Specification.Terminology;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Udap.Common;
 using Udap.Common.Models;
 using Udap.Server.DbContexts;
+using Udap.Server.Extensions;
 using Udap.Server.Mappers;
 using Udap.Server.Storage.Stores;
+using static System.Formats.Asn1.AsnWriter;
+using static Duende.IdentityServer.Events.TokenIssuedSuccessEvent;
+using Secret = Duende.IdentityServer.Models.Secret;
 
 namespace Udap.Server.Stores
 {
@@ -270,6 +276,39 @@ namespace Udap.Server.Stores
             return await _dbContext.Communities.Where(c => c.Name == community)
                 .Select(c => c.Id)
                 .SingleOrDefaultAsync(token);
+        }
+
+        public async Task<ICollection<Secret>?> RolloverClientSecrets(ParsedSecret secret, CancellationToken token = default)
+        {
+            var rolled = false;
+            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.RolloverClientSecrets");
+            activity?.SetTag(Tracing.Properties.ClientId, secret.Id);
+
+            var entity = await _dbContext.Clients
+                .Include(c => c.ClientSecrets)
+                .SingleOrDefaultAsync(c => c.ClientId == secret.Id, cancellationToken: token);
+
+            if (entity != null)
+            {
+                var endCertificate = secret.GetUdapEndCert();
+
+                if(endCertificate != null && endCertificate.NotBefore < DateTime.Now.ToUniversalTime()
+                                          && endCertificate.NotAfter > DateTime.Now.ToUniversalTime())
+                {
+                    foreach (var clientSecret in entity.ClientSecrets.Where(cs =>
+                                              cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME ||
+                                              cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY))
+                    {
+                        clientSecret.Expiration = endCertificate.NotAfter.ToUniversalTime();
+                        rolled = true;
+                    }
+                }
+
+                await _dbContext.SaveChangesAsync(token);
+            }
+
+            activity?.SetTag("Rolled", rolled);
+            return entity.ToModel().ClientSecrets;
         }
 
         private string ShowSummary(IEnumerable<Anchor> anchors)

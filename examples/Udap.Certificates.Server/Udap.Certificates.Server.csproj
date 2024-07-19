@@ -16,12 +16,18 @@
 
   <ItemGroup>
     <Content Remove="wwwroot\certs\.gitignore" />
+    <Content Remove="wwwroot\certs\SureFhirmTLS_Intermediate.cer" />
     <Content Remove="wwwroot\crl\.gitignore" />
+    <Content Remove="wwwroot\crl\SureFhirmTLSIntermediateCrl.crl" />
+    <Content Remove="wwwroot\crl\SureFhirmTLSRootCrl.crl" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="wwwroot\certs\.gitignore" />
+    <None Include="wwwroot\certs\SureFhirmTLS_Intermediate.cer" />
     <None Include="wwwroot\crl\.gitignore" />
+    <None Include="wwwroot\crl\SureFhirmTLSIntermediateCrl.crl" />
+    <None Include="wwwroot\crl\SureFhirmTLSRootCrl.crl" />
   </ItemGroup>
 
 </Project>

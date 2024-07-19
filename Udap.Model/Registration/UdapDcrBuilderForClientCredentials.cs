@@ -68,7 +68,7 @@ public class UdapDcrBuilderForClientCredentials
     }
 
     /// <summary>
-    /// Register or update an existing registration
+    /// Create a builder for registration
     /// </summary>
     /// <param name="cert"></param>
     /// <returns></returns>
@@ -79,7 +79,7 @@ public class UdapDcrBuilderForClientCredentials
 
     
     /// <summary>
-    /// Register or update an existing registration
+    /// Create a builder for registration.
     /// </summary>
     /// <returns></returns>
     public static UdapDcrBuilderForClientCredentials Create()
@@ -88,7 +88,7 @@ public class UdapDcrBuilderForClientCredentials
     }
 
     /// <summary>
-    /// Cancel an existing registration.
+    /// Create a builder to cancel an existing registration.
     /// </summary>
     /// <param name="cert"></param>
     /// <returns></returns>
@@ -97,9 +97,9 @@ public class UdapDcrBuilderForClientCredentials
         return new UdapDcrBuilderForClientCredentials(cert, true);
     }
 
-    
+
     /// <summary>
-    /// Cancel an existing registration.
+    /// Create a builder to cancel an existing registration.
     /// </summary>
     /// <returns></returns>
     public static UdapDcrBuilderForClientCredentials Cancel()
@@ -168,6 +168,11 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
+    /// <summary>
+    /// Set string, token identifier that uniquely identifies this JWT until the expiration time
+    /// </summary>
+    /// <param name="jwtId"></param>
+    /// <returns></returns>
     public UdapDcrBuilderForClientCredentials WithJwtId(string? jwtId = null)
     {
         _document.JwtId = jwtId ?? CryptoRandom.CreateUniqueId();

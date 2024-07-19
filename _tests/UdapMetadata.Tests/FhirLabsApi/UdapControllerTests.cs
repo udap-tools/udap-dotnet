@@ -70,13 +70,13 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
     private readonly ApiTestFixture _fixture;
     private readonly IServiceProvider _serviceProvider;
 
-    public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper output, ITestOutputHelper testOutputHelper)
+    public UdapControllerTests(ApiTestFixture fixture, ITestOutputHelper testOutputHelper)
     {
         //
         // Fixture is for FHIR Server configuration
         //
         if (fixture == null) throw new ArgumentNullException(nameof(fixture));
-        fixture.Output = output;
+        fixture.Output = testOutputHelper;
         _fixture = fixture;
 
 

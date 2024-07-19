@@ -45,7 +45,7 @@
                 {
             <MudTd DataLabel="Name">@context.Name</MudTd>
                 }
-        <MudTd DataLabel="Enabled"><MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" /></MudTd>
+        <MudTd DataLabel="Enabled"><MudSwitch @bind-Value="@context.Enabled" Color="Color.Primary" /></MudTd>
         <MudTd DataLabel="Certificate">@context.Certificate?.GetNameInfo(X509NameType.SimpleName, false) </MudTd>
         <MudTd DataLabel="Certificate">@context.Thumbprint </MudTd>
         <MudTd @onclick:stopPropagation="true" Style="">
@@ -54,7 +54,7 @@
               <MudFab HtmlTag="label"
                   Size="Size.Small"
                   Color="Color.Warning"
-                  Icon="@Icons.Filled.DeleteForever"
+                  Icon="@Icons.Material.Filled.DeleteForever"
                   Label="Delete"
                   class="ma-2"
                   OnClick="@(() => DeleteIntermediateCertificate(context))"
@@ -67,7 +67,7 @@
           <MudTextField @bind-Value="@context.Name" Required />
         </MudTd>
         <MudTd DataLabel="Enabled">
-            <MudSwitch @bind-Checked="@context.Enabled" Color="Color.Primary" />
+            <MudSwitch @bind-Value="@context.Enabled" Color="Color.Primary" />
         </MudTd>
         <MudTd DataLabel="Thumbprint">@context.Thumbprint</MudTd>
         <MudTd DataLable="Certificate">
@@ -83,7 +83,7 @@
           <MudFab HtmlTag="label"
                   Size="Size.Small"
                   Color="Color.Success"
-                  Icon="@Icons.Filled.AttachFile"
+                  Icon="@Icons.Material.Filled.AttachFile"
                   Label="Upload Certificate"
                   for="fileInputForRootCertificate" />
         </MudTd>

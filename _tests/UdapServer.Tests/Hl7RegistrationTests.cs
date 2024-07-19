@@ -28,6 +28,7 @@ using Udap.Common.Certificates;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
+using Udap.Server;
 using Udap.Server.DbContexts;
 using Xunit.Abstractions;
 
@@ -72,7 +73,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
             }
             else
             {
-                Console.WriteLine("Noting to remove???");
+                Console.WriteLine("Nothing to remove???");
             }
 
             services.AddSingleton(new TrustChainValidator(
@@ -358,7 +359,6 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         clientEntity.AllowOfflineAccess.Should().BeFalse();
     }
 
-    
     [Fact]
     public async Task RegistrationMissingX5cHeaderTest()
     {

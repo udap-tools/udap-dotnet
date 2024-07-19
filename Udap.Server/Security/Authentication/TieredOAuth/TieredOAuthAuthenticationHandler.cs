@@ -94,21 +94,21 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         var community = properties.GetParameter<string>(UdapConstants.Community);
         
-        if (!community.IsNullOrEmpty())
+        if (string.IsNullOrEmpty(community))
         {
             queryStrings.Add(UdapConstants.Community, community!);
         }
 
         var tokenEndpoint = properties.GetParameter<string>(UdapConstants.Discovery.TokenEndpoint);
 
-        if (!tokenEndpoint.IsNullOrEmpty())
+        if (string.IsNullOrEmpty(tokenEndpoint))
         {
             Options.TokenEndpoint = tokenEndpoint!;
         } 
 
         var idpBaseUrl = properties.GetParameter<string>("idpBaseUrl");
 
-        if (!idpBaseUrl.IsNullOrEmpty())
+        if (string.IsNullOrEmpty(idpBaseUrl))
         {
             Options.IdPBaseUrl = idpBaseUrl;
         }

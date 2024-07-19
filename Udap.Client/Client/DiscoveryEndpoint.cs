@@ -17,7 +17,7 @@ public class DiscoveryEndpoint
     /// Parses a URL and turns it into authority and discovery endpoint URL.
     /// </summary>
     /// <param name="input">The input.</param>
-    /// <param name="path">The path to the discovery document. If not specified this defaults to .well-known/open-id-configuration</param>
+    /// <param name="path">The path to the discovery document. If not specified this defaults to .well-known/udap</param>
     /// <param name="community">Optional community qualifier</param>
     /// <returns></returns>
     /// <exception cref="System.InvalidOperationException">
@@ -25,6 +25,12 @@ public class DiscoveryEndpoint
     /// </exception>
     public static DiscoveryEndpoint ParseUrl(string input, string? path = null, string? community = null)
     {
+        if (input.Contains(UdapConstants.Discovery.DiscoveryEndpoint))
+        {
+            var i = input.IndexOf(UdapConstants.Discovery.DiscoveryEndpoint, StringComparison.Ordinal);
+            return new DiscoveryEndpoint(input.Substring(0, i).RemoveTrailingSlash(), input);
+        }
+
         if (string.IsNullOrEmpty(path))
         {
             path = UdapConstants.Discovery.DiscoveryEndpoint;

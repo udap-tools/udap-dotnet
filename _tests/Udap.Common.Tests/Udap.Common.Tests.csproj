@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Firely.Fhir.Packages" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Hl7.Fhir.R4B" />
     <PackageReference Include="Microsoft.Data.SqlClient" />
@@ -25,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Udap.Client\Udap.Client.csproj" />
     <ProjectReference Include="..\..\Udap.Model\Udap.Model.csproj" />
     <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
   </ItemGroup>
@@ -32,6 +34,12 @@
   <ItemGroup>
     <PackageReference Include="IdentityModel" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="CertStore\issued\FhirLabsAdminCertification.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

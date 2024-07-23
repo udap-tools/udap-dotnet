@@ -22,20 +22,13 @@ namespace Udap.Model.Registration;
 public class UdapCertificationsAndEndorsementBuilder
 {
     private readonly DateTime _now;
-    private UdapCertificationAndEndorsementDocument _document;
+    private readonly UdapCertificationAndEndorsementDocument _document;
     private X509Certificate2? _certificate;
 
-    protected X509Certificate2? Certificate
-    {
-        get => _certificate;
-        set => _certificate = value;
-    }
-
-    protected UdapCertificationAndEndorsementDocument Document
-    {
-        get => _document;
-        set => _document = value;
-    }
+    /// <summary>
+    /// Let implementer bypass fluent interface and access Document directly
+    /// </summary>
+    protected UdapCertificationAndEndorsementDocument Document => _document;
 
     protected UdapCertificationsAndEndorsementBuilder(string certificationName, X509Certificate2 certificate) : this(certificationName)
     {
@@ -51,7 +44,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// <summary>
     /// Create a builder for registration
     /// </summary>
-    /// <param name="certificationName"></param>
+    /// <param name="certificationName">Short name for certification</param>
     /// <param name="cert"></param>
     /// <returns></returns>
     public static UdapCertificationsAndEndorsementBuilder Create(string certificationName, X509Certificate2 cert)
@@ -62,21 +55,16 @@ public class UdapCertificationsAndEndorsementBuilder
     /// <summary>
     /// Create a builder for registration
     /// </summary>
-    /// <param name="cert"></param>
+    /// <param name="certificationName"></param>
     /// <returns></returns>
     public static UdapCertificationsAndEndorsementBuilder Create(string certificationName)
     {
         return new UdapCertificationsAndEndorsementBuilder(certificationName);
     }
 
-    /// <summary>
-    /// Set at construction time. 
-    /// </summary>
-    public DateTime Now => _now;
-
-    
-    public UdapCertificationsAndEndorsementBuilder WithAudience(string? audience)
+    public UdapCertificationsAndEndorsementBuilder WithAudience(string audience)
     {
+        _ = new Uri(audience);
         _document.Audience = audience;
         return this;
     }
@@ -91,17 +79,17 @@ public class UdapCertificationsAndEndorsementBuilder
     {
         if (expirationOffset > TimeSpan.FromDays(365 * 3)) //ignoring leap year
         {
-            throw new ArgumentException("Expiration limit to 3 years");
+            throw new ArgumentOutOfRangeException(nameof(expirationOffset), "Expiration limit to 3 years");
         }
 
         if (_certificate == null)
         {
-            throw new AggregateException("Certificate required");
+            throw new Exception("Certificate required");
         }
 
-        if (_certificate.NotAfter < (_now + expirationOffset))
+        if (_certificate.NotAfter.ToUniversalTime() < (_now + expirationOffset))
         {
-            throw new AggregateException("Expiration must not expire after certificate");
+            throw new ArgumentOutOfRangeException(nameof(expirationOffset), "Expiration must not expire after certificate");
         }
 
         _document.Expiration = EpochTime.GetIntDate(_now.Add(expirationOffset));
@@ -115,7 +103,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithExpiration(DateTime expiration)
     {
-        return WithExpiration(expiration - _now);
+        return WithExpiration(expiration.ToUniversalTime() - _now);
     }
 
     /// <summary>
@@ -151,28 +139,12 @@ public class UdapCertificationsAndEndorsementBuilder
     }
 
     /// <summary>
-    /// Set short name for certification (required)
-    /// </summary>
-    /// <param name="certificationName"></param>
-    /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithCertificationName(string certificationName)
-    {
-        _document.CertificationName = certificationName;
-        return this;
-    }
-
-    /// <summary>
     /// Set optional URL pointing to logo for this certification, e.g. seal
     /// </summary>
     /// <param name="certificationLogo"></param>
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithCertificationLogo(string certificationLogo)
     {
-        if (string.IsNullOrEmpty(certificationLogo))
-        {
-            return this;
-        }
-
         _ = new Uri(certificationLogo);
         _document.CertificationLogo = certificationLogo;
         return this;
@@ -196,7 +168,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// </summary>
     /// <param name="uris"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithCertificationUris(params string[] uris)
+    public UdapCertificationsAndEndorsementBuilder WithCertificationUris(ICollection<string>? uris)
     {
         _document.CertificationUris = uris;
         return this;
@@ -210,6 +182,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithCertificationStatusEndpoint(string endpoint)
     {
+        _ = new Uri(endpoint);
         _document.CertificationStatusEndpoint = endpoint;
         return this;
     }
@@ -219,7 +192,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// </summary>
     /// <param name="isEndorsement"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithCertificationDescription(bool isEndorsement)
+    public UdapCertificationsAndEndorsementBuilder WithEndorsement(bool isEndorsement)
     {
         _document.IsEndorsement = isEndorsement;
         return this;
@@ -230,7 +203,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// </summary>
     /// <param name="name"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithCertificationDeveloperName(string name)
+    public UdapCertificationsAndEndorsementBuilder WithDeveloperName(string name)
     {
         _document.DeveloperName = name;
         return this;
@@ -254,7 +227,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// </summary>
     /// <param name="address"></param>
     /// <returns></returns>
-public UdapCertificationsAndEndorsementBuilder WithCertificationDeveloperAddress(string address)
+public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string address)
     {
         _document.DeveloperAddress = address;
         return this;
@@ -338,6 +311,8 @@ public UdapCertificationsAndEndorsementBuilder WithCertificationDeveloperAddress
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithClientUri(string clientUri)
     {
+        _ = new Uri(clientUri);
+
         _document.ClientUri = clientUri;
         return this;
     }
@@ -355,7 +330,8 @@ public UdapCertificationsAndEndorsementBuilder WithCertificationDeveloperAddress
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithLogoUri(string logoUri)
     {
-        _document.ClientUri = logoUri;
+        _ = new Uri(logoUri);
+        _document.LogoUri = logoUri;
         return this;
     }
 
@@ -424,6 +400,8 @@ public UdapCertificationsAndEndorsementBuilder WithCertificationDeveloperAddress
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithLaunchUri(string launchUri)
     {
+        _ = new Uri(launchUri);
+
         _document.LaunchUri = launchUri;
         return this;
     }
@@ -491,7 +469,7 @@ public UdapCertificationsAndEndorsementBuilder WithCertificationDeveloperAddress
     /// </summary>
     /// <param name="scope"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithResponseTypes(string scope)
+    public UdapCertificationsAndEndorsementBuilder WithScope(string scope)
     {
         _document.Scope = scope;
         return this;
@@ -519,8 +497,9 @@ public UdapCertificationsAndEndorsementBuilder WithCertificationDeveloperAddress
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithJwks(string jwks)
     {
-        _document.Jwks = jwks;
-        return this;
+        throw new NotImplementedException();
+        // _document.Jwks = jwks;
+        // return this;
     }
 
     public UdapCertificationsAndEndorsementBuilder WithCertificate(X509Certificate2 certificate)
@@ -542,7 +521,7 @@ public UdapCertificationsAndEndorsementBuilder WithCertificationDeveloperAddress
     {
         if (_certificate == null)
         {
-            return "missing certificate";
+            throw new Exception("Missing certificate");
         }
 
         return SignedSoftwareStatementBuilder<UdapCertificationAndEndorsementDocument>

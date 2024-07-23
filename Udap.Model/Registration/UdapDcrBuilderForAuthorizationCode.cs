@@ -30,13 +30,7 @@ public class UdapDcrBuilderForAuthorizationCode
     private DateTime _now;
     private UdapDynamicClientRegistrationDocument _document;
     private X509Certificate2? _certificate;
-
-    protected X509Certificate2? Certificate
-    {
-        get => _certificate;
-        set => _certificate = value;
-    }
-
+    
     protected UdapDynamicClientRegistrationDocument Document
     {
         get => _document;
@@ -103,17 +97,7 @@ public class UdapDcrBuilderForAuthorizationCode
     {
         return new UdapDcrBuilderForAuthorizationCode(true);
     }
-    /// <summary>
-    /// Set at construction time. 
-    /// </summary>
-    public DateTime Now
-    {
-        get
-        {
-            return _now;
-        }
-    }
-
+    
     public UdapDcrBuilderForAuthorizationCode WithGrantType(string grantType)
     {
         _document.GrantTypes!.Add(grantType);
@@ -244,7 +228,7 @@ public class UdapDcrBuilderForAuthorizationCode
     {
         if (_certificate == null)
         {
-            return "missing certificate";
+            throw new Exception("Missing certificate");
         }
 
         return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>

@@ -31,12 +31,6 @@ public class UdapDcrBuilderForClientCredentials
     private UdapDynamicClientRegistrationDocument _document;
     private X509Certificate2? _certificate;
 
-    protected X509Certificate2? Certificate
-    {
-        get => _certificate;
-        set => _certificate = value;
-    }
-
     protected  UdapDynamicClientRegistrationDocument Document
     {
         get => _document;
@@ -106,13 +100,8 @@ public class UdapDcrBuilderForClientCredentials
     {
         return new UdapDcrBuilderForClientCredentials(true);
     }
-
-
-    /// <summary>
-    /// Set at construction time. 
-    /// </summary>
-    public DateTime Now => _now;
-
+    
+    
 #if NET6_0_OR_GREATER
     /// <summary>
     /// If the certificate has more than one uniformResourceIdentifier in the Subject Alternative Name
@@ -234,7 +223,7 @@ public class UdapDcrBuilderForClientCredentials
     {
         if (_certificate == null)
         {
-            return "missing certificate";
+            throw new Exception("Missing certificate");
         }
 
         return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>

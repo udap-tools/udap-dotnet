@@ -111,7 +111,7 @@ public class UdapCertificationAndEndorsementDocument : ISoftwareStatementSeriali
     /// required if certification is self-signed)
     /// </summary>
     [JsonPropertyName(UdapConstants.CertificationAndEndorsementDocumentValues.CertificationUris)]
-    public string[]? CertificationUris { get; set; }
+    public ICollection<string>? CertificationUris { get; set; }
 
     /// <summary>
     /// string (optional); URL of status endpoint operated by the Certifier (see section 8); 

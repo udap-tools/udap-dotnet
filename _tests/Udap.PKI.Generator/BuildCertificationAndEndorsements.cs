@@ -22,11 +22,11 @@ using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 namespace Udap.PKI.Generator;
 
 
-public class BuildCertificationsCerts : CertificateBase
+public class BuildCertificationAndEndorsements : CertificateBase
 {
     private readonly ITestOutputHelper _testOutputHelper;
 
-    public BuildCertificationsCerts(ITestOutputHelper testOutputHelper)
+    public BuildCertificationAndEndorsements(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
 
@@ -266,6 +266,11 @@ public class BuildCertificationsCerts : CertificateBase
                 #endregion
             }
         }
+
+        // Distribute
+        File.Copy($"{SureFhirCertificationLabsUdapIssued}/FhirLabsAdminCertification.pfx",
+            $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/issued/FhirLabsAdminCertification.pfx",
+            true);
     }
 
 

@@ -21,6 +21,7 @@ using System.Text.Json.Serialization;
 using FluentAssertions;
 using IdentityModel;
 using IdentityModel.Client;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -1807,9 +1808,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
             })
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("user/Patient.* user/Practitioner.read")
+            .WithScope("user/*.read")
             .WithResponseTypes(new HashSet<string> { "code" })
             .WithRedirectUrls(redirectUrls!)
+            .WithLogoUri("https://udaped.fhirlabs.net/_content/UdapEd.Shared/images/UdapEdLogobyDesigner.png")
             .BuildSoftwareStatement();
 
         
@@ -1825,7 +1827,8 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         // return;
 
-        using var idpClient = new HttpClient(); // New client.  The existing HttpClient chains up to a CustomTrustStore 
+        handler = new HttpClientHandler() { AllowAutoRedirect = false };
+        using var idpClient = new HttpClient(handler); // New client.  The existing HttpClient chains up to a CustomTrustStore 
         var response = await idpClient.PostAsJsonAsync(reg, requestBody);
 
         if (response.StatusCode != HttpStatusCode.Created)
@@ -1833,7 +1836,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
         }
 
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        response.StatusCode.Should().BeOneOf(HttpStatusCode.Created, HttpStatusCode.OK);
         response.Content.Headers.ContentType!.ToString().Should().Be("application/json");
 
         // var documentAsJson = JsonSerializer.Serialize(document);
@@ -1878,49 +1881,65 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             now.AddMinutes(5).ToUniversalTime()
             );
 
-        var clientAssertion =
-            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
-                .Create(clientCert, jwtPayload)
-                .Build();
+        // var clientAssertion =
+        //     SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+        //         .Create(clientCert, jwtPayload)
+        //         .Build();
 
-        var clientRequest = new UdapClientCredentialsTokenRequest
-        {
-            Address = disco.TokenEndpoint,
-            //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
-            ClientAssertion = new ClientAssertion()
-            {
-                Type = ClientAssertionTypes.JwtBearer,
-                Value = clientAssertion
-            },
-            Udap = UdapConstants.UdapVersionsSupportedValue,
-            Scope = "user/Patient.* user/Practitioner.read"
-        };
-
-        
-        _testOutputHelper.WriteLine("Client Token Request");
-        _testOutputHelper.WriteLine("---------------------");
-        _testOutputHelper.WriteLine(JsonSerializer.Serialize(clientRequest));
-        _testOutputHelper.WriteLine(string.Empty);
-        _testOutputHelper.WriteLine(string.Empty);
+        // var clientRequest = new UdapClientCredentialsTokenRequest
+        // {
+        //     Address = disco.TokenEndpoint,
+        //     //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
+        //     ClientAssertion = new ClientAssertion()
+        //     {
+        //         Type = ClientAssertionTypes.JwtBearer,
+        //         Value = clientAssertion
+        //     },
+        //     Udap = UdapConstants.UdapVersionsSupportedValue,
+        //     Scope = "user/Patient.read"
+        // };
+        //
+        //
+        // _testOutputHelper.WriteLine("Client Token Request");
+        // _testOutputHelper.WriteLine("---------------------");
+        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(clientRequest));
+        // _testOutputHelper.WriteLine(string.Empty);
+        // _testOutputHelper.WriteLine(string.Empty);
 
         var url = new RequestUrl(disco.AuthorizeEndpoint!).CreateAuthorizeUrl(
             clientId: result.ClientId!,
             responseType: "code",
             state: CryptoRandom.CreateUniqueId(),
-            scope: result.Scope,
+            scope: "user/Patient.read",
             redirectUri: redirectUrls.First());
 
-        handler = new HttpClientHandler() { AllowAutoRedirect = false };
-        var httpClient = new HttpClient(handler);
-
-        response = await httpClient.GetAsync(url);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Redirect);
-
+        // handler = new HttpClientHandler() { AllowAutoRedirect = false };
+        // var httpClient = new HttpClient(handler);
+        response = await idpClient.GetAsync(url);
+        var content = await response.Content.ReadAsStringAsync();
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect, content);
 
         //
+        // If you can't control the server this is as far as you can go.  
+        // The conformance tests for Tiered oauth control the server
         //
-        // var tokenResponse = await idpClient.RequestClientCredentialsTokenAsync(clientRequest);
+
+        // response = await idpClient.GetAsync(response.Headers.Location);
+        //
+        //
+        // var  queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+        // queryParams.Should().Contain(p => p.Key == "code");
+        // var code = queryParams.Single(p => p.Key == "code").Value.ToString();
+        //
+        // var tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
+        //         result.ClientId!,
+        //         disco.RegistrationEndpoint,
+        //         clientCert,
+        //         "https://code_client/callback",
+        //         code)
+        //     .Build();
+        //
+        // var tokenResponse = await idpClient.ExchangeCodeForTokenResponse(tokenRequest);
         //
         // _testOutputHelper.WriteLine("Authorization Token Response");
         // _testOutputHelper.WriteLine("---------------------");

@@ -85,34 +85,7 @@ public static class X509Extensions
             certs.Add(cert);
         }
     }
-
-    /// <summary>
-    /// Supplies an enumeration for this collection.
-    /// </summary>
-    /// <param name="certs">The collection to enumerate.</param>
-    /// <returns>The enumerator for this collection.</returns>
-    public static IEnumerable<X509Certificate2> Enumerate(this X509Certificate2Collection certs)
-    {
-        return certs.Enumerate(null);
-    }
-
-    /// <summary>
-    /// Supplies an filtered enumeration for this collection.
-    /// </summary>
-    /// <param name="certs">The collection to enumerate.</param>
-    /// <param name="filter">The filter testing each element of the source collection for enumeration. Elements for which the filter returns <c>false</c> will not be returned by the enumerator.</param>
-    /// <returns>The enumerator for this collection.</returns>
-    public static IEnumerable<X509Certificate2> Enumerate(this X509Certificate2Collection certs, Predicate<X509Certificate2>? filter)
-    {
-        foreach (X509Certificate2 cert in certs)
-        {
-            if (filter == null || filter(cert))
-            {
-                yield return cert;
-            }
-        }
-    }
-
+    
     /// <summary>
     /// Return the first matching element whose certificate thumbprint matches the supplied <paramref name="thumbprint"/>
     /// </summary>

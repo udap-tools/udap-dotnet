@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Udap.Util\Udap.Util.csproj" />
+    <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
   </ItemGroup>
 
 </Project>

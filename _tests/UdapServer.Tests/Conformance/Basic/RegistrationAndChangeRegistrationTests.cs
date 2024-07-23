@@ -193,7 +193,7 @@ public class RegistrationAndChangeRegistrationTests
         // Second Registration as Authorization Code Flow should be a change registration, replacing the grant type
         // and returning the same clientId.
         //
-        document = UdapDcrBuilderForAuthorizationCode
+        signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -209,14 +209,8 @@ public class RegistrationAndChangeRegistrationTests
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .WithGrantType(OidcConstants.GrantTypes.RefreshToken)
-            .Build();
-
-
-        signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
+            .BuildSoftwareStatement();
+        
         requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,

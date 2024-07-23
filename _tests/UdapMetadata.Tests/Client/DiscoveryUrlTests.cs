@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Udap.Client.Client;
 
-namespace Udap.Common.Tests.Client;
+namespace UdapMetadata.Tests.Client;
 public class DiscoveryUrlTests
 {
     [Fact]

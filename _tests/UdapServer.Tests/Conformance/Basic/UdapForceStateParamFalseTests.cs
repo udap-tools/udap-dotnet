@@ -140,7 +140,7 @@ public class UdapForceStateParamFalseTests
 
         await _mockPipeline.LoginAsync("bob");
         
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -155,13 +155,8 @@ public class UdapForceStateParamFalseTests
             .WithScope("openid udap")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .Build();
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
+            .BuildSoftwareStatement();
+        
         var requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,

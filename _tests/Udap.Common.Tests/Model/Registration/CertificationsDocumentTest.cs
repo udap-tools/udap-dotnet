@@ -11,15 +11,11 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using FluentAssertions;
-using FluentAssertions.Common;
-using Hl7.Fhir.Utility;
 using IdentityModel;
 using Udap.Model.Registration;
-using Udap.Model.Statement;
 using Xunit.Abstractions;
 
-
-namespace Udap.Common.Tests
+namespace Udap.Common.Tests.Model.Registration
 {
     public class CertificationsDocumentTest
     {

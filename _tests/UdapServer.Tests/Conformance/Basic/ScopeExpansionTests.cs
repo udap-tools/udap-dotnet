@@ -476,7 +476,7 @@ public class ScopeExpansionTests
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -492,13 +492,7 @@ public class ScopeExpansionTests
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .WithGrantType("refresh_token")
-            .Build();
-
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-            .Create(clientCert, document)
-            .Build();
+            .BuildSoftwareStatement();
 
         var requestBody = new UdapRegisterRequest
         (

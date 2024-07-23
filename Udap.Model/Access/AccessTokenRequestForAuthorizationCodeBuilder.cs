@@ -95,7 +95,6 @@ public class AccessTokenRequestForAuthorizationCodeBuilder
     {
         JwtPayLoadExtension jwtPayload;
 
-        //HL7 FHIR IG profile
         jwtPayload = new JwtPayLoadExtension(
             _clientId,
             _tokenEndpoint, //The FHIR Authorization Server's token endpoint URL
@@ -108,9 +107,4 @@ public class AccessTokenRequestForAuthorizationCodeBuilder
             .Create(_certificate, jwtPayload)
             .Build(algorithm);
     }
-
-    // private string BuildHl7B2BExtensions()
-    // {
-    //     return "{\"version\": \"1\", \"subject_name\": \"todo.  more work to do here\"}";
-    // }
 }

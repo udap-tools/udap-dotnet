@@ -37,10 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="CertStore\issued\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Update="CertStore\issued\FhirLabsAdminCertification.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

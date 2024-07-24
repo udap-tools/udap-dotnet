@@ -19,12 +19,10 @@ namespace Udap.Smart.Metadata;
 public class SmartMetadataEndpoint
 {
     private readonly IOptionsMonitor<SmartMetadata>? _smartMetadata;
-    private readonly string? _namedOption;
 
-    public SmartMetadataEndpoint(IOptionsMonitor<SmartMetadata>? smartMetadata, string? namedOption)
+    public SmartMetadataEndpoint(IOptionsMonitor<SmartMetadata>? smartMetadata)
     {
         _smartMetadata = smartMetadata;
-        _namedOption = namedOption;
     }
 
     public Task<IResult> Process()
@@ -34,8 +32,6 @@ public class SmartMetadataEndpoint
             return Task.FromResult(Results.NotFound());
         }   
 
-        return Task.FromResult(Results.Ok(_namedOption == null ? 
-            _smartMetadata.CurrentValue : 
-            _smartMetadata.Get(_namedOption) ));
+        return Task.FromResult(Results.Ok(_smartMetadata.CurrentValue));
     }
 }

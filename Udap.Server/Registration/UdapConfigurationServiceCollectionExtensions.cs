@@ -18,7 +18,6 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Model;
-using Udap.Server.Infrastructure.Clock;
 using Udap.Server.Registration;
 using Udap.Server.Validation;
 using Udap.Server.Validation.Default;
@@ -45,7 +44,6 @@ public static class UdapConfigurationServiceCollectionExtensions
     {
         builder.Services.TryAddSingleton<IScopeExpander, DefaultScopeExpander>();
         builder.Services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
-        builder.Services.TryAddTransient<IClock, DefaultClock>();
         builder.Services.TryAddTransient<IUdapDynamicClientRegistrationValidator, UdapDynamicClientRegistrationValidator>();
         builder.Services.TryAddSingleton<TrustChainValidator>();
         

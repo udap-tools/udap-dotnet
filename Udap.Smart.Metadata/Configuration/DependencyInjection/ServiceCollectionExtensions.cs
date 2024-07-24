@@ -11,7 +11,6 @@ using Hl7.Fhir.Utility;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -28,12 +27,11 @@ public static class ServiceCollectionExtensions
     /// Extension method used to register a single <see cref="SmartMetadata"/> or a named <see cref="SmartMetadata"/>.
     /// </summary>
     /// <param name="services"></param>
-    /// <param name="namedOption">Named Option.  This feature is anticipated to allow a proxy server implementation to host multiple .well-known/smart-configuration endpoints.</param>
     /// <returns></returns>
-    public static IServiceCollection AddSmartMetadata(this IServiceCollection services, string? namedOption = null)
+    public static IServiceCollection AddSmartMetadata(this IServiceCollection services)
     {
         services.AddScoped<SmartMetadataEndpoint>(sp => 
-            new SmartMetadataEndpoint(sp.GetService<IOptionsMonitor<SmartMetadata>>(), namedOption));
+            new SmartMetadataEndpoint(sp.GetService<IOptionsMonitor<SmartMetadata>>()));
         return services;
     }
 
@@ -42,21 +40,18 @@ public static class ServiceCollectionExtensions
     /// This method will look up SMART Metadata from the "SmartMetadata" configuration section of appsettings.
     /// </summary>
     /// <param name="builder"></param>
-    /// <param name="namedOption">Named Option.  This feature is anticipated to allow a proxy server implementation to host multiple .well-known/smart-configuration endpoints.</param>
     /// <returns></returns>
-    public static IHostApplicationBuilder AddSmartMetadata(this IHostApplicationBuilder builder, string? namedOption = null)
+    public static IHostApplicationBuilder AddSmartMetadata(this IHostApplicationBuilder builder)
     {
         builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSection("SmartMetadata"));
-        builder.Services.AddScoped<SmartMetadataEndpoint>(sp => 
-            new SmartMetadataEndpoint(sp.GetService<IOptionsMonitor<SmartMetadata>>(), namedOption));
+        builder.Services.AddScoped<SmartMetadataEndpoint>(sp =>
+            new SmartMetadataEndpoint(sp.GetService<IOptionsMonitor<SmartMetadata>>()));
 
         return builder;
     }
 
     public static IApplicationBuilder UseSmartMetadata(this WebApplication app, string? prefixRoute = null)
     {
-        EnsureMvcControllerUnloads(app);
-
         app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{SmartConstants.Discovery.DiscoveryEndpoint}",
                 async ([FromServices] SmartMetadataEndpoint endpoint) => await endpoint.Process())
             .AllowAnonymous()
@@ -64,32 +59,5 @@ public static class ServiceCollectionExtensions
             .Produces(StatusCodes.Status404NotFound); // missing SmartMetadata
         
         return app;
-    }
-
-    public static IApplicationBuilder UseSmartMetadata(this IApplicationBuilder app, string? prefixRoute = null)
-    {
-        app.Map($"/{prefixRoute}{SmartConstants.Discovery.DiscoveryEndpoint}", path =>
-        {
-            path.Run(async ctx =>
-            {
-                var endpoint = ctx.RequestServices.GetRequiredService<SmartMetadataEndpoint>();
-                var result = await endpoint.Process();
-                await result.ExecuteAsync(ctx);
-            });
-        });
-        
-        return app;
-    }
-
-    private static void EnsureMvcControllerUnloads(WebApplication app)
-    {
-        if (app.Services.GetService(typeof(ApplicationPartManager)) is ApplicationPartManager appPartManager)
-        {
-            var part = appPartManager.ApplicationParts.FirstOrDefault(a => a.Name == "Smart.Metadata.Server");
-            if (part != null)
-            {
-                appPartManager.ApplicationParts.Remove(part);
-            }
-        }
     }
 }

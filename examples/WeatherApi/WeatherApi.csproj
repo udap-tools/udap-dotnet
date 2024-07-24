@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <!-- <UserSecretsId>b199fd8a-94b9-40bb-96ea-981ba36b5698</UserSecretsId> -->
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>

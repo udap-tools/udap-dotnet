@@ -7,8 +7,10 @@
 // */
 #endregion
 
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
@@ -29,6 +31,7 @@ using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Model;
+using Udap.Smart.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using fhirLabsProgram = FhirLabsApi.Program;
@@ -62,6 +65,41 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
         });
 
         return base.CreateHost(builder);
+    }
+}
+
+public class SmartControllerTests : IClassFixture<ApiTestFixture>
+{
+    private readonly ApiTestFixture _fixture;
+
+    public SmartControllerTests(ApiTestFixture fixture, ITestOutputHelper testOutputHelper)
+    {
+        //
+        // Fixture is for FHIR Server configuration
+        //
+        if (fixture == null) throw new ArgumentNullException(nameof(fixture));
+        fixture.Output = testOutputHelper;
+        _fixture = fixture;
+    }
+
+    /// <summary>
+    /// 200 response.
+    /// Well-formed Json
+    /// </summary>
+    [Fact]
+    public async Task SmartClientTest()
+    {
+        var httpClient = _fixture.CreateClient(); //.BaseAddress?.AbsoluteUri + "fhir/r4";
+        
+        var result = await httpClient.GetAsync("fhir/r4/.well-known/smart-configuration");
+        result.StatusCode.Should().Be(HttpStatusCode.OK);
+        
+        var smartMetadata = await result.Content.ReadFromJsonAsync<SmartMetadata>();
+        smartMetadata.Should().NotBeNull();
+        smartMetadata!.issuer.Should().Be("https://host.docker.internal:5002");
+
+        result = await httpClient.GetAsync("fhir/r4/.well-known/smart-configurationx");
+        result.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }
 
@@ -145,7 +183,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
 
     /// <summary>
     /// 200 response.
-    /// Well formed Json
+    /// Well-formed Json
     /// </summary>
     [Fact]
     public async Task UdapClientTest()

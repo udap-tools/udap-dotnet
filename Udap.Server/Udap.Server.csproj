@@ -39,5 +39,9 @@
     <None Include="docs\README.md" Pack="true" PackagePath="\" />
     <None Include="../artwork/UDAP_Ecosystem_Gears 48X48.jpg" Pack="true" PackagePath="\" />
   </ItemGroup>
+ 
+  <ItemGroup>
+    <Folder Include="Infrastructure\" />
+  </ItemGroup>
 
 </Project>

@@ -107,13 +107,11 @@ builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
 builder.Services.AddUdapMetadataServer(builder.Configuration);
 
 // SmartMetadata Examples
-// builder.Services.Configure<SmartMetadata>("SmartMetadata2", builder.Configuration.GetRequiredSection("SmartMetadata2"));
-// builder.Services.Configure<SmartMetadata>("SmartMetadata", builder.Configuration.GetRequiredSection("SmartMetadata"));
-// builder.Services.AddSmartMetadata("SmartMetadata2");
+// builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSection("SmartMetadata"));
+// builder.Services.AddSmartMetadata();
 
-
+// Or just
 builder.AddSmartMetadata();
-
 
 builder.AddRateLimiting();
 

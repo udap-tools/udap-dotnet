@@ -94,12 +94,7 @@ public class IssuedCertificateStore : IPrivateCertificateStore
                             !extension.CertificateAuthority)
                         {
                             _logger.LogInformation($"Loading Certificate:: Thumbprint: {x509Cert.Thumbprint}  Subject: {x509Cert.SubjectName.Name}");
-                            IssuedCertificates.Add(new IssuedCertificate
-                            {
-                                Community = community.Name,
-                                Certificate = x509Cert,
-                                Thumbprint = x509Cert.Thumbprint
-                            });
+                            IssuedCertificates.Add(new IssuedCertificate(x509Cert, community.Name));
                         }
                     }
                 }

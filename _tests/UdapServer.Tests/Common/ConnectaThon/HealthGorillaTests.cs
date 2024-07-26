@@ -87,24 +87,19 @@ public class HealthGorillaTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[] {new Anchor
+            Anchors = new[] {new Anchor(intermediateCert, "udap://fhirlabs.net")
             {
                 BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                 EndDate = intermediateCert.NotAfter.ToUniversalTime(),
                 Name = intermediateCert.Subject,
-                Community = "udap://fhirlabs.net",
-                Certificate = intermediateCert.ToPemFormat(),
-                Thumbprint = intermediateCert.Thumbprint,
                 Enabled = true,
                 Intermediates = new List<Intermediate>()
                 {
-                    new Intermediate
+                    new Intermediate(intermediateCert)
                     {
                         BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                         EndDate = intermediateCert.NotAfter.ToUniversalTime(),
                         Name = intermediateCert.Subject,
-                        Certificate = intermediateCert.ToPemFormat(),
-                        Thumbprint = intermediateCert.Thumbprint,
                         Enabled = true
                     }
                 }

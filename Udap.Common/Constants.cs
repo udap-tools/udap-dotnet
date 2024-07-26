@@ -15,4 +15,5 @@ public static class Constants
     /// Appsettings Configuration name identifier
     /// </summary>
     public const string UDAP_FILE_STORE_MANIFEST = "UdapFileCertStoreManifest";
+    public const string UDAP_METADATA_OPTIONS = "UdapMetadataOptions";
 }

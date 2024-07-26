@@ -584,8 +584,23 @@ namespace Udap.PKI.Generator
                 $"{BaseDir}/../../examples/FhirLabsApi/fhirlabs.net.pfx",
                 true);
 
+
             File.Copy($"{SureFhirlabsUdapIssued}/fhirlabs.net.client.pfx",
                 $"{BaseDir}/../../examples/FhirLabsApi/CertStore/issued/fhirlabs.net.client.pfx",
+                true);
+           
+            
+            
+            File.Copy($"{SureFhirlabsUdapIssued}/fhirlabs.net.client.pfx",
+                $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/issued/fhirlabs.net.client.pfx",
+                true);
+
+            File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
+                $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/anchors/SureFhirLabs_CA.cer",
+                true);
+
+            File.Copy($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.cer",
+                $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/intermediates/SureFhirLabs_Intermediate.cer",
                 true);
 
             // Copy CA to FhirLabsApi so it can be added to the Docker Container trust store. 

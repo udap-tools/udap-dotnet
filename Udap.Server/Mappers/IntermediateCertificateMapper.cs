@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Security.Cryptography.X509Certificates;
 using AutoMapper;
 using Udap.Server.Entities;
 
@@ -51,7 +52,14 @@ public class IntermediateCertificateMapperProfile : Profile
     public IntermediateCertificateMapperProfile()
     {
         CreateMap<Intermediate, Udap.Common.Models.Intermediate>(MemberList.Destination)
-            .ConstructUsing(src => new Udap.Common.Models.Intermediate())
+            .ConstructUsing(src => new Udap.Common.Models.Intermediate(
+                new X509Certificate2(Convert.FromBase64String(
+                    src.X509Certificate
+                        .Replace("-----BEGIN CERTIFICATE-----", "")
+                        .Replace("-----END CERTIFICATE-----", "")
+                        .Trim()
+                    )),
+                src.Name))
 
 
             .ForMember(model => model.Certificate, opts =>

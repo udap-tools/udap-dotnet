@@ -728,9 +728,8 @@ public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
             {
                 AnchorCertificates = new HashSet<Anchor>
                 {
-                    new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"))
+                    new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"), "udap://Provider2")
                     {
-                        Community = "udap://Provider2",
                         Intermediates = new List<Intermediate>
                         {
                             new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert.cer"))

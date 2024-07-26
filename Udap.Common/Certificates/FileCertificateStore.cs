@@ -104,9 +104,8 @@ public class FileCertificateStore : ICertificateStore
                     throw new FileNotFoundException($"Cannot find file: {path}");
                 }
 
-                AnchorCertificates.Add(new Anchor(new X509Certificate2(path))
+                AnchorCertificates.Add(new Anchor(new X509Certificate2(path), community.Name)
                 {
-                    Community = community.Name,
                     Intermediates = intermediates
                 });
             }
@@ -185,12 +184,7 @@ public class FileCertificateStore : ICertificateStore
                             }
                             else
                             {
-                                IssuedCertificates.Add(new IssuedCertificate
-                                {
-                                    Community = community.Name,
-                                    Certificate = x509Cert,
-                                    Thumbprint = x509Cert.Thumbprint
-                                });
+                                IssuedCertificates.Add(new IssuedCertificate(x509Cert, community.Name));
                             }
                         }
                     }

@@ -107,24 +107,19 @@ public class ClientCredentialsUdapModeTests
             Default = true,
             Anchors = new[]
             {
-                new Anchor
+                new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
                 {
                     BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                     EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
                     Name = sureFhirLabsAnchor.Subject,
-                    Community = "udap://fhirlabs.net",
-                    Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                    Thumbprint = sureFhirLabsAnchor.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new Intermediate
+                        new Intermediate(intermediateCert)
                         {
                             BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = intermediateCert.NotAfter.ToUniversalTime(),
                             Name = intermediateCert.Subject,
-                            Certificate = intermediateCert.ToPemFormat(),
-                            Thumbprint = intermediateCert.Thumbprint,
                             Enabled = true
                         }
                     }
@@ -139,24 +134,19 @@ public class ClientCredentialsUdapModeTests
             Default = false,
             Anchors = new[]
             {
-                new Anchor
+                new Anchor(anchorCommunity2, "localhost_fhirlabs_community2")
                 {
                     BeginDate = anchorCommunity2.NotBefore.ToUniversalTime(),
                     EndDate = anchorCommunity2.NotAfter.ToUniversalTime(),
                     Name = anchorCommunity2.Subject,
-                    Community = "localhost_fhirlabs_community2",
-                    Certificate = anchorCommunity2.ToPemFormat(),
-                    Thumbprint = anchorCommunity2.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new Intermediate
+                        new Intermediate(intermediateCommunity2)
                         {
                             BeginDate = intermediateCommunity2.NotBefore.ToUniversalTime(),
                             EndDate = intermediateCommunity2.NotAfter.ToUniversalTime(),
                             Name = intermediateCommunity2.Subject,
-                            Certificate = intermediateCommunity2.ToPemFormat(),
-                            Thumbprint = intermediateCommunity2.Thumbprint,
                             Enabled = true
                         }
                     }

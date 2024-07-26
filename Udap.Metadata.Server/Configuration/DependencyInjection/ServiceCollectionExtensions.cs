@@ -25,6 +25,7 @@ using Hl7.Fhir.Utility;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
+using Udap.Common.Metadata;
 using Udap.Metadata.Server;
 using Udap.Model;
 using Constants = Udap.Common.Constants;

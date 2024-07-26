@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Udap.Common.Extensions;
+using Udap.Common.Metadata;
 
 namespace Udap.Metadata.Server
 {

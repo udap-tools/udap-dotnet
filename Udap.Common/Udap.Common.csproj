@@ -33,10 +33,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Metadata\Server\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Udap.Util\Udap.Util.csproj" />
     <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
   </ItemGroup>

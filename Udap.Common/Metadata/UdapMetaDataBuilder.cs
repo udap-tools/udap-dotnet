@@ -18,7 +18,7 @@ using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Util.Extensions;
 
-namespace Udap.Metadata.Server;
+namespace Udap.Common.Metadata;
 
 public class UdapMetaDataBuilder
 {
@@ -37,11 +37,20 @@ public class UdapMetaDataBuilder
         _logger = logger;
     }
 
+    /// <summary>
+    /// List of community names
+    /// </summary>
+    /// <returns></returns>
     public ICollection<string> GetCommunities()
     {
         return _udapMetadata.Communities();
     }
 
+    /// <summary>
+    /// List of community HTML Anchors
+    /// </summary>
+    /// <param name="path">Base URL.  The same as the UDAP subject alternative name. </param>
+    /// <returns></returns>
     public string GetCommunitiesAsHtml(string path)
     {
         return _udapMetadata.CommunitiesAsHtml(path);
@@ -52,8 +61,8 @@ public class UdapMetaDataBuilder
     /// Further restrained by UDAP IG:: http://hl7.org/fhir/us/udap-security/discovery.html#signed-metadata-elements 
     /// </summary>
     /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
-    public async Task<UdapMetadata?> SignMetaData(string baseUrl, string? community, CancellationToken token = default)
+    /// <exception cref="System.NotImplementedException"></exception>
+    public async Task<UdapMetadata?> SignMetaData(string baseUrl, string? community = null, CancellationToken token = default)
     {
         var udapMetaData = _udapMetadata.Clone();
         var udapMetadataConfig = udapMetaData.GetUdapMetadataConfig(community);
@@ -68,12 +77,12 @@ public class UdapMetaDataBuilder
         udapMetaData.TokenEndpoint = udapMetadataConfig.SignedMetadataConfig.TokenEndpoint;
         udapMetaData.RegistrationEndpoint = udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint;
 
-        if (udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms.Any())
+        if (Enumerable.Any<string>(udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms))
         {
             udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms;
         }
 
-        if (udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms.Any())
+        if (Enumerable.Any<string>(udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms))
         {
             udapMetaData.TokenEndpointAuthSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms;
         }
@@ -105,15 +114,15 @@ public class UdapMetaDataBuilder
 
         var builder = SignedSoftwareStatementBuilder<ISoftwareStatementSerializer>.Create(certificate, jwtPayload);
 
-        if (udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.First().IsECDSA())
+        if (Enumerable.First<string>(udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported).IsECDSA())
         {
-            udapMetaData.SignedMetadata = builder.BuildECDSA(udapMetaData.
-                RegistrationEndpointJwtSigningAlgValuesSupported.First());
+            udapMetaData.SignedMetadata = builder.BuildECDSA(Enumerable.First<string>(udapMetaData.
+                    RegistrationEndpointJwtSigningAlgValuesSupported));
         }
         else
         {
-            udapMetaData.SignedMetadata = builder.Build(udapMetaData.
-                RegistrationEndpointJwtSigningAlgValuesSupported.First());
+            udapMetaData.SignedMetadata = builder.Build(Enumerable.First<string>(udapMetaData.
+                    RegistrationEndpointJwtSigningAlgValuesSupported));
         }
 
         return udapMetaData;
@@ -146,7 +155,7 @@ public class UdapMetaDataBuilder
             .Where(c => c.Community == udapMetadataConfig.Community)
             .MaxBy(c => c.Certificate!.NotBefore);
 
-        if (entity == null)
+        if (entity == null )
         {
             _logger.LogInformation($"Missing certificate for community: {udapMetadataConfig.Community}");
             return null;

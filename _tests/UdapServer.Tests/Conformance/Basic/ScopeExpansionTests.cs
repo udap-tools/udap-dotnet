@@ -90,24 +90,19 @@ public class ScopeExpansionTests
             Default = true,
             Anchors = new[]
             {
-                new Anchor
+                new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
                 {
                     BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                     EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
                     Name = sureFhirLabsAnchor.Subject,
-                    Community = "udap://fhirlabs.net",
-                    Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                    Thumbprint = sureFhirLabsAnchor.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new()
+                        new(intermediateCert)
                         {
                             BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = intermediateCert.NotAfter.ToUniversalTime(),
                             Name = intermediateCert.Subject,
-                            Certificate = intermediateCert.ToPemFormat(),
-                            Thumbprint = intermediateCert.Thumbprint,
                             Enabled = true
                         }
                     }

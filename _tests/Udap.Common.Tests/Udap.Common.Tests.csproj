@@ -9,12 +9,36 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="appsettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>    
     <PackageReference Include="Firely.Fhir.Packages" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Hl7.Fhir.R4B" />
+    <PackageReference Include="MartinCostello.Logging.XUnit" />
+    <PackageReference Include="Meziantou.Extensions.Logging.Xunit" />
     <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" />
     <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.abstractions" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -27,6 +51,8 @@
 
   <ItemGroup>
     <!-- <ProjectReference Include="..\..\Udap.Client\Udap.Client.csproj" /> -->
+    <ProjectReference Include="..\..\Udap.Client\Udap.Client.csproj" />
+    <ProjectReference Include="..\..\Udap.Common\Udap.Common.csproj" />
     <ProjectReference Include="..\..\Udap.Model\Udap.Model.csproj" />
     <ProjectReference Include="..\..\Udap.Smart.Model\Udap.Smart.Model.csproj" />
     <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
@@ -38,14 +64,25 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="CertStore\issued\fhirlabs.net.client.pfx">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="CertStore\issued\FhirLabsAdminCertification.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Client\" />
     <Folder Include="Model\Access\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\intermediates\SureFhirLabs_Intermediate.cer" Link="CertStore\intermediates\SureFhirLabs_Intermediate.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\SureFhirLabs_CA.cer" Link="CertStore\anchors\SureFhirLabs_CA.cer">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

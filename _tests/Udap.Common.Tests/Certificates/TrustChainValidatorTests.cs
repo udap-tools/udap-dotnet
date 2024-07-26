@@ -78,13 +78,16 @@ public class TrustChainValidatorTests
             ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
         
         }, out _);
-        
+
+        //
+        // Certificate revocation is offline for unit tests.
+        //
         var problemFlags = X509ChainStatusFlags.NotTimeValid |
                            X509ChainStatusFlags.Revoked |
                            X509ChainStatusFlags.NotSignatureValid |
                            X509ChainStatusFlags.InvalidBasicConstraints |
                            X509ChainStatusFlags.CtlNotTimeValid |
-                           X509ChainStatusFlags.OfflineRevocation |
+                           // X509ChainStatusFlags.OfflineRevocation |
                            X509ChainStatusFlags.CtlNotSignatureValid;
         
         (await ValidateCertificateChain(cert, problemFlags, "udap://fhirlabs.net")).Should().BeTrue();

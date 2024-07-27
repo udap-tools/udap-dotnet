@@ -80,7 +80,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://stage.healthtogo.me:8181/fhir/r4/stage",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
         });
@@ -256,7 +255,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://api-conn.qa.healthgorilla.com/unit/qhin",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
         });
@@ -432,7 +430,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://test.udap.org/fhir/r4/stage",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
         });
@@ -525,7 +522,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://national-directory.meteorapp.com",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
         });
@@ -598,7 +594,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://udap.fast.poolnook.me",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
         });
@@ -673,7 +668,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://localhost:4081/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
         });
@@ -894,7 +888,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://localhost:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
         });
@@ -1119,7 +1112,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://localhost:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
         });
@@ -1351,7 +1343,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://fhirlabs.net/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
         });
@@ -1535,7 +1526,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://fhirlabs.net/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             },
             Community = "udap://fhirlabs.net"
@@ -1736,7 +1726,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://fhirlabs.net/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
         });
@@ -1966,7 +1955,6 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Address = "https://localhost:7016/fhir/r4",
             Policy = new Udap.Client.Client.DiscoveryPolicy
             {
-                ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             },
             Community = "udap://fhirlabs.net"

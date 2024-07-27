@@ -1,29 +1,32 @@
-﻿using NSubstitute;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Options;
-using Udap.Client.Client;
-using Udap.Client.Configuration;
-using Microsoft.Extensions.Logging;
-using Udap.Client.Client.Messages;
-using Udap.Common.Certificates;
-using Xunit.Abstractions;
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using FluentAssertions;
 using MartinCostello.Logging.XUnit;
-using Udap.Common.Metadata;
-using Udap.Model;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using FluentAssertions.Common;
-using System.IdentityModel.Tokens.Jwt;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using NSubstitute;
+using Udap.Client.Client;
+using Udap.Client.Configuration;
+using Udap.Common.Certificates;
+using Udap.Common.Metadata;
+using Udap.Model;
+using Xunit.Abstractions;
 
 namespace Udap.Common.Tests.Client;
+
 public class UdapClientTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
@@ -35,7 +38,7 @@ public class UdapClientTests
                                         X509ChainStatusFlags.NotSignatureValid |
                                         X509ChainStatusFlags.InvalidBasicConstraints |
                                         X509ChainStatusFlags.CtlNotTimeValid |
-                                        X509ChainStatusFlags.OfflineRevocation |
+                                        // X509ChainStatusFlags.OfflineRevocation | Do not test revocation in unit tests
                                         X509ChainStatusFlags.CtlNotSignatureValid;
 
     public UdapClientTests(ITestOutputHelper testOutputHelper)

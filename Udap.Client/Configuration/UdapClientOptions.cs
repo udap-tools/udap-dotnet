@@ -8,8 +8,34 @@
 #endregion
 
 using System.Text.Json.Serialization;
+using Udap.Client.Client;
 
 namespace Udap.Client.Configuration;
+
+/// <summary>
+/// Properties that can be configured by a client application using the <see cref="UdapClient"/>.
+/// Typically placed in appsettings under the name UdapClientOptions and registered with dependency injection.
+/// </summary>
+/// <remarks>
+///
+/// <pre>
+///
+/// services.Configure&lt;UdapClientOptions&gt;(configuration.GetSection("UdapClientOptions")); <br/><br/>
+///
+/// 
+/// "UdapClientOptions": { 
+///    "ClientName": "Udap.Auth.SecuredControls",
+///    "Contacts": [ "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" ],
+///    "Headers": {
+///        "USER_KEY": "hobojoe",
+///        "ORG_KEY": "travelOrg"
+///    },
+///    "TieredOAuthClientLogo": "https://securedcontrols.net/_content/Udap.UI/udapAuthLogo.jpg"
+/// }
+///  
+/// </pre>
+/// </remarks>
+
 public class UdapClientOptions
 {
     [JsonPropertyName("ClientName")]

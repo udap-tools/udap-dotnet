@@ -55,7 +55,7 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     public JsonWebKeySet? KeySet { get; set; }
 
     // strongly typed
-    public string? Issuer => TryGetString(UdapConstants.Discovery.Issuer);
+    private string? Issuer => TryGetString(UdapConstants.Discovery.Issuer);
     public IEnumerable<string> UdapVersionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapVersionsSupported);
     public IEnumerable<string> UdapProfilesSupported => TryGetStringArray(UdapConstants.Discovery.UdapProfilesSupported);
     public IEnumerable<string> UdapAuthorizationExtensionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapAuthorizationExtensionsSupported);

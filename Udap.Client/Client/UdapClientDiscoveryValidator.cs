@@ -19,6 +19,9 @@ using Udap.Util.Extensions;
 
 namespace Udap.Client.Client;
 
+/// <summary>
+/// Validator orchestrates JWT validation followed by x509 chain validation
+/// </summary>
 public class UdapClientDiscoveryValidator : IUdapClientEvents
 {
     private readonly TrustChainValidator _trustChainValidator;

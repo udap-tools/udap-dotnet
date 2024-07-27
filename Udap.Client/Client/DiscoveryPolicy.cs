@@ -57,8 +57,9 @@ public class DiscoveryPolicy
 
     /// <summary>
     /// Specifies if the issuer name is checked to be identical to the authority. Defaults to true.
+    /// No issuer name in UDAP Metadata 
     /// </summary>
-    public bool ValidateIssuerName { get; set; } = true;
+    public bool ValidateIssuerName { get; set; } = false;
 
     /// <summary>
     /// Specifies if all endpoints are checked to belong to the authority. Defaults to true.

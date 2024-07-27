@@ -21,6 +21,16 @@ namespace Udap.Client.Client;
 
 public interface IUdapClient : IUdapClientEvents
 {
+    /// <summary>
+    /// Query the UDAP well-known endpoint and validate the metadata.
+    /// The metadata will contain a signed JWT.  The signed JWT will be validated.  The <see cref="DiscoveryPolicy"/> can
+    /// be supplied to override the default policy but, it would not be typical.
+    /// </summary>
+    /// <param name="baseUrl"></param>
+    /// <param name="community"></param>
+    /// <param name="discoveryPolicy"></param>
+    /// <param name="token"></param>
+    /// <returns></returns>
     Task<UdapDiscoveryDocumentResponse> ValidateResource(
         string baseUrl,
         string? community = null,

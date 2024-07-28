@@ -180,7 +180,10 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
             throw new UnauthorizedAccessException("Failed Trust Chain Validation: Missing public certificate");
         }
 
-        var store = clientSuppliedTrustAnchorStore ?? (_trustAnchorStore == null ? null : await _trustAnchorStore.Resolve());
+        var store = clientSuppliedTrustAnchorStore != null ? 
+            await clientSuppliedTrustAnchorStore.Resolve()
+            : (_trustAnchorStore == null ? null : await _trustAnchorStore.Resolve());
+
         var anchors = X509Certificate2Collection(community, store).ToList();
 
         if (!anchors.Any())

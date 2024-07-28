@@ -23,9 +23,11 @@ using Udap.Client.Configuration;
 using Udap.Common.Certificates;
 using Udap.Common.Metadata;
 using Udap.Model;
+using Udap.Support.Tests.Client;
 using Xunit.Abstractions;
 
 namespace Udap.Common.Tests.Client;
+
 
 public class UdapClientTests
 {
@@ -57,6 +59,9 @@ public class UdapClientTests
                 // builder.SetMinimumLevel(LogLevel.Warning); 
             })
             .BuildServiceProvider();
+
+
+
     }
 
     /// <summary>
@@ -66,74 +71,7 @@ public class UdapClientTests
     [Fact]
     public async Task StandardSuccessTest()
     {
-        //
-        // Metadata for describing different UDAP metadata per community
-        //
-        var udapMetadataOptions = new UdapMetadataOptions();
-        _configuration.GetSection(Constants.UDAP_METADATA_OPTIONS).Bind(udapMetadataOptions);
-        var unSignedMetadata = new UdapMetadata(udapMetadataOptions);
-
-        // TODO:  Make scope configuration first class in DI
-        unSignedMetadata.ScopesSupported = new List<string>
-        {
-            "openid", "patient/*.read", "user/*.read", "system/*.read", "patient/*.rs", "user/*.rs", "system/*.rs"
-        };
-
-
-
-        //
-        // Certificate store metadata
-        //
-        var udapFileCertStoreManifest = new UdapFileCertStoreManifest();
-        _configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST).Bind(udapFileCertStoreManifest);
-        var udapFileCertStoreManifestOptions = Substitute.For<IOptionsMonitor<UdapFileCertStoreManifest>>();
-        udapFileCertStoreManifestOptions.CurrentValue.Returns(udapFileCertStoreManifest);
-
-        //
-        // IPrivateCertificateStore implementation as a file store
-        //
-        var privateCertificateStore = new IssuedCertificateStore(udapFileCertStoreManifestOptions, _serviceProvider.GetRequiredService<ILogger<IssuedCertificateStore>>());
-
-        //
-        // MetadataBuilder helps build signed UDAP metadata using the previous metadata and IPrivateCertificateStore implementation
-        //
-        var metaDataBuilder = new UdapMetaDataBuilder(unSignedMetadata, privateCertificateStore, _serviceProvider.GetRequiredService<ILogger<UdapMetaDataBuilder>>());
-        var signedMetadata = await metaDataBuilder.SignMetaData("https://fhirlabs.net/fhir/r4");
-
-        //
-        // Mock an HttpClient used by UdapClient.  The mock will return the signed Metadata rather than rely on aa UDAP Metadata service.
-        //
-        var httpClientMock = Substitute.For<HttpClient>()!;
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(JsonSerializer.Serialize(signedMetadata))
-        };
-        httpClientMock.SendAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(response));
-
-        //
-        // TrustChainValidator handle the x509 chain building, policy and validation
-        //
-        var validator = new TrustChainValidator(new X509ChainPolicy(), _problemFlags, _serviceProvider.GetRequiredService<ILogger<TrustChainValidator>>())!;
-
-        //
-        // TrustAnchorStore is using an ITrustAnchorStore implemented as a file store.
-        //
-        var trustAnchorStore = new TrustAnchorFileStore(udapFileCertStoreManifestOptions, _serviceProvider.GetRequiredService<ILogger<TrustAnchorFileStore>>());
-
-        //
-        // UdapClientDiscoveryValidator orchestrates JWT validation followed by x509 chain validation used by UdapClient
-        //
-        var udapClientDiscoveryValidator = Substitute.For<UdapClientDiscoveryValidator>(
-            validator,
-            _serviceProvider.GetRequiredService<ILogger<UdapClientDiscoveryValidator>>(),
-            trustAnchorStore);
-
-        //
-        // Options for setting your client name, contacts, logo and HTTP headers.
-        //
-        var udapClientOptions = new UdapClientOptions();
-        var udapClientIOptions = Substitute.For<IOptionsMonitor<UdapClientOptions>>();
-        udapClientIOptions.CurrentValue.Returns(udapClientOptions);
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport();
 
         //
         // The actual UdapClient.  There are two examples of using it in the _tests/client folder
@@ -254,5 +192,210 @@ public class UdapClientTests
         var tokenHeader = jwt.Header;
 
         var x5CArray = tokenHeader["x5c"] as List<object>;
+    }
+
+    [Fact]
+    public async Task ClientSuppliedTrustAnchorStoreSuccessTest()
+    {
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport();
+
+        IUdapClient udapClient = new UdapClient(
+            httpClientMock,
+            udapClientDiscoveryValidator,
+            udapClientIOptions,
+            _serviceProvider.GetRequiredService<ILogger<UdapClient>>());
+
+
+        var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4", trustAnchorStore);
+
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        disco.HttpStatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.NotNull(udapClient.UdapServerMetaData);
+    }
+
+    [Fact]
+    public async Task FullWellKnownAddressTest()
+    {
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport();
+        
+
+        IUdapClient udapClient = new UdapClient(
+            httpClientMock,
+            udapClientDiscoveryValidator,
+            udapClientIOptions,
+            _serviceProvider.GetRequiredService<ILogger<UdapClient>>());
+
+        var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4/.well-known/udap", trustAnchorStore);
+
+        disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+        disco.HttpStatusCode.Should().Be(HttpStatusCode.OK);
+        Assert.NotNull(udapClient.UdapServerMetaData);
+    }
+
+    private readonly FakeValidatorDiagnostics _diagnosticsValidator = new FakeValidatorDiagnostics();
+    [Fact]
+    public async Task MissingUdapMetadatTest()
+    {
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport();
+        //udapClientDiscoveryValidator.ValidateJwtToken(Arg.Any<UdapMetadata>(), Arg.Any<string>()).Returns(Task.FromResult(false));
+
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("")
+        };
+        httpClientMock.SendAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(response));
+
+        IUdapClient udapClient = new UdapClient(
+            httpClientMock,
+            udapClientDiscoveryValidator,
+            udapClientIOptions,
+            _serviceProvider.GetRequiredService<ILogger<UdapClient>>());
+
+        udapClient.Error += _diagnosticsValidator.OnError;
+        var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4", trustAnchorStore);
+
+        disco.IsError.Should().BeTrue();
+        disco.Error.Should().Be("Missing UDAP Metadata");
+    }
+
+    [Fact]
+    public async Task IssMatchToSubjectAltNameTest()
+    {
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport("https://fhirlabs.net/fhir/r4", "udap://Iss.Mismatch.To.SubjAltName/");
+        
+        IUdapClient udapClient = new UdapClient(
+            httpClientMock,
+            udapClientDiscoveryValidator,
+            udapClientIOptions,
+            _serviceProvider.GetRequiredService<ILogger<UdapClient>>());
+
+        udapClient.TokenError += _diagnosticsValidator.OnTokenError;
+        var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4", trustAnchorStore, "udap://Iss.Mismatch.To.SubjAltName/");
+
+        disco.IsError.Should().BeTrue(disco.Raw);
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.TokenErrorCalled.Should().BeTrue();
+        _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("Failed JWT Validation")).Should().BeTrue();
+        // https://san.mismatch.fhirlabs.net/fhir/r4 is the subject alt used to sign software statement
+        _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("https://san.mismatch.fhirlabs.net/fhir/r4")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task InvalidJwtTokentBadIssMatchToBaseUrlTest()
+    {
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport("http://fhirlabs.net/IssMismatchToBaseUrl/r4", "udap://Iss.Mismatch.To.BaseUrl/");
+
+        IUdapClient udapClient = new UdapClient(
+            httpClientMock,
+            udapClientDiscoveryValidator,
+            udapClientIOptions,
+            _serviceProvider.GetRequiredService<ILogger<UdapClient>>());
+
+        udapClient.TokenError += _diagnosticsValidator.OnTokenError;
+        var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4", trustAnchorStore, "udap://Iss.Mismatch.To.BaseUrl/");
+
+        disco.IsError.Should().BeTrue(disco.Raw);
+        Assert.NotNull(udapClient.UdapServerMetaData);
+        _diagnosticsValidator.TokenErrorCalled.Should().BeTrue();
+        _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("JWT iss does not match baseUrl.")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetCommunitiesTest()
+    {
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport("http://fhirlabs.net/IssMismatchToBaseUrl/r4", "udap://Iss.Mismatch.To.BaseUrl/");
+        
+        var client = _fixture.CreateClient();
+        var response = await client.GetAsync("fhir/r4/.well-known/udap/communities");
+        response.EnsureSuccessStatusCode();
+        var communities = await response.Content.ReadFromJsonAsync<List<string>>();
+        communities.Count.Should().Be(6);
+        communities.Should().Contain(c => c == "udap://fhirlabs1/");
+        communities.Should().Contain(c => c == "udap://Provider2");
+
+        response = await client.GetAsync("fhir/r4/.well-known/udap/communities/ashtml");
+        response.EnsureSuccessStatusCode();
+        var communityHtml = await response.Content.ReadAsStringAsync();
+        communityHtml.Should().NotBeNullOrWhiteSpace();
+        communityHtml.Should().Contain("href=\"http://localhost/fhir/r4/.well-known/udap?community=udap://fhirlabs1/\"");
+        communityHtml.Should().Contain("href=\"http://localhost/fhir/r4/.well-known/udap?community=udap://Provider2\"");
+    }
+
+    private async Task<(
+        HttpClient httpClientMock, 
+        UdapClientDiscoveryValidator udapClientDiscoveryValidator, 
+        IOptionsMonitor<UdapClientOptions> udapClientIOptions, 
+        ITrustAnchorStore trustAnchorFileStore)> BuildClientSupport(string baseUrl = "https://fhirlabs.net/fhir/r4", string? community = null)
+    {
+        //
+        // Metadata for describing different UDAP metadata per community
+        //
+        var udapMetadataOptions = new UdapMetadataOptions();
+        _configuration.GetSection(Constants.UDAP_METADATA_OPTIONS).Bind(udapMetadataOptions);
+        var unSignedMetadata = new UdapMetadata(udapMetadataOptions);
+
+        // TODO:  Make scope configuration first class in DI
+        unSignedMetadata.ScopesSupported = new List<string>
+        {
+            "openid", "patient/*.read", "user/*.read", "system/*.read", "patient/*.rs", "user/*.rs", "system/*.rs"
+        };
+
+
+
+        //
+        // Certificate store metadata
+        //
+        var udapFileCertStoreManifest = new UdapFileCertStoreManifest();
+        _configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST).Bind(udapFileCertStoreManifest);
+        var udapFileCertStoreManifestOptions = Substitute.For<IOptionsMonitor<UdapFileCertStoreManifest>>();
+        udapFileCertStoreManifestOptions.CurrentValue.Returns(udapFileCertStoreManifest);
+
+        //
+        // IPrivateCertificateStore implementation as a file store
+        //
+        var privateCertificateStore = new IssuedCertificateStore(udapFileCertStoreManifestOptions, _serviceProvider.GetRequiredService<ILogger<IssuedCertificateStore>>());
+
+        //
+        // MetadataBuilder helps build signed UDAP metadata using the previous metadata and IPrivateCertificateStore implementation
+        //
+        var metaDataBuilder = new UdapMetaDataBuilder(unSignedMetadata, privateCertificateStore, _serviceProvider.GetRequiredService<ILogger<UdapMetaDataBuilder>>());
+        var signedMetadata = await metaDataBuilder.SignMetaData(baseUrl, community);
+
+        //
+        // Mock an HttpClient used by UdapClient.  The mock will return the signed Metadata rather than rely on aa UDAP Metadata service.
+        //
+        var httpClientMock = Substitute.For<HttpClient>()!;
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(JsonSerializer.Serialize(signedMetadata))
+        };
+        httpClientMock.SendAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(response));
+
+        //
+        // TrustChainValidator handle the x509 chain building, policy and validation
+        //
+        var validator = new TrustChainValidator(new X509ChainPolicy(), _problemFlags, _serviceProvider.GetRequiredService<ILogger<TrustChainValidator>>())!;
+
+        //
+        // TrustAnchorStore is using an ITrustAnchorStore implemented as a file store.
+        //
+        var trustAnchorStore = new TrustAnchorFileStore(udapFileCertStoreManifestOptions, _serviceProvider.GetRequiredService<ILogger<TrustAnchorFileStore>>());
+
+        //
+        // UdapClientDiscoveryValidator orchestrates JWT validation followed by x509 chain validation used by UdapClient
+        //
+        var udapClientDiscoveryValidator = Substitute.ForPartsOf<UdapClientDiscoveryValidator>(
+            validator,
+            _serviceProvider.GetRequiredService<ILogger<UdapClientDiscoveryValidator>>(),
+            trustAnchorStore);
+
+        //
+        // Options for setting your client name, contacts, logo and HTTP headers.
+        //
+        var udapClientOptions = new UdapClientOptions();
+        var udapClientIOptions = Substitute.For<IOptionsMonitor<UdapClientOptions>>();
+        udapClientIOptions.CurrentValue.Returns(udapClientOptions);
+
+        return (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore);
     }
 }

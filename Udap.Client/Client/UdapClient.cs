@@ -324,7 +324,12 @@ namespace Udap.Client.Client
                         baseUrl = baseUrl.Substring(0, i).RemoveTrailingSlash();
                     }
 
-                    if (!await _clientDiscoveryValidator.ValidateJwtToken(UdapServerMetaData!, baseUrl))
+                    if (UdapServerMetaData == null)
+                    {
+                        throw new NullReferenceException("Missing UDAP Metadata");
+                    }
+
+                    if (!await _clientDiscoveryValidator.ValidateJwtToken(UdapServerMetaData, baseUrl))
                     {
                         throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
                     }

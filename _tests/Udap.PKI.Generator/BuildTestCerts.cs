@@ -21,6 +21,7 @@ using Org.BouncyCastle.X509;
 using Org.BouncyCastle.X509.Extension;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
+using Xunit.Extensions.Ordering;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
 namespace Udap.PKI.Generator
@@ -89,7 +90,7 @@ namespace Udap.PKI.Generator
         /// default community uri = udap://fhirlabs.net
         ///
         /// </summary>
-        [Fact]
+        [Fact, Order(1)]
         public void MakeCaWithIntermediateUdapAndSSLForDefaultCommunity()
         {
             Console.WriteLine("*************************************");
@@ -590,7 +591,9 @@ namespace Udap.PKI.Generator
                 true);
            
             
-            
+            //
+            // Udap.Common.Tests
+            //
             File.Copy($"{SureFhirlabsUdapIssued}/fhirlabs.net.client.pfx",
                 $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/issued/fhirlabs.net.client.pfx",
                 true);
@@ -602,6 +605,12 @@ namespace Udap.PKI.Generator
             File.Copy($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.cer",
                 $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/intermediates/SureFhirLabs_Intermediate.cer",
                 true);
+
+            File.Copy($"{SureFhirlabsUdapIssued}/fhirlabs.net.ecdsa.client.pfx",
+                $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/issued/fhirlabs.net.ecdsa.client.pfx",
+                true);
+
+
 
             // Copy CA to FhirLabsApi so it can be added to the Docker Container trust store. 
             File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
@@ -633,7 +642,7 @@ namespace Udap.PKI.Generator
                 true);
         }
 
-        [Fact (Skip = "Enabled on desktop when needed.")]
+        [Fact, Order(2)]
         public void MakeNegativeTestCertsForFhirLabsReferenceImplementationServer()
         {
             using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
@@ -693,7 +702,7 @@ namespace Udap.PKI.Generator
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
                 "CN=fhirlabs.net mismatch SAN, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                new List<string> { "https://fhirlabs.net/fhir/r4", "https://fhirlabs.net:7016/fhir/r4" },
+                new List<string> { "http://fhirlabs.net/IssMismatchToBaseUrl/r4" },
                 $"{SureFhirlabsUdapIssued}/fhirlabs.net.mismatchBaseUrl.client",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
@@ -715,6 +724,26 @@ namespace Udap.PKI.Generator
                 $"{SureFhirlabsUdapIssued}/fhirlabs.net.untrusted.client",
                 "http://localhost/crl/localhost.crl"
             );
+
+            //Distribute
+            
+            File.Copy($"{SureFhirlabsUdapIssued}/fhirlabs.net.expired.client.pfx",
+                $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/issued/fhirlabs.net.expired.client.pfx",
+                true);
+
+            File.Copy($"{SureFhirlabsUdapIssued}/fhirlabs.net.mismatchSan.client.pfx",
+                $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/issued/fhirlabs.net.mismatchSan.client.pfx",
+                true);
+
+            File.Copy($"{SureFhirlabsUdapIssued}/fhirlabs.net.mismatchBaseUrl.client.pfx",
+                $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/issued/fhirlabs.net.mismatchBaseUrl.client.pfx",
+                true);
+
+            File.Copy($"{SureFhirlabsUdapIssued}/fhirlabs.net.untrusted.client.pfx",
+                $"{BaseDir}/../../_tests/Udap.Common.Tests/CertStore/issued/fhirlabs.net.untrusted.client.pfx",
+                true);
+
+
         }
 
 

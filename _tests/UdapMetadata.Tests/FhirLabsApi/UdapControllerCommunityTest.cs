@@ -10,6 +10,7 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
@@ -28,6 +29,7 @@ using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
+using Udap.Support.Tests.Client;
 using Xunit.Abstractions;
 using static UdapMetadata.Tests.FhirLabsApi.UdapControllerCommunityTest;
 using fhirLabsProgram = FhirLabsApi.Program;
@@ -141,7 +143,27 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 
         _serviceProvider = services.BuildServiceProvider();
     }
-    
+
+    [Fact]
+    public async Task GetCommunitiesTest()
+    {
+        var client = _fixture.CreateClient();
+        var response = await client.GetAsync("fhir/r4/.well-known/udap/communities");
+        response.EnsureSuccessStatusCode();
+        var communities = await response.Content.ReadFromJsonAsync<List<string>>();
+        communities.Count.Should().Be(6);
+        communities.Should().Contain(c => c == "udap://fhirlabs1/");
+        communities.Should().Contain(c => c == "udap://Provider2");
+
+        response = await client.GetAsync("fhir/r4/.well-known/udap/communities/ashtml");
+        response.EnsureSuccessStatusCode();
+        var communityHtml = await response.Content.ReadAsStringAsync();
+        communityHtml.Should().NotBeNullOrWhiteSpace();
+        communityHtml.Should().Contain("href=\"http://localhost/fhir/r4/.well-known/udap?community=udap://fhirlabs1/\"");
+        communityHtml.Should().Contain("href=\"http://localhost/fhir/r4/.well-known/udap?community=udap://Provider2\"");
+    }
+
+
     [Fact]
     public async Task ValidateChainTest()
     {
@@ -447,52 +469,6 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         var exp = int.Parse(expClaim.Value);
         var year = DateTimeOffset.FromUnixTimeSeconds(exp).AddYears(1).ToUnixTimeSeconds();
         iat.Should().BeLessOrEqualTo((int)year);
-    }
-  
-    public class FakeValidatorDiagnostics
-    {
-        public bool ProblemCalled;
-        public bool ErrorCalled;
-        public bool UntrustedCalled;
-        public bool TokenErrorCalled;
-
-        public string UnTrustedCertificate = string.Empty;
-
-        private readonly List<string> _actualErrorMessages = new List<string>();
-        public List<string> ActualErrorMessages
-        {
-            get { return _actualErrorMessages; }
-        }
-
-        public void OnChainProblem(X509ChainElement chainElement)
-        {
-            foreach (var chainElementStatus in chainElement.ChainElementStatus
-                         .Where(s => (s.Status & TrustChainValidator.DefaultProblemFlags) != 0))
-            {
-                var problem = $"Trust ERROR ({chainElementStatus.Status}){chainElementStatus.StatusInformation}, {chainElement.Certificate}";
-                _actualErrorMessages.Add(problem);
-                ProblemCalled = true;
-            }
-        }
-        
-        public void OnError(X509Certificate2 certificate, Exception exception)
-        {
-            _actualErrorMessages.Add($"Failed validating certificate: {certificate.SubjectName.Name} \n {exception.Message}");
-            ErrorCalled = true;
-        }
-
-        public void OnUnTrusted(X509Certificate2 certificate)
-        {
-            UnTrustedCertificate = certificate.SubjectName.Name;
-            _actualErrorMessages.Add($"Untrusted validating certificate: {certificate.SubjectName.Name}");
-            UntrustedCalled = true;
-        }
-
-        public void OnTokenError(string message)
-        {
-            _actualErrorMessages.Add($"Failed JWT Validation: {message}");
-            TokenErrorCalled = true;
-        }
     }
 }
 

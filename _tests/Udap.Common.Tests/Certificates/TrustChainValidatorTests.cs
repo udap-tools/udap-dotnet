@@ -151,17 +151,16 @@ public class TrustChainValidatorTests
         var metaDataBuilder = new UdapMetaDataBuilder(unSignedMetadata, privateCertificateStore, Substitute.For<ILogger<UdapMetaDataBuilder>>());
         var communities = metaDataBuilder.GetCommunities();
 
-        communities.Count.Should().Be(3);
+        communities.Count.Should().Be(6);
         communities.Should().Contain(c => c == "udap://fhirlabs.net");
-        communities.Should().Contain(c => c == "http://MissingCertificate");
-        communities.Should().Contain(c => c == "http://localhost");
+        communities.Should().Contain(c => c == "udap://expired.fhirlabs.net/");
+        communities.Should().Contain(c => c == "udap://untrusted.fhirlabs.net/");
 
         var communityHtml = metaDataBuilder.GetCommunitiesAsHtml("https://baseurl");
 
         communityHtml.Should().NotBeNullOrWhiteSpace();
         communityHtml.Should().Contain("href=\"https://baseurl/.well-known/udap?community=udap://fhirlabs.net\"");
-        communityHtml.Should().Contain("href=\"https://baseurl/.well-known/udap?community=http://MissingCertificate\"");
-        communityHtml.Should().Contain("href=\"https://baseurl/.well-known/udap?community=http://localhost\"");
+        communityHtml.Should().Contain("href=\"https://baseurl/.well-known/udap?community=udap://untrusted.fhirlabs.net/\"");
     }
 
 

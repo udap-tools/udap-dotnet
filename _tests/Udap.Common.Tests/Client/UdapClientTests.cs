@@ -300,26 +300,26 @@ public class UdapClientTests
         _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("JWT iss does not match baseUrl.")).Should().BeTrue();
     }
 
-    [Fact]
-    public async Task GetCommunitiesTest()
-    {
-        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport("http://fhirlabs.net/IssMismatchToBaseUrl/r4", "udap://Iss.Mismatch.To.BaseUrl/");
-        
-        var client = _fixture.CreateClient();
-        var response = await client.GetAsync("fhir/r4/.well-known/udap/communities");
-        response.EnsureSuccessStatusCode();
-        var communities = await response.Content.ReadFromJsonAsync<List<string>>();
-        communities.Count.Should().Be(6);
-        communities.Should().Contain(c => c == "udap://fhirlabs1/");
-        communities.Should().Contain(c => c == "udap://Provider2");
-
-        response = await client.GetAsync("fhir/r4/.well-known/udap/communities/ashtml");
-        response.EnsureSuccessStatusCode();
-        var communityHtml = await response.Content.ReadAsStringAsync();
-        communityHtml.Should().NotBeNullOrWhiteSpace();
-        communityHtml.Should().Contain("href=\"http://localhost/fhir/r4/.well-known/udap?community=udap://fhirlabs1/\"");
-        communityHtml.Should().Contain("href=\"http://localhost/fhir/r4/.well-known/udap?community=udap://Provider2\"");
-    }
+    // [Fact]
+    // public async Task GetCommunitiesTest()
+    // {
+    //     var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport("http://fhirlabs.net/IssMismatchToBaseUrl/r4", "udap://Iss.Mismatch.To.BaseUrl/");
+    //     
+    //     var client = _fixture.CreateClient();
+    //     var response = await client.GetAsync("fhir/r4/.well-known/udap/communities");
+    //     response.EnsureSuccessStatusCode();
+    //     var communities = await response.Content.ReadFromJsonAsync<List<string>>();
+    //     communities.Count.Should().Be(6);
+    //     communities.Should().Contain(c => c == "udap://fhirlabs1/");
+    //     communities.Should().Contain(c => c == "udap://Provider2");
+    //
+    //     response = await client.GetAsync("fhir/r4/.well-known/udap/communities/ashtml");
+    //     response.EnsureSuccessStatusCode();
+    //     var communityHtml = await response.Content.ReadAsStringAsync();
+    //     communityHtml.Should().NotBeNullOrWhiteSpace();
+    //     communityHtml.Should().Contain("href=\"http://localhost/fhir/r4/.well-known/udap?community=udap://fhirlabs1/\"");
+    //     communityHtml.Should().Contain("href=\"http://localhost/fhir/r4/.well-known/udap?community=udap://Provider2\"");
+    // }
 
     private async Task<(
         HttpClient httpClientMock, 

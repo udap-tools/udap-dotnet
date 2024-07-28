@@ -158,7 +158,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
             new X509ChainPolicy()
             {
                 DisableCertificateDownloads = true,
-                UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
             }, 
             problemFlags,
             testOutputHelper.ToLogger<TrustChainValidator>()));

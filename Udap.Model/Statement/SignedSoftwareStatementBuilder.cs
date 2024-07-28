@@ -18,7 +18,7 @@ using Udap.Model.Registration;
 using ECCurve = System.Security.Cryptography.ECCurve;
 
 namespace Udap.Model.Statement;
-public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatementSerializer
+public class SignedSoftwareStatementBuilder<T> where T : class, ISoftwareStatementSerializer
 {
     private readonly X509Certificate2 _certificate;
     private readonly T _document;
@@ -33,7 +33,7 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
     {
         return new SignedSoftwareStatementBuilder<T>(certificate, document);
     }
-     
+
     //
     // No With items...
     // There are plenty of interesting scenarios like loading the x5c hierarchy where
@@ -42,7 +42,7 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
 
     public string Build(string? algorithm = null)
     {
-#if NET5_0_OR_GREATER
+
         //
         // Short circuit to ECDSA
         //
@@ -50,7 +50,7 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
         {
             return BuildECDSA(algorithm);
         }
-#endif
+
         algorithm ??= UdapConstants.SupportedAlgorithm.RS256;
         var securityKey = new X509SecurityKey(_certificate);
         var signingCredentials = new SigningCredentials(securityKey, algorithm);
@@ -72,7 +72,6 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
         return signedSoftwareStatement;
     }
 
-#if NET5_0_OR_GREATER
 
     public string BuildECDSA(string? algorithm = null)
     {
@@ -108,9 +107,9 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
         {
             // If this routine is called multiple times then you must supply the CryptoProvider factory without caching.
             // See: https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/1302#issuecomment-606776893
-            CryptoProviderFactory = new CryptoProviderFactory{ CacheSignatureProviders = false}
+            CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
         };
-      
+
         var pem = Convert.ToBase64String(_certificate.Export(X509ContentType.Cert));
         var jwtHeader = new JwtHeader
         {
@@ -125,7 +124,5 @@ public class SignedSoftwareStatementBuilder<T> where T: class, ISoftwareStatemen
         var signedSoftwareStatement = string.Concat(encodedHeader, ".", encodedPayload, ".", encodedSignature);
 
         return signedSoftwareStatement;
-}
-
-#endif
+    }
 }

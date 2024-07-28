@@ -1,17 +1,21 @@
-using Microsoft.Extensions.Configuration;
-using System.Security.Cryptography.X509Certificates;
+#region (c) 2024 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using System.Security.Cryptography;
-using Udap.Util.Extensions;
-using Xunit.Abstractions;
-using System.Formats.Asn1;
-using System.Text;
-using static Udap.Common.Standard.ObjectIdentifiers.UdapExperimental;
-using Org.BouncyCastle.Asn1.X509;
+using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.Configuration;
 using Org.BouncyCastle.Crypto.Operators;
-using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
-using Org.BouncyCastle.X509.Extension;
 using Org.BouncyCastle.X509;
+using Org.BouncyCastle.X509.Extension;
+using Udap.Support.Tests.Extensions;
+using Xunit.Abstractions;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
 
 namespace Udap.PKI.Generator;

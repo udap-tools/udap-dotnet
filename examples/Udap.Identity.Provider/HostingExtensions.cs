@@ -12,9 +12,11 @@ using Duende.IdentityServer.EntityFramework.Stores;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Udap.Common;
+using Udap.Common.Certificates;
 using Udap.Identity.Provider;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
@@ -78,11 +80,10 @@ internal static class HostingExtensions
 
         
         builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
-        // builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
-        //     new IssuedCertificateStore(
-        //         sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
-        //         sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
-        //         "FhirLabsApi"));
+        builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
+            new IssuedCertificateStore(
+                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                sp.GetRequiredService<ILogger<IssuedCertificateStore>>()));
 
         builder.Services.AddUdapMetadataServer(builder.Configuration);
 

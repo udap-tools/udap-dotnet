@@ -123,7 +123,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                 new X509ChainPolicy()
                 {
                     DisableCertificateDownloads = true,
-                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                    UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
                 }, 
                 problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
@@ -357,7 +357,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                 new X509ChainPolicy()
                 {
                     DisableCertificateDownloads = true,
-                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                    UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
                 }, 
                 problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
@@ -566,7 +566,7 @@ public async Task ValidateChainWithMyAnchorAndIntermediateTest()
         new TrustChainValidator(new X509ChainPolicy()
             {
                 DisableCertificateDownloads = true,
-                UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
             }, 
             problemFlags,
             _testOutputHelper.ToLogger<TrustChainValidator>()));
@@ -644,7 +644,7 @@ public async Task ValidateChainWithMyAnchorTest()
             new TrustChainValidator(new X509ChainPolicy()
                 {
                     DisableCertificateDownloads = true,
-                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                    UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
                 }, 
                 problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
@@ -730,7 +730,7 @@ public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
                 new X509ChainPolicy()
                 {
                     DisableCertificateDownloads = true,
-                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                    UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
                 }, 
                 problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
@@ -812,7 +812,7 @@ public async Task ValidateChainWithMyAnchorFailTest()
             new TrustChainValidator(new X509ChainPolicy()
                 {
                     DisableCertificateDownloads = true,
-                    UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                    UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
                 }, 
                 problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));

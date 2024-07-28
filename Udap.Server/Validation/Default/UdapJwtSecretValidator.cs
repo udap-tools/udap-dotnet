@@ -20,7 +20,6 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Model;
-using Udap.Server.Configuration;
 using Udap.Server.Extensions;
 using Udap.Server.Storage.Stores;
 using Udap.Util.Extensions;
@@ -37,7 +36,6 @@ public class UdapJwtSecretValidator : ISecretValidator
     private readonly IServerUrls _urls;
     private readonly IdentityServerOptions _options;
     private TrustChainValidator _trustChainValidator;
-    private readonly ServerSettings _serverSettings;
     private readonly IUdapClientRegistrationStore _clientStore;
     private readonly ILogger _logger;
 
@@ -49,7 +47,6 @@ public class UdapJwtSecretValidator : ISecretValidator
         IServerUrls urls,
         IdentityServerOptions options,
         TrustChainValidator trustChainValidator,
-        ServerSettings serverSettings,
         IUdapClientRegistrationStore clientStore,
         ILogger<UdapJwtSecretValidator> logger)
     {
@@ -58,7 +55,6 @@ public class UdapJwtSecretValidator : ISecretValidator
         _urls = urls;
         _options = options;
         _trustChainValidator = trustChainValidator;
-        _serverSettings = serverSettings;
         _clientStore = clientStore;
 
         _logger = logger;
@@ -127,7 +123,7 @@ public class UdapJwtSecretValidator : ISecretValidator
             ValidateSignatureLast = true
         };
         
-        var result = tokenHandler.ValidateToken(jwtTokenString, tokenValidationParameters);
+        var result = await tokenHandler.ValidateTokenAsync(jwtTokenString, tokenValidationParameters);
         
         if (!result.IsValid)
         {
@@ -140,7 +136,7 @@ public class UdapJwtSecretValidator : ISecretValidator
                 _logger.LogError($"Missing jwt x5c claim in header for client_id: {parsedSecret.Id}");
             }
 
-            if (!jsonWebToken!.TryGetHeaderValue(JwtHeaderParameterNames.X5c, out string _))
+            if (!jsonWebToken.TryGetHeaderValue(JwtHeaderParameterNames.X5c, out string _))
             {
                 _logger.LogError($"Missing jwt x5c claim in header for client_id: {parsedSecret.Id}");
             }

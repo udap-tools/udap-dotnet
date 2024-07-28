@@ -19,7 +19,7 @@ using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Security;
 using Org.BouncyCastle.X509;
 using Org.BouncyCastle.X509.Extension;
-using Udap.Util.Extensions;
+using Udap.Support.Tests.Extensions;
 using Xunit.Abstractions;
 using Xunit.Extensions.Ordering;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;

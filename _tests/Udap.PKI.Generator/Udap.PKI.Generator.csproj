@@ -52,6 +52,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Udap.Common\Udap.Common.csproj" />
     <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
+    <ProjectReference Include="..\Udap.Support.Tests\Udap.Support.Tests.csproj" />
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

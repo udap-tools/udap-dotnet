@@ -16,8 +16,6 @@ namespace Udap.Model
     /// </summary>
     public class UdapMetadataOptions
     {
-        public bool Enabled { get; set; }
-
         public HashSet<string> UdapProfilesSupported { get; set; } = new();
 
         public List<UdapMetadataConfig> UdapMetadataConfigs { get; set; } = new();

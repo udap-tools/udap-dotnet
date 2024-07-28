@@ -9,7 +9,7 @@
 
 using System.IO;
 
-namespace Udap.Util.Extensions;
+namespace Udap.Support.Tests.Extensions;
 
 public static class GeneralExtensions
 {

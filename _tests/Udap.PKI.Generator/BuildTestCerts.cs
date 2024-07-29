@@ -280,61 +280,61 @@ namespace Udap.PKI.Generator
 
                     #region weatherapi.lab SSL
 
-                    using RSA rsaWeatherApiSsl = RSA.Create(2048);
-                    var sslReq = new CertificateRequest(
-                        "CN=weatherapi.lab, OU=SSL, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                        rsaWeatherApiSsl,
-                        HashAlgorithmName.SHA256,
-                        RSASignaturePadding.Pkcs1);
-
-                    sslReq.CertificateExtensions.Add(
-                        new X509BasicConstraintsExtension(false, false, 0, true));
-
-                    sslReq.CertificateExtensions.Add(
-                        new X509KeyUsageExtension(
-                            X509KeyUsageFlags.DigitalSignature,
-                            true));
-
-                    sslReq.CertificateExtensions.Add(
-                        new X509SubjectKeyIdentifierExtension(sslReq.PublicKey, false));
-
-                    AddAuthorityKeyIdentifier(intermediateCertWithoutKey, sslReq, _testOutputHelper);
-                    sslReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsIntermediateCrl));
-
-                    subAltNameBuilder = new SubjectAlternativeNameBuilder();
-                    subAltNameBuilder.AddDnsName("weatherapi.lab");
-                    x509Extension = subAltNameBuilder.Build();
-                    sslReq.CertificateExtensions.Add(x509Extension);
-
-                    sslReq.CertificateExtensions.Add(
-                        new X509EnhancedKeyUsageExtension(
-                            new OidCollection {
-                                new Oid("1.3.6.1.5.5.7.3.2"), // TLS Client auth
-                                new Oid("1.3.6.1.5.5.7.3.1"), // TLS Server auth
-                            },
-                            true));
-
-                    using (var clientCert = sslReq.Create(
-                               intermediateCertWithKey,
-                               DateTimeOffset.UtcNow.AddDays(-1),
-                               DateTimeOffset.UtcNow.AddYears(2),
-                               new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
-                    {
-                        // Do something with these certs, like export them to PFX,
-                        // or add them to an X509Store, or whatever.
-                        var sslCert = clientCert.CopyWithPrivateKey(rsaWeatherApiSsl);
-
-                        SureFhirLabsSslWeatherApi.EnsureDirectoryExists();
-                        var clientBytes = sslCert.Export(X509ContentType.Pkcs12, "udap-test");
-
-                        Console.WriteLine("*************************************");
-                        Console.WriteLine($"{SureFhirLabsSslWeatherApi}/weatherapi.lab.pfx");
-                        Console.WriteLine("*************************************");
-
-                        File.WriteAllBytes($"{SureFhirLabsSslWeatherApi}/weatherapi.lab.pfx", clientBytes);
-                        char[] certificatePem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
-                        File.WriteAllBytes($"{SureFhirLabsSslWeatherApi}/weatherapi.lab.cer", certificatePem.Select(c => (byte)c).ToArray());
-                    }
+                    // using RSA rsaWeatherApiSsl = RSA.Create(2048);
+                    // var sslReq = new CertificateRequest(
+                    //     "CN=weatherapi.lab, OU=SSL, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                    //     rsaWeatherApiSsl,
+                    //     HashAlgorithmName.SHA256,
+                    //     RSASignaturePadding.Pkcs1);
+                    //
+                    // sslReq.CertificateExtensions.Add(
+                    //     new X509BasicConstraintsExtension(false, false, 0, true));
+                    //
+                    // sslReq.CertificateExtensions.Add(
+                    //     new X509KeyUsageExtension(
+                    //         X509KeyUsageFlags.DigitalSignature,
+                    //         true));
+                    //
+                    // sslReq.CertificateExtensions.Add(
+                    //     new X509SubjectKeyIdentifierExtension(sslReq.PublicKey, false));
+                    //
+                    // AddAuthorityKeyIdentifier(intermediateCertWithoutKey, sslReq, _testOutputHelper);
+                    // sslReq.CertificateExtensions.Add(MakeCdp(SureFhirLabsIntermediateCrl));
+                    //
+                    // subAltNameBuilder = new SubjectAlternativeNameBuilder();
+                    // subAltNameBuilder.AddDnsName("weatherapi.lab");
+                    // x509Extension = subAltNameBuilder.Build();
+                    // sslReq.CertificateExtensions.Add(x509Extension);
+                    //
+                    // sslReq.CertificateExtensions.Add(
+                    //     new X509EnhancedKeyUsageExtension(
+                    //         new OidCollection {
+                    //             new Oid("1.3.6.1.5.5.7.3.2"), // TLS Client auth
+                    //             new Oid("1.3.6.1.5.5.7.3.1"), // TLS Server auth
+                    //         },
+                    //         true));
+                    //
+                    // using (var clientCert = sslReq.Create(
+                    //            intermediateCertWithKey,
+                    //            DateTimeOffset.UtcNow.AddDays(-1),
+                    //            DateTimeOffset.UtcNow.AddYears(2),
+                    //            new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
+                    // {
+                    //     // Do something with these certs, like export them to PFX,
+                    //     // or add them to an X509Store, or whatever.
+                    //     var sslCert = clientCert.CopyWithPrivateKey(rsaWeatherApiSsl);
+                    //
+                    //     SureFhirLabsSslWeatherApi.EnsureDirectoryExists();
+                    //     var clientBytes = sslCert.Export(X509ContentType.Pkcs12, "udap-test");
+                    //
+                    //     Console.WriteLine("*************************************");
+                    //     Console.WriteLine($"{SureFhirLabsSslWeatherApi}/weatherapi.lab.pfx");
+                    //     Console.WriteLine("*************************************");
+                    //
+                    //     File.WriteAllBytes($"{SureFhirLabsSslWeatherApi}/weatherapi.lab.pfx", clientBytes);
+                    //     char[] certificatePem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
+                    //     File.WriteAllBytes($"{SureFhirLabsSslWeatherApi}/weatherapi.lab.cer", certificatePem.Select(c => (byte)c).ToArray());
+                    // }
                     #endregion
 
                     #region fhirlabs.net SSL
@@ -902,7 +902,7 @@ namespace Udap.PKI.Generator
         {
             yield return new object[]
             {
-                $"{LocalhostCertStore}localhost_fhirlabs_community1",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community1",                       //communityStorePath
                 "caLocalhostCert",                                                          //anchorName
                 "intermediateLocalhostCert",                                                //intermediateName
                 "fhirLabsApiClientLocalhostCert",                                           //issuedName
@@ -922,7 +922,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}localhost_fhirlabs_community2",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community2",                       //communityStorePath
                 "caLocalhostCert2",                                                         //anchorName
                 "intermediateLocalhostCert2",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert2",                                          //issuedName
@@ -942,7 +942,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}localhost_fhirlabs_community3",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community3",                        //communityStorePath
                 "caLocalhostCert3",                                                         //anchorName
                 "intermediateLocalhostCert3",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert3",                                          //issuedName
@@ -959,7 +959,7 @@ namespace Udap.PKI.Generator
             //
             yield return new object[]
             {
-                $"{LocalhostCertStore}localhost_fhirlabs_community4",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community4",                       //communityStorePath
                 "caLocalhostCert4",                                                         //anchorName
                 "intermediateLocalhostCert4",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert4",                                          //issuedName
@@ -978,7 +978,7 @@ namespace Udap.PKI.Generator
             //
             yield return new object[]
             {
-                $"{LocalhostCertStore}localhost_fhirlabs_community5",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community5",                       //communityStorePath
                 "caLocalhostCert5",                                                         //anchorName
                 "intermediateLocalhostCert5",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert5",                                          //issuedName
@@ -993,7 +993,7 @@ namespace Udap.PKI.Generator
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}localhost_fhirlabs_community6",                      //communityStorePath
+                $"{LocalhostCertStore}localhost_fhirlabs_community6",                       //communityStorePath
                 "caLocalhostCert6",                                                         //anchorName
                 "intermediateLocalhostCert6",                                               //intermediateName
                 "fhirLabsApiClientLocalhostCert6_ECDSA",                                    //issuedName
@@ -1011,7 +1011,7 @@ namespace Udap.PKI.Generator
             
             yield return new object[]
             {
-                $"{LocalhostCertStore}localhost_weatherapi_community1",                    //communityStorePath
+                $"{LocalhostCertStore}localhost_weatherapi_community1",                     //communityStorePath
                 "caWeatherApiLocalhostCert",                                                //anchorName
                 "intermediateWeatherApiLocalhostCert",                                      //intermediateName
                 "weatherApiClientLocalhostCert1",                                           //issuedName
@@ -1021,13 +1021,13 @@ namespace Udap.PKI.Generator
                     "http://localhost/",
                     "https://localhost:5021"
                 },                                                                          //SubjAltNames
-                "WeatherApi",                                                               //deliveryProjectPath    
+                null!,                                                                      //deliveryProjectPath    
                 "RSA"
             };
 
             yield return new object[]
             {
-                $"{LocalhostCertStore}localhost_weatherapi_community2",                    //communityStorePath
+                $"{LocalhostCertStore}localhost_weatherapi_community2",                     //communityStorePath
                 "caWeatherApiLocalhostCert2",                                               //anchorName
                 "intermediateWeatherApiLocalhostCert2",                                     //intermediateName
                 "weatherApiClientLocalhostCert2",                                           //issuedName
@@ -1037,7 +1037,7 @@ namespace Udap.PKI.Generator
                     "http://localhost/",
                     "https://localhost:5021"
                 },
-                "WeatherApi",                                                               //deliveryProjectPath    
+                null!,                                                                      //deliveryProjectPath    
                 "RSA"
             };
         }
@@ -1062,7 +1062,7 @@ namespace Udap.PKI.Generator
             string issuedName,
             string issuedDistinguishedName,
             List<string> issuedSubjectAltNames,
-            string deliverProjectPath,
+            string? deliverProjectPath,
             string cryptoAlgorithm)
         {
             var LocalhostCrl = $"{communityStorePath}/crl";
@@ -1298,9 +1298,12 @@ namespace Udap.PKI.Generator
             //
             // Issued -> Project
             //
-            File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",
-                $"{BaseDir}/../../examples/{deliverProjectPath}/CertStore/issued/{issuedName}.pfx",
-                true);
+            if (deliverProjectPath != null)
+            {
+                File.Copy($"{LocalhostUdapIssued}/{issuedName}.pfx",
+                    $"{BaseDir}/../../examples/{deliverProjectPath}/CertStore/issued/{issuedName}.pfx",
+                    true);
+            }
 
 
             // TODO: had to hard code deliveryProjectPath for Udap.Identity.Provider

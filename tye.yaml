@@ -7,18 +7,6 @@
 name: udap
 
 services:
-#- name: weatherapi
-#  project: examples/WeatherApi/WeatherApi.csproj
-#  bindings:
-#  - protocol: https
-#    name: https
-#    host: host.docker.internal
-#    port: 5021
-#    routes:
-#     - /swagger
-#  - protocol: http
-#    name: http
-#    port: 5020
   
 - name: fhirlabsapi
   project: examples/FhirLabsApi/FhirLabsApi.csproj

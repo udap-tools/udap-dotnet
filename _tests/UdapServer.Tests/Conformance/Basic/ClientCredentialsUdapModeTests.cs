@@ -763,7 +763,7 @@ public class ClientCredentialsUdapModeTests
         var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
         regDocumentResult!.Scope.Should().Be("system/Patient.rs");
 
-        var clientIdWithDefaultSubAltName = regDocumentResult.ClientId;
+        var clientIdWithDefaultSubAltName = regDocumentResult.ClientId!;
 
         //
         // Cancel Registration
@@ -806,7 +806,7 @@ public class ClientCredentialsUdapModeTests
         //
         regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
         regDocumentResult!.SoftwareStatement.Should().Be(signedSoftwareStatement);
-        // regDocumentResult.ClientId.Should().Be(clientIdWithDefaultSubAltName);  //with a cancel it is possible to delete multiple client ids.
+        regDocumentResult.ClientId.Should().Be("removed"); 
 
         //
         // Repeated un-register should be 400 rather than not found (404).
@@ -956,8 +956,7 @@ public class ClientCredentialsUdapModeTests
         regResponse.StatusCode.Should().Be(HttpStatusCode.Created);
         var regDocumentResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
         regDocumentResult!.Scope.Should().Be("system/Patient.rs");
-
-
+        
         //
         // Register Client 2 from community "localhost_fhirlabs_community2"
         //

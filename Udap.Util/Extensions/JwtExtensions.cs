@@ -7,8 +7,6 @@
 // */
 #endregion
 
-#if NET6_0_OR_GREATER
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -92,5 +90,3 @@ public static class JwtExtensions
         return new X509Certificate2(Convert.FromBase64String(firstNode.ToString()));
     }
 }
-
-#endif

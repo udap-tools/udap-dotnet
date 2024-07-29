@@ -13,10 +13,8 @@ using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
-#if NET6_0_OR_GREATER
 using Udap.Util.Extensions;
 using System.Linq;
-#endif
 
 namespace Udap.Model.Registration;
 
@@ -34,7 +32,6 @@ public class UdapDcrBuilderForAuthorizationCode
     protected UdapDynamicClientRegistrationDocument Document
     {
         get => _document;
-        set => _document = value;
     }
     
     protected UdapDcrBuilderForAuthorizationCode(X509Certificate2 certificate, bool cancelRegistration) : this(cancelRegistration)
@@ -105,7 +102,6 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-#if NET6_0_OR_GREATER
     /// <summary>
     /// If the certificate has more than one uniformResourceIdentifier in the Subject Alternative Name
     /// extension of the client certificate then this will allow one to be picked.
@@ -123,8 +119,7 @@ public class UdapDcrBuilderForAuthorizationCode
         _document.Subject = issuer.AbsoluteUri;
         return this;
     }
-
-#endif
+    
 
     public UdapDcrBuilderForAuthorizationCode WithAudience(string? audience)
     {
@@ -221,6 +216,11 @@ public class UdapDcrBuilderForAuthorizationCode
 
     public UdapDynamicClientRegistrationDocument Build()
     {
+        if(_document.ResponseTypes == null || !_document.ResponseTypes.Any())
+        {
+            _document.ResponseTypes = new HashSet<string> { "code" };
+        }
+
         return Document;
     }
 
@@ -232,7 +232,7 @@ public class UdapDcrBuilderForAuthorizationCode
         }
 
         return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-            .Create(_certificate, Document)
+            .Create(_certificate, Build())
             .Build(signingAlgorithm);
     }
 }

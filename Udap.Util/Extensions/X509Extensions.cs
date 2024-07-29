@@ -22,11 +22,9 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-#if NET6_0_OR_GREATER
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
-using X509Extension = System.Security.Cryptography.X509Certificates.X509Extension;
-#endif
+
 namespace Udap.Util.Extensions;
 
 public static class X509Extensions
@@ -214,7 +212,6 @@ public static class X509Extensions
         return pem.ToString();
     }
 
-#if NET6_0_OR_GREATER
 
     /// <summary>
     /// Gets the specified certificate extension field from the certificate as a <see cref="DerObjectIdentifier"/>.  
@@ -324,9 +321,6 @@ public static class X509Extensions
 
         return sans.First().Item2;
     }
-
-
-#endif
     
     
     public static TEnum FromTag<TEnum>(int tagNo)

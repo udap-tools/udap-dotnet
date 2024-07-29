@@ -464,7 +464,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
             {
                 if (this.TryGetValue(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethod, out var value))
                 {
-                    _tokenEndpointAuthMethod = value as string;
+                    _tokenEndpointAuthMethod = value.ToString();
                 }
             }
             return _tokenEndpointAuthMethod;

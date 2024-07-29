@@ -13,10 +13,8 @@ using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
-#if NET6_0_OR_GREATER
 using Udap.Util.Extensions;
 using System.Linq;
-#endif
 
 namespace Udap.Model.Registration;
 
@@ -34,7 +32,6 @@ public class UdapDcrBuilderForClientCredentials
     protected  UdapDynamicClientRegistrationDocument Document
     {
         get => _document;
-        set => _document = value;
     }
     
     protected UdapDcrBuilderForClientCredentials(X509Certificate2 certificate, bool cancelRegistration) : this(cancelRegistration)
@@ -102,7 +99,6 @@ public class UdapDcrBuilderForClientCredentials
     }
     
     
-#if NET6_0_OR_GREATER
     /// <summary>
     /// If the certificate has more than one uniformResourceIdentifier in the Subject Alternative Name
     /// extension of the client certificate then this will allow one to be picked.
@@ -120,8 +116,7 @@ public class UdapDcrBuilderForClientCredentials
         _document.Subject = issuer.AbsoluteUri;
         return this;
     }
-    
-#endif
+
 
     public UdapDcrBuilderForClientCredentials WithAudience(string? audience)
     {
@@ -192,7 +187,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithLogoUri(string? logoUri)
+    public UdapDcrBuilderForClientCredentials WithLogoUri(string logoUri)
     {
         if (string.IsNullOrEmpty(logoUri))
         {

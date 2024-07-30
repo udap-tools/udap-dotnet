@@ -313,7 +313,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             SubjectName = subjectName,
             SubjectRole = subjectRole,
             OrganizationId = organizationId,
-            OraganizationName = organizationName,
+            OrganizationName = organizationName,
             PurposeOfUse = purposeOfUse,
             ConsentReference = consentReference,
             ConsentPolicy = consentPolicy, // client supplied
@@ -354,7 +354,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         extensionSerialized.SubjectName.Should().Be(subjectName);
         extensionSerialized.SubjectRole.Should().Be(subjectRole);
         extensionSerialized.OrganizationId.Should().Be(organizationId);
-        extensionSerialized.OraganizationName.Should().Be(organizationName);
+        extensionSerialized.OrganizationName.Should().Be(organizationName);
         extensionSerialized.ConsentReference.Should().ContainInOrder(consentReference);
         extensionSerialized.PurposeOfUse.Should().ContainInOrder(purposeOfUse);
         extensionSerialized.ConsentPolicy.Should().ContainInOrder(consentPolicy);
@@ -376,6 +376,22 @@ public class UdapDynamicClientRegistrationDocumentTest
         extensionSerialized!.SubjectName.Should().BeNull();
         extensionSerialized.ConsentReference.Should().BeEmpty();
     }
+
+    [Fact]
+    public void Hl7b2bExtensionValidationTest()
+    {
+        var b2bHl7 = new B2BAuthorizationExtension()
+        {
+            Version = null
+        };
+
+        var notes = b2bHl7.Validate();
+        notes.Should().NotBeNull();
+        notes.Count().Should().Be(3);
+        notes.Should().ContainInOrder("Missing required version", "Missing required organization_id", "Missing required purpose_of_use");
+    }
+
+
 
     [Fact]
     public void ClaimAuthorizationCodeFlowTest()

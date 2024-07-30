@@ -124,7 +124,7 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     /// the organizational requestor is the organization represented by the subject.
     /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.OrganizationName)]
-    public string? OraganizationName
+    public string? OrganizationName
     {
         get
         {
@@ -240,6 +240,28 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
             _consentReference = value;
             if (value != null) this[UdapConstants.B2BAuthorizationExtension.ConsentReference] = value;
         }
+    }
+
+    public List<string> Validate()
+    {
+        var notes = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(Version))
+        {
+            notes.Add("Missing required version");
+        }
+
+        if (string.IsNullOrWhiteSpace(OrganizationId))
+        {
+            notes.Add("Missing required organization_id");
+        }
+
+        if (!PurposeOfUse.Any())
+        {
+            notes.Add("Missing required purpose_of_use");
+        }
+
+        return notes;
     }
 
     internal IList<string> GetIListClaims(string claimType)

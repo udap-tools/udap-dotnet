@@ -9,17 +9,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
 using Udap.Util.Extensions;
-using System.Linq;
-using System.Security.Claims;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using Microsoft.IdentityModel.JsonWebTokens;
-using Udap.Model.UdapAuthenticationExtensions;
 
 namespace Udap.Model.Registration;
 
@@ -208,12 +203,6 @@ public class UdapDcrBuilderForClientCredentials
 
     public UdapDcrBuilderForClientCredentials WithExtension<T>(string key, T value) where T : class
     {
-        // var json = new JsonObject(new KeyValuePair<string, JsonNode?>[]{new KeyValuePair<string, JsonNode?>(key, JsonNode.Parse(JsonSerializer.Serialize(value)))});
-        // _document.AddClaims(new Claim[]
-        // {
-        //     new Claim("extensions", JsonSerializer.Serialize(json), JsonClaimValueTypes.Json)
-        // });
-
         _extensions![key] = value;
         _document.Extensions = _extensions;
 

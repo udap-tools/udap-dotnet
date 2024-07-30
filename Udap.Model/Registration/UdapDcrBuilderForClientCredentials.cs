@@ -15,6 +15,11 @@ using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
 using Udap.Util.Extensions;
 using System.Linq;
+using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Microsoft.IdentityModel.JsonWebTokens;
+using Udap.Model.UdapAuthenticationExtensions;
 
 namespace Udap.Model.Registration;
 
@@ -199,6 +204,21 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
+    private readonly Dictionary<string, object>? _extensions = new Dictionary<string, object>();
+
+    public UdapDcrBuilderForClientCredentials WithExtension<T>(string key, T value) where T : class
+    {
+        // var json = new JsonObject(new KeyValuePair<string, JsonNode?>[]{new KeyValuePair<string, JsonNode?>(key, JsonNode.Parse(JsonSerializer.Serialize(value)))});
+        // _document.AddClaims(new Claim[]
+        // {
+        //     new Claim("extensions", JsonSerializer.Serialize(json), JsonClaimValueTypes.Json)
+        // });
+
+        _extensions![key] = value;
+        _document.Extensions = _extensions;
+
+        return this;
+    }
     public UdapDcrBuilderForClientCredentials WithCertificate(X509Certificate2 certificate)
     {
         _certificate = certificate;
@@ -222,7 +242,7 @@ public class UdapDcrBuilderForClientCredentials
         }
 
         return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(_certificate, Document)
+                .Create(_certificate, Build())
                 .Build(signingAlgorithm);
     }
 }

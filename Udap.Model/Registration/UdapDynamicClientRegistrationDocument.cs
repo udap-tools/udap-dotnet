@@ -504,14 +504,13 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         }
     }
 
-    // [JsonPropertyName(UdapConstants.RegistrationDocumentValues.Extensions)]
+    [JsonPropertyName(UdapConstants.RegistrationDocumentValues.Extensions)]
     public Dictionary<string, object>? Extensions
     {
         get
         {
             if (_extensions != null && !_extensions.Any())
             {
-                // this["extensions"].GetType();
                 _extensions = GetDictionaryClaims(UdapConstants.RegistrationDocumentValues.Extensions);
             }
 

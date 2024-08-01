@@ -9,7 +9,7 @@ public class X509ExtensionTests
     private string CertStore = "../../../../Udap.PKI.Generator/certstores";
 
     [Fact]
-    public void ResolveUriSubjAltName()
+    public void ResolveUriSubjAltNameTest()
     {
         var certificate = new X509Certificate2($"{CertStore}/localhost_fhirlabs_community1/issued/fhirLabsApiClientLocalhostCert.cer");
 
@@ -23,5 +23,16 @@ public class X509ExtensionTests
         
         certificate.ResolveUriSubjAltName("https://localhost:7016/fhir/r4").Should().Be("https://localhost:7016/fhir/r4");
         certificate.ResolveUriSubjAltName("https://localhost:7016/fhir/r4/").Should().Be("https://localhost:7016/fhir/r4");
+    }
+
+    [Fact]
+    public void KeyUsageTest()
+    {
+        var certificate = new X509Certificate2($"CertStore/anchors/SureFhirLabs_CA.cer");
+
+        var extensions = certificate.Extensions.OfType<X509KeyUsageExtension>().ToList();
+        extensions.Should().NotBeNullOrEmpty();
+
+        extensions.Single().KeyUsages.ToKeyUsageToString().Should().ContainInOrder("CrlSign", "KeyCertSign");
     }
 }

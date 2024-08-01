@@ -321,8 +321,21 @@ public static class X509Extensions
 
         return sans.First().Item2;
     }
-    
-    
+
+    public static IEnumerable<string> ToKeyUsageToString(this X509KeyUsageFlags flags)
+    {
+        if (flags.HasFlag(X509KeyUsageFlags.KeyAgreement)) { yield return X509KeyUsageFlags.KeyAgreement.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.CrlSign)) { yield return X509KeyUsageFlags.CrlSign.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.DataEncipherment)) { yield return X509KeyUsageFlags.DataEncipherment.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.DecipherOnly)) { yield return X509KeyUsageFlags.DecipherOnly.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.DigitalSignature)) { yield return X509KeyUsageFlags.DigitalSignature.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.EncipherOnly)) { yield return X509KeyUsageFlags.EncipherOnly.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.KeyCertSign)) { yield return X509KeyUsageFlags.KeyCertSign.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.KeyEncipherment)) { yield return X509KeyUsageFlags.KeyEncipherment.ToString(); }
+        if (flags.HasFlag(X509KeyUsageFlags.NonRepudiation)) { yield return X509KeyUsageFlags.NonRepudiation.ToString(); }
+    }
+
+
     public static TEnum FromTag<TEnum>(int tagNo)
     {
         return (TEnum)Enum.ToObject(typeof(TEnum), tagNo);

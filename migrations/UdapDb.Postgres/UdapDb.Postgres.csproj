@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.0.5" />
+    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.0.6" />
     <PackageReference Include="EFCore.NamingConventions" Version="8.0.3" />
     <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="5.9.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.7" />

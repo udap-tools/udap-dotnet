@@ -37,7 +37,7 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.24324.3" />
     <PackageReference Include="System.CommandLine.Hosting" Version="0.4.0-alpha.24324.3" />
-    <PackageReference Include="Udap.Client" Version="0.3.57" />
+    <PackageReference Include="Udap.Client" Version="0.3.59" />
   </ItemGroup>
 
   <ItemGroup>

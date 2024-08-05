@@ -24,6 +24,12 @@ using Udap.Util.Extensions;
 using Yarp.ReverseProxy.Transforms;
 using ZiggyCreatures.Caching.Fusion;
 
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+Log.Information("Starting up");
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSerilog((services, lc) => lc

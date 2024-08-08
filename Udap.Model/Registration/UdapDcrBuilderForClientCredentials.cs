@@ -9,14 +9,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Cryptography.X509Certificates;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
-#if NET6_0_OR_GREATER
 using Udap.Util.Extensions;
-using System.Linq;
-#endif
 
 namespace Udap.Model.Registration;
 
@@ -31,16 +29,9 @@ public class UdapDcrBuilderForClientCredentials
     private UdapDynamicClientRegistrationDocument _document;
     private X509Certificate2? _certificate;
 
-    protected X509Certificate2? Certificate
-    {
-        get => _certificate;
-        set => _certificate = value;
-    }
-
     protected  UdapDynamicClientRegistrationDocument Document
     {
         get => _document;
-        set => _document = value;
     }
     
     protected UdapDcrBuilderForClientCredentials(X509Certificate2 certificate, bool cancelRegistration) : this(cancelRegistration)
@@ -106,14 +97,8 @@ public class UdapDcrBuilderForClientCredentials
     {
         return new UdapDcrBuilderForClientCredentials(true);
     }
-
-
-    /// <summary>
-    /// Set at construction time. 
-    /// </summary>
-    public DateTime Now => _now;
-
-#if NET6_0_OR_GREATER
+    
+    
     /// <summary>
     /// If the certificate has more than one uniformResourceIdentifier in the Subject Alternative Name
     /// extension of the client certificate then this will allow one to be picked.
@@ -131,8 +116,7 @@ public class UdapDcrBuilderForClientCredentials
         _document.Subject = issuer.AbsoluteUri;
         return this;
     }
-    
-#endif
+
 
     public UdapDcrBuilderForClientCredentials WithAudience(string? audience)
     {
@@ -203,7 +187,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithLogoUri(string? logoUri)
+    public UdapDcrBuilderForClientCredentials WithLogoUri(string logoUri)
     {
         if (string.IsNullOrEmpty(logoUri))
         {
@@ -215,6 +199,15 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
+    private readonly Dictionary<string, object>? _extensions = new Dictionary<string, object>();
+
+    public UdapDcrBuilderForClientCredentials WithExtension<T>(string key, T value) where T : class
+    {
+        _extensions![key] = value;
+        _document.Extensions = _extensions;
+
+        return this;
+    }
     public UdapDcrBuilderForClientCredentials WithCertificate(X509Certificate2 certificate)
     {
         _certificate = certificate;
@@ -234,11 +227,11 @@ public class UdapDcrBuilderForClientCredentials
     {
         if (_certificate == null)
         {
-            return "missing certificate";
+            throw new Exception("Missing certificate");
         }
 
         return SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(_certificate, Document)
+                .Create(_certificate, Build())
                 .Build(signingAlgorithm);
     }
 }

@@ -34,10 +34,3 @@ public class DuplicateIntermediateCertificateException : Exception
     {
     }
 }
-
-public class UdapProblemDetailsException : Exception
-{
-    public UdapProblemDetailsException(string message) : base(message)
-    {
-    }
-}

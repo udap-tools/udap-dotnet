@@ -23,7 +23,7 @@ public class Anchor : ICertificateValidateMarker
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
 
-    public Community Community { get; set; } = default!;
+    public Community? Community { get; set; }
     public int CommunityId { get; set; }
 
     public virtual ICollection<AnchorCertification> AnchorCertifications { get; set; } = default!;

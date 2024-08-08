@@ -9,7 +9,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -26,14 +25,19 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     private string? _organizationName;
     private string? _organizationId = default!;
     private ICollection<string> _purposeOfUse = new HashSet<string>();
-    private ICollection<string>? _consentPolicy;
-    private ICollection<string>? _consentReference;
+    private ICollection<string>? _consentPolicy = new HashSet<string>();
+    private ICollection<string>? _consentReference = new HashSet<string>();
 
     public B2BAuthorizationExtension()
     {
         Version = _version;
     }
 
+    /// <summary>
+    /// version required
+    ///
+    /// String with fixed value: "1"
+    /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.Version)]
     public string Version
     {
@@ -50,6 +54,11 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
     }
 
+    /// <summary>
+    /// subject_name conditional:
+    ///
+    /// String containing the human readable name of the human or non-human requestor; required if known.
+    /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.SubjectName)]
     public string? SubjectName
     {
@@ -64,6 +73,15 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
     }
 
+    /// <summary>
+    /// subject_id conditional:
+    ///
+    /// String containing a unique identifier for the requestor; required if known for
+    /// human requestors when the subject_name parameter is present. For US Realm, the
+    /// value SHALL be the subject's individual National Provider Identifier (NPI); omit
+    /// for non-human requestors and for requestors who have not been assigned an NPI.
+    /// See Section 5.2.1.2 below for the preferred format of the identifier value string.
+    /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.SubjectId)]
     public string? SubjectId
     {
@@ -75,6 +93,16 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
     }
 
+    /// <summary>
+    /// subject_role conditional:
+    ///
+    /// String containing a code identifying the role of the requestor; required if known for
+    /// human requestors when the subject_name parameter is present. For US Realm, trust communities
+    /// SHOULD constrain the allowed values and formats, and are encouraged to draw from the National
+    /// Uniform Claim Committee (NUCC) Provider Taxonomy Code Set, but are not required to do so
+    /// to be considered conformant. See Section 5.2.1.2 below for the preferred format of the code
+    /// value string.
+    /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.SubjectRole)]
     public string? SubjectRole
     {
@@ -89,8 +117,14 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
     }
 
+    /// <summary>
+    /// organization_name optional:
+    ///
+    /// String containing the human readable name of the organizational requestor. If a subject is named,
+    /// the organizational requestor is the organization represented by the subject.
+    /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.OrganizationName)]
-    public string? OraganizationName
+    public string? OrganizationName
     {
         get
         {
@@ -103,6 +137,14 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
     }
 
+    /// <summary>
+    /// organization_id required:
+    /// 
+    /// String containing a unique identifier for the organizational requestor. If a subject is named, the
+    /// organizational requestor is the organization represented by the subject. The identifier SHALL be a
+    /// Uniform Resource Identifier (URI). Trust communities SHALL define the allowed URI scheme(s). If a URL
+    /// is used, the issuer SHALL include a URL that is resolvable by the receiving party.
+    /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.OrganizationId)]
     public string? OrganizationId
     {
@@ -122,6 +164,14 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
     }
 
+    /// <summary>
+    /// purpose_of_use required:
+    /// 
+    /// An array of one or more strings, each containing a code identifying a purpose for which the data is being
+    /// requested. For US Realm, trust communities SHOULD constrain the allowed values, and are encouraged to
+    /// draw from the HL7 PurposeOfUse value set, but are not required to do so to be considered conformant.
+    /// See Section 5.2.1.2 below for the preferred format of each code value string array element.
+    /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.PurposeOfUse)]
     public ICollection<string> PurposeOfUse
     {
@@ -140,6 +190,12 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
     }
 
+    /// <summary>
+    /// consent_policy optional:
+    /// 
+    /// An array of one or more strings, each containing a URI identifying a privacy consent directive policy
+    /// or other policy consistent with the value of the purpose_of_use parameter.
+    /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.ConsentPolicy)]
     public ICollection<string>? ConsentPolicy
     {
@@ -158,7 +214,16 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
     }
 
-
+    /// <summary>
+    /// consent_reference conditional:
+    /// 
+    /// An array of one or more strings, each containing an absolute URL consistent with a literal reference to a FHIR Consent
+    /// or DocumentReference resource containing or referencing a privacy consent directive relevant to a purpose identified
+    /// by the purpose_of_use parameter and the policy or policies identified by the consent_policy parameter. The issuer of
+    /// this Authorization Extension Object SHALL only include URLs that are resolvable by the receiving party. If a referenced
+    /// resource does not include the raw document data inline in the resource or as a contained resource, then it SHALL
+    /// include a URL to the attachment data that is resolvable by the receiving party. Omit if consent_policy is not present.
+    /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.ConsentReference)]
     public ICollection<string>? ConsentReference
     {
@@ -177,40 +242,43 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
     }
 
+    public List<string> Validate()
+    {
+        var notes = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(Version))
+        {
+            notes.Add("Missing required version");
+        }
+
+        if (string.IsNullOrWhiteSpace(OrganizationId))
+        {
+            notes.Add("Missing required organization_id");
+        }
+
+        if (!PurposeOfUse.Any())
+        {
+            notes.Add("Missing required purpose_of_use");
+        }
+
+        return notes;
+    }
+
     internal IList<string> GetIListClaims(string claimType)
     {
         var claimValues = new List<string>();
 
-        if (!TryGetValue(claimType, out var value))
+        if (TryGetValue(claimType, out var value))
         {
-            return claimValues;
-        }
-
-        if (value is string str)
-        {
-            claimValues.Add(str);
-            return claimValues;
-        }
-
-        if (value is JsonElement { ValueKind: JsonValueKind.Array } element)
-        {
-            foreach (var item in element.EnumerateArray())
+            if (value is JsonElement { ValueKind: JsonValueKind.Array } element)
             {
-                claimValues.Add(item.ToString());
-            }
-            return claimValues;
-        }
+                foreach (var item in element.EnumerateArray())
+                {
+                    claimValues.Add(item.ToString());
+                }
 
-        if (value is IEnumerable<string> values)
-        {
-            foreach (var item in values)
-            {
-                claimValues.Add(item);
+                return claimValues;
             }
-        }
-        else
-        {
-            claimValues.Add(JsonSerializer.Serialize(value));
         }
 
         return claimValues;
@@ -220,9 +288,6 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     {
         if (TryGetValue(claimType, out object? value))
         {
-            if (value is string str)
-                return str;
-
             if (value is JsonElement element)
             {
                 if (element.ValueKind == JsonValueKind.String)
@@ -230,8 +295,6 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
                     return element.GetString();
                 }
             }
-
-            return JsonSerializer.Serialize(value);
         }
 
         return null;

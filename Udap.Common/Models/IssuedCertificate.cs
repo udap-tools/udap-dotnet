@@ -11,24 +11,37 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Udap.Common.Models;
 
-public class IssuedCertificate 
+public class IssuedCertificate : IEquatable<IssuedCertificate>
 {
-    public int Id { get; set; }
-    public bool Enabled { get; set; }
-    // public string Name { get; set; } = string.Empty;
-    public string Community { get; set; } = string.Empty;
+    public IssuedCertificate(X509Certificate2 certificate, string community = "")
+    {
+        Certificate = certificate;
+        Community = community;
+        Thumbprint = certificate.Thumbprint;
+    }
 
-    public X509Certificate2 Certificate { get; set; } = default!;
-    public DateTime BeginDate { get; set; }
-    public DateTime EndDate { get; set; }
+    public string Community { get; }
 
-    public string Thumbprint { get; set; }
+    public X509Certificate2 Certificate { get; }
+    
+    public string Thumbprint { get; }
 
     /// <summary>Serves as the default hash function.</summary>
     /// <returns>A hash code for the current object.</returns>
     public override int GetHashCode()
     {
-        return Thumbprint.GetHashCode();
+        return HashCode.Combine(Thumbprint, Community);
+    }
+
+    /// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
+    /// <param name="other">An object to compare with this object.</param>
+    /// <returns>
+    /// <see langword="true" /> if the current object is equal to the <paramref name="other" /> parameter; otherwise, <see langword="false" />.</returns>
+    public bool Equals(IssuedCertificate? other)
+    {
+        if (other == null) return false;
+        return other.Thumbprint == this.Thumbprint &&
+               other.Community == this.Community;
     }
 
     /// <summary>Determines whether the specified object is equal to the current object.</summary>
@@ -37,6 +50,7 @@ public class IssuedCertificate
     /// <see langword="true" /> if the specified object  is equal to the current object; otherwise, <see langword="false" />.</returns>
     public override bool Equals(object? obj)
     {
-        return obj is IssuedCertificate issued && issued.Thumbprint.Equals(Thumbprint) && issued.Community.Equals(Community);
+        if (obj is IssuedCertificate issued) return Equals(issued);
+        return false;
     }
 }

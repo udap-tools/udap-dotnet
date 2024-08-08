@@ -288,7 +288,7 @@ public class ExperimentationTest
         Console.WriteLine(jwt);
     }
 
-
+#if NET7_0_OR_GREATER
     /// <summary>
     /// Still would need to put the kid in the jwt header segment
     /// But a good experiment to mess with while working in ECDSA certificates.
@@ -458,6 +458,7 @@ public class ExperimentationTest
             _testOutputHelper.WriteLine(validatedToken.Exception?.Message);
         }
     }
+#endif
 
     public class Jwks
     {

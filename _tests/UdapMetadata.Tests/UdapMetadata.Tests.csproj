@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net7.0;net6.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -33,9 +33,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\examples\FhirLabsApi\FhirLabsApi.csproj" />
-    <ProjectReference Include="..\..\examples\WeatherApi\WeatherApi.csproj" />
     <ProjectReference Include="..\..\Udap.Client\Udap.Client.csproj" />
-    <!-- <ProjectReference Include="..\UdapServer.Tests\UdapServer.Tests.csproj" /> -->
+    <ProjectReference Include="..\Udap.Support.Tests\Udap.Support.Tests.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -18,8 +18,8 @@ public class Intermediate : IEquatable<Intermediate>
     public long AnchorId { get; set; }
     public bool Enabled { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string Certificate { get; set; } = string.Empty;
-    public string Thumbprint { get; set; } = string.Empty;
+    public string Certificate { get; }
+    public string Thumbprint { get; } = string.Empty;
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
 
@@ -36,7 +36,7 @@ public class Intermediate : IEquatable<Intermediate>
     /// <returns>A hash code for the current object.</returns>
     public override int GetHashCode()
     {
-        return ToString().GetHashCode();
+        return Thumbprint.GetHashCode();
     }
 
     /// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
@@ -55,7 +55,7 @@ public class Intermediate : IEquatable<Intermediate>
     /// <see langword="true" /> if the specified object  is equal to the current object; otherwise, <see langword="false" />.</returns>
     public override bool Equals(object? obj)
     {
-        if (obj is Intermediate rootCertificate) return Equals(rootCertificate);
+        if (obj is Intermediate intermediate) return Equals(intermediate);
         return false;
     }
 }

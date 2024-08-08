@@ -1,7 +1,6 @@
 ﻿using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Org.BouncyCastle.X509;
 using Udap.Common.Models;
 
 namespace Udap.Common.Certificates;
@@ -10,17 +9,14 @@ public class IssuedCertificateStore : IPrivateCertificateStore
 {
     private readonly IOptionsMonitor<UdapFileCertStoreManifest> _manifest;
     private readonly ILogger<IssuedCertificateStore> _logger;
-    private string? _resourceServerName;
     private bool _resolved;
 
 
     public IssuedCertificateStore(
         IOptionsMonitor<UdapFileCertStoreManifest> manifest,
-        ILogger<IssuedCertificateStore> logger,
-        string? resourceServerName = null)
+        ILogger<IssuedCertificateStore> logger)
     {
         _manifest = manifest;
-        _resourceServerName = resourceServerName;
         _logger = logger;
 
         _manifest.OnChange(_ =>
@@ -47,20 +43,7 @@ public class IssuedCertificateStore : IPrivateCertificateStore
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
     {
         ICollection<Common.Metadata.Community>? communities;
-
-        if (_resourceServerName == null)
-        {
-            _logger.LogInformation($"Loading first ResourceServers from UdapFileCertStoreManifest:ResourceServers.");
-
-            communities = manifestCurrentValue.Communities;
-        }
-        else
-        {
-            _logger.LogInformation($"Loading UdapFileCertStoreManifest:ResourceServers:Name {_resourceServerName}.");
-
-            communities = manifestCurrentValue.Communities;
-        }
-
+        communities = manifestCurrentValue.Communities;
         _logger.LogInformation($"{communities.Count} communities loaded");
 
         foreach (var community in communities)
@@ -94,12 +77,7 @@ public class IssuedCertificateStore : IPrivateCertificateStore
                             !extension.CertificateAuthority)
                         {
                             _logger.LogInformation($"Loading Certificate:: Thumbprint: {x509Cert.Thumbprint}  Subject: {x509Cert.SubjectName.Name}");
-                            IssuedCertificates.Add(new IssuedCertificate
-                            {
-                                Community = community.Name,
-                                Certificate = x509Cert,
-                                Thumbprint = x509Cert.Thumbprint
-                            });
+                            IssuedCertificates.Add(new IssuedCertificate(x509Cert, community.Name));
                         }
                     }
                 }

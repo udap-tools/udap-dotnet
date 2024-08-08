@@ -10,10 +10,8 @@
 using System.Net;
 using System.Text.Json;
 using FhirLabsApi;
-using FhirLabsApi.Extensions;
 using Hl7.Fhir.DemoFileSystemFhirServer;
 using Hl7.Fhir.NetCoreApi;
-using Hl7.Fhir.Utility;
 using Hl7.Fhir.WebApi;
 using IdentityModel;
 using Microsoft.AspNetCore.Mvc.Formatters;
@@ -98,24 +96,25 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
 
 
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
-builder.Services.AddSingleton<IPrivateCertificateStore>(sp =>
-    new IssuedCertificateStore(
-        sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
-        sp.GetRequiredService<ILogger<IssuedCertificateStore>>(),
-        "FhirLabsApi"));
 
-builder.Services.AddUdapMetadataServer(builder.Configuration);
-
-// SmartMetadata Examples
-// builder.Services.Configure<SmartMetadata>("SmartMetadata2", builder.Configuration.GetRequiredSection("SmartMetadata2"));
-// builder.Services.Configure<SmartMetadata>("SmartMetadata", builder.Configuration.GetRequiredSection("SmartMetadata"));
-// builder.Services.AddSmartMetadata("SmartMetadata2");
+builder.Services
+    .AddUdapMetadataServer(builder.Configuration)
+    .AddSingleton<IPrivateCertificateStore>(sp =>
+        new IssuedCertificateStore(
+            sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
+            sp.GetRequiredService<ILogger<IssuedCertificateStore>>()));
 
 
+
+#if NET8_0_OR_GREATER
 builder.AddSmartMetadata();
+#else
+builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSection("SmartMetadata"));
+builder.Services.AddSmartMetadata();
+#endif
 
 
-builder.AddRateLimiting();
+
 
 // From Hl7.Fhir.WebApi (brian)
 // builder.Services.AddTransient<FhirSmartAppLaunchConfiguration>(options =>
@@ -142,7 +141,6 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 
 app.UseSerilogRequestLogging();
-app.UseRateLimiter();
 
 app.UsePathBase(new PathString("/fhir/r4"));
 
@@ -192,8 +190,7 @@ app.UseSmartMetadata();
 
 
 app.MapControllers()
-    .RequireAuthorization()
-    .RequireRateLimiting(RateLimitExtensions.GetPolicy);
+    .RequireAuthorization();
 
 app.Run();
 

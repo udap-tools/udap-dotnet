@@ -29,6 +29,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Portable.BouncyCastle" />
     <PackageReference Include="xunit" />
+    <PackageReference Include="Xunit.Extensions.Ordering" />
     <PackageReference Include="xunit.runner.visualstudio">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
@@ -51,6 +52,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Udap.Common\Udap.Common.csproj" />
     <ProjectReference Include="..\..\Udap.Util\Udap.Util.csproj" />
+    <ProjectReference Include="..\Udap.Support.Tests\Udap.Support.Tests.csproj" />
   </ItemGroup>
 
   <Target Name="PreBuild" BeforeTargets="PreBuildEvent">

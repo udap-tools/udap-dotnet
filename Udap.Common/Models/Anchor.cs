@@ -12,24 +12,25 @@ using Udap.Util.Extensions;
 
 namespace Udap.Common.Models;
 
-public class Anchor : IEquatable<Anchor>
+public class Anchor: IEquatable<Anchor>
 {
-    public Anchor(){}
-    public Anchor(X509Certificate2 cert, string? name = null)
+    public Anchor(X509Certificate2 cert, string? communityName = null, string? name = null)
     {
         Certificate = cert.ToPemFormat();
         BeginDate = cert.NotBefore;
         EndDate = cert.NotAfter;
         Thumbprint = cert.Thumbprint;
+        Community = communityName;
         Name = name ?? cert.Subject;
     }
+
     public long Id { get; set; }
     public bool Enabled { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string? Community { get; set; }
+    public string? Community { get;  }
     public long CommunityId { get; set; }
-    public string Certificate { get; set; } = string.Empty;
-    public string Thumbprint { get; set; } = string.Empty;
+    public string Certificate { get; } 
+    public string Thumbprint { get; }
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
 
@@ -46,7 +47,7 @@ public class Anchor : IEquatable<Anchor>
     /// <returns>A hash code for the current object.</returns>
     public override int GetHashCode()
     {
-        return (ToString()).GetHashCode();
+        return HashCode.Combine(Thumbprint, Community);
     }
 
     /// <summary>Indicates whether the current object is equal to another object of the same type.</summary>
@@ -56,7 +57,8 @@ public class Anchor : IEquatable<Anchor>
     public bool Equals(Anchor? other)
     {
         if (other == null) return false;
-        return other.Thumbprint == this.Thumbprint && other.Community == this.Community;
+        return other.Thumbprint == this.Thumbprint && 
+               other.Community == this.Community;
     }
 
     /// <summary>Determines whether the specified object is equal to the current object.</summary>

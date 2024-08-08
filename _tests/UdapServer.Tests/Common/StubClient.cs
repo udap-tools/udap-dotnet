@@ -16,7 +16,7 @@
 //
 
 
-using Udap.Server.Infrastructure.Clock;
+using Duende.IdentityServer;
 
 namespace UdapServer.Tests.Common;
 

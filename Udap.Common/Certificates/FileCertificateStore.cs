@@ -21,17 +21,14 @@ public class FileCertificateStore : ICertificateStore
 {
     private readonly IOptionsMonitor<UdapFileCertStoreManifest> _manifest;
     private readonly ILogger<FileCertificateStore> _logger;
-    private string? _resourceServerName;
     private bool _resolved;
 
 
     public FileCertificateStore(
         IOptionsMonitor<UdapFileCertStoreManifest> manifest,
-        ILogger<FileCertificateStore> logger,
-        string? resourceServerName = null)
+        ILogger<FileCertificateStore> logger)
     {
         _manifest = manifest;
-        _resourceServerName = resourceServerName;
         _logger = logger;
 
         _manifest.OnChange(_ =>
@@ -61,24 +58,9 @@ public class FileCertificateStore : ICertificateStore
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
     {
         ICollection<Common.Metadata.Community>? communities;
-
-        if (_resourceServerName == null)
-        {
-            _logger.LogInformation($"Loading first ResourceServers from UdapFileCertStoreManifest:ResourceServers.");
-
-            communities = manifestCurrentValue.Communities;
-        }
-        else
-        {
-            _logger.LogInformation($"Loading UdapFileCertStoreManifest:ResourceServers:Name {_resourceServerName}.");
-
-            communities = manifestCurrentValue.Communities;
-        }
-
+        communities = manifestCurrentValue.Communities;
         _logger.LogInformation($"{communities.Count} communities loaded");
-
-        if (communities == null) return;
-
+        
         foreach (var community in communities)
         {
             var intermediates = new List<Intermediate>();
@@ -104,9 +86,8 @@ public class FileCertificateStore : ICertificateStore
                     throw new FileNotFoundException($"Cannot find file: {path}");
                 }
 
-                AnchorCertificates.Add(new Anchor(new X509Certificate2(path))
+                AnchorCertificates.Add(new Anchor(new X509Certificate2(path), community.Name)
                 {
-                    Community = community.Name,
                     Intermediates = intermediates
                 });
             }
@@ -185,12 +166,7 @@ public class FileCertificateStore : ICertificateStore
                             }
                             else
                             {
-                                IssuedCertificates.Add(new IssuedCertificate
-                                {
-                                    Community = community.Name,
-                                    Certificate = x509Cert,
-                                    Thumbprint = x509Cert.Thumbprint
-                                });
+                                IssuedCertificates.Add(new IssuedCertificate(x509Cert, community.Name));
                             }
                         }
                     }

@@ -211,7 +211,6 @@ A this point a success would result in a result similar to the following json.  
 ### UDAP Resource Server Examples
 
 - [FhirLabsApi example project](./examples//FhirLabsApi/)
-- [WeatherApi example project](./examples//WeatherApi/)
 - [FhirLabs Published](https://fhirlabs.net/fhir/r4/.well-known/udap)
 - [FhirLabs UdapEd Tool | Discovery | Registration | B2B | Patient Match | National Directory ](https://udaped.fhirlabs.net)
 

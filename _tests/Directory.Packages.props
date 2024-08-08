@@ -7,13 +7,12 @@
     <PackageVersion Include="Duende.IdentityServer" Version="7.0.0" />
     <PackageVersion Include="Duende.IdentityServer.Storage" Version="7.0.0" />
     <PackageVersion Include="Firely.Fhir.Packages" Version="4.7.0" />
-    <PackageVersion Include="Hl7.Fhir.Specification.R4B" Version="5.9.0" />
+    <PackageVersion Include="Hl7.Fhir.Specification.R4B" Version="5.9.1" />
     <PackageVersion Include="FluentAssertions" Version="6.12.0" />
     <PackageVersion Include="FluentAssertions.Analyzers" Version="0.33.0" />
     <PackageVersion Include="IdentityModel" Version="7.0.0" />
     <PackageVersion Include="MartinCostello.Logging.XUnit" Version="0.4.0" />
     <PackageVersion Include="Meziantou.Extensions.Logging.Xunit" Version="1.0.7" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="[6.0.32,8.0.7]" />
     <PackageVersion Include="Microsoft.Data.SqlClient" Version="5.2.1" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.7" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.7" />
@@ -42,4 +41,19 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.2" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.0.1" />
   </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net6.0'">
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="[6.0.32, 7.0.0)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net7.0'">
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="[7.0.20, 8.0.0)" />
+  </ItemGroup>
+
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.7" />
+  </ItemGroup>
+
+
 </Project>

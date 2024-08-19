@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.0.6" />
     <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="5.9.1" />
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
       <PrivateAssets>all</PrivateAssets>

@@ -17,7 +17,6 @@ public class DiscoveryPolicy
     {
         return new DiscoveryPolicy
         {
-            ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
             ValidateEndpoints = false // Authority endpoints are not hosted on same domain as resource server.
         };
     }
@@ -54,11 +53,6 @@ public class DiscoveryPolicy
     /// Specifies valid loopback addresses, defaults to localhost and 127.0.0.1
     /// </summary>
     public ICollection<string> LoopbackAddresses = new HashSet<string> { "localhost", "127.0.0.1" };
-
-    /// <summary>
-    /// Specifies if the issuer name is checked to be identical to the authority. Defaults to true.
-    /// </summary>
-    public bool ValidateIssuerName { get; set; } = true;
 
     /// <summary>
     /// Specifies if all endpoints are checked to belong to the authority. Defaults to true.

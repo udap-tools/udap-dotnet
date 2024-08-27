@@ -55,7 +55,6 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     public JsonWebKeySet? KeySet { get; set; }
 
     // strongly typed
-    public string? Issuer => TryGetString(UdapConstants.Discovery.Issuer);
     public IEnumerable<string> UdapVersionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapVersionsSupported);
     public IEnumerable<string> UdapProfilesSupported => TryGetStringArray(UdapConstants.Discovery.UdapProfilesSupported);
     public IEnumerable<string> UdapAuthorizationExtensionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapAuthorizationExtensionsSupported);
@@ -78,25 +77,11 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     public string? RegistrationEndpoint => TryGetString(UdapConstants.Discovery.RegistrationEndpoint);
 
     // generic
-    public JsonElement? TryGetValue(string name) => Json?.TryGetValue(name);
-    public string? TryGetString(string name) => Json?.TryGetString(name);
-    public bool? TryGetBoolean(string name) => Json?.TryGetBoolean(name);
-    public IEnumerable<string>? TryGetStringArray(string name) => Json?.TryGetStringArray(name);
+    private string? TryGetString(string name) => Json?.TryGetString(name);
+    private IEnumerable<string>? TryGetStringArray(string name) => Json?.TryGetStringArray(name);
 
     private string Validate(DiscoveryPolicy policy)
     {
-        if (policy.ValidateIssuerName)
-        {
-            IAuthorityValidationStrategy strategy = policy.AuthorityValidationStrategy;
-
-            AuthorityValidationResult issuerValidationResult = strategy.IsIssuerNameValid(Issuer, policy.Authority);
-
-            if (!issuerValidationResult.Success)
-            {
-                return issuerValidationResult.ErrorMessage;
-            }
-        }
-
         if (Json.HasValue)
         {
             var error = ValidateEndpoints(Json.Value, policy);

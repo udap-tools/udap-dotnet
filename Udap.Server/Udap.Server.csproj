@@ -27,6 +27,7 @@
     <PackageReference Include="Duende.IdentityServer.AspNetIdentity" />
     <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" />
     <PackageReference Include="IdentityModel.AspNetCore.OAuth2Introspection" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
@@ -38,6 +39,10 @@
     <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
     <None Include="docs\README.md" Pack="true" PackagePath="\" />
     <None Include="../artwork/UDAP_Ecosystem_Gears 48X48.jpg" Pack="true" PackagePath="\" />
+  </ItemGroup>
+ 
+  <ItemGroup>
+    <Folder Include="Infrastructure\" />
   </ItemGroup>
 
 </Project>

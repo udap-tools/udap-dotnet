@@ -51,6 +51,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     private ICollection<string>? _responseTypes = new HashSet<string>();
     private string? _tokenEndpointAuthMethod;
     private string? _scope;
+    private Dictionary<string, object>? _extensions = new Dictionary<string, object>();
 
     /// <summary>
     /// Array of redirection URI strings for use in redirect-based flows
@@ -464,7 +465,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
             {
                 if (this.TryGetValue(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethod, out var value))
                 {
-                    _tokenEndpointAuthMethod = value as string;
+                    _tokenEndpointAuthMethod = value.ToString();
                 }
             }
             return _tokenEndpointAuthMethod;
@@ -503,6 +504,33 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         }
     }
 
+    [JsonPropertyName(UdapConstants.RegistrationDocumentValues.Extensions)]
+    public Dictionary<string, object>? Extensions
+    {
+        get
+        {
+            if (_extensions != null && !_extensions.Any())
+            {
+                _extensions = GetDictionaryClaims(UdapConstants.RegistrationDocumentValues.Extensions);
+            }
+
+            return _extensions;
+        }
+        set
+        {
+            _extensions = value;
+        
+            if (value == null)
+            {
+                this.Remove(UdapConstants.RegistrationDocumentValues.Extensions);
+            }
+            else
+            {
+                this[UdapConstants.RegistrationDocumentValues.Extensions] = value;
+            }
+        }
+    }
+
     public string? GetError()
     {
         return GetStandardClaim("error");
@@ -527,20 +555,6 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     /// <exception cref="System.ArgumentNullException"><paramref name="claims"/> is null.</exception>
     public void AddClaims(IEnumerable<Claim> claims)
     {
-        if (claims == null)
-        {   //TODO: Add telemetry data via Activity.  
-            // The JwtPayload.AddClaims uses a EventSource implementation called IdentityModelEventSource to allow visibility into errors.
-            //
-            // The code was this:
-            //
-            // if (claims == null)
-            //     throw LogHelper.LogExceptionMessage(new ArgumentNullException(nameof(claims)));
-            //
-
-            throw new ArgumentNullException(nameof(claims));
-        }
-        
-
         foreach (Claim claim in claims)
         {
             var jsonClaimType = claim.Type;
@@ -564,14 +578,6 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
                     }
                 }
 
-                if (existingValue is not IList<object> claimValues)
-                {
-                    claimValues = new List<object>();
-                    claimValues.Add(existingValue);
-                    this[jsonClaimType] = claimValues;
-                }
-
-                claimValues.Add(jsonClaimValue);
                 break;
             }
             else
@@ -588,10 +594,11 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
                         break;
 
                     case UdapConstants.RegistrationDocumentValues.RedirectUris:
-                        var redirectUris = new List<string>() { (string)jsonClaimValue};
+                        var redirectUris = new List<string>() { (string)jsonClaimValue };
 
                         this[jsonClaimType] = redirectUris;
                         break;
+                    
                     default:
                         this[jsonClaimType] = jsonClaimValue;
                         break;
@@ -640,6 +647,26 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         return claimValues;
     }
 
+    internal Dictionary<string, object>? GetDictionaryClaims(string claimType)
+    {
+        var claimValues = new Dictionary<string, object>();
+
+        if (!TryGetValue(claimType, out var value))
+        {
+            return claimValues;
+        }
+
+        if (value is JsonElement { ValueKind: JsonValueKind.Object } element)
+        {
+            foreach (var item in element.EnumerateObject())
+            {
+                claimValues.Add(item.Name, item.Value);
+            }
+            return claimValues;
+        }
+
+        return claimValues;
+    }
 
     internal string? GetStandardClaim(string claimType)
     {

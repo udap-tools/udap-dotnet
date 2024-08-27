@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net8.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RepositoryType>git</RepositoryType>
@@ -21,6 +21,8 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
 
     <PackageReference Include="Microsoft.Extensions.Configuration" />
+
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
 
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />

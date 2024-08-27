@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Security.Cryptography.X509Certificates;
 using AutoMapper;
 using Udap.Server.Entities;
 
@@ -52,10 +53,18 @@ public class AnchorMapperProfile : Profile
     public AnchorMapperProfile()
     {
         CreateMap<Anchor, Udap.Common.Models.Anchor>(MemberList.Destination)
-            .ConstructUsing(src => new Udap.Common.Models.Anchor())
+            .ConstructUsing(src => new Udap.Common.Models.Anchor(
+                    new X509Certificate2(Convert.FromBase64String(
+                            src.X509Certificate
+                                .Replace("-----BEGIN CERTIFICATE-----", "")
+                                .Replace("-----END CERTIFICATE-----", "")
+                                .Trim()
+                            )),
+                    src.Community == null ? null : src.Community.Name,
+                    src.Name))
 
-            .ForMember(model => model.Community, opts =>
-                opts.MapFrom(entity => entity.Community.Name))
+            // .ForMember(model => model.Community, opts =>
+            //     opts.MapFrom(entity => entity.Community.Name))
 
             .ForMember(model => model.CommunityId, opts =>
                 opts.MapFrom(entity => entity.CommunityId))
@@ -64,7 +73,7 @@ public class AnchorMapperProfile : Profile
                 opts.MapFrom(entity => entity.X509Certificate))
 
             .ReverseMap()
-
+            
             .ForMember(entity => entity.X509Certificate, opts =>
                 opts.MapFrom(model => model.Certificate))
 

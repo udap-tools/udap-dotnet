@@ -79,9 +79,8 @@ public class TrustAnchorFileStore : ITrustAnchorStore
                     throw new FileNotFoundException($"Cannot find file: {path}");
                 }
 
-                AnchorCertificates.Add(new Anchor(new X509Certificate2(path))
+                AnchorCertificates.Add(new Anchor(new X509Certificate2(path), community.Name)
                 {
-                    Community = community.Name,
                     Intermediates = intermediates
                 });
             }

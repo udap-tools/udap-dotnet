@@ -87,24 +87,19 @@ public class UdapForceStateParamFalseTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[] {new Anchor
+            Anchors = new[] {new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
             {
                 BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                 EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
                 Name = sureFhirLabsAnchor.Subject,
-                Community = "udap://fhirlabs.net",
-                Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                Thumbprint = sureFhirLabsAnchor.Thumbprint,
                 Enabled = true,
                 Intermediates = new List<Intermediate>()
                 {
-                    new Intermediate
+                    new Intermediate(intermediateCert)
                     {
                         BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                         EndDate = intermediateCert.NotAfter.ToUniversalTime(),
                         Name = intermediateCert.Subject,
-                        Certificate = intermediateCert.ToPemFormat(),
-                        Thumbprint = intermediateCert.Thumbprint,
                         Enabled = true
                     }
                 }
@@ -140,7 +135,7 @@ public class UdapForceStateParamFalseTests
 
         await _mockPipeline.LoginAsync("bob");
         
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -155,13 +150,8 @@ public class UdapForceStateParamFalseTests
             .WithScope("openid udap")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .Build();
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
+            .BuildSoftwareStatement();
+        
         var requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,

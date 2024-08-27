@@ -4,6 +4,7 @@
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {
+        "GCPDeploy": "false",
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,

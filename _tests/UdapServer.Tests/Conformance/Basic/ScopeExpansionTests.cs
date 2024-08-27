@@ -90,24 +90,19 @@ public class ScopeExpansionTests
             Default = true,
             Anchors = new[]
             {
-                new Anchor
+                new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
                 {
                     BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                     EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
                     Name = sureFhirLabsAnchor.Subject,
-                    Community = "udap://fhirlabs.net",
-                    Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                    Thumbprint = sureFhirLabsAnchor.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new()
+                        new(intermediateCert)
                         {
                             BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = intermediateCert.NotAfter.ToUniversalTime(),
                             Name = intermediateCert.Subject,
-                            Certificate = intermediateCert.ToPemFormat(),
-                            Thumbprint = intermediateCert.Thumbprint,
                             Enabled = true
                         }
                     }
@@ -476,7 +471,7 @@ public class ScopeExpansionTests
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -492,13 +487,7 @@ public class ScopeExpansionTests
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .WithGrantType("refresh_token")
-            .Build();
-
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-            .Create(clientCert, document)
-            .Build();
+            .BuildSoftwareStatement();
 
         var requestBody = new UdapRegisterRequest
         (

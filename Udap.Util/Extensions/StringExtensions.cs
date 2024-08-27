@@ -55,7 +55,7 @@ public static class StringExtensions
 
         return list.Any() ? string.Join(" ", list): string.Empty;
     }
-#if NET6_0_OR_GREATER
+
     [DebuggerStepThrough]
     public static string ToSpaceSeparatedString(this IEnumerable<string>? list)
     {
@@ -66,7 +66,6 @@ public static class StringExtensions
 
         return string.Join(' ', list);
     }
-#endif
 
     [DebuggerStepThrough]
     public static bool IsECDSA(this string input)

@@ -154,24 +154,19 @@ public class TieredOauthTests
             Default = true,
             Anchors = new[]
             {
-                new Anchor
+                new Anchor(_community1Anchor, "https://idpserver")
                 {
                     BeginDate = _community1Anchor.NotBefore.ToUniversalTime(),
                     EndDate = _community1Anchor.NotAfter.ToUniversalTime(),
                     Name = _community1Anchor.Subject,
-                    Community = "https://idpserver",
-                    Certificate = _community1Anchor.ToPemFormat(),
-                    Thumbprint = _community1Anchor.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new()
+                        new(_community1IntermediateCert)
                         {
                             BeginDate = _community1IntermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = _community1IntermediateCert.NotAfter.ToUniversalTime(),
                             Name = _community1IntermediateCert.Subject,
-                            Certificate = _community1IntermediateCert.ToPemFormat(),
-                            Thumbprint = _community1IntermediateCert.Thumbprint,
                             Enabled = true
                         }
                     }
@@ -187,24 +182,19 @@ public class TieredOauthTests
             Default = true,
             Anchors = new[]
             {
-                new Anchor
+                new Anchor(_community2Anchor, "udap://idp-community-2")
                 {
                     BeginDate = _community2Anchor.NotBefore.ToUniversalTime(),
                     EndDate = _community2Anchor.NotAfter.ToUniversalTime(),
                     Name = _community2Anchor.Subject,
-                    Community = "udap://idp-community-2",
-                    Certificate = _community2Anchor.ToPemFormat(),
-                    Thumbprint = _community2Anchor.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new()
+                        new(_community2IntermediateCert)
                         {
                             BeginDate =  _community2IntermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = _community2IntermediateCert.NotAfter.ToUniversalTime(),
                             Name = _community2IntermediateCert.Subject,
-                            Certificate = _community2IntermediateCert.ToPemFormat(),
-                            Thumbprint = _community2IntermediateCert.Thumbprint,
                             Enabled = true
                         }
                     }
@@ -278,24 +268,19 @@ public class TieredOauthTests
             Default = true,
             Anchors = new[]
             {
-                new Anchor
+                new Anchor(_community1Anchor, "udap://idp-community-1")
                 {
                     BeginDate = _community1Anchor.NotBefore.ToUniversalTime(),
                     EndDate = _community1Anchor.NotAfter.ToUniversalTime(),
                     Name = _community1Anchor.Subject,
-                    Community = "udap://idp-community-1",
-                    Certificate = _community1Anchor.ToPemFormat(),
-                    Thumbprint = _community1Anchor.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new()
+                        new(_community1IntermediateCert)
                         {
                             BeginDate =  _community1IntermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = _community1IntermediateCert.NotAfter.ToUniversalTime(),
                             Name = _community1IntermediateCert.Subject,
-                            Certificate = _community1IntermediateCert.ToPemFormat(),
-                            Thumbprint = _community1IntermediateCert.Thumbprint,
                             Enabled = true
                         }
                     }
@@ -368,24 +353,19 @@ public class TieredOauthTests
             Default = true,
             Anchors = new[]
             {
-                new Anchor
+                new Anchor(_community2Anchor, "udap://idp-community-2")
                 {
                     BeginDate = _community2Anchor.NotBefore.ToUniversalTime(),
                     EndDate = _community2Anchor.NotAfter.ToUniversalTime(),
                     Name = _community2Anchor.Subject,
-                    Community = "udap://idp-community-2",
-                    Certificate = _community2Anchor.ToPemFormat(),
-                    Thumbprint = _community2Anchor.Thumbprint,
                     Enabled = true,
                     Intermediates = new List<Intermediate>()
                     {
-                        new()
+                        new(_community2IntermediateCert)
                         {
                             BeginDate =  _community2IntermediateCert.NotBefore.ToUniversalTime(),
                             EndDate = _community2IntermediateCert.NotAfter.ToUniversalTime(),
                             Name = _community2IntermediateCert.Subject,
-                            Certificate = _community2IntermediateCert.ToPemFormat(),
-                            Thumbprint = _community2IntermediateCert.Thumbprint,
                             Enabled = true
                         }
                     }

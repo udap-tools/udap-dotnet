@@ -7,8 +7,10 @@
 // */
 #endregion
 
+using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
@@ -29,6 +31,7 @@ using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Model;
+using Udap.Smart.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using fhirLabsProgram = FhirLabsApi.Program;
@@ -62,6 +65,41 @@ public class ApiTestFixture : WebApplicationFactory<fhirLabsProgram>
         });
 
         return base.CreateHost(builder);
+    }
+}
+
+public class SmartControllerTests : IClassFixture<ApiTestFixture>
+{
+    private readonly ApiTestFixture _fixture;
+
+    public SmartControllerTests(ApiTestFixture fixture, ITestOutputHelper testOutputHelper)
+    {
+        //
+        // Fixture is for FHIR Server configuration
+        //
+        if (fixture == null) throw new ArgumentNullException(nameof(fixture));
+        fixture.Output = testOutputHelper;
+        _fixture = fixture;
+    }
+
+    /// <summary>
+    /// 200 response.
+    /// Well-formed Json
+    /// </summary>
+    [Fact]
+    public async Task SmartClientTest()
+    {
+        var httpClient = _fixture.CreateClient(); //.BaseAddress?.AbsoluteUri + "fhir/r4";
+        
+        var result = await httpClient.GetAsync("fhir/r4/.well-known/smart-configuration");
+        result.StatusCode.Should().Be(HttpStatusCode.OK);
+        
+        var smartMetadata = await result.Content.ReadFromJsonAsync<SmartMetadata>();
+        smartMetadata.Should().NotBeNull();
+        smartMetadata!.issuer.Should().Be("https://host.docker.internal:5002");
+
+        result = await httpClient.GetAsync("fhir/r4/.well-known/smart-configurationx");
+        result.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }
 
@@ -120,7 +158,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
             new X509ChainPolicy()
             {
                 DisableCertificateDownloads = true,
-                UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
             }, 
             problemFlags,
             testOutputHelper.ToLogger<TrustChainValidator>()));
@@ -145,7 +183,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
 
     /// <summary>
     /// 200 response.
-    /// Well formed Json
+    /// Well-formed Json
     /// </summary>
     [Fact]
     public async Task UdapClientTest()
@@ -240,10 +278,10 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var certificationsSupported = disco.UdapCertificationsRequired.SingleOrDefault();
-        certificationsSupported.Should().NotBeNullOrEmpty();
-        var uriCertificationsSupported = new Uri(certificationsSupported!);
-        uriCertificationsSupported.Should().Be("http://MyUdapCertification");
+        var certificationsRequired = disco.UdapCertificationsRequired.SingleOrDefault();
+        certificationsRequired.Should().NotBeNullOrEmpty();
+        var uriCertificationsRequired = new Uri(certificationsRequired!);
+        uriCertificationsRequired.Should().Be("http://MyUdapCertification");
     }
 
     [Fact]
@@ -323,9 +361,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var scopesSupported = disco.TokenEndpointAuthMethodsSupported.SingleOrDefault();
-        scopesSupported.Should().NotBeNullOrEmpty();
-        scopesSupported.Should().Be("private_key_jwt");
+        var tokenEndpointAuthMethodSupported = disco.TokenEndpointAuthMethodsSupported.SingleOrDefault();
+        tokenEndpointAuthMethodSupported.Should().NotBeNullOrEmpty();
+        tokenEndpointAuthMethodSupported.Should().Be("private_key_jwt");
     }
 
     [Fact]
@@ -336,13 +374,13 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
         
-        var signingAlgValuesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported.ToList();
-        signingAlgValuesSupported.Should().NotBeNullOrEmpty();
-        signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
-        signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
-        signingAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
-        signingAlgValuesSupported.Count().Should().Be(4);
+        var registrationSigningAlgValuesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported.ToList();
+        registrationSigningAlgValuesSupported.Should().NotBeNullOrEmpty();
+        registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
+        registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
+        registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
+        registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
+        registrationSigningAlgValuesSupported.Count().Should().Be(4);
     }
 
     [Fact]
@@ -353,13 +391,13 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var scopesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported.ToList();
-        scopesSupported.Should().NotBeNullOrEmpty();
-        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
-        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
-        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
-        scopesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
-        scopesSupported.Count().Should().Be(4);
+        var tokenSigningAlgValuesSupported = disco.TokenEndpointAuthSigningAlgValuesSupported.ToList();
+        tokenSigningAlgValuesSupported.Should().NotBeNullOrEmpty();
+        tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
+        tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
+        tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
+        tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
+        tokenSigningAlgValuesSupported.Count().Should().Be(4);
     }
 
     [Fact]

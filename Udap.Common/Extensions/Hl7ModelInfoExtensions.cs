@@ -18,10 +18,10 @@ namespace Udap.Common.Extensions;
 public static class Hl7ModelInfoExtensions
 {
     public static HashSet<string> BuildHl7FhirV1AndV2Scopes(
-        List<string> prefixes, 
-        string v1Suffix = "read", 
-        string v2Suffix = "rs",
-        Func<string, bool>? specification = null)
+        List<string> prefixes,
+        Func<string, bool>? specification = null,
+        string v1Suffix = "read",
+        string v2Suffix = "rs")
     {
         var scopes = new HashSet<string>();
 
@@ -36,32 +36,20 @@ public static class Hl7ModelInfoExtensions
 
     public static HashSet<string> BuildHl7FhirV1AndV2Scopes(
         string prefix, 
-        string v1Suffix = "read", 
-        string v2Suffix = "rs", 
-        Func<string, bool>? specification = null, 
+        Func<string, bool>? specification = null,
+        string v1Suffix = "read",
+        string v2Suffix = "rs",
         HashSet<string>? scopes = null)
     {
         scopes ??= new HashSet<string>();
-        specification ??= r => true;
 
-        foreach (var resName in ModelInfo.SupportedResources.Where(specification))
-        {
-            scopes.Add($"{prefix}/{resName}.{v1Suffix}");
-        }
-
-        scopes.Add($"{prefix}/*.{v1Suffix}");
-
-        foreach (var resName in ModelInfo.SupportedResources.Where(specification))
-        {
-            scopes.Add($"{prefix}/{resName}.{v2Suffix}");
-        }
-
-        scopes.Add($"{prefix}/*.{v2Suffix}");
+        BuildHl7FhirV1Scopes(prefix, specification, v1Suffix, scopes);
+        BuildHl7FhirV2Scopes(prefix, specification, v2Suffix, scopes);
 
         return scopes;
     }
 
-    public static HashSet<string> BuildHl7FhirV2Scopes(List<string> prefixes, string suffix = "rs", Func<string, bool>? specification = null)
+    public static HashSet<string> BuildHl7FhirV2Scopes(List<string> prefixes, Func<string, bool>? specification = null, string suffix = "rs")
     {
         var scopes = new HashSet<string>();
         var parameters = suffix.ToList();
@@ -96,7 +84,7 @@ public static class Hl7ModelInfoExtensions
 
         return scopes;
     }
-    public static HashSet<string> BuildHl7FhirV1Scopes(List<string> prefixes, string suffix = "read", Func<string, bool>? specification = null)
+    public static HashSet<string> BuildHl7FhirV1Scopes(List<string> prefixes, Func<string, bool>? specification = null, string suffix = "read")
     {
         var scopes = new HashSet<string>();
 

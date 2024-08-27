@@ -10,7 +10,7 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Configuration;
-using Udap.Util.Extensions;
+using Udap.Support.Tests.Extensions;
 using Xunit.Abstractions;
 
 namespace Udap.PKI.Generator;

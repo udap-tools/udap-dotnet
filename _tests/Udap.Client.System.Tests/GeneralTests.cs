@@ -150,7 +150,7 @@ namespace Udap.Client.System.Tests
             var client = new HttpClient();
             var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
             {
-                Address = "https://securedcontrols.net:5001",
+                Address = "https://securedcontrols.net",
                 Policy = new DiscoveryPolicy()
                 {
                     DiscoveryDocumentPath = ".well-known/udap"
@@ -161,8 +161,8 @@ namespace Udap.Client.System.Tests
                 _testOutputHelper.WriteLine(disco.Error);
             }
 
-            var registrationEndpoint = disco.TryGetString(UdapConstants.Discovery.RegistrationEndpoint);
-            registrationEndpoint.Should().BeEquivalentTo("https://securedcontrols.net:5001/connect/register");
+            var registrationEndpoint = disco.RegistrationEndpoint;
+            registrationEndpoint.Should().BeEquivalentTo("https://securedcontrols.net/connect/register");
         }
 
         [Fact]
@@ -174,7 +174,6 @@ namespace Udap.Client.System.Tests
                 Address = "https://fhirlabs.net/fhir/r4", 
                 Community = "udap://fhirlabs.net",
                 Policy = new DiscoveryPolicy { 
-                    ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                     ValidateEndpoints = false   // Authority endpoints are not hosted on same domain as Identity Provider.
                 }
             });
@@ -226,7 +225,6 @@ namespace Udap.Client.System.Tests
                 Address = "https://stage.healthtogo.me:8181/fhir/r4/stage",
                 Policy = new DiscoveryPolicy
                 {
-                    ValidateIssuerName = false, // No issuer name in UDAP Metadata of FHIR Server.
                     ValidateEndpoints = false   // Authority endpoints are not hosted on same domain as Identity Provider.
                 }
             });

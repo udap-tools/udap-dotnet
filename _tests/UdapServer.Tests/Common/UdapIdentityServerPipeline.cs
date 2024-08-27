@@ -31,13 +31,16 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
-using Udap.Server;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
+using Constants = Udap.Server.Constants;
 
 namespace UdapServer.Tests.Common;
 
@@ -122,7 +125,7 @@ public class UdapIdentityServerPipeline
     public Func<HttpContext, Task<bool>>? OnFederatedSignout;
    
 
-    public void Initialize(string basePath = null, bool enableLogging = false)
+    public void Initialize(string? basePath = null, bool enableLogging = false)
     {
         var builder = new WebHostBuilder();
         builder.ConfigureServices(ConfigureServices);
@@ -183,6 +186,18 @@ public class UdapIdentityServerPipeline
 
         services.AddUdapServerAsIdentityProvider(baseUrl: BaseUrl)
             .AddInMemoryUdapCertificates(Communities);
+
+        if (services.All(x => x.ServiceType != typeof(IPrivateCertificateStore)))
+        {
+            services.Configure<UdapFileCertStoreManifest>(
+                builder.Configuration.GetSection(Udap.Common.Constants.UDAP_FILE_STORE_MANIFEST));
+
+            services.TryAddSingleton<IPrivateCertificateStore>(sp =>
+                new IssuedCertificateStore(
+                    sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                    sp.GetRequiredService<ILogger<IssuedCertificateStore>>()));
+        }
+
 
         services.AddIdentityServer(options =>
             {

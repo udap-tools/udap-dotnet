@@ -22,11 +22,9 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-#if NET6_0_OR_GREATER
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
-using X509Extension = System.Security.Cryptography.X509Certificates.X509Extension;
-#endif
+
 namespace Udap.Util.Extensions;
 
 public static class X509Extensions
@@ -85,34 +83,7 @@ public static class X509Extensions
             certs.Add(cert);
         }
     }
-
-    /// <summary>
-    /// Supplies an enumeration for this collection.
-    /// </summary>
-    /// <param name="certs">The collection to enumerate.</param>
-    /// <returns>The enumerator for this collection.</returns>
-    public static IEnumerable<X509Certificate2> Enumerate(this X509Certificate2Collection certs)
-    {
-        return certs.Enumerate(null);
-    }
-
-    /// <summary>
-    /// Supplies an filtered enumeration for this collection.
-    /// </summary>
-    /// <param name="certs">The collection to enumerate.</param>
-    /// <param name="filter">The filter testing each element of the source collection for enumeration. Elements for which the filter returns <c>false</c> will not be returned by the enumerator.</param>
-    /// <returns>The enumerator for this collection.</returns>
-    public static IEnumerable<X509Certificate2> Enumerate(this X509Certificate2Collection certs, Predicate<X509Certificate2>? filter)
-    {
-        foreach (X509Certificate2 cert in certs)
-        {
-            if (filter == null || filter(cert))
-            {
-                yield return cert;
-            }
-        }
-    }
-
+    
     /// <summary>
     /// Return the first matching element whose certificate thumbprint matches the supplied <paramref name="thumbprint"/>
     /// </summary>
@@ -241,7 +212,6 @@ public static class X509Extensions
         return pem.ToString();
     }
 
-#if NET6_0_OR_GREATER
 
     /// <summary>
     /// Gets the specified certificate extension field from the certificate as a <see cref="DerObjectIdentifier"/>.  
@@ -352,11 +322,6 @@ public static class X509Extensions
         return sans.First().Item2;
     }
 
-
-#endif
-
-
-
     public static IEnumerable<string> ToKeyUsageToString(this X509KeyUsageFlags flags)
     {
         if (flags.HasFlag(X509KeyUsageFlags.KeyAgreement)) { yield return X509KeyUsageFlags.KeyAgreement.ToString(); }
@@ -370,8 +335,7 @@ public static class X509Extensions
         if (flags.HasFlag(X509KeyUsageFlags.NonRepudiation)) { yield return X509KeyUsageFlags.NonRepudiation.ToString(); }
     }
 
-    
-    
+
     public static TEnum FromTag<TEnum>(int tagNo)
     {
         return (TEnum)Enum.ToObject(typeof(TEnum), tagNo);

@@ -7,10 +7,10 @@
 // */
 #endregion
 
-using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using System.Security.Cryptography.X509Certificates;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Common.Models;
@@ -19,6 +19,9 @@ using Udap.Util.Extensions;
 
 namespace Udap.Client.Client;
 
+/// <summary>
+/// Validator orchestrates JWT validation followed by x509 chain validation
+/// </summary>
 public class UdapClientDiscoveryValidator : IUdapClientEvents
 {
     private readonly TrustChainValidator _trustChainValidator;
@@ -177,7 +180,10 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
             throw new UnauthorizedAccessException("Failed Trust Chain Validation: Missing public certificate");
         }
 
-        var store = clientSuppliedTrustAnchorStore ?? (_trustAnchorStore == null ? null : await _trustAnchorStore.Resolve());
+        var store = clientSuppliedTrustAnchorStore != null ? 
+            await clientSuppliedTrustAnchorStore.Resolve()
+            : (_trustAnchorStore == null ? null : await _trustAnchorStore.Resolve());
+
         var anchors = X509Certificate2Collection(community, store).ToList();
 
         if (!anchors.Any())

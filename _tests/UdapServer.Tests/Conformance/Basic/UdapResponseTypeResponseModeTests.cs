@@ -87,24 +87,19 @@ public class UdapResponseTypeResponseModeTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[] {new Anchor
+            Anchors = new[] {new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
             {
                 BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                 EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
                 Name = sureFhirLabsAnchor.Subject,
-                Community = "udap://fhirlabs.net",
-                Certificate = sureFhirLabsAnchor.ToPemFormat(),
-                Thumbprint = sureFhirLabsAnchor.Thumbprint,
                 Enabled = true,
                 Intermediates = new List<Intermediate>()
                 {
-                    new Intermediate
+                    new Intermediate(intermediateCert)
                     {
                         BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                         EndDate = intermediateCert.NotAfter.ToUniversalTime(),
                         Name = intermediateCert.Subject,
-                        Certificate = intermediateCert.ToPemFormat(),
-                        Thumbprint = intermediateCert.Thumbprint,
                         Enabled = true
                     }
                 }
@@ -138,7 +133,7 @@ public class UdapResponseTypeResponseModeTests
 
         await _mockPipeline.LoginAsync("bob");
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -153,13 +148,8 @@ public class UdapResponseTypeResponseModeTests
             .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .Build();
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
+            .BuildSoftwareStatement();
+        
         var requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,
@@ -218,7 +208,7 @@ public class UdapResponseTypeResponseModeTests
         
         await _mockPipeline.LoginAsync("bob");
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -233,14 +223,7 @@ public class UdapResponseTypeResponseModeTests
             .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .Build();
-
-        var nonce = Guid.NewGuid().ToString();
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
+            .BuildSoftwareStatement();
 
         var requestBody = new UdapRegisterRequest
         (
@@ -259,6 +242,8 @@ public class UdapResponseTypeResponseModeTests
         var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
         resultDocument.Should().NotBeNull();
         resultDocument!.ClientId.Should().NotBeNull();
+
+        var nonce = Guid.NewGuid().ToString();
 
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
@@ -291,7 +276,7 @@ public class UdapResponseTypeResponseModeTests
 
         await _mockPipeline.LoginAsync("bob");
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -306,13 +291,8 @@ public class UdapResponseTypeResponseModeTests
             .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .Build();
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
+            .BuildSoftwareStatement();
+        
         var requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,
@@ -365,7 +345,7 @@ public class UdapResponseTypeResponseModeTests
 
         await _mockPipeline.LoginAsync("bob");
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -380,13 +360,7 @@ public class UdapResponseTypeResponseModeTests
             .WithScope("openid system/*.read")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .Build();
-
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
+            .BuildSoftwareStatement();
 
         var requestBody = new UdapRegisterRequest
         (
@@ -434,7 +408,7 @@ public class UdapResponseTypeResponseModeTests
 
         await _mockPipeline.LoginAsync("bob");
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -449,13 +423,8 @@ public class UdapResponseTypeResponseModeTests
             .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .Build();
+            .BuildSoftwareStatement();
         
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
         var requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,
@@ -500,7 +469,7 @@ public class UdapResponseTypeResponseModeTests
     {
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -516,13 +485,7 @@ public class UdapResponseTypeResponseModeTests
             .WithResponseTypes(new List<string> {"code"})
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
             .WithGrantType( "refresh_token" )
-            .Build();
-
-        
-        var signedSoftwareStatement = 
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-            .Create(clientCert, document)
-            .Build();
+            .BuildSoftwareStatement();
 
         var requestBody = new UdapRegisterRequest
         (
@@ -719,7 +682,7 @@ public class UdapResponseTypeResponseModeTests
 
         await _mockPipeline.LoginAsync("bob");
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -734,14 +697,8 @@ public class UdapResponseTypeResponseModeTests
             .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { redirect_url })
-            .Build();
-
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-            .Create(clientCert, document)
-            .Build();
-
+            .BuildSoftwareStatement();
+        
         var requestBody = new UdapRegisterRequest
         (
             signedSoftwareStatement,
@@ -794,7 +751,7 @@ public class UdapResponseTypeResponseModeTests
 
         await _mockPipeline.LoginAsync("bob");
 
-        var document = UdapDcrBuilderForAuthorizationCode
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
             .WithExpiration(TimeSpan.FromMinutes(5))
@@ -809,13 +766,8 @@ public class UdapResponseTypeResponseModeTests
             .WithScope("openid system/*.read")
             .WithResponseTypes(new List<string> { "code" })
             .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .Build();
+            .BuildSoftwareStatement();
 
-
-        var signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
 
         var requestBody = new UdapRegisterRequest
         (

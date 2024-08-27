@@ -233,7 +233,7 @@ namespace Udap.Client.Client
         }
 
         /// <summary>
-        /// Sends a token request using the authorization_code grant type.  Typically used when called from
+        /// Sends a token request using the authorization_code grant type.  Typically used when called
         /// from a OAuthHandler implementation.  TieredOAuthAuthenticationHandler is an implementation that
         /// calls this method.
         /// </summary>
@@ -324,7 +324,12 @@ namespace Udap.Client.Client
                         baseUrl = baseUrl.Substring(0, i).RemoveTrailingSlash();
                     }
 
-                    if (!await _clientDiscoveryValidator.ValidateJwtToken(UdapServerMetaData!, baseUrl))
+                    if (UdapServerMetaData == null)
+                    {
+                        throw new NullReferenceException("Missing UDAP Metadata");
+                    }
+
+                    if (!await _clientDiscoveryValidator.ValidateJwtToken(UdapServerMetaData, baseUrl))
                     {
                         throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
                     }
@@ -455,12 +460,7 @@ namespace Udap.Client.Client
                     builder.WithIssuer(new Uri(issuer));
                 }
 
-                var document = builder.Build();
-
-                var signedSoftwareStatement =
-                    SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                        .Create(clientCert, document)
-                        .Build();
+                var signedSoftwareStatement = builder.BuildSoftwareStatement();
 
                 var requestBody = new UdapRegisterRequest
                 (

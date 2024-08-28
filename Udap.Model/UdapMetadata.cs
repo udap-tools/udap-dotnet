@@ -8,12 +8,10 @@
 #endregion
 
 using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using IdentityModel;
 using Microsoft.Extensions.Options;
 using Udap.Util.Extensions;
 
@@ -107,60 +105,43 @@ public class UdapMetadata
     public UdapMetadata(UdapMetadataOptions udapMetadataOptions, IEnumerable<string>? scopes = null)
     {
         _udapMetadataConfigs = udapMetadataOptions.UdapMetadataConfigs;
-        UdapVersionsSupported = new HashSet<string> { UdapConstants.UdapVersionsSupportedValue };
+        UdapVersionsSupported = udapMetadataOptions.UdapVersionsSupported;
 
         BuildSupportedProfiles(udapMetadataOptions);
 
-        UdapAuthorizationExtensionsSupported = new HashSet<string>
-        {
-                UdapConstants.UdapAuthorizationExtensions.Hl7B2B
-                // "acme-ext"
-        };
+        UdapAuthorizationExtensionsSupported = udapMetadataOptions.UdapAuthorizationExtensionsSupported;
+        UdapAuthorizationExtensionsRequired = udapMetadataOptions.UdapAuthorizationExtensionsRequired;
+        UdapCertificationsSupported = udapMetadataOptions.UdapCertificationsSupported;
+        UdapCertificationsRequired = udapMetadataOptions.UdapCertificationsRequired;
+        GrantTypesSupported = udapMetadataOptions.GrantTypesSupported;
+        ScopesSupported = udapMetadataOptions.ScopesSupported;
+        TokenEndpointAuthMethodsSupported = new HashSet<string> { UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue };
 
-        UdapAuthorizationExtensionsRequired = new HashSet<string>
+        if (udapMetadataOptions.TokenEndpointAuthSigningAlgValuesSupported.Any())
         {
-                UdapConstants.UdapAuthorizationExtensions.Hl7B2B
-        };
-
-        UdapCertificationsSupported = new HashSet<string>
+            TokenEndpointAuthSigningAlgValuesSupported = udapMetadataOptions.TokenEndpointAuthSigningAlgValuesSupported;
+        }
+        else
         {
-                "http://MyUdapCertification", "http://MyUdapCertification2"
-        };
-
-        UdapCertificationsRequired = new HashSet<string> { "http://MyUdapCertification" };
-
-        GrantTypesSupported = new HashSet<string>
-        {
-                OidcConstants.GrantTypes.AuthorizationCode,
-                OidcConstants.GrantTypes.RefreshToken,
-                OidcConstants.GrantTypes.ClientCredentials
-        };
-
-        ScopesSupported = new HashSet<string>
-        {
-                OidcConstants.StandardScopes.OpenId,
-        };
-
-        if (scopes != null)
-        {
-            foreach (var scope in scopes)
+            TokenEndpointAuthSigningAlgValuesSupported = new HashSet<string>
             {
-                ScopesSupported.Add(scope);
-            }
+                UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384,
+                UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384
+            };
         }
 
-        TokenEndpointAuthMethodsSupported = new HashSet<string> { UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue };
-        //TODO: All of this should be configurable, via config string and builder pattern.
-        TokenEndpointAuthSigningAlgValuesSupported = new HashSet<string>
+        if (udapMetadataOptions.RegistrationEndpointJwtSigningAlgValuesSupported.Any())
         {
-            UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384,
-            UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384
-        };
-        RegistrationEndpointJwtSigningAlgValuesSupported = new HashSet<string>
+            RegistrationEndpointJwtSigningAlgValuesSupported = udapMetadataOptions.RegistrationEndpointJwtSigningAlgValuesSupported;
+        }
+        else
         {
-            UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384,
-            UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384
-        };
+            RegistrationEndpointJwtSigningAlgValuesSupported = new HashSet<string>
+            {
+                UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384,
+                UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384
+            };
+        }
     }
 
     private void BuildSupportedProfiles(UdapMetadataOptions udapMetadataOptions)
@@ -261,7 +242,7 @@ public class UdapMetadata
     /// ["openid", "launch/patient", "system/Patient.read", "system/AllergyIntolerance.read", "system/Procedures.read"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.ScopesSupported)]
-    public ICollection<string> ScopesSupported { get; set; }
+    public ICollection<string>? ScopesSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#f0ad4e;">conditional</span><br/>

@@ -1,4 +1,4 @@
-﻿#region (c) 2023 Joseph Shook. All rights reserved.
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,27 +7,20 @@
 // */
 #endregion
 
-
-
 //
 // See reason for Microsoft.Extensions.DependencyInjection namespace
 // here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
 //
+using Hl7.Fhir.Utility;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Hl7.Fhir.Utility;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Udap.Common;
-using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Common.Metadata;
 using Udap.Metadata.Server;
 using Udap.Model;
-using Constants = Udap.Common.Constants;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -36,23 +29,24 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddUdapMetadataServer(
         this IServiceCollection services,
-        IConfiguration configuration,
-        string? applicationName = null)
+        IConfiguration configuration)
     {
-        var udapMetadataOptions = new UdapMetadataOptions();
-        configuration.GetSection("UdapMetadataOptions").Bind(udapMetadataOptions);
+        // var udapMetadataOptions = new UdapMetadataOptions();
+        // configuration.GetSection("UdapMetadataOptions").Bind(udapMetadataOptions);
 
         services.Configure<UdapMetadataOptions>(configuration.GetSection("UdapMetadataOptions"));
         
-        //TODO: this could use some DI work...
-        var udapMetadata = new UdapMetadata(
-            udapMetadataOptions!,
-            new List<string>
-            {
-                "openid", "patient/*.read", "user/*.read", "system/*.read", "patient/*.rs", "user/*.rs", "system/*.rs"
-            });
 
-        services.AddSingleton(udapMetadata);
+        //TODO: this could use some DI work...
+        // var udapMetadata = new UdapMetadata(
+        //     udapMetadataOptions!
+            // new List<string>
+            // {
+            //     "openid", "patient/*.read", "user/*.read", "system/*.read", "patient/*.rs", "user/*.rs", "system/*.rs"
+            // }
+            // );
+
+        // services.AddSingleton<UdapMetaDataEndpoint>(udapMetadata);
         services.TryAddScoped<UdapMetaDataBuilder>();
         services.AddScoped<UdapMetaDataEndpoint>();
         

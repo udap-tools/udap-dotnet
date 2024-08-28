@@ -28,6 +28,8 @@
 
   <ItemGroup>
     <PackageReference Include="Duende.IdentityServer" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>

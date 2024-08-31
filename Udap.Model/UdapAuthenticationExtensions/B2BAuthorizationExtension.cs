@@ -10,11 +10,43 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Udap.Model.UdapAuthenticationExtensions;
 
+public class B2BAuthorizationExtensionConverter : JsonConverter<B2BAuthorizationExtension>
+{
+    public override B2BAuthorizationExtension Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        var dictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(ref reader, options);
+        var extension = new B2BAuthorizationExtension();
+        foreach (var kvp in dictionary)
+        {
+            extension[kvp.Key] = kvp.Value;
+        }
+        return extension;
+    }
+
+    public override void Write(Utf8JsonWriter writer, B2BAuthorizationExtension value, JsonSerializerOptions options)
+    {
+        var dictionary = new Dictionary<string, object>(value);
+        var properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+
+        foreach (var property in properties)
+        {
+            if (property.CanRead && property.GetValue(value) is object propertyValue)
+            {
+                var jsonPropertyName = property.GetCustomAttributes(typeof(JsonPropertyNameAttribute), false)
+                    .FirstOrDefault() as JsonPropertyNameAttribute;
+                var propertyName = jsonPropertyName?.Name ?? property.Name;
+                dictionary[propertyName] = propertyValue;
+            }
+        }
+        JsonSerializer.Serialize(writer, dictionary, options);
+    }
+}
 
 public class B2BAuthorizationExtension : Dictionary<string, object>
 {
@@ -24,13 +56,16 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     private string? _subjectRole;
     private string? _organizationName;
     private string? _organizationId = default!;
-    private ICollection<string> _purposeOfUse = new HashSet<string>();
-    private ICollection<string>? _consentPolicy = new HashSet<string>();
-    private ICollection<string>? _consentReference = new HashSet<string>();
+    private ICollection<string>? _purposeOfUse;
+    private ICollection<string>? _consentPolicy;
+    private ICollection<string>? _consentReference;
 
     public B2BAuthorizationExtension()
     {
         Version = _version;
+        PurposeOfUse = new HashSet<string>();
+        ConsentPolicy = new HashSet<string>();
+        ConsentReference = new HashSet<string>();
     }
 
     /// <summary>
@@ -173,11 +208,11 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     /// See Section 5.2.1.2 below for the preferred format of each code value string array element.
     /// </summary>
     [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.PurposeOfUse)]
-    public ICollection<string> PurposeOfUse
+    public ICollection<string>? PurposeOfUse
     {
         get
         {
-            if (!_purposeOfUse.Any())
+            if (_purposeOfUse != null && !_purposeOfUse.Any())
             {
                 _purposeOfUse = GetIListClaims(UdapConstants.B2BAuthorizationExtension.PurposeOfUse);
             }
@@ -185,8 +220,16 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         }
         set
         {
+            
             _purposeOfUse = value;
-            this[UdapConstants.B2BAuthorizationExtension.PurposeOfUse] = value;
+            if (value == null)
+            {
+                this.Remove(UdapConstants.B2BAuthorizationExtension.PurposeOfUse);
+            }
+            else
+            {
+                this[UdapConstants.B2BAuthorizationExtension.PurposeOfUse] = value;
+            }
         }
     }
 
@@ -268,17 +311,36 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     {
         var claimValues = new List<string>();
 
-        if (TryGetValue(claimType, out var value))
+        if (!TryGetValue(claimType, out var value))
         {
-            if (value is JsonElement { ValueKind: JsonValueKind.Array } element)
-            {
-                foreach (var item in element.EnumerateArray())
-                {
-                    claimValues.Add(item.ToString());
-                }
+            return claimValues;
+        }
 
-                return claimValues;
+        if (value is string str)
+        {
+            claimValues.Add(str);
+            return claimValues;
+        }
+
+        if (value is JsonElement { ValueKind: JsonValueKind.Array } element)
+        {
+            foreach (var item in element.EnumerateArray())
+            {
+                claimValues.Add(item.ToString());
             }
+            return claimValues;
+        }
+
+        if (value is IEnumerable<string> values)
+        {
+            foreach (var item in values)
+            {
+                claimValues.Add(item);
+            }
+        }
+        else
+        {
+            claimValues.Add(JsonSerializer.Serialize(value));
         }
 
         return claimValues;
@@ -299,4 +361,17 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
 
         return null;
     }
+
+    /// <summary>
+    /// Serializes this instance to JSON.
+    /// </summary>
+    /// <returns>This instance as JSON.</returns>
+    public virtual string SerializeToJson()
+    {
+        return JsonSerializer.Serialize(this, new JsonSerializerOptions
+        {
+            Converters = { new B2BAuthorizationExtensionConverter() }
+        });
+    }
+
 }

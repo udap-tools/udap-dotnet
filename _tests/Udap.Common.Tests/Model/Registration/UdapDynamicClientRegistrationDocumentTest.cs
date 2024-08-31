@@ -8,6 +8,7 @@
 #endregion
 
 
+using System.Reflection.Metadata;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
@@ -279,6 +280,38 @@ public class UdapDynamicClientRegistrationDocumentTest
         (document["json"] as JsonObject).ToJsonString().Should().Be("{\"joe\":\"test\"}");
         (document["jsonarray"] as JsonArray).ToJsonString().Should().Be("[\"one\",\"two\"]");
         // document["datetime"].Should().Be(now);
+    }
+
+    /// <summary>
+    /// Without builder
+    /// </summary>
+    [Fact]
+    public void TestHl7b2bExtensionSerialization()
+    {
+        var subjectId = "urn:oid:2.16.840.1.113883.4.6#1234567890";
+        var subjectName = "FhirLabs AI calendar prep";
+        var subjectRole = "http://nucc.org/provider-taxonomy#207SG0202X";
+        var organizationId = new Uri("https://fhirlabs.net/fhir/r4/Organization|99").OriginalString;
+        var organizationName = "FhirLabs";
+
+        var b2bHl7 = new B2BAuthorizationExtension()
+        {
+            SubjectId = subjectId,
+            SubjectName = subjectName,
+            SubjectRole = subjectRole,
+            OrganizationId = organizationId,
+            OrganizationName = organizationName
+        };
+
+        b2bHl7.PurposeOfUse.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        b2bHl7.ConsentPolicy.Add("https://udaped.fhirlabs.net/Policy/Consent|99");
+        b2bHl7.ConsentReference.Add("https://fhirlabs.net/fhir/r4/Consent|99");
+
+        var serializeDocument = b2bHl7.SerializeToJson();
+
+        serializeDocument.Should().Contain("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        serializeDocument.Should().Contain("https://udaped.fhirlabs.net/Policy/Consent|99");
+        serializeDocument.Should().Contain("https://fhirlabs.net/fhir/r4/Consent|99");
     }
 
     [Fact]

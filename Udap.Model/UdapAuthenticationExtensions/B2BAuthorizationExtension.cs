@@ -63,9 +63,9 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     public B2BAuthorizationExtension()
     {
         Version = _version;
-        PurposeOfUse = new HashSet<string>();
-        ConsentPolicy = new HashSet<string>();
-        ConsentReference = new HashSet<string>();
+        PurposeOfUse = new List<string>();
+        ConsentPolicy = new List<string>();
+        ConsentReference = new List<string>();
     }
 
     /// <summary>

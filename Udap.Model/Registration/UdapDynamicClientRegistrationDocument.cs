@@ -26,6 +26,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Microsoft.IdentityModel.Tokens;
+using Udap.Model.UdapAuthenticationExtensions;
 
 namespace Udap.Model.Registration;
 
@@ -741,6 +742,17 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         return claim.Value;
     }
 
+    public virtual string SerializeToJson(bool indent)
+    {
+        return JsonSerializer.Serialize(this, new JsonSerializerOptions
+        {
+            Converters = {
+                new B2BAuthorizationExtensionConverter(),
+                new B2BUserAuthorizationExtensionConverter(indent)
+            },
+            WriteIndented = indent
+        });
+    }
 
     /// <summary>
     /// Serializes this instance to JSON.
@@ -748,7 +760,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     /// <returns>This instance as JSON.</returns>
     public virtual string SerializeToJson()
     {
-        return JsonSerializer.Serialize(this);
+        return SerializeToJson(false);
     }
 
     /// <summary>

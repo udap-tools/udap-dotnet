@@ -89,6 +89,9 @@
     <None Update="CertStore\issued\FhirLabsAdminCertification.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Model\Registration\Person-FASTIDUDAPPerson-Example.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

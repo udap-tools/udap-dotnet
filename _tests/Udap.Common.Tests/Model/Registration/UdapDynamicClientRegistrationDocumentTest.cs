@@ -15,6 +15,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using FluentAssertions;
 using Hl7.Fhir.Model;
+using Hl7.Fhir.Serialization;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
@@ -22,6 +23,7 @@ using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Model.UdapAuthenticationExtensions;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 using Claim = System.Security.Claims.Claim;
 
 namespace Udap.Common.Tests.Model.Registration;
@@ -340,6 +342,15 @@ public class UdapDynamicClientRegistrationDocumentTest
             "https://udaped.fhirlabs.net/Policy/Consent|199"
         };
 
+        var userPersonJson = File.ReadAllText("Model/Registration/Person-FASTIDUDAPPerson-Example.json");
+        var parser = new FhirJsonParser();
+        var personResource = parser.Parse<Person>(userPersonJson);
+        personResource.Should().NotBeNull();
+        var serializer = new FhirJsonSerializer();
+        var userPerson = serializer.SerializeToString(personResource);
+        userPerson.Should().NotBeNullOrEmpty();
+        // _testOutputHelper.WriteLine(userPerson);
+
         var b2bHl7 = new B2BAuthorizationExtension()
         {
             SubjectId = subjectId,
@@ -353,33 +364,50 @@ public class UdapDynamicClientRegistrationDocumentTest
         };
 
         b2bHl7.Add("NewClaim", "Testing 123");
-        
+
+        var b2bUserHl7 = new B2BUserAuthorizationExtension()
+        {
+            UserPerson = userPerson,
+            PurposeOfUse = purposeOfUse,
+            ConsentReference = consentReference,
+            ConsentPolicy = consentPolicy, // client supplied
+        };
+
         // need to serialize to compare.
-        var b2bHl7Serialized = JsonSerializer.Serialize(b2bHl7, new JsonSerializerOptions());
+        var b2bHl7Serialized = JsonSerializer.Serialize(b2bHl7);
+        var b2bHl7UserSerialized = b2bUserHl7.SerializeToJson();
 
         builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, b2bHl7);
-        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B + "-2", b2bHl7);
+        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER, b2bUserHl7);
         
         var document = builder.Build();
 
-        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(document, new JsonSerializerOptions(){WriteIndented = true}));
+        // _testOutputHelper.WriteLine(document.SerializeToJson(true));
+
         var extentions = document.Extensions;
 
         extentions.Should().NotBeNull();
         extentions!.Count.Should().Be(2);
         extentions["hl7-b2b"].Should().Be(b2bHl7);
-        extentions["hl7-b2b-2"].Should().Be(b2bHl7);
+        extentions["hl7-b2b-user"].Should().Be(b2bUserHl7);
 
-        var serializeDocument = JsonSerializer.Serialize(document);
+        var serializeDocument = JsonSerializer.Serialize(document, new JsonSerializerOptions() 
+            { Converters = { new B2BUserAuthorizationExtensionConverter() } });
+
+        
         var documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
-        _testOutputHelper.WriteLine(JsonSerializer.Serialize(documentDeserialize, new JsonSerializerOptions() { WriteIndented = true }));
+
+        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(documentDeserialize, new JsonSerializerOptions() 
+        //     { Converters = { new B2BUserAuthorizationExtensionConverter() }, 
+        //         WriteIndented = true
+        //     }));
 
         extentions = documentDeserialize.Extensions;
 
         extentions.Should().NotBeNull();
         extentions!.Count.Should().Be(2);
         extentions["hl7-b2b"].ToString().Should().BeEquivalentTo(b2bHl7Serialized);
-        extentions["hl7-b2b-2"].ToString().Should().BeEquivalentTo(b2bHl7Serialized);
+        extentions["hl7-b2b-user"].ToString().Should().BeEquivalentTo(b2bHl7UserSerialized);
 
         var extensionSerialized = JsonSerializer.Deserialize<B2BAuthorizationExtension>(extentions["hl7-b2b"].ToString()!);
         extensionSerialized!.Version.Should().Be("1");
@@ -424,7 +452,19 @@ public class UdapDynamicClientRegistrationDocumentTest
         notes.Should().ContainInOrder("Missing required version", "Missing required organization_id", "Missing required purpose_of_use");
     }
 
+    [Fact]
+    public void Hl7b2bUserExtensionValidationTest()
+    {
+        var b2bHl7 = new B2BUserAuthorizationExtension()
+        {
+            Version = null
+        };
 
+        var notes = b2bHl7.Validate();
+        notes.Should().NotBeNull();
+        notes.Count().Should().Be(3);
+        notes.Should().ContainInOrder("Missing required version", "Missing required user_person", "Missing required purpose_of_use");
+    }
 
     [Fact]
     public void ClaimAuthorizationCodeFlowTest()

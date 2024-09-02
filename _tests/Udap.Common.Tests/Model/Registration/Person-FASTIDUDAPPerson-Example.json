@@ -1,0 +1,35 @@
+{
+  "resourceType" : "Person",
+  "id" : "FASTIDUDAPPerson-Example",
+  "meta" : {
+    "profile" : ["http://hl7.org/fhir/us/identity-matching/StructureDefinition/FASTIDUDAPPerson"]
+  },
+  "text" : {
+    "status" : "generated",
+    "div" : "<div xmlns=\"http://www.w3.org/1999/xhtml\"><p class=\"res-header-id\"><b>Generated Narrative: Person FASTIDUDAPPerson-Example</b></p><a name=\"FASTIDUDAPPerson-Example\"> </a><a name=\"hcFASTIDUDAPPerson-Example\"> </a><a name=\"FASTIDUDAPPerson-Example-en-US\"> </a><p><b>name</b>: Peter James Chalmers (Official)</p><p><b>telecom</b>: ph: (03) 5555 6473(Work), <a href=\"mailto:Jim@example.org\">Jim@example.org</a></p><p><b>birthDate</b>: 1974-12-25</p><p><b>address</b>: 534 Erewhon St PleasantVille Vic 3999 (work)</p></div>"
+  },
+  "name" : [{
+    "use" : "official",
+    "family" : "Chalmers",
+    "given" : ["Peter",
+    "James"]
+  }],
+  "telecom" : [{
+    "system" : "phone",
+    "value" : "(03) 5555 6473",
+    "use" : "work"
+  },
+  {
+    "system" : "email",
+    "value" : "Jim@example.org",
+    "use" : "work"
+  }],
+  "birthDate" : "1974-12-25",
+  "address" : [{
+    "use" : "work",
+    "line" : ["534 Erewhon St"],
+    "city" : "PleasantVille",
+    "state" : "Vic",
+    "postalCode" : "3999"
+  }]
+}

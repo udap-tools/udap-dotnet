@@ -14,19 +14,15 @@ using System.Text.Json.Serialization;
 
 namespace Udap.Model.UdapAuthenticationExtensions;
 
-public class B2BAuthorizationExtension : Dictionary<string, object>
+public class B2BUserAuthorizationExtension : Dictionary<string, object>
 {
     private string _version = "1";
-    private string? _subjectName;
-    private string? _subjectId;
-    private string? _subjectRole;
-    private string? _organizationName;
-    private string? _organizationId = default!;
+    private string? _userPerson;
     private ICollection<string>? _purposeOfUse;
     private ICollection<string>? _consentPolicy;
     private ICollection<string>? _consentReference;
 
-    public B2BAuthorizationExtension()
+    public B2BUserAuthorizationExtension()
     {
         Version = _version;
         PurposeOfUse = new List<string>();
@@ -39,7 +35,7 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     ///
     /// String with fixed value: "1"
     /// </summary>
-    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.Version)]
+    [JsonPropertyName(UdapConstants.B2BUserAuthorizationExtension.Version)]
     public string Version
     {
         get
@@ -60,111 +56,21 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     ///
     /// String containing the human readable name of the human or non-human requestor; required if known.
     /// </summary>
-    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.SubjectName)]
-    public string? SubjectName
+    [JsonPropertyName(UdapConstants.B2BUserAuthorizationExtension.UserPerson)]
+    public string? UserPerson
     {
         get
         {
-            return _subjectName ??= GetStandardClaim(UdapConstants.B2BAuthorizationExtension.SubjectName);
+            return _userPerson ??= GetStandardClaim(UdapConstants.B2BUserAuthorizationExtension.UserPerson);
         }
         set
         {
-            _subjectName = value;
-            if (value != null) this[UdapConstants.B2BAuthorizationExtension.SubjectName] = value;
+            _userPerson = value;
+            if (value != null) this[UdapConstants.B2BUserAuthorizationExtension.UserPerson] = value;
         }
     }
 
-    /// <summary>
-    /// subject_id conditional:
-    ///
-    /// String containing a unique identifier for the requestor; required if known for
-    /// human requestors when the subject_name parameter is present. For US Realm, the
-    /// value SHALL be the subject's individual National Provider Identifier (NPI); omit
-    /// for non-human requestors and for requestors who have not been assigned an NPI.
-    /// See Section 5.2.1.2 below for the preferred format of the identifier value string.
-    /// </summary>
-    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.SubjectId)]
-    public string? SubjectId
-    {
-        get { return _subjectId ??= GetStandardClaim(UdapConstants.B2BAuthorizationExtension.SubjectId); }
-        set
-        {
-            _subjectId = value;
-            if (value != null) this[UdapConstants.B2BAuthorizationExtension.SubjectId] = value;
-        }
-    }
-
-    /// <summary>
-    /// subject_role conditional:
-    ///
-    /// String containing a code identifying the role of the requestor; required if known for
-    /// human requestors when the subject_name parameter is present. For US Realm, trust communities
-    /// SHOULD constrain the allowed values and formats, and are encouraged to draw from the National
-    /// Uniform Claim Committee (NUCC) Provider Taxonomy Code Set, but are not required to do so
-    /// to be considered conformant. See Section 5.2.1.2 below for the preferred format of the code
-    /// value string.
-    /// </summary>
-    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.SubjectRole)]
-    public string? SubjectRole
-    {
-        get
-        {
-            return _subjectRole ??= GetStandardClaim(UdapConstants.B2BAuthorizationExtension.SubjectRole);
-        }
-        set
-        {
-            _subjectRole = value;
-            if (value != null) this[UdapConstants.B2BAuthorizationExtension.SubjectRole] = value;
-        }
-    }
-
-    /// <summary>
-    /// organization_name optional:
-    ///
-    /// String containing the human readable name of the organizational requestor. If a subject is named,
-    /// the organizational requestor is the organization represented by the subject.
-    /// </summary>
-    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.OrganizationName)]
-    public string? OrganizationName
-    {
-        get
-        {
-            return _organizationName ??= GetStandardClaim(UdapConstants.B2BAuthorizationExtension.OrganizationName);
-        }
-        set
-        {
-            _organizationName = value;
-            if (value != null) this[UdapConstants.B2BAuthorizationExtension.OrganizationName] = value;
-        }
-    }
-
-    /// <summary>
-    /// organization_id required:
-    /// 
-    /// String containing a unique identifier for the organizational requestor. If a subject is named, the
-    /// organizational requestor is the organization represented by the subject. The identifier SHALL be a
-    /// Uniform Resource Identifier (URI). Trust communities SHALL define the allowed URI scheme(s). If a URL
-    /// is used, the issuer SHALL include a URL that is resolvable by the receiving party.
-    /// </summary>
-    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.OrganizationId)]
-    public string? OrganizationId
-    {
-        get
-        {
-            if (_organizationId == null)
-            {
-                _organizationId = GetStandardClaim(UdapConstants.B2BAuthorizationExtension.OrganizationId);
-            }
-
-            return _organizationId;
-        }
-        set
-        {
-            _organizationId = value;
-            if (value != null) this[UdapConstants.B2BAuthorizationExtension.OrganizationId] = value;
-        }
-    }
-
+    
     /// <summary>
     /// purpose_of_use required:
     /// 
@@ -173,14 +79,14 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     /// draw from the HL7 PurposeOfUse value set, but are not required to do so to be considered conformant.
     /// See Section 5.2.1.2 below for the preferred format of each code value string array element.
     /// </summary>
-    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.PurposeOfUse)]
+    [JsonPropertyName(UdapConstants.B2BUserAuthorizationExtension.PurposeOfUse)]
     public ICollection<string>? PurposeOfUse
     {
         get
         {
             if (_purposeOfUse != null && !_purposeOfUse.Any())
             {
-                _purposeOfUse = GetIListClaims(UdapConstants.B2BAuthorizationExtension.PurposeOfUse);
+                _purposeOfUse = GetIListClaims(UdapConstants.B2BUserAuthorizationExtension.PurposeOfUse);
             }
             return _purposeOfUse;
         }
@@ -190,11 +96,11 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
             _purposeOfUse = value;
             if (value == null)
             {
-                this.Remove(UdapConstants.B2BAuthorizationExtension.PurposeOfUse);
+                this.Remove(UdapConstants.B2BUserAuthorizationExtension.PurposeOfUse);
             }
             else
             {
-                this[UdapConstants.B2BAuthorizationExtension.PurposeOfUse] = value;
+                this[UdapConstants.B2BUserAuthorizationExtension.PurposeOfUse] = value;
             }
         }
     }
@@ -205,21 +111,21 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     /// An array of one or more strings, each containing a URI identifying a privacy consent directive policy
     /// or other policy consistent with the value of the purpose_of_use parameter.
     /// </summary>
-    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.ConsentPolicy)]
+    [JsonPropertyName(UdapConstants.B2BUserAuthorizationExtension.ConsentPolicy)]
     public ICollection<string>? ConsentPolicy
     {
         get
         {
             if (_consentPolicy != null && !_consentPolicy.Any())
             {
-                _consentPolicy = GetIListClaims(UdapConstants.B2BAuthorizationExtension.ConsentPolicy);
+                _consentPolicy = GetIListClaims(UdapConstants.B2BUserAuthorizationExtension.ConsentPolicy);
             }
             return _consentPolicy;
         }
         set
         {
             _consentPolicy = value;
-            if (value != null) this[UdapConstants.B2BAuthorizationExtension.ConsentPolicy] = value;
+            if (value != null) this[UdapConstants.B2BUserAuthorizationExtension.ConsentPolicy] = value;
         }
     }
 
@@ -233,21 +139,21 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     /// resource does not include the raw document data inline in the resource or as a contained resource, then it SHALL
     /// include a URL to the attachment data that is resolvable by the receiving party. Omit if consent_policy is not present.
     /// </summary>
-    [JsonPropertyName(UdapConstants.B2BAuthorizationExtension.ConsentReference)]
+    [JsonPropertyName(UdapConstants.B2BUserAuthorizationExtension.ConsentReference)]
     public ICollection<string>? ConsentReference
     {
         get
         {
             if (_consentReference != null && !_consentReference.Any())
             {
-                _consentReference = GetIListClaims(UdapConstants.B2BAuthorizationExtension.ConsentReference);
+                _consentReference = GetIListClaims(UdapConstants.B2BUserAuthorizationExtension.ConsentReference);
             }
             return _consentReference;
         }
         set
         {
             _consentReference = value;
-            if (value != null) this[UdapConstants.B2BAuthorizationExtension.ConsentReference] = value;
+            if (value != null) this[UdapConstants.B2BUserAuthorizationExtension.ConsentReference] = value;
         }
     }
 
@@ -260,9 +166,9 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
             notes.Add("Missing required version");
         }
 
-        if (string.IsNullOrWhiteSpace(OrganizationId))
+        if (string.IsNullOrWhiteSpace(UserPerson))
         {
-            notes.Add("Missing required organization_id");
+            notes.Add("Missing required user_person");
         }
 
         if (!PurposeOfUse.Any())
@@ -336,7 +242,7 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
     {
         return JsonSerializer.Serialize(this, new JsonSerializerOptions
         {
-            Converters = { new B2BAuthorizationExtensionConverter() },
+            Converters = { new B2BUserAuthorizationExtensionConverter() },
             WriteIndented = indented
         });
     }

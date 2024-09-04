@@ -337,9 +337,15 @@ public class UdapDynamicClientRegistrationDocumentTest
         var userPerson = serializer.SerializeToString(personResource);
         userPerson.Should().NotBeNullOrEmpty();
 
+        JsonElement userPersonElement;
+        using (var jasonDocument = JsonDocument.Parse(userPerson))
+        {
+            userPersonElement = jasonDocument.RootElement.Clone();
+        }
+
         var b2bHl7User = new B2BUserAuthorizationExtension()
         {
-            UserPerson = userPerson,
+            UserPerson = userPersonElement,
         };
 
         b2bHl7User.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
@@ -453,9 +459,15 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         b2bHl7.Add("NewClaim", "Testing 123");
 
+        JsonElement userPersonElement;
+        using (var jasonDocument = JsonDocument.Parse(userPerson))
+        {
+            userPersonElement = jasonDocument.RootElement.Clone();
+        }
+
         var b2bUserHl7 = new B2BUserAuthorizationExtension()
         {
-            UserPerson = userPerson,
+            UserPerson = userPersonElement,
             PurposeOfUse = purposeOfUse,
             ConsentReference = consentReference,
             ConsentPolicy = consentPolicy, // client supplied

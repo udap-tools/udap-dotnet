@@ -17,7 +17,7 @@ namespace Udap.Model.UdapAuthenticationExtensions;
 public class B2BUserAuthorizationExtension : Dictionary<string, object>
 {
     private string _version = "1";
-    private string? _userPerson;
+    private JsonElement? _userPerson;
     private ICollection<string>? _purposeOfUse;
     private ICollection<string>? _consentPolicy;
     private ICollection<string>? _consentReference;
@@ -54,14 +54,25 @@ public class B2BUserAuthorizationExtension : Dictionary<string, object>
     /// <summary>
     /// subject_name conditional:
     ///
-    /// String containing the human readable name of the human or non-human requestor; required if known.
+    /// String containing the human-readable name of the human or non-human requestor; required if known.
     /// </summary>
     [JsonPropertyName(UdapConstants.B2BUserAuthorizationExtension.UserPerson)]
-    public string? UserPerson
+    public JsonElement? UserPerson
     {
         get
         {
-            return _userPerson ??= GetStandardClaim(UdapConstants.B2BUserAuthorizationExtension.UserPerson);
+            if (_userPerson.HasValue)
+            {
+                return _userPerson;
+            }
+
+            if (TryGetValue(UdapConstants.B2BUserAuthorizationExtension.UserPerson, out var value) && value is JsonElement element)
+            {
+                _userPerson = element;
+                return element;
+            }
+
+            return null;
         }
         set
         {
@@ -175,12 +186,12 @@ public class B2BUserAuthorizationExtension : Dictionary<string, object>
             notes.Add("Missing required version");
         }
 
-        if (string.IsNullOrWhiteSpace(UserPerson))
+        if (!UserPerson.HasValue || string.IsNullOrEmpty(UserPerson.Value.ToString()))
         {
             notes.Add("Missing required user_person");
         }
 
-        if (!PurposeOfUse.Any())
+        if (PurposeOfUse == null || !PurposeOfUse.Any())
         {
             notes.Add("Missing required purpose_of_use");
         }

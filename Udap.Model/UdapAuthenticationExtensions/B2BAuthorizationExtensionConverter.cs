@@ -15,7 +15,30 @@ public class B2BAuthorizationExtensionConverter : JsonConverter<B2BAuthorization
         var extension = new B2BAuthorizationExtension();
         foreach (var kvp in dictionary)
         {
-            extension[kvp.Key] = kvp.Value;
+            if (kvp.Value is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Array)
+            {
+                var list = JsonSerializer.Deserialize<List<string>>(jsonElement.GetRawText(), options);
+                var properties = typeof(B2BAuthorizationExtension).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                
+                foreach (var property in properties)
+                {
+                    var jsonPropertyNameAttribute = property.GetCustomAttributes(typeof(JsonPropertyNameAttribute), false)
+                        .FirstOrDefault() as JsonPropertyNameAttribute;
+
+                    if (jsonPropertyNameAttribute != null && jsonPropertyNameAttribute.Name == kvp.Key)
+                    {
+                        if (property.CanWrite)
+                        {
+                            property.SetValue(extension, list);
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                extension[kvp.Key] = kvp.Value;
+            }
         }
         return extension;
     }
@@ -38,3 +61,4 @@ public class B2BAuthorizationExtensionConverter : JsonConverter<B2BAuthorization
         JsonSerializer.Serialize(writer, dictionary, options);
     }
 }
+

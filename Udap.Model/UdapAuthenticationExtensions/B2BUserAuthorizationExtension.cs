@@ -228,6 +228,10 @@ public class B2BUserAuthorizationExtension : Dictionary<string, object>
                 {
                     return element.GetString();
                 }
+                else if (element.ValueKind == JsonValueKind.Object)
+                {
+                    return element.GetRawText();
+                }
             }
         }
 

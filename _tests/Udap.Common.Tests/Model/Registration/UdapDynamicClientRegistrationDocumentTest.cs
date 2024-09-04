@@ -314,6 +314,94 @@ public class UdapDynamicClientRegistrationDocumentTest
         serializeDocument.Should().Contain("urn:oid:2.16.840.1.113883.5.8#TREAT");
         serializeDocument.Should().Contain("https://udaped.fhirlabs.net/Policy/Consent|99");
         serializeDocument.Should().Contain("https://fhirlabs.net/fhir/r4/Consent|99");
+
+
+        b2bHl7.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
+        b2bHl7.PurposeOfUse.Any().Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Without builder
+    /// </summary>
+    [Fact]
+    public void TestHl7b2bUserExtensionSerialization()
+    {
+        var userPersonJson = File.ReadAllText("Model/Registration/Person-FASTIDUDAPPerson-Example.json");
+        var parser = new FhirJsonParser();
+        var personResource = parser.Parse<Person>(userPersonJson);
+        personResource.Should().NotBeNull();
+        var serializer = new FhirJsonSerializer();
+        var userPerson = serializer.SerializeToString(personResource);
+        userPerson.Should().NotBeNullOrEmpty();
+
+        var b2bHl7User = new B2BUserAuthorizationExtension()
+        {
+            UserPerson = userPerson,
+        };
+
+        b2bHl7User.PurposeOfUse.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        b2bHl7User.ConsentPolicy.Add("https://udaped.fhirlabs.net/Policy/Consent|99");
+        b2bHl7User.ConsentReference.Add("https://fhirlabs.net/fhir/r4/Consent|99");
+
+        var serializeDocument = b2bHl7User.SerializeToJson();
+
+        serializeDocument.Should().Contain("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        serializeDocument.Should().Contain("https://udaped.fhirlabs.net/Policy/Consent|99");
+        serializeDocument.Should().Contain("https://fhirlabs.net/fhir/r4/Consent|99");
+
+        b2bHl7User = JsonSerializer.Deserialize<B2BUserAuthorizationExtension>(serializeDocument, new JsonSerializerOptions(){Converters = { new B2BUserAuthorizationExtensionConverter() }});
+
+        b2bHl7User.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
+        b2bHl7User.PurposeOfUse.Any().Should().BeFalse();
+    }
+
+    [Fact]
+    public void DeserializeTestWhenRemovingItemFromList()
+    {
+        var builder = UdapDcrBuilderForClientCredentials
+            .Create();
+
+        var subjectId = "urn:oid:2.16.840.1.113883.4.6#1234567890";
+        var subjectName = "FhirLabs AI calendar prep";
+        var subjectRole = "http://nucc.org/provider-taxonomy#207SG0202X";
+        var organizationId = new Uri("https://fhirlabs.net/fhir/r4/Organization|99").OriginalString;
+        var organizationName = "FhirLabs";
+
+        var b2bHl7 = new B2BAuthorizationExtension()
+        {
+            SubjectId = subjectId,
+            SubjectName = subjectName,
+            SubjectRole = subjectRole,
+            OrganizationId = organizationId,
+            OrganizationName = organizationName
+        };
+
+        b2bHl7.PurposeOfUse.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        b2bHl7.ConsentPolicy.Add("https://udaped.fhirlabs.net/Policy/Consent|99");
+        b2bHl7.ConsentReference.Add("https://fhirlabs.net/fhir/r4/Consent|99");
+
+        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, b2bHl7);
+        var document = builder.Build();
+
+        var serializeDocument = document.SerializeToJson(true);
+        _testOutputHelper.WriteLine(serializeDocument);
+
+        document = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(
+            serializeDocument, 
+            new JsonSerializerOptions()
+            {
+                Converters =
+                {
+                    new B2BAuthorizationExtensionConverter(),
+                    new B2BUserAuthorizationExtensionConverter()
+                }
+            });
+
+
+        var b2BAuthExtension = document.Extensions["hl7-b2b"] as B2BAuthorizationExtension;
+        b2BAuthExtension.PurposeOfUse.Should().Contain("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        b2BAuthExtension.ConsentPolicy.Should().Contain("https://udaped.fhirlabs.net/Policy/Consent|99");
+        b2BAuthExtension.ConsentReference.Should().Contain("https://fhirlabs.net/fhir/r4/Consent|99");
     }
 
     [Fact]
@@ -392,24 +480,25 @@ public class UdapDynamicClientRegistrationDocumentTest
         extentions["hl7-b2b-user"].Should().Be(b2bUserHl7);
 
         var serializeDocument = JsonSerializer.Serialize(document, new JsonSerializerOptions() 
-            { Converters = { new B2BUserAuthorizationExtensionConverter() } });
+            { Converters = { new B2BUserAuthorizationExtensionConverter() }, WriteIndented = true});
 
-        
         var documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
-
-        // _testOutputHelper.WriteLine(JsonSerializer.Serialize(documentDeserialize, new JsonSerializerOptions() 
-        //     { Converters = { new B2BUserAuthorizationExtensionConverter() }, 
-        //         WriteIndented = true
-        //     }));
 
         extentions = documentDeserialize.Extensions;
 
         extentions.Should().NotBeNull();
         extentions!.Count.Should().Be(2);
-        extentions["hl7-b2b"].ToString().Should().BeEquivalentTo(b2bHl7Serialized);
-        extentions["hl7-b2b-user"].ToString().Should().BeEquivalentTo(b2bHl7UserSerialized);
+        ((B2BAuthorizationExtension)extentions["hl7-b2b"]).SerializeToJson().Should().BeEquivalentTo(b2bHl7Serialized);
 
-        var extensionSerialized = JsonSerializer.Deserialize<B2BAuthorizationExtension>(extentions["hl7-b2b"].ToString()!);
+        
+        // _testOutputHelper.WriteLine(b2bHl7UserSerialized);
+        // _testOutputHelper.WriteLine(((B2BUserAuthorizationExtension)extentions["hl7-b2b-user"]).SerializeToJson(true));
+        
+
+
+        ((B2BUserAuthorizationExtension)extentions["hl7-b2b-user"]).SerializeToJson().Should().BeEquivalentTo(b2bHl7UserSerialized);
+
+        var extensionSerialized = JsonSerializer.Deserialize<B2BAuthorizationExtension>(((B2BAuthorizationExtension)extentions["hl7-b2b"]).SerializeToJson());
         extensionSerialized!.Version.Should().Be("1");
         extensionSerialized.SubjectId.Should().Be(subjectId);
         extensionSerialized.SubjectName.Should().Be(subjectName);
@@ -433,9 +522,10 @@ public class UdapDynamicClientRegistrationDocumentTest
         document = builder.Build();
         serializeDocument = JsonSerializer.Serialize(document);
         documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
-        extensionSerialized = JsonSerializer.Deserialize<B2BAuthorizationExtension>(documentDeserialize!.Extensions!["hl7-b2b"].ToString()!);
+        extensionSerialized = JsonSerializer.Deserialize<B2BAuthorizationExtension>(((B2BAuthorizationExtension)documentDeserialize!.Extensions!["hl7-b2b"]).SerializeToJson());
         extensionSerialized!.SubjectName.Should().BeNull();
         extensionSerialized.ConsentReference.Should().BeEmpty();
+
     }
 
     [Fact]

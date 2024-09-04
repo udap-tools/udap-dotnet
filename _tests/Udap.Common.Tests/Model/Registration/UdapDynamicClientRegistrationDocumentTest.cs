@@ -318,6 +318,13 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         b2bHl7.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
         b2bHl7.PurposeOfUse.Any().Should().BeFalse();
+
+        b2bHl7 = JsonSerializer.Deserialize<B2BAuthorizationExtension>(b2bHl7.SerializeToJson(),
+            new JsonSerializerOptions()
+            {
+                Converters = { new B2BAuthorizationExtensionConverter() }
+            });
+        b2bHl7.PurposeOfUse.Any().Should().BeFalse();
     }
 
     /// <summary>
@@ -353,6 +360,17 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         b2bHl7User.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
         b2bHl7User.PurposeOfUse.Any().Should().BeFalse();
+
+        b2bHl7User.ConsentPolicy.Remove("https://udaped.fhirlabs.net/Policy/Consent|99");
+        b2bHl7User.ConsentPolicy.Any().Should().BeFalse();
+
+        b2bHl7User.SerializeToJson().Should().NotContain("https://udaped.fhirlabs.net/Policy/Consent|99");
+        b2bHl7User = JsonSerializer.Deserialize<B2BUserAuthorizationExtension>(b2bHl7User.SerializeToJson(),
+            new JsonSerializerOptions()
+            {
+                Converters = { new B2BUserAuthorizationExtensionConverter() }
+            });
+        b2bHl7User.ConsentPolicy.Any().Should().BeFalse();
     }
 
     [Fact]

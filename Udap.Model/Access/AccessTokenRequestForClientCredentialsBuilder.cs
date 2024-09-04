@@ -9,13 +9,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
-using Udap.Model.UdapAuthenticationExtensions;
 
 namespace Udap.Model.Access;
 
@@ -69,24 +69,14 @@ public  class AccessTokenRequestForClientCredentialsBuilder
         _scope = scope;
         return this;
     }
-
-    // private string BuildHl7B2BExtensions()
-    // {
-    //     return "{\"version\": \"1\", \"subject_name\": \"todo.  more work to do here\"}";
-    // }
-
-    private Dictionary<string, B2BAuthorizationExtension>? _extensions;
     
-    public AccessTokenRequestForClientCredentialsBuilder WithExtension(string key, B2BAuthorizationExtension value)
-    {
-        //TODO: Hack for connect-a-thon.
-        if (_extensions == null)
-        {
-            _extensions = new Dictionary<string, B2BAuthorizationExtension>();
-        }
+    private Dictionary<string, object> _extensions = new Dictionary<string, object>();
+    
 
+    public AccessTokenRequestForClientCredentialsBuilder WithExtension<T>(string key, T value) where T : class
+    {
         _extensions[key] = value;
-        
+
         return this;
     }
 
@@ -127,7 +117,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
             _now.AddMinutes(5)
         );
 
-        if (_extensions != null)
+        if (_extensions.Any())
         {
             var payload = jwtPayload as Dictionary<string, object>;
             payload.Add(UdapConstants.JwtClaimTypes.Extensions, _extensions);

@@ -199,11 +199,11 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    private readonly Dictionary<string, object>? _extensions = new Dictionary<string, object>();
+    private readonly Dictionary<string, object> _extensions = new Dictionary<string, object>();
 
     public UdapDcrBuilderForClientCredentials WithExtension<T>(string key, T value) where T : class
     {
-        _extensions![key] = value;
+        _extensions[key] = value;
         _document.Extensions = _extensions;
 
         return this;

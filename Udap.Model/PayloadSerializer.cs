@@ -101,4 +101,40 @@ public static class PayloadSerializer
 
         return default;
     }
+
+    public static Dictionary<string, object> Deserialize(Dictionary<string, string> jsonElement)
+    {
+        var claimValues = new Dictionary<string, object>();
+
+        foreach (var item in jsonElement)
+        {
+            object? deserializedValue;
+            if (item.Key == UdapConstants.UdapAuthorizationExtensions.Hl7B2B)
+            {
+                deserializedValue = Deserialize<B2BAuthorizationExtension>(item.Value);
+            }
+            else if (item.Key == UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER)
+            {
+                deserializedValue = Deserialize<B2BUserAuthorizationExtension>(item.Value);
+            }
+            // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCAIAS)
+            // {
+            //
+            // }
+            // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCASMART)
+            // {
+            //
+            // }
+
+            else
+            {
+                // Default deserialization for other types
+                deserializedValue = JsonSerializer.Deserialize<object>(item.Value);
+            }
+
+            claimValues.Add(item.Key, deserializedValue);
+        }
+
+        return claimValues;
+    }
 }

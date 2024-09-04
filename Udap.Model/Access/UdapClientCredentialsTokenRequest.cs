@@ -7,8 +7,11 @@
 // */
 #endregion
 
+using System.Collections.Generic;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using IdentityModel.Client;
+using Udap.Model.UdapAuthenticationExtensions;
 
 namespace Udap.Model.Access;
 

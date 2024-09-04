@@ -659,43 +659,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
 
         if (value is JsonElement { ValueKind: JsonValueKind.Object } element)
         {
-            foreach (var item in element.EnumerateObject())
-            {
-                object? deserializedValue;
-                if (item.Name == UdapConstants.UdapAuthorizationExtensions.Hl7B2B)
-                {
-                    deserializedValue = JsonSerializer.Deserialize<B2BAuthorizationExtension>(item.Value.GetRawText(),
-                        new JsonSerializerOptions()
-                        {
-                            Converters = { new B2BAuthorizationExtensionConverter() }
-                        });
-                }
-                else if (item.Name == UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER)
-                {
-                    deserializedValue = JsonSerializer.Deserialize<B2BUserAuthorizationExtension>(item.Value.GetRawText(),
-                        new JsonSerializerOptions()
-                        {
-                            Converters = { new B2BUserAuthorizationExtensionConverter() }
-                        });
-                }
-                // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCAIAS)
-                // {
-                //
-                // }
-                // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCASMART)
-                // {
-                //
-                // }
-
-                else
-                {
-                    // Default deserialization for other types
-                    deserializedValue = JsonSerializer.Deserialize<object>(item.Value.GetRawText());
-                }
-
-                claimValues.Add(item.Name, deserializedValue);
-            }
-            return claimValues;
+            claimValues = PayloadSerializer.Deserialize(element);
         }
 
         return claimValues;

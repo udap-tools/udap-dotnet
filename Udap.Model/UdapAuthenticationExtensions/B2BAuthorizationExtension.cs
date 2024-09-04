@@ -180,7 +180,10 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         {
             if (_purposeOfUse != null && !_purposeOfUse.Any())
             {
-                _purposeOfUse = GetIListClaims(UdapConstants.B2BAuthorizationExtension.PurposeOfUse);
+                foreach (var item in GetIListClaims(UdapConstants.B2BAuthorizationExtension.PurposeOfUse))
+                {
+                    _purposeOfUse.Add(item);
+                }
             }
             return _purposeOfUse;
         }
@@ -212,7 +215,10 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         {
             if (_consentPolicy != null && !_consentPolicy.Any())
             {
-                _consentPolicy = GetIListClaims(UdapConstants.B2BAuthorizationExtension.ConsentPolicy);
+                foreach (var item in GetIListClaims(UdapConstants.B2BAuthorizationExtension.ConsentPolicy))
+                {
+                    _consentPolicy.Add(item);
+                }
             }
             return _consentPolicy;
         }
@@ -240,7 +246,10 @@ public class B2BAuthorizationExtension : Dictionary<string, object>
         {
             if (_consentReference != null && !_consentReference.Any())
             {
-                _consentReference = GetIListClaims(UdapConstants.B2BAuthorizationExtension.ConsentReference);
+                foreach (var item in GetIListClaims(UdapConstants.B2BAuthorizationExtension.ConsentReference))
+                {
+                    _consentReference.Add(item);
+                }
             }
             return _consentReference;
         }

@@ -95,10 +95,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Model\Access\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="..\Udap.PKI.Generator\certstores\surefhirlabs_community\intermediates\SureFhirLabs_Intermediate.cer" Link="CertStore\intermediates\SureFhirLabs_Intermediate.cer">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

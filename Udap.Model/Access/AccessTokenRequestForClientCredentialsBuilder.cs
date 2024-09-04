@@ -106,12 +106,11 @@ public  class AccessTokenRequestForClientCredentialsBuilder
 
     private string BuildClientAssertion(string algorithm)
     {
-        JwtPayLoadExtension jwtPayload;
-        
-        //HL7 FHIR IG profile
-        jwtPayload = new JwtPayLoadExtension(
+        var jwtPayload =
+            //HL7 FHIR IG profile
+            new JwtPayLoadExtension(
             _clientId, //TODO:: Let user pick the subject alt name.  Create will need extra param.
-            _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
+            _tokenEndoint,
             _claims,
             _now,
             _now.AddMinutes(5)
@@ -123,8 +122,6 @@ public  class AccessTokenRequestForClientCredentialsBuilder
             payload.Add(UdapConstants.JwtClaimTypes.Extensions, _extensions);
         }
         
-        Console.WriteLine(JsonSerializer.Serialize(jwtPayload, new JsonSerializerOptions{WriteIndented = true}));
-
         return SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(_certificate, jwtPayload)
                 .Build(algorithm);

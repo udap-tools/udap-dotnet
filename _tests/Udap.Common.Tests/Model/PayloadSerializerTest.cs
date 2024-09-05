@@ -37,7 +37,7 @@ public class PayloadSerializerTest
         var organizationId = new Uri("https://fhirlabs.net/fhir/r4/Organization/99").OriginalString;
         var organizationName = "FhirLabs";
 
-        var b2bHl7 = new B2BAuthorizationExtension()
+        var b2bHl7 = new HL7B2BAuthorizationExtension()
         {
             SubjectId = subjectId,
             SubjectName = subjectName,
@@ -56,7 +56,7 @@ public class PayloadSerializerTest
         //
         // hl7-b2b-user
         //
-        var userPersonJson = File.ReadAllText("Model/Registration/Person-FASTIDUDAPPerson-Example.json");
+        var userPersonJson = File.ReadAllText("Model/Person-FASTIDUDAPPerson-Example.json");
         var parser = new FhirJsonParser();
         var personResource = parser.Parse<Person>(userPersonJson);
         personResource.Should().NotBeNull();
@@ -75,7 +75,7 @@ public class PayloadSerializerTest
         // _testOutputHelper.WriteLine(userPersonElement.GetProperty("text").GetRawText());
 
 
-        var b2bHl7User = new B2BUserAuthorizationExtension()
+        var b2bHl7User = new HL7B2BUserAuthorizationExtension()
         {
             UserPerson = userPersonElement,
         };
@@ -95,14 +95,14 @@ public class PayloadSerializerTest
 
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(extensionsResult, new JsonSerializerOptions(){WriteIndented = true}));
 
-        var b2bHl7Result = ((B2BAuthorizationExtension)extensionsResult[UdapConstants.UdapAuthorizationExtensions.Hl7B2B]);
+        var b2bHl7Result = ((HL7B2BAuthorizationExtension)extensionsResult[UdapConstants.UdapAuthorizationExtensions.Hl7B2B]);
 
         b2bHl7Result.Version.Should().BeEquivalentTo(b2bHl7.Version);
         b2bHl7Result.PurposeOfUse.Should().ContainInOrder(b2bHl7.PurposeOfUse);
         b2bHl7Result.ConsentPolicy.Should().ContainInOrder(b2bHl7.ConsentPolicy);
 
 
-        var b2bHl7UserResult = ((B2BUserAuthorizationExtension)extensionsResult[UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER]);
+        var b2bHl7UserResult = ((HL7B2BUserAuthorizationExtension)extensionsResult[UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER]);
 
         b2bHl7UserResult.Version.Should().BeEquivalentTo(b2bHl7User.Version);
         b2bHl7UserResult.PurposeOfUse.Should().ContainInOrder(b2bHl7User.PurposeOfUse);

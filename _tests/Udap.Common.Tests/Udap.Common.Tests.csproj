@@ -89,7 +89,13 @@
     <None Update="CertStore\issued\FhirLabsAdminCertification.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Model\Registration\Person-FASTIDUDAPPerson-Example.json">
+    <None Update="Model\PatientExample.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Model\Person-FASTIDUDAPPerson-Example.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Model\RelatedPersonExample.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>

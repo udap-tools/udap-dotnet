@@ -4,22 +4,33 @@ using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Hl7.Fhir.Model;
+using Hl7.Fhir.Serialization;
 
 namespace Udap.Model.UdapAuthenticationExtensions;
 
-public class B2BAuthorizationExtensionConverter : JsonConverter<B2BAuthorizationExtension>
+public class HL7B2BUserAuthorizationExtensionConverter : JsonConverter<HL7B2BUserAuthorizationExtension>
 {
-    public override B2BAuthorizationExtension Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    private readonly bool _indent;
+
+    public HL7B2BUserAuthorizationExtensionConverter(bool indent = false)
+    {
+        _indent = indent;
+    }
+
+    public override HL7B2BUserAuthorizationExtension Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var dictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(ref reader, options);
-        var extension = new B2BAuthorizationExtension();
+        var extension = new HL7B2BUserAuthorizationExtension();
         foreach (var kvp in dictionary)
         {
             if (kvp.Value is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Array)
             {
                 var list = JsonSerializer.Deserialize<List<string>>(jsonElement.GetRawText(), options);
-                var properties = typeof(B2BAuthorizationExtension).GetProperties(BindingFlags.Public | BindingFlags.Instance);
-                
+                var properties = typeof(HL7B2BUserAuthorizationExtension).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+                bool propertySet = false;
+
                 foreach (var property in properties)
                 {
                     var jsonPropertyNameAttribute = property.GetCustomAttributes(typeof(JsonPropertyNameAttribute), false)
@@ -30,11 +41,12 @@ public class B2BAuthorizationExtensionConverter : JsonConverter<B2BAuthorization
                         if (property.CanWrite)
                         {
                             property.SetValue(extension, list);
+                            propertySet = true;
                             break;
                         }
                     }
                 }
-            }
+            }            
             else
             {
                 extension[kvp.Key] = kvp.Value;
@@ -43,9 +55,9 @@ public class B2BAuthorizationExtensionConverter : JsonConverter<B2BAuthorization
         return extension;
     }
 
-    public override void Write(Utf8JsonWriter writer, B2BAuthorizationExtension value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, HL7B2BUserAuthorizationExtension value, JsonSerializerOptions options)
     {
-        var dictionary = new Dictionary<string, object>(value);
+        writer.WriteStartObject();
         var properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
 
         foreach (var property in properties)
@@ -55,10 +67,25 @@ public class B2BAuthorizationExtensionConverter : JsonConverter<B2BAuthorization
                 var jsonPropertyName = property.GetCustomAttributes(typeof(JsonPropertyNameAttribute), false)
                     .FirstOrDefault() as JsonPropertyNameAttribute;
                 var propertyName = jsonPropertyName?.Name ?? property.Name;
-                dictionary[propertyName] = propertyValue;
+
+                if (property.Name == "UserPerson")
+                {
+                    var parser = new FhirJsonParser();
+                    var personResource = parser.Parse<Person>(propertyValue.ToString());
+                    var serializer = new FhirJsonSerializer(new SerializerSettings() { Pretty = _indent });
+                    var serializedPerson = serializer.SerializeToString(personResource);
+
+                    writer.WritePropertyName(propertyName);
+                    writer.WriteRawValue(serializedPerson);
+                }
+                else
+                {
+                    writer.WritePropertyName(propertyName);
+                    JsonSerializer.Serialize(writer, propertyValue, propertyValue.GetType(), options);
+                }
             }
         }
-        JsonSerializer.Serialize(writer, dictionary, options);
+
+        writer.WriteEndObject();
     }
 }
-

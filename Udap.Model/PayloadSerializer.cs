@@ -35,11 +35,11 @@ public static class PayloadSerializer
             object? deserializedValue;
             if (item.Name == UdapConstants.UdapAuthorizationExtensions.Hl7B2B)
             {
-                deserializedValue = Deserialize<B2BAuthorizationExtension>(item.Value.GetRawText());
+                deserializedValue = Deserialize<HL7B2BAuthorizationExtension>(item.Value.GetRawText());
             }
             else if (item.Name == UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER)
             {
-                deserializedValue = Deserialize<B2BUserAuthorizationExtension>(item.Value.GetRawText());
+                deserializedValue = Deserialize<HL7B2BUserAuthorizationExtension>(item.Value.GetRawText());
             }
             // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCAIAS)
             // {
@@ -77,26 +77,34 @@ public static class PayloadSerializer
                 {
                     Converters =
                     {
-                        new B2BAuthorizationExtensionConverter(),
-                        new B2BUserAuthorizationExtensionConverter()
+                        new HL7B2BAuthorizationExtensionConverter(),
+                        new HL7B2BUserAuthorizationExtensionConverter()
                     }
                 });
         }
-        if (typeof(T) == typeof(B2BAuthorizationExtension))
+        if (typeof(T) == typeof(HL7B2BAuthorizationExtension))
         {
             return JsonSerializer.Deserialize<T>(rawJson,
             new JsonSerializerOptions()
             {
-                Converters = { new B2BAuthorizationExtensionConverter() }
+                Converters = { new HL7B2BAuthorizationExtensionConverter() }
             });
         }
-        else if (typeof(T) == typeof(B2BUserAuthorizationExtension))
+        else if (typeof(T) == typeof(HL7B2BUserAuthorizationExtension))
         {
             return JsonSerializer.Deserialize<T>(rawJson,
             new JsonSerializerOptions()
             {
-                Converters = { new B2BUserAuthorizationExtensionConverter() }
+                Converters = { new HL7B2BUserAuthorizationExtensionConverter() }
             });
+        }
+        else if (typeof(T) == typeof(TEFCAIASAuthorizationExtension))
+        {
+            return JsonSerializer.Deserialize<T>(rawJson,
+                new JsonSerializerOptions()
+                {
+                    Converters = { new TEFCAIASAuthorizationExtensionConverter() }
+                });
         }
 
         return default;
@@ -111,16 +119,16 @@ public static class PayloadSerializer
             object? deserializedValue;
             if (item.Key == UdapConstants.UdapAuthorizationExtensions.Hl7B2B)
             {
-                deserializedValue = Deserialize<B2BAuthorizationExtension>(item.Value);
+                deserializedValue = Deserialize<HL7B2BAuthorizationExtension>(item.Value);
             }
             else if (item.Key == UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER)
             {
-                deserializedValue = Deserialize<B2BUserAuthorizationExtension>(item.Value);
+                deserializedValue = Deserialize<HL7B2BUserAuthorizationExtension>(item.Value);
             }
-            // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCAIAS)
-            // {
-            //
-            // }
+            else if (item.Key == UdapConstants.UdapAuthorizationExtensions.TEFCAIAS)
+            {
+                deserializedValue = Deserialize<TEFCAIASAuthorizationExtension>(item.Value);
+            }
             // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCASMART)
             // {
             //

@@ -9,25 +9,25 @@ using Hl7.Fhir.Serialization;
 
 namespace Udap.Model.UdapAuthenticationExtensions;
 
-public class B2BUserAuthorizationExtensionConverter : JsonConverter<B2BUserAuthorizationExtension>
+public class TEFCAIASAuthorizationExtensionConverter : JsonConverter<TEFCAIASAuthorizationExtension>
 {
     private readonly bool _indent;
 
-    public B2BUserAuthorizationExtensionConverter(bool indent = false)
+    public TEFCAIASAuthorizationExtensionConverter(bool indent = false)
     {
         _indent = indent;
     }
 
-    public override B2BUserAuthorizationExtension Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override TEFCAIASAuthorizationExtension Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var dictionary = JsonSerializer.Deserialize<Dictionary<string, object>>(ref reader, options);
-        var extension = new B2BUserAuthorizationExtension();
+        var extension = new TEFCAIASAuthorizationExtension();
         foreach (var kvp in dictionary)
         {
             if (kvp.Value is JsonElement jsonElement && jsonElement.ValueKind == JsonValueKind.Array)
             {
                 var list = JsonSerializer.Deserialize<List<string>>(jsonElement.GetRawText(), options);
-                var properties = typeof(B2BUserAuthorizationExtension).GetProperties(BindingFlags.Public | BindingFlags.Instance);
+                var properties = typeof(TEFCAIASAuthorizationExtension).GetProperties(BindingFlags.Public | BindingFlags.Instance);
 
                 bool propertySet = false;
 
@@ -46,7 +46,7 @@ public class B2BUserAuthorizationExtensionConverter : JsonConverter<B2BUserAutho
                         }
                     }
                 }
-            }            
+            }
             else
             {
                 extension[kvp.Key] = kvp.Value;
@@ -55,7 +55,7 @@ public class B2BUserAuthorizationExtensionConverter : JsonConverter<B2BUserAutho
         return extension;
     }
 
-    public override void Write(Utf8JsonWriter writer, B2BUserAuthorizationExtension value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, TEFCAIASAuthorizationExtension value, JsonSerializerOptions options)
     {
         writer.WriteStartObject();
         var properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
@@ -68,10 +68,20 @@ public class B2BUserAuthorizationExtensionConverter : JsonConverter<B2BUserAutho
                     .FirstOrDefault() as JsonPropertyNameAttribute;
                 var propertyName = jsonPropertyName?.Name ?? property.Name;
 
-                if (property.Name == "UserPerson")
+                if (property.Name == "UserInformation")
                 {
                     var parser = new FhirJsonParser();
-                    var personResource = parser.Parse<Person>(propertyValue.ToString());
+                    var personResource = parser.Parse<RelatedPerson>(propertyValue.ToString());
+                    var serializer = new FhirJsonSerializer(new SerializerSettings() { Pretty = _indent });
+                    var serializedRelatedPerson = serializer.SerializeToString(personResource);
+
+                    writer.WritePropertyName(propertyName);
+                    writer.WriteRawValue(serializedRelatedPerson);
+                }
+                if (property.Name == "PatientInformation")
+                {
+                    var parser = new FhirJsonParser();
+                    var personResource = parser.Parse<Patient>(propertyValue.ToString());
                     var serializer = new FhirJsonSerializer(new SerializerSettings() { Pretty = _indent });
                     var serializedPerson = serializer.SerializeToString(personResource);
 

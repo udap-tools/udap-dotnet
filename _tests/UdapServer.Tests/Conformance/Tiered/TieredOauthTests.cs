@@ -67,7 +67,7 @@ public class TieredOauthTests
 
         _community2Anchor = new X509Certificate2("CertStore/anchors/caLocalhostCert2.cer");
         _community2IntermediateCert = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert2.cer");
-            }
+    }
 
     private void BuildUdapAuthorizationServer(List<string>? tieredOAuthScopes = null)
     {

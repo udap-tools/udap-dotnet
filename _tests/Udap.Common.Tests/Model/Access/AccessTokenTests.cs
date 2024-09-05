@@ -65,7 +65,7 @@ public class AccessTokenTests
         var organizationId = new Uri("https://fhirlabs.net/fhir/r4/Organization/99").OriginalString;
         var organizationName = "FhirLabs";
 
-        var b2bHl7 = new B2BAuthorizationExtension()
+        var b2bHl7 = new HL7B2BAuthorizationExtension()
         {
             SubjectId = subjectId,
             SubjectName = subjectName,
@@ -84,7 +84,7 @@ public class AccessTokenTests
         //
         // hl7-b2b-user
         //
-        var userPersonJson = File.ReadAllText("Model/Registration/Person-FASTIDUDAPPerson-Example.json");
+        var userPersonJson = File.ReadAllText("Model/Person-FASTIDUDAPPerson-Example.json");
         var parser = new FhirJsonParser();
         var personResource = parser.Parse<Person>(userPersonJson);
         personResource.Should().NotBeNull();
@@ -103,7 +103,7 @@ public class AccessTokenTests
         // _testOutputHelper.WriteLine(userPersonElement.GetProperty("text").GetRawText());
 
         
-        var b2bHl7User = new B2BUserAuthorizationExtension()
+        var b2bHl7User = new HL7B2BUserAuthorizationExtension()
         {
             UserPerson = userPersonElement,
         };
@@ -144,7 +144,7 @@ public class AccessTokenTests
 
         var extensions = PayloadSerializer.Deserialize((JsonElement)payload["extensions"]);
         var b2bUserResult =
-            extensions[UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER] as B2BUserAuthorizationExtension;
+            extensions[UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER] as HL7B2BUserAuthorizationExtension;
         b2bUserResult.UserPerson.Should().NotBeNull();
         b2bUserResult.UserPerson.Value.GetRawText().Should().BeEquivalentTo(userPerson);
         
@@ -152,7 +152,7 @@ public class AccessTokenTests
         b2bHl7.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
         b2bHl7.PurposeOfUse.Any().Should().BeFalse();
 
-        b2bHl7 = PayloadSerializer.Deserialize<B2BAuthorizationExtension>(b2bHl7.SerializeToJson());
+        b2bHl7 = PayloadSerializer.Deserialize<HL7B2BAuthorizationExtension>(b2bHl7.SerializeToJson());
         b2bHl7.PurposeOfUse.Any().Should().BeFalse();
     }
 }

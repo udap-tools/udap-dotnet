@@ -743,8 +743,8 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         return JsonSerializer.Serialize(this, new JsonSerializerOptions
         {
             Converters = {
-                new B2BAuthorizationExtensionConverter(),
-                new B2BUserAuthorizationExtensionConverter(indent)
+                new HL7B2BAuthorizationExtensionConverter(),
+                new HL7B2BUserAuthorizationExtensionConverter(indent)
             },
             WriteIndented = indent
         });

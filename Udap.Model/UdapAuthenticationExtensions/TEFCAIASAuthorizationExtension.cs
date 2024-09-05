@@ -19,14 +19,15 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     private string _version = "1";
     private JsonElement? _userInformation;
     private JsonElement? _patientInformation;
-    private ICollection<string>? _purposeOfUse;
+    private string _purposeOfUse = UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUseCode;
     private ICollection<string>? _consentPolicy;
     private ICollection<string>? _consentReference;
+    private JsonElement? _idToken;
+    private JsonElement? _ialVetted;
 
     public TEFCAIASAuthorizationExtension()
     {
         Version = _version;
-        PurposeOfUse = new List<string>();
         ConsentPolicy = new List<string>();
         ConsentReference = new List<string>();
     }
@@ -41,21 +42,44 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     {
         get
         {
-            _version = GetStandardClaim("version") ?? _version;
+            _version = GetStandardClaim(UdapConstants.TEFCAIASAuthorizationExtension.Version) ?? _version;
 
             return _version;
         }
         set
         {
             _version = value;
-            this["version"] = value;
+            this[UdapConstants.TEFCAIASAuthorizationExtension.Version] = value;
         }
     }
 
     /// <summary>
-    /// subject_name conditional:
+    /// purpose_of_use required:
+    /// 
+    /// Fixed Value “T-IAS”. 
+    /// </summary>
+    [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse)]
+    public string PurposeOfUse
+    {
+        get
+        {
+            _purposeOfUse = GetStandardClaim(UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse) ?? _purposeOfUse;
+
+            return _purposeOfUse;
+        }
+        set
+        {
+            _purposeOfUse = value;
+            this[UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse] = value;
+        }
+    }
+
+    /// <summary>
+    /// user_information required:
     ///
-    /// String containing the human-readable name of the human or non-human requestor; required if known.
+    /// FHIR RelatedPerson Resource with all known
+    /// demographics.Where the user is the patient, the value of
+    /// the relationship element MUST be "ONESELF"
     /// </summary>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.UserInformation)]
     public JsonElement? UserInformation
@@ -83,9 +107,9 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     }
 
     /// <summary>
-    /// subject_name conditional:
+    /// patient_information required:
     ///
-    /// String containing the human-readable name of the human or non-human requestor; required if known.
+    /// FHIR US Core Patient Resource with all known and validated demographics
     /// </summary>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.PatientInformation)]
     public JsonElement? PatientInformation
@@ -111,49 +135,15 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
             if (value != null) this[UdapConstants.TEFCAIASAuthorizationExtension.PatientInformation] = value;
         }
     }
-
+    
     /// <summary>
-    /// purpose_of_use required:
+    /// consent_policy required:
     /// 
-    /// An array of one or more strings, each containing a code identifying a purpose for which the data is being
-    /// requested. For US Realm, trust communities SHOULD constrain the allowed values, and are encouraged to
-    /// draw from the HL7 PurposeOfUse value set, but are not required to do so to be considered conformant.
-    /// See Section 5.2.1.2 below for the preferred format of each code value string array element.
-    /// </summary>
-    [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse)]
-    public ICollection<string>? PurposeOfUse
-    {
-        get
-        {
-            if (_purposeOfUse != null && !_purposeOfUse.Any())
-            {
-                foreach (var item in GetIListClaims(UdapConstants.HL7B2BAuthorizationExtension.PurposeOfUse))
-                {
-                    _purposeOfUse.Add(item);
-                }
-            }
-            return _purposeOfUse;
-        }
-        set
-        {
-            
-            _purposeOfUse = value;
-            if (value == null)
-            {
-                this.Remove(UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse);
-            }
-            else
-            {
-                this[UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse] = value;
-            }
-        }
-    }
-
-    /// <summary>
-    /// consent_policy optional:
-    /// 
-    /// An array of one or more strings, each containing a URI identifying a privacy consent directive policy
-    /// or other policy consistent with the value of the purpose_of_use parameter.
+    /// The Access Consent Policy Identifier corresponding to the asserted
+    /// Access Policy that represents the identity proofing level of assurance
+    /// of the user, array of string values from the subset of valid policy
+    /// OIDs in that represent identity proofing levels of assurance, each
+    /// expressed as a URI, e.g. ["urn:oid:2.16.840.1.113883.3.7204.1.1.1.1.2.1"]
     /// </summary>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.ConsentPolicy)]
     public ICollection<string>? ConsentPolicy
@@ -177,14 +167,12 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     }
 
     /// <summary>
-    /// consent_reference conditional:
+    /// consent_reference optional:
     /// 
-    /// An array of one or more strings, each containing an absolute URL consistent with a literal reference to a FHIR Consent
-    /// or DocumentReference resource containing or referencing a privacy consent directive relevant to a purpose identified
-    /// by the purpose_of_use parameter and the policy or policies identified by the consent_policy parameter. The issuer of
-    /// this Authorization Extension Object SHALL only include URLs that are resolvable by the receiving party. If a referenced
-    /// resource does not include the raw document data inline in the resource or as a contained resource, then it SHALL
-    /// include a URL to the attachment data that is resolvable by the receiving party. Omit if consent_policy is not present.
+    /// An array of FHIR Document Reference or Consent Resources where the
+    /// supporting access consent documentation can be retrieved, each
+    /// expressed as an absolute URL,
+    /// e.g. ["https://tefca.example.com/fhir/R4/DocumentReference/consent-6461766570"]
     /// </summary>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.ConsentReference)]
     public ICollection<string>? ConsentReference
@@ -204,6 +192,66 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
         {
             _consentReference = value;
             if (value != null) this[UdapConstants.TEFCAIASAuthorizationExtension.ConsentReference] = value;
+        }
+    }
+    
+    /// <summary>
+    /// id_token optional:
+    /// 
+    /// Additional token as per relevant SOP
+    /// </summary>
+    [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.IdToken)]
+    public JsonElement? IdToken
+    {
+        get
+        {
+            if (_idToken.HasValue)
+            {
+                return _idToken;
+            }
+
+            if (TryGetValue(UdapConstants.TEFCAIASAuthorizationExtension.IdToken, out var value) && value is JsonElement element)
+            {
+                _idToken = element;
+                return element;
+            }
+
+            return null;
+        }
+        set
+        {
+            _idToken = value;
+            if (value != null) this[UdapConstants.TEFCAIASAuthorizationExtension.IdToken] = value;
+        }
+    }
+    /// <summary>
+    /// ial_vetted conditional:
+    /// 
+    /// OIDC token provided by Identity Verifier when the Identity Verifier is not
+    /// the Responding Node. Responding server MAY respond with invalid_grant if missing.
+    /// </summary>
+    [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.IalVetted)]
+    public JsonElement? IalVetted
+    {
+        get
+        {
+            if (_ialVetted.HasValue)
+            {
+                return _ialVetted;
+            }
+
+            if (TryGetValue(UdapConstants.TEFCAIASAuthorizationExtension.IalVetted, out var value) && value is JsonElement element)
+            {
+                _ialVetted = element;
+                return element;
+            }
+
+            return null;
+        }
+        set
+        {
+            _ialVetted = value;
+            if (value != null) this[UdapConstants.TEFCAIASAuthorizationExtension.IalVetted] = value;
         }
     }
 
@@ -226,9 +274,9 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
             notes.Add($"Missing required {UdapConstants.TEFCAIASAuthorizationExtension.PatientInformation}");
         }
 
-        if (PurposeOfUse == null || !PurposeOfUse.Any())
+        if (PurposeOfUse != UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUseCode)
         {
-            notes.Add($"Missing required {UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse}");
+            notes.Add($"{UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse} must be {UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUseCode}");
         }
 
         return notes;

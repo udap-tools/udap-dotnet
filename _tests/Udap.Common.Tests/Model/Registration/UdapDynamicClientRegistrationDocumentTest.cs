@@ -400,14 +400,23 @@ public class UdapDynamicClientRegistrationDocumentTest
         {
             patientElement = jasonDocument.RootElement.Clone();
         }
-        
+
+        var exampleIdentityToken = "{\r\n\"iss\": \"https://example.com\",\r\n  \"sub\": \"user123\",\r\n  \"aud\": \"client123\",\r\n  \"exp\": 1672531200,\r\n  \"iat\": 1672444800,\r\n  \"jti\": \"abc123\"\r\n}";
+
+        JsonElement identityTokenElement;
+        using (var jasonDocument = JsonDocument.Parse(exampleIdentityToken))
+        {
+            identityTokenElement = jasonDocument.RootElement.Clone();
+        }
+
         var tefcaIas = new TEFCAIASAuthorizationExtension()
         {
             UserInformation = relatedPersonElement,
-            PatientInformation = patientElement
+            PatientInformation = patientElement,
+            IalVetted = identityTokenElement,
+            IdToken = identityTokenElement
         };
 
-        tefcaIas.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
         tefcaIas.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
         tefcaIas.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
 
@@ -418,14 +427,13 @@ public class UdapDynamicClientRegistrationDocumentTest
         // _testOutputHelper.WriteLine(serializeDocument);
    
 
-        serializeDocument.Should().Contain("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        serializeDocument.Should().Contain("T-IAS");
         serializeDocument.Should().Contain("https://udaped.fhirlabs.net/Policy/Consent/99");
         serializeDocument.Should().Contain("https://fhirlabs.net/fhir/r4/Consent/99");
 
         tefcaIas = PayloadSerializer.Deserialize<TEFCAIASAuthorizationExtension>(serializeDocument);
 
-        tefcaIas.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
-        tefcaIas.PurposeOfUse.Any().Should().BeFalse();
+        tefcaIas.PurposeOfUse.Should().Be("T-IAS");
 
         tefcaIas.ConsentPolicy?.Remove("https://udaped.fhirlabs.net/Policy/Consent/99");
         tefcaIas.ConsentPolicy?.Any().Should().BeFalse();
@@ -433,6 +441,12 @@ public class UdapDynamicClientRegistrationDocumentTest
         tefcaIas.SerializeToJson().Should().NotContain("https://udaped.fhirlabs.net/Policy/Consent/99");
         tefcaIas = PayloadSerializer.Deserialize<TEFCAIASAuthorizationExtension>(tefcaIas.SerializeToJson());
         tefcaIas.ConsentPolicy?.Any().Should().BeFalse();
+
+        tefcaIas.IalVetted.Value.GetRawText().Should().BeEquivalentTo(identityTokenElement.GetRawText()
+            .Replace("\n", "").Replace("\r", "").Replace(": ", ":").Replace(",  ", ","));
+
+        tefcaIas.IdToken.Value.GetRawText().Should().BeEquivalentTo(identityTokenElement.GetRawText()
+            .Replace("\n", "").Replace("\r", "").Replace(": ", ":").Replace(",  ", ","));
 
         var realtedPersonResourceResult = new FhirJsonParser().Parse<RelatedPerson>(tefcaIas.UserInformation.Value.GetRawText());
         var patientResourceResult = new FhirJsonParser().Parse<RelatedPerson>(tefcaIas.PatientInformation.Value.GetRawText());
@@ -644,13 +658,14 @@ public class UdapDynamicClientRegistrationDocumentTest
     {
         var hl7b2b = new TEFCAIASAuthorizationExtension()
         {
-            Version = null
+            Version = null,
+            PurposeOfUse = "Bad"
         };
 
         var notes = hl7b2b.Validate();
         notes.Should().NotBeNull();
         notes.Count().Should().Be(4);
-        notes.Should().ContainInOrder("Missing required version", "Missing required user_information", "Missing required patient_information", "Missing required purpose_of_use");
+        notes.Should().ContainInOrder("Missing required version", "Missing required user_information", "Missing required patient_information", "purpose_of_use must be T-IAS");
     }
 
     [Fact]

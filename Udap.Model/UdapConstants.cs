@@ -204,6 +204,7 @@ public static class UdapConstants
     {
         public const string Version = "version";
         public const string PurposeOfUse = "purpose_of_use";
+        public const string PurposeOfUseCode = "T-IAS";
         public const string UserInformation = "user_information";
         public const string PatientInformation = "patient_information";
         public const string IalVetted = "ial_vetted";

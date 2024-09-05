@@ -41,10 +41,10 @@ public static class PayloadSerializer
             {
                 deserializedValue = Deserialize<HL7B2BUserAuthorizationExtension>(item.Value.GetRawText());
             }
-            // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCAIAS)
-            // {
-            //
-            // }
+            else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCAIAS)
+            {
+                deserializedValue = Deserialize<TEFCAIASAuthorizationExtension>(item.Value.GetRawText());
+            }
             // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCASMART)
             // {
             //

@@ -1,12 +1,3 @@
-﻿#region (c) 2023 Joseph Shook. All rights reserved.
-// /*
-//  Authors:
-//     Joseph Shook   Joseph.Shook@Surescripts.com
-// 
-//  See LICENSE in the project root for license information.
-// */
-#endregion
-
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -14,7 +5,12 @@ using System.Text.Json.Serialization;
 
 namespace Udap.Model.UdapAuthenticationExtensions;
 
-public class HL7B2BAuthorizationExtension : Dictionary<string, object>
+/// <summary>
+/// User this for code like building hl7-b2b extension objects
+///
+/// <a href="http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token">HL7 B2B</a>
+/// </summary>
+public class HL7B2BAuthorizationExtension
 {
     private string _version = "1";
     private string? _subjectName;
@@ -42,36 +38,20 @@ public class HL7B2BAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BAuthorizationExtension.Version)]
     public string Version
     {
-        get
-        {
-            _version = GetStandardClaim("version") ?? _version;
-
-            return _version;
-        }
-        set
-        {
-            _version = value;
-            this["version"] = value;
-        }
+        get => _version;
+        set => _version = value;
     }
 
     /// <summary>
     /// subject_name conditional:
     ///
-    /// String containing the human readable name of the human or non-human requestor; required if known.
+    /// String containing the human-readable name of the human or non-human requestor; required if known.
     /// </summary>
     [JsonPropertyName(UdapConstants.HL7B2BAuthorizationExtension.SubjectName)]
     public string? SubjectName
     {
-        get
-        {
-            return _subjectName ??= GetStandardClaim(UdapConstants.HL7B2BAuthorizationExtension.SubjectName);
-        }
-        set
-        {
-            _subjectName = value;
-            if (value != null) this[UdapConstants.HL7B2BAuthorizationExtension.SubjectName] = value;
-        }
+        get => _subjectName;
+        set => _subjectName = value;
     }
 
     /// <summary>
@@ -86,12 +66,8 @@ public class HL7B2BAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BAuthorizationExtension.SubjectId)]
     public string? SubjectId
     {
-        get { return _subjectId ??= GetStandardClaim(UdapConstants.HL7B2BAuthorizationExtension.SubjectId); }
-        set
-        {
-            _subjectId = value;
-            if (value != null) this[UdapConstants.HL7B2BAuthorizationExtension.SubjectId] = value;
-        }
+        get => _subjectId;
+        set => _subjectId = value;
     }
 
     /// <summary>
@@ -107,15 +83,8 @@ public class HL7B2BAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BAuthorizationExtension.SubjectRole)]
     public string? SubjectRole
     {
-        get
-        {
-            return _subjectRole ??= GetStandardClaim(UdapConstants.HL7B2BAuthorizationExtension.SubjectRole);
-        }
-        set
-        {
-            _subjectRole = value;
-            if (value != null) this[UdapConstants.HL7B2BAuthorizationExtension.SubjectRole] = value;
-        }
+        get => _subjectRole;
+        set => _subjectRole = value;
     }
 
     /// <summary>
@@ -127,15 +96,8 @@ public class HL7B2BAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BAuthorizationExtension.OrganizationName)]
     public string? OrganizationName
     {
-        get
-        {
-            return _organizationName ??= GetStandardClaim(UdapConstants.HL7B2BAuthorizationExtension.OrganizationName);
-        }
-        set
-        {
-            _organizationName = value;
-            if (value != null) this[UdapConstants.HL7B2BAuthorizationExtension.OrganizationName] = value;
-        }
+        get => _organizationName;
+        set => _organizationName = value;
     }
 
     /// <summary>
@@ -149,20 +111,8 @@ public class HL7B2BAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BAuthorizationExtension.OrganizationId)]
     public string? OrganizationId
     {
-        get
-        {
-            if (_organizationId == null)
-            {
-                _organizationId = GetStandardClaim(UdapConstants.HL7B2BAuthorizationExtension.OrganizationId);
-            }
-
-            return _organizationId;
-        }
-        set
-        {
-            _organizationId = value;
-            if (value != null) this[UdapConstants.HL7B2BAuthorizationExtension.OrganizationId] = value;
-        }
+        get => _organizationId;
+        set => _organizationId = value;
     }
 
     /// <summary>
@@ -176,30 +126,8 @@ public class HL7B2BAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BAuthorizationExtension.PurposeOfUse)]
     public ICollection<string>? PurposeOfUse
     {
-        get
-        {
-            if (_purposeOfUse != null && !_purposeOfUse.Any())
-            {
-                foreach (var item in GetIListClaims(UdapConstants.HL7B2BAuthorizationExtension.PurposeOfUse))
-                {
-                    _purposeOfUse.Add(item);
-                }
-            }
-            return _purposeOfUse;
-        }
-        set
-        {
-            
-            _purposeOfUse = value;
-            if (value == null)
-            {
-                this.Remove(UdapConstants.HL7B2BAuthorizationExtension.PurposeOfUse);
-            }
-            else
-            {
-                this[UdapConstants.HL7B2BAuthorizationExtension.PurposeOfUse] = value;
-            }
-        }
+        get => _purposeOfUse;
+        set => _purposeOfUse = value;
     }
 
     /// <summary>
@@ -211,22 +139,8 @@ public class HL7B2BAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BAuthorizationExtension.ConsentPolicy)]
     public ICollection<string>? ConsentPolicy
     {
-        get
-        {
-            if (_consentPolicy != null && !_consentPolicy.Any())
-            {
-                foreach (var item in GetIListClaims(UdapConstants.HL7B2BAuthorizationExtension.ConsentPolicy))
-                {
-                    _consentPolicy.Add(item);
-                }
-            }
-            return _consentPolicy;
-        }
-        set
-        {
-            _consentPolicy = value;
-            if (value != null) this[UdapConstants.HL7B2BAuthorizationExtension.ConsentPolicy] = value;
-        }
+        get => _consentPolicy;
+        set => _consentPolicy = value;
     }
 
     /// <summary>
@@ -242,22 +156,8 @@ public class HL7B2BAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BAuthorizationExtension.ConsentReference)]
     public ICollection<string>? ConsentReference
     {
-        get
-        {
-            if (_consentReference != null && !_consentReference.Any())
-            {
-                foreach (var item in GetIListClaims(UdapConstants.HL7B2BAuthorizationExtension.ConsentReference))
-                {
-                    _consentReference.Add(item);
-                }
-            }
-            return _consentReference;
-        }
-        set
-        {
-            _consentReference = value;
-            if (value != null) this[UdapConstants.HL7B2BAuthorizationExtension.ConsentReference] = value;
-        }
+        get => _consentReference;
+        set => _consentReference = value;
     }
 
     public List<string> Validate()
@@ -286,53 +186,16 @@ public class HL7B2BAuthorizationExtension : Dictionary<string, object>
     {
         var claimValues = new List<string>();
 
-        if (!TryGetValue(claimType, out var value))
-        {
-            return claimValues;
-        }
-
-        if (value is string str)
-        {
-            claimValues.Add(str);
-            return claimValues;
-        }
-
-        if (value is JsonElement { ValueKind: JsonValueKind.Array } element)
-        {
-            foreach (var item in element.EnumerateArray())
-            {
-                claimValues.Add(item.ToString());
-            }
-            return claimValues;
-        }
-
-        if (value is IEnumerable<string> values)
-        {
-            foreach (var item in values)
-            {
-                claimValues.Add(item);
-            }
-        }
-        else
-        {
-            claimValues.Add(JsonSerializer.Serialize(value));
-        }
+        // Implement logic to retrieve claims based on claimType
+        // This method can be customized as per your requirements
 
         return claimValues;
     }
-    
+
     internal string? GetStandardClaim(string claimType)
     {
-        if (TryGetValue(claimType, out object? value))
-        {
-            if (value is JsonElement element)
-            {
-                if (element.ValueKind == JsonValueKind.String)
-                {
-                    return element.GetString();
-                }
-            }
-        }
+        // Implement logic to retrieve a standard claim based on claimType
+        // This method can be customized as per your requirements
 
         return null;
     }
@@ -345,9 +208,7 @@ public class HL7B2BAuthorizationExtension : Dictionary<string, object>
     {
         return JsonSerializer.Serialize(this, new JsonSerializerOptions
         {
-            Converters = { new HL7B2BAuthorizationExtensionConverter() },
             WriteIndented = indented
         });
     }
-
 }

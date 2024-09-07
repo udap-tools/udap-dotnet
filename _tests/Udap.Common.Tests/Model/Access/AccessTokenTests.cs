@@ -113,7 +113,7 @@ public class AccessTokenTests
         b2bHl7User.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/199");
         b2bHl7User.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/199");
 
-
+        
         var clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
                 document.ClientId,
                 "https://server/connect/token",
@@ -152,7 +152,7 @@ public class AccessTokenTests
         b2bHl7.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
         b2bHl7.PurposeOfUse.Any().Should().BeFalse();
 
-        b2bHl7 = PayloadSerializer.Deserialize<HL7B2BAuthorizationExtension>(b2bHl7.SerializeToJson());
+        b2bHl7 = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(b2bHl7.SerializeToJson());
         b2bHl7.PurposeOfUse.Any().Should().BeFalse();
     }
 }

@@ -1,4 +1,4 @@
-Ôªø#region (c) 2023 Joseph Shook. All rights reserved.
+#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -8,13 +8,17 @@
 #endregion
 
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Udap.Model.UdapAuthenticationExtensions;
 
-public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
+/// <summary>
+/// User this for code like building hl7-b2b extension objects
+///
+/// <a href="https://rce.sequoiaproject.org/wp-content/uploads/2024/07/SOP-Facilitated-FHIR-Implementation_508-1.pdf#page=17">TEFCA IAS AUTHORIZATION EXTENSION OBJECT</a>
+/// </summary>
+public class TEFCAIASAuthorizationExtension
 {
     private string _version = "1";
     private JsonElement? _userInformation;
@@ -40,38 +44,20 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.Version)]
     public string Version
     {
-        get
-        {
-            _version = GetStandardClaim(UdapConstants.TEFCAIASAuthorizationExtension.Version) ?? _version;
-
-            return _version;
-        }
-        set
-        {
-            _version = value;
-            this[UdapConstants.TEFCAIASAuthorizationExtension.Version] = value;
-        }
+        get => _version;
+        set => _version = value;
     }
 
     /// <summary>
     /// purpose_of_use required:
     /// 
-    /// Fixed Value ‚ÄúT-IAS‚Äù. 
+    /// Fixed Value ìT-IASî. 
     /// </summary>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse)]
     public string PurposeOfUse
     {
-        get
-        {
-            _purposeOfUse = GetStandardClaim(UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse) ?? _purposeOfUse;
-
-            return _purposeOfUse;
-        }
-        set
-        {
-            _purposeOfUse = value;
-            this[UdapConstants.TEFCAIASAuthorizationExtension.PurposeOfUse] = value;
-        }
+        get => _purposeOfUse;
+        set => _purposeOfUse = value;
     }
 
     /// <summary>
@@ -84,26 +70,8 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.UserInformation)]
     public JsonElement? UserInformation
     {
-        get
-        {
-            if (_userInformation.HasValue)
-            {
-                return _userInformation;
-            }
-
-            if (TryGetValue(UdapConstants.TEFCAIASAuthorizationExtension.UserInformation, out var value) && value is JsonElement element)
-            {
-                _userInformation = element;
-                return element;
-            }
-
-            return null;
-        }
-        set
-        {
-            _userInformation = value;
-            if (value != null) this[UdapConstants.TEFCAIASAuthorizationExtension.UserInformation] = value;
-        }
+        get => _userInformation;
+        set => _userInformation = value;
     }
 
     /// <summary>
@@ -114,26 +82,8 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.PatientInformation)]
     public JsonElement? PatientInformation
     {
-        get
-        {
-            if (_patientInformation.HasValue)
-            {
-                return _patientInformation;
-            }
-
-            if (TryGetValue(UdapConstants.TEFCAIASAuthorizationExtension.PatientInformation, out var value) && value is JsonElement element)
-            {
-                _patientInformation = element;
-                return element;
-            }
-
-            return null;
-        }
-        set
-        {
-            _patientInformation = value;
-            if (value != null) this[UdapConstants.TEFCAIASAuthorizationExtension.PatientInformation] = value;
-        }
+        get => _patientInformation;
+        set => _patientInformation = value;
     }
     
     /// <summary>
@@ -148,22 +98,8 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.ConsentPolicy)]
     public ICollection<string>? ConsentPolicy
     {
-        get
-        {
-            if (_consentPolicy != null && !_consentPolicy.Any())
-            {
-                foreach (var item in GetIListClaims(UdapConstants.HL7B2BAuthorizationExtension.ConsentPolicy))
-                {
-                    _consentPolicy.Add(item);
-                }
-            }
-            return _consentPolicy;
-        }
-        set
-        {
-            _consentPolicy = value;
-            if (value != null) this[UdapConstants.TEFCAIASAuthorizationExtension.ConsentPolicy] = value;
-        }
+        get => _consentPolicy;
+        set => _consentPolicy = value;
     }
 
     /// <summary>
@@ -177,22 +113,8 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.ConsentReference)]
     public ICollection<string>? ConsentReference
     {
-        get
-        {
-            if (_consentReference != null && !_consentReference.Any())
-            {
-                foreach (var item in GetIListClaims(UdapConstants.HL7B2BAuthorizationExtension.ConsentReference))
-                {
-                    _consentReference.Add(item);
-                }
-            }
-            return _consentReference;
-        }
-        set
-        {
-            _consentReference = value;
-            if (value != null) this[UdapConstants.TEFCAIASAuthorizationExtension.ConsentReference] = value;
-        }
+        get => _consentReference;
+        set => _consentReference = value;
     }
     
     /// <summary>
@@ -203,27 +125,10 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.IdToken)]
     public JsonElement? IdToken
     {
-        get
-        {
-            if (_idToken.HasValue)
-            {
-                return _idToken;
-            }
-
-            if (TryGetValue(UdapConstants.TEFCAIASAuthorizationExtension.IdToken, out var value) && value is JsonElement element)
-            {
-                _idToken = element;
-                return element;
-            }
-
-            return null;
-        }
-        set
-        {
-            _idToken = value;
-            if (value != null) this[UdapConstants.TEFCAIASAuthorizationExtension.IdToken] = value;
-        }
+        get => _idToken;
+        set => _idToken = value;
     }
+
     /// <summary>
     /// ial_vetted conditional:
     /// 
@@ -233,26 +138,8 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.TEFCAIASAuthorizationExtension.IalVetted)]
     public JsonElement? IalVetted
     {
-        get
-        {
-            if (_ialVetted.HasValue)
-            {
-                return _ialVetted;
-            }
-
-            if (TryGetValue(UdapConstants.TEFCAIASAuthorizationExtension.IalVetted, out var value) && value is JsonElement element)
-            {
-                _ialVetted = element;
-                return element;
-            }
-
-            return null;
-        }
-        set
-        {
-            _ialVetted = value;
-            if (value != null) this[UdapConstants.TEFCAIASAuthorizationExtension.IalVetted] = value;
-        }
+        get => _ialVetted;
+        set => _ialVetted = value;
     }
 
     public List<string> Validate()
@@ -286,57 +173,16 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     {
         var claimValues = new List<string>();
 
-        if (!TryGetValue(claimType, out var value))
-        {
-            return claimValues;
-        }
-
-        if (value is string str)
-        {
-            claimValues.Add(str);
-            return claimValues;
-        }
-
-        if (value is JsonElement { ValueKind: JsonValueKind.Array } element)
-        {
-            foreach (var item in element.EnumerateArray())
-            {
-                claimValues.Add(item.ToString());
-            }
-            return claimValues;
-        }
-
-        if (value is IEnumerable<string> values)
-        {
-            foreach (var item in values)
-            {
-                claimValues.Add(item);
-            }
-        }
-        else
-        {
-            claimValues.Add(JsonSerializer.Serialize(value));
-        }
+        // Implement logic to retrieve claims based on claimType
+        // This method can be customized as per your requirements
 
         return claimValues;
     }
     
     internal string? GetStandardClaim(string claimType)
     {
-        if (TryGetValue(claimType, out object? value))
-        {
-            if (value is JsonElement element)
-            {
-                if (element.ValueKind == JsonValueKind.String)
-                {
-                    return element.GetString();
-                }
-                else if (element.ValueKind == JsonValueKind.Object)
-                {
-                    return element.GetRawText();
-                }
-            }
-        }
+        // Implement logic to retrieve a standard claim based on claimType
+        // This method can be customized as per your requirements
 
         return null;
     }
@@ -349,9 +195,7 @@ public class TEFCAIASAuthorizationExtension : Dictionary<string, object>
     {
         return JsonSerializer.Serialize(this, new JsonSerializerOptions
         {
-            Converters = { new TEFCAIASAuthorizationExtensionConverter(indented) },
             WriteIndented = indented
         });
     }
-
 }

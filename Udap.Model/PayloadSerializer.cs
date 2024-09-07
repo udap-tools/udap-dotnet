@@ -9,8 +9,6 @@
 
 using System.Collections.Generic;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Udap.Model.Registration;
 using Udap.Model.UdapAuthenticationExtensions;
 
 namespace Udap.Model;
@@ -35,15 +33,15 @@ public static class PayloadSerializer
             object? deserializedValue;
             if (item.Name == UdapConstants.UdapAuthorizationExtensions.Hl7B2B)
             {
-                deserializedValue = Deserialize<HL7B2BAuthorizationExtension>(item.Value.GetRawText());
+                deserializedValue = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(item.Value.GetRawText());
             }
             else if (item.Name == UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER)
             {
-                deserializedValue = Deserialize<HL7B2BUserAuthorizationExtension>(item.Value.GetRawText());
+                deserializedValue = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(item.Value.GetRawText());
             }
             else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCAIAS)
             {
-                deserializedValue = Deserialize<TEFCAIASAuthorizationExtension>(item.Value.GetRawText());
+                deserializedValue = JsonSerializer.Deserialize<TEFCAIASAuthorizationExtension>(item.Value.GetRawText());
             }
             // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCASMART)
             // {
@@ -62,54 +60,7 @@ public static class PayloadSerializer
         return claimValues;
     }
 
-    /// <summary>
-    /// Deserializer that understands the type of <see cref="JsonConverter"/> and uses the appropriate converter.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="rawJson"></param>
-    /// <returns></returns>
-    public static T? Deserialize<T>(string rawJson)
-    {
-        if (typeof(T) == typeof(UdapDynamicClientRegistrationDocument))
-        {
-            return JsonSerializer.Deserialize<T>(rawJson,
-                new JsonSerializerOptions()
-                {
-                    Converters =
-                    {
-                        new HL7B2BAuthorizationExtensionConverter(),
-                        new HL7B2BUserAuthorizationExtensionConverter()
-                    }
-                });
-        }
-        if (typeof(T) == typeof(HL7B2BAuthorizationExtension))
-        {
-            return JsonSerializer.Deserialize<T>(rawJson,
-            new JsonSerializerOptions()
-            {
-                Converters = { new HL7B2BAuthorizationExtensionConverter() }
-            });
-        }
-        else if (typeof(T) == typeof(HL7B2BUserAuthorizationExtension))
-        {
-            return JsonSerializer.Deserialize<T>(rawJson,
-            new JsonSerializerOptions()
-            {
-                Converters = { new HL7B2BUserAuthorizationExtensionConverter() }
-            });
-        }
-        else if (typeof(T) == typeof(TEFCAIASAuthorizationExtension))
-        {
-            return JsonSerializer.Deserialize<T>(rawJson,
-                new JsonSerializerOptions()
-                {
-                    Converters = { new TEFCAIASAuthorizationExtensionConverter() }
-                });
-        }
-
-        return default;
-    }
-
+   
     public static Dictionary<string, object> Deserialize(Dictionary<string, string> jsonElement)
     {
         var claimValues = new Dictionary<string, object>();
@@ -119,15 +70,15 @@ public static class PayloadSerializer
             object? deserializedValue;
             if (item.Key == UdapConstants.UdapAuthorizationExtensions.Hl7B2B)
             {
-                deserializedValue = Deserialize<HL7B2BAuthorizationExtension>(item.Value);
+                deserializedValue = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(item.Value);
             }
             else if (item.Key == UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER)
             {
-                deserializedValue = Deserialize<HL7B2BUserAuthorizationExtension>(item.Value);
+                deserializedValue = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(item.Value);
             }
             else if (item.Key == UdapConstants.UdapAuthorizationExtensions.TEFCAIAS)
             {
-                deserializedValue = Deserialize<TEFCAIASAuthorizationExtension>(item.Value);
+                deserializedValue = JsonSerializer.Deserialize<TEFCAIASAuthorizationExtension>(item.Value);
             }
             // else if (item.Name == UdapConstants.UdapAuthorizationExtensions.TEFCASMART)
             // {

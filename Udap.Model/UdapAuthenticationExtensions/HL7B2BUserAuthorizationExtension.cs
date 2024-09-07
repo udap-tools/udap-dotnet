@@ -1,4 +1,4 @@
-﻿#region (c) 2023 Joseph Shook. All rights reserved.
+#region (c) 2023 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -14,7 +14,12 @@ using System.Text.Json.Serialization;
 
 namespace Udap.Model.UdapAuthenticationExtensions;
 
-public class HL7B2BUserAuthorizationExtension : Dictionary<string, object>
+/// <summary>
+/// User this for code like building hl7-b2b-user extension objects in UIs.
+///
+/// <a href="https://build.fhir.org/ig/HL7/fhir-identity-matching-ig/patient-matching.html#consumer-match">Consumer Match</a>
+/// </summary>
+public class HL7B2BUserAuthorizationExtension
 {
     private string _version = "1";
     private JsonElement? _userPerson;
@@ -38,17 +43,8 @@ public class HL7B2BUserAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BUserAuthorizationExtension.Version)]
     public string Version
     {
-        get
-        {
-            _version = GetStandardClaim("version") ?? _version;
-
-            return _version;
-        }
-        set
-        {
-            _version = value;
-            this["version"] = value;
-        }
+        get => _version;
+        set => _version = value;
     }
 
     /// <summary>
@@ -59,29 +55,10 @@ public class HL7B2BUserAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BUserAuthorizationExtension.UserPerson)]
     public JsonElement? UserPerson
     {
-        get
-        {
-            if (_userPerson.HasValue)
-            {
-                return _userPerson;
-            }
-
-            if (TryGetValue(UdapConstants.HL7B2BUserAuthorizationExtension.UserPerson, out var value) && value is JsonElement element)
-            {
-                _userPerson = element;
-                return element;
-            }
-
-            return null;
-        }
-        set
-        {
-            _userPerson = value;
-            if (value != null) this[UdapConstants.HL7B2BUserAuthorizationExtension.UserPerson] = value;
-        }
+        get => _userPerson;
+        set => _userPerson = value;
     }
 
-    
     /// <summary>
     /// purpose_of_use required:
     /// 
@@ -93,30 +70,8 @@ public class HL7B2BUserAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BUserAuthorizationExtension.PurposeOfUse)]
     public ICollection<string>? PurposeOfUse
     {
-        get
-        {
-            if (_purposeOfUse != null && !_purposeOfUse.Any())
-            {
-                foreach (var item in GetIListClaims(UdapConstants.HL7B2BAuthorizationExtension.PurposeOfUse))
-                {
-                    _purposeOfUse.Add(item);
-                }
-            }
-            return _purposeOfUse;
-        }
-        set
-        {
-            
-            _purposeOfUse = value;
-            if (value == null)
-            {
-                this.Remove(UdapConstants.HL7B2BUserAuthorizationExtension.PurposeOfUse);
-            }
-            else
-            {
-                this[UdapConstants.HL7B2BUserAuthorizationExtension.PurposeOfUse] = value;
-            }
-        }
+        get => _purposeOfUse;
+        set => _purposeOfUse = value;
     }
 
     /// <summary>
@@ -128,22 +83,8 @@ public class HL7B2BUserAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BUserAuthorizationExtension.ConsentPolicy)]
     public ICollection<string>? ConsentPolicy
     {
-        get
-        {
-            if (_consentPolicy != null && !_consentPolicy.Any())
-            {
-                foreach (var item in GetIListClaims(UdapConstants.HL7B2BAuthorizationExtension.ConsentPolicy))
-                {
-                    _consentPolicy.Add(item);
-                }
-            }
-            return _consentPolicy;
-        }
-        set
-        {
-            _consentPolicy = value;
-            if (value != null) this[UdapConstants.HL7B2BUserAuthorizationExtension.ConsentPolicy] = value;
-        }
+        get => _consentPolicy;
+        set => _consentPolicy = value;
     }
 
     /// <summary>
@@ -159,22 +100,8 @@ public class HL7B2BUserAuthorizationExtension : Dictionary<string, object>
     [JsonPropertyName(UdapConstants.HL7B2BUserAuthorizationExtension.ConsentReference)]
     public ICollection<string>? ConsentReference
     {
-        get
-        {
-            if (_consentReference != null && !_consentReference.Any())
-            {
-                foreach (var item in GetIListClaims(UdapConstants.HL7B2BAuthorizationExtension.ConsentReference))
-                {
-                    _consentReference.Add(item);
-                }
-            }
-            return _consentReference;
-        }
-        set
-        {
-            _consentReference = value;
-            if (value != null) this[UdapConstants.HL7B2BUserAuthorizationExtension.ConsentReference] = value;
-        }
+        get => _consentReference;
+        set => _consentReference = value;
     }
 
     public List<string> Validate()
@@ -183,7 +110,7 @@ public class HL7B2BUserAuthorizationExtension : Dictionary<string, object>
 
         if (string.IsNullOrWhiteSpace(Version))
         {
-            notes.Add($"Missing required {UdapConstants.TEFCAIASAuthorizationExtension.Version}");
+            notes.Add($"Missing required {UdapConstants.HL7B2BUserAuthorizationExtension.Version}");
         }
 
         if (!UserPerson.HasValue || string.IsNullOrEmpty(UserPerson.Value.ToString()))
@@ -203,57 +130,16 @@ public class HL7B2BUserAuthorizationExtension : Dictionary<string, object>
     {
         var claimValues = new List<string>();
 
-        if (!TryGetValue(claimType, out var value))
-        {
-            return claimValues;
-        }
-
-        if (value is string str)
-        {
-            claimValues.Add(str);
-            return claimValues;
-        }
-
-        if (value is JsonElement { ValueKind: JsonValueKind.Array } element)
-        {
-            foreach (var item in element.EnumerateArray())
-            {
-                claimValues.Add(item.ToString());
-            }
-            return claimValues;
-        }
-
-        if (value is IEnumerable<string> values)
-        {
-            foreach (var item in values)
-            {
-                claimValues.Add(item);
-            }
-        }
-        else
-        {
-            claimValues.Add(JsonSerializer.Serialize(value));
-        }
+        // Implement logic to retrieve claims based on claimType
+        // This method can be customized as per your requirements
 
         return claimValues;
     }
     
     internal string? GetStandardClaim(string claimType)
     {
-        if (TryGetValue(claimType, out object? value))
-        {
-            if (value is JsonElement element)
-            {
-                if (element.ValueKind == JsonValueKind.String)
-                {
-                    return element.GetString();
-                }
-                else if (element.ValueKind == JsonValueKind.Object)
-                {
-                    return element.GetRawText();
-                }
-            }
-        }
+        // Implement logic to retrieve a standard claim based on claimType
+        // This method can be customized as per your requirements
 
         return null;
     }
@@ -266,9 +152,7 @@ public class HL7B2BUserAuthorizationExtension : Dictionary<string, object>
     {
         return JsonSerializer.Serialize(this, new JsonSerializerOptions
         {
-            Converters = { new HL7B2BUserAuthorizationExtensionConverter(indented) },
             WriteIndented = indented
         });
     }
-
 }

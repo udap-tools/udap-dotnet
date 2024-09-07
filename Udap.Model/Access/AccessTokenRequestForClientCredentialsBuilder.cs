@@ -16,6 +16,7 @@ using System.Text.Json;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
+using Udap.Model.UdapAuthenticationExtensions;
 
 namespace Udap.Model.Access;
 
@@ -75,8 +76,8 @@ public  class AccessTokenRequestForClientCredentialsBuilder
 
     public AccessTokenRequestForClientCredentialsBuilder WithExtension<T>(string key, T value) where T : class
     {
-        _extensions[key] = value;
-
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(value));
+        _extensions[key] = jsonElement;
         return this;
     }
 

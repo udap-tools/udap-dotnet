@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
@@ -201,13 +202,22 @@ public class UdapDcrBuilderForClientCredentials
 
     private readonly Dictionary<string, object> _extensions = new Dictionary<string, object>();
 
+    /// <summary>
+    /// Add Typed extension object
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
     public UdapDcrBuilderForClientCredentials WithExtension<T>(string key, T value) where T : class
     {
-        _extensions[key] = value;
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(value));
+        _extensions[key] = jsonElement;
         _document.Extensions = _extensions;
-
         return this;
     }
+
+
     public UdapDcrBuilderForClientCredentials WithCertificate(X509Certificate2 certificate)
     {
         _certificate = certificate;

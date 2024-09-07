@@ -80,7 +80,7 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         document.ClientId = "MyNewClientId"; // Simulate successful registration
         var serializeDocument = JsonSerializer.Serialize(document);
-        var documentDeserialize = PayloadSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
+        var documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
 
         documentDeserialize!.ClientId.Should().Be(document.ClientId);
         documentDeserialize.Should().NotBeNullOrEmpty();
@@ -103,7 +103,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         document.Contacts = null;
         document.Extensions = null;
         serializeDocument = JsonSerializer.Serialize(document);
-        documentDeserialize = PayloadSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
+        documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
         documentDeserialize!.Contacts.Should().BeEmpty();
         documentDeserialize.Extensions.Should().BeEmpty();
 
@@ -319,7 +319,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         hl7b2b.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
         hl7b2b.PurposeOfUse.Any().Should().BeFalse();
 
-        hl7b2b = PayloadSerializer.Deserialize<HL7B2BAuthorizationExtension>(hl7b2b.SerializeToJson());
+        hl7b2b = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(hl7b2b.SerializeToJson());
         hl7b2b.PurposeOfUse.Any().Should().BeFalse();
     }
 
@@ -358,7 +358,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         serializeDocument.Should().Contain("https://udaped.fhirlabs.net/Policy/Consent/99");
         serializeDocument.Should().Contain("https://fhirlabs.net/fhir/r4/Consent/99");
 
-        hl7b2bUser = PayloadSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(serializeDocument);
+        hl7b2bUser = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(serializeDocument);
 
         hl7b2bUser.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
         hl7b2bUser.PurposeOfUse.Any().Should().BeFalse();
@@ -367,7 +367,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         hl7b2bUser.ConsentPolicy?.Any().Should().BeFalse();
 
         hl7b2bUser.SerializeToJson().Should().NotContain("https://udaped.fhirlabs.net/Policy/Consent/99");
-        hl7b2bUser = PayloadSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(hl7b2bUser.SerializeToJson());
+        hl7b2bUser = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(hl7b2bUser.SerializeToJson());
         hl7b2bUser?.ConsentPolicy?.Any().Should().BeFalse();
     }
 
@@ -431,7 +431,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         serializeDocument.Should().Contain("https://udaped.fhirlabs.net/Policy/Consent/99");
         serializeDocument.Should().Contain("https://fhirlabs.net/fhir/r4/Consent/99");
 
-        tefcaIas = PayloadSerializer.Deserialize<TEFCAIASAuthorizationExtension>(serializeDocument);
+        tefcaIas = JsonSerializer.Deserialize<TEFCAIASAuthorizationExtension>(serializeDocument);
 
         tefcaIas.PurposeOfUse.Should().Be("T-IAS");
 
@@ -439,7 +439,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         tefcaIas.ConsentPolicy?.Any().Should().BeFalse();
 
         tefcaIas.SerializeToJson().Should().NotContain("https://udaped.fhirlabs.net/Policy/Consent/99");
-        tefcaIas = PayloadSerializer.Deserialize<TEFCAIASAuthorizationExtension>(tefcaIas.SerializeToJson());
+        tefcaIas = JsonSerializer.Deserialize<TEFCAIASAuthorizationExtension>(tefcaIas.SerializeToJson());
         tefcaIas.ConsentPolicy?.Any().Should().BeFalse();
 
         tefcaIas.IalVetted.Value.GetRawText().Should().BeEquivalentTo(identityTokenElement.GetRawText()
@@ -487,7 +487,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         var serializeDocument = document.SerializeToJson(true);
         _testOutputHelper.WriteLine(serializeDocument);
 
-        document = PayloadSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
+        document = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
 
         var b2BAuthExtension = document?.Extensions?["hl7-b2b"] as HL7B2BAuthorizationExtension;
         b2BAuthExtension?.PurposeOfUse.Should().Contain("urn:oid:2.16.840.1.113883.5.8#TREAT");
@@ -541,8 +541,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             ConsentReference = consentReference,
             ConsentPolicy = consentPolicy, // client supplied
         };
-
-        hl7b2b.Add("NewClaim", "Testing 123");
+        
 
         JsonElement userPersonElement;
         using (var jasonDocument = JsonDocument.Parse(userPerson))
@@ -559,7 +558,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         };
 
         // need to serialize to compare.
-        var hl7b2bSerialized = JsonSerializer.Serialize(hl7b2b);
+        var hl7b2bSerialized = hl7b2b.SerializeToJson();
         var hl7b2bUserSerialized = b2bUserHl7.SerializeToJson();
 
         builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7b2b);
@@ -573,13 +572,14 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         extensions.Should().NotBeNull();
         extensions!.Count.Should().Be(2);
-        extensions["hl7-b2b"].Should().Be(hl7b2b);
-        extensions["hl7-b2b-user"].Should().Be(b2bUserHl7);
+       
 
-        var serializeDocument = JsonSerializer.Serialize(document, new JsonSerializerOptions() 
-            { Converters = { new HL7B2BUserAuthorizationExtensionConverter() }, WriteIndented = true});
+        var serializeDocument = JsonSerializer.Serialize(document, new JsonSerializerOptions()
+        {
+            WriteIndented = true
+        });
 
-        var documentDeserialize = PayloadSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
+        var documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
 
         extensions = documentDeserialize?.Extensions;
 
@@ -595,7 +595,7 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         ((HL7B2BUserAuthorizationExtension)extensions["hl7-b2b-user"]).SerializeToJson().Should().BeEquivalentTo(hl7b2bUserSerialized);
 
-        var extensionSerialized = PayloadSerializer.Deserialize<HL7B2BAuthorizationExtension>(((HL7B2BAuthorizationExtension)extensions["hl7-b2b"]).SerializeToJson());
+        var extensionSerialized = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(((HL7B2BAuthorizationExtension)extensions["hl7-b2b"]).SerializeToJson());
         extensionSerialized!.Version.Should().Be("1");
         extensionSerialized.SubjectId.Should().Be(subjectId);
         extensionSerialized.SubjectName.Should().Be(subjectName);
@@ -606,9 +606,6 @@ public class UdapDynamicClientRegistrationDocumentTest
         extensionSerialized.PurposeOfUse.Should().ContainInOrder(purposeOfUse);
         extensionSerialized.ConsentPolicy.Should().ContainInOrder(consentPolicy);
 
-        extensionSerialized["NewClaim"].ToString().Should().Be("Testing 123");
-        extensionSerialized.Should().NotContainKey("MissingClaim");
-
         hl7b2b = new HL7B2BAuthorizationExtension()
         {
             SubjectId = subjectId
@@ -618,8 +615,8 @@ public class UdapDynamicClientRegistrationDocumentTest
         builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7b2b);
         document = builder.Build();
         serializeDocument = JsonSerializer.Serialize(document);
-        documentDeserialize = PayloadSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
-        extensionSerialized = PayloadSerializer.Deserialize<HL7B2BAuthorizationExtension>(((HL7B2BAuthorizationExtension)documentDeserialize!.Extensions!["hl7-b2b"]).SerializeToJson());
+        documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
+        extensionSerialized = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(((HL7B2BAuthorizationExtension)documentDeserialize!.Extensions!["hl7-b2b"]).SerializeToJson());
         extensionSerialized!.SubjectName.Should().BeNull();
         extensionSerialized.ConsentReference.Should().BeEmpty();
 
@@ -743,7 +740,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         document.SoftwareStatement = signedDocument;
         document.ClientId = "MyNewClientId"; // Simulate successful registration
         var serializeDocument = JsonSerializer.Serialize(document);
-        var documentDeserialize = PayloadSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
+        var documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
 
         documentDeserialize!.ClientId.Should().Be(document.ClientId);
         documentDeserialize.Should().NotBeNullOrEmpty();
@@ -770,7 +767,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         document.GrantTypes = null;
         document.RedirectUris = null;
         serializeDocument = JsonSerializer.Serialize(document);
-        documentDeserialize = PayloadSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
+        documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
         documentDeserialize!.Contacts.Should().BeEmpty();
         documentDeserialize.ResponseTypes.Should().BeEmpty();
         documentDeserialize.GrantTypes.Should().BeEmpty();

@@ -17,6 +17,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Udap.Common;
+using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Common.Metadata;
 using Udap.Metadata.Server;
@@ -31,22 +35,13 @@ public static class ServiceCollectionExtensions
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        // var udapMetadataOptions = new UdapMetadataOptions();
-        // configuration.GetSection("UdapMetadataOptions").Bind(udapMetadataOptions);
+
+        services.TryAddSingleton<IPrivateCertificateStore>(sp =>
+            new IssuedCertificateStore(
+                sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
+                sp.GetRequiredService<ILogger<IssuedCertificateStore>>()));
 
         services.Configure<UdapMetadataOptions>(configuration.GetSection("UdapMetadataOptions"));
-        
-
-        //TODO: this could use some DI work...
-        // var udapMetadata = new UdapMetadata(
-        //     udapMetadataOptions!
-            // new List<string>
-            // {
-            //     "openid", "patient/*.read", "user/*.read", "system/*.read", "patient/*.rs", "user/*.rs", "system/*.rs"
-            // }
-            // );
-
-        // services.AddSingleton<UdapMetaDataEndpoint>(udapMetadata);
         services.TryAddScoped<UdapMetaDataBuilder>();
         services.AddScoped<UdapMetaDataEndpoint>();
         

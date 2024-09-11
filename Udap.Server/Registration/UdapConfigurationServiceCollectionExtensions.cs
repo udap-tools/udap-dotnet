@@ -51,11 +51,12 @@ public static class UdapConfigurationServiceCollectionExtensions
     }
 
 
-    public static IUdapServiceBuilder AddUdapSigningCredentials(this IUdapServiceBuilder builder)
+    public static IUdapServiceBuilder AddUdapSigningCredentials<TUdapMetadataOptions>(this IUdapServiceBuilder builder) 
+        where TUdapMetadataOptions : UdapMetadataOptions
     {
         builder.Services.AddSingleton<IEnumerable<ISigningCredentialStore>>(resolver =>
         {
-            var udapMetadataOptions = resolver.GetRequiredService<IOptionsMonitor<UdapMetadataOptions>>().CurrentValue;
+            var udapMetadataOptions = resolver.GetRequiredService<IOptionsMonitor<TUdapMetadataOptions>>().CurrentValue;
             var signingCredentialStore = new List<ISigningCredentialStore>();
             var certStore = resolver.GetRequiredService<IPrivateCertificateStore>();
             certStore.Resolve();
@@ -77,7 +78,7 @@ public static class UdapConfigurationServiceCollectionExtensions
 
         builder.Services.AddSingleton<IEnumerable<IValidationKeysStore>>(resolver =>
         {
-            var udapMetadataOptions = resolver.GetRequiredService<IOptionsMonitor<UdapMetadataOptions>>().CurrentValue;
+            var udapMetadataOptions = resolver.GetRequiredService<IOptionsMonitor<TUdapMetadataOptions>>().CurrentValue;
             var validationKeyStore = new List<IValidationKeysStore>();
             var certStore = resolver.GetRequiredService<IPrivateCertificateStore>();
             certStore.Resolve();

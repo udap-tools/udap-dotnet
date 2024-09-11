@@ -22,17 +22,18 @@ using Udap.Util.Extensions;
 
 namespace Udap.Common.Metadata;
 
-public class UdapMetaDataBuilder
+public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata> 
+    where TUdapMetadataOptions : UdapMetadataOptions
+    where TUdapMetadata : UdapMetadata
 {
-    private readonly IOptionsMonitor<UdapMetadataOptions> _optionsMonitor;
+    private readonly IOptionsMonitor<TUdapMetadataOptions> _optionsMonitor;
     private readonly IPrivateCertificateStore _certificateStore;
-    private readonly ILogger<UdapMetaDataBuilder> _logger;
-
+    private readonly ILogger<UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>> _logger;
 
     public UdapMetaDataBuilder(
-        IOptionsMonitor<UdapMetadataOptions> optionsMonitor,
+        IOptionsMonitor<TUdapMetadataOptions> optionsMonitor,
         IPrivateCertificateStore certificateStore,
-        ILogger<UdapMetaDataBuilder> logger)
+        ILogger<UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>> logger)
     {
         _optionsMonitor = optionsMonitor;
         _certificateStore = certificateStore;
@@ -46,7 +47,7 @@ public class UdapMetaDataBuilder
     public ICollection<string> GetCommunities()
     {
         var options = _optionsMonitor.CurrentValue;
-        var udapMetaData = new UdapMetadata(options);
+        var udapMetaData = (TUdapMetadata)Activator.CreateInstance(typeof(TUdapMetadata), options)!;
 
         return udapMetaData.Communities();
     }
@@ -59,7 +60,7 @@ public class UdapMetaDataBuilder
     public string GetCommunitiesAsHtml(string path)
     {
         var options = _optionsMonitor.CurrentValue;
-        var udapMetaData = new UdapMetadata(options);
+        var udapMetaData = (TUdapMetadata)Activator.CreateInstance(typeof(TUdapMetadata), options)!;
 
         return udapMetaData.CommunitiesAsHtml(path);
     }
@@ -73,7 +74,7 @@ public class UdapMetaDataBuilder
     public async Task<UdapMetadata?> SignMetaData(string baseUrl, string? community = null, CancellationToken token = default)
     {
         var options = _optionsMonitor.CurrentValue;
-        var udapMetaData = new UdapMetadata(options);
+        var udapMetaData = (TUdapMetadata)Activator.CreateInstance(typeof(TUdapMetadata), options)!;
 
         var udapMetadataConfig = udapMetaData.GetUdapMetadataConfig(community);
 

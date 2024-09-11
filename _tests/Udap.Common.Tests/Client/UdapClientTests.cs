@@ -362,7 +362,10 @@ public class UdapClientTests
         //
         // MetadataBuilder helps build signed UDAP metadata using the previous metadata and IPrivateCertificateStore implementation
         //
-        var metaDataBuilder = new UdapMetaDataBuilder(udapMetadataOptionsMock, privateCertificateStore, _serviceProvider.GetRequiredService<ILogger<UdapMetaDataBuilder>>());
+        var metaDataBuilder = new UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>(
+            udapMetadataOptionsMock, 
+            privateCertificateStore, 
+            _serviceProvider.GetRequiredService<ILogger<UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>>>());
         var signedMetadata = await metaDataBuilder.SignMetaData(baseUrl, community);
 
         //

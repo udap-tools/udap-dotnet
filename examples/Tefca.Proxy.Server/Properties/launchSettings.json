@@ -17,7 +17,8 @@
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}/index.html",
       "environmentVariables": {
         "ASPNETCORE_URLS": "http://*:8080;https://*:443",
-        "GCPDeploy": "true"
+        "GCPDeploy": "true",
+        "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "publishAllPorts": true,
       "useSSL": true

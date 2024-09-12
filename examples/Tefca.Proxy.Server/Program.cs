@@ -44,7 +44,7 @@ builder.Services.AddSerilog((services, lc) => lc
         theme: TemplateTheme.Code)));
 
 // Mount Cloud Secrets
-builder.Configuration.AddJsonFile("/secret/udapproxyserverappsettings", true, false);
+builder.Configuration.AddJsonFile("/secret/tefcaproxyserverappsettings", true, false);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

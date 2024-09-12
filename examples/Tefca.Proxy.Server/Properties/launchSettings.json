@@ -9,7 +9,7 @@
         "AccessToken": "your bearer token"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7075;https://proxy.fhirlabs.net:7075"
+      "applicationUrl": "https://localhost:7075"
     },
     "Container (Dockerfile)": {
       "commandName": "Docker",

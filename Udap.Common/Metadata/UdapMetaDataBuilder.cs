@@ -80,7 +80,7 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
         if (udapMetadataConfig == null)
         {
-            _logger.LogWarning($"Missing metadata for community: {System.Security.SecurityElement.Escape(community)}");
+            _logger.LogWarning($"Missing metadata for community: {System.Net.WebUtility.UrlEncode(community)}");
             return null;
         }
 
@@ -102,7 +102,7 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
         if (certificate == null)
         {
-            _logger.LogWarning($"Missing default community certificate: {System.Security.SecurityElement.Escape(community)}");
+            _logger.LogWarning($"Missing default community certificate: {System.Net.WebUtility.UrlEncode(community)}");
             return null;
         }
 

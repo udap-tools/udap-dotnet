@@ -9,8 +9,10 @@
 
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Web;
 using IdentityModel;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Certificates;
 using Udap.Model;
@@ -20,19 +22,20 @@ using Udap.Util.Extensions;
 
 namespace Udap.Common.Metadata;
 
-public class UdapMetaDataBuilder
+public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata> 
+    where TUdapMetadataOptions : UdapMetadataOptions
+    where TUdapMetadata : UdapMetadata
 {
-    private UdapMetadata _udapMetadata;
+    private readonly IOptionsMonitor<TUdapMetadataOptions> _optionsMonitor;
     private readonly IPrivateCertificateStore _certificateStore;
-    private readonly ILogger<UdapMetaDataBuilder> _logger;
-
+    private readonly ILogger<UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>> _logger;
 
     public UdapMetaDataBuilder(
-        UdapMetadata udapMetadata,
+        IOptionsMonitor<TUdapMetadataOptions> optionsMonitor,
         IPrivateCertificateStore certificateStore,
-        ILogger<UdapMetaDataBuilder> logger)
+        ILogger<UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>> logger)
     {
-        _udapMetadata = udapMetadata;
+        _optionsMonitor = optionsMonitor;
         _certificateStore = certificateStore;
         _logger = logger;
     }
@@ -43,7 +46,10 @@ public class UdapMetaDataBuilder
     /// <returns></returns>
     public ICollection<string> GetCommunities()
     {
-        return _udapMetadata.Communities();
+        var options = _optionsMonitor.CurrentValue;
+        var udapMetaData = (TUdapMetadata)Activator.CreateInstance(typeof(TUdapMetadata), options)!;
+
+        return udapMetaData.Communities();
     }
 
     /// <summary>
@@ -53,7 +59,10 @@ public class UdapMetaDataBuilder
     /// <returns></returns>
     public string GetCommunitiesAsHtml(string path)
     {
-        return _udapMetadata.CommunitiesAsHtml(path);
+        var options = _optionsMonitor.CurrentValue;
+        var udapMetaData = (TUdapMetadata)Activator.CreateInstance(typeof(TUdapMetadata), options)!;
+
+        return udapMetaData.CommunitiesAsHtml(path);
     }
 
     /// <summary>
@@ -64,12 +73,14 @@ public class UdapMetaDataBuilder
     /// <exception cref="System.NotImplementedException"></exception>
     public async Task<UdapMetadata?> SignMetaData(string baseUrl, string? community = null, CancellationToken token = default)
     {
-        var udapMetaData = _udapMetadata.Clone();
+        var options = _optionsMonitor.CurrentValue;
+        var udapMetaData = (TUdapMetadata)Activator.CreateInstance(typeof(TUdapMetadata), options)!;
+
         var udapMetadataConfig = udapMetaData.GetUdapMetadataConfig(community);
 
         if (udapMetadataConfig == null)
         {
-            _logger.LogWarning($"Missing metadata for community: {System.Web.HttpUtility.UrlEncode(community)}");
+            _logger.LogWarning($"Missing metadata for community: {System.Net.WebUtility.UrlEncode(community)}");
             return null;
         }
 
@@ -77,12 +88,12 @@ public class UdapMetaDataBuilder
         udapMetaData.TokenEndpoint = udapMetadataConfig.SignedMetadataConfig.TokenEndpoint;
         udapMetaData.RegistrationEndpoint = udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint;
 
-        if (Enumerable.Any<string>(udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms))
+        if (udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms.Any())
         {
             udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms;
         }
 
-        if (Enumerable.Any<string>(udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms))
+        if (udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms.Any())
         {
             udapMetaData.TokenEndpointAuthSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms;
         }
@@ -91,7 +102,7 @@ public class UdapMetaDataBuilder
 
         if (certificate == null)
         {
-            _logger.LogWarning($"Missing default community certificate: {System.Web.HttpUtility.UrlEncode(community)}");
+            _logger.LogWarning($"Missing default community certificate: {System.Net.WebUtility.UrlEncode(community)}");
             return null;
         }
 
@@ -114,15 +125,15 @@ public class UdapMetaDataBuilder
 
         var builder = SignedSoftwareStatementBuilder<ISoftwareStatementSerializer>.Create(certificate, jwtPayload);
 
-        if (Enumerable.First<string>(udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported).IsECDSA())
+        if (udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.First().IsECDSA())
         {
-            udapMetaData.SignedMetadata = builder.BuildECDSA(Enumerable.First<string>(udapMetaData.
-                    RegistrationEndpointJwtSigningAlgValuesSupported));
+            udapMetaData.SignedMetadata = builder.BuildECDSA(udapMetaData.
+                RegistrationEndpointJwtSigningAlgValuesSupported.First());
         }
         else
         {
-            udapMetaData.SignedMetadata = builder.Build(Enumerable.First<string>(udapMetaData.
-                    RegistrationEndpointJwtSigningAlgValuesSupported));
+            udapMetaData.SignedMetadata = builder.Build(udapMetaData.
+                RegistrationEndpointJwtSigningAlgValuesSupported.First());
         }
 
         return udapMetaData;

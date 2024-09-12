@@ -189,7 +189,7 @@ public class ClientCredentialsUdapModeTests
 
         regDocumentResult.GetError().Should().BeNull();
 
-        var b2bHl7 = new B2BAuthorizationExtension()
+        var b2bHl7 = new HL7B2BAuthorizationExtension()
         {
             SubjectId = "urn:oid:2.16.840.1.113883.4.6#1234567890",
             OrganizationId = new Uri("https://fhirlabs.net/fhir/r4").OriginalString,

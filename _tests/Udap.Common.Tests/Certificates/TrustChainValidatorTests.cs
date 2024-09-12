@@ -23,7 +23,6 @@ using Udap.Common.Metadata;
 using Udap.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
-using static IdentityModel.ClaimComparer;
 
 namespace Udap.Common.Tests.Certificates;
 public class TrustChainValidatorTests
@@ -46,8 +45,11 @@ public class TrustChainValidatorTests
     {
         var udapMetadataOptions = new UdapMetadataOptions();
         _configuration.GetSection(Constants.UDAP_METADATA_OPTIONS).Bind(udapMetadataOptions);
-        var unSignedMetadata = new UdapMetadata(udapMetadataOptions);
+        var udapMetadataOptionsMock = Substitute.For<IOptionsMonitor<UdapMetadataOptions>>();
+        udapMetadataOptionsMock.CurrentValue.Returns(udapMetadataOptions);
 
+        _configuration.GetSection(Constants.UDAP_METADATA_OPTIONS).Bind(udapMetadataOptions);
+        
         var udapFileCertStoreManifest = new UdapFileCertStoreManifest();
         _configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST).Bind(udapFileCertStoreManifest);
 
@@ -55,7 +57,10 @@ public class TrustChainValidatorTests
         udapFileCertStoreManifestOptions.CurrentValue.Returns(udapFileCertStoreManifest);
 
         var privateCertificateStore = new IssuedCertificateStore(udapFileCertStoreManifestOptions, Substitute.For<ILogger<IssuedCertificateStore>>());
-        var metaDataBuilder = new UdapMetaDataBuilder(unSignedMetadata, privateCertificateStore, Substitute.For<ILogger<UdapMetaDataBuilder>>());
+        var metaDataBuilder = new UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>(
+            udapMetadataOptionsMock, 
+            privateCertificateStore, 
+            Substitute.For<ILogger<UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>>>());
         var metadata = await metaDataBuilder.SignMetaData("https://fhirlabs.net/fhir/r4");
 
         // var metadata = disco.Json?.Deserialize<UdapMetadata>();
@@ -99,7 +104,10 @@ public class TrustChainValidatorTests
     {
         var udapMetadataOptions = new UdapMetadataOptions();
         _configuration.GetSection(Constants.UDAP_METADATA_OPTIONS).Bind(udapMetadataOptions);
-        var unSignedMetadata = new UdapMetadata(udapMetadataOptions);
+        var udapMetadataOptionsMock = Substitute.For<IOptionsMonitor<UdapMetadataOptions>>();
+        udapMetadataOptionsMock.CurrentValue.Returns(udapMetadataOptions);
+
+        _configuration.GetSection(Constants.UDAP_METADATA_OPTIONS).Bind(udapMetadataOptions);
 
         var udapFileCertStoreManifest = new UdapFileCertStoreManifest();
         _configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST).Bind(udapFileCertStoreManifest);
@@ -108,7 +116,10 @@ public class TrustChainValidatorTests
         udapFileCertStoreManifestOptions.CurrentValue.Returns(udapFileCertStoreManifest);
 
         var privateCertificateStore = new IssuedCertificateStore(udapFileCertStoreManifestOptions, Substitute.For<ILogger<IssuedCertificateStore>>());
-        var metaDataBuilder = new UdapMetaDataBuilder(unSignedMetadata, privateCertificateStore, Substitute.For<ILogger<UdapMetaDataBuilder>>());
+        var metaDataBuilder = new UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>(
+            udapMetadataOptionsMock, 
+            privateCertificateStore, 
+            Substitute.For<ILogger<UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>>>());
         var metadata = await metaDataBuilder.SignMetaData("https://fhirlabs.net/fhir/r4", "http://MissingCertificate");
 
         metadata.Should().BeNull();
@@ -117,9 +128,9 @@ public class TrustChainValidatorTests
     [Fact]
     public async Task UnkownCommunityTest()
     {
-        var udapMetadataOptions = new UdapMetadataOptions();
+        var udapMetadataOptions = Substitute.For<IOptionsMonitor<UdapMetadataOptions>>();
+        udapMetadataOptions.CurrentValue.Returns(new UdapMetadataOptions());
         _configuration.GetSection(Constants.UDAP_METADATA_OPTIONS).Bind(udapMetadataOptions);
-        var unSignedMetadata = new UdapMetadata(udapMetadataOptions);
 
         var udapFileCertStoreManifest = new UdapFileCertStoreManifest();
         _configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST).Bind(udapFileCertStoreManifest);
@@ -128,7 +139,10 @@ public class TrustChainValidatorTests
         udapFileCertStoreManifestOptions.CurrentValue.Returns(udapFileCertStoreManifest);
 
         var privateCertificateStore = new IssuedCertificateStore(udapFileCertStoreManifestOptions, Substitute.For<ILogger<IssuedCertificateStore>>());
-        var metaDataBuilder = new UdapMetaDataBuilder(unSignedMetadata, privateCertificateStore, Substitute.For<ILogger<UdapMetaDataBuilder>>());
+        var metaDataBuilder = new UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>(
+            udapMetadataOptions, 
+            privateCertificateStore, 
+            Substitute.For<ILogger<UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>>>());
         var metadata = await metaDataBuilder.SignMetaData("https://fhirlabs.net/fhir/r4", "udap://unknown");
 
         metadata.Should().BeNull();
@@ -139,7 +153,8 @@ public class TrustChainValidatorTests
     {
         var udapMetadataOptions = new UdapMetadataOptions();
         _configuration.GetSection(Constants.UDAP_METADATA_OPTIONS).Bind(udapMetadataOptions);
-        var unSignedMetadata = new UdapMetadata(udapMetadataOptions);
+        var udapMetadataOptionsMock = Substitute.For<IOptionsMonitor<UdapMetadataOptions>>();
+        udapMetadataOptionsMock.CurrentValue.Returns(udapMetadataOptions);
 
         var udapFileCertStoreManifest = new UdapFileCertStoreManifest();
         _configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST).Bind(udapFileCertStoreManifest);
@@ -148,7 +163,10 @@ public class TrustChainValidatorTests
         udapFileCertStoreManifestOptions.CurrentValue.Returns(udapFileCertStoreManifest);
 
         var privateCertificateStore = new IssuedCertificateStore(udapFileCertStoreManifestOptions, Substitute.For<ILogger<IssuedCertificateStore>>());
-        var metaDataBuilder = new UdapMetaDataBuilder(unSignedMetadata, privateCertificateStore, Substitute.For<ILogger<UdapMetaDataBuilder>>());
+        var metaDataBuilder = new UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>(
+            udapMetadataOptionsMock, 
+            privateCertificateStore, 
+            Substitute.For<ILogger<UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>>>());
         var communities = metaDataBuilder.GetCommunities();
 
         communities.Count.Should().Be(6);

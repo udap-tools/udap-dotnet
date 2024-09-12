@@ -332,7 +332,11 @@ public class UdapClientTests
         //
         var udapMetadataOptions = new UdapMetadataOptions();
         _configuration.GetSection(Constants.UDAP_METADATA_OPTIONS).Bind(udapMetadataOptions);
-        var unSignedMetadata = new UdapMetadata(udapMetadataOptions);
+        var udapMetadataOptionsMock = Substitute.For<IOptionsMonitor<UdapMetadataOptions>>();
+        udapMetadataOptionsMock.CurrentValue.Returns(udapMetadataOptions);
+
+        
+        var unSignedMetadata = new UdapMetadata(udapMetadataOptionsMock.CurrentValue);
 
         // TODO:  Make scope configuration first class in DI
         unSignedMetadata.ScopesSupported = new List<string>
@@ -358,7 +362,10 @@ public class UdapClientTests
         //
         // MetadataBuilder helps build signed UDAP metadata using the previous metadata and IPrivateCertificateStore implementation
         //
-        var metaDataBuilder = new UdapMetaDataBuilder(unSignedMetadata, privateCertificateStore, _serviceProvider.GetRequiredService<ILogger<UdapMetaDataBuilder>>());
+        var metaDataBuilder = new UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>(
+            udapMetadataOptionsMock, 
+            privateCertificateStore, 
+            _serviceProvider.GetRequiredService<ILogger<UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>>>());
         var signedMetadata = await metaDataBuilder.SignMetaData(baseUrl, community);
 
         //

@@ -9,6 +9,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
@@ -69,24 +70,14 @@ public  class AccessTokenRequestForClientCredentialsBuilder
         _scope = scope;
         return this;
     }
-
-    // private string BuildHl7B2BExtensions()
-    // {
-    //     return "{\"version\": \"1\", \"subject_name\": \"todo.  more work to do here\"}";
-    // }
-
-    private Dictionary<string, B2BAuthorizationExtension>? _extensions;
     
-    public AccessTokenRequestForClientCredentialsBuilder WithExtension(string key, B2BAuthorizationExtension value)
-    {
-        //TODO: Hack for connect-a-thon.
-        if (_extensions == null)
-        {
-            _extensions = new Dictionary<string, B2BAuthorizationExtension>();
-        }
+    private Dictionary<string, object> _extensions = new Dictionary<string, object>();
+    
 
-        _extensions[key] = value;
-        
+    public AccessTokenRequestForClientCredentialsBuilder WithExtension<T>(string key, T value) where T : class
+    {
+        var jsonElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(value));
+        _extensions[key] = jsonElement;
         return this;
     }
 
@@ -116,25 +107,22 @@ public  class AccessTokenRequestForClientCredentialsBuilder
 
     private string BuildClientAssertion(string algorithm)
     {
-        JwtPayLoadExtension jwtPayload;
-        
-        //HL7 FHIR IG profile
-        jwtPayload = new JwtPayLoadExtension(
+        var jwtPayload =
+            //HL7 FHIR IG profile
+            new JwtPayLoadExtension(
             _clientId, //TODO:: Let user pick the subject alt name.  Create will need extra param.
-            _tokenEndoint, //The FHIR Authorization Server's token endpoint URL
+            _tokenEndoint,
             _claims,
             _now,
             _now.AddMinutes(5)
         );
 
-        if (_extensions != null)
+        if (_extensions.Any())
         {
             var payload = jwtPayload as Dictionary<string, object>;
             payload.Add(UdapConstants.JwtClaimTypes.Extensions, _extensions);
         }
         
-        Console.WriteLine(JsonSerializer.Serialize(jwtPayload, new JsonSerializerOptions{WriteIndented = true}));
-
         return SignedSoftwareStatementBuilder<JwtPayLoadExtension>
                 .Create(_certificate, jwtPayload)
                 .Build(algorithm);

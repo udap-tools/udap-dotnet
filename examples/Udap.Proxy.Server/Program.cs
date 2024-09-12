@@ -18,6 +18,7 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Templates;
 using Serilog.Templates.Themes;
+using Udap.Common;
 using Udap.Proxy.Server;
 using Udap.Smart.Model;
 using Udap.Util.Extensions;
@@ -48,6 +49,8 @@ builder.Configuration.AddJsonFile("/secret/udapproxyserverappsettings", true, fa
 builder.Services.AddControllersWithViews();
 
 builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSection("SmartMetadata"));
+builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
+
 builder.Services.AddSmartMetadata();
 builder.Services.AddUdapMetadataServer(builder.Configuration);
 builder.Services.AddFusionCache()

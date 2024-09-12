@@ -163,6 +163,9 @@ public static class UdapConstants
         /// See <a href="http://hl7.org/fhir/us/udap-security/b2b.html#b2b-authorization-extension-object">B2B Authorization Extension Object</a>
         /// </summary>
         public const string Hl7B2B = "hl7-b2b";
+        public const string Hl7B2BUSER = "hl7-b2b-user";
+        public const string TEFCAIAS = "tefca-ias";
+        public const string TEFCASMART = "tefca_smart";
     }
 
     /// <summary>
@@ -170,7 +173,7 @@ public static class UdapConstants
     /// Key Name: "hl7-b2b"
     /// See <a href="http://hl7.org/fhir/us/udap-security/b2b.html#b2b-authorization-extension-object">B2B Authorization Extension Object</a>
     /// </summary>
-    public static class B2BAuthorizationExtension
+    public static class HL7B2BAuthorizationExtension
     {
         public const string Version = "version";
         public const string SubjectName = "subject_name";
@@ -181,6 +184,42 @@ public static class UdapConstants
         public const string PurposeOfUse = "purpose_of_use";
         public const string ConsentPolicy = "consent_policy";
         public const string ConsentReference = "consent_reference";
+    }
+
+    /// <summary>
+    /// B2B with User Authorization Extension Object
+    /// Key Name: "hl7-b2b"
+    /// See <a href="https://build.fhir.org/ig/HL7/fhir-identity-matching-ig/patient-matching.html#consumer-match">B2B with User Authorization Extension Object</a>
+    /// </summary>
+    public static class HL7B2BUserAuthorizationExtension
+    {
+        public const string Version = "version";
+        public const string UserPerson = "user_person";
+        public const string PurposeOfUse = "purpose_of_use";
+        public const string ConsentPolicy = "consent_policy";
+        public const string ConsentReference = "consent_reference";
+    }
+    
+    public static class TEFCAIASAuthorizationExtension
+    {
+        public const string Version = "version";
+        public const string PurposeOfUse = "purpose_of_use";
+        public const string PurposeOfUseCode = "T-IAS";
+        public const string UserInformation = "user_information";
+        public const string PatientInformation = "patient_information";
+        public const string IalVetted = "ial_vetted";
+        public const string ConsentPolicy = "consent_policy";
+        public const string ConsentReference = "consent_reference";
+        public const string IdToken = "id_token";
+    }
+
+    public static class TEFCASMARTAuthorizationExtension
+    {
+        public const string Version = "version";
+        public const string PurposeOfUse = "purpose_of_use";
+        public const string ConsentPolicy = "consent_policy";
+        public const string ConsentReference = "consent_reference";
+        public const string IdToken = "id_token";
     }
 
     public static class JwtClaimTypes

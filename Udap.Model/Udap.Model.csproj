@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Hl7.Fhir.R4B" />
     <PackageReference Include="IdentityModel" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />

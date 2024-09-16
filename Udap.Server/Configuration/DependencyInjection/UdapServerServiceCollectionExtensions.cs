@@ -21,6 +21,7 @@ using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Common.Models;
+using Udap.Model;
 using Udap.Server;
 using Udap.Server.Configuration;
 using Udap.Server.Configuration.DependencyInjection;
@@ -168,7 +169,7 @@ public static class UdapServerServiceCollectionExtensions
         }
 
         builder.Services.TryAddSingleton<IPostConfigureOptions<ServerSettings>, TieredIdpServerSettings>();
-        builder.AddUdapSigningCredentials();
+        builder.AddUdapSigningCredentials<UdapMetadataOptions>();
         services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
         builder.AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl);
         builder.AddUdapServerConfiguration();

@@ -18,8 +18,9 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Templates;
 using Serilog.Templates.Themes;
+using Tefca.Proxy.Server;
 using Udap.Common;
-using Udap.Proxy.Server;
+using Udap.Tefca.Model;
 using Udap.Smart.Model;
 using Udap.Util.Extensions;
 using Yarp.ReverseProxy.Transforms;
@@ -43,7 +44,7 @@ builder.Services.AddSerilog((services, lc) => lc
         theme: TemplateTheme.Code)));
 
 // Mount Cloud Secrets
-builder.Configuration.AddJsonFile("/secret/udapproxyserverappsettings", true, false);
+builder.Configuration.AddJsonFile("/secret/tefcaproxyserverappsettings", true, false);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -52,7 +53,7 @@ builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSecti
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
 
 builder.Services.AddSmartMetadata();
-builder.Services.AddUdapMetadataServer(builder.Configuration);
+builder.Services.AddUdapMetadataServer<TefcaMetadataOptions, TefcaMetadata>(builder.Configuration);
 builder.Services.AddFusionCache()
     .WithDefaultEntryOptions(new FusionCacheEntryOptions
     {
@@ -178,7 +179,7 @@ app.UseAuthorization();
 app.MapReverseProxy();
 
 app.UseSmartMetadata("fhir/r4");
-app.UseUdapMetadataServer("fhir/r4"); // Ensure metadata can only be called from this base URL.
+app.UseUdapMetadataServer<TefcaMetadataOptions, TefcaMetadata>("fhir/r4"); // Ensure metadata can only be called from this base URL.
 
 app.Run();
 

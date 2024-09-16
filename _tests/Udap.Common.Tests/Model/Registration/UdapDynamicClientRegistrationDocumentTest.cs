@@ -496,6 +496,48 @@ public class UdapDynamicClientRegistrationDocumentTest
     }
 
     [Fact]
+    public void AddExtensionViaExtensionsProperty()
+    {
+        var builder = UdapDcrBuilderForClientCredentials
+            .Create();
+
+        var subjectId = "urn:oid:2.16.840.1.113883.4.6#1234567890";
+        var subjectName = "FhirLabs AI calendar prep";
+        var subjectRole = "http://nucc.org/provider-taxonomy#207SG0202X";
+        var organizationId = new Uri("https://fhirlabs.net/fhir/r4/Organization/99").OriginalString;
+        var organizationName = "FhirLabs";
+
+        var hl7b2b = new HL7B2BAuthorizationExtension()
+        {
+            SubjectId = subjectId,
+            SubjectName = subjectName,
+            SubjectRole = subjectRole,
+            OrganizationId = organizationId,
+            OrganizationName = organizationName
+        };
+
+        hl7b2b.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        hl7b2b.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
+        hl7b2b.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
+
+        var document = builder.Build();
+        document.Extensions = new Dictionary<string, object>
+        {
+            {UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7b2b}
+        };
+
+        var serializeDocument = document.SerializeToJson(true);
+        _testOutputHelper.WriteLine(serializeDocument);
+
+        document = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
+
+        var b2BAuthExtension = document?.Extensions?["hl7-b2b"] as HL7B2BAuthorizationExtension;
+        b2BAuthExtension?.PurposeOfUse.Should().Contain("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        b2BAuthExtension?.ConsentPolicy.Should().Contain("https://udaped.fhirlabs.net/Policy/Consent/99");
+        b2BAuthExtension?.ConsentReference.Should().Contain("https://fhirlabs.net/fhir/r4/Consent/99");
+    }
+
+    [Fact]
     public void Hl7b2bExtensionTest()
     {
         var builder = UdapDcrBuilderForClientCredentials

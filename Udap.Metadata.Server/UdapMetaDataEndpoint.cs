@@ -12,15 +12,18 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using Udap.Common.Extensions;
 using Udap.Common.Metadata;
+using Udap.Model;
 
 namespace Udap.Metadata.Server;
 
-public class UdapMetaDataEndpoint
+public class UdapMetaDataEndpoint<TUdapMetadataOptions, TUdapMetadata> 
+    where TUdapMetadataOptions : UdapMetadataOptions
+    where TUdapMetadata : UdapMetadata
 {
-    private readonly UdapMetaDataBuilder _metaDataBuilder;
-    private readonly ILogger<UdapMetaDataEndpoint> _logger;
+    private readonly UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata> _metaDataBuilder;
+    private readonly ILogger<UdapMetaDataEndpoint<TUdapMetadataOptions, TUdapMetadata>> _logger;
 
-    public UdapMetaDataEndpoint(UdapMetaDataBuilder metaDataBuilder, ILogger<UdapMetaDataEndpoint> logger)
+    public UdapMetaDataEndpoint(UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata> metaDataBuilder, ILogger<UdapMetaDataEndpoint<TUdapMetadataOptions, TUdapMetadata>> logger)
     {
         _metaDataBuilder = metaDataBuilder;
         _logger = logger;

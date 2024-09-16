@@ -23,16 +23,16 @@ namespace Udap.Model;
 /// </summary>
 public class UdapMetadata
 {
-    private readonly List<UdapMetadataConfig>? _udapMetadataConfigs;
+    protected List<UdapMetadataConfig>? UdapMetadataConfigs;
 
     public UdapMetadataConfig? GetUdapMetadataConfig(string? community = null)
     {
         if (community == null)
         {
-            return _udapMetadataConfigs?.FirstOrDefault();
+            return UdapMetadataConfigs?.FirstOrDefault();
         }
 
-        return _udapMetadataConfigs?.SingleOrDefault(c => c.Community == community);
+        return UdapMetadataConfigs?.SingleOrDefault(c => c.Community == community);
     }
 
 
@@ -53,7 +53,7 @@ public class UdapMetadata
         ICollection<string> tokenEndpointAuthSigningAlgValuesSupported,
         ICollection<string> registrationEndpointJwtSigningAlgValuesSupported)
     {
-        _udapMetadataConfigs = null;
+        UdapMetadataConfigs = null;
         UdapVersionsSupported = udapVersionsSupported;
         UdapProfilesSupported = udapProfilesSupported;
         UdapAuthorizationExtensionsSupported = udapAuthorizationExtensionsSupported;
@@ -81,7 +81,7 @@ public class UdapMetadata
         ICollection<string> registrationEndpointJwtSigningAlgValuesSupported,
         List<UdapMetadataConfig>? udapMetadataConfigs = null)
     {
-        _udapMetadataConfigs = udapMetadataConfigs;
+        UdapMetadataConfigs = udapMetadataConfigs;
         UdapVersionsSupported = udapVersionsSupported;
         UdapProfilesSupported = udapProfilesSupported;
         UdapAuthorizationExtensionsSupported = udapAuthorizationExtensionsSupported;
@@ -95,6 +95,11 @@ public class UdapMetadata
         RegistrationEndpointJwtSigningAlgValuesSupported = registrationEndpointJwtSigningAlgValuesSupported;
     }
 
+    public UdapMetadata(UdapMetadataOptions udapMetadataOptions) : this(udapMetadataOptions, null)
+    {
+
+    }
+
     /// <summary>
     /// <a href="http://hl7.org/fhir/us/udap-security/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
     /// </summary>
@@ -104,7 +109,7 @@ public class UdapMetadata
 
     public UdapMetadata(UdapMetadataOptions udapMetadataOptions, IEnumerable<string>? scopes = null)
     {
-        _udapMetadataConfigs = udapMetadataOptions.UdapMetadataConfigs;
+        UdapMetadataConfigs = udapMetadataOptions.UdapMetadataConfigs;
         UdapVersionsSupported = udapMetadataOptions.UdapVersionsSupported;
 
         BuildSupportedProfiles(udapMetadataOptions);
@@ -310,11 +315,11 @@ public class UdapMetadata
 
     public ICollection<string> Communities()
     {
-        if (_udapMetadataConfigs == null)
+        if (UdapMetadataConfigs == null)
         {
             return new List<string>();
         }
-        return _udapMetadataConfigs.Select(c => c.Community).ToList();
+        return UdapMetadataConfigs.Select(c => c.Community).ToList();
     }
 
     public string CommunitiesAsHtml(string path)
@@ -360,7 +365,7 @@ public class UdapMetadata
             TokenEndpointAuthMethodsSupported,
             TokenEndpointAuthSigningAlgValuesSupported.Clone(),
             RegistrationEndpointJwtSigningAlgValuesSupported.Clone(),
-            _udapMetadataConfigs);
+            UdapMetadataConfigs);
         
         return metaData;
     }

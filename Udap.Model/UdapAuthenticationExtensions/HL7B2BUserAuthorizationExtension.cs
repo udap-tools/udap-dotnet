@@ -8,6 +8,7 @@
 #endregion
 
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -53,6 +54,7 @@ public class HL7B2BUserAuthorizationExtension
     /// String containing the human-readable name of the human or non-human requestor; required if known.
     /// </summary>
     [JsonPropertyName(UdapConstants.HL7B2BUserAuthorizationExtension.UserPerson)]
+    [Required(ErrorMessage = "FHIR Person is required")]
     public JsonElement? UserPerson
     {
         get => _userPerson;

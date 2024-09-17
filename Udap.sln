@@ -92,7 +92,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "mTLS.Proxy.Server", "exampl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tefca.Proxy.Server", "examples\Tefca.Proxy.Server\Tefca.Proxy.Server.csproj", "{FDB5712F-2EB4-4A36-9DEF-955B3575024D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Udap.Tefca.Model", "Udap.Tefca.Model\Udap.Tefca.Model.csproj", "{4009D7A4-36A6-46E7-96A3-7C13A78065C3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Tefca.Model", "Udap.Tefca.Model\Udap.Tefca.Model.csproj", "{4009D7A4-36A6-46E7-96A3-7C13A78065C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

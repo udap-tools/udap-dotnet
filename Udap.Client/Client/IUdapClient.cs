@@ -131,6 +131,16 @@ public interface IUdapClient : IUdapClientEvents
         string? logo = null,
         CancellationToken token = default);
 
+    public bool PkcseEnabled { get;}
+
+    /// <summary>
+    /// Generated PKCS and use in the authorization code flow.
+    /// <seealso cref="https://datatracker.ietf.org/doc/html/rfc7636"/>
+    /// <seealso cref="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/b2b.html#obtaining-an-authorization-code"/> 
+    /// <seealso cref="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/consumer.html#obtaining-an-authorization-code"/>
+    /// </summary>
+    public Pkce GeneratePkce();
+
     Task<TokenResponse> ExchangeCodeForTokenResponse(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);
 
     Task<OAuthTokenResponse> ExchangeCodeForAuthTokenResponse(UdapAuthorizationCodeTokenRequest tokenRequest, CancellationToken token = default);

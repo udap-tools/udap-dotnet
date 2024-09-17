@@ -50,6 +50,8 @@ public class ServerSettings
 
     public bool RequireConsent { get; set; } = true;
     public bool AllowRememberConsent { get; set; } = false;
+
+    public bool RequirePKCE { get; set; }
 }
 
 

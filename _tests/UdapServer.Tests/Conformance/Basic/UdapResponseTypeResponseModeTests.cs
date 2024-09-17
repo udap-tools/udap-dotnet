@@ -1,4 +1,4 @@
-﻿#region (c) 2023 Joseph Shook. All rights reserved.
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -16,6 +16,7 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -28,13 +29,17 @@ using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Udap.Client.Client;
 using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
+using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Server.Configuration;
-using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
 
@@ -60,7 +65,8 @@ public class UdapResponseTypeResponseModeTests
                 DefaultUserScopes = "user/*.read",
                 DefaultSystemScopes = "system/*.read",
                 ForceStateParamOnAuthorizationCode = true,
-                RequireConsent = false
+                RequireConsent = false,
+                RequirePKCE = false
             });
 
             s.AddSingleton<UdapClientOptions>(new UdapClientOptions
@@ -77,6 +83,15 @@ public class UdapResponseTypeResponseModeTests
             // TODO: PR Deunde for this issue.
             // They register Clients as IEnumerable<Client> in AddInMemoryClients extension
             s.AddSingleton(_mockPipeline.Clients);
+
+            s.AddScoped<IUdapClient>(sp =>
+            {
+                return new UdapClient(
+                    _mockPipeline.BackChannelClient,
+                    sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                    sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                    sp.GetRequiredService<ILogger<UdapClient>>());
+            });
         };
 
         _mockPipeline.Initialize(enableLogging: true);
@@ -465,8 +480,9 @@ public class UdapResponseTypeResponseModeTests
 
 
     [Fact]
-    public async Task Request_accepted()
+    public async Task AuthorizeWithoutPKCSE_accepted()
     {
+
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
@@ -496,6 +512,7 @@ public class UdapResponseTypeResponseModeTests
        
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
 
+        // Register
         var response = await _mockPipeline.BrowserClient.PostAsync(
             UdapAuthServerPipeline.RegistrationEndpoint,
             new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
@@ -505,11 +522,13 @@ public class UdapResponseTypeResponseModeTests
         resultDocument.Should().NotBeNull();
         resultDocument!.ClientId.Should().NotBeNull();
 
+        var clientId = resultDocument!.ClientId;
         var state = Guid.NewGuid().ToString();
         var nonce = Guid.NewGuid().ToString();
 
         await _mockPipeline.LoginAsync("bob");
 
+        // Authorize
         var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument!.ClientId!,
             responseType: "code",
@@ -530,6 +549,45 @@ public class UdapResponseTypeResponseModeTests
         queryParams.Should().Contain(p => p.Key == "code");
         queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid offline_access");
         queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
+
+
+        // Request Token From Auth Code
+        var tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
+                clientId,
+                "https://server/connect/token",
+                clientCert,
+                "https://code_client/callback",
+                queryParams.First(p => p.Key == "code").Value)
+        .Build();
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+        var tokenResponse = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
+
+        tokenResponse.Should().NotBeNull();
+        tokenResponse.IdentityToken.Should().NotBeNull();
+        var jwt = new JwtSecurityToken(tokenResponse.IdentityToken);
+        new JwtSecurityToken(tokenResponse.AccessToken).Should().NotBeNull();
+
+        using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
+        var formattedStatement = JsonSerializer.Serialize(
+            jsonDocument,
+            new JsonSerializerOptions { WriteIndented = true }
+        );
+
+        var formattedHeader = Base64UrlEncoder.Decode(jwt.EncodedHeader);
+
+        _testOutputHelper.WriteLine(formattedHeader);
+        _testOutputHelper.WriteLine(formattedStatement);
+
+
+        // udap.org Tiered 4.3
+        // aud: client_id of Resource Holder (matches client_id in Resource Holder request in Step 3.4)
+        jwt.Claims.Should().Contain(c => c.Type == "aud");
+        jwt.Claims.Single(c => c.Type == "aud").Value.Should().Be(clientId);
+
+        // iss: Auth Servers unique identifying URI 
+        jwt.Claims.Should().Contain(c => c.Type == "iss");
+        jwt.Claims.Single(c => c.Type == "iss").Value.Should().Be(UdapAuthServerPipeline.BaseUrl);
         
     }
 

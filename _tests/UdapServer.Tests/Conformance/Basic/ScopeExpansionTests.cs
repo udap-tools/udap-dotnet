@@ -60,6 +60,7 @@ public class ScopeExpansionTests
             {
                 var serverSettings = sp.GetRequiredService<IOptions<ServerSettings>>().Value;
                 serverSettings.RequireConsent = false;
+                serverSettings.RequirePKCE = false;
                 return serverSettings;
             });
 

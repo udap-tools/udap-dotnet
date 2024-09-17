@@ -20,7 +20,6 @@ using Serilog.Templates;
 using Serilog.Templates.Themes;
 using Tefca.Proxy.Server;
 using Udap.Common;
-using Udap.Tefca.Model;
 using Udap.Smart.Model;
 using Udap.Util.Extensions;
 using Yarp.ReverseProxy.Transforms;
@@ -53,7 +52,7 @@ builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSecti
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
 
 builder.Services.AddSmartMetadata();
-builder.Services.AddUdapMetadataServer<TefcaMetadataOptions, TefcaMetadata>(builder.Configuration);
+builder.Services.AddUdapMetadataServer(builder.Configuration);
 builder.Services.AddFusionCache()
     .WithDefaultEntryOptions(new FusionCacheEntryOptions
     {
@@ -179,7 +178,7 @@ app.UseAuthorization();
 app.MapReverseProxy();
 
 app.UseSmartMetadata("fhir/r4");
-app.UseUdapMetadataServer<TefcaMetadataOptions, TefcaMetadata>("fhir/r4"); // Ensure metadata can only be called from this base URL.
+app.UseUdapMetadataServer("fhir/r4"); // Ensure metadata can only be called from this base URL.
 
 app.Run();
 

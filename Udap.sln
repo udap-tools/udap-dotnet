@@ -92,8 +92,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "mTLS.Proxy.Server", "exampl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tefca.Proxy.Server", "examples\Tefca.Proxy.Server\Tefca.Proxy.Server.csproj", "{FDB5712F-2EB4-4A36-9DEF-955B3575024D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.Tefca.Model", "Udap.Tefca.Model\Udap.Tefca.Model.csproj", "{4009D7A4-36A6-46E7-96A3-7C13A78065C3}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -281,12 +279,6 @@ Global
 		{FDB5712F-2EB4-4A36-9DEF-955B3575024D}.FullDebug|Any CPU.Build.0 = Debug|Any CPU
 		{FDB5712F-2EB4-4A36-9DEF-955B3575024D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDB5712F-2EB4-4A36-9DEF-955B3575024D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{4009D7A4-36A6-46E7-96A3-7C13A78065C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4009D7A4-36A6-46E7-96A3-7C13A78065C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4009D7A4-36A6-46E7-96A3-7C13A78065C3}.FullDebug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4009D7A4-36A6-46E7-96A3-7C13A78065C3}.FullDebug|Any CPU.Build.0 = Debug|Any CPU
-		{4009D7A4-36A6-46E7-96A3-7C13A78065C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4009D7A4-36A6-46E7-96A3-7C13A78065C3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -50,6 +50,11 @@ public class ServerSettings
 
     public bool RequireConsent { get; set; } = true;
     public bool AllowRememberConsent { get; set; } = false;
+
+    /// <summary>
+    /// Force UDAP clients to register with 
+    /// </summary>
+    public bool RequirePkce { get; set; }
 }
 
 

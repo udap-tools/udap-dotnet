@@ -16,6 +16,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using System.Text.Json;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Configuration;
@@ -275,10 +276,20 @@ public class UdapIdentityServerPipeline
                         await next.Invoke(ctx);
                         memStream.Position = 0;
                         var responseBody = await new StreamReader(memStream).ReadToEndAsync();
-                        var jsonDoc = JsonDocument.Parse(responseBody!).RootElement;
-                        IdToken = new JwtSecurityToken(jsonDoc.GetString("id_token"));
-                        memStream.Position = 0;
-                        await memStream.CopyToAsync(originalBody);
+                        try
+                        {
+                            var jsonDoc = JsonDocument.Parse(responseBody!).RootElement;
+                            IdToken = new JwtSecurityToken(jsonDoc.GetString("id_token"));
+                            memStream.Position = 0;
+                            await memStream.CopyToAsync(originalBody);
+                        }
+                        catch(Exception ex)
+                        {
+                            using var errorMemStream = new MemoryStream(Encoding.UTF8.GetBytes(responseBody));
+                            memStream.Position = 0;
+                            await errorMemStream.CopyToAsync(originalBody);
+                        }
+                       
                     }
                     finally {
                         ctx.Response.Body = originalBody;

@@ -66,7 +66,7 @@ public class UdapResponseTypeResponseModeTests
                 DefaultSystemScopes = "system/*.read",
                 ForceStateParamOnAuthorizationCode = true,
                 RequireConsent = false,
-                RequirePKCE = false
+                RequirePkce = false
             });
 
             s.AddSingleton<UdapClientOptions>(new UdapClientOptions
@@ -848,17 +848,18 @@ public class UdapResponseTypeResponseModeTests
         var state = Guid.NewGuid().ToString();
         var nonce = Guid.NewGuid().ToString();
 
-        var url = _mockPipeline.CreateAuthorizeUrl(
-            clientId: resultDocument.ClientId!,
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+
+        response = await udapClient.Authorize(
+            authorizationUrl: UdapAuthServerPipeline.AuthorizeEndpoint,
+            clientId: resultDocument!.ClientId!,
             responseType: "code",
             scope: "openid",
             redirectUri: "http://www.udap.org/",
             state: state,
             nonce: nonce
-            );
-        _testOutputHelper.WriteLine(url);
-        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
-        response = await _mockPipeline.BrowserClient.GetAsync(url);
+        );
+
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();

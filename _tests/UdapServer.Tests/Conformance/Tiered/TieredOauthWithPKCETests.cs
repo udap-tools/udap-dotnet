@@ -10,6 +10,7 @@
 using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -77,7 +78,7 @@ public class TieredOauthWithPKCETests
             services.AddSingleton(new ServerSettings
             {
                 ForceStateParamOnAuthorizationCode = true, //false (default)
-                RequirePKCE = true,
+                RequirePkce = true,
                 RequireConsent = false
             });
 
@@ -242,7 +243,7 @@ public class TieredOauthWithPKCETests
                     // ForceStateParamOnAuthorizationCode = false (default)
                     serverSettings.AlwaysIncludeUserClaimsInIdToken = true;
                     serverSettings.RequireConsent = false;
-                    serverSettings.RequirePKCE = true;
+                    serverSettings.RequirePkce = false;
                     return serverSettings;
                 });
            
@@ -326,7 +327,7 @@ public class TieredOauthWithPKCETests
                     // ForceStateParamOnAuthorizationCode = false (default)
                     serverSettings.AlwaysIncludeUserClaimsInIdToken = true;
                     serverSettings.RequireConsent = false;
-                    serverSettings.RequirePKCE = false;
+                    serverSettings.RequirePkce = false;
                     return serverSettings;
                 });
             
@@ -403,7 +404,7 @@ public class TieredOauthWithPKCETests
     /// </summary>
     /// <returns></returns>
     [Fact]
-    public async Task ClientAuthorize_IdPDiscovery_IdPRegistration_IdPAuthAccess_ClientAuthAccess_Test()
+    public async Task Tiered_OAuth()
     {
         BuildUdapAuthorizationServer();
         BuildUdapIdentityProvider1();
@@ -429,6 +430,9 @@ public class TieredOauthWithPKCETests
 
         var clientState = Guid.NewGuid().ToString();
 
+        var udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
+        var pkce = udapClient.GeneratePkce();
+
         // Builds https://server/connect/authorize plus query params
         var clientAuthorizeUrl = _mockAuthorServerPipeline.CreateAuthorizeUrl(
             clientId: clientId,
@@ -439,7 +443,9 @@ public class TieredOauthWithPKCETests
             extra: new
             {
                 idp = "https://idpserver"
-            });
+            },
+            codeChallenge: pkce.CodeChallenge,
+            codeChallengeMethod: OidcConstants.CodeChallengeMethods.Sha256);
 
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
         // The BrowserHandler.cs will normally set the cookie to indicate user signed in.
@@ -586,7 +592,7 @@ public class TieredOauthWithPKCETests
         // _testOutputHelper.WriteLine(schemeCallbackResult.Headers.Location!.OriginalString);
         // Validate Cookies
         _mockAuthorServerPipeline.GetSessionCookie().Should().NotBeNull();
-        _testOutputHelper.WriteLine(_mockAuthorServerPipeline.GetSessionCookie()!.Value);
+        // _testOutputHelper.WriteLine(_mockAuthorServerPipeline.GetSessionCookie()!.Value);
         _mockAuthorServerPipeline.BrowserClient.GetCookie("https://server", "idsrv").Should().NotBeNull();
         //TODO assert match State and nonce between Auth Server and IdP
 
@@ -637,8 +643,14 @@ public class TieredOauthWithPKCETests
 
 
         dynamicIdp.Name = null; // Influence UdapClient resolution in AddTieredOAuthForTests.
-        var udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
-        
+
+        // 
+        // You need to resolve udapClient again because the TestExtension.cs 
+        // resolves a IUdapClient for other test servers in the scope of this test.
+        // Other servers are the _mockIdPPipeline1 and _mockIdPPipeline2 instances.
+        //
+        udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
+        tokenRequest.CodeVerifier = pkce.CodeVerifier;
 
         var accessToken = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
         accessToken.Should().NotBeNull();
@@ -696,8 +708,8 @@ public class TieredOauthWithPKCETests
          */
     }
 
-    [Fact] //(Skip = "Dynamic Tiered OAuth Provider WIP")]
-    public async Task Tiered_OAuth_With_DynamicProvider()
+    [Fact]
+    public async Task Tiered_OAuth_With_Community()
     {
         BuildUdapAuthorizationServer();
         BuildUdapIdentityProvider2();
@@ -721,6 +733,7 @@ public class TieredOauthWithPKCETests
         // Data Holder's Auth Server validates Identity Provider's Server software statement
 
         var clientState = Guid.NewGuid().ToString();
+        
         var udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
         var pkce = udapClient.GeneratePkce();
 
@@ -945,8 +958,14 @@ public class TieredOauthWithPKCETests
 
         dynamicIdp.Name = null; // Influence UdapClient resolution in AddTieredOAuthForTests.
 
-         tokenRequest.CodeVerifier = pkce.CodeVerifier;
-
+        // 
+        // You need to resolve udapClient again because the TestExtension.cs 
+        // resolves a IUdapClient for other test servers in the scope of this test.
+        // Other servers are the _mockIdPPipeline1 and _mockIdPPipeline2 instances.
+        //
+        udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
+        tokenRequest.CodeVerifier = pkce.CodeVerifier;
+        
         var accessToken = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
         accessToken.Should().NotBeNull();
         accessToken.IdentityToken.Should().NotBeNull();
@@ -998,8 +1017,8 @@ public class TieredOauthWithPKCETests
         
     }
 
-    [Fact] //(Skip = "Dynamic Tiered OAuth Provider WIP")]
-    public async Task Tiered_OAuth_Missing_Backend_PKCE()
+    [Fact]
+    public async Task Tiered_OAuth_Invalid_Code_Verifier()
     {
         BuildUdapAuthorizationServer();
         BuildUdapIdentityProvider2();
@@ -1111,7 +1130,7 @@ public class TieredOauthWithPKCETests
         backChannelChallengeResponse.Headers.Location.Should().NotBeNull();
         backChannelChallengeResponse.Headers.Location!.AbsoluteUri.Should().StartWith("https://idpserver2/connect/authorize");
 
-        _testOutputHelper.WriteLine(backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
+        // _testOutputHelper.WriteLine(backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
         QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.Should().NotBeEmpty();
         var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "state").Value.ToString();
         backChannelState.Should().NotBeNullOrEmpty();
@@ -1234,59 +1253,76 @@ public class TieredOauthWithPKCETests
             code)
             .Build();
 
+        tokenRequest.CodeVerifier = "bad_guy";
 
         dynamicIdp.Name = null; // Influence UdapClient resolution in AddTieredOAuthForTests.
-        
-        var accessToken = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
-        accessToken.Should().NotBeNull();
-        accessToken.IdentityToken.Should().NotBeNull();
-        var jwt = new JwtSecurityToken(accessToken.IdentityToken);
-        new JwtSecurityToken(accessToken.AccessToken).Should().NotBeNull();
 
+        // 
+        // You need to resolve udapClient again because the TestExtension.cs 
+        // resolves a IUdapClient for other test servers in the scope of this test.
+        // Other servers are the _mockIdPPipeline1 and _mockIdPPipeline2 instances.
+        //
+        udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
 
-        using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
-        var formattedStatement = JsonSerializer.Serialize(
-            jsonDocument,
-            new JsonSerializerOptions { WriteIndented = true }
-        );
+        var tokenResponse = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
+        tokenResponse.Should().NotBeNull();
+        tokenResponse.IsError.Should().BeTrue();
+        tokenResponse.IdentityToken.Should().BeNull();
+        tokenResponse.AccessToken.Should().BeNull();
 
-        var formattedHeader = Base64UrlEncoder.Decode(jwt.EncodedHeader);
-
-        _testOutputHelper.WriteLine(formattedHeader);
-        _testOutputHelper.WriteLine(formattedStatement);
-
-
-
-        // udap.org Tiered 4.3
-        // aud: client_id of Resource Holder (matches client_id in Resource Holder request in Step 3.4)
-        jwt.Claims.Should().Contain(c => c.Type == "aud");
-        jwt.Claims.Single(c => c.Type == "aud").Value.Should().Be(clientId);
-
-        // iss: IdP’s unique identifying URI (matches idp parameter from Step 2)
-        jwt.Claims.Should().Contain(c => c.Type == "iss");
-        jwt.Claims.Single(c => c.Type == "iss").Value.Should().Be(UdapAuthServerPipeline.BaseUrl);
-
-        jwt.Claims.Should().Contain(c => c.Type == "hl7_identifier");
-        jwt.Claims.Single(c => c.Type == "hl7_identifier").Value.Should().Be("123");
-
-
-
-
-        // sub: unique identifier for user in namespace of issuer, i.e. iss + sub is globally unique
-
-        // TODO: Currently the sub is the code given at access time.  Maybe that is OK?  I could put the clientId in from 
-        // backchannel.  But I am not sure I want to show that.  After all it is still globally unique.
-        // jwt.Claims.Should().Contain(c => c.Type == "sub");
-        // jwt.Claims.Single(c => c.Type == "sub").Value.Should().Be(backChannelClientId);
-
-        // jwt.Claims.Should().Contain(c => c.Type == "sub");
-        // jwt.Claims.Single(c => c.Type == "sub").Value.Should().Be(backChannelCode);
-
-        // Todo: Nonce 
-        // Todo: Validate claims.  Like missing name and other identity claims.  Maybe add a hl7_identifier
-        // Why is idp:TieredOAuth in the returned claims?
-
+        tokenResponse.Error.Should().Be("invalid_grant");
     }
+
+    [Fact]
+    public async Task Tiered_OAuth_Missing__Code_Challenge()
+    {
+        BuildUdapAuthorizationServer();
+        BuildUdapIdentityProvider2();
+
+        // Register client with auth server
+        var resultDocument = await RegisterClientWithAuthServer();
+        _mockAuthorServerPipeline.RemoveSessionCookie();
+        _mockAuthorServerPipeline.RemoveLoginCookie();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        var clientId = resultDocument.ClientId!;
+
+        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
+        dynamicIdp.Name = _mockIdPPipeline2.BaseUrl;
+
+        //////////////////////
+        // ClientAuthorize
+        //////////////////////
+
+        // Data Holder's Auth Server validates Identity Provider's Server software statement
+
+        var clientState = Guid.NewGuid().ToString();
+        
+        var clientAuthorizeUrl = _mockAuthorServerPipeline.CreateAuthorizeUrl(
+            clientId: clientId,
+            responseType: "code",
+            scope: "udap openid user/*.read",
+            redirectUri: "https://code_client/callback",
+            state: clientState,
+            extra: new
+            {
+                idp = "https://idpserver2?community=udap://idp-community-2"
+            });
+
+        _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
+        // The BrowserHandler.cs will normally set the cookie to indicate user signed in.
+        // We want to skip that and get a redirect to the login page
+        _mockAuthorServerPipeline.BrowserClient.AllowCookies = false;
+        var response = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, await response.Content.ReadAsStringAsync());
+
+        var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
+        errorMessage.Should().NotBeNull();
+        errorMessage!.Error.Should().Be("invalid_request"); //defined in Duende
+        errorMessage!.ErrorDescription.Should().BeEquivalentTo("code challenge required"); //defined in Duende
+    }
+
 
     private async Task<UdapDynamicClientRegistrationDocument?> RegisterClientWithAuthServer()
     {
@@ -1306,7 +1342,9 @@ public class TieredOauthWithPKCETests
             new List<string> { "https://code_client/callback" });
 
         documentResponse.GetError().Should().BeNull();
-        
+
+        // _testOutputHelper.WriteLine(documentResponse.ClientId);
+
         return documentResponse;
     }
 }

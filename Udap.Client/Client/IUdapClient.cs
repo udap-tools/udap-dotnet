@@ -131,7 +131,27 @@ public interface IUdapClient : IUdapClientEvents
         string? logo = null,
         CancellationToken token = default);
 
-    public bool PkcseEnabled { get;}
+    Task<HttpResponseMessage> Authorize(
+        string authorizationUrl,
+        string clientId,
+        string? responseType = null,
+        string? scope = null,
+        string? redirectUri = null,
+        string? state = null,
+        string? nonce = null,
+        string? loginHint = null,
+        string? acrValues = null,
+        string? prompt = null,
+        string? responseMode = null,
+        string? codeChallenge = null,
+        string? codeChallengeMethod = null,
+        string? display = null,
+        int? maxAge = null,
+        string? uiLocales = null,
+        string? idTokenHint = null,
+        string? requestUri = null,
+        object? extra = null);
+
 
     /// <summary>
     /// Generated PKCS and use in the authorization code flow.
@@ -148,4 +168,5 @@ public interface IUdapClient : IUdapClientEvents
     Task<IEnumerable<SecurityKey>?> ResolveJwtKeys(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default);
 
     Task<DiscoveryDocumentResponse?> ResolveOpenIdConfig(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default);
+    
 }

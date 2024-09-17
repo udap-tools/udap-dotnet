@@ -74,7 +74,7 @@ public class TieredOauthTests
             services.AddSingleton(new ServerSettings
             {
                 ForceStateParamOnAuthorizationCode = true, //false (default)
-                RequirePKCE = false,
+                RequirePkce = false,
                 RequireConsent = false
             });
 
@@ -239,7 +239,7 @@ public class TieredOauthTests
                     // ForceStateParamOnAuthorizationCode = false (default)
                     serverSettings.AlwaysIncludeUserClaimsInIdToken = true;
                     serverSettings.RequireConsent = false;
-                    serverSettings.RequirePKCE = false;
+                    serverSettings.RequirePkce = false;
                     return serverSettings;
                 });
            
@@ -323,7 +323,7 @@ public class TieredOauthTests
                     // ForceStateParamOnAuthorizationCode = false (default)
                     serverSettings.AlwaysIncludeUserClaimsInIdToken = true;
                     serverSettings.RequireConsent = false;
-                    serverSettings.RequirePKCE = false;
+                    serverSettings.RequirePkce = false;
                     return serverSettings;
                 });
             
@@ -400,7 +400,7 @@ public class TieredOauthTests
     /// </summary>
     /// <returns></returns>
     [Fact]
-    public async Task ClientAuthorize_IdPDiscovery_IdPRegistration_IdPAuthAccess_ClientAuthAccess_Test()
+    public async Task Tiered_OAuth()
     {
         BuildUdapAuthorizationServer();
         BuildUdapIdentityProvider1();
@@ -693,8 +693,8 @@ public class TieredOauthTests
          */
     }
 
-    [Fact] //(Skip = "Dynamic Tiered OAuth Provider WIP")]
-    public async Task Tiered_OAuth_With_DynamicProvider()
+    [Fact]
+    public async Task Tiered_OAuth_With_Community()
     {
         BuildUdapAuthorizationServer();
         BuildUdapIdentityProvider2();

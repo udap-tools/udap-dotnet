@@ -59,8 +59,6 @@ namespace Udap.Client.Client
             _udapClientOptions = udapClientOptions.CurrentValue;
             _logger = logger;
             _discoveryPolicy = discoveryPolicy ?? DiscoveryPolicy.DefaultMetadataServerPolicy();
-
-            PkcseEnabled = enablePkceEnabled;
         }
 
         public UdapMetadata? UdapDynamicClientRegistrationDocument { get; set; }
@@ -221,6 +219,51 @@ namespace Udap.Client.Client
                 token
             );
         }
+
+        public Task<HttpResponseMessage> Authorize(
+            string authorizationUrl,
+            string clientId,
+            string? responseType = null,
+            string? scope = null,
+            string? redirectUri = null,
+            string? state = null,
+            string? nonce = null,
+            string? loginHint = null,
+            string? acrValues = null,
+            string? prompt = null,
+            string? responseMode = null,
+            string? codeChallenge = null,
+            string? codeChallengeMethod = null,
+            string? display = null,
+            int? maxAge = null,
+            string? uiLocales = null,
+            string? idTokenHint = null,
+            string? requestUri = null,
+            object? extra = null)
+        {
+            var url = new RequestUrl(authorizationUrl).CreateAuthorizeUrl(
+                clientId: clientId,
+                responseType: responseType,
+                scope: scope,
+                redirectUri: redirectUri,
+                state: state,
+                nonce: nonce,
+                loginHint: loginHint,
+                acrValues: acrValues,
+                responseMode: responseMode,
+                codeChallenge: codeChallenge,
+                codeChallengeMethod: codeChallengeMethod,
+                display: display,
+                maxAge: maxAge,
+                uiLocales: uiLocales,
+                idTokenHint: idTokenHint,
+                requestUri: requestUri,
+                extra: Parameters.FromObject(extra)
+                );
+
+            return _httpClient.GetAsync(url);
+        }
+        
 
         public bool PkcseEnabled { get; }
 

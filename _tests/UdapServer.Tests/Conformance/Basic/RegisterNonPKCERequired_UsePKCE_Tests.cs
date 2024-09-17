@@ -37,15 +37,18 @@ using Xunit.Abstractions;
 
 namespace UdapServer.Tests.Conformance.Basic;
 
+/// <summary>
+/// Server does not require PKCE but should respect it if a code_challenge is sent
+/// </summary>
 [Collection("Udap.Auth.Server")]
-public class PKCERequiredTests
+public class RegisterNonPKCERequired_UsePKCE_Tests
 {
 
     private readonly ITestOutputHelper _testOutputHelper;
     private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
 
 
-    public PKCERequiredTests(ITestOutputHelper testOutputHelper)
+    public RegisterNonPKCERequired_UsePKCE_Tests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
@@ -59,7 +62,7 @@ public class PKCERequiredTests
                 DefaultSystemScopes = "system/*.read",
                 ForceStateParamOnAuthorizationCode = true,
                 RequireConsent = false,
-                RequirePkce = true
+                RequirePkce = false
             });
 
             s.AddSingleton<UdapClientOptions>(new UdapClientOptions
@@ -249,77 +252,6 @@ public class PKCERequiredTests
         jwt.Claims.Single(c => c.Type == "iss").Value.Should().Be(UdapAuthServerPipeline.BaseUrl);
 
     }
-
-
-    [Fact]
-    public async Task AuthorizeWithPKCSE_Missing_code_challenge()
-    {
-        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
-
-        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
-            .Create(clientCert)
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock test")
-            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("openid")
-            .WithResponseTypes(new List<string> { "code" })
-            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
-            .WithGrantType("refresh_token")
-            .BuildSoftwareStatement();
-
-        var requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
-
-        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
-
-        // Register
-        var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        resultDocument.Should().NotBeNull();
-        resultDocument!.ClientId.Should().NotBeNull();
-
-        var state = Guid.NewGuid().ToString();
-        var nonce = Guid.NewGuid().ToString();
-
-        await _mockPipeline.LoginAsync("bob");
-
-        // Authorize
-        var url = _mockPipeline.CreateAuthorizeUrl(
-            clientId: resultDocument!.ClientId!,
-            responseType: "code",
-            scope: "openid offline_access",
-            redirectUri: "https://code_client/callback",
-            state: state,
-            nonce: nonce,
-            codeChallengeMethod: OidcConstants.CodeChallengeMethods.Sha256);
-        
-        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
-        response = await _mockPipeline.BrowserClient.GetAsync(url);
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest, await response.Content.ReadAsStringAsync());
-
-        var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
-        errorMessage.Should().NotBeNull();
-        errorMessage!.Error.Should().Be("invalid_request"); //defined in Duende
-        errorMessage!.ErrorDescription.Should().BeEquivalentTo("code challenge required"); //defined in Duende
-
-    }
-
 
     [Fact]
     public async Task AuthorizeWithPKCSE_Invalid_code_verifier()

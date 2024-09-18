@@ -102,7 +102,7 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
         if (certificate == null)
         {
-            _logger.LogWarning($"Missing default community certificate: {System.Net.WebUtility.UrlEncode(community)}");
+            _logger.LogWarning($"Missing default community certificate: {System.Web.HttpUtility.UrlEncode(community)}");
             return null;
         }
 

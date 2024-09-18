@@ -60,7 +60,8 @@ public class UdapForceStateParamFalseTests
                 DefaultUserScopes = "user/*.read",
                 DefaultSystemScopes = "system/*.read",
                 // ForceStateParamOnAuthorizationCode = false (default)
-                RequireConsent = false
+                RequireConsent = false,
+                RequirePkce = false
             });
 
             s.AddSingleton<UdapClientOptions>(new UdapClientOptions

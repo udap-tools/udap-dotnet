@@ -27,7 +27,6 @@ jobs:
     - name: Pack
       run: |
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Model/Udap.Model.csproj 
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Tefca.Model/Udap.Tefca.Model.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Util/Udap.Util.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Common/Udap.Common.csproj 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Metadata.Server/Udap.Metadata.Server.csproj 
@@ -40,7 +39,6 @@ jobs:
     - name: Push
       run: |
         dotnet nuget push ./Udap.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.Tefca.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
         dotnet nuget push ./Udap.Util/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
         dotnet nuget push ./Udap.Common/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
         dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}

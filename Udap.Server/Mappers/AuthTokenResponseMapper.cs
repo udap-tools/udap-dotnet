@@ -50,6 +50,16 @@ public class AuthTokenResponseMapperProfile : Profile
     public AuthTokenResponseMapperProfile()
     {
         CreateMap<OAuthTokenResponse, Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse>()
-            .ReverseMap();
+            .ConstructUsing((src, context) =>
+            {
+                if (src.Error != null)
+                {
+                    return Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse.Failed(src.Error);
+                }
+                else
+                {
+                    return Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse.Success(src.Response);
+                }
+            });
     }
 }

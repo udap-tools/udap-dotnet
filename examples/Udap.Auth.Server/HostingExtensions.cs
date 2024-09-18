@@ -117,6 +117,7 @@ internal static class HostingExtensions
                 options.UserInteraction.LogoutUrl = "/udapaccount/logout";
                 // options.KeyManagement.Enabled = false;
                 options.InputLengthRestrictions.Scope = 7000;
+                
             });
             // .AddSigningCredential(new X509Certificate2("./CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test"), UdapConstants.SupportedAlgorithm.RS256)
             // .AddSigningCredential(new X509Certificate2("./CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test"), UdapConstants.SupportedAlgorithm.RS384)

@@ -351,7 +351,7 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithTermsOfService(string termsOfService)
     {
-        _document.ClientUri = termsOfService;
+        _document.TosUri = termsOfService;
         return this;
     }
 

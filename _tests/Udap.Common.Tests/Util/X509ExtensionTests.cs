@@ -35,4 +35,13 @@ public class X509ExtensionTests
 
         extensions.Single().KeyUsages.ToKeyUsageToString().Should().ContainInOrder("CrlSign", "KeyCertSign");
     }
+
+    [Fact]
+    public void GetSubjectAltNames()
+    {
+        var certificate = new X509Certificate2($"{CertStore}/SurefhirCertificationLabs_Community/issued/FhirLabsAdminCertification.cer");
+
+        var subjectAltNames = certificate.GetSubjectAltNames();
+        subjectAltNames.Should().BeEmpty();
+    }
 }

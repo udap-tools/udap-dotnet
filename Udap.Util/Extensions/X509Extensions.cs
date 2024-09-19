@@ -291,9 +291,15 @@ public static class X509Extensions
 
     public static List<Tuple<string, string>> GetSubjectAltNames(this X509Certificate2 cert, Func<GeneralName, bool>? sanFilter = null)
     {
-        var extension = cert.GetExtensionValue("2.5.29.17");
-        var generalNames = GeneralNames.GetInstance(extension);
         var names = new List<Tuple<string, string>>();
+        var extension = cert.GetExtensionValue("2.5.29.17");
+        
+        if (extension == null)
+        {
+            return names;
+        }
+
+        var generalNames = GeneralNames.GetInstance(extension);
 
         foreach (var name in generalNames.GetNames().Where(sanFilter ?? (n => true)))
         {

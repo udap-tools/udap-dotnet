@@ -13,6 +13,7 @@ namespace Udap.Common.Models;
 
 public class IssuedCertificate : IEquatable<IssuedCertificate>
 {
+    public IssuedCertificate(){} // do not remove
     public IssuedCertificate(X509Certificate2 certificate, string community = "")
     {
         Certificate = certificate;

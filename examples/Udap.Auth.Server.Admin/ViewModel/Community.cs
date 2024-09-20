@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography.X509Certificates;
+using Udap.Server.Entities;
 
 namespace Udap.Auth.Server.Admin.ViewModel
 {
@@ -36,6 +37,9 @@ namespace Udap.Auth.Server.Admin.ViewModel
         public string? Thumbprint { get; set; }
         public DateTime? BeginDate { get; set; }
         public DateTime? EndDate { get; set; }
+        public virtual ICollection<AnchorCertification> AnchorCertifications { get; set; } = default!;
+
+        public virtual ICollection<IntermediateCertificate> Intermediates { get; set; } = default!;
     }
 
     public class IntermediateCertificate
@@ -55,6 +59,14 @@ namespace Udap.Auth.Server.Admin.ViewModel
     {
         public string? Id { get; set; }
         public string? Name { get; set; }
+    }
+
+    public class AnchorCertification
+    {
+        public virtual Anchor Anchor { get; set; } = default!;
+        public int AnchorId { get; set; }
+        public virtual Certification Certification { get; set; } = default!;
+        public int CertificationId { get; set; }
     }
 
     public class IssuedCertificate

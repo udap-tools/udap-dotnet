@@ -21,6 +21,7 @@ namespace Udap.Server.Mappers
                 {
                     cfg.AddProfile<CommunityMapperProfile>();
                     cfg.AddProfile<AnchorMapperProfile>();
+                    cfg.AddProfile<IntermediateCertificateMapperProfile>();
                 })
                 .CreateMapper();
         }

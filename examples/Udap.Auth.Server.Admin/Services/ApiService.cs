@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Udap.Auth.Server.Admin.ViewModel;
@@ -18,10 +19,19 @@ namespace Udap.Auth.Server.Admin.Services
 
         public async Task<ICollection<Community>> GetCommunities()
         {
-            var response = await HttpClient.GetFromJsonAsync<ICollection<Common.Models.Community>>("api/community");
+            var jsonResponse = await HttpClient.GetStringAsync("api/community");
+            
+            //var response = await HttpClient.GetFromJsonAsync<ICollection<Common.Models.Community>>("api/community");
+            var options = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.Preserve,
+                WriteIndented = true
+            };
+            var response = JsonSerializer.Deserialize<ICollection<Common.Models.Community>>(jsonResponse, options);
+            
 
             var communities = _mapper.Map<ICollection<Community>>(response);
-
+            
             return communities;
         }
 

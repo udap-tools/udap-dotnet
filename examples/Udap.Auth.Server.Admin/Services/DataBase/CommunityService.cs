@@ -83,6 +83,7 @@ namespace Udap.Auth.Server.Admin.Services.DataBase
         {
             return await _dbContext.Communities
                 .Include(c => c.Anchors)
+                .ThenInclude(a => a.Intermediates)
                 .ToListAsync(cancellationToken: token);
         }
 

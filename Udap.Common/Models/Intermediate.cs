@@ -18,8 +18,8 @@ public class Intermediate : IEquatable<Intermediate>
     public long AnchorId { get; set; }
     public bool Enabled { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string Certificate { get; }
-    public string Thumbprint { get; } = string.Empty;
+    public string Certificate { get; set; } = string.Empty;
+    public string Thumbprint { get; set; } = string.Empty;
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
 

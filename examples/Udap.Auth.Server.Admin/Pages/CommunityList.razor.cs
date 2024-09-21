@@ -15,6 +15,8 @@ public partial class CommunityList
     [Inject]
     CommunityState CommunityState { get; set; }
 
+    [Inject] private NavigationManager Navigation { get; set; }
+
     private List<string> editEvents = new();
     private string searchString = "";
     private Community communityBeforeEdit;
@@ -26,14 +28,20 @@ public partial class CommunityList
     protected override async Task OnInitializedAsync()
     {
         var taskCommunities = ApiService.GetCommunities();
-        var taskRootCertificates = ApiService.GetRootCertificates();
+        // var taskRootCertificates = ApiService.GetRootCertificates();
 
-        await Task.WhenAll(taskCommunities, taskRootCertificates);
+        // await Task.WhenAll(taskCommunities, taskRootCertificates);
 
         Communities = await taskCommunities;
-        RootCertificates = await taskRootCertificates;
+        // RootCertificates = await taskRootCertificates;
 
         CommunityState.SetState(RootCertificates);
+    }
+
+    private void EditAnchors(Community context)
+    {
+        CommunityState.SetState(context);
+        Navigation.NavigateTo("/CAEdit");
     }
 
     private void ClearEventLog()

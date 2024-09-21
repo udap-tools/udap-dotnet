@@ -26,7 +26,7 @@ public partial class IntermediateCertEditComponent
     [Inject] CommunityState CommunityState { get; set; } = null!;
 
     [Inject] private IJSRuntime Js { get; set; } = null!;
-
+    [Parameter] public long AnchorId { get; set; }
     ErrorBoundary? ErrorBoundary { get; set; }
 
     private List<string> _editEvents = new();
@@ -41,7 +41,8 @@ public partial class IntermediateCertEditComponent
     {
         base.OnInitialized();
 
-        _intermediateCertificates = CommunityState.IntermediateCertificates;
+        _intermediateCertificates = CommunityState.Community?.Anchors
+            .SelectMany(a => a.Intermediates).ToList();
     }
 
     protected override void OnParametersSet()

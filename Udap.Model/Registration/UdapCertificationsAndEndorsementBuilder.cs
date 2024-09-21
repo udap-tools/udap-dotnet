@@ -62,10 +62,14 @@ public class UdapCertificationsAndEndorsementBuilder
         return new UdapCertificationsAndEndorsementBuilder(certificationName);
     }
 
-    public UdapCertificationsAndEndorsementBuilder WithAudience(string audience)
+    public UdapCertificationsAndEndorsementBuilder WithAudience(string? audience)
     {
-        _ = new Uri(audience);
-        _document.Audience = audience;
+        if (!string.IsNullOrEmpty(audience))
+        {
+            _ = new Uri(audience);
+            _document.Audience = audience;
+        }
+        
         return this;
     }
 
@@ -143,10 +147,14 @@ public class UdapCertificationsAndEndorsementBuilder
     /// </summary>
     /// <param name="certificationLogo"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithCertificationLogo(string certificationLogo)
+    public UdapCertificationsAndEndorsementBuilder WithCertificationLogo(string? certificationLogo)
     {
-        _ = new Uri(certificationLogo);
-        _document.CertificationLogo = certificationLogo;
+        if (!string.IsNullOrEmpty(certificationLogo))
+        {
+            _ = new Uri(certificationLogo);
+            _document.CertificationLogo = certificationLogo;
+        }
+        
         return this;
     }
 
@@ -180,10 +188,14 @@ public class UdapCertificationsAndEndorsementBuilder
     /// </summary>
     /// <param name="endpoint"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithCertificationStatusEndpoint(string endpoint)
+    public UdapCertificationsAndEndorsementBuilder WithCertificationStatusEndpoint(string? endpoint)
     {
-        _ = new Uri(endpoint);
-        _document.CertificationStatusEndpoint = endpoint;
+        if (!string.IsNullOrEmpty(endpoint))
+        {
+            _ = new Uri(endpoint);
+            _document.CertificationStatusEndpoint = endpoint;
+        }
+
         return this;
     }
 
@@ -309,11 +321,14 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// </summary>
     /// <param name="clientUri"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithClientUri(string clientUri)
+    public UdapCertificationsAndEndorsementBuilder WithClientUri(string? clientUri)
     {
-        _ = new Uri(clientUri);
-
-        _document.ClientUri = clientUri;
+        if (!string.IsNullOrEmpty(clientUri))
+        {
+            _ = new Uri(clientUri);
+            _document.ClientUri = clientUri;
+        }
+        
         return this;
     }
 
@@ -328,10 +343,14 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// </summary>
     /// <param name="logoUri"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithLogoUri(string logoUri)
+    public UdapCertificationsAndEndorsementBuilder WithLogoUri(string? logoUri)
     {
-        _ = new Uri(logoUri);
-        _document.LogoUri = logoUri;
+        if (!string.IsNullOrEmpty(logoUri))
+        {
+            _ = new Uri(logoUri);
+            _document.LogoUri = logoUri;
+        }
+        
         return this;
     }
 
@@ -351,7 +370,7 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithTermsOfService(string termsOfService)
     {
-        _document.ClientUri = termsOfService;
+        _document.TosUri = termsOfService;
         return this;
     }
 
@@ -398,11 +417,14 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// </summary>
     /// <param name="launchUri"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithLaunchUri(string launchUri)
+    public UdapCertificationsAndEndorsementBuilder WithLaunchUri(string? launchUri)
     {
-        _ = new Uri(launchUri);
-
-        _document.LaunchUri = launchUri;
+        if (!string.IsNullOrEmpty(launchUri))
+        {
+            _ = new Uri(launchUri);
+            _document.LaunchUri = launchUri;
+        }
+        
         return this;
     }
 

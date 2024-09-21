@@ -39,9 +39,9 @@ public class IntermediateCertificateController : ControllerBase
             return new List<Intermediate>();
         }
 
-        var communities = entitities.Select(e => e.ToModel());
+        var intermediates = entitities.Select(e => e.ToModel());
 
-        return Ok(communities);
+        return Ok(intermediates);
     }
 
     // GET api/<IntermediateCertificateController>/5

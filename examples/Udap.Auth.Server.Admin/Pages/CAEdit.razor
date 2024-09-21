@@ -15,10 +15,12 @@
 <MudCard>
     <MudCardHeader>
         <CardHeaderContent>
-            <MudText Typo="Typo.h5">Root Certificate Edit</MudText>
+            <MudTooltip Content="Add intermediate certificates that cannot be resolved.">
+                <MudText Typo="Typo.h5">Intermediate Certificate Edit</MudText>
+            </MudTooltip>
         </CardHeaderContent>
     </MudCardHeader>
     <MudCardContent >
-        <IntermediateCertEditComponent></IntermediateCertEditComponent>
+        <IntermediateCertEditComponent AnchorId="@communityState.Community.Id"></IntermediateCertEditComponent>
     </MudCardContent>
 </MudCard>

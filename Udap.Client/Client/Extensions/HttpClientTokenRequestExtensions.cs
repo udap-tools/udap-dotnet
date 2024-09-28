@@ -109,7 +109,7 @@ public static class HttpClientTokenRequestExtensions
 
     /// <summary>
     /// Sends a token request using the authorization_code grant type.  Typically used when called from
-    /// from a OAuthHandler implementation.  TieredOAuthAuthenticationHandler is an implementation that
+    /// an OAuthHandler implementation.  TieredOAuthAuthenticationHandler is an implementation that
     /// calls this method.
     /// </summary>
     /// <param name="client">The client.</param>

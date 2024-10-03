@@ -30,7 +30,7 @@ public class HeaderAugmentationHandler : DelegatingHandler
         _udapClientOptions = udapClientOptions.CurrentValue;
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         if (_udapClientOptions.Headers != null)
         {
@@ -40,7 +40,7 @@ public class HeaderAugmentationHandler : DelegatingHandler
             }
         }
 
-        return await base.SendAsync(request, cancellationToken);
+        return base.SendAsync(request, cancellationToken);
     }
 }
 

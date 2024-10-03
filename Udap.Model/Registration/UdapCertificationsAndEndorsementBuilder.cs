@@ -303,7 +303,7 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string? addr
     /// </summary>
     /// <param name="softwareVersion"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithSoftwareVersion(string softwareVersion)
+    public UdapCertificationsAndEndorsementBuilder WithSoftwareVersion(string? softwareVersion)
     {
         _document.SoftwareVersion = softwareVersion;
         return this;

@@ -38,7 +38,7 @@ public static class HttpClientTokenRequestExtensions
     /// <param name="request">The request.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns></returns>
-    public static async Task<TokenResponse> UdapRequestClientCredentialsTokenAsync(
+    public static Task<TokenResponse> UdapRequestClientCredentialsTokenAsync(
         this HttpMessageInvoker client,
         UdapClientCredentialsTokenRequest request, 
         CancellationToken cancellationToken = default)
@@ -49,7 +49,7 @@ public static class HttpClientTokenRequestExtensions
         clone.Parameters.AddOptional(OidcConstants.TokenRequest.Scope, request.Scope);
         clone.Parameters.AddRequired(UdapConstants.TokenRequest.Udap, UdapConstants.UdapVersionsSupportedValue);
 
-        return await client.RequestTokenAsync(clone, cancellationToken).ConfigureAwait(false);
+        return client.RequestTokenAsync(clone, cancellationToken);
     }
 
     /// <summary>
@@ -59,7 +59,7 @@ public static class HttpClientTokenRequestExtensions
     /// <param name="tokenRequest">The request.</param>
     /// <param name="token">The cancellation token.</param>
     /// <returns></returns>
-    public static async Task<TokenResponse> ExchangeCodeForTokenResponse(
+    public static Task<TokenResponse> ExchangeCodeForTokenResponse(
         this HttpMessageInvoker client, 
         AuthorizationCodeTokenRequest tokenRequest,
         CancellationToken token = default)
@@ -68,10 +68,6 @@ public static class HttpClientTokenRequestExtensions
 
         clone.Parameters.AddRequired(OidcConstants.TokenRequest.GrantType, OidcConstants.GrantTypes.AuthorizationCode);
         clone.Parameters.AddRequired(OidcConstants.TokenRequest.Code, tokenRequest.Code);
-        // TODO: revisit:: This is not required according to https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3
-        // UDAP profiles also do not require it.  
-        // I think that the Duende.IdentityServer.Validation.TokenRequestValidator will always fail without it.
-        // The https://www.udap.org/UDAPTestTool/ sends the redirect_uri.  So not sure on the path forward yet.
         clone.Parameters.AddOptional(OidcConstants.TokenRequest.RedirectUri, tokenRequest.RedirectUri);
         clone.Parameters.AddRequired(UdapConstants.TokenRequest.Udap, UdapConstants.UdapVersionsSupportedValue);
 
@@ -85,7 +81,7 @@ public static class HttpClientTokenRequestExtensions
             clone.Parameters.AddRequired(OidcConstants.TokenRequest.Resource, resource, allowDuplicates: true);
         }
 
-        return await client.RequestTokenAsync(clone, token).ConfigureAwait(false);
+        return client.RequestTokenAsync(clone, token);
     }
 
     internal static async Task<TokenResponse> RequestTokenAsync(this HttpMessageInvoker client, ProtocolRequest request, CancellationToken cancellationToken = default)
@@ -179,7 +175,7 @@ public static class HttpClientTokenRequestExtensions
         }
 
         var exception = new Exception(result.ToString());
-        exception.Data["error"] = error.ToString();
+        exception.Data["error"] = error;
         exception.Data["error_description"] = errorDescription.ToString();
         exception.Data["error_uri"] = errorUri.ToString();
 

@@ -160,7 +160,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });

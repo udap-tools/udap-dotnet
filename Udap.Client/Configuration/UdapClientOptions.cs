@@ -38,15 +38,36 @@ namespace Udap.Client.Configuration;
 
 public class UdapClientOptions
 {
+    public UdapClientOptions()
+    {
+        ClientName = string.Empty;
+        Contacts = new HashSet<string>();
+        Headers = new Dictionary<string, string>();
+        TieredOAuthClientLogo = string.Empty;
+    }
+
+    [JsonConstructor]
+    public UdapClientOptions(
+        string? clientName = null,
+        HashSet<string>? contacts = null,
+        Dictionary<string, string>? headers = null,
+        string tieredOAuthClientLogo = "")
+    {
+        ClientName = clientName ?? string.Empty;
+        Contacts = contacts ?? new HashSet<string>();
+        Headers = headers ?? new Dictionary<string, string>();
+        TieredOAuthClientLogo = tieredOAuthClientLogo;
+    }
+
     [JsonPropertyName("ClientName")]
-    public string? ClientName { get; set; }
+    public string? ClientName { get; init; }
 
     [JsonPropertyName("Contacts")]
-    public HashSet<string>? Contacts { get; set; }
+    public HashSet<string>? Contacts { get; init; }
 
     [JsonPropertyName("Headers")]
-    public Dictionary<string, string>? Headers { get; set; }
+    public Dictionary<string, string>? Headers { get; init; }
 
     [JsonPropertyName("TieredOAuthClientLogo")]
-    public string TieredOAuthClientLogo { get; set; }
+    public string TieredOAuthClientLogo { get; init; }
 }

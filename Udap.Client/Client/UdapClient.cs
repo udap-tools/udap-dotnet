@@ -27,7 +27,6 @@ using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
-using System.Text;
 
 
 #if NET7_0_OR_GREATER
@@ -50,7 +49,6 @@ namespace Udap.Client.Client
             UdapClientDiscoveryValidator clientDiscoveryValidator,
             IOptionsMonitor<UdapClientOptions> udapClientOptions,
             ILogger<UdapClient> logger,
-            bool enablePkceEnabled = true,
             DiscoveryPolicy? discoveryPolicy = null)
         {
             _httpClient = httpClient;
@@ -153,7 +151,7 @@ namespace Udap.Client.Client
         }
 
         /// <inheritdoc />
-        public async Task<UdapDynamicClientRegistrationDocument> RegisterAuthCodeClient(
+        public Task<UdapDynamicClientRegistrationDocument> RegisterAuthCodeClient(
             X509Certificate2 certificate, 
             string scopes,
             string logo,
@@ -161,7 +159,7 @@ namespace Udap.Client.Client
             string? issuer,
             CancellationToken token = default)
         {
-            return await this.RegisterAuthCodeClient(
+            return this.RegisterAuthCodeClient(
                 new List<X509Certificate2> { certificate },
                 scopes, 
                 logo,
@@ -204,14 +202,14 @@ namespace Udap.Client.Client
         }
 
         //// <inheritdoc />
-        public async Task<UdapDynamicClientRegistrationDocument> RegisterClientCredentialsClient(
+        public Task<UdapDynamicClientRegistrationDocument> RegisterClientCredentialsClient(
             X509Certificate2 certificate, 
             string scopes,
             string? issuer, 
             string? logo,
             CancellationToken token = default)
         {
-            return await this.RegisterClientCredentialsClient(
+            return this.RegisterClientCredentialsClient(
                 new List<X509Certificate2> { certificate },
                 scopes, 
                 logo,
@@ -258,21 +256,18 @@ namespace Udap.Client.Client
                 uiLocales: uiLocales,
                 idTokenHint: idTokenHint,
                 requestUri: requestUri,
-                extra: Parameters.FromObject(extra)
+                extra: extra == null ? null : Parameters.FromObject(extra)
                 );
-
+            
             return _httpClient.GetAsync(url);
         }
-        
-
-        public bool PkcseEnabled { get; }
 
         /// <summary>
         /// UdapClient is enabled for PKCE by default in constructor.  This can be overridden by setting this property to false or at construction.
         /// Overriding at construction time will avoid the allocation of CodeVerifier and CodeChallenge.
-        /// <seealso cref="https://datatracker.ietf.org/doc/html/rfc7636"/>
-        /// <seealso cref="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/b2b.html#obtaining-an-authorization-code">adfaf</seealso> and 
-        /// <seealso cref="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/consumer.html#obtaining-an-authorization-code"/>
+        /// <a href="https://datatracker.ietf.org/doc/html/rfc7636"/>,
+        /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/b2b.html#obtaining-an-authorization-code" /> and 
+        /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/consumer.html#obtaining-an-authorization-code"/>
         /// </summary>
         public Pkce GeneratePkce()
         {
@@ -341,13 +336,13 @@ namespace Udap.Client.Client
         /// <param name="token"></param>
         /// <returns></returns>
         /// <exception cref="UnauthorizedAccessException"></exception>
-        public async Task<UdapDiscoveryDocumentResponse> ValidateResource(
+        public Task<UdapDiscoveryDocumentResponse> ValidateResource(
             string baseUrl,
             string? community,
             DiscoveryPolicy? discoveryPolicy,
             CancellationToken token = default)
         {
-            return await InternalValidateResource(baseUrl, null, community, discoveryPolicy, token);
+            return InternalValidateResource(baseUrl, null, community, discoveryPolicy, token);
         }
 
         private async Task<UdapDiscoveryDocumentResponse> InternalValidateResource(
@@ -617,10 +612,14 @@ namespace Udap.Client.Client
                     .WithExpiration(TimeSpan.FromMinutes(5))
                     .WithJwtId()
                     .WithClientName(_udapClientOptions.ClientName)
-                    .WithLogoUri(logoUrl)
                     .WithContacts(_udapClientOptions.Contacts)
                     .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                     .WithScope(scopes);
+
+                if (logoUrl != null)
+                {
+                    builder.WithLogoUri(logoUrl);
+                }
 
                 if (!string.IsNullOrEmpty(issuer))
                 {

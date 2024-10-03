@@ -47,8 +47,7 @@ public static class TestExtensions
                     pipelineIdp1.BackChannelClient,
                     sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                     sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                    sp.GetRequiredService<ILogger<UdapClient>>(),
-                    false);
+                    sp.GetRequiredService<ILogger<UdapClient>>());
             }
 
             if (dynamicIdp.Name == "https://idpserver2")
@@ -58,16 +57,14 @@ public static class TestExtensions
                     pipelineIdp2.BackChannelClient,
                     sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                     sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                    sp.GetRequiredService<ILogger<UdapClient>>(),
-                    false);
+                    sp.GetRequiredService<ILogger<UdapClient>>());
             }
 
             return new UdapClient(
                 authServerPipeline.BrowserClient,
                 sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                false);
+                sp.GetRequiredService<ILogger<UdapClient>>());
             
         });
 

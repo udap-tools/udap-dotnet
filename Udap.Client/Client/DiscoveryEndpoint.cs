@@ -92,7 +92,7 @@ public class DiscoveryEndpoint
     }
 
     /// <summary>
-    /// Determines whether uses a secure scheme according to the policy.
+    /// Determines whether it uses a secure scheme according to the policy.
     /// </summary>
     /// <param name="url">The URL.</param>
     /// <param name="policy">The policy.</param>

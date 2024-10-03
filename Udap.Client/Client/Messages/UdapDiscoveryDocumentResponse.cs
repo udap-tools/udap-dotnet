@@ -1,4 +1,13 @@
-﻿// UdapModel is modeled after IdentityModel. See https://github.com/IdentityModel/IdentityModel
+﻿#region (c) 2022 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
+// UdapModel is modeled after IdentityModel. See https://github.com/IdentityModel/IdentityModel
 // 
 // Copyright (c) Brock Allen & Dominick Baier. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See LICENSE in the project root for license information.
@@ -23,7 +32,7 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
 
     protected override Task InitializeAsync(object? initializationData = null)
     {
-        if (!HttpResponse.IsSuccessStatusCode)
+        if (HttpResponse == null || !HttpResponse.IsSuccessStatusCode)
         {
             ErrorMessage = initializationData as string;
             return Task.CompletedTask;
@@ -55,17 +64,17 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     public JsonWebKeySet? KeySet { get; set; }
 
     // strongly typed
-    public IEnumerable<string> UdapVersionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapVersionsSupported);
-    public IEnumerable<string> UdapProfilesSupported => TryGetStringArray(UdapConstants.Discovery.UdapProfilesSupported);
-    public IEnumerable<string> UdapAuthorizationExtensionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapAuthorizationExtensionsSupported);
-    public IEnumerable<string> UdapAuthorizationExtensionsRequired => TryGetStringArray(UdapConstants.Discovery.UdapAuthorizationExtensionsRequired);
-    public IEnumerable<string> UdapCertificationsSupported => TryGetStringArray(UdapConstants.Discovery.UdapCertificationsSupported);
-    public IEnumerable<string> UdapCertificationsRequired => TryGetStringArray(UdapConstants.Discovery.UdapCertificationsRequired);
-    public IEnumerable<string> GrantTypesSupported => TryGetStringArray(UdapConstants.Discovery.GrantTypesSupported);
-    public IEnumerable<string> ScopesSupported => TryGetStringArray(UdapConstants.Discovery.ScopesSupported);
-    public IEnumerable<string> TokenEndpointAuthMethodsSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported);
-    public IEnumerable<string> TokenEndpointAuthSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported);
-    public IEnumerable<string> RegistrationEndpointJwtSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.RegistrationEndpointJwtSigningAlgValuesSupported);
+    public IEnumerable<string>? UdapVersionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapVersionsSupported);
+    public IEnumerable<string>? UdapProfilesSupported => TryGetStringArray(UdapConstants.Discovery.UdapProfilesSupported);
+    public IEnumerable<string>? UdapAuthorizationExtensionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapAuthorizationExtensionsSupported);
+    public IEnumerable<string>? UdapAuthorizationExtensionsRequired => TryGetStringArray(UdapConstants.Discovery.UdapAuthorizationExtensionsRequired);
+    public IEnumerable<string>? UdapCertificationsSupported => TryGetStringArray(UdapConstants.Discovery.UdapCertificationsSupported);
+    public IEnumerable<string>? UdapCertificationsRequired => TryGetStringArray(UdapConstants.Discovery.UdapCertificationsRequired);
+    public IEnumerable<string>? GrantTypesSupported => TryGetStringArray(UdapConstants.Discovery.GrantTypesSupported);
+    public IEnumerable<string>? ScopesSupported => TryGetStringArray(UdapConstants.Discovery.ScopesSupported);
+    public IEnumerable<string>? TokenEndpointAuthMethodsSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported);
+    public IEnumerable<string>? TokenEndpointAuthSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported);
+    public IEnumerable<string>? RegistrationEndpointJwtSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.RegistrationEndpointJwtSigningAlgValuesSupported);
 
     public string? JwksUri => TryGetString(UdapConstants.Discovery.JwksUri);
     public string? AuthorizeEndpoint => TryGetString(UdapConstants.Discovery.AuthorizationEndpoint);

@@ -17,9 +17,9 @@ public record Pkce
 {
     /// <summary>
     /// PKCE generated and used in the authorization code flow.
-    /// <seealso cref="https://datatracker.ietf.org/doc/html/rfc7636"/>
-    /// <seealso cref="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/b2b.html#obtaining-an-authorization-code"/> 
-    /// <seealso cref="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/consumer.html#obtaining-an-authorization-code"/>
+    /// <a href="https://datatracker.ietf.org/doc/html/rfc7636"/>
+    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/b2b.html#obtaining-an-authorization-code"/> 
+    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/consumer.html#obtaining-an-authorization-code"/>
     /// </summary>
     public Pkce()
     {

@@ -148,7 +148,7 @@ namespace Udap.Common.Certificates
             }
 
             intermediateCertificates = null;
-            anchorCertificates = null;
+            
 
             // if there are no anchors we should always fail
             if (roots.IsNullOrEmpty())
@@ -217,10 +217,13 @@ namespace Udap.Common.Certificates
                         // Found a valid anchor!
                         // Because we found an anchor we trust, we can skip trust
                         foundAnchor = true;
-                        if (anchors != null)
+                        var anchorList = (anchors ?? Array.Empty<Anchor>()).ToList();
+
+                        if (anchorList.Any())
                         {
-                            communityId = anchors.First(a => a.Thumbprint == chainElement.Certificate.Thumbprint).CommunityId;
+                            communityId = anchorList.First(a => a.Thumbprint == chainElement.Certificate.Thumbprint).CommunityId;
                         }
+
                         continue;
                     }
 

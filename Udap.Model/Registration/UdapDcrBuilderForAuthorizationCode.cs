@@ -161,7 +161,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithClientName(string clientName)
+    public UdapDcrBuilderForAuthorizationCode WithClientName(string? clientName)
     {
         _document.ClientName = clientName;
         return this;
@@ -173,7 +173,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithTokenEndpointAuthMethod(string tokenEndpointAuthMethod)
+    public UdapDcrBuilderForAuthorizationCode WithTokenEndpointAuthMethod(string? tokenEndpointAuthMethod)
     {
         _document.TokenEndpointAuthMethod = tokenEndpointAuthMethod;
         return this;

@@ -164,7 +164,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithClientName(string clientName)
+    public UdapDcrBuilderForClientCredentials WithClientName(string? clientName)
     {
         _document.ClientName = clientName;
         return this;
@@ -176,7 +176,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithTokenEndpointAuthMethod(string tokenEndpointAuthMethod)
+    public UdapDcrBuilderForClientCredentials WithTokenEndpointAuthMethod(string? tokenEndpointAuthMethod)
     {
         _document.TokenEndpointAuthMethod = tokenEndpointAuthMethod;
         return this;

@@ -149,7 +149,7 @@ public class TrustChainValidatorTests
     }
 
     [Fact]
-    public async Task FindCommunityTest()
+    public Task FindCommunityTest()
     {
         var udapMetadataOptions = new UdapMetadataOptions();
         _configuration.GetSection(Constants.UDAP_METADATA_OPTIONS).Bind(udapMetadataOptions);
@@ -179,6 +179,7 @@ public class TrustChainValidatorTests
         communityHtml.Should().NotBeNullOrWhiteSpace();
         communityHtml.Should().Contain("href=\"https://baseurl/.well-known/udap?community=udap://fhirlabs.net\"");
         communityHtml.Should().Contain("href=\"https://baseurl/.well-known/udap?community=udap://untrusted.fhirlabs.net/\"");
+        return Task.CompletedTask;
     }
 
 
@@ -194,7 +195,7 @@ public class TrustChainValidatorTests
         var services = new ServiceCollection();
 
         // UDAP CertStore
-        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
+        services.Configure<UdapFileCertStoreManifest>(configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
         services.AddSingleton<ITrustAnchorStore>(sp =>
             new TrustAnchorFileStore(
                 sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
@@ -206,13 +207,14 @@ public class TrustChainValidatorTests
 
         var certificateStore = await certStore.Resolve();
         var anchors = certificateStore.AnchorCertificates
-            .Where(c => c.Community == communityName);
+            .Where(c => c.Community == communityName)
+            .ToList();
 
         // Coverage for frameworks not hosted in example projects.  Funky but works.
         certStore.AnchorCertificates.AsEnumerable().ToX509Collection().Should().NotBeNullOrEmpty();
 
         var intermediates = anchors
-            .SelectMany(a => a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate))).ToArray()
+            .SelectMany(a => a.Intermediates!.Select(i => X509Certificate2.CreateFromPem(i.Certificate))).ToArray()
             .ToX509Collection();
 
         var anchorCertificates = anchors

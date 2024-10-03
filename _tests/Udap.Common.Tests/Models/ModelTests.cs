@@ -10,6 +10,7 @@
 using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using Udap.Common.Models;
+// ReSharper disable SuspiciousTypeConversion.Global
 
 namespace Udap.Common.Tests.Models;
 
@@ -32,9 +33,8 @@ public class ModelTests
 
         anchor.Equals(new object()).Should().BeFalse();
         anchor.Equals(null).Should().BeFalse();
-        anchor!.Equals(null as Anchor).Should().BeFalse();
-
-        anchor.EndDate.Should().Be(certificate.NotAfter);
+        
+        anchor!.EndDate.Should().Be(certificate.NotAfter);
         anchor.BeginDate.Should().Be(certificate.NotBefore);
         anchor.Enabled.Should().BeFalse();
         anchor.Id.Should().Be(0);
@@ -56,11 +56,10 @@ public class ModelTests
 
         var secondAnchor = new Anchor(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
         intermediate.Equals(secondAnchor).Should().BeFalse();
-        intermediate.Equals(secondAnchor as object).Should().BeFalse();
 
         intermediate.Equals(new object()).Should().BeFalse();
         intermediate.Equals(null).Should().BeFalse();
-        intermediate.Equals(null as Anchor).Should().BeFalse();
+        intermediate!.Equals(null as Anchor).Should().BeFalse();
 
         intermediate.EndDate.Should().Be(intermediateCertificate.NotAfter);
         intermediate.BeginDate.Should().Be(intermediateCertificate.NotBefore);
@@ -93,9 +92,8 @@ public class ModelTests
 
         issued.Equals(new object()).Should().BeFalse();
         issued.Equals(null).Should().BeFalse();
-        issued!.Equals(null as IssuedCertificate).Should().BeFalse();
 
-        issued.GetHashCode().Should().NotBe(secondIssued.GetHashCode());
+        issued!.GetHashCode().Should().NotBe(secondIssued.GetHashCode());
     }
 
 

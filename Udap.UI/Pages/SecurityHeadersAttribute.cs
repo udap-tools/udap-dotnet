@@ -34,13 +34,11 @@ public class SecurityHeadersAttribute : ActionFilterAttribute
                 }
             }
 
-
             // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
             if (!context.HttpContext.Response.Headers.ContainsKey("X-Content-Type-Options"))
             {
                 context.HttpContext.Response.Headers["X-Content-Type-Options"] = "nosniff";
             }
-            
 
             // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
             if (!context.HttpContext.Response.Headers.ContainsKey("X-Frame-Options"))

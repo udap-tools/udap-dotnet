@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
@@ -210,9 +209,9 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var verSupported = disco.UdapVersionsSupported.ToList();
+        var verSupported = disco.UdapVersionsSupported?.ToList();
         verSupported.Should().NotBeNullOrEmpty();
-        verSupported.Single().Should().Be("1");
+        verSupported!.Single().Should().Be("1");
     }
 
 
@@ -224,10 +223,10 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var extensions = disco.UdapAuthorizationExtensionsSupported.ToList();
+        var extensions = disco.UdapAuthorizationExtensionsSupported?.ToList();
         extensions.Should().NotBeNullOrEmpty();
 
-        var hl7B2B = extensions.SingleOrDefault(c => c == "hl7-b2b");
+        var hl7B2B = extensions?.SingleOrDefault(c => c == "hl7-b2b");
         hl7B2B.Should().NotBeNullOrEmpty();
     }
 
@@ -256,12 +255,12 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var certificationsSupported = disco.UdapCertificationsSupported.SingleOrDefault(c => c == "http://MyUdapCertification");
+        var certificationsSupported = disco.UdapCertificationsSupported?.SingleOrDefault(c => c == "http://MyUdapCertification");
         certificationsSupported.Should().NotBeNullOrEmpty();
         var uriCertificationsSupported = new Uri(certificationsSupported!);
         uriCertificationsSupported.Should().Be("http://MyUdapCertification");
 
-        certificationsSupported = disco.UdapCertificationsSupported.SingleOrDefault(c => c == "http://MyUdapCertification2");
+        certificationsSupported = disco.UdapCertificationsSupported?.SingleOrDefault(c => c == "http://MyUdapCertification2");
         certificationsSupported.Should().NotBeNullOrEmpty();
         uriCertificationsSupported = new Uri(certificationsSupported!);
         uriCertificationsSupported.Should().Be("http://MyUdapCertification2");
@@ -278,7 +277,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var certificationsRequired = disco.UdapCertificationsRequired.SingleOrDefault();
+        var certificationsRequired = disco.UdapCertificationsRequired?.SingleOrDefault();
         certificationsRequired.Should().NotBeNullOrEmpty();
         var uriCertificationsRequired = new Uri(certificationsRequired!);
         uriCertificationsRequired.Should().Be("http://MyUdapCertification");
@@ -292,10 +291,10 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var grantTypes = disco.GrantTypesSupported.ToList();
+        var grantTypes = disco.GrantTypesSupported?.ToList();
         grantTypes.Should().NotBeNullOrEmpty();
 
-        grantTypes.Count().Should().Be(3);
+        grantTypes!.Count().Should().Be(3);
         grantTypes.Should().Contain("authorization_code");
         grantTypes.Should().Contain("refresh_token");
         grantTypes.Should().Contain("client_credentials");
@@ -309,7 +308,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var scopesSupported = disco.ScopesSupported.ToList();
+        var scopesSupported = disco.ScopesSupported?.ToList();
 
         scopesSupported.Should().Contain("openid");
         scopesSupported.Should().Contain("system/*.read");
@@ -361,7 +360,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var tokenEndpointAuthMethodSupported = disco.TokenEndpointAuthMethodsSupported.SingleOrDefault();
+        var tokenEndpointAuthMethodSupported = disco.TokenEndpointAuthMethodsSupported?.SingleOrDefault();
         tokenEndpointAuthMethodSupported.Should().NotBeNullOrEmpty();
         tokenEndpointAuthMethodSupported.Should().Be("private_key_jwt");
     }
@@ -374,13 +373,13 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
         
-        var registrationSigningAlgValuesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported.ToList();
+        var registrationSigningAlgValuesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported?.ToList();
         registrationSigningAlgValuesSupported.Should().NotBeNullOrEmpty();
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
-        registrationSigningAlgValuesSupported.Count().Should().Be(4);
+        registrationSigningAlgValuesSupported!.Count().Should().Be(4);
     }
 
     [Fact]
@@ -391,13 +390,13 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var disco = await udapClient.ValidateResource(
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
-        var tokenSigningAlgValuesSupported = disco.TokenEndpointAuthSigningAlgValuesSupported.ToList();
+        var tokenSigningAlgValuesSupported = disco.TokenEndpointAuthSigningAlgValuesSupported?.ToList();
         tokenSigningAlgValuesSupported.Should().NotBeNullOrEmpty();
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
-        tokenSigningAlgValuesSupported.Count().Should().Be(4);
+        tokenSigningAlgValuesSupported!.Count().Should().Be(4);
     }
 
     [Fact]
@@ -432,7 +431,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         // bad keys
         //x5cArray[0] = "MIIFJDCCBAygAwIBAgIIUFnObaPiufEwDQYJKoZIhvcNAQELBQAwgbMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIDApDYWxpZm9ybmlhMRIwEAYDVQQHDAlTYW4gRGllZ28xEzARBgNVBAoMCkVNUiBEaXJlY3QxPzA9BgNVBAsMNlRlc3QgUEtJIENlcnRpZmljYXRpb24gQXV0aG9yaXR5IChjZXJ0cy5lbXJkaXJlY3QuY29tKTElMCMGA1UEAwwcRU1SIERpcmVjdCBUZXN0IENsaWVudCBTdWJDQTAeFw0yMTAxMTUyMTQ1MTRaFw0yNDAxMTYyMTQ1MTRaMIGlMQswCQYDVQQGEwJVUzETMBEGA1UECAwKQ2FsaWZvcm5pYTETMBEGA1UECgwKRU1SIERpcmVjdDEzMDEGA1UECwwqVURBUCBUZXN0IENlcnRpZmljYXRlIE5PVCBGT1IgVVNFIFdJVEggUEhJMTcwNQYDVQQDDC5odHRwczovL3N0YWdlLmhlYWx0aHRvZ28ubWU6ODE4MS9maGlyL3I0L3N0YWdlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt9j718Yu8HjoIdSvLTloVLnFLdfdL7T/BylPcIpcKhB7zJvNzZOpq8T/fXhc9b4p6cY6gBPBq1Vnax4zTCAP/te5W6FfoRoKhKqpExuYmgIw0lE8a4UAnHVwPOAvuKS3abGzYfLxxUc4PFXp4HrBx/QWOMqR408GlbSYG0wpeifhMx1VD8TFmU13FmFqgP3cEHjT7RxulfJnPcPPXZ8b5tZIkQMlApJRULVnHEBcICixaRWCJjzzArgoFUydPiAfMZELi80W4n0Wn/WduSYZqwQAosI7AfS3NINd44w8kek1X9WVwX/QtcAVuCXvSFoqoIAa3l4kBCQIHmY9UhltZwIDAQABo4IBRjCCAUIwWQYIKwYBBQUHAQEETTBLMEkGCCsGAQUFBzAChj1odHRwOi8vY2VydHMuZW1yZGlyZWN0LmNvbS9jZXJ0cy9FTVJEaXJlY3RUZXN0Q2xpZW50U3ViQ0EuY3J0MB0GA1UdDgQWBBRZmXqpQzFDSamfvPKiKtjg9gp8cTAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFKOVbWu9K1HN4c/lkG/XJk+/3T7eMEwGA1UdHwRFMEMwQaA/oD2GO2h0dHA6Ly9jZXJ0cy5lbXJkaXJlY3QuY29tL2NybC9FTVJEaXJlY3RUZXN0Q2xpZW50U3ViQ0EuY3JsMA4GA1UdDwEB/wQEAwIHgDA5BgNVHREEMjAwhi5odHRwczovL3N0YWdlLmhlYWx0aHRvZ28ubWU6ODE4MS9maGlyL3I0L3N0YWdlMA0GCSqGSIb3DQEBCwUAA4IBAQAePi+wIAPubt2Fk2jbELZt/bgkc7KTGC5C4sLX25NNYyzvHh0kwmHvgBx3thCv7uOvf/nbmhnk+l3EmgdaB1ZjzcjLMFc7xec9YJWsegzEkR2pzYQp/41cmhTfwNSnXxUSZrBtqInx+mALi9r96lg6RpqQh+DxlToC2vreW7Fy3pFa3DQKFN6j6azYTj5ljqrGprKQRh/iyqRvY+j+BC44Wl+POfBVObwtf71irMuLsSCmMptPGFGTqQdtLYbFjkB4wowiFfEe0PYL+N015iPZA4wimlXbau4XaEvipnIsWxqzT30RbQgrrOw7zN1QjGRURBbdBkMrgLkzmfGxhjuV";
 
-        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()?.ToString()!));
+        var cert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First().ToString()!));
 
         var tokenHandler = new JwtSecurityTokenHandler();
         

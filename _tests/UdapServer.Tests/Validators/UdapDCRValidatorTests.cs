@@ -7,11 +7,9 @@
 // */
 #endregion
 
-using System.Net;
 using System.Reflection;
 using Duende.IdentityServer.Stores;
 using FluentAssertions;
-using FluentAssertions.Common;
 using IdentityModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -135,8 +133,12 @@ public class UdapDcrValidatorTests
         var mockHandler = Substitute.For<HttpMessageHandler>();
 
         mockHandler.GetType().GetMethod("SendAsync", BindingFlags.NonPublic | BindingFlags.Instance)
-            .Invoke(mockHandler, new object[] { Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>()})
-            .Returns(callInfo =>
+#pragma warning disable NS1000
+#pragma warning disable NS1004
+            ?.Invoke(mockHandler, new object[] { Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>()})
+#pragma warning restore NS1004
+#pragma warning restore NS1000
+            .Returns(_ =>
             {
                 var response = new HttpResponseMessage();
 
@@ -189,7 +191,7 @@ public class UdapDcrValidatorTests
         result = await validator.ValidateJti(document, EpochTime.GetIntDate(expires));
 
         result.Should().NotBeNull();
-        result!.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
+        result.Error.Should().Be(UdapDynamicClientRegistrationErrors.InvalidClientMetadata);
         result.ErrorDescription.Should().Be(UdapDynamicClientRegistrationErrorDescriptions.Replay);
     }
 
@@ -198,7 +200,7 @@ public class UdapDcrValidatorTests
         HttpClient httpClient,
         out UdapDynamicClientRegistrationValidator validator)
     {
-        var _clock = new StubClock();
+        var clock = new StubClock();
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -231,7 +233,7 @@ public class UdapDcrValidatorTests
         validator = new UdapDynamicClientRegistrationValidator(
             Substitute.For<TrustChainValidator>(Substitute.For<ILogger<TrustChainValidator>>()),
             httpClient,
-            new TestReplayCache(_clock),
+            new TestReplayCache(clock),
             serverSettings,
             mockHttpContextAccessor,
             new DefaultScopeExpander(),
@@ -245,8 +247,13 @@ public class UdapDcrValidatorTests
         var mockHandler = Substitute.For<HttpMessageHandler>();
 
         mockHandler.GetType().GetMethod("SendAsync", BindingFlags.NonPublic | BindingFlags.Instance)
-            .Invoke(mockHandler, new object[] { Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>() })
-            .Returns(callInfo =>
+
+#pragma warning disable NS1004
+#pragma warning disable NS1000
+            ?.Invoke(mockHandler, new object[] { Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>() })
+#pragma warning restore NS1000
+#pragma warning restore NS1004
+            .Returns(_ =>
             {
                 var response = new HttpResponseMessage();
 

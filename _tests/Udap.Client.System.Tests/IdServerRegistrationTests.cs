@@ -21,7 +21,6 @@ using System.Text.Json.Serialization;
 using FluentAssertions;
 using IdentityModel;
 using IdentityModel.Client;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -84,7 +83,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             }
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         
         
@@ -259,7 +258,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             }
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
 
@@ -434,7 +433,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             }
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
@@ -526,7 +525,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             }
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
@@ -598,7 +597,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             }
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
@@ -672,7 +671,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             }
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         var discoJsonFormatted =
             JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
@@ -892,7 +891,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             }
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
@@ -1116,7 +1115,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             }
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
@@ -1347,7 +1346,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             }
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
@@ -1531,7 +1530,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Community = "udap://fhirlabs.net"
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         
 
@@ -1730,7 +1729,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             }
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
@@ -1854,21 +1853,21 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         // Get Access Token
         //
-        var now = DateTime.UtcNow;
+        // var now = DateTime.UtcNow;
 
-        var jwtPayload = new JwtPayLoadExtension(
-            result!.ClientId,
-            disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
-            new List<Claim>()
-            {
-                new Claim(JwtClaimTypes.Subject, result.ClientId!),
-                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
-                new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
-            },
-            now.ToUniversalTime(),
-            now.AddMinutes(5).ToUniversalTime()
-            );
+        // var jwtPayload = new JwtPayLoadExtension(
+        //     result!.ClientId,
+        //     disco.TokenEndpoint, //The FHIR Authorization Server's token endpoint URL
+        //     new List<Claim>()
+        //     {
+        //         new Claim(JwtClaimTypes.Subject, result.ClientId!),
+        //         new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(now.ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
+        //         new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+        //         new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+        //     },
+        //     now.ToUniversalTime(),
+        //     now.AddMinutes(5).ToUniversalTime()
+        //     );
 
         // var clientAssertion =
         //     SignedSoftwareStatementBuilder<JwtPayLoadExtension>
@@ -1896,7 +1895,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         // _testOutputHelper.WriteLine(string.Empty);
 
         var url = new RequestUrl(disco.AuthorizeEndpoint!).CreateAuthorizeUrl(
-            clientId: result.ClientId!,
+            clientId: result?.ClientId!,
             responseType: "code",
             state: CryptoRandom.CreateUniqueId(),
             scope: "user/Patient.read",
@@ -1960,7 +1959,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             Community = "udap://fhirlabs.net"
         });
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         
         // var discoJsonFormatted =

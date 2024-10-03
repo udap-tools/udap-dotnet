@@ -1,4 +1,5 @@
 ﻿#nullable disable
+#pragma warning disable
 
 using Microsoft.EntityFrameworkCore.Migrations;
 

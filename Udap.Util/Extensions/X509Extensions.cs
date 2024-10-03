@@ -314,7 +314,7 @@ public static class X509Extensions
 
     public static string ResolveUriSubjAltName(this X509Certificate2 cert, string baseUrl)
     {
-        var sans = cert.GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI);
+        var sans = cert.GetSubjectAltNames(n => n.TagNo == (int)GeneralNameType.URI);
 
         foreach (var san in sans.Select(s => s.Item2))
         {

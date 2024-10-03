@@ -494,7 +494,7 @@ public class ScopeExpansionTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
@@ -562,7 +562,7 @@ public class ScopeExpansionTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var response = await _mockPipeline.BrowserClient.PostAsync(

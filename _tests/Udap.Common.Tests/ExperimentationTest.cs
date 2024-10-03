@@ -477,15 +477,11 @@ public class ExperimentationTest
     // Helper function to convert a private key to PKCS8 format
     public static byte[] ConvertPrivateKeyToPkcs8(byte[] privateKey)
     {
-        using (var stream = new MemoryStream(privateKey))
-        {
-            using (var reader = new StreamReader(stream))
-            {
-                var pemReader = new Org.BouncyCastle.OpenSsl.PemReader(reader);
-                var keyPair = pemReader.ReadObject() as Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair;
-                var pkcs8 = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(keyPair.Private).GetDerEncoded();
-                return pkcs8;
-            }
-        }
+        using var stream = new MemoryStream(privateKey);
+        using var reader = new StreamReader(stream);
+        var pemReader = new Org.BouncyCastle.OpenSsl.PemReader(reader);
+        var keyPair = pemReader.ReadObject() as Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair;
+        var pkcs8 = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(keyPair.Private).GetDerEncoded();
+        return pkcs8;
     }
 }

@@ -163,7 +163,7 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
@@ -280,7 +280,7 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;

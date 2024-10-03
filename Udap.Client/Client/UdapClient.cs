@@ -524,7 +524,7 @@ namespace Udap.Client.Client
                 (
                     signedSoftwareStatement,
                     UdapConstants.UdapVersionsSupportedValue
-                    // new string[] { }
+                    // Array.Empty<string>()
                 );
 
                 // New StringContent constructor taking a MediaTypeHeaderValue to ensure CharSet can be controlled
@@ -637,7 +637,7 @@ namespace Udap.Client.Client
                 (
                     signedSoftwareStatement,
                     UdapConstants.UdapVersionsSupportedValue
-                // new string[] { }
+                // Array.Empty<string>()
                 );
 
                 // New StringContent constructor taking a MediaTypeHeaderValue to ensure CharSet can be controlled

@@ -11,7 +11,6 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
-using Duende.IdentityServer.Models;
 using FluentAssertions;
 using IdentityModel;
 using Microsoft.AspNetCore.Hosting;
@@ -28,13 +27,12 @@ using Udap.Common.Certificates;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
-using Udap.Server;
 using Udap.Server.DbContexts;
 using Xunit.Abstractions;
 
 namespace UdapServer.Tests;
 
-public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
+public class Hl7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
 {
     public ITestOutputHelper Output { get; set; } = null!;
 
@@ -43,7 +41,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
     private ServiceProvider _serviceProvider = null!;
     private IServiceScope _serviceScope = null!;
 
-    public HL7ApiTestFixture()
+    public Hl7ApiTestFixture()
     {
         SeedData.EnsureSeedData("Data Source=./Udap.Idp.db.HL7;", Substitute.For<Serilog.ILogger>()).GetAwaiter().GetResult();
     }
@@ -57,7 +55,7 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
         Environment.SetEnvironmentVariable("provider", "Sqlite");
         builder.UseEnvironment("Development");
         
-        builder.ConfigureServices((hostContext, services) =>
+        builder.ConfigureServices((_, services) =>
         {
             services.AddSingleton<IHostLifetime, NoopHostLifetime>();
 
@@ -112,10 +110,10 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
     }
 
     /// <inheritdoc />
-    public override async ValueTask DisposeAsync()
+    public override ValueTask DisposeAsync()
     {
         _serviceScope.Dispose();
-        await _serviceProvider.DisposeAsync();
+        return _serviceProvider.DisposeAsync();
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -137,13 +135,13 @@ public class HL7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
 /// Full Web tests.  Using <see cref="Udap.Auth.Server"/> web server.
 /// </summary>
 [Collection("Udap.Auth.Server")]
-public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
+public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 {
-    private readonly HL7ApiTestFixture _fixture;
+    private readonly Hl7ApiTestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
    
     public Hl7RegistrationTests(
-        HL7ApiTestFixture fixture, 
+        Hl7ApiTestFixture fixture, 
         ITestOutputHelper testOutputHelper)
     {
         if (fixture == null) throw new ArgumentNullException(nameof(fixture));
@@ -268,7 +266,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
 
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
@@ -360,7 +358,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
     }
 
     [Fact]
-    public async Task RegistrationMissingX5cHeaderTest()
+    public async Task RegistrationMissingX5CHeaderTest()
     {
         // var clientPolicyStore = _fixture.Services.GetService<IIpPolicyStore>();
         //
@@ -368,7 +366,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
         //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
@@ -436,7 +434,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
        
         var regEndpoint = disco.RegistrationEndpoint;
@@ -502,7 +500,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -569,7 +567,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -633,7 +631,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -699,7 +697,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -764,7 +762,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -829,7 +827,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -894,7 +892,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -959,7 +957,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -1024,7 +1022,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -1089,7 +1087,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -1154,7 +1152,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -1220,7 +1218,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -1327,7 +1325,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;
@@ -1396,7 +1394,7 @@ public class Hl7RegistrationTests : IClassFixture<HL7ApiTestFixture>
         using var client = _fixture.CreateClient();
         var disco = await client.GetUdapDiscoveryDocument();
 
-        disco.HttpResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
 
         var regEndpoint = disco.RegistrationEndpoint;

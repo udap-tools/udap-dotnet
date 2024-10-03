@@ -507,7 +507,7 @@ public class UdapResponseTypeResponseModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
        
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
@@ -626,7 +626,7 @@ public class UdapResponseTypeResponseModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
@@ -683,7 +683,7 @@ public class UdapResponseTypeResponseModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
@@ -761,7 +761,7 @@ public class UdapResponseTypeResponseModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;

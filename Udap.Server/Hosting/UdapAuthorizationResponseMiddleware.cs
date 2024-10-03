@@ -118,8 +118,8 @@ internal class UdapAuthorizationResponseMiddleware
                     var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
                     
                     var scopes = scope?.FromSpaceSeparatedString();
-                    var udap = (scopes ?? new string[] { }).FirstOrDefault(s => s == "udap");
-                    var openid = (scopes ?? new string[] { }).FirstOrDefault(s => s == "openid");
+                    var udap = (scopes ?? Array.Empty<string>()).FirstOrDefault(s => s == "udap");
+                    var openid = (scopes ?? Array.Empty<string>()).FirstOrDefault(s => s == "openid");
 
                     if (client != null &&
                         client.ClientSecrets.Any(cs =>

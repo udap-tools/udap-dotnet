@@ -10,6 +10,7 @@
 using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Stores;
+using System;
 using Udap.Common;
 using Udap.Server.Validation;
 using Udap.Util.Extensions;
@@ -66,8 +67,8 @@ public class UdapInMemoryResourceStore : IResourceStore
         var apiResourceNamesList = apiResourceNames as List<string> ?? apiResourceNames.ToList();
         activity?.SetTag(Tracing.Properties.ApiResourceNames, apiResourceNamesList.ToSpaceSeparatedString());
 
-        if (apiResourceNames == null) throw new ArgumentNullException(nameof(apiResourceNames));
-        
+        ArgumentNullException.ThrowIfNull(apiResourceNames);
+
         var query = from a in _apiResources
                     where apiResourceNamesList.Contains(a.Name)
                     select a;

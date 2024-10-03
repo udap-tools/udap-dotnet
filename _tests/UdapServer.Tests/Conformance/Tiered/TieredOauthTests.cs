@@ -233,7 +233,7 @@ public class TieredOauthTests
             services.AddSingleton(
                 sp =>
                 {
-                    var serverSettings = sp.GetService<IOptions<ServerSettings>>().Value; // must resolve to trigger the post config at TieredIdpServerSettings
+                    var serverSettings = sp.GetRequiredService<IOptions<ServerSettings>>().Value; // must resolve to trigger the post config at TieredIdpServerSettings
                     serverSettings.DefaultUserScopes = "udap";
                     serverSettings.DefaultSystemScopes = "udap";
                     // ForceStateParamOnAuthorizationCode = false (default)
@@ -252,7 +252,7 @@ public class TieredOauthTests
             //
             // Allow logo resolve back to udap.auth server
             //
-            services.AddSingleton<HttpClient>(sp => _mockAuthorServerPipeline.BrowserClient);
+            services.AddSingleton<HttpClient>(_ => _mockAuthorServerPipeline.BrowserClient);
         };
         
 
@@ -317,7 +317,7 @@ public class TieredOauthTests
             services.AddSingleton(
                 sp =>
                 {
-                    var serverSettings = sp.GetService<IOptions<ServerSettings>>().Value;
+                    var serverSettings = sp.GetRequiredService<IOptions<ServerSettings>>().Value;
                     serverSettings.DefaultUserScopes = "udap";
                     serverSettings.DefaultSystemScopes = "udap";
                     // ForceStateParamOnAuthorizationCode = false (default)
@@ -336,7 +336,7 @@ public class TieredOauthTests
             //
             // Allow logo resolve back to udap.auth server
             //
-            services.AddSingleton<HttpClient>(sp => _mockAuthorServerPipeline.BrowserClient);
+            services.AddSingleton<HttpClient>(_ => _mockAuthorServerPipeline.BrowserClient);
         };
 
        
@@ -1074,8 +1074,8 @@ public class TieredOauthTests
     /// </summary>
     /// <returns></returns>
     [Theory]
-    [InlineData(new object[] { new string[] { "openid", "email", "profile"}})]
-    [InlineData(new object[] { new string[] { "udap", "email", "profile" } })]
+    [InlineData(new object[] { new[] { "openid", "email", "profile"}})]
+    [InlineData(new object[] { new[] { "udap", "email", "profile" } })]
     public async Task ClientAuthorize_Missing_udap_or_idp_scope_between_dataholder_and_IdP_Test(string[] scopes)
     {
         // var scopes = new List<string>() { "email", "profile" };
@@ -1205,7 +1205,7 @@ public class TieredOauthTests
         Debug.Assert(_mockIdPPipeline.BrowserClient != null, "_mockIdPPipeline.BrowserClient != null");
         var backChannelAuthResult =
             await _mockIdPPipeline.BrowserClient.GetAsync(backChannelChallengeResponse.Headers.Location);
-        _testOutputHelper.WriteLine(HttpUtility.UrlDecode(backChannelAuthResult.Headers.Location.Query));
+        _testOutputHelper.WriteLine(HttpUtility.UrlDecode(backChannelAuthResult.Headers.Location?.Query));
 
         backChannelAuthResult.StatusCode.Should().Be(HttpStatusCode.Redirect,
             await backChannelAuthResult.Content.ReadAsStringAsync());

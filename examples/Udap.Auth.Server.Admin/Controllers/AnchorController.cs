@@ -20,7 +20,7 @@ namespace Udap.Auth.Server.Admin.Controllers;
 public class AnchorController : ControllerBase
 {
     IAnchorService _anchorService;
-    ILogger<AnchorController> _logger;
+    readonly ILogger<AnchorController> _logger;
 
     public AnchorController(IAnchorService anchorService, ILogger<AnchorController> logger)
     {

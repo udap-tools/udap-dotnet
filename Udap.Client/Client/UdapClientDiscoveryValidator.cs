@@ -168,9 +168,9 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
         }
     }
 
-    public async Task<bool> ValidateTrustChain(string? community)
+    public Task<bool> ValidateTrustChain(string? community)
     {
-        return await ValidateTrustChain(community, null);
+        return ValidateTrustChain(community, null);
     }
 
     public async Task<bool> ValidateTrustChain(string? community, ITrustAnchorStore? clientSuppliedTrustAnchorStore)

@@ -3,10 +3,9 @@ using System;
 using Duende.IdentityServer.EntityFramework.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
+#pragma warning disable
 
 namespace IdentityServerDb.Migrations.ConfigurationDb
 {

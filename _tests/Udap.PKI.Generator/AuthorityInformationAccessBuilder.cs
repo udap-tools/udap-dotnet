@@ -14,7 +14,7 @@ namespace Udap.PKI.Generator
 {
     public sealed class AuthorityInformationAccessBuilder
     {
-        private readonly List<byte[]> _encodedSequences = new List<byte[]>();
+        private readonly List<byte[]> _encodedSequences = [];
         /// <summary>
         /// Adding ObjectIdentifier (OID) 1.3.6.1.5.5.7.48.2
         /// </summary>
@@ -23,10 +23,9 @@ namespace Udap.PKI.Generator
         {
             var encodedParts = new List<byte[]>();
 
-            if (uri == null) 
-                throw new ArgumentNullException(nameof(uri));
+            ArgumentNullException.ThrowIfNull(uri);
             
-            AsnWriter writer = new AsnWriter(AsnEncodingRules.DER);
+            var writer = new AsnWriter(AsnEncodingRules.DER);
             
             writer.WriteObjectIdentifier("1.3.6.1.5.5.7.48.2"); //Certificate Authority Issuer
             encodedParts.Add(writer.Encode());
@@ -54,7 +53,7 @@ namespace Udap.PKI.Generator
 
         public X509Extension Build(bool critical = false)
         {
-            AsnWriter writer = new AsnWriter(AsnEncodingRules.DER);
+            var writer = new AsnWriter(AsnEncodingRules.DER);
 
             using (writer.PushSequence())
             {
@@ -75,7 +74,7 @@ namespace Udap.PKI.Generator
     public sealed class CertificatePolicyBuilder
     {
         
-        private readonly List<byte[]> _encodedSequences = new List<byte[]>();
+        private readonly List<byte[]> _encodedSequences = [];
 
         /// <summary>
         /// Adding a policy Oid
@@ -124,7 +123,7 @@ namespace Udap.PKI.Generator
 
         public X509Extension Build(bool critical = false)
         {
-            AsnWriter writer = new AsnWriter(AsnEncodingRules.DER);
+            var writer = new AsnWriter(AsnEncodingRules.DER);
 
             using (writer.PushSequence())
             {

@@ -13,9 +13,6 @@ using Xunit.Abstractions;
 namespace Udap.PKI.Generator;
 public class CertificateRenewal : CertificateBase
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-
-
     //
     // Community:SureFhirLabs:: Certificate Store File Constants
     //

@@ -7,6 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Udap.Server.DbContexts;
 
 #nullable disable
+#pragma warning disable
 
 namespace UdapDb.Postgres.Migrations.PersistedGrantDb
 {

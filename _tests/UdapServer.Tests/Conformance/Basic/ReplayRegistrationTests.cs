@@ -158,7 +158,7 @@ public class ReplayRegistrationTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -217,7 +217,7 @@ public class ReplayRegistrationTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -264,7 +264,7 @@ public class ReplayRegistrationTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipelineReplay.BrowserClient.PostAsync(
@@ -319,7 +319,7 @@ public class ReplayRegistrationTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipelineReplay.BrowserClient.PostAsync(

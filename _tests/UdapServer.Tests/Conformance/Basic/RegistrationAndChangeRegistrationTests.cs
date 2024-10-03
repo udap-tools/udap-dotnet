@@ -163,7 +163,7 @@ public class RegistrationAndChangeRegistrationTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -205,7 +205,7 @@ public class RegistrationAndChangeRegistrationTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         regResponse = await _mockPipeline.BrowserClient.PostAsync(

@@ -481,7 +481,7 @@ public class UdapControllerCommunityCertificateResolverTests : IClassFixture<Api
     public UdapControllerCommunityCertificateResolverTests(ApiForCommunityTestFixture fixture,
         ITestOutputHelper testOutputHelper)
     {
-        if (fixture == null) throw new ArgumentNullException(nameof(fixture));
+        ArgumentNullException.ThrowIfNull(fixture);
         fixture.Output = testOutputHelper;
         _fixture = fixture;
         _testOutputHelper = testOutputHelper;

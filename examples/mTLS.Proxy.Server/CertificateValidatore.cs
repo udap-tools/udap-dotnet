@@ -20,7 +20,7 @@ public class CertificateValidator : ICertificateValidator
         }
         catch (Exception ex)
         {
-            throw ex;
+            throw;
         }
     }
 }

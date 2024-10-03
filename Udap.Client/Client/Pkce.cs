@@ -39,11 +39,9 @@ public record Pkce
 
     private string GenerateCodeChallenge(string codeVerifier)
     {
-        using (var sha256 = SHA256.Create())
-        {
-            var challengeBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(codeVerifier));
-            return Base64UrlEncoder.Encode(challengeBytes);
-        }
+        using var sha256 = SHA256.Create();
+        var challengeBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(codeVerifier));
+        return Base64UrlEncoder.Encode(challengeBytes);
     }
 
 

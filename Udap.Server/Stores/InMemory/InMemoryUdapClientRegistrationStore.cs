@@ -68,7 +68,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.UpsertClient");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
 
         var iss = client.ClientSecrets.SingleOrDefault(i =>
@@ -109,7 +109,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<bool> UpsertTieredClient(TieredClient client, CancellationToken token = default)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.UpsertTieredClient");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
         activity?.SetTag(Tracing.Properties.ClientId, client.IdPBaseUrl);
 
@@ -173,7 +173,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetAnchors");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         activity?.SetTag(Tracing.Properties.Community, community);
 
         List<Anchor> anchors;
@@ -198,7 +198,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<IEnumerable<X509Certificate2>>? GetCommunityCertificates(long communityId, CancellationToken token = default)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetCommunityCertificates");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         activity?.SetTag(Tracing.Properties.CommunityId, communityId);
 
         var anchors = _communities
@@ -228,7 +228,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetIntermediateCertificates");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
 
         var intermediates = _intermediateCertificates.ToList();
         var certificates = new X509Certificate2Collection(intermediates
@@ -239,7 +239,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<X509Certificate2Collection?> GetAnchorsCertificates(string? community, CancellationToken token = default)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("InMemoryUdapClientRegistrationStore.GetAnchorsCertificates");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         activity?.SetTag(Tracing.Properties.Community, community);
 
         var anchors = GetAnchors(community, token).Result.ToList();
@@ -279,7 +279,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
     public Task<ICollection<Secret>?> RolloverClientSecrets(ParsedSecret secret, CancellationToken token = default)
     {
         var rolled = false;
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.RolloverClientSecrets");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         activity?.SetTag(Tracing.Properties.ClientId, secret.Id);
 
         var client = _clients.SingleOrDefault(c => c.ClientId == secret.Id);

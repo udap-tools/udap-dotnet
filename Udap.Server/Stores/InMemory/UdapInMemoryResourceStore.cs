@@ -54,7 +54,7 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// <inheritdoc/>
     public Task<Resources> GetAllResourcesAsync()
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.GetAllResources");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
 
         var result = new Resources(_identityResources, _apiResources, _apiScopes);
         return Task.FromResult(result);
@@ -63,7 +63,7 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// <inheritdoc/>
     public Task<IEnumerable<ApiResource>> FindApiResourcesByNameAsync(IEnumerable<string> apiResourceNames)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.FindApiResourcesByName");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         var apiResourceNamesList = apiResourceNames as List<string> ?? apiResourceNames.ToList();
         activity?.SetTag(Tracing.Properties.ApiResourceNames, apiResourceNamesList.ToSpaceSeparatedString());
 
@@ -80,7 +80,7 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// <inheritdoc/>
     public Task<IEnumerable<IdentityResource>> FindIdentityResourcesByScopeNameAsync(IEnumerable<string> scopeNames)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.FindIdentityResourcesByScopeName");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
         activity?.SetTag(Tracing.Properties.ScopeNames, scopeNamesList.ToSpaceSeparatedString());
 
@@ -96,7 +96,7 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// <inheritdoc/>
     public Task<IEnumerable<ApiResource>> FindApiResourcesByScopeNameAsync(IEnumerable<string> scopeNames)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.FindApiResourcesByScopeName");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
         activity?.SetTag(Tracing.Properties.ScopeNames, scopeNamesList.ToSpaceSeparatedString());
 
@@ -112,7 +112,7 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// <inheritdoc/>
     public Task<IEnumerable<ApiScope>> FindApiScopesByNameAsync(IEnumerable<string> scopeNames)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.FindApiScopesByName");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
         activity?.SetTag(Tracing.Properties.ScopeNames, scopeNamesList.ToSpaceSeparatedString());
 

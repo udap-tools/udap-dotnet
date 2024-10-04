@@ -16,7 +16,7 @@ public static class IdentityServerBuilderExtensions
 {
 
 
-    public static IIdentityServerBuilder AddInMemorIdentityProviders(
+    public static IIdentityServerBuilder AddInMemoryIdentityProviders(
         this IIdentityServerBuilder builder, IEnumerable<IdentityProvider> identityProviders)
     {
         builder.Services.AddSingleton(identityProviders);

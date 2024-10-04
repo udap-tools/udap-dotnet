@@ -150,10 +150,12 @@ internal class UdapAuthorizationResponseMiddleware
                     if (responseParams.TryGetValue(_options.UserInteraction.ErrorIdParameter, out var errorId))
                     {
                         var requestParamCollection = context.Request.Query.AsNameValueCollection();
-                        var client =
-                            await clients.FindClientByIdAsync(
-                                requestParamCollection.Get(AuthorizeRequest.ClientId));
-                        
+                        var clientId = requestParamCollection.Get(AuthorizeRequest.ClientId);
+                        Duende.IdentityServer.Models.Client? client = null;
+
+                        if(clientId != null){
+                            client = await clients.FindClientByIdAsync(clientId);
+                        }
 
                         if (client == null)
                         {
@@ -161,12 +163,10 @@ internal class UdapAuthorizationResponseMiddleware
                             return;
                         }
 
-                        if (client != null &&
-                            client.ClientSecrets.Any(cs =>
+                        if (client.ClientSecrets.Any(cs =>
                                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                         {
                             await RenderErrorResponse(context, interactionService, errorId);
-                            return;
                         }
                     }
                 }
@@ -220,7 +220,7 @@ internal class UdapAuthorizationResponseMiddleware
     {
         var errorMessage = await interactionService.GetErrorContextAsync(errorId);
 
-        if (errorMessage.Error == AuthorizeErrors.UnsupportedResponseType
+        if (errorMessage?.Error == AuthorizeErrors.UnsupportedResponseType
             || errorMessage is { Error: AuthorizeErrors.InvalidRequest, ErrorDescription: "Missing response_type" }
             )
         {
@@ -256,7 +256,7 @@ internal class UdapAuthorizationResponseMiddleware
         HttpContext context, 
         StringValues redirectUri,
         string error,
-        string errorDescription)
+        string? errorDescription)
     {
         var sb = new StringBuilder();
 
@@ -269,10 +269,13 @@ internal class UdapAuthorizationResponseMiddleware
             // TODO: PR to Duende?
             .Append(error);
 
-        sb.Append('&')
+        if(errorDescription != null)
+        {
+            sb.Append('&')
             .Append(AuthorizeResponse.ErrorDescription)
             .Append('=')
             .Append(errorDescription);
+        }
 
         if (context.Request.Query.TryGetValue(
                 AuthorizeRequest.ResponseType,

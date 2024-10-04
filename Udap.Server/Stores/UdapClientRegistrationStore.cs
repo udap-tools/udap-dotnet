@@ -1,4 +1,4 @@
-﻿#region (c) 2022 Joseph Shook. All rights reserved.
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -12,7 +12,6 @@ using System.Text;
 using Duende.IdentityServer.EntityFramework.Entities;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.Models;
-using Hl7.Fhir.Specification.Terminology;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Udap.Common;
@@ -21,8 +20,6 @@ using Udap.Server.DbContexts;
 using Udap.Server.Extensions;
 using Udap.Server.Mappers;
 using Udap.Server.Storage.Stores;
-using static System.Formats.Asn1.AsnWriter;
-using static Duende.IdentityServer.Events.TokenIssuedSuccessEvent;
 using Secret = Duende.IdentityServer.Models.Secret;
 
 namespace Udap.Server.Stores
@@ -31,7 +28,7 @@ namespace Udap.Server.Stores
     public class UdapClientRegistrationStore : IUdapClientRegistrationStore
     {
         private readonly IUdapDbAdminContext _dbContext;
-        private ILogger<UdapClientRegistrationStore> _logger;
+        private readonly ILogger<UdapClientRegistrationStore> _logger;
 
         public UdapClientRegistrationStore(IUdapDbAdminContext dbContext, ILogger<UdapClientRegistrationStore> logger)
         {
@@ -50,7 +47,7 @@ namespace Udap.Server.Stores
         
         public async Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.UpsertClient");
+            using var activity = Tracing.StoreActivitySource.StartActivity();
             activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
 
             var iss = client.ClientSecrets
@@ -100,7 +97,7 @@ namespace Udap.Server.Stores
 
         public async Task<bool> UpsertTieredClient(TieredClient client, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.UpsertTieredClient");
+            using var activity = Tracing.StoreActivitySource.StartActivity();
             activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
             activity?.SetTag(Tracing.Properties.ClientId, client.IdPBaseUrl);
 
@@ -114,7 +111,11 @@ namespace Udap.Server.Stores
             if (existingClient != null)
             {
                 client.ClientId = existingClient.ClientId;
-                existingClient.RedirectUri = client.RedirectUri;
+                if (client.RedirectUri != null)
+                {
+                    existingClient.RedirectUri = client.RedirectUri;
+                }
+
                 await _dbContext.SaveChangesAsync(token);
                 _logger.LogInformation("Updated client: {Id}", existingClient.Id);
                 return true;
@@ -175,7 +176,7 @@ namespace Udap.Server.Stores
 
         public async Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetAnchors");
+            using var activity = Tracing.StoreActivitySource.StartActivity();
             activity?.SetTag(Tracing.Properties.Community, community);
 
             List<Entities.Anchor> anchors;
@@ -185,7 +186,7 @@ namespace Udap.Server.Stores
                 anchors = await _dbContext.Anchors
                     .Include(a => a.Community)
                     .Include(a => a.Intermediates)
-                    .Where(a => a.Community.Enabled && a.Enabled)
+                    .Where(a => a.Community != null && a.Community.Enabled && a.Enabled)
                     .Select(a => a)
                     .ToListAsync(token);
             }
@@ -194,7 +195,7 @@ namespace Udap.Server.Stores
                 anchors = await _dbContext.Anchors
                     .Include(a => a.Community)
                     .Include(a => a.Intermediates)
-                    .Where(a => a.Community.Enabled && a.Community.Name == community && a.Enabled)
+                    .Where(a => a.Community != null && a.Community.Enabled && a.Community.Name == community && a.Enabled)
                     .Select(a => a)
                     .ToListAsync(token);
             }
@@ -202,9 +203,9 @@ namespace Udap.Server.Stores
             return anchors.Select(a => a.ToModel());
         }
 
-        public async Task<IEnumerable<X509Certificate2>>? GetCommunityCertificates(long communityId, CancellationToken token = default)
+        public async Task<IEnumerable<X509Certificate2>> GetCommunityCertificates(long communityId, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetCommunityCertificates");
+            using var activity = Tracing.StoreActivitySource.StartActivity();
             activity?.SetTag(Tracing.Properties.Community, communityId);
 
             var encodedCerts = await _dbContext.Anchors
@@ -218,7 +219,7 @@ namespace Udap.Server.Stores
 
             foreach (var intCert in encodedCerts.SelectMany(anchor => anchor.Intermediates))
             {
-                certificates.Append(X509Certificate2.CreateFromPem(intCert.X509Certificate));
+                _ = certificates.Append(X509Certificate2.CreateFromPem(intCert.X509Certificate));
             }
            
             return certificates;
@@ -226,32 +227,26 @@ namespace Udap.Server.Stores
 
         public async Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetIntermediateCertificates");
+            using var activity = Tracing.StoreActivitySource.StartActivity();
 
             var intermediates = await _dbContext.IntermediateCertificates.ToListAsync(token).ConfigureAwait(false);
-            
-            _logger.LogInformation($"Found {intermediates?.Count ?? 0} intermediate certificates");
 
-            if (intermediates != null)
-            {
-                return new X509Certificate2Collection(intermediates
+            _logger.LogInformation("Found {IntermediateCount} intermediate certificates", intermediates.Count);
+
+            return new X509Certificate2Collection(intermediates
                     .Select(a => X509Certificate2.CreateFromPem(a.X509Certificate)).ToArray());
-
-            }
-
-            return null;
         }
 
 
-        public async Task<X509Certificate2Collection> GetAnchorsCertificates(string? community, CancellationToken token = default)
+        public async Task<X509Certificate2Collection?> GetAnchorsCertificates(string? community, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetAnchorsCertificates");
+            using var activity = Tracing.StoreActivitySource.StartActivity();
             activity?.SetTag(Tracing.Properties.Community, community);
 
             var anchors = (await GetAnchors(community, token).ConfigureAwait(false)).ToList();
 
-            _logger.LogInformation($"Found {anchors.Count} anchors for community, {community}");
-            _logger.LogDebug(ShowSummary(anchors));
+            _logger.LogInformation("Found {AnchorCount} anchors for community {Community}", anchors.Count, community);
+            _logger.LogDebug("Anchor summary: {Summary}", ShowSummary(anchors));
 
             if (!anchors.Any())
             {
@@ -263,7 +258,7 @@ namespace Udap.Server.Stores
 
         public async Task<int?> GetCommunityId(string community, CancellationToken token = default)
         {
-            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.GetCommunityId");
+            using var activity = Tracing.StoreActivitySource.StartActivity();
             activity?.SetTag(Tracing.Properties.Community, community);
 
             if (string.IsNullOrEmpty(community))
@@ -281,7 +276,7 @@ namespace Udap.Server.Stores
         public async Task<ICollection<Secret>?> RolloverClientSecrets(ParsedSecret secret, CancellationToken token = default)
         {
             var rolled = false;
-            using var activity = Tracing.StoreActivitySource.StartActivity("UdapClientRegistrationStore.RolloverClientSecrets");
+            using var activity = Tracing.StoreActivitySource.StartActivity();
             activity?.SetTag(Tracing.Properties.ClientId, secret.Id);
 
             var entity = await _dbContext.Clients

@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System.Diagnostics;
 using System.Net;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Endpoints.Results;
@@ -17,6 +16,7 @@ using Duende.IdentityServer.Services;
 using IdentityModel.Client;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Udap.Common;
 
 namespace Udap.Server
 {
@@ -43,9 +43,9 @@ namespace Udap.Server
             _responseGenerator = responseGenerator;
         }
 
-        public async Task<IEndpointResult> ProcessAsync(HttpContext context)
+        public async Task<IEndpointResult?> ProcessAsync(HttpContext context)
         {
-            using var activity = new ActivitySource("Duende.IdentityServer", "1").StartActivity("Discovery" + "Endpoint");
+            using var activity = Tracing.DiscoveryEndpointActivitySource.StartActivity();
 
             _logger.LogTrace("Processing discovery request.");
 

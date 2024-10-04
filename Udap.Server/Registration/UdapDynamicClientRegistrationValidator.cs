@@ -84,7 +84,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         IEnumerable<Anchor>? anchors
         )
     {
-        using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
+        using var activity = Tracing.ValidationActivitySource.StartActivity();
         
         var tokenHandler = new JsonWebTokenHandler();
         var jsonWebToken = tokenHandler.ReadJsonWebToken(request.SoftwareStatement);

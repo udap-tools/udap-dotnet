@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Udap.Client.Client;
 
@@ -36,6 +37,7 @@ namespace Udap.Client.Configuration;
 /// </pre>
 /// </remarks>
 
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 public class UdapClientOptions
 {
     public UdapClientOptions()
@@ -60,14 +62,14 @@ public class UdapClientOptions
     }
 
     [JsonPropertyName("ClientName")]
-    public string? ClientName { get; init; }
+    public string? ClientName { get; set; }
 
     [JsonPropertyName("Contacts")]
-    public HashSet<string>? Contacts { get; init; }
+    public HashSet<string>? Contacts { get; set; }
 
     [JsonPropertyName("Headers")]
-    public Dictionary<string, string>? Headers { get; init; }
+    public Dictionary<string, string>? Headers { get; set; }
 
     [JsonPropertyName("TieredOAuthClientLogo")]
-    public string TieredOAuthClientLogo { get; init; }
+    public string TieredOAuthClientLogo { get; set; }
 }

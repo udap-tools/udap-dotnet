@@ -31,7 +31,6 @@ namespace Udap.Common.Tests.Client;
 
 public class UdapClientTests
 {
-    private readonly ITestOutputHelper _testOutputHelper;
     private readonly IConfigurationRoot _configuration;
     private readonly ServiceProvider _serviceProvider;
 
@@ -45,8 +44,6 @@ public class UdapClientTests
 
     public UdapClientTests(ITestOutputHelper testOutputHelper)
     {
-        _testOutputHelper = testOutputHelper;
-
         _configuration = new ConfigurationBuilder()
             .AddJsonFile("appsettings.json", false, true)
             .Build();
@@ -55,7 +52,7 @@ public class UdapClientTests
             .AddLogging(builder =>
             {
                 builder.AddConfiguration(_configuration.GetSection("Logging"));
-                builder.AddProvider(new XUnitLoggerProvider(_testOutputHelper, new XUnitLoggerOptions()));
+                builder.AddProvider(new XUnitLoggerProvider(testOutputHelper, new XUnitLoggerOptions()));
                 // builder.SetMinimumLevel(LogLevel.Warning); 
             })
             .BuildServiceProvider();
@@ -71,7 +68,7 @@ public class UdapClientTests
     [Fact]
     public async Task StandardSuccessTest()
     {
-        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport();
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, _) = await BuildClientSupport();
 
         //
         // The actual UdapClient.  There are two examples of using it in the _tests/client folder
@@ -96,12 +93,12 @@ public class UdapClientTests
         // These tests are easier to test against all the current framework versions.  For example currently this test is testing .Net 6, 7 and 8
         // ensuring we get good coverage
         //
-        var verSupported = disco.UdapVersionsSupported.ToList();
+        var verSupported = disco.UdapVersionsSupported!.ToList();
         verSupported.Should().NotBeNullOrEmpty();
         verSupported.Single().Should().Be("1");
 
 
-        var extensions = disco.UdapAuthorizationExtensionsSupported.ToList();
+        var extensions = disco.UdapAuthorizationExtensionsSupported!.ToList();
         extensions.Should().NotBeNullOrEmpty();
         var hl7B2B = extensions.SingleOrDefault(c => c == "hl7-b2b");
         hl7B2B.Should().NotBeNullOrEmpty();
@@ -110,33 +107,33 @@ public class UdapClientTests
         disco.UdapAuthorizationExtensionsRequired.Should().Contain("hl7-b2b");
 
 
-        var certificationsSupported = disco.UdapCertificationsSupported.SingleOrDefault(c => c == "http://MyUdapCertification");
+        var certificationsSupported = disco.UdapCertificationsSupported!.SingleOrDefault(c => c == "http://MyUdapCertification");
         certificationsSupported.Should().NotBeNullOrEmpty();
         var uriCertificationsSupported = new Uri(certificationsSupported!);
         uriCertificationsSupported.Should().Be("http://MyUdapCertification");
 
 
-        certificationsSupported = disco.UdapCertificationsSupported.SingleOrDefault(c => c == "http://MyUdapCertification2");
+        certificationsSupported = disco.UdapCertificationsSupported!.SingleOrDefault(c => c == "http://MyUdapCertification2");
         certificationsSupported.Should().NotBeNullOrEmpty();
         uriCertificationsSupported = new Uri(certificationsSupported!);
         uriCertificationsSupported.Should().Be("http://MyUdapCertification2");
 
 
-        var certificationsRequired = disco.UdapCertificationsRequired.SingleOrDefault();
+        var certificationsRequired = disco.UdapCertificationsRequired!.SingleOrDefault();
         certificationsRequired.Should().NotBeNullOrEmpty();
         var uriCertificationsRequired = new Uri(certificationsRequired!);
         uriCertificationsRequired.Should().Be("http://MyUdapCertification");
 
 
-        var grantTypes = disco.GrantTypesSupported.ToList();
+        var grantTypes = disco.GrantTypesSupported!.ToList();
         grantTypes.Should().NotBeNullOrEmpty();
-        grantTypes.Count().Should().Be(3);
+        grantTypes.Count.Should().Be(3);
         grantTypes.Should().Contain("authorization_code");
         grantTypes.Should().Contain("refresh_token");
         grantTypes.Should().Contain("client_credentials");
 
 
-        var scopesSupported = disco.ScopesSupported.ToList();
+        var scopesSupported = disco.ScopesSupported!.ToList();
         scopesSupported.Should().Contain("openid");
         scopesSupported.Should().Contain("system/*.read");
         scopesSupported.Should().Contain("user/*.read");
@@ -155,30 +152,30 @@ public class UdapClientTests
         registrationEndpoint.Should().Be("https://securedcontrols.net:5001/connect/register");
 
 
-        var tokenEndpointAuthMethodSupported = disco.TokenEndpointAuthMethodsSupported.SingleOrDefault();
+        var tokenEndpointAuthMethodSupported = disco.TokenEndpointAuthMethodsSupported!.SingleOrDefault();
         tokenEndpointAuthMethodSupported.Should().NotBeNullOrEmpty();
         tokenEndpointAuthMethodSupported.Should().Be("private_key_jwt");
 
 
-        var registrationSigningAlgValuesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported.ToList();
+        var registrationSigningAlgValuesSupported = disco.RegistrationEndpointJwtSigningAlgValuesSupported!.ToList();
         registrationSigningAlgValuesSupported.Should().NotBeNullOrEmpty();
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
-        registrationSigningAlgValuesSupported.Count().Should().Be(4);
+        registrationSigningAlgValuesSupported.Count.Should().Be(4);
 
 
 
-        var tokenSigningAlgValuesSupported = disco.TokenEndpointAuthSigningAlgValuesSupported.ToList();
+        var tokenSigningAlgValuesSupported = disco.TokenEndpointAuthSigningAlgValuesSupported!.ToList();
         tokenSigningAlgValuesSupported.Should().NotBeNullOrEmpty();
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS256);
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
-        tokenSigningAlgValuesSupported.Count().Should().Be(4);
+        tokenSigningAlgValuesSupported.Count.Should().Be(4);
 
-        var profilesSupported = disco.UdapProfilesSupported.ToList();
+        var profilesSupported = disco.UdapProfilesSupported!.ToList();
         profilesSupported.Should().NotBeNullOrEmpty();
         profilesSupported.Should().Contain(UdapConstants.UdapProfilesSupportedValues.UdapDcr);
         profilesSupported.Should().Contain(UdapConstants.UdapProfilesSupportedValues.UdapAuthn);

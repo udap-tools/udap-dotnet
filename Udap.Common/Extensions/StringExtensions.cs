@@ -88,7 +88,7 @@ public static class StringExtensions
             return null;
         }
 
-        return community!.Split("=").LastOrDefault();
+        return community.Split("=").LastOrDefault();
     }
 
     [DebuggerStepThrough]

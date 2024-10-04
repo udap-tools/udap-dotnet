@@ -32,7 +32,6 @@ using Udap.Model.Statement;
 using Udap.Server.Configuration;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
-using Udap.Server.Options;
 using Udap.Server.Registration;
 using Udap.Server.Storage.Stores;
 using Udap.Server.Stores;
@@ -42,25 +41,18 @@ using JsonClaimValueTypes = System.IdentityModel.Tokens.Jwt.JsonClaimValueTypes;
 
 namespace UdapServer.Tests
 {
-    public class DatabaseProviderFixture<TStoreOption> : IAsyncLifetime
-        where TStoreOption : class
+    public class DatabaseProviderFixture : IAsyncLifetime
     {
-        public DbContextOptions<UdapDbContext>? DatabaseProvider;
-        protected static readonly TStoreOption StoreOptions = Activator.CreateInstance<TStoreOption>();
-
-        protected static readonly ConfigurationStoreOptions StoreOptions2 =
-            Activator.CreateInstance<ConfigurationStoreOptions>();
-
-        public string DatabaseName = "UdapTestDb";
+        public readonly string DatabaseName = "UdapTestDb";
         public required X509Certificate2 AnchorCert = new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
             "caWeatherApiLocalhostCert.cer"));
 
         /// <summary>
         /// Called immediately after the class has been created, before it is used.
         /// </summary>
-        public async Task InitializeAsync()
+        public Task InitializeAsync()
         {
-            await SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", Substitute.For<Serilog.ILogger>());
+            return SeedData.EnsureSeedData($@"Data Source=./Udap.Idp.db.{DatabaseName};", Substitute.For<Serilog.ILogger>());
 
             // await SeedData();
         }
@@ -77,18 +69,16 @@ namespace UdapServer.Tests
     }
 
     [Collection("Udap.Auth.Server")]
-    public class IntegrationRegistrationTests : IClassFixture<DatabaseProviderFixture<UdapConfigurationStoreOptions>>
+    public class IntegrationRegistrationTests : IClassFixture<DatabaseProviderFixture>
     {
         private readonly ITestOutputHelper _testOutputHelper;
-        private DbContextOptions<UdapDbContext>? _databaseProvider;
-        private string _databaseName;
-        private X509Certificate2 _anchorCert;
+        private readonly string _databaseName;
+        private readonly X509Certificate2 _anchorCert;
 
-        public IntegrationRegistrationTests(DatabaseProviderFixture<UdapConfigurationStoreOptions> fixture,
+        public IntegrationRegistrationTests(DatabaseProviderFixture fixture,
             ITestOutputHelper testOutputHelper)
         {
             _testOutputHelper = testOutputHelper;
-            _databaseProvider = fixture.DatabaseProvider;
             _databaseName = fixture.DatabaseName;
             _anchorCert = fixture.AnchorCert;
 
@@ -175,28 +165,26 @@ namespace UdapServer.Tests
             //
             // Checking to see two contexts are working together.
             //
-            await using (var context = sp.GetService<ConfigurationDbContext>())
-            {
-                client = new Client();
-                var clientId = Guid.NewGuid().ToString("N");
-                client.ClientId = clientId;
+            await using var context = sp.GetRequiredService<ConfigurationDbContext>();
+            client = new Client();
+            var clientId = Guid.NewGuid().ToString("N");
+            client.ClientId = clientId;
 
-                var entity = await context.Clients.SingleOrDefaultAsync(c => c.ClientId == client.ClientId);
-                entity.Should().BeNull();
+            var entity = await context.Clients.SingleOrDefaultAsync(c => c.ClientId == client.ClientId);
+            entity.Should().BeNull();
 
-                context.Clients.Add(client.ToEntity());
-                await context.SaveChangesAsync();
-                entity = await context.Clients.SingleOrDefaultAsync(c => c.ClientId == client.ClientId);
-                client = entity.ToModel();
-                client.Should().NotBeNull();
+            context.Clients.Add(client.ToEntity());
+            await context.SaveChangesAsync();
+            entity = await context.Clients.SingleOrDefaultAsync(c => c.ClientId == client.ClientId);
+            client = entity.ToModel();
+            client.Should().NotBeNull();
 
-                client = await store.GetClient(new Client() { ClientId = clientId });
-                client.ClientId.Should().Be(clientId);
+            client = await store.GetClient(new Client() { ClientId = clientId });
+            client!.ClientId.Should().Be(clientId);
 
-                var anchors = await store.GetAnchors();
-                anchors.Count().Should().Be(2);
-                anchors.First().Certificate.ToLf().Should().BeEquivalentTo(_anchorCert.ToPemFormat().ToLf());
-            }
+            var anchors = (await store.GetAnchors()).ToList();
+            anchors.Count.Should().Be(2);
+            anchors.First().Certificate.ToLf().Should().BeEquivalentTo(_anchorCert.ToPemFormat().ToLf());
         }
 
 
@@ -225,7 +213,7 @@ namespace UdapServer.Tests
             // this Udap Dynamic Registration.
             //
             var jwtPayload = new JwtPayload(
-                new List<System.Security.Claims.Claim>
+                new List<Claim>
                 {
                     new (JwtClaimTypes.Issuer, "https://weatherapi.lab:5021/fhir"),
                     new (JwtClaimTypes.Subject, "https://weatherapi.lab:5021/fhir"),
@@ -279,7 +267,7 @@ namespace UdapServer.Tests
 
             var handler = new JwtSecurityTokenHandler();
             var token = handler.ReadToken(signedSoftwareStatement) as JwtSecurityToken;
-            foreach (var tokenClaim in token.Claims)
+            foreach (var tokenClaim in token!.Claims)
             {
                 _testOutputHelper.WriteLine(tokenClaim.Value);
             }
@@ -340,7 +328,7 @@ namespace UdapServer.Tests
             context.Request.Path = "/connect/register";
             mockHttpContextAccessor.HttpContext.Returns(context);
             
-            services.AddSingleton<IHttpContextAccessor>(mockHttpContextAccessor);
+            services.AddSingleton(mockHttpContextAccessor);
 
 
             // services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor(){new DefaultHttpContext(){ Request = { Path = "/"}}});
@@ -387,14 +375,14 @@ namespace UdapServer.Tests
 
             var store = sp.GetRequiredService<IUdapClientRegistrationStore>();
             var communityAnchors = await store.GetAnchorsCertificates("http://localhost");
-            var anchors = await store.GetAnchors("http://localhost");
-            var intermediateCerts = new X509Certificate2Collection(anchors.First().Intermediates
+            var anchors = (await store.GetAnchors("http://localhost")).ToArray();
+            var intermediateCerts = new X509Certificate2Collection(anchors.First().Intermediates!
                 .Select(s => X509Certificate2.CreateFromPem(s.Certificate)).ToArray());
 
             var result = await validator.ValidateAsync(
                 requestBody, 
                 intermediateCerts, 
-                communityAnchors, 
+                communityAnchors!, 
                 anchors);
 
             result.IsError.Should().BeFalse($"{result.Error} : {result.ErrorDescription}");
@@ -456,7 +444,7 @@ namespace UdapServer.Tests
             context.Request.Path = "/connect/register";
             mockHttpContextAccessor.HttpContext.Returns(context);
 
-            services.AddSingleton<IHttpContextAccessor>(mockHttpContextAccessor);
+            services.AddSingleton(mockHttpContextAccessor);
 
 
             // services.AddSingleton<IHttpContextAccessor>(new HttpContextAccessor(){new DefaultHttpContext(){ Request = { Path = "/"}}});
@@ -507,14 +495,14 @@ namespace UdapServer.Tests
 
             var store = sp.GetRequiredService<IUdapClientRegistrationStore>();
             var communityAnchors = await store.GetAnchorsCertificates("http://localhost");
-            var anchors = await store.GetAnchors("http://localhost");
-            var intermediateCerts = new X509Certificate2Collection(anchors.First().Intermediates
+            var anchors = (await store.GetAnchors("http://localhost")).ToArray();
+            var intermediateCerts = new X509Certificate2Collection(anchors.First().Intermediates!
                 .Select(s => X509Certificate2.CreateFromPem(s.Certificate)).ToArray());
 
             var result = await validator.ValidateAsync(
                 requestBody,
                 intermediateCerts,
-                communityAnchors,
+                communityAnchors!,
                 anchors);
 
             result.IsError.Should().BeFalse($"{result.Error} : {result.ErrorDescription}");
@@ -588,7 +576,7 @@ namespace UdapServer.Tests
             // this Udap Dynamic Registration.
             //
             var jwtPayload = new JwtPayload(
-                new List<System.Security.Claims.Claim>
+                new List<Claim>
                 {
                     new (JwtClaimTypes.Issuer, "https://weatherapi.lab:5021/fhir"),
                     new (JwtClaimTypes.Subject, "https://weatherapi.lab:5021/fhir"),
@@ -646,7 +634,7 @@ namespace UdapServer.Tests
             var handler = new JwtSecurityTokenHandler();
             var token = handler.ReadToken(signedSoftwareStatement) as JwtSecurityToken;
 
-            foreach (var tokenClaim in token.Claims)
+            foreach (var tokenClaim in token!.Claims)
             {
                 _testOutputHelper.WriteLine(tokenClaim.Value);
             }
@@ -679,8 +667,8 @@ namespace UdapServer.Tests
             
             _testOutputHelper.WriteLine(documentSerialized);
 
-            var docDeserialized =
-                JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(documentSerialized);
+            // var docDeserialized =
+            //     JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(documentSerialized);
 
             // var docDeserialized = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(documentSerialized);
             //_testOutputHelper.WriteLine(docDeserialized.RedirectUris.First());

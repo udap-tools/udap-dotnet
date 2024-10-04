@@ -23,12 +23,13 @@ using Udap.Support.Tests.Extensions;
 using Xunit.Abstractions;
 using Xunit.Extensions.Ordering;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
+// ReSharper disable All
 
 namespace Udap.PKI.Generator
 {
 
     [Collection("Udap.PKI.Generator")]
-    public class BuildTestCerts : CertificateBase
+    public partial class BuildTestCerts : CertificateBase
     {
         private readonly ITestOutputHelper _testOutputHelper;
 
@@ -882,15 +883,15 @@ namespace Udap.PKI.Generator
             {
                 var assembly = Assembly.GetExecutingAssembly();
                 var resourcePath = String.Format(
-                    $"{Regex.Replace(assembly.ManifestModule.Name, @"\.(exe|dll)$", string.Empty, RegexOptions.IgnoreCase)}" +
+                    $"{MyRegex().Replace(assembly.ManifestModule.Name, string.Empty)}" +
                     $".Resources.ProjectDirectory.txt");
 
                 var rm = new ResourceManager("Resources", assembly);
 
-                string[] names = assembly.GetManifestResourceNames(); // Help finding names
+                // string[] names = assembly.GetManifestResourceNames(); // Help finding names
 
                 using var stream = assembly.GetManifestResourceStream(resourcePath);
-                using var streamReader = new StreamReader(stream);
+                using var streamReader = new StreamReader(stream!);
 
                 var baseDir = streamReader.ReadToEnd();
 
@@ -1695,5 +1696,7 @@ namespace Udap.PKI.Generator
 
         }
 
+        [GeneratedRegex(@"\.(exe|dll)$", RegexOptions.IgnoreCase, "en-US")]
+        private static partial Regex MyRegex();
     }
 }

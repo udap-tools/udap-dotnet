@@ -13,14 +13,7 @@ public class CertificateValidator : ICertificateValidator
 {
     public bool Validate(X509Certificate2 clientCertificate)
     {
-        try
-        {
-            Console.WriteLine(clientCertificate.Subject);   
-            return true;
-        }
-        catch (Exception ex)
-        {
-            throw;
-        }
+        Console.WriteLine(clientCertificate.Subject);   
+        return true;
     }
 }

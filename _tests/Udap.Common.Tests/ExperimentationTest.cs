@@ -19,6 +19,9 @@ using Microsoft.IdentityModel.Tokens;
 using Xunit.Abstractions;
 using Claim = System.Security.Claims.Claim;
 using Task = System.Threading.Tasks.Task;
+// ReSharper disable All
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace Udap.Common.Tests;
 
@@ -45,7 +48,7 @@ public class ExperimentationTest
 
         fhirClient.Settings.PreferredFormat = ResourceFormat.Json;
         var codeSystem = await fhirClient.ReadAsync<Hl7.Fhir.Model.CodeSystem>("https://tx.fhir.org/r4/CodeSystem/v2-0203");
-        var codeSystemJson = await new FhirJsonSerializer().SerializeToStringAsync(codeSystem);
+        var codeSystemJson = await new FhirJsonSerializer().SerializeToStringAsync(codeSystem!);
     }
 
     [Fact(Skip = "Experimenting")]
@@ -110,28 +113,28 @@ public class ExperimentationTest
         }
 
         ///<inheritdoc />
-        public async Task<Resource> Expand(Parameters parameters, string id = null, bool useGet = false)
+        public async Task<Resource> Expand(Parameters parameters, string? id = null, bool useGet = false)
         {
             var joe = await _resolver.FindValueSetAsync(id);
-            return null;
+            return null!;
             // throw new NotImplementedException();
             // return await Endpoint.InstanceOperationAsync(constructUri<ValueSet>(id), RestOperation.EXPAND_VALUESET, parameters, useGet).ConfigureAwait(false);
         }
 
         ///<inheritdoc />
-        public Task<Parameters> ValueSetValidateCode(Parameters parameters, string id = null, bool useGet = false)
+        public Task<Parameters> ValueSetValidateCode(Parameters parameters, string? id = null, bool useGet = false)
         {
             throw new NotImplementedException();
         }
 
         ///<inheritdoc />
-        public Task<Parameters> Subsumes(Parameters parameters, string id = null, bool useGet = false)
+        public Task<Parameters> Subsumes(Parameters parameters, string? id = null, bool useGet = false)
         {
             throw new NotImplementedException();
         }
 
         ///<inheritdoc />
-        public Task<Parameters> CodeSystemValidateCode(Parameters parameters, string id = null, bool useGet = false)
+        public Task<Parameters> CodeSystemValidateCode(Parameters parameters, string? id = null, bool useGet = false)
         {
             throw new NotImplementedException();
         }
@@ -143,7 +146,7 @@ public class ExperimentationTest
         }
 
         ///<inheritdoc />
-        public Task<Parameters> Translate(Parameters parameters, string id = null, bool useGet = false)
+        public Task<Parameters> Translate(Parameters parameters, string? id = null, bool useGet = false)
         {
             throw new NotImplementedException();
         }
@@ -166,7 +169,7 @@ public class ExperimentationTest
         _testOutputHelper.WriteLine(new FhirJsonSerializer().SerializeToString(parametersResource.Parameter.Single(n => n.Name == "UdapEdPatientMatch").Resource));
 
         var patient = parametersResource.Parameter.Single(n => n.Name == "UdapEdPatientMatch").Resource as Patient;
-        Assert.Equal("1970-05-01", patient.BirthDate);
+        Assert.Equal("1970-05-01", patient!.BirthDate);
 
         var patientJson = await new FhirJsonSerializer().SerializeToStringAsync(parametersResource.Parameter
             .Single(n => n.Name == "UdapEdPatientMatch").Resource);
@@ -193,7 +196,7 @@ public class ExperimentationTest
 
         AsymmetricAlgorithm key = cert.GetECDsaPrivateKey();
 
-        byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
+        byte[] encryptedPrivKeyBytes = key!.ExportEncryptedPkcs8PrivateKey(
             "udap-test",
             new PbeParameters(
                 PbeEncryptionAlgorithm.Aes256Cbc,
@@ -252,7 +255,7 @@ public class ExperimentationTest
         var cert = new X509Certificate2(@"C:\Source\GitHub\JoeShook\udap-tools\udap-dotnet\_tests\Udap.PKI.Generator\certstores\localhost_fhirlabs_community6\issued\fhirLabsApiClientLocalhostCert6_ECDSA.pfx");
         //var cert = new X509Certificate2(@"/mnt/c/Source/GitHub/JoeShook/udap-tools/udap-dotnet/_tests/Udap.PKI.Generator/certstores/localhost_fhirlabs_community6/issued/fhirLabsApiClientLocalhostCert6_ECDSA.pfx", "udap-test", X509KeyStorageFlags.Exportable);
         var joe = cert.HasPrivateKey;
-        byte[] privateKeyBytes = cert.GetECDsaPrivateKey().ExportECPrivateKey(); //Might be DER encoded
+        byte[] privateKeyBytes = cert.GetECDsaPrivateKey()!.ExportECPrivateKey(); //Might be DER encoded
         // Console.WriteLine(privateKeyBytes.Length);
         // // Convert the private key to the appropriate format
         // // byte[] formattedPrivateKeyBytes = ConvertPrivateKeyToPkcs8(privateKeyBytes);
@@ -481,7 +484,7 @@ public class ExperimentationTest
         using var reader = new StreamReader(stream);
         var pemReader = new Org.BouncyCastle.OpenSsl.PemReader(reader);
         var keyPair = pemReader.ReadObject() as Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair;
-        var pkcs8 = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(keyPair.Private).GetDerEncoded();
+        var pkcs8 = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(keyPair!.Private).GetDerEncoded();
         return pkcs8;
     }
 }

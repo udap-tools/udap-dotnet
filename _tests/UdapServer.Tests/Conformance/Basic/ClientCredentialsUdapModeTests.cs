@@ -1,4 +1,4 @@
-﻿#region (c) 2023 Joseph Shook. All rights reserved.
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,8 +7,6 @@
 // */
 #endregion
 
-
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -37,7 +35,6 @@ using Udap.Model.Statement;
 using Udap.Model.UdapAuthenticationExtensions;
 using Udap.Server.Configuration;
 using Udap.Server.Validation;
-using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
 using JwtHeaderParameterNames = Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames;
@@ -159,15 +156,6 @@ public class ClientCredentialsUdapModeTests
         _mockPipeline.IdentityScopes.Add(new IdentityResources.Profile());
         _mockPipeline.ApiScopes.AddRange(new HL7SmartScopeExpander().ExpandToApiScopes("system/Patient.rs"));
         _mockPipeline.ApiScopes.AddRange(new HL7SmartScopeExpander().ExpandToApiScopes(" system/Appointment.rs"));
-    }
-
-    [Fact]
-    public async Task Todo()
-    {
-        //Need tests here:
-
-        // Ensure the missing scope test during /connect/token request works
-        // It should test in UDAP server mode and specifically UdapScopeResolverMiddleware and 
     }
 
     [Fact]
@@ -677,7 +665,7 @@ public class ClientCredentialsUdapModeTests
             "system/Patient.rs");
 
         regDocumentResult.GetError().Should().BeNull();
-        regDocumentResult!.Scope.Should().Be("system/Patient.rs");
+        regDocumentResult.Scope.Should().Be("system/Patient.rs");
 
         var clientIdWithDefaultSubAltName = regDocumentResult.ClientId;
 
@@ -689,7 +677,7 @@ public class ClientCredentialsUdapModeTests
             "system/Patient.rs system/Appointment.rs");
 
         regDocumentResult.GetError().Should().BeNull();
-        regDocumentResult!.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
+        regDocumentResult.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
 
         regDocumentResult.ClientId.Should().Be(clientIdWithDefaultSubAltName);
 
@@ -702,7 +690,7 @@ public class ClientCredentialsUdapModeTests
             "system/Patient.rs system/Appointment.rs",
             "https://fhirlabs.net:7016/fhir/r4");
         
-        regDocumentResultForSelectedSubAltName!.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
+        regDocumentResultForSelectedSubAltName.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
         var clientIdWithSelectedSubAltName = regDocumentResultForSelectedSubAltName.ClientId;
         clientIdWithSelectedSubAltName.Should().NotBe(clientIdWithDefaultSubAltName);
 
@@ -715,7 +703,7 @@ public class ClientCredentialsUdapModeTests
             "system/Patient.rs",
             "https://fhirlabs.net:7016/fhir/r4");
         
-        regDocumentResultForSelectedSubAltNameSecond!.Scope.Should().Be("system/Patient.rs");
+        regDocumentResultForSelectedSubAltNameSecond.Scope.Should().Be("system/Patient.rs");
         regDocumentResultForSelectedSubAltNameSecond.ClientId.Should().Be(clientIdWithSelectedSubAltName);
 
     }

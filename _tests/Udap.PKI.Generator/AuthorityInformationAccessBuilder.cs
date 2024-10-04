@@ -85,8 +85,7 @@ namespace Udap.PKI.Generator
         {
             var encodedParts = new List<byte[]>();
 
-            if (policyOid == null)
-                throw new ArgumentNullException(nameof(policyOid));
+            ArgumentNullException.ThrowIfNull(policyOid);
 
             var writer = new AsnWriter(AsnEncodingRules.DER);
 

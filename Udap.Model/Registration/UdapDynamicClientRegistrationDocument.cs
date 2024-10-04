@@ -68,10 +68,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_clientId == null)
-            {
-                _clientId = GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientId);
-            }
+            _clientId ??= GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientId);
 
             return _clientId;
         }
@@ -87,10 +84,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_softwareStatement == null)
-            {
-                _softwareStatement = GetStandardClaim(UdapConstants.RegistrationDocumentValues.SoftwareStatement);
-            }
+            _softwareStatement ??= GetStandardClaim(UdapConstants.RegistrationDocumentValues.SoftwareStatement);
 
             return _softwareStatement;
         }
@@ -111,10 +105,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_issuer == null)
-            {
-                _issuer = GetStandardClaim(UdapConstants.RegistrationDocumentValues.Issuer);
-            }
+            _issuer ??= GetStandardClaim(UdapConstants.RegistrationDocumentValues.Issuer);
             return _issuer;
         }
         set
@@ -133,10 +124,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_subject == null)
-            {
-                _subject = GetStandardClaim(UdapConstants.RegistrationDocumentValues.Subject);
-            }
+            _subject ??= GetStandardClaim(UdapConstants.RegistrationDocumentValues.Subject);
             return _subject;
         }
         set
@@ -155,10 +143,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_audience == null)
-            {
-                _audience = GetStandardClaim(UdapConstants.RegistrationDocumentValues.Audience);
-            }
+            _audience ??= GetStandardClaim(UdapConstants.RegistrationDocumentValues.Audience);
             return _audience;
         }
         set

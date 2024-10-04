@@ -237,7 +237,7 @@ public class TieredOauthWithPKCETests
             services.AddSingleton(
                 sp =>
                 {
-                    var serverSettings = sp.GetService<IOptions<ServerSettings>>().Value; // must resolve to trigger the post config at TieredIdpServerSettings
+                    var serverSettings = sp.GetRequiredService<IOptions<ServerSettings>>().Value; // must resolve to trigger the post config at TieredIdpServerSettings
                     serverSettings.DefaultUserScopes = "udap";
                     serverSettings.DefaultSystemScopes = "udap";
                     // ForceStateParamOnAuthorizationCode = false (default)
@@ -321,7 +321,7 @@ public class TieredOauthWithPKCETests
             services.AddSingleton(
                 sp =>
                 {
-                    var serverSettings = sp.GetService<IOptions<ServerSettings>>().Value;
+                    var serverSettings = sp.GetRequiredService<IOptions<ServerSettings>>().Value;
                     serverSettings.DefaultUserScopes = "udap";
                     serverSettings.DefaultSystemScopes = "udap";
                     // ForceStateParamOnAuthorizationCode = false (default)

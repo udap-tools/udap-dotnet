@@ -84,7 +84,7 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
-    .ConfigureHttpClient((context, handler) =>
+    .ConfigureHttpClient((_, handler) =>
     {
         // this is required to decompress automatically.  *******   troubleshooting only   *******
         handler.AutomaticDecompression = System.Net.DecompressionMethods.All;
@@ -216,11 +216,6 @@ async Task<string?> ResolveAccessToken(IReadOnlyDictionary<string, string> metad
 }
 
 
-async Task<string> UdapMedatData(string s)
-{
-    return s;
-}
-
 async Task<byte[]?> GetFhirMetadata(ResponseTransformContext responseTransformContext,
     WebApplicationBuilder webApplicationBuilder)
 {
@@ -280,7 +275,7 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
 
     var tokenHandler = new JwtSecurityTokenHandler();
     var jsonToken = tokenHandler.ReadJwtToken(requestTransformContext.HttpContext.Request.Headers.Authorization.First()?.Replace("Bearer", "").Trim());
-    var scopes = jsonToken?.Claims.Where(c => c.Type == "scope");
+    var scopes = jsonToken.Claims.Where(c => c.Type == "scope");
     var iss = jsonToken.Claims.Where(c => c.Type == "iss");
     // var sub = jsonToken.Claims.Where(c => c.Type == "sub"); // figure out what subject should be for GCP
 
@@ -295,6 +290,6 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
         .ToSpaceSeparatedString();
     
     requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Scope", spaceSeparatedString);
-    requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault().Value);
+    requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault()?.Value);
     // context.ProxyRequest.Headers.Add("X-Authorization-Subject", sub.SingleOrDefault().Value);
 }

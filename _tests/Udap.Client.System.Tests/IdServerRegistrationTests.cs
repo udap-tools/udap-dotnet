@@ -748,11 +748,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine("---------");
 
         var sb = new StringBuilder();
-        sb.Append("[");
+        sb.Append('[');
         sb.Append(Base64UrlEncoder.Decode(requestToken!.EncodedHeader));
-        sb.Append(",");
+        sb.Append(',');
         sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedPayload));
-        sb.Append("]");
+        sb.Append(']');
         _testOutputHelper.WriteLine(JsonNode.Parse(sb.ToString())!.ToJsonString(new JsonSerializerOptions(){WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping}));
         _testOutputHelper.WriteLine("---------"); 
         _testOutputHelper.WriteLine(string.Empty);
@@ -970,11 +970,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine("---------");
 
         var sb = new StringBuilder();
-        sb.Append("[");
+        sb.Append('[');
         sb.Append(Base64UrlEncoder.Decode(requestToken!.EncodedHeader));
-        sb.Append(",");
+        sb.Append(',');
         sb.Append(Base64UrlEncoder.Decode(requestToken.EncodedPayload));
-        sb.Append("]");
+        sb.Append(']');
         _testOutputHelper.WriteLine(JsonNode.Parse(sb.ToString())!.ToJsonString(new JsonSerializerOptions() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
         _testOutputHelper.WriteLine("---------");
         _testOutputHelper.WriteLine(string.Empty);

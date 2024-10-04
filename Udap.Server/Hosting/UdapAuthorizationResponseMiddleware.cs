@@ -260,27 +260,27 @@ internal class UdapAuthorizationResponseMiddleware
     {
         var sb = new StringBuilder();
 
-        sb.Append(redirectUri).Append("?");
+        sb.Append(redirectUri).Append('?');
 
         sb.Append(AuthorizeResponse.Error)
-            .Append("=")
+            .Append('=')
             // Transform error of unsupported_response_type to invalid_request
             // Seems reasonable if you read RFC 6749
             // TODO: PR to Duende?
             .Append(error);
 
-        sb.Append("&")
+        sb.Append('&')
             .Append(AuthorizeResponse.ErrorDescription)
-            .Append("=")
+            .Append('=')
             .Append(errorDescription);
 
         if (context.Request.Query.TryGetValue(
                 AuthorizeRequest.ResponseType,
                 out StringValues responseType))
         {
-            sb.Append("&")
+            sb.Append('&')
                 .Append(AuthorizeRequest.ResponseType)
-                .Append("=")
+                .Append('=')
                 .Append(responseType);
         }
 
@@ -288,9 +288,9 @@ internal class UdapAuthorizationResponseMiddleware
                 AuthorizeRequest.Scope,
                 out StringValues scope))
         {
-            sb.Append("&")
+            sb.Append('&')
                 .Append(AuthorizeRequest.Scope)
-                .Append("=")
+                .Append('=')
                 .Append(scope);
         }
 
@@ -298,9 +298,9 @@ internal class UdapAuthorizationResponseMiddleware
                 AuthorizeRequest.State,
                 out StringValues state))
         {
-            sb.Append("&")
+            sb.Append('&')
                 .Append(AuthorizeRequest.State)
-                .Append("=")
+                .Append('=')
                 .Append(state);
         }
 
@@ -308,9 +308,9 @@ internal class UdapAuthorizationResponseMiddleware
                 AuthorizeRequest.Nonce,
                 out StringValues nonce))
         {
-            sb.Append("&")
+            sb.Append('&')
                 .Append(AuthorizeRequest.Nonce)
-                .Append("=")
+                .Append('=')
                 .Append(nonce);
         }
 

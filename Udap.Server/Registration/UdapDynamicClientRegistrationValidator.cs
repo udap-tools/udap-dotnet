@@ -16,9 +16,7 @@
 //
 
 using System.IdentityModel.Tokens.Jwt;
-using System.Net.Http;
 using System.Net.Mime;
-using System.Reflection.Metadata;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Duende.IdentityServer.Models;
@@ -30,7 +28,6 @@ using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Client.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Extensions;
@@ -84,7 +81,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         UdapRegisterRequest request,
         X509Certificate2Collection? intermediateCertificates,
         X509Certificate2Collection anchorCertificates,
-        IEnumerable<Anchor> anchors
+        IEnumerable<Anchor>? anchors
         )
     {
         using var activity = Tracing.ValidationActivitySource.StartActivity("UdapDynamicClientRegistrationValidator.Validate");
@@ -105,12 +102,12 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
         var subAltNames = publicCert.GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI);
-        TokenValidationResult? validatedToken = null;
-        var publicKey = publicCert?.PublicKey.GetRSAPublicKey();
+        TokenValidationResult? validatedToken;
+        var publicKey = publicCert.PublicKey.GetRSAPublicKey();
         
         if (publicKey != null)
         {
-            validatedToken = tokenHandler.ValidateToken(request.SoftwareStatement,
+            validatedToken = await tokenHandler.ValidateTokenAsync(request.SoftwareStatement,
                 new TokenValidationParameters
                 {
                     RequireSignedTokens = true,
@@ -129,9 +126,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
         else
         {
-            var ecdsaPublicKey = publicCert?.PublicKey.GetECDsaPublicKey();
+            var ecdsaPublicKey = publicCert.PublicKey.GetECDsaPublicKey();
 
-            validatedToken = tokenHandler.ValidateToken(request.SoftwareStatement,
+            validatedToken = await tokenHandler.ValidateTokenAsync(request.SoftwareStatement,
                 new TokenValidationParameters
                 {
                     RequireSignedTokens = true,
@@ -207,8 +204,10 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (!Uri.TryCreate(document.Audience, UriKind.Absolute, out var aud))
         {
-            _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
-                               $"{UdapDynamicClientRegistrationErrorDescriptions.InvalidAud}: {aud}");
+            _logger.LogWarning("{Error}::{Description}: {Aud}",
+                UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
+                UdapDynamicClientRegistrationErrorDescriptions.InvalidAud,
+                aud);
 
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
@@ -223,8 +222,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UriFormat.SafeUnescaped, StringComparison.OrdinalIgnoreCase)
             != 0)
         {
-            _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
-                               $"{UdapDynamicClientRegistrationErrorDescriptions.InvalidMatchAud}");
+            _logger.LogWarning("{Error}::{Description}",
+                UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
+                UdapDynamicClientRegistrationErrorDescriptions.InvalidMatchAud);
 
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
@@ -236,8 +236,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //TODO Server Config for iat window (clock skew?)
         if (document.IssuedAt == 0)
         {
-            _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
-                               UdapDynamicClientRegistrationErrorDescriptions.IssuedAtMissing);
+            _logger.LogWarning("{Error}::{Description}",
+                UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
+                UdapDynamicClientRegistrationErrorDescriptions.IssuedAtMissing);
 
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
@@ -245,12 +246,13 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         var iat = EpochTime.DateTime(document.IssuedAt).ToUniversalTime();
-        var exp = EpochTime.DateTime(document.Expiration).ToUniversalTime();
+        // var exp = EpochTime.DateTime(document.Expiration).ToUniversalTime();
         //TODO Server Config for iat window (clock skew?)
         if (iat > DateTime.UtcNow.AddSeconds(5))
         {
-            _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
-                               UdapDynamicClientRegistrationErrorDescriptions.IssuedAtInFuture);
+            _logger.LogWarning("{Error}::{Description}",
+                   UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
+                   UdapDynamicClientRegistrationErrorDescriptions.IssuedAtInFuture);
 
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
@@ -259,8 +261,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (string.IsNullOrEmpty(document.ClientName))
         {
-            _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidClientMetadata}::" +
-                               UdapDynamicClientRegistrationErrorDescriptions.ClientNameMissing);
+            _logger.LogWarning("{Error}::{Description}",
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                UdapDynamicClientRegistrationErrorDescriptions.ClientNameMissing);
 
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -269,8 +272,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (string.IsNullOrEmpty(document.TokenEndpointAuthMethod))
         {
-            _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidClientMetadata}::" +
-                               UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing);
+            _logger.LogWarning("{Error}::{Description}",
+                UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
+                UdapDynamicClientRegistrationErrorDescriptions.TokenEndpointAuthMethodMissing);
 
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -287,12 +291,13 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             AllowRememberConsent = _serverSettings.AllowRememberConsent
         };
 
-        _logger.LogDebug($"Validating chain for ClientId: {client.ClientId}. x5c {jwtHeader.X5c}");
+        _logger.LogDebug("Validating chain for ClientId: {ClientId}. x5c {X5c}", client.ClientId, jwtHeader.X5c);
 
         if (!ValidateChain(client, jsonWebToken, jwtHeader, intermediateCertificates, anchorCertificates, anchors))
         {
-            _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement}::" +
-                               UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate);
+            _logger.LogWarning("{Error}::{Description}",
+                UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement,
+                UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate);
 
             var sb = new StringBuilder();
             sb.AppendLine($"Client Thumbprint: {publicCert.Thumbprint}");
@@ -305,14 +310,14 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             }
 
             sb.AppendLine($"Anchor Certificate Thumbprints: {string.Join(" | ", anchorCertificates.Select(a => a.Thumbprint))}");
-            _logger.LogWarning(sb.ToString());
+            _logger.LogWarning("{Message}", sb.ToString());
 
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement,
                 UdapDynamicClientRegistrationErrorDescriptions.UntrustedCertificate));
         }
 
-        _logger.LogDebug($"Chain Validated {client.ClientId}");
+        _logger.LogDebug("Chain Validated {ClientId}", client.ClientId);
 
         //////////////////////////////
         // validate grant_types
@@ -330,7 +335,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             {
                 if (!payload.Contains(RegistrationDocumentValues.GrantTypes))
                 {
-                    _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidClientMetadata}::" +
+                    _logger.LogWarning("{Error}::{Description}",
+                                       UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                                        UdapDynamicClientRegistrationErrorDescriptions.GrantTypeMissing);
 
                     return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
@@ -498,7 +504,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         // validation successful - return client
-        _logger.LogDebug($"Validation success for ClientId: {client.ClientId}");
+        _logger.LogDebug($"Validation success for ClientId: {client?.ClientId}");
 
         return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
     }
@@ -610,7 +616,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         JwtHeader jwtHeader,
         X509Certificate2Collection? intermediateCertificates,
         X509Certificate2Collection anchorCertificates,
-        IEnumerable<Anchor> anchors)
+        IEnumerable<Anchor>? anchors)
     {
         var x5cArray = Getx5c(jwtHeader);
         
@@ -620,7 +626,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
 
             if (_trustChainValidator.IsTrustedCertificate(
-                    client.ClientName, //TODO: clientName is not set?
+                    client.ClientName ?? string.Empty,
                     cert,
                     intermediateCertificates,
                     anchorCertificates, 
@@ -634,22 +640,25 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
                     return false;
                 }
+                
+                var clientSecrets = client.ClientSecrets = new List<Secret>();
 
-               var clientSecrets = client.ClientSecrets = new List<Secret>();
-
-               clientSecrets.Add(new()
+                clientSecrets.Add(new()
                 {
                     Expiration = chainElements.First().Certificate.NotAfter.ToUniversalTime(),
                     Type = UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME,
                     Value = jwtSecurityToken.Issuer
                 });
 
-                clientSecrets.Add(new()
+                if(communityId.HasValue)
                 {
-                    Expiration = chainElements.First().Certificate.NotAfter.ToUniversalTime(),
-                    Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY,
-                    Value = communityId.ToString()
-                });
+                    clientSecrets.Add(new()
+                    {
+                        Expiration = chainElements.First().Certificate.NotAfter.ToUniversalTime(),
+                        Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY,
+                        Value = communityId.Value.ToString()
+                    });
+                }
 
                 return true;
             }

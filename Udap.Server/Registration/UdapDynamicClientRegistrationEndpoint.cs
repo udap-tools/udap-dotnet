@@ -113,12 +113,9 @@ public class UdapDynamicClientRegistrationEndpoint
             _logger.LogError(ex, "Unhandled UdapDynamicClientRegistrationEndpoint Error");
         }
 
-        if (result == null)
-        {
-            result = new UdapDynamicClientRegistrationValidationResult(
+        result ??= new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 UdapDynamicClientRegistrationErrorDescriptions.MissingValidationResult);
-        }
 
         if (result.IsError)
         {
@@ -129,8 +126,8 @@ public class UdapDynamicClientRegistrationEndpoint
                 result.Error ?? string.Empty,
                 result.ErrorDescription ?? string.Empty
             );
-            
-            _logger.LogWarning(JsonSerializer.Serialize(error));
+
+            _logger.LogWarning("Error: {@Error}", error);
 
             await context.Response.WriteAsJsonAsync(error, cancellationToken: token);
 

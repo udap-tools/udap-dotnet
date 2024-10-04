@@ -30,7 +30,7 @@ public class BuildCertificationAndEndorsements : CertificateBase
     {
         _testOutputHelper = testOutputHelper;
 
-        IConfiguration config = new ConfigurationBuilder()
+        IConfiguration unused = new ConfigurationBuilder()
             .AddUserSecrets<SecretSettings>()
             .Build();
     }
@@ -68,9 +68,9 @@ public class BuildCertificationAndEndorsements : CertificateBase
     [Fact]
     public void MakeCaWithIntermediateForCertificationAndEndorsements()
     {
-        Console.WriteLine("*************************************");
-        Console.WriteLine(BaseDir);
-        Console.WriteLine("*************************************");
+        _testOutputHelper.WriteLine("*************************************");
+        _testOutputHelper.WriteLine(BaseDir);
+        _testOutputHelper.WriteLine("*************************************");
 
 
         #region SureFhir CA
@@ -274,17 +274,16 @@ public class BuildCertificationAndEndorsements : CertificateBase
     }
 
 
-    private X509Certificate2 BuildClientCertificationCertificate(
-            X509Certificate2 intermediateCert,
-            X509Certificate2 caCert,
-            RSA intermediateKey,
-            string distinguishedName,
-            string clientCertFilePath,
-            string? crl,
-            List<string>? subjectAltNames = null,
-            string? buildAIAExtensionsPath = null,
-            DateTimeOffset notBefore = default,
-            DateTimeOffset notAfter = default)
+    private void BuildClientCertificationCertificate(X509Certificate2 intermediateCert,
+        X509Certificate2 caCert,
+        RSA intermediateKey,
+        string distinguishedName,
+        string clientCertFilePath,
+        string? crl,
+        List<string>? subjectAltNames = null,
+        string? buildAIAExtensionsPath = null,
+        DateTimeOffset notBefore = default,
+        DateTimeOffset notAfter = default)
     {
 
         if (notBefore == default)
@@ -366,7 +365,7 @@ public class BuildCertificationAndEndorsements : CertificateBase
 
 
         var certPackage = new X509Certificate2Collection();
-        certPackage!.Add(clientCertWithKey);
+        certPackage.Add(clientCertWithKey);
         certPackage.Add(new X509Certificate2(intermediateCert.Export(X509ContentType.Cert)));
         certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
 
@@ -374,8 +373,6 @@ public class BuildCertificationAndEndorsements : CertificateBase
         File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes!);
         var clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
         File.WriteAllBytes($"{clientCertFilePath}.cer", clientPem.Select(c => (byte)c).ToArray());
-
-        return clientCert;
     }
 
 }

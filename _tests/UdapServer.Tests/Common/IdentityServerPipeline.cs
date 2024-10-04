@@ -11,7 +11,7 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
-
+#pragma warning disable
 
 using System.Diagnostics;
 using System.Net;

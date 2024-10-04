@@ -671,7 +671,7 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         var notes = hl7B2BUser.Validate();
         notes.Should().NotBeNull();
-        notes.Count().Should().Be(3);
+        notes.Count.Should().Be(3);
         notes.Should().ContainInOrder("Missing required version", "Missing required organization_id", "Missing required purpose_of_use");
     }
 
@@ -685,7 +685,7 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         var notes = hl7B2BUser.Validate();
         notes.Should().NotBeNull();
-        notes.Count().Should().Be(3);
+        notes.Count.Should().Be(3);
         notes.Should().ContainInOrder("Missing required version", "Missing required user_person", "Missing required purpose_of_use");
     }
 
@@ -700,7 +700,7 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         var notes = hl7B2BUser.Validate();
         notes.Should().NotBeNull();
-        notes.Count().Should().Be(4);
+        notes.Count.Should().Be(4);
         notes.Should().ContainInOrder("Missing required version", "Missing required user_information", "Missing required patient_information", "purpose_of_use must be T-IAS");
     }
 
@@ -821,7 +821,9 @@ public class UdapDynamicClientRegistrationDocumentTest
 
 
         // ReSharper disable once ObjectCreationAsStatement
+#pragma warning disable CA1806
         Action act = () => new UdapDynamicClientRegistrationDocument()
+#pragma warning restore CA1806
         {
             ClientId = document.ClientId,
             SoftwareStatement = null

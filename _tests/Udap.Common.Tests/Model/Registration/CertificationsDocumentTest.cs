@@ -221,7 +221,6 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void JwtIdTests()
         {
-            var now = DateTime.Now.ToEpochTime();
             var certificationsDoc = UdapCertificationsAndEndorsementBuilder
                 .Create("Client Name")
                 .Build();
@@ -246,7 +245,6 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void CertificationDescriptionTests()
         {
-            var now = DateTime.Now.ToEpochTime();
             var certificationsDoc = UdapCertificationsAndEndorsementBuilder
                 .Create("Client Name")
                 .Build();

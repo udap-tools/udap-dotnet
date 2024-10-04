@@ -21,13 +21,14 @@ using Org.BouncyCastle.Math;
 using Xunit.Abstractions;
 using X509Extension = System.Security.Cryptography.X509Certificates.X509Extension;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
+// ReSharper disable All
 
 namespace Udap.PKI.Generator;
-public class CertificateBase
+public partial class CertificateBase
 {
-    private static string _baseDir;
+    private static string? _baseDir;
 
-    protected static string BaseDir
+    protected static string? BaseDir
     {
         get
         {
@@ -38,7 +39,7 @@ public class CertificateBase
 
             var assembly = Assembly.GetExecutingAssembly();
             var resourcePath = String.Format(
-                $"{Regex.Replace(assembly.ManifestModule.Name, @"\.(exe|dll)$", string.Empty, RegexOptions.IgnoreCase)}" +
+                $"{MyRegex().Replace(assembly.ManifestModule.Name, string.Empty)}" +
                 $".Resources.ProjectDirectory.txt");
 
             var rm = new ResourceManager("Resources", assembly);
@@ -46,15 +47,20 @@ public class CertificateBase
             // string[] names = assembly.GetManifestResourceNames(); // Help finding names
 
             using var stream = assembly.GetManifestResourceStream(resourcePath);
-            using var streamReader = new StreamReader(stream);
+            if (stream != null)
+            {
+                using var streamReader = new StreamReader(stream);
 
-            _baseDir = streamReader.ReadToEnd().Trim();
+                _baseDir = streamReader.ReadToEnd().Trim();
+            }
 
             return _baseDir;
         }
     }
 
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     protected string DefaultPKCS12Password { get; set; }
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     protected void UpdateWindowsMachineStore(X509Certificate2 certificate)
     {
@@ -86,8 +92,8 @@ public class CertificateBase
         //
 
 
-        var issuerSubjectKey = caCert.Extensions?["2.5.29.14"].RawData;
-        var segment = new ArraySegment<byte>(issuerSubjectKey, 2, issuerSubjectKey.Length - 2);
+        var issuerSubjectKey = caCert.Extensions?["2.5.29.14"]?.RawData;
+        var segment = new ArraySegment<byte>(issuerSubjectKey!, 2, issuerSubjectKey!.Length - 2);
         var authorityKeyIdentifier = new byte[segment.Count + 4];
         // these bytes define the "KeyID" part of the AuthorityKeyIdentifier
         authorityKeyIdentifier[0] = 0x30;
@@ -152,4 +158,6 @@ public class CertificateBase
         return nextCrlNum;
     }
 
+    [GeneratedRegex(@"\.(exe|dll)$", RegexOptions.IgnoreCase, "en-US")]
+    private static partial Regex MyRegex();
 }

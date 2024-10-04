@@ -84,7 +84,7 @@ public class UdapInMemoryResourceStore : IResourceStore
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
         activity?.SetTag(Tracing.Properties.ScopeNames, scopeNamesList.ToSpaceSeparatedString());
 
-        if (scopeNames == null) throw new ArgumentNullException(nameof(scopeNames));
+        ArgumentNullException.ThrowIfNull(scopeNames);
 
         var identity = from i in _identityResources
                        where scopeNamesList.Contains(i.Name)
@@ -100,7 +100,7 @@ public class UdapInMemoryResourceStore : IResourceStore
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
         activity?.SetTag(Tracing.Properties.ScopeNames, scopeNamesList.ToSpaceSeparatedString());
 
-        if (scopeNames == null) throw new ArgumentNullException(nameof(scopeNames));
+        ArgumentNullException.ThrowIfNull(scopeNames);
 
         var query = from a in _apiResources
                     where a.Scopes.Any(x => scopeNamesList.Contains(x))
@@ -116,8 +116,8 @@ public class UdapInMemoryResourceStore : IResourceStore
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
         activity?.SetTag(Tracing.Properties.ScopeNames, scopeNamesList.ToSpaceSeparatedString());
 
-        if (scopeNames == null) throw new ArgumentNullException(nameof(scopeNames));
-        
+        ArgumentNullException.ThrowIfNull(scopeNames);
+
         var query =
             from x in _apiScopes
             where scopeNamesList.Contains(x.Name)

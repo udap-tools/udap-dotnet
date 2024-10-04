@@ -559,14 +559,11 @@ namespace Udap.Client.Client
                         await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>(
                             cancellationToken: token);
 
-                    if (resultDocument == null)
-                    {
-                        resultDocument = new UdapDynamicClientRegistrationDocument
+                    resultDocument ??= new UdapDynamicClientRegistrationDocument
                         {
                             { "error", "Unknown error" },
                             { "error_description", response.StatusCode }
                         };
-                    }
 
                     return resultDocument;
                 }
@@ -663,14 +660,11 @@ namespace Udap.Client.Client
                         await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>(
                             cancellationToken: token);
 
-                    if (resultDocument == null)
-                    {
-                        resultDocument = new UdapDynamicClientRegistrationDocument
+                    resultDocument ??= new UdapDynamicClientRegistrationDocument
                         {
                             { "error", "Unknown error" },
                             { "error_description", response.StatusCode }
                         };
-                    }
 
                     return resultDocument;
                 }

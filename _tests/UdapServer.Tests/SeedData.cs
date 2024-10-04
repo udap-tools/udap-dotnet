@@ -14,7 +14,6 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
 using Duende.IdentityServer.Models;
-using Hl7.Fhir.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -66,8 +65,8 @@ public static class SeedData
 
         var configDbContext = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
 
-        await scope.ServiceProvider.GetService<PersistedGrantDbContext>()?.Database.MigrateAsync();
-        await scope.ServiceProvider.GetService<ConfigurationDbContext>()?.Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>().Database.MigrateAsync();
 
 
         var clientRegistrationStore = scope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
@@ -219,7 +218,7 @@ public static class SeedData
 
     private static async Task SeedFhirScopes(
         ConfigurationDbContext configDbContext,
-        HashSet<string>? seedScopes,
+        HashSet<string> seedScopes,
         Dictionary<string, string> scopeProperties)
     {
         var apiScopes = configDbContext.ApiScopes

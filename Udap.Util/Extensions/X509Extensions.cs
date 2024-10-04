@@ -55,10 +55,7 @@ public static class X509Extensions
     /// <param name="newOids">The collection to add from</param>
     public static void Add(this OidCollection oids, OidCollection newOids)
     {
-        if (newOids == null)
-        {
-            throw new ArgumentNullException(nameof(newOids));
-        }
+        ArgumentNullException.ThrowIfNull(newOids);
 
         for (int i = 0, count = newOids.Count; i < count; ++i)
         {
@@ -73,10 +70,7 @@ public static class X509Extensions
     /// <param name="newCerts">The collection from which to add certificates.</param>
     public static void Add(this X509Certificate2Collection certs, X509Certificate2Collection? newCerts)
     {
-        if (newCerts == null)
-        {
-            throw new ArgumentNullException(nameof(newCerts));
-        }
+        ArgumentNullException.ThrowIfNull(newCerts);
 
         foreach (var cert in newCerts)
         {
@@ -126,10 +120,7 @@ public static class X509Extensions
     /// <returns>The zero-based index of the first matching element, or -1 if no matching elements are found</returns>
     public static int IndexOf(this X509Certificate2Collection certs, Predicate<X509Certificate2> matcher)
     {
-        if (matcher == null)
-        {
-            throw new ArgumentNullException(nameof(matcher));
-        }
+        ArgumentNullException.ThrowIfNull(matcher);
 
         for (int i = 0, count = certs.Count; i < count; ++i)
         {

@@ -12,49 +12,19 @@ using System.Text.RegularExpressions;
 
 namespace Udap.Server.Extensions;
 
-internal static class StringExtensions
+internal static partial class StringExtensions
 {
-    // [DebuggerStepThrough]
-    // public static string EnsureLeadingSlash(this string? url)
-    // {
-    //     if (url != null && !url.StartsWith("/"))
-    //     {
-    //         return "/" + url;
-    //     }
-    //
-    //     return string.Empty;
-    // }
-    //
-    // [DebuggerStepThrough]
-    // public static bool IsPresent(this string? value)
-    // {
-    //     return !string.IsNullOrWhiteSpace(value);
-    // }
-    //
-    // [DebuggerStepThrough]
-    // public static string EnsureTrailingSlash(this string url)
-    // {
-    //     if (!url.EndsWith("/"))
-    //     {
-    //         return url + "/";
-    //     }
-    //
-    //     return url;
-    // }
-    //
-    // [DebuggerStepThrough]
-    // public static bool IsMissing(this string value)
-    // {
-    //     return string.IsNullOrWhiteSpace(value);
-    // }
-
- 
+    [DebuggerStepThrough]
     public static string ToSnakeCase(this string input)
     {
         if (string.IsNullOrEmpty(input)) { return input; }
 
-        var startUnderscores = Regex.Match(input, @"^_+");
-        return startUnderscores + Regex.Replace(input, @"([a-z0-9])([A-Z])", "$1_$2").ToLower();
+        var startUnderscores = MyRegex().Match(input);
+        return startUnderscores + MyRegex1().Replace(input, "$1_$2").ToLower();
     }
- 
+
+    [GeneratedRegex(@"^_+")]
+    private static partial Regex MyRegex();
+    [GeneratedRegex(@"([a-z0-9])([A-Z])")]
+    private static partial Regex MyRegex1();
 }

@@ -76,7 +76,7 @@ public class SmartControllerTests : IClassFixture<ApiTestFixture>
         //
         // Fixture is for FHIR Server configuration
         //
-        if (fixture == null) throw new ArgumentNullException(nameof(fixture));
+        ArgumentNullException.ThrowIfNull(fixture);
         fixture.Output = testOutputHelper;
         _fixture = fixture;
     }
@@ -112,7 +112,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         //
         // Fixture is for FHIR Server configuration
         //
-        if (fixture == null) throw new ArgumentNullException(nameof(fixture));
+        ArgumentNullException.ThrowIfNull(fixture);
         fixture.Output = testOutputHelper;
         _fixture = fixture;
 
@@ -194,7 +194,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         disco.HttpStatusCode.Should().Be(HttpStatusCode.OK);
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
     }
     
 
@@ -294,7 +294,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         var grantTypes = disco.GrantTypesSupported?.ToList();
         grantTypes.Should().NotBeNullOrEmpty();
 
-        grantTypes!.Count().Should().Be(3);
+        grantTypes!.Should().HaveCount(3);
         grantTypes.Should().Contain("authorization_code");
         grantTypes.Should().Contain("refresh_token");
         grantTypes.Should().Contain("client_credentials");
@@ -379,7 +379,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
         registrationSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
-        registrationSigningAlgValuesSupported!.Count().Should().Be(4);
+        registrationSigningAlgValuesSupported!.Should().HaveCount(4);
     }
 
     [Fact]
@@ -396,7 +396,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.RS384);
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES256);
         tokenSigningAlgValuesSupported.Should().Contain(UdapConstants.SupportedAlgorithm.ES384);
-        tokenSigningAlgValuesSupported!.Count().Should().Be(4);
+        tokenSigningAlgValuesSupported!.Should().HaveCount(4);
     }
 
     [Fact]

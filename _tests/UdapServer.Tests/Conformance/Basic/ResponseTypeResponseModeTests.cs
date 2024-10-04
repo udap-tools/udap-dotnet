@@ -99,7 +99,7 @@ public class ResponseTypeResponseModeTests
         url = url.Replace("response_type=removeMe", "");
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
-        var response = await _mockPipeline.BrowserClient.GetAsync(url);
+        await _mockPipeline.BrowserClient.GetAsync(url);
 
         _mockPipeline.ErrorMessage.Error.Should().Be("invalid_request");
     }

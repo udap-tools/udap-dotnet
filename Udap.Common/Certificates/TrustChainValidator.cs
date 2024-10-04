@@ -34,8 +34,8 @@ namespace Udap.Common.Certificates
 {
     public class TrustChainValidator
     {
-        private X509ChainPolicy _validationPolicy;
-        private X509ChainStatusFlags _problemFlags;
+        private readonly X509ChainPolicy _validationPolicy;
+        private readonly X509ChainStatusFlags _problemFlags;
         private const X509RevocationMode DefaultX509RevocationMode = X509RevocationMode.Online;
         private const X509RevocationFlag DefaultX509RevocationFlag = X509RevocationFlag.ExcludeRoot;
         private readonly ILogger<TrustChainValidator> _logger;
@@ -133,20 +133,16 @@ namespace Udap.Common.Certificates
             communityId = null;
             chainElements = null;
 
-            if (certificate == null)
-            {
-                throw new ArgumentNullException(nameof(certificate));
-            }
-
             // Let's avoid complex state and/or race conditions by making copies of these collections.
-            X509Certificate2Collection roots = new X509Certificate2Collection(anchorCertificates); 
-            X509Certificate2Collection? intermeds = null;
+            var roots = new X509Certificate2Collection(anchorCertificates); 
+            X509Certificate2Collection? intermediatesCloned = null;
 
             if (intermediateCertificates != null)
             {
-                intermeds = new X509Certificate2Collection(intermediateCertificates);
+                intermediatesCloned = new X509Certificate2Collection(intermediateCertificates);
             }
 
+            // ReSharper disable once RedundantAssignment
             intermediateCertificates = null;
             
 
@@ -168,6 +164,8 @@ namespace Udap.Common.Certificates
                 // In direct world this was just a way to resolve the intermediate in our own store
                 // I don't think on Windows we ever did this in practice.
                 // The chain builder in Windows and I believe in OpenSSL on Linux does the intermediate resolution.
+                // Note: I found if this is hosted on an Android device the intermediate certificate is not automatically
+                // resolved by the x509Chain.Build().
                 // Again more to test here.
                 //
 
@@ -181,9 +179,9 @@ namespace Udap.Common.Certificates
                 }
 
                 chainBuilder.ChainPolicy = chainPolicy;
-                if (intermeds != null)
+                if (intermediatesCloned != null)
                 {
-                    chainBuilder.ChainPolicy.ExtraStore.AddRange(intermeds!);
+                    chainBuilder.ChainPolicy.ExtraStore.AddRange(intermediatesCloned);
                 }
                 var result = chainBuilder.Build(certificate);
 

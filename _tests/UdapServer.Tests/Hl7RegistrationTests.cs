@@ -144,7 +144,7 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         Hl7ApiTestFixture fixture, 
         ITestOutputHelper testOutputHelper)
     {
-        if (fixture == null) throw new ArgumentNullException(nameof(fixture));
+        ArgumentNullException.ThrowIfNull(fixture);
         fixture.Output = testOutputHelper;
         _fixture = fixture;
         _testOutputHelper = testOutputHelper;

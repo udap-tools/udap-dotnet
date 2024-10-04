@@ -26,6 +26,7 @@ public interface IUdapDynamicClientRegistrationValidator
     /// <param name="request"></param>
     /// <param name="intermediateCertificates"></param>
     /// <param name="anchorCertificates"></param>
+    /// <param name="anchors"></param>
     /// <returns></returns>
     Task<UdapDynamicClientRegistrationValidationResult> ValidateAsync(
         UdapRegisterRequest request, 

@@ -219,7 +219,10 @@ async Task<string?> ResolveAccessToken(IReadOnlyDictionary<string, string> metad
 async Task<byte[]?> GetFhirMetadata(ResponseTransformContext responseTransformContext,
     WebApplicationBuilder webApplicationBuilder)
 {
-    var stream = await responseTransformContext.ProxyResponse.Content.ReadAsStreamAsync();
+    var stream = responseTransformContext.ProxyResponse?.Content != null
+        ? await responseTransformContext.ProxyResponse.Content.ReadAsStreamAsync()
+        : Stream.Null;
+
     using var reader = new StreamReader(stream);
     var body = await reader.ReadToEndAsync();
 
@@ -285,7 +288,7 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
     requestTransformContext.ProxyRequest.Headers.Remove("X-Authorization-Issuer");
  
     // Google Cloud way of passing scopes to the Fhir Server
-    var spaceSeparatedString = scopes?.Select(s => s.Value)
+    var spaceSeparatedString = scopes.Select(s => s.Value)
         .Where(s => s != "udap") //gcp doesn't know udap  Need better filter to block unknown scopes
         .ToSpaceSeparatedString();
     

@@ -84,7 +84,7 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
-    .ConfigureHttpClient((context, handler) =>
+    .ConfigureHttpClient((_, handler) =>
     {
         // this is required to decompress automatically.  *******   troubleshooting only   *******
         handler.AutomaticDecompression = System.Net.DecompressionMethods.All;
@@ -215,16 +215,13 @@ async Task<string?> ResolveAccessToken(IReadOnlyDictionary<string, string> metad
 
 }
 
-
-async Task<string> UdapMedatData(string s)
-{
-    return s;
-}
-
 async Task<byte[]?> GetFhirMetadata(ResponseTransformContext responseTransformContext,
     WebApplicationBuilder webApplicationBuilder)
 {
-    var stream = await responseTransformContext.ProxyResponse.Content.ReadAsStreamAsync();
+    var stream = responseTransformContext.ProxyResponse?.Content != null
+        ? await responseTransformContext.ProxyResponse.Content.ReadAsStreamAsync()
+        : Stream.Null;
+
     using var reader = new StreamReader(stream);
     var body = await reader.ReadToEndAsync();
 
@@ -280,7 +277,7 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
 
     var tokenHandler = new JwtSecurityTokenHandler();
     var jsonToken = tokenHandler.ReadJwtToken(requestTransformContext.HttpContext.Request.Headers.Authorization.First()?.Replace("Bearer", "").Trim());
-    var scopes = jsonToken?.Claims.Where(c => c.Type == "scope");
+    var scopes = jsonToken.Claims.Where(c => c.Type == "scope");
     var iss = jsonToken.Claims.Where(c => c.Type == "iss");
     // var sub = jsonToken.Claims.Where(c => c.Type == "sub"); // figure out what subject should be for GCP
 
@@ -290,11 +287,11 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
     requestTransformContext.ProxyRequest.Headers.Remove("X-Authorization-Issuer");
  
     // Google Cloud way of passing scopes to the Fhir Server
-    var spaceSeparatedString = scopes?.Select(s => s.Value)
+    var spaceSeparatedString = scopes.Select(s => s.Value)
         .Where(s => s != "udap") //gcp doesn't know udap  Need better filter to block unknown scopes
         .ToSpaceSeparatedString();
     
     requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Scope", spaceSeparatedString);
-    requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault().Value);
+    requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault()?.Value);
     // context.ProxyRequest.Headers.Add("X-Authorization-Subject", sub.SingleOrDefault().Value);
 }

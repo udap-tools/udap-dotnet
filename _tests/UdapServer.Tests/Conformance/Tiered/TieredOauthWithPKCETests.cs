@@ -1330,7 +1330,7 @@ public class TieredOauthWithPKCETests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
         
         var documentResponse = await udapClient.RegisterAuthCodeClient(

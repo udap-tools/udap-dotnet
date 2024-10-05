@@ -168,7 +168,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -220,7 +220,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -271,7 +271,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -344,7 +344,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -417,7 +417,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -499,7 +499,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -581,7 +581,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -618,7 +618,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -657,7 +657,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(

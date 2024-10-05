@@ -175,7 +175,7 @@ var app = builder.Build();
 
 if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
 {
-    app.Use(async (ctx, next) =>
+    app.Use((ctx, next) =>
     {
         var header = ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedProtoHeaderName].FirstOrDefault();
         if (header != null)
@@ -183,7 +183,7 @@ if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
             ctx.Request.Scheme = header;
         }
 
-        await next();
+        return next();
     });
 }
 
@@ -266,7 +266,7 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
     requestTransformContext.ProxyRequest.Headers.Remove("X-Authorization-Issuer");
 
     // Google Cloud way of passing scopes to the Fhir Server
-    var spaceSeparatedString = scopes?.Select(s => s.Value)
+    var spaceSeparatedString = scopes.Select(s => s.Value)
         .Where(s => s != "udap") //gcp doesn't know udap  Need better filter to block unknown scopes
         .ToSpaceSeparatedString();
 

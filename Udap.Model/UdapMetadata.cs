@@ -25,6 +25,8 @@ public class UdapMetadata
 {
     protected List<UdapMetadataConfig>? UdapMetadataConfigs;
 
+   public UdapMetadata() { }
+
     public UdapMetadataConfig? GetUdapMetadataConfig(string? community = null)
     {
         if (community == null)
@@ -75,7 +77,7 @@ public class UdapMetadata
         ICollection<string> udapCertificationsSupported,
         ICollection<string> udapCertificationsRequired,
         ICollection<string> grantTypesSupported,
-        ICollection<string> scopesSupported,
+        ICollection<string>? scopesSupported,
         ICollection<string> tokenEndpointAuthMethodsSupported,
         ICollection<string> tokenEndpointAuthSigningAlgValuesSupported,
         ICollection<string> registrationEndpointJwtSigningAlgValuesSupported,
@@ -95,22 +97,18 @@ public class UdapMetadata
         RegistrationEndpointJwtSigningAlgValuesSupported = registrationEndpointJwtSigningAlgValuesSupported;
     }
 
-    public UdapMetadata(UdapMetadataOptions udapMetadataOptions) : this(udapMetadataOptions, null)
-    {
-
-    }
-
     /// <summary>
     /// <a href="http://hl7.org/fhir/us/udap-security/discovery.html#required-udap-metadata">2.2 Required UDAP Metadata</a>
     /// </summary>
-    public UdapMetadata(IOptionsMonitor<UdapMetadataOptions> udapMetadataOptions, HashSet<string>? scopes) : this(udapMetadataOptions.CurrentValue, scopes)
+    public UdapMetadata(IOptionsMonitor<UdapMetadataOptions> udapMetadataOptions) : this(udapMetadataOptions.CurrentValue)
     {
     }
 
-    public UdapMetadata(UdapMetadataOptions udapMetadataOptions, IEnumerable<string>? scopes = null)
+    public UdapMetadata(UdapMetadataOptions udapMetadataOptions)
     {
         UdapMetadataConfigs = udapMetadataOptions.UdapMetadataConfigs;
         UdapVersionsSupported = udapMetadataOptions.UdapVersionsSupported;
+        UdapProfilesSupported = udapMetadataOptions.UdapProfilesSupported;
 
         BuildSupportedProfiles(udapMetadataOptions);
 
@@ -148,6 +146,7 @@ public class UdapMetadata
             };
         }
     }
+
 
     private void BuildSupportedProfiles(UdapMetadataOptions udapMetadataOptions)
     {
@@ -344,10 +343,11 @@ public class UdapMetadata
     /// Serializes this instance to JSON.
     /// </summary>
     /// <returns>This instance as JSON.</returns>
-    /// <remarks>Use <see cref="System.IdentityModel.Tokens.Jwt.JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
     public virtual string SerializeToJson()
     {
         return JsonSerializer.Serialize(this);
+
+        // <remarks>Use <see cref="System.IdentityModel.Tokens.Jwt.JsonExtensions.Serializer"/> to customize JSON serialization.</remarks>
         // return JsonExtensions.SerializeToJson(this);
     }
 

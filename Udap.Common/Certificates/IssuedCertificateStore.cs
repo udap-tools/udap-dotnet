@@ -11,7 +11,6 @@ public class IssuedCertificateStore : IPrivateCertificateStore
     private readonly ILogger<IssuedCertificateStore> _logger;
     private bool _resolved;
 
-
     public IssuedCertificateStore(
         IOptionsMonitor<UdapFileCertStoreManifest> manifest,
         ILogger<IssuedCertificateStore> logger)
@@ -25,15 +24,17 @@ public class IssuedCertificateStore : IPrivateCertificateStore
         });
     }
 
-    public Task<IPrivateCertificateStore> Resolve()
+    public async Task<IPrivateCertificateStore> Resolve(CancellationToken token = default)
     {
+        token.ThrowIfCancellationRequested();
+
         if (_resolved == false)
         {
-            LoadCertificates(_manifest.CurrentValue);
+            await Task.Run(() => LoadCertificates(_manifest.CurrentValue), token);
         }
         _resolved = true;
 
-        return Task.FromResult(this as IPrivateCertificateStore);
+        return this;
     }
 
     public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new HashSet<IssuedCertificate>();
@@ -42,8 +43,7 @@ public class IssuedCertificateStore : IPrivateCertificateStore
 
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
     {
-        ICollection<Common.Metadata.Community>? communities;
-        communities = manifestCurrentValue.Communities;
+        ICollection<Metadata.Community> communities = manifestCurrentValue.Communities;
         _logger.LogInformation("{Count} communities loaded", communities.Count);
 
         foreach (var community in communities)
@@ -72,8 +72,8 @@ public class IssuedCertificateStore : IPrivateCertificateStore
 
                     foreach (var x509Cert in certificates)
                     {
-                        if (x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19") 
-                                is X509BasicConstraintsExtension extension && 
+                        if (x509Cert.Extensions.FirstOrDefault(e => e.Oid?.Value == "2.5.29.19")
+                                is X509BasicConstraintsExtension extension &&
                             !extension.CertificateAuthority)
                         {
                             _logger.LogInformation("Loading Certificate:: Thumbprint: {Thumbprint}  Subject: {SubjectName}", x509Cert.Thumbprint, x509Cert.SubjectName.Name);
@@ -84,5 +84,4 @@ public class IssuedCertificateStore : IPrivateCertificateStore
             }
         }
     }
-
 }

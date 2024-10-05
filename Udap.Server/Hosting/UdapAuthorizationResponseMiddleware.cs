@@ -176,7 +176,7 @@ internal class UdapAuthorizationResponseMiddleware
         await _next(context);
     }
 
-    private Task RenderRequiredScopeErrorResponse(HttpContext context)
+    private static Task RenderRequiredScopeErrorResponse(HttpContext context)
     {
         if (context.Request.Query.TryGetValue(
                 AuthorizeRequest.RedirectUri,
@@ -195,7 +195,7 @@ internal class UdapAuthorizationResponseMiddleware
     }
 
 
-    private Task RenderMissingStateErrorResponse(HttpContext context)
+    private static Task RenderMissingStateErrorResponse(HttpContext context)
     {
         if (context.Request.Query.TryGetValue(
                 AuthorizeRequest.RedirectUri,
@@ -213,7 +213,7 @@ internal class UdapAuthorizationResponseMiddleware
         return Task.CompletedTask;
     }
 
-    private async Task RenderErrorResponse(
+    private static async Task RenderErrorResponse(
         HttpContext context,
         IIdentityServerInteractionService interactionService,
         StringValues errorId)

@@ -59,7 +59,7 @@ public partial class CertificateBase
 
     protected string? DefaultPKCS12Password { get; set; }
 
-    protected void UpdateWindowsMachineStore(X509Certificate2 certificate)
+    protected static void UpdateWindowsMachineStore(X509Certificate2 certificate)
     {
         //This could be modified to handle Linux also... Maybe later.
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

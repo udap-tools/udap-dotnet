@@ -2137,7 +2137,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         _testOutputHelper.WriteLine(await patientResponse.Content.ReadAsStringAsync());
     }
 
-    private string BuildHl7B2BExtensions()
+    private static string BuildHl7B2BExtensions()
     {
         return "{\"version\": \"1\", \"subject_name\": \"todo.  more work to do here\"}";
     }

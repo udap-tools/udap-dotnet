@@ -306,7 +306,7 @@ namespace Udap.Server.Stores
             return entity.ToModel().ClientSecrets;
         }
 
-        private string ShowSummary(IEnumerable<Anchor> anchors)
+        private static string ShowSummary(IEnumerable<Anchor> anchors)
         {
             var sb = new StringBuilder();
             sb.Append("Resolved Anchors: | ");

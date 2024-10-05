@@ -145,9 +145,9 @@ public class AccessTokenTests
         
 
         b2BHl7.PurposeOfUse!.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
-        b2BHl7.PurposeOfUse.Any().Should().BeFalse();
+        b2BHl7.PurposeOfUse.Count.Should().Be(0);
 
         b2BHl7 = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(b2BHl7.SerializeToJson());
-        b2BHl7!.PurposeOfUse!.Any().Should().BeFalse();
+        b2BHl7!.PurposeOfUse!.Count.Should().Be(0);
     }
 }

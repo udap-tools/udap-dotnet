@@ -214,15 +214,15 @@ public class BuildNginxProxySSLCerts : CertificateBase
 
 
 
-    private X509Certificate2 BuildSslCertificate(
-        X509Certificate2? caCert,
+    private void BuildSslCertificate(X509Certificate2 caCert,
         string distinguishedName,
         string subjectAltNames,
         string sslCertFilePath,
         string? crl = default,
         // string? buildAIAExtensionsPath = null,
         DateTimeOffset notBefore = default,
-        DateTimeOffset notAfter = default)
+        DateTimeOffset notAfter = default
+    )
     {
 
         if (notBefore == default)
@@ -290,15 +290,13 @@ public class BuildNginxProxySSLCerts : CertificateBase
         certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
         
         var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
-        File.WriteAllBytes($"{sslCertFilePath}.pfx", clientBytes);
+        File.WriteAllBytes($"{sslCertFilePath}.pfx", clientBytes!);
         var clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
         File.WriteAllBytes($"{sslCertFilePath}.cer", clientPem.Select(c => (byte)c).ToArray());
         File.WriteAllBytes($"{sslCertFilePath}.pem", clientPem.Select(c => (byte)c).ToArray());
 
         var key = PemEncoding.Write("RSA PRIVATE KEY", rsaKey.ExportRSAPrivateKey());
         File.WriteAllBytes($"{sslCertFilePath}.key", key.Select(c => (byte)c).ToArray());
-
-        return clientCert;
     }
 
 }

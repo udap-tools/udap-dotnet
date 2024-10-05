@@ -27,7 +27,9 @@ using Udap.Server.Validation.Default;
 // here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
 //
 // ReSharper disable once CheckNamespace
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Microsoft.Extensions.DependencyInjection;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static class UdapConfigurationServiceCollectionExtensions
 {
@@ -51,7 +53,7 @@ public static class UdapConfigurationServiceCollectionExtensions
     }
 
 
-    public static IUdapServiceBuilder AddUdapSigningCredentials<TUdapMetadataOptions>(this IUdapServiceBuilder builder) 
+    public static IUdapServiceBuilder AddUdapSigningCredentials<TUdapMetadataOptions>(this IUdapServiceBuilder builder)
         where TUdapMetadataOptions : UdapMetadataOptions
     {
         builder.Services.AddSingleton<IEnumerable<ISigningCredentialStore>>(resolver =>
@@ -59,7 +61,19 @@ public static class UdapConfigurationServiceCollectionExtensions
             var udapMetadataOptions = resolver.GetRequiredService<IOptionsMonitor<TUdapMetadataOptions>>().CurrentValue;
             var signingCredentialStore = new List<ISigningCredentialStore>();
             var certStore = resolver.GetRequiredService<IPrivateCertificateStore>();
-            certStore.Resolve();
+            var timeout = TimeSpan.FromSeconds(udapMetadataOptions.CertificateResolveTimeoutSeconds);
+
+            using (var cts = new CancellationTokenSource(timeout))
+            {
+                try
+                {
+                    certStore.Resolve(cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new InvalidOperationException($"Certificate store resolution timed out after {timeout.TotalSeconds} seconds.");
+                }
+            }
 
             foreach (var issued in certStore.IssuedCertificates)
             {
@@ -81,7 +95,19 @@ public static class UdapConfigurationServiceCollectionExtensions
             var udapMetadataOptions = resolver.GetRequiredService<IOptionsMonitor<TUdapMetadataOptions>>().CurrentValue;
             var validationKeyStore = new List<IValidationKeysStore>();
             var certStore = resolver.GetRequiredService<IPrivateCertificateStore>();
-            certStore.Resolve();
+            var timeout = TimeSpan.FromSeconds(udapMetadataOptions.CertificateResolveTimeoutSeconds);
+
+            using (var cts = new CancellationTokenSource(timeout))
+            {
+                try
+                {
+                    certStore.Resolve(cts.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new InvalidOperationException($"Certificate store resolution timed out after {timeout.TotalSeconds} seconds.");
+                }
+            }
 
             foreach (var issued in certStore.IssuedCertificates)
             {

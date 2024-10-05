@@ -27,7 +27,7 @@ public record Pkce
         CodeChallenge = GenerateCodeChallenge(CodeVerifier);
     }
 
-    private string GenerateCodeVerifier()
+    private static string GenerateCodeVerifier()
     {
         var bytes = new byte[32];
         using (var rng = RandomNumberGenerator.Create())
@@ -37,7 +37,7 @@ public record Pkce
         return Base64UrlEncoder.Encode(bytes);
     }
 
-    private string GenerateCodeChallenge(string codeVerifier)
+    private static string GenerateCodeChallenge(string codeVerifier)
     {
         using var sha256 = SHA256.Create();
         var challengeBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(codeVerifier));

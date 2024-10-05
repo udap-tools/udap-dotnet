@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -249,7 +248,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             var validationParameters = Options.TokenValidationParameters.Clone();
 
             var clientId = properties.Items["client_id"] ?? throw new InvalidOperationException($"client_id not found in properties");
-            var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId) ?? throw new InvalidOperationException($"client_id not found in registration store: {clientId}");
+            var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId, Context.RequestAborted) ?? throw new InvalidOperationException($"client_id not found in registration store: {clientId}");
 
             if (string.IsNullOrEmpty(tieredClient.IdPBaseUrl))
             {
@@ -268,7 +267,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                 }
             };
 
-            var keys = await _udapClient.ResolveJwtKeys(request);
+            var keys = await _udapClient.ResolveJwtKeys(request, Context.RequestAborted);
             validationParameters.IssuerSigningKeys = keys;
 
             var tokenEndpointUser =
@@ -415,22 +414,16 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var idpUri = new Uri(idp);
         var communityParam = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
 
-        var clientId = context.Properties.Items["client_id"];
-
-        if (clientId == null)
-        {
-            throw new InvalidOperationException("client_id is null");
-        }
-
+        var clientId = context.Properties.Items["client_id"] ?? throw new InvalidOperationException("client_id is null");
         var resourceHolderRedirectUrl =
             $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
 
         var requestParams = Context.Request.Query;
         var code = requestParams["code"];
-        var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId) ?? throw new InvalidOperationException($"client_id not found: {clientId}");
+        var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId, Context.RequestAborted) ?? throw new InvalidOperationException($"client_id not found: {clientId}");
         var tieredClientId = tieredClient.ClientId;
             
-        await _certificateStore.Resolve();
+        await _certificateStore.Resolve(Context.RequestAborted);
 
         // Sign request for token 
         var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
@@ -463,13 +456,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var idpParam = (requestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
         var scope = (requestParams.GetValues("scope") ?? throw new InvalidOperationException()).First();
 
-        var udap = scope.FromSpaceSeparatedString().FirstOrDefault(s => s == UdapConstants.StandardScopes.Udap);
-
-        if (udap == null)
-        {
-            throw new Exception("Missing required udap scope from client for Tiered OAuth");
-        }
-
+        _ = scope.FromSpaceSeparatedString().FirstOrDefault(s => s == UdapConstants.StandardScopes.Udap) ?? throw new Exception("Missing required udap scope from client for Tiered OAuth");
         var clientRedirectUrl = (requestParams.GetValues("redirect_uri") ?? throw new InvalidOperationException()).Last();
         var updateRegistration = requestParams.GetValues("update_registration")?.Last();
 
@@ -493,7 +480,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         _udapClient.Untrusted += certificate2 => properties.Parameters.Add("Untrusted", certificate2.Subject);
         _udapClient.TokenError += message => properties.Parameters.Add("TokenError", message);
         
-        var response = await _udapClient.ValidateResource(idp, communityParam);
+        var response = await _udapClient.ValidateResource(idp, communityParam, token: Context.RequestAborted);
         
         var resourceHolderRedirectUrl =
             $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Options.CallbackPath}";
@@ -528,7 +515,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         // if not registered with IdP, then register.
         //
 
-        var idpClient = await _udapClientRegistrationStore.FindTieredClientById(idp);
+        var idpClient = await _udapClientRegistrationStore.FindTieredClientById(idp, Context.RequestAborted);
 
         var idpClientId = null as string;
 
@@ -541,7 +528,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         // Not sure if it stays here or lives in an Admin tool.
         if (idpClient == null || !idpClient.Enabled || updateRegistration == "true")
         {
-            await _certificateStore.Resolve();
+            await _certificateStore.Resolve(Context.RequestAborted);
             var communityName = communityParam ?? _certificateStore.IssuedCertificates.First().Community; //TODO: query by 
             var communityId = await _udapClientRegistrationStore.GetCommunityId(communityName, Context.RequestAborted);
 
@@ -581,13 +568,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
           
             var tokenHandler = new JsonWebTokenHandler();
             var jsonWebToken = tokenHandler.ReadJsonWebToken(document.SoftwareStatement);
-            var publicCert = jsonWebToken.GetPublicCertificate();
-
-            if (publicCert == null)
-            {
-                throw new MissingFieldException("Missing x5c public certificate");
-            }
-
+            var publicCert = jsonWebToken.GetPublicCertificate() ?? throw new MissingFieldException("Missing x5c public certificate");
             var tieredClient = new TieredClient
             {
                 ClientName = document.ClientName,

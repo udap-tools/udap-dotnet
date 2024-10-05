@@ -203,7 +203,7 @@ public class UdapDynamicClientRegistrationEndpoint
         await context.Response.WriteAsJsonAsync(registrationResponse, options, "application/json", cancellationToken: token);
     }
 
-    private async Task<string> GetBody(HttpContext context)
+    private static async Task<string> GetBody(HttpContext context)
     {
         context.Request.EnableBuffering();
         using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true);

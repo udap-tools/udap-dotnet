@@ -9,7 +9,6 @@
 
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Web;
 using IdentityModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -98,7 +97,7 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
             udapMetaData.TokenEndpointAuthSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms;
         }
 
-        var certificate = await Load(udapMetadataConfig);
+        var certificate = await Load(udapMetadataConfig, token);
 
         if (certificate == null)
         {
@@ -139,7 +138,7 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
         return udapMetaData;
     }
 
-    private (string issuer, string subject) ResolveIssuer(string baseUrl, UdapMetadataConfig udapMetadataConfig, X509Certificate2 certificate)
+    private static (string issuer, string subject) ResolveIssuer(string baseUrl, UdapMetadataConfig udapMetadataConfig, X509Certificate2 certificate)
     {
         var issuer = udapMetadataConfig.SignedMetadataConfig.Issuer;
         var subject = udapMetadataConfig.SignedMetadataConfig.Subject;
@@ -158,15 +157,15 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
         return (issuer, subject);
     }
 
-    private async Task<X509Certificate2?> Load(UdapMetadataConfig udapMetadataConfig)
+    private async Task<X509Certificate2?> Load(UdapMetadataConfig udapMetadataConfig, CancellationToken token)
     {
-        var store = await _certificateStore.Resolve();
+        var store = await _certificateStore.Resolve(token);
 
         var entity = store.IssuedCertificates
             .Where(c => c.Community == udapMetadataConfig.Community)
-            .MaxBy(c => c.Certificate!.NotBefore);
+            .MaxBy(c => c.Certificate.NotBefore);
 
-        if (entity == null )
+        if (entity == null)
         {
             _logger.LogInformation("Missing certificate for community: {Community}", udapMetadataConfig.Community);
             return null;

@@ -29,5 +29,7 @@ namespace Udap.Model
         public HashSet<string> RegistrationEndpointJwtSigningAlgValuesSupported { get; set; } = [];
 
         public List<UdapMetadataConfig> UdapMetadataConfigs { get; set; } = [];
+
+        public int CertificateResolveTimeoutSeconds { get; set; } = 10; 
     }
 }

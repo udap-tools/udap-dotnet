@@ -242,7 +242,7 @@ public class UdapDcrValidatorTests
         return document;
     }
 
-    private HttpClient GetHttpClientForLogo(string? contentType)
+    private static HttpClient GetHttpClientForLogo(string? contentType)
     {
         var mockHandler = Substitute.For<HttpMessageHandler>();
 

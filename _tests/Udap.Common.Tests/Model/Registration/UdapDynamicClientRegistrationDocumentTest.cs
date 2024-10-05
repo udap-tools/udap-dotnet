@@ -315,10 +315,10 @@ public class UdapDynamicClientRegistrationDocumentTest
 
 
         hl7B2B.PurposeOfUse?.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
-        hl7B2B.PurposeOfUse!.Any().Should().BeFalse();
+        hl7B2B.PurposeOfUse!.Count.Should().Be(0);
 
         hl7B2B = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(hl7B2B.SerializeToJson());
-        hl7B2B?.PurposeOfUse!.Any().Should().BeFalse();
+        hl7B2B?.PurposeOfUse!.Count.Should().Be(0);
     }
 
     /// <summary>
@@ -359,14 +359,14 @@ public class UdapDynamicClientRegistrationDocumentTest
         hl7B2BUser = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(serializeDocument);
 
         hl7B2BUser!.PurposeOfUse!.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
-        hl7B2BUser.PurposeOfUse.Any().Should().BeFalse();
+        hl7B2BUser.PurposeOfUse.Count.Should().Be(0);
 
         hl7B2BUser.ConsentPolicy!.Remove("https://udaped.fhirlabs.net/Policy/Consent/99");
-        hl7B2BUser.ConsentPolicy!.Any().Should().BeFalse();
+        hl7B2BUser.ConsentPolicy!.Count.Should().Be(0);
 
         hl7B2BUser.SerializeToJson().Should().NotContain("https://udaped.fhirlabs.net/Policy/Consent/99");
         hl7B2BUser = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(hl7B2BUser.SerializeToJson());
-        hl7B2BUser?.ConsentPolicy!.Any().Should().BeFalse();
+        hl7B2BUser?.ConsentPolicy!.Count.Should().Be(0);
     }
 
     /// <summary>
@@ -434,11 +434,11 @@ public class UdapDynamicClientRegistrationDocumentTest
         tefcaIas!.PurposeOfUse.Should().Be("T-IAS");
 
         tefcaIas.ConsentPolicy!.Remove("https://udaped.fhirlabs.net/Policy/Consent/99");
-        tefcaIas.ConsentPolicy.Any().Should().BeFalse();
+        tefcaIas.ConsentPolicy.Count.Should().Be(0);
 
         tefcaIas.SerializeToJson().Should().NotContain("https://udaped.fhirlabs.net/Policy/Consent/99");
         tefcaIas = JsonSerializer.Deserialize<TEFCAIASAuthorizationExtension>(tefcaIas.SerializeToJson());
-        tefcaIas!.ConsentPolicy!.Any().Should().BeFalse();
+        tefcaIas!.ConsentPolicy!.Count.Should().Be(0);
 
         tefcaIas.IalVetted?.GetRawText().Should().BeEquivalentTo(identityTokenElement.GetRawText()
             .Replace("\n", "").Replace("\r", "").Replace(": ", ":").Replace(",  ", ","));

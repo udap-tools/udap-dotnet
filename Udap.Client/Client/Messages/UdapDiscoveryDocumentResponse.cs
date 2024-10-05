@@ -109,7 +109,7 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     /// <param name="json">The json.</param>
     /// <param name="policy">The policy.</param>
     /// <returns></returns>
-    public string ValidateEndpoints(JsonElement json, DiscoveryPolicy policy)
+    public static string ValidateEndpoints(JsonElement json, DiscoveryPolicy policy)
     {
         // allowed hosts
         var allowedHosts = new HashSet<string>(policy.AdditionalEndpointBaseAddresses.Select(e => new Uri(e).Authority))

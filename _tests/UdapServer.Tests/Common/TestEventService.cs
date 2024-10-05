@@ -16,7 +16,7 @@ using Duende.IdentityServer.Events;
 using Duende.IdentityServer.Services;
 using FluentAssertions;
 
-namespace UnitTests.Common;
+namespace UdapServer.Tests.Common;
 
 public class TestEventService : IEventService
 {

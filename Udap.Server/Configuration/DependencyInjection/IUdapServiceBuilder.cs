@@ -13,7 +13,10 @@
 //
 using Microsoft.Extensions.DependencyInjection;
 
+#pragma warning disable CA1050 // Declare types in namespaces
+// ReSharper disable once CheckNamespace
 public interface IUdapServiceBuilder
+#pragma warning restore CA1050 // Declare types in namespaces
 {
     /// <summary>
     /// Gets the services.

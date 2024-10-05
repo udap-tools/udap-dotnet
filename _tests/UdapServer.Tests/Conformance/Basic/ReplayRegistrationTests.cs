@@ -80,7 +80,7 @@ public class ReplayRegistrationTests
         
     }
 
-    private void BuildUdapAuthorizationServer(X509Certificate2 sureFhirLabsAnchor, X509Certificate2 intermediateCert, UdapAuthServerPipeline mockPipeline)
+    private static void BuildUdapAuthorizationServer(X509Certificate2 sureFhirLabsAnchor, X509Certificate2 intermediateCert, UdapAuthServerPipeline mockPipeline)
     {
 
         mockPipeline.OnPreConfigureServices += (_, s) =>

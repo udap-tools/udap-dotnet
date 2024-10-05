@@ -23,9 +23,9 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
 {
      public UdapClientRegistrationStoreTests(TestDatabaseProvider<UdapDbContext> fixture) : base(fixture)
     {
-        foreach (var options in TestDatabaseProviders.SelectMany(x => x.Select(y => (DbContextOptions<UdapDbContext>)y)).ToList())
+        foreach (var options in TestDatabaseProviders)
         {
-            using var context = new UdapDbContext(options, true);
+            using var context = new UdapDbContext((DbContextOptions<UdapDbContext>)options, true);
             context.Database.EnsureCreated();
         }
     }

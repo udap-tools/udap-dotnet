@@ -9,8 +9,7 @@
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <NeutralLanguage>en</NeutralLanguage>
-    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers>
-    <SuppressNETSdk1206Warning>true</SuppressNETSdk1206Warning>
+    <NoWarn>$(NoWarn);NETSDK1206</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,9 +1,13 @@
 [*.cs]
+dotnet_diagnostic.IDE0028.severity = none
 dotnet_diagnostic.IDE0290.severity = none
 dotnet_diagnostic.IDE0090.severity = none
 dotnet_diagnostic.IDE0019.severity = none
 dotnet_diagnostic.IDE0039.severity = none
 dotnet_diagnostic.IDE0083.severity = none
+dotnet_diagnostic.IDE0057.severity = none
+dotnet_diagnostic.IDE0305.severity = none
+dotnet_diagnostic.IDE0301.severity = none
 csharp_using_directive_placement = outside_namespace:silent
 csharp_prefer_simple_using_statement = true:suggestion
 csharp_prefer_braces = true:silent

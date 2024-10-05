@@ -160,7 +160,7 @@ namespace Udap.Server.Stores
                 .Select(c => c)
                 .ToList();
 
-            if (clientsFound.Any())
+            if (clientsFound.Count != 0)
             {
                 foreach (var clientFound in clientsFound)
                 {
@@ -203,7 +203,7 @@ namespace Udap.Server.Stores
             return anchors.Select(a => a.ToModel());
         }
 
-        public async Task<IEnumerable<X509Certificate2>> GetCommunityCertificates(long communityId, CancellationToken token = default)
+        public async Task<IEnumerable<X509Certificate2>?> GetCommunityCertificates(long communityId, CancellationToken token = default)
         {
             using var activity = Tracing.StoreActivitySource.StartActivity();
             activity?.SetTag(Tracing.Properties.Community, communityId);
@@ -248,7 +248,7 @@ namespace Udap.Server.Stores
             _logger.LogInformation("Found {AnchorCount} anchors for community {Community}", anchors.Count, community);
             _logger.LogDebug("Anchor summary: {Summary}", ShowSummary(anchors));
 
-            if (!anchors.Any())
+            if (anchors.Count == 0)
             {
                 return new X509Certificate2Collection();
             }

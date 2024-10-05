@@ -83,11 +83,11 @@ internal class UdapAuthorizationResponseMiddleware
         {
             var requestParams = context.Request.Query;
 
-            if (requestParams.Any())
+            if (requestParams.Count != 0)
             {
                 if (udapServerOptions.ForceStateParamOnAuthorizationCode)
                 {
-                    if (!requestParams.TryGetValue(AuthorizeRequest.State, out var state))
+                    if (!requestParams.TryGetValue(AuthorizeRequest.State, out _))
                     {
                         var client =
                             await clients.FindClientByIdAsync(

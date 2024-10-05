@@ -261,7 +261,7 @@ async Task<byte[]?> GetFhirMetadata(ResponseTransformContext responseTransformCo
 
 void SetProxyHeaders(RequestTransformContext requestTransformContext)
 {
-    if (!requestTransformContext.HttpContext.Request.Headers.Authorization.Any())
+    if (requestTransformContext.HttpContext.Request.Headers.Authorization.Count == 0)
     {
         return;
     }

@@ -217,7 +217,7 @@ namespace Udap.Common.Certificates
                         foundAnchor = true;
                         var anchorList = (anchors ?? Array.Empty<Anchor>()).ToList();
 
-                        if (anchorList.Any())
+                        if (anchorList.Count != 0)
                         {
                             communityId = anchorList.First(a => a.Thumbprint == chainElement.Certificate.Thumbprint).CommunityId;
                         }
@@ -238,7 +238,10 @@ namespace Udap.Common.Certificates
                     //
                     // Can end up here if problem flags exist that we do not care about.
                     //
-                    _logger.LogWarning($"Client:: {clientName} Problem Flags set:: {_problemFlags.ToString()} ChainStatus:: {chainElements.Summarize()}");
+                    _logger.LogWarning("Client: {ClientName} Problem Flags set: {ProblemFlags} ChainStatus: {ChainStatus}",
+                        clientName,
+                        _problemFlags.ToString(),
+                        chainElements.Summarize());
                 }
 
                 if (!foundAnchor)
@@ -276,7 +279,7 @@ namespace Udap.Common.Certificates
 
         private void NotifyUntrusted(X509Certificate2 cert)
         {
-            _logger.LogWarning($"{nameof(TrustChainValidator)} Untrusted: {cert.Subject}");
+            _logger.LogWarning("{Validator} Untrusted: {CertificateSubject}", nameof(TrustChainValidator), cert.Subject);
 
             if (this.Untrusted != null)
             {
@@ -294,7 +297,7 @@ namespace Udap.Common.Certificates
 
         private void NotifyProblem(X509ChainElement chainElement)
         {
-            _logger.LogWarning($"{nameof(TrustChainValidator)} Chain Problem: {chainElement.ChainElementStatus.Summarize(_problemFlags)}");
+            _logger.LogWarning("{Validator} Chain Problem: {ChainStatus}", nameof(TrustChainValidator), chainElement.ChainElementStatus.Summarize(_problemFlags));
 
             if (this.Problem != null)
             {
@@ -311,7 +314,7 @@ namespace Udap.Common.Certificates
 
         private void NotifyError(X509Certificate2 cert, Exception exception)
         {
-            _logger.LogWarning($"{nameof(TrustChainValidator)} Error: {exception.Message}");
+            _logger.LogWarning("{Validator} Error: {ErrorMessage}", nameof(TrustChainValidator), exception.Message);
 
             if (this.Error != null)
             {

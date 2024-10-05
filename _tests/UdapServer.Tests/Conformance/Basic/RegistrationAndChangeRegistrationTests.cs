@@ -35,7 +35,7 @@ public class RegistrationAndChangeRegistrationTests
 {
 
     private readonly ITestOutputHelper _testOutputHelper;
-    private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
 
     public RegistrationAndChangeRegistrationTests(ITestOutputHelper testOutputHelper)
     {
@@ -75,8 +75,8 @@ public class RegistrationAndChangeRegistrationTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
                 {
                     BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
@@ -94,7 +94,7 @@ public class RegistrationAndChangeRegistrationTests
                         }
                     }
                 }
-            }
+            ]
         });
 
         _mockPipeline.Communities.Add(new Community
@@ -102,8 +102,8 @@ public class RegistrationAndChangeRegistrationTests
             Name = "localhost_fhirlabs_community2",
             Enabled = true,
             Default = false,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(anchorCommunity2, "localhost_fhirlabs_community2")
                 {
                     BeginDate = anchorCommunity2.NotBefore.ToUniversalTime(),
@@ -121,7 +121,7 @@ public class RegistrationAndChangeRegistrationTests
                         }
                     }
                 }
-            }
+            ]
         });
 
 

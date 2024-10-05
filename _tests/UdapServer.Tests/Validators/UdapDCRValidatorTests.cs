@@ -26,9 +26,9 @@ using UdapServer.Tests.Common;
 namespace UdapServer.Tests.Validators;
 public class UdapDcrValidatorTests
 {
-    private StubClock _clock = new StubClock();
+    private readonly StubClock _clock = new StubClock();
 
-    private DateTime _now = new DateTime(2020, 3, 10, 9, 0, 0, DateTimeKind.Utc);
+    private readonly DateTime _now = new DateTime(2020, 3, 10, 9, 0, 0, DateTimeKind.Utc);
 
     public DateTime UtcNow
     {
@@ -135,7 +135,7 @@ public class UdapDcrValidatorTests
         mockHandler.GetType().GetMethod("SendAsync", BindingFlags.NonPublic | BindingFlags.Instance)
 #pragma warning disable NS1000
 #pragma warning disable NS1004
-            ?.Invoke(mockHandler, new object[] { Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>()})
+            ?.Invoke(mockHandler, [Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>()])
 #pragma warning restore NS1004
 #pragma warning restore NS1000
             .Returns(_ =>
@@ -250,7 +250,7 @@ public class UdapDcrValidatorTests
 
 #pragma warning disable NS1004
 #pragma warning disable NS1000
-            ?.Invoke(mockHandler, new object[] { Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>() })
+            ?.Invoke(mockHandler, [Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>()])
 #pragma warning restore NS1000
 #pragma warning restore NS1004
             .Returns(_ =>

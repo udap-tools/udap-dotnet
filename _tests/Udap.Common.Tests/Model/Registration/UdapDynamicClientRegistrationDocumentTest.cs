@@ -26,6 +26,7 @@ using Claim = System.Security.Claims.Claim;
 namespace Udap.Common.Tests.Model.Registration;
 public class UdapDynamicClientRegistrationDocumentTest
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
     private readonly ITestOutputHelper _testOutputHelper;
 
     public UdapDynamicClientRegistrationDocumentTest(ITestOutputHelper testOutputHelper)
@@ -56,7 +57,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
             .Build();
 
-        document.AddClaims(new Claim[] { new("MyClaim", "Testing 123", ClaimValueTypes.String) });
+        document.AddClaims([new("MyClaim", "Testing 123", ClaimValueTypes.String)]);
 
         document.ClientId.Should().BeNull();
         document.Audience.Should().Be("https://securedcontrols.net/connect/register");
@@ -240,11 +241,11 @@ public class UdapDynamicClientRegistrationDocumentTest
             .Create()
             .Build();
 
-        document.AddClaims(new Claim[]
-        {
+        document.AddClaims(
+        [
             new Claim("error", "Poof"),
             new Claim("error_description", "Poof description")
-        });
+        ]);
 
         document.GetError().Should().Be("Poof");
         document.GetErrorDescription().Should().Be("Poof description");
@@ -259,8 +260,8 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         // var now = DateTime.Now.ToOADate().ToString(); 
 
-        document.AddClaims(new Claim[]
-        {
+        document.AddClaims(
+        [
             new Claim("bool", "true", ClaimValueTypes.Boolean),
             new Claim("string", "hello", ClaimValueTypes.String),
             new Claim("double", "10.5", ClaimValueTypes.Double),
@@ -269,7 +270,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             new Claim("integer64", Int64.MaxValue.ToString(), ClaimValueTypes.Integer64),
             new Claim("json", "{\"joe\":\"test\"}", JsonClaimValueTypes.Json),
             new Claim("jsonarray", "[\"one\", \"two\"]", JsonClaimValueTypes.JsonArray)
-        });
+        ]);
 
         document["bool"].Should().Be(true);
         document["string"].Should().Be("hello");
@@ -613,10 +614,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         extensions!.Count.Should().Be(2);
        
 
-        var serializeDocument = JsonSerializer.Serialize(document, new JsonSerializerOptions()
-        {
-            WriteIndented = true
-        });
+        var serializeDocument = JsonSerializer.Serialize(document, IndentedJsonOptions);
 
         var documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
 
@@ -713,14 +711,14 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         // var now = DateTime.Now.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"); 
 
-        document.AddClaims(new Claim[]
-        {
+        document.AddClaims(
+        [
             new Claim("bool", "true", ClaimValueTypes.Boolean),
             new Claim("string", "hello", ClaimValueTypes.String),
             new Claim("double", "10.5", ClaimValueTypes.Double),
             new Claim("null", "null", JsonClaimValueTypes.JsonNull),
             // new Claim("datetime", now, ClaimValueTypes.DateTime),
-        });
+        ]);
 
         document["bool"].Should().Be(true);
         document["string"].Should().Be("hello");
@@ -754,7 +752,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
             .Build();
 
-        document.AddClaims(new Claim[] { new Claim("MyClaim", "Testing 123") });
+        document.AddClaims([new Claim("MyClaim", "Testing 123")]);
 
         document.ClientId.Should().BeNull();
         document.Audience.Should().Be("https://securedcontrols.net/connect/register");
@@ -990,11 +988,11 @@ public class UdapDynamicClientRegistrationDocumentTest
             .Create()
             .Build();
 
-        document.AddClaims(new Claim[]
-        {
+        document.AddClaims(
+        [
             new Claim("error", "Poof"),
             new Claim("error_description", "Poof description")
-        });
+        ]);
 
         document.GetError().Should().Be("Poof");
         document.GetErrorDescription().Should().Be("Poof description");

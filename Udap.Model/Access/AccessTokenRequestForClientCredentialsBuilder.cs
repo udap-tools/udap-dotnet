@@ -31,7 +31,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
     private readonly DateTime _now;
     private readonly X509Certificate2 _certificate;
     private string? _scope;
-    private readonly Dictionary<string, object> _extensions = new Dictionary<string, object>();
+    private readonly Dictionary<string, object> _extensions = [];
 
     private AccessTokenRequestForClientCredentialsBuilder(string? clientId, string? tokenEndpoint, X509Certificate2 certificate)
     {
@@ -118,7 +118,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
             _now.AddMinutes(5)
         );
 
-        if (_extensions.Any())
+        if (_extensions.Count != 0)
         {
             var payload = jwtPayload as Dictionary<string, object>;
             payload.Add(UdapConstants.JwtClaimTypes.Extensions, _extensions);

@@ -122,7 +122,7 @@ public class UdapMetadata
         ScopesSupported = udapMetadataOptions.ScopesSupported;
         TokenEndpointAuthMethodsSupported = new HashSet<string> { UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue };
 
-        if (udapMetadataOptions.TokenEndpointAuthSigningAlgValuesSupported.Any())
+        if (udapMetadataOptions.TokenEndpointAuthSigningAlgValuesSupported.Count != 0)
         {
             TokenEndpointAuthSigningAlgValuesSupported = udapMetadataOptions.TokenEndpointAuthSigningAlgValuesSupported;
         }
@@ -135,7 +135,7 @@ public class UdapMetadata
             };
         }
 
-        if (udapMetadataOptions.RegistrationEndpointJwtSigningAlgValuesSupported.Any())
+        if (udapMetadataOptions.RegistrationEndpointJwtSigningAlgValuesSupported.Count != 0)
         {
             RegistrationEndpointJwtSigningAlgValuesSupported = udapMetadataOptions.RegistrationEndpointJwtSigningAlgValuesSupported;
         }
@@ -151,7 +151,7 @@ public class UdapMetadata
 
     private void BuildSupportedProfiles(UdapMetadataOptions udapMetadataOptions)
     {
-        if (udapMetadataOptions.UdapProfilesSupported.Any())
+        if (udapMetadataOptions.UdapProfilesSupported.Count != 0)
         {
             UdapProfilesSupported = udapMetadataOptions.UdapProfilesSupported;
             return;
@@ -317,7 +317,7 @@ public class UdapMetadata
     {
         if (UdapMetadataConfigs == null)
         {
-            return new List<string>();
+            return [];
         }
         return UdapMetadataConfigs.Select(c => c.Community).ToList();
     }

@@ -37,14 +37,14 @@ namespace Udap.Client.Configuration;
 /// </pre>
 /// </remarks>
 
-[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
+
 public class UdapClientOptions
 {
     public UdapClientOptions()
     {
         ClientName = string.Empty;
-        Contacts = new HashSet<string>();
-        Headers = new Dictionary<string, string>();
+        Contacts = [];
+        Headers = [];
         TieredOAuthClientLogo = string.Empty;
     }
 
@@ -56,8 +56,8 @@ public class UdapClientOptions
         string tieredOAuthClientLogo = "")
     {
         ClientName = clientName ?? string.Empty;
-        Contacts = contacts ?? new HashSet<string>();
-        Headers = headers ?? new Dictionary<string, string>();
+        Contacts = contacts ?? [];
+        Headers = headers ?? [];
         TieredOAuthClientLogo = tieredOAuthClientLogo;
     }
 

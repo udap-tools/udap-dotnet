@@ -89,8 +89,8 @@ public class ScopeExpansionTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
                 {
                     BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
@@ -108,7 +108,7 @@ public class ScopeExpansionTests
                         }
                     }
                 }
-            }
+            ]
         });
 
         _mockPipeline.ApiScopes.AddRange(new HL7SmartScopeExpander().ExpandToApiScopes("system/Patient.cruds"));
@@ -124,12 +124,12 @@ public class ScopeExpansionTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney")
-            }
+            ]
         });
     }
 

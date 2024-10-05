@@ -32,7 +32,7 @@ namespace Udap.Client.System.Tests
     public class GeneralTests
     {
         private readonly ITestOutputHelper _testOutputHelper;
-        private FakeChainValidatorDiagnostics _diagnosticsChainValidator = new FakeChainValidatorDiagnostics();
+        private readonly FakeChainValidatorDiagnostics _diagnosticsChainValidator = new FakeChainValidatorDiagnostics();
 
         public GeneralTests(ITestOutputHelper testOutputHelper)
         {
@@ -195,11 +195,11 @@ namespace Udap.Client.System.Tests
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[] { "https://fhirlabs.net/fhir/r4" }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                ValidIssuers = ["https://fhirlabs.net/fhir/r4"], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(cert),
-                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+                ValidAlgorithms = [tokenHeader.Alg], //must match signing algorithm
 
             }, out _);
 
@@ -246,11 +246,11 @@ namespace Udap.Client.System.Tests
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[] { "https://stage.healthtogo.me:8181/fhir/r4/stage" }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                ValidIssuers = ["https://stage.healthtogo.me:8181/fhir/r4/stage"], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(cert),
-                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+                ValidAlgorithms = [tokenHeader.Alg], //must match signing algorithm
             
             }, out _);
             

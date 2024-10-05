@@ -34,6 +34,7 @@ using Udap.Model.Statement;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using static IdentityModel.OidcConstants;
+#pragma warning disable xUnit1004
 
 namespace Udap.Client.System.Tests;
 
@@ -99,14 +100,14 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         {
             RequireSignedTokens = true,
             ValidateIssuer = true,
-            ValidIssuers = new[]
-            {
+            ValidIssuers =
+            [
                 "https://stage.healthtogo.me:8181/fhir/r4/stage"
-            }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+            ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
             ValidateAudience = false, // No aud for UDAP metadata
             ValidateLifetime = true,
             IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { jwt!.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+            ValidAlgorithms = [jwt!.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg)], //must match signing algorithm
         });
 
         validatedToken.IsValid.Should().BeTrue(validatedToken.Exception?.Message);
@@ -274,14 +275,14 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         {
             RequireSignedTokens = true,
             ValidateIssuer = true,
-            ValidIssuers = new[]
-            {
+            ValidIssuers =
+            [
                 "https://api-conn.qa.healthgorilla.com/unit/qhin"
-            }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+            ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
             ValidateAudience = false, // No aud for UDAP metadata
             ValidateLifetime = true,
             IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { jwt.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+            ValidAlgorithms = [jwt.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg)], //must match signing algorithm
         });
 
         validatedToken.IsValid.Should().BeTrue(validatedToken.Exception?.Message);
@@ -481,8 +482,10 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var certifications = new List<string>();
 
-        var certification = new UdapCertificationAndEndorsementDocument("HoboJoes Basic Interop Certification");
-        certification.LogoUri = "https://avatars.githubusercontent.com/u/77421324?s=48&v=4";
+        var certification = new UdapCertificationAndEndorsementDocument("HoboJoes Basic Interop Certification")
+        {
+            LogoUri = "https://avatars.githubusercontent.com/u/77421324?s=48&v=4"
+        };
 
         //TODO: Create a UdapCertificationAndEndorsementDocument builder to build a collection of statements
         var certificationSoftwareStatement =
@@ -702,15 +705,15 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[]
-                {
+                ValidIssuers =
+                [
                     "https://fhirlabs.net:7016/fhir/r4",
                     "http://localhost/fhir/r4"
-                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(publicCert),
-                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+                ValidAlgorithms = [tokenHeader.Alg], //must match signing algorithm
             } // , out SecurityToken validatedToken
         );
 
@@ -866,17 +869,19 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     [Fact]
     public async Task RegistrationSuccess_client_credentials_FhirLabs_desktop_WithTokenRequestScopes_Test()
     {
-        var handler = new HttpClientHandler();
-        //
-        // Interesting discussion if you are into this sort of stuff
-        // https://github.com/dotnet/runtime/issues/39835
-        //
-        handler.ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
+        var handler = new HttpClientHandler
         {
-            chain!.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-            chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
-            chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
-            return chain.Build(cert!);
+            //
+            // Interesting discussion if you are into this sort of stuff
+            // https://github.com/dotnet/runtime/issues/39835
+            //
+            ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
+            {
+                chain!.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+                chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
+                chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
+                return chain.Build(cert!);
+            }
         };
 
         // using var fhirLabsClient = new HttpClient(handler);
@@ -922,15 +927,15 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[]
-                {
+                ValidIssuers =
+                [
                     "https://fhirlabs.net:7016/fhir/r4",
                     "http://localhost/fhir/r4"
-                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(publicCert),
-                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+                ValidAlgorithms = [tokenHeader.Alg], //must match signing algorithm
             } // , out SecurityToken validatedToken
         );
 
@@ -1146,14 +1151,14 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[]
-                {
+                ValidIssuers =
+                [
                     "https://localhost:7016/fhir/r4"
-                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(publicCert),
-                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+                ValidAlgorithms = [tokenHeader.Alg], //must match signing algorithm
             } // , out SecurityToken validatedToken
         );
 
@@ -1377,14 +1382,14 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[]
-                {
+                ValidIssuers =
+                [
                     "https://localhost:7016/fhir/r4"
-                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(publicCert),
-                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+                ValidAlgorithms = [tokenHeader.Alg], //must match signing algorithm
             } // , out SecurityToken validatedToken
         );
 
@@ -1551,14 +1556,14 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         {
             RequireSignedTokens = true,
             ValidateIssuer = true,
-            ValidIssuers = new[]
-            {
+            ValidIssuers =
+            [
                 "https://fhirlabs.net/fhir/r4"
-            }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+            ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
             ValidateAudience = false, // No aud for UDAP metadata
             ValidateLifetime = true,
             IssuerSigningKey = new X509SecurityKey(publicCert),
-            ValidAlgorithms = new[] { jwt.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+            ValidAlgorithms = [jwt.GetHeaderValue<string>(Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames.Alg)], //must match signing algorithm
         });
 
         validatedToken.IsValid.Should().BeTrue(validatedToken.Exception?.Message);
@@ -1704,17 +1709,19 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
     [Fact]
     public async Task RegistrationSuccess_authorization_code_FhirLabs_LIVE_Test()
     {
-        var handler = new HttpClientHandler();
-        //
-        // Interesting discussion if you are into this sort of stuff
-        // https://github.com/dotnet/runtime/issues/39835
-        //
-        handler.ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
+        var handler = new HttpClientHandler
         {
-            chain!.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
-            chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
-            chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
-            return chain.Build(cert!);
+            //
+            // Interesting discussion if you are into this sort of stuff
+            // https://github.com/dotnet/runtime/issues/39835
+            //
+            ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
+            {
+                chain!.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+                chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
+                chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
+                return chain.Build(cert!);
+            }
         };
 
         // using var fhirLabsClient = new HttpClient(handler);
@@ -1760,14 +1767,14 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[]
-                {
+                ValidIssuers =
+                [
                     "https://fhirlabs.net:7016/fhir/r4"
-                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(publicCert),
-                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+                ValidAlgorithms = [tokenHeader.Alg], //must match signing algorithm
             } // , out SecurityToken validatedToken
         );
 
@@ -1991,14 +1998,14 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             {
                 RequireSignedTokens = true,
                 ValidateIssuer = true,
-                ValidIssuers = new[]
-                {
+                ValidIssuers =
+                [
                     "https://fhirlabs.net:7016/fhir/r4"
-                }, //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
+                ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
                 IssuerSigningKey = new X509SecurityKey(publicCert),
-                ValidAlgorithms = new[] { tokenHeader.Alg }, //must match signing algorithm
+                ValidAlgorithms = [tokenHeader.Alg], //must match signing algorithm
             } // , out SecurityToken validatedToken
         );
 

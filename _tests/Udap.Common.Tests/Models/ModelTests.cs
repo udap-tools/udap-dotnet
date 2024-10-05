@@ -100,9 +100,11 @@ public class ModelTests
     [Fact]
     public void SimpleCommunityTest()
     {
-        var community = new Community();
-        community.Default = true;
-        community.Anchors = new List<Anchor>();
+        var community = new Community
+        {
+            Default = true,
+            Anchors = new List<Anchor>()
+        };
         community.Anchors.Add(new Anchor(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer")));
         community.Anchors.Add(new Anchor(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer")));
         community.Certifications = new List<Certification>();

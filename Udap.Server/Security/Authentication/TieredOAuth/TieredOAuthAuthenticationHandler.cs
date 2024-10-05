@@ -41,6 +41,7 @@ namespace Udap.Server.Security.Authentication.TieredOAuth;
 
 public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenticationOptions>
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions =  new JsonSerializerOptions { WriteIndented = true };
     private readonly IUdapClient _udapClient;
     private readonly IPrivateCertificateStore _certificateStore;
     private readonly IUdapClientRegistrationStore _udapClientRegistrationStore;
@@ -499,7 +500,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         if (response.IsError)
         {
-            Logger.LogError(response.Error);
+            Logger.LogError("OAuth token exchange error: {Error}", response.Error);
 
             // TODO: investigate what this might have been used for.  
             // var untrustedContext = new UdapUntrustedContext(Context, Scheme, Options, properties);
@@ -518,10 +519,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         }
 
 
-        Logger.LogInformation($"Validated UDAP signed_metadata from {idp}");
-        Logger.LogDebug(JsonSerializer.Serialize(
+        Logger.LogInformation("Validated UDAP signed_metadata from {Idp}", idp);
+        Logger.LogDebug("UDAP Server Metadata: {Metadata}", JsonSerializer.Serialize(
             _udapClient.UdapServerMetaData,
-            new JsonSerializerOptions { WriteIndented = true }));
+            IndentedJsonOptions));
 
         //
         // if not registered with IdP, then register.
@@ -568,7 +569,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
             if (document.GetError() != null)
             {
-                Logger.LogWarning(document.GetError() + ": " + document.GetErrorDescription());
+                Logger.LogWarning("Error: {Error}, Description: {Description}", document.GetError(), document.GetErrorDescription());
                 await base.HandleChallengeAsync(properties);
                 return;
             }

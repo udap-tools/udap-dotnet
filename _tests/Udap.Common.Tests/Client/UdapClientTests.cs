@@ -34,7 +34,7 @@ public class UdapClientTests
     private readonly IConfigurationRoot _configuration;
     private readonly ServiceProvider _serviceProvider;
 
-    X509ChainStatusFlags _problemFlags = X509ChainStatusFlags.NotTimeValid |
+    readonly X509ChainStatusFlags _problemFlags = X509ChainStatusFlags.NotTimeValid |
                                         X509ChainStatusFlags.Revoked |
                                         X509ChainStatusFlags.NotSignatureValid |
                                         X509ChainStatusFlags.InvalidBasicConstraints |
@@ -73,14 +73,14 @@ public class UdapClientTests
         //
         // The actual UdapClient.  There are two examples of using it in the _tests/client folder
         //
-        IUdapClient udapClient = new UdapClient(
+        var udapClient = new UdapClient(
              httpClientMock,
              udapClientDiscoveryValidator,
              udapClientIOptions,
              _serviceProvider.GetRequiredService<ILogger<UdapClient>>());
 
 
-        var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4");
+        var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4", null);
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         disco.HttpStatusCode.Should().Be(HttpStatusCode.OK);
@@ -196,7 +196,7 @@ public class UdapClientTests
     {
         var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport();
 
-        IUdapClient udapClient = new UdapClient(
+        var udapClient = new UdapClient(
             httpClientMock,
             udapClientDiscoveryValidator,
             udapClientIOptions,
@@ -215,8 +215,7 @@ public class UdapClientTests
     {
         var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport();
         
-
-        IUdapClient udapClient = new UdapClient(
+        var udapClient = new UdapClient(
             httpClientMock,
             udapClientDiscoveryValidator,
             udapClientIOptions,
@@ -242,7 +241,7 @@ public class UdapClientTests
         };
         httpClientMock.SendAsync(Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(response));
 
-        IUdapClient udapClient = new UdapClient(
+        var udapClient = new UdapClient(
             httpClientMock,
             udapClientDiscoveryValidator,
             udapClientIOptions,
@@ -260,7 +259,7 @@ public class UdapClientTests
     {
         var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport("https://fhirlabs.net/fhir/r4", "udap://Iss.Mismatch.To.SubjAltName/");
         
-        IUdapClient udapClient = new UdapClient(
+        var udapClient = new UdapClient(
             httpClientMock,
             udapClientDiscoveryValidator,
             udapClientIOptions,
@@ -282,7 +281,7 @@ public class UdapClientTests
     {
         var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport("http://fhirlabs.net/IssMismatchToBaseUrl/r4", "udap://Iss.Mismatch.To.BaseUrl/");
 
-        IUdapClient udapClient = new UdapClient(
+        var udapClient = new UdapClient(
             httpClientMock,
             udapClientDiscoveryValidator,
             udapClientIOptions,
@@ -332,13 +331,14 @@ public class UdapClientTests
         var udapMetadataOptionsMock = Substitute.For<IOptionsMonitor<UdapMetadataOptions>>();
         udapMetadataOptionsMock.CurrentValue.Returns(udapMetadataOptions);
 
-        
-        var unSignedMetadata = new UdapMetadata(udapMetadataOptionsMock.CurrentValue);
 
-        // TODO:  Make scope configuration first class in DI
-        unSignedMetadata.ScopesSupported = new List<string>
+        var unSignedMetadata = new UdapMetadata(udapMetadataOptionsMock.CurrentValue)
+        {
+            // TODO:  Make scope configuration first class in DI
+            ScopesSupported = new List<string>
         {
             "openid", "patient/*.read", "user/*.read", "system/*.read", "patient/*.rs", "user/*.rs", "system/*.rs"
+        }
         };
 
 

@@ -21,6 +21,7 @@ using Udap.Server.Configuration;
 using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
+#pragma warning disable xUnit1004
 
 
 namespace UdapServer.Tests.Common.ConnectaThon;
@@ -87,7 +88,7 @@ public class HealthGorillaTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[] {new Anchor(intermediateCert, "udap://fhirlabs.net")
+            Anchors = [new Anchor(intermediateCert, "udap://fhirlabs.net")
             {
                 BeginDate = intermediateCert.NotBefore.ToUniversalTime(),
                 EndDate = intermediateCert.NotAfter.ToUniversalTime(),
@@ -103,7 +104,7 @@ public class HealthGorillaTests
                         Enabled = true
                     }
                 }
-            }}
+            }]
         });
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
@@ -114,12 +115,12 @@ public class HealthGorillaTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new Claim[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney")
-            }
+            ]
         });
     }
 

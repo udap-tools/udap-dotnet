@@ -53,7 +53,7 @@ public static class StringExtensions
             return string.Empty;
         }
 
-        return list.Any() ? string.Join(" ", list): string.Empty;
+        return list.Count != 0 ? string.Join(" ", list): string.Empty;
     }
 
     [DebuggerStepThrough]

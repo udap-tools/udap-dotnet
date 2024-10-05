@@ -110,11 +110,14 @@ public class Hl7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
     }
 
     /// <inheritdoc />
+#pragma warning disable CA1816
     public override ValueTask DisposeAsync()
+#pragma warning restore CA1816
     {
         _serviceScope.Dispose();
         return _serviceProvider.DisposeAsync();
     }
+    
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -137,6 +140,8 @@ public class Hl7ApiTestFixture : WebApplicationFactory<Udap.Auth.Server.Program>
 [Collection("Udap.Auth.Server")]
 public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
+
     private readonly Hl7ApiTestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
    
@@ -161,7 +166,7 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
-        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        //     JsonSerializer.Serialize(disco.Json, IndentedJsonOptions);
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint!);
@@ -232,8 +237,7 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         responseUdapDocument.Should().NotBeNull();
         responseUdapDocument!.ClientId.Should().NotBeNullOrEmpty();
-        _testOutputHelper.WriteLine(JsonSerializer.Serialize(responseUdapDocument,
-            new JsonSerializerOptions { WriteIndented = true }));
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(responseUdapDocument, IndentedJsonOptions));
 
         //
         // Assertions according to
@@ -269,7 +273,7 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
-        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        //     JsonSerializer.Serialize(disco.Json, IndentedJsonOptions);
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint!);
@@ -335,7 +339,7 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         responseUdapDocument.Should().NotBeNull();
         responseUdapDocument!.ClientId.Should().NotBeNullOrEmpty();
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(responseUdapDocument,
-            new JsonSerializerOptions { WriteIndented = true }));
+            IndentedJsonOptions));
 
         //
         // Assertions according to
@@ -369,7 +373,7 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         disco.HttpResponse?.StatusCode.Should().Be(HttpStatusCode.OK);
         disco.IsError.Should().BeFalse($"{disco.Error} :: {disco.HttpErrorReason}");
         // var discoJsonFormatted =
-        //     JsonSerializer.Serialize(disco.Json, new JsonSerializerOptions { WriteIndented = true });
+        //     JsonSerializer.Serialize(disco.Json, IndentedJsonOptions);
         // _testOutputHelper.WriteLine(discoJsonFormatted);
         var regEndpoint = disco.RegistrationEndpoint;
         var reg = new Uri(regEndpoint!);

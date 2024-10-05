@@ -74,17 +74,23 @@ public static class SeedData
 
         if (!udapContext.Communities.Any(c => c.Name == "http://localhost"))
         {
-            var community = new Community { Name = "http://localhost" };
-            community.Enabled = true;
-            community.Default = true;
+            var community = new Community
+            {
+                Name = "http://localhost",
+                Enabled = true,
+                Default = true
+            };
             udapContext.Communities.Add(community);
             await udapContext.SaveChangesAsync();
         }
 
         if (!udapContext.Communities.Any(c => c.Name == "udap://fhirlabs.net"))
         {
-            var community = new Community { Name = "udap://fhirlabs.net" };
-            community.Enabled = true;
+            var community = new Community
+            {
+                Name = "udap://fhirlabs.net",
+                Enabled = true
+            };
             udapContext.Communities.Add(community);
             await udapContext.SaveChangesAsync();
         }
@@ -231,8 +237,10 @@ public static class SeedData
             if (!apiScopes.Any(s =>
                     s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "system")))
             {
-                var apiScope = new ApiScope(scopeName);
-                apiScope.ShowInDiscoveryDocument = false;
+                var apiScope = new ApiScope(scopeName)
+                {
+                    ShowInDiscoveryDocument = false
+                };
 
                 if (apiScope.Name.StartsWith("system/*."))
                 {
@@ -256,8 +264,10 @@ public static class SeedData
             if (!apiScopes.Any(s =>
                     s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "user")))
             {
-                var apiScope = new ApiScope(scopeName);
-                apiScope.ShowInDiscoveryDocument = false;
+                var apiScope = new ApiScope(scopeName)
+                {
+                    ShowInDiscoveryDocument = false
+                };
 
                 if (apiScope.Name.StartsWith("user/*."))
                 {
@@ -280,8 +290,10 @@ public static class SeedData
         {
             if (!apiScopes.Any(s => s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "patient")))
             {
-                var apiScope = new ApiScope(scopeName);
-                apiScope.ShowInDiscoveryDocument = false;
+                var apiScope = new ApiScope(scopeName)
+                {
+                    ShowInDiscoveryDocument = false
+                };
 
                 if (apiScope.Name.StartsWith("patient/*."))
                 {

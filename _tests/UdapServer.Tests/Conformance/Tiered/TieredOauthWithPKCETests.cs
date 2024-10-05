@@ -1,4 +1,4 @@
-﻿#region (c) 2023 Joseph Shook. All rights reserved.
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -14,14 +14,11 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Web;
 using Duende.IdentityServer;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
-using FluentAssertions.Common;
 using IdentityModel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -41,7 +38,6 @@ using Udap.Model.Registration;
 using Udap.Server.Configuration;
 using Udap.Server.Models;
 using Udap.Server.Security.Authentication.TieredOAuth;
-using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
 
@@ -50,6 +46,8 @@ namespace UdapServer.Tests.Conformance.Tiered;
 [Collection("Udap.Auth.Server")]
 public class TieredOauthWithPKCETests
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
+
     private readonly ITestOutputHelper _testOutputHelper;
 
     private readonly UdapAuthServerPipeline _mockAuthorServerPipeline = new();
@@ -155,8 +153,8 @@ public class TieredOauthWithPKCETests
             Name = "https://idpserver",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(_community1Anchor, "https://idpserver")
                 {
                     BeginDate = _community1Anchor.NotBefore.ToUniversalTime(),
@@ -174,7 +172,7 @@ public class TieredOauthWithPKCETests
                         }
                     }
                 }
-            }
+            ]
         });
 
         _mockAuthorServerPipeline.Communities.Add(new Community
@@ -183,8 +181,8 @@ public class TieredOauthWithPKCETests
             Name = "udap://idp-community-2",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(_community2Anchor, "udap://idp-community-2")
                 {
                     BeginDate = _community2Anchor.NotBefore.ToUniversalTime(),
@@ -202,7 +200,7 @@ public class TieredOauthWithPKCETests
                         }
                     }
                 }
-            }
+            ]
         });
 
 
@@ -219,12 +217,12 @@ public class TieredOauthWithPKCETests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney")
-            }
+            ]
         });
 
         _mockAuthorServerPipeline.UserStore = new TestUserStore(_mockAuthorServerPipeline.Users);
@@ -269,8 +267,8 @@ public class TieredOauthWithPKCETests
             Name = "udap://idp-community-1",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(_community1Anchor, "udap://idp-community-1")
                 {
                     BeginDate = _community1Anchor.NotBefore.ToUniversalTime(),
@@ -288,7 +286,7 @@ public class TieredOauthWithPKCETests
                         }
                     }
                 }
-            }
+            ]
         });
 
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
@@ -301,13 +299,13 @@ public class TieredOauthWithPKCETests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney"),
                 new Claim("hl7_identifier", "123")
-            }
+            ]
         });
 
         // Allow pipeline to sign in during Login
@@ -354,8 +352,8 @@ public class TieredOauthWithPKCETests
             Name = "udap://idp-community-2",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(_community2Anchor, "udap://idp-community-2")
                 {
                     BeginDate = _community2Anchor.NotBefore.ToUniversalTime(),
@@ -373,7 +371,7 @@ public class TieredOauthWithPKCETests
                         }
                     }
                 }
-            }
+            ]
         });
 
         _mockIdPPipeline2.IdentityScopes.Add(new IdentityResources.OpenId());
@@ -386,13 +384,13 @@ public class TieredOauthWithPKCETests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney"),
                 new Claim("hl7_identifier", "123")
-            }
+            ]
         });
 
         // Allow pipeline to sign in during Login
@@ -661,7 +659,7 @@ public class TieredOauthWithPKCETests
         using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
         var formattedStatement = JsonSerializer.Serialize(
             jsonDocument,
-            new JsonSerializerOptions { WriteIndented = true }
+            IndentedJsonOptions
         );
 
         var formattedHeader = Base64UrlEncoder.Decode(jwt.EncodedHeader);
@@ -976,7 +974,7 @@ public class TieredOauthWithPKCETests
         using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
         var formattedStatement = JsonSerializer.Serialize(
             jsonDocument,
-            new JsonSerializerOptions { WriteIndented = true }
+            IndentedJsonOptions
         );
 
         var formattedHeader = Base64UrlEncoder.Decode(jwt.EncodedHeader);

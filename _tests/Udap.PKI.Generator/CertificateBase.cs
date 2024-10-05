@@ -41,8 +41,7 @@ public partial class CertificateBase
             var resourcePath = String.Format(
                 $"{MyRegex().Replace(assembly.ManifestModule.Name, string.Empty)}" +
                 $".Resources.ProjectDirectory.txt");
-
-            var rm = new ResourceManager("Resources", assembly);
+            _ = new ResourceManager("Resources", assembly);
 
             // string[] names = assembly.GetManifestResourceNames(); // Help finding names
 
@@ -58,9 +57,7 @@ public partial class CertificateBase
         }
     }
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    protected string DefaultPKCS12Password { get; set; }
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+    protected string? DefaultPKCS12Password { get; set; }
 
     protected void UpdateWindowsMachineStore(X509Certificate2 certificate)
     {

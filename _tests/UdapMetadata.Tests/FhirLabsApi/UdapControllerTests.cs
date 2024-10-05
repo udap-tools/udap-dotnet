@@ -440,7 +440,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
             ValidateIssuer = false,
             ValidateLifetime = true,
             IssuerSigningKey = new X509SecurityKey(cert),
-            ValidAlgorithms = new[] { tokenHeader.Alg },
+            ValidAlgorithms = [tokenHeader.Alg],
             ValidateAudience = false
         }, out _);
 

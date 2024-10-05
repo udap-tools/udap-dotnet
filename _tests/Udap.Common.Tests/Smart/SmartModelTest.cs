@@ -5,7 +5,7 @@ using Udap.Smart.Model;
 namespace Udap.Common.Tests.Smart; 
 public class SmartModelTest
 {
-    private string modelConfigSource = @"
+    private readonly string modelConfigSource = @"
    {
   ""issuer"": ""https://host.docker.internal:5002"",
   ""jwks_uri"": ""https://host.docker.internal:5002/.well-known/openid-configuration/jwks"",

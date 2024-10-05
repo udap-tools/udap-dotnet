@@ -224,8 +224,8 @@ public static class UdapConstants
 
     public static class JwtClaimTypes
     {
-        public static string Extensions = "extensions";
-        public static string Hl7Identifier = "hl7_identifier";
+        public const string Extensions = "extensions";
+        public const string Hl7Identifier = "hl7_identifier";
     }
 
     public static class TokenRequest

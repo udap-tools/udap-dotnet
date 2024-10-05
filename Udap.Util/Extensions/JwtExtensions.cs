@@ -23,7 +23,7 @@ public static class JwtExtensions
 
         if (x5cArray == null)
         {
-            return new JsonArray();
+            return [];
         }
         
         return JsonNode.Parse(x5cArray)?.AsArray();
@@ -64,7 +64,7 @@ public static class JwtExtensions
     {
         var jsonArray = jwt.Getx5cArray();
 
-        if (jsonArray == null || !jsonArray.Any())
+        if (jsonArray == null || jsonArray.Count == 0)
         {
             return null;
         }
@@ -75,7 +75,7 @@ public static class JwtExtensions
 
     public static X509Certificate2? GetPublicCertificate(this JsonArray jsonArray)
     {
-        if (!jsonArray.Any())
+        if (jsonArray.Count == 0)
         {
             return null;
         }

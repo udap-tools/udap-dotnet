@@ -80,7 +80,7 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
         if (udapMetadataConfig == null)
         {
-            _logger.LogWarning($"Missing metadata for community: {System.Net.WebUtility.UrlEncode(community)}");
+            _logger.LogWarning("Missing metadata for community: {Community}", System.Net.WebUtility.UrlEncode(community));
             return null;
         }
 
@@ -88,12 +88,12 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
         udapMetaData.TokenEndpoint = udapMetadataConfig.SignedMetadataConfig.TokenEndpoint;
         udapMetaData.RegistrationEndpoint = udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint;
 
-        if (udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms.Any())
+        if (udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms.Count != 0)
         {
             udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms;
         }
 
-        if (udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms.Any())
+        if (udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms.Count != 0)
         {
             udapMetaData.TokenEndpointAuthSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms;
         }
@@ -102,7 +102,7 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
         if (certificate == null)
         {
-            _logger.LogWarning($"Missing default community certificate: {System.Web.HttpUtility.UrlEncode(community)}");
+            _logger.LogWarning("Missing default community certificate: {Community}", System.Web.HttpUtility.UrlEncode(community));
             return null;
         }
 
@@ -168,7 +168,7 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
         if (entity == null )
         {
-            _logger.LogInformation($"Missing certificate for community: {udapMetadataConfig.Community}");
+            _logger.LogInformation("Missing certificate for community: {Community}", udapMetadataConfig.Community);
             return null;
         }
 

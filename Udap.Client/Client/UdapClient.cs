@@ -100,7 +100,7 @@ namespace Udap.Client.Client
 
             try
             {
-                var resultDocument = await RegisterAuthCodeFlow(certificates, scopes, _udapClientOptions.TieredOAuthClientLogo, new List<string>{ redirectUrl }, null, token);
+                var resultDocument = await RegisterAuthCodeFlow(certificates, scopes, _udapClientOptions.TieredOAuthClientLogo, [redirectUrl], null, token);
 
                 if(string.IsNullOrEmpty(resultDocument.GetError()))
                 {
@@ -374,7 +374,7 @@ namespace Udap.Client.Client
                 if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
                 {
                     UdapServerMetaData = disco.Json?.Deserialize<UdapMetadata>();
-                    _logger.LogDebug(UdapServerMetaData?.SerializeToJson());
+                    _logger.LogDebug("UdapServerMetaData: {UdapServerMetaDataJson}", UdapServerMetaData?.SerializeToJson());
 
                     if (baseUrl.Contains(UdapConstants.Discovery.DiscoveryEndpoint))
                     {
@@ -442,7 +442,7 @@ namespace Udap.Client.Client
             return keys;
         }
 
-        public async Task<DiscoveryDocumentResponse?> ResolveOpenIdConfig(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default)
+        public async Task<DiscoveryDocumentResponse> ResolveOpenIdConfig(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
@@ -460,7 +460,7 @@ namespace Udap.Client.Client
 
         private void NotifyTokenError(string message)
         {
-            _logger.LogWarning(message);
+            _logger.LogWarning("Token error occurred: {ErrorMessage}", message);
 
             if (TokenError != null)
             {
@@ -484,7 +484,7 @@ namespace Udap.Client.Client
             CancellationToken token)
         {
             var x509Certificates = certificates.ToList();
-            if (certificates == null || !x509Certificates.Any())
+            if (certificates == null || x509Certificates.Count == 0)
             {
                 throw new Exception("Tiered OAuth: No client certificates provided.");
             }
@@ -498,7 +498,7 @@ namespace Udap.Client.Client
 
             foreach (var clientCert in x509Certificates)
             {
-                _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
+                _logger.LogDebug("Using certificate {CertificateSubjectName} [ {CertificateThumbprint} ]", clientCert.SubjectName.Name, clientCert.Thumbprint);
 
                 var builder = UdapDcrBuilderForAuthorizationCode
                     .Create(clientCert)
@@ -510,7 +510,7 @@ namespace Udap.Client.Client
                     .WithContacts(_udapClientOptions.Contacts)
                     .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                     .WithScope(scopes)
-                    .WithResponseTypes(new List<string> { "code" })
+                    .WithResponseTypes(["code"])
                     .WithRedirectUrls(redirectUrls);
 
                 if (!string.IsNullOrEmpty(issuer))
@@ -587,7 +587,7 @@ namespace Udap.Client.Client
            CancellationToken token)
         {
             var x509Certificates = certificates.ToList();
-            if (certificates == null || !x509Certificates.Any())
+            if (certificates == null || x509Certificates.Count == 0)
             {
                 throw new Exception("Tiered OAuth: No client certificates provided.");
             }
@@ -601,7 +601,7 @@ namespace Udap.Client.Client
 
             foreach (var clientCert in x509Certificates)
             {
-                _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
+                _logger.LogDebug("Using certificate {CertificateSubjectName} [{CertificateThumbprint}]", clientCert.SubjectName.Name, clientCert.Thumbprint);
 
                 var builder = UdapDcrBuilderForClientCredentials
                     .Create(clientCert)

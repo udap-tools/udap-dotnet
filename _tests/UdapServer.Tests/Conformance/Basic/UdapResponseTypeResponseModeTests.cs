@@ -47,10 +47,9 @@ using Xunit.Abstractions;
 namespace UdapServer.Tests.Conformance.Basic;
 
 [Collection("Udap.Auth.Server")]
-[SuppressMessage("ReSharper", "UseCollectionExpression")]
-[SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeEvident")]
 public class UdapResponseTypeResponseModeTests
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
     
@@ -102,7 +101,7 @@ public class UdapResponseTypeResponseModeTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[] {new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
+            Anchors = [new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
             {
                 BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                 EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
@@ -118,7 +117,7 @@ public class UdapResponseTypeResponseModeTests
                         Enabled = true
                     }
                 }
-            }}
+            }]
         });
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
@@ -131,12 +130,12 @@ public class UdapResponseTypeResponseModeTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney")
-            }
+            ]
         });
     }
 
@@ -571,7 +570,7 @@ public class UdapResponseTypeResponseModeTests
         using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
         var formattedStatement = JsonSerializer.Serialize(
             jsonDocument,
-            new JsonSerializerOptions { WriteIndented = true }
+            IndentedJsonOptions
         );
 
         var formattedHeader = Base64UrlEncoder.Decode(jwt.EncodedHeader);

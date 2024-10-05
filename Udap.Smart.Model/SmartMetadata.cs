@@ -1,4 +1,7 @@
-﻿namespace Udap.Smart.Model;
+﻿// ReSharper disable InconsistentNaming
+// ReSharper disable CollectionNeverUpdated.Global
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
+namespace Udap.Smart.Model;
 
 /// <summary>
 /// FHIR SMART App Launch Metadata Class definition based on HL7 FHIR SMART App Launch Specification v 2.1
@@ -39,7 +42,7 @@ public class SmartMetadata
     /// <summary>
     /// OPTIONAL, array of client authentication methods supported by the token endpoint.
     /// The options are “client_secret_post”, “client_secret_basic”, and “private_key_jwt”.
-    /// </remarks>
+    /// </summary>
     public ICollection<string> token_endpoint_auth_methods_supported { get; set; }
 
     /// <summary>
@@ -63,7 +66,7 @@ public class SmartMetadata
 
     /// <summary>
     /// RECOMMENDED, Array of OAuth2 response_type values that are supported. Implementers can
-    /// refer to response_types defined in OAuth 2.0 (<a href"https://datatracker.ietf.org/doc/html/rfc6749">RFC 6749</a>)
+    /// refer to response_types defined in OAuth 2.0 (<a href="https://datatracker.ietf.org/doc/html/rfc6749">RFC 6749</a>)
     /// and in <a href="https://openid.net/specs/openid-connect-core-1_0.html#Authentication">OIDC</a> Core.
     /// </summary>
     public ICollection<string> response_types_supported { get; set; }

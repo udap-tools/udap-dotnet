@@ -38,6 +38,7 @@ using Udap.Server.Stores;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
 using JsonClaimValueTypes = System.IdentityModel.Tokens.Jwt.JsonClaimValueTypes;
+#pragma warning disable xUnit1004
 
 namespace UdapServer.Tests
 {
@@ -154,8 +155,10 @@ namespace UdapServer.Tests
             client.Should().BeNull();
 
 
-            client = new Client();
-            client.ClientId = Guid.NewGuid().ToString("N");
+            client = new Client
+            {
+                ClientId = Guid.NewGuid().ToString("N")
+            };
             await adminStore.UpsertClient(client);
             
 

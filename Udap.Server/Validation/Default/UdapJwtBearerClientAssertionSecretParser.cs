@@ -59,7 +59,7 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
 
         _logger.LogDebug(JsonSerializer.Serialize(body));
 
-        if (body.Any())
+        if (body.Count != 0)
         {
             var clientAssertionType = body[OidcConstants.TokenRequest.ClientAssertionType].FirstOrDefault();
             var clientAssertion = body[OidcConstants.TokenRequest.ClientAssertion].FirstOrDefault();

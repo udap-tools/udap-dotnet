@@ -23,7 +23,7 @@ public class FakeValidatorDiagnostics
 
     public string UnTrustedCertificate = string.Empty;
 
-    private readonly List<string> _actualErrorMessages = new List<string>();
+    private readonly List<string> _actualErrorMessages = [];
     public List<string> ActualErrorMessages
     {
         get { return _actualErrorMessages; }

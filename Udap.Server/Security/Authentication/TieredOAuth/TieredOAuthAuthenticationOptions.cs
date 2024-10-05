@@ -20,6 +20,8 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions
 
     private readonly JwtSecurityTokenHandler _defaultHandler = new JwtSecurityTokenHandler();
 
+    /// <inheritdoc />
+
     public TieredOAuthAuthenticationOptions()
     {
         SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;

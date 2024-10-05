@@ -119,7 +119,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new X509SecurityKey(publicCert),
-                    ValidAlgorithms = new[] { jsonWebToken.Alg }, //must match signing algorithm
+                    ValidAlgorithms = [jsonWebToken.Alg], //must match signing algorithm
                     // AudienceValidator = (audiences, token, parameters) =>  Potential enhanced validation.  or replace inline validation code below
                 }
             );
@@ -138,11 +138,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new ECDsaSecurityKey(ecdsaPublicKey),
-                    ValidAlgorithms = new[] { jsonWebToken.Alg }, //must match signing algorithm
+                    ValidAlgorithms = [jsonWebToken.Alg], //must match signing algorithm
                 });
         }
 
-        _logger.LogDebug($"Is token valid: {validatedToken.IsValid}");
+        _logger.LogDebug("Is token valid: {IsValid}", validatedToken.IsValid);
 
         if (!validatedToken.IsValid)
         {
@@ -160,7 +160,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     $"{UdapDynamicClientRegistrationErrorDescriptions.ExpExpired}: {validatedToken.Exception.Message}"));
             }
             
-            _logger.LogWarning(validatedToken.Exception, UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
+            _logger.LogWarning(validatedToken.Exception, "Invalid software statement: {Error}", UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement);
 
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
@@ -184,8 +184,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (document.Subject == null)
         {
-            _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
-                               UdapDynamicClientRegistrationErrorDescriptions.SubIsMissing);
+            _logger.LogWarning("{Error}::{Description}", 
+                UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement, 
+                UdapDynamicClientRegistrationErrorDescriptions.SubIsMissing);
 
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
@@ -194,8 +195,10 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (document.Subject != document.Issuer)
         {
-            _logger.LogWarning($"{UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement}::" +
-                               UdapDynamicClientRegistrationErrorDescriptions.SubNotEqualToIss);
+            
+            _logger.LogWarning("{Error}::{Description}", 
+                UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement, 
+                UdapDynamicClientRegistrationErrorDescriptions.SubNotEqualToIss);
             
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement,
@@ -359,7 +362,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         // TODO: This whole method needs to be migrated into a better software pattern.  Also, UdapTieredOAuthMiddleware now has this logic
         if (client.AllowedGrantTypes.Count == 0 && 
             document.GrantTypes != null && 
-            document.GrantTypes.Any())
+            document.GrantTypes.Count != 0)
         {
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -400,7 +403,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 client.LogoUri = document.LogoUri;
             }
 
-            if (document.RedirectUris != null && document.RedirectUris.Any())
+            if (document.RedirectUris != null && document.RedirectUris.Count != 0)
             {
                 foreach (var requestRedirectUri in document.RedirectUris)
                 {
@@ -443,7 +446,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             client.AllowedGrantTypes.FirstOrDefault(t => t.Equals(OidcConstants.GrantTypes.ClientCredentials)) != null)
         {
             //TODO: find the RFC reference for this rule and add a Test
-            if (document.RedirectUris != null && document.RedirectUris.Any())
+            if (document.RedirectUris != null && document.RedirectUris.Count != 0)
             {
                 return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -456,7 +459,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //////////////////////////////
         
         if (client.AllowedGrantTypes.Count != 0 && //Cancel Registration
-            (document.Scope == null || !document.Scope.Any()))
+            string.IsNullOrEmpty(document.Scope))
         {
             return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -504,7 +507,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
 
         // validation successful - return client
-        _logger.LogDebug($"Validation success for ClientId: {client?.ClientId}");
+        _logger.LogDebug("Validation success for ClientId: {ClientId}", client?.ClientId);
 
         return await Task.FromResult(new UdapDynamicClientRegistrationValidationResult(client, document));
     }
@@ -524,7 +527,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         if (Uri.TryCreate(document.LogoUri, UriKind.Absolute, out var logoUri))
         {
-            _logger.LogDebug($"Validating logo: {logoUri.OriginalString}");
+            _logger.LogDebug("Validating logo: {LogoUri}", logoUri.OriginalString);
 
             if (!logoUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
             {
@@ -557,7 +560,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                     UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidContentType);
 
-                _logger.LogDebug($"Logo validation failed: {logoUri.OriginalString}");
+                _logger.LogDebug("Logo validation failed: {LogoUri}", logoUri.OriginalString);
 
                 return (false, errorResult);
             }
@@ -568,12 +571,12 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidUri);
 
-            _logger.LogDebug($"Logo validation failed: {document.LogoUri}");
+            _logger.LogDebug("Logo validation failed: {LogoUri}", document.LogoUri);
 
             return (false, errorResult);
         }
 
-        _logger.LogDebug($"Logo validation succeeded: {logoUri.OriginalString}");
+        _logger.LogDebug("Logo validation succeeded: {LogoUri}", logoUri.OriginalString);
 
         return (true, null);
     }
@@ -664,18 +667,18 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             }
         }
 
-        _logger.LogDebug($"jwt payload {jwtSecurityToken.EncodedPayload}");
-        _logger.LogDebug($"x5c { jwtHeader.X5c }");
+        _logger.LogDebug("JWT payload: {EncodedPayload}", jwtSecurityToken.EncodedPayload);
+        _logger.LogDebug("x5c: {X5c}", jwtHeader.X5c);
 
         return false;
     }
 
-    private string[]? _x5cArray = null;
+    private string[]? _x5cArray;
 
     //Todo duplicate code
     private string[]? Getx5c(JwtHeader jwtHeader)
     {
-        if (_x5cArray != null && _x5cArray.Any()) return _x5cArray;
+        if (_x5cArray != null && _x5cArray.Length != 0) return _x5cArray;
 
         if (jwtHeader.X5c == null)
         {

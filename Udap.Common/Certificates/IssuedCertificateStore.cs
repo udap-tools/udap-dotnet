@@ -44,17 +44,17 @@ public class IssuedCertificateStore : IPrivateCertificateStore
     {
         ICollection<Common.Metadata.Community>? communities;
         communities = manifestCurrentValue.Communities;
-        _logger.LogInformation($"{communities.Count} communities loaded");
+        _logger.LogInformation("{Count} communities loaded", communities.Count);
 
         foreach (var community in communities)
         {
-            _logger.LogInformation($"Loading Community:: Name: '{community.Name}'");
+            _logger.LogInformation("Loading Community:: Name: '{CommunityName}'", community.Name);
 
             foreach (var communityIssuer in community.IssuedCerts)
             {
                 if (communityIssuer.FilePath == null)
                 {
-                    _logger.LogWarning($"Missing file path in on of the anchors {nameof(community.IssuedCerts)}");
+                    _logger.LogWarning("Missing file path in one of the anchors {IssuedCerts}", nameof(community.IssuedCerts));
                 }
 
                 if (communityIssuer.FilePath != null)
@@ -63,7 +63,7 @@ public class IssuedCertificateStore : IPrivateCertificateStore
 
                     if (!File.Exists(path))
                     {
-                        _logger.LogWarning($"Cannot find file: {path}");
+                        _logger.LogWarning("Cannot find file: {FilePath}", path);
                         continue;
                     }
 
@@ -76,7 +76,7 @@ public class IssuedCertificateStore : IPrivateCertificateStore
                                 is X509BasicConstraintsExtension extension && 
                             !extension.CertificateAuthority)
                         {
-                            _logger.LogInformation($"Loading Certificate:: Thumbprint: {x509Cert.Thumbprint}  Subject: {x509Cert.SubjectName.Name}");
+                            _logger.LogInformation("Loading Certificate:: Thumbprint: {Thumbprint}  Subject: {SubjectName}", x509Cert.Thumbprint, x509Cert.SubjectName.Name);
                             IssuedCertificates.Add(new IssuedCertificate(x509Cert, community.Name));
                         }
                     }

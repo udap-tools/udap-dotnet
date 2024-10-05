@@ -136,7 +136,7 @@ public static class X509Extensions
     [DebuggerStepThrough]
     public static X509Certificate2Collection? ToX509Collection(this X509Certificate2[] source)
     {
-        if (!source.Any())
+        if (source.Length == 0)
         {
             return null;
         }
@@ -225,7 +225,7 @@ public static class X509Extensions
 
     public static X509Certificate2[] ToRootCertArray(this IList<X509Certificate2> certificates)
     {
-        X509Certificate2Collection caCerts = new X509Certificate2Collection();
+        X509Certificate2Collection caCerts = [];
 
         foreach (var x509Cert in certificates)
         {

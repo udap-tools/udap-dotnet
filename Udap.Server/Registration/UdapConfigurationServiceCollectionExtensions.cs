@@ -107,7 +107,7 @@ public static class UdapConfigurationServiceCollectionExtensions
         var supportedAlgs = udapMetadataOptions.UdapMetadataConfigs
             .Single(c => c.Community == issued.Community).SignedMetadataConfig.TokenSigningAlgorithms;
 
-        if (!supportedAlgs.Any())
+        if (supportedAlgs.Count == 0)
         {
             supportedAlgs = DefaultAlgorithms.RsaTokenSigningAlgorithms;
         }
@@ -124,7 +124,7 @@ public static class UdapConfigurationServiceCollectionExtensions
                 SigningAlgorithm = supportedAlg
             };
 
-            validationKeyStore.Add(new InMemoryValidationKeysStore(new[] { keyInfo }));
+            validationKeyStore.Add(new InMemoryValidationKeysStore([keyInfo]));
         }
     }
 
@@ -135,7 +135,7 @@ public static class UdapConfigurationServiceCollectionExtensions
         var supportedAlgs = udapMetadataOptions.UdapMetadataConfigs
             .Single(c => c.Community == issued.Community).SignedMetadataConfig.TokenSigningAlgorithms;
 
-        if (!supportedAlgs.Any())
+        if (supportedAlgs.Count == 0)
         {
             supportedAlgs = DefaultAlgorithms.EcdsaTokenSigningAlgorithms;
         }
@@ -184,7 +184,7 @@ public static class UdapConfigurationServiceCollectionExtensions
                 SigningAlgorithm = supportedAlg
             };
 
-            validationKeyStore.Add(new InMemoryValidationKeysStore(new[] { keyInfo }));
+            validationKeyStore.Add(new InMemoryValidationKeysStore([keyInfo]));
         }
     }
     private static void AddRsaSigningCredentialStore(IssuedCertificate issued, UdapMetadataOptions udapMetadataOptions,
@@ -193,7 +193,7 @@ public static class UdapConfigurationServiceCollectionExtensions
         var supportedAlgs = udapMetadataOptions.UdapMetadataConfigs
             .Single(c => c.Community == issued.Community).SignedMetadataConfig.TokenSigningAlgorithms;
 
-        if (!supportedAlgs.Any())
+        if (supportedAlgs.Count == 0)
         {
             supportedAlgs = DefaultAlgorithms.RsaTokenSigningAlgorithms;
         }
@@ -213,7 +213,7 @@ public static class UdapConfigurationServiceCollectionExtensions
         var supportedAlgs = udapMetadataOptions.UdapMetadataConfigs
             .Single(c => c.Community == issued.Community).SignedMetadataConfig.TokenSigningAlgorithms;
 
-        if (!supportedAlgs.Any())
+        if (supportedAlgs.Count == 0)
         {
             supportedAlgs = DefaultAlgorithms.EcdsaTokenSigningAlgorithms;
         }

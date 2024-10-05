@@ -33,6 +33,7 @@ using Udap.Support.Tests.Client;
 using Xunit.Abstractions;
 using static UdapMetadata.Tests.FhirLabsApi.UdapControllerCommunityTest;
 using fhirLabsProgram = FhirLabsApi.Program;
+#pragma warning disable xUnit1004
 
 
 namespace UdapMetadata.Tests.FhirLabsApi;
@@ -70,7 +71,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 {
     private readonly ApiForCommunityTestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
-    private IServiceProvider _serviceProvider;
+    private readonly IServiceProvider _serviceProvider;
     private readonly FakeValidatorDiagnostics _diagnosticsValidator = new FakeValidatorDiagnostics();
 
     public UdapControllerCommunityTest(ApiForCommunityTestFixture fixture, ITestOutputHelper testOutputHelper)
@@ -542,10 +543,10 @@ public async Task ValidateChainWithMyAnchorAndIntermediateTest()
                 new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert2.cer"))
                 {
                     //TODO:  Implement a ICertificateResolver, injected into TrustChainValidator to follow AIA extensions, resolving intermediate certificates
-                    Intermediates = new List<Intermediate>
-                    {
+                    Intermediates =
+                    [
                         new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert2.cer"))
-                    }
+                    ]
                 }
             }
         });
@@ -705,10 +706,10 @@ public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
                 {
                     new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"), "udap://Provider2")
                     {
-                        Intermediates = new List<Intermediate>
-                        {
+                        Intermediates =
+                        [
                             new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert.cer"))
-                        }
+                        ]
                     }
                 }
             });

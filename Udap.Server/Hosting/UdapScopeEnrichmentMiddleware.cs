@@ -49,7 +49,7 @@ internal class UdapScopeEnrichmentMiddleware
         {
             var body = await context.Request.ReadFormAsync();
 
-            if (body.Any())
+            if (body.Count != 0)
             {
 
                 var clientAssertionType = body[OidcConstants.TokenRequest.ClientAssertionType].FirstOrDefault();
@@ -95,7 +95,7 @@ internal class UdapScopeEnrichmentMiddleware
                             //
                             // Default scopes only added if we have none.
                             //
-                            if (defaultScopes != null && !client.AllowedScopes.Any())
+                            if (defaultScopes != null && client.AllowedScopes.Count == 0)
                             {
                                 foreach (var defaults in defaultScopes)
                                 {
@@ -103,7 +103,7 @@ internal class UdapScopeEnrichmentMiddleware
                                 }
                             }
 
-                            _logger.LogDebug($"Appending scopes; {scopes.ToSpaceSeparatedString()}");
+                            _logger.LogDebug("Appending scopes; {Scopes}", scopes.ToSpaceSeparatedString());
 
                             form.Set(OidcConstants.TokenRequest.Scope, scopes.ToSpaceSeparatedString());
                             var values = new Dictionary<string, StringValues>();

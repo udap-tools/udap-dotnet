@@ -20,7 +20,7 @@ namespace UnitTests.Common;
 
 public class TestEventService : IEventService
 {
-    private Dictionary<Type, object> _events = new Dictionary<Type, object>();
+    private readonly Dictionary<Type, object> _events = new Dictionary<Type, object>();
 
     public Task RaiseAsync(Event evt)
     {

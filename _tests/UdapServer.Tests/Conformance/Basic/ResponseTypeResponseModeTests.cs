@@ -27,7 +27,7 @@ namespace UdapServer.Tests.Conformance.Basic;
 [Collection("Udap.Auth.Server")]
 public class ResponseTypeResponseModeTests
 {
-    private IdentityServerPipeline _mockPipeline = new IdentityServerPipeline();
+    private readonly IdentityServerPipeline _mockPipeline = new IdentityServerPipeline();
 
     public ResponseTypeResponseModeTests()
     {
@@ -59,12 +59,12 @@ public class ResponseTypeResponseModeTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new Claim[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney")
-            }
+            ]
         });
     }
 

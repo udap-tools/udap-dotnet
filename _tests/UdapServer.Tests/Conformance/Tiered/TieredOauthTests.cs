@@ -46,6 +46,8 @@ namespace UdapServer.Tests.Conformance.Tiered;
 [Collection("Udap.Auth.Server")]
 public class TieredOauthTests
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
+
     private readonly ITestOutputHelper _testOutputHelper;
 
     private readonly UdapAuthServerPipeline _mockAuthorServerPipeline = new();
@@ -151,8 +153,8 @@ public class TieredOauthTests
             Name = "https://idpserver",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(_community1Anchor, "https://idpserver")
                 {
                     BeginDate = _community1Anchor.NotBefore.ToUniversalTime(),
@@ -170,7 +172,7 @@ public class TieredOauthTests
                         }
                     }
                 }
-            }
+            ]
         });
 
         _mockAuthorServerPipeline.Communities.Add(new Community
@@ -179,8 +181,8 @@ public class TieredOauthTests
             Name = "udap://idp-community-2",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(_community2Anchor, "udap://idp-community-2")
                 {
                     BeginDate = _community2Anchor.NotBefore.ToUniversalTime(),
@@ -198,7 +200,7 @@ public class TieredOauthTests
                         }
                     }
                 }
-            }
+            ]
         });
 
 
@@ -215,12 +217,12 @@ public class TieredOauthTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney")
-            }
+            ]
         });
 
         _mockAuthorServerPipeline.UserStore = new TestUserStore(_mockAuthorServerPipeline.Users);
@@ -265,8 +267,8 @@ public class TieredOauthTests
             Name = "udap://idp-community-1",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(_community1Anchor, "udap://idp-community-1")
                 {
                     BeginDate = _community1Anchor.NotBefore.ToUniversalTime(),
@@ -284,7 +286,7 @@ public class TieredOauthTests
                         }
                     }
                 }
-            }
+            ]
         });
 
         _mockIdPPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
@@ -297,13 +299,13 @@ public class TieredOauthTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney"),
                 new Claim("hl7_identifier", "123")
-            }
+            ]
         });
 
         // Allow pipeline to sign in during Login
@@ -350,8 +352,8 @@ public class TieredOauthTests
             Name = "udap://idp-community-2",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(_community2Anchor, "udap://idp-community-2")
                 {
                     BeginDate = _community2Anchor.NotBefore.ToUniversalTime(),
@@ -369,7 +371,7 @@ public class TieredOauthTests
                         }
                     }
                 }
-            }
+            ]
         });
 
         _mockIdPPipeline2.IdentityScopes.Add(new IdentityResources.OpenId());
@@ -382,13 +384,13 @@ public class TieredOauthTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney"),
                 new Claim("hl7_identifier", "123")
-            }
+            ]
         });
 
         // Allow pipeline to sign in during Login
@@ -646,7 +648,7 @@ public class TieredOauthTests
         using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
         var formattedStatement = JsonSerializer.Serialize(
             jsonDocument,
-            new JsonSerializerOptions { WriteIndented = true }
+            IndentedJsonOptions
         );
 
         var formattedHeader = Base64UrlEncoder.Decode(jwt.EncodedHeader);
@@ -939,7 +941,7 @@ public class TieredOauthTests
         using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
         var formattedStatement = JsonSerializer.Serialize(
             jsonDocument,
-            new JsonSerializerOptions { WriteIndented = true }
+            IndentedJsonOptions
         );
 
         var formattedHeader = Base64UrlEncoder.Decode(jwt.EncodedHeader);
@@ -1074,8 +1076,8 @@ public class TieredOauthTests
     /// </summary>
     /// <returns></returns>
     [Theory]
-    [InlineData(new object[] { new[] { "openid", "email", "profile"}})]
-    [InlineData(new object[] { new[] { "udap", "email", "profile" } })]
+    [InlineData([new[] { "openid", "email", "profile"}])]
+    [InlineData([new[] { "udap", "email", "profile" }])]
     public async Task ClientAuthorize_Missing_udap_or_idp_scope_between_dataholder_and_IdP_Test(string[] scopes)
     {
         // var scopes = new List<string>() { "email", "profile" };

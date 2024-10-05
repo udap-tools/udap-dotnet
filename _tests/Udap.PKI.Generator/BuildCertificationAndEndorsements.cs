@@ -18,6 +18,7 @@ using Udap.Support.Tests.Extensions;
 using Xunit.Abstractions;
 using static Udap.Common.Standard.ObjectIdentifiers.UdapExperimental;
 using X509Extensions = Org.BouncyCastle.Asn1.X509.X509Extensions;
+// ReSharper disable All
 
 namespace Udap.PKI.Generator;
 
@@ -30,7 +31,7 @@ public class BuildCertificationAndEndorsements : CertificateBase
     {
         _testOutputHelper = testOutputHelper;
 
-        IConfiguration unused = new ConfigurationBuilder()
+        _ = new ConfigurationBuilder()
             .AddUserSecrets<SecretSettings>()
             .Build();
     }
@@ -48,11 +49,11 @@ public class BuildCertificationAndEndorsements : CertificateBase
         }
     }
 
-    private static string SurefhirlabsCrl { get; } = $"{SureFhirCertificationLabsCertStore}/crl";
+    private static string SurefhirLabsCrl { get; } = $"{SureFhirCertificationLabsCertStore}/crl";
     private static string SureFhirCertificationLabsRootPkcsFileCrl { get; } = "SureFhirCertificationLabsRootCrl.crl";
-    private static string sureFhirIntermediateCrlFilename = $"{SurefhirlabsCrl}/{SureFhirCertificationLabsRootPkcsFileCrl}";
+    private static readonly string sureFhirIntermediateCrlFilename = $"{SurefhirLabsCrl}/{SureFhirCertificationLabsRootPkcsFileCrl}";
     private static string SureFhirCertificationLabsIntermediatePkcsFileCrl { get; } = "SureFhirCertificationLabsIntermediateCrl.crl";
-    private static string sureFhirClientCrlFilename = $"{SurefhirlabsCrl}/{SureFhirCertificationLabsIntermediatePkcsFileCrl}";
+    private static readonly string sureFhirClientCrlFilename = $"{SurefhirLabsCrl}/{SureFhirCertificationLabsIntermediatePkcsFileCrl}";
     private static string SureFhirCertificationLabsRootCrl { get; } = $"http://crl.fhircerts.net/crl/{SureFhirCertificationLabsRootPkcsFileCrl}";
     private static string SureFhirCertificationLabsIntermediateCrl { get; } = $"http://crl.fhircerts.net/crl/{SureFhirCertificationLabsIntermediatePkcsFileCrl}";
     private static string SureFhirCertificationLabsCaPublicCertHosted { get; } = $"http://crl.fhircerts.net/certs/SureFhirCertificationLabs_CA.cer";
@@ -105,166 +106,164 @@ public class BuildCertificationAndEndorsements : CertificateBase
             parentReq.CertificateExtensions.Add(
                 new X509SubjectKeyIdentifierExtension(parentReq.PublicKey, false));
 
-            using (var caCert = parentReq.CreateSelfSigned(
+            using var caCert = parentReq.CreateSelfSigned(
                        DateTimeOffset.UtcNow.AddDays(-1),
-                       DateTimeOffset.UtcNow.AddYears(10)))
-            {
-                var parentBytes = caCert.Export(X509ContentType.Pkcs12, "udap-test");
-                SureFhirCertificationLabsCertStore.EnsureDirectoryExists();
-                File.WriteAllBytes($"{SureFhirCertificationLabsCertStore}/SureFhirCertificationLabs_CA.pfx",
-                    parentBytes);
-                char[] caPem = PemEncoding.Write("CERTIFICATE", caCert.RawData);
-                File.WriteAllBytes($"{SureFhirCertificationLabsCertStore}/SureFhirCertificationLabs_CA.cer",
-                    caPem.Select(c => (byte)c).ToArray());
-                UpdateWindowsMachineStore(caCert);
+                       DateTimeOffset.UtcNow.AddYears(10));
+            var parentBytes = caCert.Export(X509ContentType.Pkcs12, "udap-test");
+            SureFhirCertificationLabsCertStore.EnsureDirectoryExists();
+            File.WriteAllBytes($"{SureFhirCertificationLabsCertStore}/SureFhirCertificationLabs_CA.pfx",
+                parentBytes);
+            char[] caPem = PemEncoding.Write("CERTIFICATE", caCert.RawData);
+            File.WriteAllBytes($"{SureFhirCertificationLabsCertStore}/SureFhirCertificationLabs_CA.cer",
+                caPem.Select(c => (byte)c).ToArray());
+            UpdateWindowsMachineStore(caCert);
 
-                #endregion
+            #endregion
 
-                #region SureFireLabs Intermediate
+            #region SureFireLabs Intermediate
 
-                var intermediateReq = new CertificateRequest(
-                    "CN=SureFhirCertification-Intermediate, OU=Intermediate, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                    intermediateRSAKey,
-                    HashAlgorithmName.SHA256,
-                    RSASignaturePadding.Pkcs1);
+            var intermediateReq = new CertificateRequest(
+                "CN=SureFhirCertification-Intermediate, OU=Intermediate, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                intermediateRSAKey,
+                HashAlgorithmName.SHA256,
+                RSASignaturePadding.Pkcs1);
 
-                // Referred to as intermediate Cert or Intermediate
-                intermediateReq.CertificateExtensions.Add(
-                    new X509BasicConstraintsExtension(true, false, 0, true));
+            // Referred to as intermediate Cert or Intermediate
+            intermediateReq.CertificateExtensions.Add(
+                new X509BasicConstraintsExtension(true, false, 0, true));
 
-                intermediateReq.CertificateExtensions.Add(
-                    new X509KeyUsageExtension(
-                        X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.KeyCertSign,
-                        true));
+            intermediateReq.CertificateExtensions.Add(
+                new X509KeyUsageExtension(
+                    X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.KeyCertSign,
+                    true));
 
-                intermediateReq.CertificateExtensions.Add(
-                    new X509SubjectKeyIdentifierExtension(intermediateReq.PublicKey, false));
+            intermediateReq.CertificateExtensions.Add(
+                new X509SubjectKeyIdentifierExtension(intermediateReq.PublicKey, false));
 
-                AddAuthorityKeyIdentifier(caCert, intermediateReq, _testOutputHelper);
-                intermediateReq.CertificateExtensions.Add(MakeCdp(SureFhirCertificationLabsRootCrl));
-
+            AddAuthorityKeyIdentifier(caCert, intermediateReq, _testOutputHelper);
+            intermediateReq.CertificateExtensions.Add(MakeCdp(SureFhirCertificationLabsRootCrl));
 
 
-                var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-                subAltNameBuilder.AddUri(
-                    new Uri("udap://fhirlabs.net")); // embedding a community uri in intermediate cert
-                var x509Extension = subAltNameBuilder.Build();
-                intermediateReq.CertificateExtensions.Add(x509Extension);
 
-                var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
-                authorityInfoAccessBuilder.AddCertificateAuthorityIssuerUri(
-                    new Uri(SureFhirCertificationLabsCaPublicCertHosted));
-                var aiaExtension = authorityInfoAccessBuilder.Build();
-                intermediateReq.CertificateExtensions.Add(aiaExtension);
+            var subAltNameBuilder = new SubjectAlternativeNameBuilder();
+            subAltNameBuilder.AddUri(
+                new Uri("udap://fhirlabs.net")); // embedding a community uri in intermediate cert
+            var x509Extension = subAltNameBuilder.Build();
+            intermediateReq.CertificateExtensions.Add(x509Extension);
 
-
-                using var intermediateCertWithoutKey = intermediateReq.Create(
-                    caCert,
-                    DateTimeOffset.UtcNow.AddDays(-1),
-                    DateTimeOffset.UtcNow.AddYears(5),
-                    new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16)));
-                var intermediateCertWithKey = intermediateCertWithoutKey.CopyWithPrivateKey(intermediateRSAKey);
-
-                SureFhirCertificationLabsUdapIntermediates.EnsureDirectoryExists();
-                var intermediateBytes = intermediateCertWithKey.Export(X509ContentType.Pkcs12, "udap-test");
-                File.WriteAllBytes(
-                    $"{SureFhirCertificationLabsUdapIntermediates}/SureFhirCertificationLabs_Intermediate.pfx",
-                    intermediateBytes);
-                char[] intermediatePem = PemEncoding.Write("CERTIFICATE", intermediateCertWithoutKey.RawData);
-                File.WriteAllBytes(
-                    $"{SureFhirCertificationLabsUdapIntermediates}/SureFhirCertificationLabs_Intermediate.cer",
-                    intermediatePem.Select(c => (byte)c).ToArray());
-                UpdateWindowsMachineStore(intermediateCertWithoutKey);
-
-                #endregion
-
-                SureFhirCertificationLabsUdapIssued.EnsureDirectoryExists();
-
-                #region Administration Certification
-
-                BuildClientCertificationCertificate(
-                    intermediateCertWithoutKey,
-                    caCert,
-                    intermediateRSAKey,
-                    "CN=FhirLabs Administrator, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                    $"{SureFhirCertificationLabsUdapIssued}/FhirLabsAdminCertification",
-                    SureFhirCertificationLabsIntermediateCrl,
-                    null, //No Subject Alt Name
-                    SureFhirCertificationLabsIntermediatePublicCertHosted);
-
-                #endregion
+            var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
+            authorityInfoAccessBuilder.AddCertificateAuthorityIssuerUri(
+                new Uri(SureFhirCertificationLabsCaPublicCertHosted));
+            var aiaExtension = authorityInfoAccessBuilder.Build();
+            intermediateReq.CertificateExtensions.Add(aiaExtension);
 
 
-                #region SureFhir Intermediate CRL
+            using var intermediateCertWithoutKey = intermediateReq.Create(
+                caCert,
+                DateTimeOffset.UtcNow.AddDays(-1),
+                DateTimeOffset.UtcNow.AddYears(5),
+                new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16)));
+            var intermediateCertWithKey = intermediateCertWithoutKey.CopyWithPrivateKey(intermediateRSAKey);
 
-                // Certificate Revocation
-                var bouncyCaCert = DotNetUtilities.FromX509Certificate(caCert);
+            SureFhirCertificationLabsUdapIntermediates.EnsureDirectoryExists();
+            var intermediateBytes = intermediateCertWithKey.Export(X509ContentType.Pkcs12, "udap-test");
+            File.WriteAllBytes(
+                $"{SureFhirCertificationLabsUdapIntermediates}/SureFhirCertificationLabs_Intermediate.pfx",
+                intermediateBytes);
+            char[] intermediatePem = PemEncoding.Write("CERTIFICATE", intermediateCertWithoutKey.RawData);
+            File.WriteAllBytes(
+                $"{SureFhirCertificationLabsUdapIntermediates}/SureFhirCertificationLabs_Intermediate.cer",
+                intermediatePem.Select(c => (byte)c).ToArray());
+            UpdateWindowsMachineStore(intermediateCertWithoutKey);
 
-                var crlIntermediateGen = new X509V2CrlGenerator();
-                var intermediateNow = DateTime.UtcNow;
-                crlIntermediateGen.SetIssuerDN(bouncyCaCert.SubjectDN);
-                crlIntermediateGen.SetThisUpdate(intermediateNow);
-                crlIntermediateGen.SetNextUpdate(intermediateNow.AddYears(1));
+            #endregion
 
-                //crlIntermediateGen.AddCrlEntry(BigInteger.One, intermediateNow, CrlReason.PrivilegeWithdrawn);
+            SureFhirCertificationLabsUdapIssued.EnsureDirectoryExists();
 
-                crlIntermediateGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
-                    false,
-                    new AuthorityKeyIdentifierStructure(bouncyCaCert.GetPublicKey()));
+            #region Administration Certification
 
-                var nextsureFhirIntermediateCrlNum = GetNextCrlNumber(sureFhirIntermediateCrlFilename);
+            BuildClientCertificationCertificate(
+                intermediateCertWithoutKey,
+                caCert,
+                intermediateRSAKey,
+                "CN=FhirLabs Administrator, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+                $"{SureFhirCertificationLabsUdapIssued}/FhirLabsAdminCertification",
+                SureFhirCertificationLabsIntermediateCrl,
+                null, //No Subject Alt Name
+                SureFhirCertificationLabsIntermediatePublicCertHosted);
 
-                crlIntermediateGen.AddExtension(X509Extensions.CrlNumber, false, nextsureFhirIntermediateCrlNum);
-
-                // var intermediateRandomGenerator = new CryptoApiRandomGenerator();
-                // var intermediateRandom = new SecureRandom(intermediateRandomGenerator);
-
-                var intermediateAkp = DotNetUtilities.GetKeyPair(caCert.GetRSAPrivateKey()).Private;
-
-                // var intermediateCrl = crlIntermediateGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", intermediateAkp, intermediateRandom));
-                var intermediateCrl = crlIntermediateGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", intermediateAkp));
-
-                SurefhirlabsCrl.EnsureDirectoryExists();
-                File.WriteAllBytes(sureFhirIntermediateCrlFilename, intermediateCrl.GetEncoded());
-
-                #endregion
-
-                #region SureFhir client CRL
-
-                // Certificate Revocation
-                var bouncyIntermediateCert = DotNetUtilities.FromX509Certificate(intermediateCertWithKey);
-
-                var crlGen = new X509V2CrlGenerator();
-                var now = DateTime.UtcNow;
-                crlGen.SetIssuerDN(bouncyIntermediateCert.SubjectDN);
-                crlGen.SetThisUpdate(now);
-                crlGen.SetNextUpdate(now.AddYears(1));
-                // crlGen.SetSignatureAlgorithm("SHA256withRSA");
-
-                //crlGen.AddCrlEntry(BigInteger.One, now, CrlReason.PrivilegeWithdrawn);
-
-                crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
-                    false,
-                    new AuthorityKeyIdentifierStructure(bouncyIntermediateCert.GetPublicKey()));
-
-                var nextSureFhirClientCrlNum = GetNextCrlNumber(sureFhirClientCrlFilename);
-
-                crlGen.AddExtension(X509Extensions.CrlNumber, false, nextSureFhirClientCrlNum);
+            #endregion
 
 
-                // var randomGenerator = new CryptoApiRandomGenerator();
-                // var random = new SecureRandom(randomGenerator);
+            #region SureFhir Intermediate CRL
 
-                var Akp = DotNetUtilities.GetKeyPair(intermediateCertWithKey.GetRSAPrivateKey()).Private;
+            // Certificate Revocation
+            var bouncyCaCert = DotNetUtilities.FromX509Certificate(caCert);
 
-                //var crl = crlGen.Generate(Akp, random);
-                var crl = crlGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", Akp));
+            var crlIntermediateGen = new X509V2CrlGenerator();
+            var intermediateNow = DateTime.UtcNow;
+            crlIntermediateGen.SetIssuerDN(bouncyCaCert.SubjectDN);
+            crlIntermediateGen.SetThisUpdate(intermediateNow);
+            crlIntermediateGen.SetNextUpdate(intermediateNow.AddYears(1));
 
-                SurefhirlabsCrl.EnsureDirectoryExists();
-                File.WriteAllBytes(sureFhirClientCrlFilename, crl.GetEncoded());
+            //crlIntermediateGen.AddCrlEntry(BigInteger.One, intermediateNow, CrlReason.PrivilegeWithdrawn);
 
-                #endregion
-            }
+            crlIntermediateGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
+                false,
+                new AuthorityKeyIdentifierStructure(bouncyCaCert.GetPublicKey()));
+
+            var nextsureFhirIntermediateCrlNum = GetNextCrlNumber(sureFhirIntermediateCrlFilename);
+
+            crlIntermediateGen.AddExtension(X509Extensions.CrlNumber, false, nextsureFhirIntermediateCrlNum);
+
+            // var intermediateRandomGenerator = new CryptoApiRandomGenerator();
+            // var intermediateRandom = new SecureRandom(intermediateRandomGenerator);
+
+            var intermediateAkp = DotNetUtilities.GetKeyPair(caCert.GetRSAPrivateKey()).Private;
+
+            // var intermediateCrl = crlIntermediateGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", intermediateAkp, intermediateRandom));
+            var intermediateCrl = crlIntermediateGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", intermediateAkp));
+
+            SurefhirLabsCrl.EnsureDirectoryExists();
+            File.WriteAllBytes(sureFhirIntermediateCrlFilename, intermediateCrl.GetEncoded());
+
+            #endregion
+
+            #region SureFhir client CRL
+
+            // Certificate Revocation
+            var bouncyIntermediateCert = DotNetUtilities.FromX509Certificate(intermediateCertWithKey);
+
+            var crlGen = new X509V2CrlGenerator();
+            var now = DateTime.UtcNow;
+            crlGen.SetIssuerDN(bouncyIntermediateCert.SubjectDN);
+            crlGen.SetThisUpdate(now);
+            crlGen.SetNextUpdate(now.AddYears(1));
+            // crlGen.SetSignatureAlgorithm("SHA256withRSA");
+
+            //crlGen.AddCrlEntry(BigInteger.One, now, CrlReason.PrivilegeWithdrawn);
+
+            crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
+                false,
+                new AuthorityKeyIdentifierStructure(bouncyIntermediateCert.GetPublicKey()));
+
+            var nextSureFhirClientCrlNum = GetNextCrlNumber(sureFhirClientCrlFilename);
+
+            crlGen.AddExtension(X509Extensions.CrlNumber, false, nextSureFhirClientCrlNum);
+
+
+            // var randomGenerator = new CryptoApiRandomGenerator();
+            // var random = new SecureRandom(randomGenerator);
+
+            var Akp = DotNetUtilities.GetKeyPair(intermediateCertWithKey.GetRSAPrivateKey()).Private;
+
+            //var crl = crlGen.Generate(Akp, random);
+            var crl = crlGen.Generate(new Asn1SignatureFactory("SHA256WithRSAEncryption", Akp));
+
+            SurefhirLabsCrl.EnsureDirectoryExists();
+            File.WriteAllBytes(sureFhirClientCrlFilename, crl.GetEncoded());
+
+            #endregion
         }
 
         // Distribute

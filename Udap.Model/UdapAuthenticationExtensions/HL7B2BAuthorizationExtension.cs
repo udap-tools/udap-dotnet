@@ -17,7 +17,7 @@ public class HL7B2BAuthorizationExtension
     private string? _subjectId;
     private string? _subjectRole;
     private string? _organizationName;
-    private string? _organizationId = default!;
+    private string? _organizationId;
     private ICollection<string>? _purposeOfUse;
     private ICollection<string>? _consentPolicy;
     private ICollection<string>? _consentReference;
@@ -25,9 +25,9 @@ public class HL7B2BAuthorizationExtension
     public HL7B2BAuthorizationExtension()
     {
         Version = _version;
-        PurposeOfUse = new List<string>();
-        ConsentPolicy = new List<string>();
-        ConsentReference = new List<string>();
+        PurposeOfUse = [];
+        ConsentPolicy = [];
+        ConsentReference = [];
     }
 
     /// <summary>
@@ -174,7 +174,7 @@ public class HL7B2BAuthorizationExtension
             notes.Add($"Missing required {UdapConstants.HL7B2BAuthorizationExtension.OrganizationId}");
         }
 
-        if (PurposeOfUse != null && !PurposeOfUse.Any())
+        if (PurposeOfUse != null && PurposeOfUse.Count == 0)
         {
             notes.Add($"Missing required {UdapConstants.HL7B2BAuthorizationExtension.PurposeOfUse}");
         }
@@ -182,33 +182,15 @@ public class HL7B2BAuthorizationExtension
         return notes;
     }
 
-    internal IList<string> GetIListClaims(string claimType)
-    {
-        var claimValues = new List<string>();
-
-        // Implement logic to retrieve claims based on claimType
-        // This method can be customized as per your requirements
-
-        return claimValues;
-    }
-
-    internal string? GetStandardClaim(string claimType)
-    {
-        // Implement logic to retrieve a standard claim based on claimType
-        // This method can be customized as per your requirements
-
-        return null;
-    }
-
     /// <summary>
     /// Serializes this instance to JSON.
     /// </summary>
     /// <returns>This instance as JSON.</returns>
-    public virtual string SerializeToJson(bool indented = false)
+    public virtual string SerializeToJson(bool indent = false)
     {
-        return JsonSerializer.Serialize(this, new JsonSerializerOptions
-        {
-            WriteIndented = indented
-        });
+        return JsonSerializer.Serialize(this, indent ? IndentedOptions : DefaultOptions);
     }
+
+    private static readonly JsonSerializerOptions DefaultOptions = new JsonSerializerOptions { WriteIndented = false };
+    private static readonly JsonSerializerOptions IndentedOptions = new JsonSerializerOptions { WriteIndented = true };
 }

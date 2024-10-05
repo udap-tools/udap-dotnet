@@ -45,7 +45,7 @@ public partial class HL7SmartScopeExpander : IScopeExpander
             var smartV1Regex = SmartV1Regex();
             var smartV1Matches = smartV1Regex.Matches(scope);
 
-            if (smartV2Matches.Any()) // Expand SMART V2 Scopes
+            if (smartV2Matches.Count != 0) // Expand SMART V2 Scopes
             {
                 foreach (Match match in smartV2Matches)
                 {
@@ -60,7 +60,7 @@ public partial class HL7SmartScopeExpander : IScopeExpander
                     }
                 }
             }
-            else if (smartV1Matches.Any()) // Just keep SMART V1 scopes
+            else if (smartV1Matches.Count != 0) // Just keep SMART V1 scopes
             {
                 expandedScopes.Add(scope);
             }
@@ -101,7 +101,7 @@ public partial class HL7SmartScopeExpander : IScopeExpander
             var smartV1Regex = SmartV1Regex2();
             var smartV1Matches = smartV1Regex.Matches(scope);
 
-            if (smartV2Matches.Any())
+            if (smartV2Matches.Count != 0)
             {
                 foreach (Match match in smartV2Matches)
                 {
@@ -117,7 +117,7 @@ public partial class HL7SmartScopeExpander : IScopeExpander
                     }
                 }
             }
-            else if (smartV1Matches.Any())
+            else if (smartV1Matches.Count != 0)
             {
                 foreach (Match match in smartV1Matches)
                 {

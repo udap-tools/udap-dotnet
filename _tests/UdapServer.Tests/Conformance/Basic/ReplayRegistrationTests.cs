@@ -31,8 +31,8 @@ namespace UdapServer.Tests.Conformance.Basic;
 public class ReplayRegistrationTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
-    private UdapAuthServerPipeline _mockPipelineReplay = new UdapAuthServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipelineReplay = new UdapAuthServerPipeline();
 
     public ReplayRegistrationTests(ITestOutputHelper testOutputHelper)
     {
@@ -99,8 +99,8 @@ public class ReplayRegistrationTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
                 {
                     BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
@@ -118,7 +118,7 @@ public class ReplayRegistrationTests
                         }
                     }
                 }
-            }
+            ]
         });
 
 

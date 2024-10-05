@@ -43,17 +43,17 @@ public class UdapMetadata
     /// </summary>
     [JsonConstructor]
     public UdapMetadata(
-        ICollection<string> udapVersionsSupported,
-        ICollection<string> udapProfilesSupported,
-        ICollection<string> udapAuthorizationExtensionsSupported,
-        ICollection<string> udapAuthorizationExtensionsRequired,
-        ICollection<string> udapCertificationsSupported,
-        ICollection<string> udapCertificationsRequired,
-        ICollection<string> grantTypesSupported,
+        ICollection<string>? udapVersionsSupported,
+        ICollection<string>? udapProfilesSupported,
+        ICollection<string>? udapAuthorizationExtensionsSupported,
+        ICollection<string>? udapAuthorizationExtensionsRequired,
+        ICollection<string>? udapCertificationsSupported,
+        ICollection<string>? udapCertificationsRequired,
+        ICollection<string>? grantTypesSupported,
         ICollection<string> scopesSupported,
-        ICollection<string> tokenEndpointAuthMethodsSupported,
-        ICollection<string> tokenEndpointAuthSigningAlgValuesSupported,
-        ICollection<string> registrationEndpointJwtSigningAlgValuesSupported)
+        ICollection<string>? tokenEndpointAuthMethodsSupported,
+        ICollection<string>? tokenEndpointAuthSigningAlgValuesSupported,
+        ICollection<string>? registrationEndpointJwtSigningAlgValuesSupported)
     {
         UdapMetadataConfigs = null;
         UdapVersionsSupported = udapVersionsSupported;
@@ -70,17 +70,17 @@ public class UdapMetadata
     }
 
     private UdapMetadata(
-        ICollection<string> udapVersionsSupported,
-        ICollection<string> udapProfilesSupported,
-        ICollection<string> udapAuthorizationExtensionsSupported,
-        ICollection<string> udapAuthorizationExtensionsRequired,
-        ICollection<string> udapCertificationsSupported,
-        ICollection<string> udapCertificationsRequired,
-        ICollection<string> grantTypesSupported,
+        ICollection<string>? udapVersionsSupported,
+        ICollection<string>? udapProfilesSupported,
+        ICollection<string>? udapAuthorizationExtensionsSupported,
+        ICollection<string>? udapAuthorizationExtensionsRequired,
+        ICollection<string>? udapCertificationsSupported,
+        ICollection<string>? udapCertificationsRequired,
+        ICollection<string>? grantTypesSupported,
         ICollection<string>? scopesSupported,
-        ICollection<string> tokenEndpointAuthMethodsSupported,
-        ICollection<string> tokenEndpointAuthSigningAlgValuesSupported,
-        ICollection<string> registrationEndpointJwtSigningAlgValuesSupported,
+        ICollection<string>? tokenEndpointAuthMethodsSupported,
+        ICollection<string>? tokenEndpointAuthSigningAlgValuesSupported,
+        ICollection<string>? registrationEndpointJwtSigningAlgValuesSupported,
         List<UdapMetadataConfig>? udapMetadataConfigs = null)
     {
         UdapMetadataConfigs = udapMetadataConfigs;
@@ -120,7 +120,7 @@ public class UdapMetadata
         ScopesSupported = udapMetadataOptions.ScopesSupported;
         TokenEndpointAuthMethodsSupported = new HashSet<string> { UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue };
 
-        if (udapMetadataOptions.TokenEndpointAuthSigningAlgValuesSupported.Count != 0)
+        if (udapMetadataOptions.TokenEndpointAuthSigningAlgValuesSupported != null && udapMetadataOptions.TokenEndpointAuthSigningAlgValuesSupported.Count != 0)
         {
             TokenEndpointAuthSigningAlgValuesSupported = udapMetadataOptions.TokenEndpointAuthSigningAlgValuesSupported;
         }
@@ -133,7 +133,7 @@ public class UdapMetadata
             };
         }
 
-        if (udapMetadataOptions.RegistrationEndpointJwtSigningAlgValuesSupported.Count != 0)
+        if (udapMetadataOptions.RegistrationEndpointJwtSigningAlgValuesSupported != null && udapMetadataOptions.RegistrationEndpointJwtSigningAlgValuesSupported.Count != 0)
         {
             RegistrationEndpointJwtSigningAlgValuesSupported = udapMetadataOptions.RegistrationEndpointJwtSigningAlgValuesSupported;
         }
@@ -150,7 +150,7 @@ public class UdapMetadata
 
     private void BuildSupportedProfiles(UdapMetadataOptions udapMetadataOptions)
     {
-        if (udapMetadataOptions.UdapProfilesSupported.Count != 0)
+        if (udapMetadataOptions.UdapProfilesSupported != null && udapMetadataOptions.UdapProfilesSupported.Count != 0)
         {
             UdapProfilesSupported = udapMetadataOptions.UdapProfilesSupported;
             return;
@@ -168,7 +168,7 @@ public class UdapMetadata
     /// A fixed array with one string element
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapVersionsSupported)]
-    public ICollection<string> UdapVersionsSupported { get; set; }
+    public ICollection<string>? UdapVersionsSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -184,7 +184,7 @@ public class UdapMetadata
     /// "udap_to" for UDAP Tiered OAuth for User Authentication.
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapProfilesSupported)]
-    public ICollection<string> UdapProfilesSupported { get; set; }
+    public ICollection<string>? UdapProfilesSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -195,7 +195,7 @@ public class UdapMetadata
     /// ["hl7-b2b"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapAuthorizationExtensionsSupported)]
-    public ICollection<string> UdapAuthorizationExtensionsSupported { get; set; }
+    public ICollection<string>? UdapAuthorizationExtensionsSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#f0ad4e;">conditional</span><br/>
@@ -208,7 +208,7 @@ public class UdapMetadata
     /// ["hl7-b2b"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapAuthorizationExtensionsRequired)]
-    public ICollection<string> UdapAuthorizationExtensionsRequired { get; set; }
+    public ICollection<string>? UdapAuthorizationExtensionsRequired { get; set; }
 
     /// <summary>
     ///  <span style="background-color:#5cb85c;">required</span><br/>
@@ -216,7 +216,7 @@ public class UdapMetadata
     /// ["https://www.example.com/udap/profiles/example-certification"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapCertificationsSupported)]
-    public ICollection<string> UdapCertificationsSupported { get; set; }
+    public ICollection<string>? UdapCertificationsSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#f0ad4e;">conditional</span><br/>
@@ -226,7 +226,7 @@ public class UdapMetadata
     /// ["https://www.example.com/udap/profiles/example-certification"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.UdapCertificationsRequired)]
-    public ICollection<string> UdapCertificationsRequired { get; set; }
+    public ICollection<string>? UdapCertificationsRequired { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -236,7 +236,7 @@ public class UdapMetadata
     /// See <see cref="IdentityModel.OidcConstants.GrantTypes"/> for supported grant types
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.GrantTypesSupported)]
-    public ICollection<string> GrantTypesSupported { get; set; }
+    public ICollection<string>? GrantTypesSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5bc0de;">optional</span><br/>
@@ -271,7 +271,7 @@ public class UdapMetadata
     /// Fixed array with one value: ["private_key_jwt"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported)]
-    public ICollection<string> TokenEndpointAuthMethodsSupported { get; set; }
+    public ICollection<string>? TokenEndpointAuthMethodsSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -281,7 +281,7 @@ public class UdapMetadata
     /// ["RS256", "ES384"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported)]
-    public ICollection<string> TokenEndpointAuthSigningAlgValuesSupported { get; set; }
+    public ICollection<string>? TokenEndpointAuthSigningAlgValuesSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>
@@ -301,7 +301,7 @@ public class UdapMetadata
     /// ["RS256", "ES384"]
     /// </summary>
     [JsonPropertyName(UdapConstants.Discovery.RegistrationEndpointJwtSigningAlgValuesSupported)]
-    public ICollection<string> RegistrationEndpointJwtSigningAlgValuesSupported { get; set; }
+    public ICollection<string>? RegistrationEndpointJwtSigningAlgValuesSupported { get; set; }
 
     /// <summary>
     /// <span style="background-color:#5cb85c;">required</span><br/>

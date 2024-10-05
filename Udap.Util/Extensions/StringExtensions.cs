@@ -37,7 +37,7 @@ public static class StringExtensions
     public static IEnumerable<string> FromSpaceSeparatedString(this string input)
     {
         input = input.Trim();
-        return input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        return input.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
     }
 
     public static string DecodeJwtHeader(this string input)

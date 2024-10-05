@@ -195,8 +195,10 @@ public class BuildNginxProxySSLCerts : CertificateBase
     }
 
     [Theory(Skip = "Enabled on desktop when needed.")]
+#pragma warning disable xUnit1042
     [MemberData(nameof(SSLProxyCerts))]
     [MemberData(nameof(Hl7SRI))]
+#pragma warning restore xUnit1042
     public void MakeIdentityProviderCertificates(string dn, string san)
     {
         using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/ngnix-proxy-TestCA.pfx", "udap-test");

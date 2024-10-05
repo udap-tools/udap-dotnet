@@ -16,17 +16,17 @@ namespace Udap.Model
     /// </summary>
     public class UdapMetadataOptions
     {
-        public HashSet<string> UdapVersionsSupported { get; set; } = [];
-        public HashSet<string> UdapProfilesSupported { get; set; } = [];
-        public HashSet<string> UdapAuthorizationExtensionsSupported { get; set; } = [];
-        public HashSet<string> UdapAuthorizationExtensionsRequired { get; set; } = [];
-        public HashSet<string> UdapCertificationsSupported { get; set; } = [];
-        public HashSet<string> UdapCertificationsRequired { get; set; } = [];
-        public HashSet<string> GrantTypesSupported { get; set; } = [];
+        public HashSet<string>? UdapVersionsSupported { get; set; } = [];
+        public HashSet<string>? UdapProfilesSupported { get; set; } = [];
+        public HashSet<string>? UdapAuthorizationExtensionsSupported { get; set; } = [];
+        public HashSet<string>? UdapAuthorizationExtensionsRequired { get; set; } = [];
+        public HashSet<string>? UdapCertificationsSupported { get; set; } = [];
+        public HashSet<string>? UdapCertificationsRequired { get; set; } = [];
+        public HashSet<string>? GrantTypesSupported { get; set; } = [];
         public HashSet<string>? ScopesSupported { get; set; }
 
-        public HashSet<string> TokenEndpointAuthSigningAlgValuesSupported { get; set; } = [];
-        public HashSet<string> RegistrationEndpointJwtSigningAlgValuesSupported { get; set; } = [];
+        public HashSet<string>? TokenEndpointAuthSigningAlgValuesSupported { get; set; } = [];
+        public HashSet<string>? RegistrationEndpointJwtSigningAlgValuesSupported { get; set; } = [];
 
         public List<UdapMetadataConfig> UdapMetadataConfigs { get; set; } = [];
 

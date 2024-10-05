@@ -1054,7 +1054,9 @@ namespace Udap.PKI.Generator
         /// FhirLabsApi Client  =>  
         /// </summary>
         [Theory]
+#pragma warning disable xUnit1042
         [MemberData(nameof(LocalhostCommunities))]
+#pragma warning restore xUnit1042
         public void MakeCaWithIntermediateUdapForLocalhostCommunity(
             string communityStorePath,
             string anchorName,

@@ -53,7 +53,7 @@ public class DiscoveryEndpoint
         }
 
         var url = input.RemoveTrailingSlash();
-        if (path.StartsWith("/"))
+        if (path.StartsWith('/'))
         {
             path = path.Substring(1);
         }

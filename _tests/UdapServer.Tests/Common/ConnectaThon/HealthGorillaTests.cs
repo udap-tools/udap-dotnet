@@ -1,4 +1,12 @@
-﻿
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -8,43 +16,31 @@ using System.Text.Json;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Test;
 using FluentAssertions;
-using FluentAssertions.Common;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Udap.Client.Configuration;
 using Udap.Common.Models;
-using Udap.Model;
 using Udap.Model.Registration;
-using Udap.Model.Statement;
 using Udap.Server.Configuration;
-using Udap.Util.Extensions;
-using UdapServer.Tests.Common;
-using Xunit.Abstractions;
+
 #pragma warning disable xUnit1004
 
 
 namespace UdapServer.Tests.Common.ConnectaThon;
 public class HealthGorillaTests
 {
-
-    private readonly ITestOutputHelper _testOutputHelper;
-    private const string Category = "Conformance.Basic.UdapResponseTypeResponseModeTests";
-
     private readonly UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
 
 
-    public HealthGorillaTests(ITestOutputHelper testOutputHelper)
+    public HealthGorillaTests()
     {
-        _testOutputHelper = testOutputHelper;
-        var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
 
         _mockPipeline.OnPostConfigureServices += services =>
         {
             services.AddSingleton(sp => sp.GetRequiredService<IOptions<ServerSettings>>().Value);
             
-            services.AddSingleton<UdapClientOptions>(new UdapClientOptions
+            services.AddSingleton(new UdapClientOptions
             {
                 ClientName = "Mock Client",
                 Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }

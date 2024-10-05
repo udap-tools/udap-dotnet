@@ -332,7 +332,7 @@ public class UdapClientTests
         udapMetadataOptionsMock.CurrentValue.Returns(udapMetadataOptions);
 
 
-        var unSignedMetadata = new UdapMetadata(udapMetadataOptionsMock.CurrentValue)
+        _ = new UdapMetadata(udapMetadataOptionsMock.CurrentValue)
         {
             // TODO:  Make scope configuration first class in DI
             ScopesSupported = new List<string>

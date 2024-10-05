@@ -87,12 +87,12 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
         udapMetaData.TokenEndpoint = udapMetadataConfig.SignedMetadataConfig.TokenEndpoint;
         udapMetaData.RegistrationEndpoint = udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint;
 
-        if (udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms.Count != 0)
+        if (udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms != null && udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms.Count != 0)
         {
             udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms;
         }
 
-        if (udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms.Count != 0)
+        if (udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms != null && udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms.Count != 0)
         {
             udapMetaData.TokenEndpointAuthSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms;
         }
@@ -124,15 +124,18 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
         var builder = SignedSoftwareStatementBuilder<ISoftwareStatementSerializer>.Create(certificate, jwtPayload);
 
-        if (udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.First().IsECDSA())
+        if (udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported != null && udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.First().IsECDSA())
         {
             udapMetaData.SignedMetadata = builder.BuildECDSA(udapMetaData.
                 RegistrationEndpointJwtSigningAlgValuesSupported.First());
         }
         else
         {
-            udapMetaData.SignedMetadata = builder.Build(udapMetaData.
-                RegistrationEndpointJwtSigningAlgValuesSupported.First());
+            if (udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported != null)
+            {
+                udapMetaData.SignedMetadata =
+                    builder.Build(udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.First());
+            }
         }
 
         return udapMetaData;

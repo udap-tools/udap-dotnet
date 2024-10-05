@@ -14,7 +14,11 @@ using Hl7.Fhir.Specification;
 using Hl7.Fhir.Specification.Source;
 using Hl7.Fhir.Specification.Terminology;
 using Hl7.Fhir.Utility;
+
+#if NET7_0_OR_GREATER
 using IdentityModel;
+#endif
+
 using Microsoft.IdentityModel.Tokens;
 using Xunit.Abstractions;
 using Claim = System.Security.Claims.Claim;
@@ -51,7 +55,7 @@ public class ExperimentationTest
 
         fhirClient.Settings.PreferredFormat = ResourceFormat.Json;
         var codeSystem = await fhirClient.ReadAsync<Hl7.Fhir.Model.CodeSystem>("https://tx.fhir.org/r4/CodeSystem/v2-0203");
-        var codeSystemJson = await new FhirJsonSerializer().SerializeToStringAsync(codeSystem!);
+        await new FhirJsonSerializer().SerializeToStringAsync(codeSystem!);
     }
 
     [Fact(Skip = "Experimenting")]

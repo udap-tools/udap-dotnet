@@ -22,13 +22,12 @@ using Udap.Common;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Udap.Server.Security.Authentication.TieredOAuth;
-using Udap.UI.Pages;
 
 namespace Udap.Auth.Server;
 
 internal static class HostingExtensions
 {
-    public static WebApplication ConfigureServices(this WebApplicationBuilder builder, string[] args)
+    public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
     {
         // if (! int.TryParse(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"), out int sslPort))
         // {

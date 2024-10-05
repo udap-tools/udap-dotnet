@@ -16,7 +16,7 @@ public static class StringExtensions
     [DebuggerStepThrough]
     public static string EnsureTrailingSlash(this string url)
     {
-        if (!url.EndsWith("/"))
+        if (!url.EndsWith('/'))
         {
             return url + "/";
         }
@@ -27,7 +27,7 @@ public static class StringExtensions
     [DebuggerStepThrough]
     public static string EnsureLeadingSlash(this string? url)
     {
-        if (url != null && !url.StartsWith("/"))
+        if (url != null && !url.StartsWith('/'))
         {
             return "/" + url;
         }
@@ -52,7 +52,7 @@ public static class StringExtensions
     [DebuggerStepThrough]
     public static string RemoveTrailingSlash(this string url)
     {
-        if (url.EndsWith("/"))
+        if (url.EndsWith('/'))
         {
             url = url.Substring(0, url.Length - 1);
         }

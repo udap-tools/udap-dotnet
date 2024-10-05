@@ -7,6 +7,8 @@
 // */
 #endregion
 
+using FluentAssertions;
+
 namespace UdapMetadata.Tests;
 
 public class UdapMetadataTests
@@ -43,17 +45,17 @@ public class UdapMetadataTests
         );
 
         // Assert
-        Assert.Equal(udapVersionsSupported, udapMetadata.UdapVersionsSupported);
-        Assert.Equal(udapProfilesSupported, udapMetadata.UdapProfilesSupported);
-        Assert.Equal(udapAuthorizationExtensionsSupported, udapMetadata.UdapAuthorizationExtensionsSupported);
-        Assert.Equal(udapAuthorizationExtensionsRequired, udapMetadata.UdapAuthorizationExtensionsRequired);
-        Assert.Equal(udapCertificationsSupported, udapMetadata.UdapCertificationsSupported);
-        Assert.Equal(udapCertificationsRequired, udapMetadata.UdapCertificationsRequired);
-        Assert.Equal(grantTypesSupported, udapMetadata.GrantTypesSupported);
-        Assert.Equal(scopesSupported, udapMetadata.ScopesSupported);
-        Assert.Equal(tokenEndpointAuthMethodsSupported, udapMetadata.TokenEndpointAuthMethodsSupported);
-        Assert.Equal(tokenEndpointAuthSigningAlgValuesSupported, udapMetadata.TokenEndpointAuthSigningAlgValuesSupported);
-        Assert.Equal(registrationEndpointJwtSigningAlgValuesSupported, udapMetadata.RegistrationEndpointJwtSigningAlgValuesSupported);
+        udapMetadata.UdapVersionsSupported.Should().BeEquivalentTo(udapVersionsSupported);
+        udapMetadata.UdapProfilesSupported.Should().BeEquivalentTo(udapProfilesSupported);
+        udapMetadata.UdapAuthorizationExtensionsSupported.Should().BeEquivalentTo(udapAuthorizationExtensionsSupported);
+        udapMetadata.UdapAuthorizationExtensionsRequired.Should().BeEquivalentTo(udapAuthorizationExtensionsRequired);
+        udapMetadata.UdapCertificationsSupported.Should().BeEquivalentTo(udapCertificationsSupported);
+        udapMetadata.UdapCertificationsRequired.Should().BeEquivalentTo(udapCertificationsRequired);
+        udapMetadata.GrantTypesSupported.Should().BeEquivalentTo(grantTypesSupported);
+        udapMetadata.ScopesSupported.Should().BeEquivalentTo(scopesSupported);
+        udapMetadata.TokenEndpointAuthMethodsSupported.Should().BeEquivalentTo(tokenEndpointAuthMethodsSupported);
+        udapMetadata.TokenEndpointAuthSigningAlgValuesSupported.Should().BeEquivalentTo(tokenEndpointAuthSigningAlgValuesSupported);
+        udapMetadata.RegistrationEndpointJwtSigningAlgValuesSupported.Should().BeEquivalentTo(registrationEndpointJwtSigningAlgValuesSupported);
     }
 
     [Fact]
@@ -92,18 +94,18 @@ public class UdapMetadataTests
         udapMetadata.TokenEndpoint = tokenEndpoint;
 
         // Assert
-        Assert.Equal(udapVersionsSupported, udapMetadata.UdapVersionsSupported);
-        Assert.Equal(udapProfilesSupported, udapMetadata.UdapProfilesSupported);
-        Assert.Equal(udapAuthorizationExtensionsSupported, udapMetadata.UdapAuthorizationExtensionsSupported);
-        Assert.Equal(udapAuthorizationExtensionsRequired, udapMetadata.UdapAuthorizationExtensionsRequired);
-        Assert.Equal(udapCertificationsSupported, udapMetadata.UdapCertificationsSupported);
-        Assert.Equal(udapCertificationsRequired, udapMetadata.UdapCertificationsRequired);
-        Assert.Equal(grantTypesSupported, udapMetadata.GrantTypesSupported);
-        Assert.Equal(scopesSupported, udapMetadata.ScopesSupported);
-        Assert.Equal(tokenEndpointAuthMethodsSupported, udapMetadata.TokenEndpointAuthMethodsSupported);
-        Assert.Equal(tokenEndpointAuthSigningAlgValuesSupported, udapMetadata.TokenEndpointAuthSigningAlgValuesSupported);
-        Assert.Equal(registrationEndpointJwtSigningAlgValuesSupported, udapMetadata.RegistrationEndpointJwtSigningAlgValuesSupported);
-        Assert.Equal(authorizationEndpoint, udapMetadata.AuthorizationEndpoint);
-        Assert.Equal(tokenEndpoint, udapMetadata.TokenEndpoint);
+        udapMetadata.UdapVersionsSupported.Should().BeEquivalentTo(udapVersionsSupported);
+        udapMetadata.UdapProfilesSupported.Should().BeEquivalentTo(udapProfilesSupported);
+        udapMetadata.UdapAuthorizationExtensionsSupported.Should().BeEquivalentTo(udapAuthorizationExtensionsSupported);
+        udapMetadata.UdapAuthorizationExtensionsRequired.Should().BeEquivalentTo(udapAuthorizationExtensionsRequired);
+        udapMetadata.UdapCertificationsSupported.Should().BeEquivalentTo(udapCertificationsSupported);
+        udapMetadata.UdapCertificationsRequired.Should().BeEquivalentTo(udapCertificationsRequired);
+        udapMetadata.GrantTypesSupported.Should().BeEquivalentTo(grantTypesSupported);
+        udapMetadata.ScopesSupported.Should().BeEquivalentTo(scopesSupported);
+        udapMetadata.TokenEndpointAuthMethodsSupported.Should().BeEquivalentTo(tokenEndpointAuthMethodsSupported);
+        udapMetadata.TokenEndpointAuthSigningAlgValuesSupported.Should().BeEquivalentTo(tokenEndpointAuthSigningAlgValuesSupported);
+        udapMetadata.RegistrationEndpointJwtSigningAlgValuesSupported.Should().BeEquivalentTo(registrationEndpointJwtSigningAlgValuesSupported);
+        udapMetadata.AuthorizationEndpoint.Should().Be(authorizationEndpoint);
+        udapMetadata.TokenEndpoint.Should().Be(tokenEndpoint);
     }
 }

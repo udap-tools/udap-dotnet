@@ -29,7 +29,10 @@ namespace UdapServer.Tests;
 
 public static class SeedData
 {
+    // ReSharper disable once UnusedParameter.Global
+#pragma warning disable IDE0060 // Remove unused parameter
     public static async Task EnsureSeedData(string connectionString, ILogger logger)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         var services = new ServiceCollection();
 

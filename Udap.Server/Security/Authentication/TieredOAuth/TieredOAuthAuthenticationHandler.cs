@@ -53,12 +53,11 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         IOptionsMonitor<TieredOAuthAuthenticationOptions> options,
         ILoggerFactory logger, 
         UrlEncoder encoder, 
-        ISystemClock clock,
         IUdapClient udapClient,
         IPrivateCertificateStore certificateStore,
         IUdapClientRegistrationStore udapClientRegistrationStore
         ) :
-        base(options, logger, encoder, clock)
+        base(options, logger, encoder)
     {
         _udapClient = udapClient;
         _certificateStore = certificateStore;
@@ -271,7 +270,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             validationParameters.IssuerSigningKeys = keys;
 
             var tokenEndpointUser =
-                ValidateToken(idToken, tieredClient.IdPBaseUrl, clientId, validationParameters, out _); //out var tokenEndpointJwt);
+                ValidateToken(idToken, tieredClient.IdPBaseUrl, clientId, validationParameters); //out var tokenEndpointJwt);
 
             // nonce = tokenEndpointJwt.Payload.Nonce;
             // if (!string.IsNullOrEmpty(nonce))
@@ -290,8 +289,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             // properties = tokenValidatedContext.Properties;
             // jwt = tokenValidatedContext.SecurityToken;
             // nonce = tokenValidatedContext.Nonce;
-
-
+            
             return HandleRequestResult.Success(new AuthenticationTicket(tokenEndpointUser, properties, Scheme.Name));
         }
         catch (Exception exception)
@@ -305,8 +303,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         string idToken, 
         string idpBaseUrl,
         string clientId,
-        TokenValidationParameters validationParameters,
-        out JwtSecurityToken jwt)
+        TokenValidationParameters validationParameters)
     {
         if (!Options.SecurityTokenValidator.CanReadToken(idToken))
         {
@@ -330,9 +327,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         validationParameters.ValidateIssuerSigningKey = false;
         
         var principal = Options.SecurityTokenValidator.ValidateToken(idToken, validationParameters, out SecurityToken validatedToken);
-        if (validatedToken is JwtSecurityToken validatedJwt)
+
+        if (validatedToken is JwtSecurityToken)
         {
-            jwt = validatedJwt;
+            // jwt = validatedJwt;
         }
         else
         {
@@ -406,8 +404,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     protected override async Task<OAuthTokenResponse> ExchangeCodeAsync(OAuthCodeExchangeContext context)
     {
         Logger.LogInformation("UDAP exchanging authorization code.");
-        Logger.LogDebug(context.Properties.Items["returnUrl"] ?? "~/");
-        Logger.LogDebug(Context.Request.QueryString.Value);
+        Logger.LogDebug("{ReturnUrl}", context.Properties.Items["returnUrl"] ?? "~/");
+        Logger.LogDebug("{QueryString}", Context.Request.QueryString.Value);
 
         var originalRequestParams = HttpUtility.ParseQueryString(context.Properties.Items["returnUrl"] ?? "~/");
         var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();

@@ -133,24 +133,27 @@ public static class UdapConfigurationServiceCollectionExtensions
         var supportedAlgs = udapMetadataOptions.UdapMetadataConfigs
             .Single(c => c.Community == issued.Community).SignedMetadataConfig.TokenSigningAlgorithms;
 
-        if (supportedAlgs.Count == 0)
+        if (supportedAlgs != null && supportedAlgs.Count == 0)
         {
             supportedAlgs = DefaultAlgorithms.RsaTokenSigningAlgorithms;
         }
 
-        foreach (var supportedAlg in supportedAlgs)
+        if (supportedAlgs != null)
         {
-            var key = new X509SecurityKey(issued.Certificate);
-            key.KeyId += supportedAlg;
-            var credential = new SigningCredentials(key, supportedAlg);
-
-            var keyInfo = new SecurityKeyInfo
+            foreach (var supportedAlg in supportedAlgs)
             {
-                Key = credential.Key,
-                SigningAlgorithm = supportedAlg
-            };
+                var key = new X509SecurityKey(issued.Certificate);
+                key.KeyId += supportedAlg;
+                var credential = new SigningCredentials(key, supportedAlg);
 
-            validationKeyStore.Add(new InMemoryValidationKeysStore([keyInfo]));
+                var keyInfo = new SecurityKeyInfo
+                {
+                    Key = credential.Key,
+                    SigningAlgorithm = supportedAlg
+                };
+
+                validationKeyStore.Add(new InMemoryValidationKeysStore([keyInfo]));
+            }
         }
     }
 
@@ -161,7 +164,7 @@ public static class UdapConfigurationServiceCollectionExtensions
         var supportedAlgs = udapMetadataOptions.UdapMetadataConfigs
             .Single(c => c.Community == issued.Community).SignedMetadataConfig.TokenSigningAlgorithms;
 
-        if (supportedAlgs.Count == 0)
+        if (supportedAlgs != null && supportedAlgs.Count == 0)
         {
             supportedAlgs = DefaultAlgorithms.EcdsaTokenSigningAlgorithms;
         }
@@ -193,24 +196,27 @@ public static class UdapConfigurationServiceCollectionExtensions
             ecdsa.ImportECPrivateKey(key?.ExportECPrivateKey(), out _);
         }
 
-        foreach (var supportedAlg in supportedAlgs)
+        if (supportedAlgs != null)
         {
-            var ecDsaSecurityKey = new ECDsaSecurityKey(ecdsa);
-            ecDsaSecurityKey.KeyId += issued.Thumbprint + supportedAlg;
-            var credential = new SigningCredentials(ecDsaSecurityKey, supportedAlg)
+            foreach (var supportedAlg in supportedAlgs)
             {
-                // If this routine is called multiple times then you must supply the CryptoProvider factory without caching.
-                // See: https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/1302#issuecomment-606776893
-                CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
-            };
+                var ecDsaSecurityKey = new ECDsaSecurityKey(ecdsa);
+                ecDsaSecurityKey.KeyId += issued.Thumbprint + supportedAlg;
+                var credential = new SigningCredentials(ecDsaSecurityKey, supportedAlg)
+                {
+                    // If this routine is called multiple times then you must supply the CryptoProvider factory without caching.
+                    // See: https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/1302#issuecomment-606776893
+                    CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
+                };
 
-            var keyInfo = new SecurityKeyInfo
-            {
-                Key = credential.Key,
-                SigningAlgorithm = supportedAlg
-            };
+                var keyInfo = new SecurityKeyInfo
+                {
+                    Key = credential.Key,
+                    SigningAlgorithm = supportedAlg
+                };
 
-            validationKeyStore.Add(new InMemoryValidationKeysStore([keyInfo]));
+                validationKeyStore.Add(new InMemoryValidationKeysStore([keyInfo]));
+            }
         }
     }
     private static void AddRsaSigningCredentialStore(IssuedCertificate issued, UdapMetadataOptions udapMetadataOptions,
@@ -219,17 +225,20 @@ public static class UdapConfigurationServiceCollectionExtensions
         var supportedAlgs = udapMetadataOptions.UdapMetadataConfigs
             .Single(c => c.Community == issued.Community).SignedMetadataConfig.TokenSigningAlgorithms;
 
-        if (supportedAlgs.Count == 0)
+        if (supportedAlgs != null && supportedAlgs.Count == 0)
         {
             supportedAlgs = DefaultAlgorithms.RsaTokenSigningAlgorithms;
         }
 
-        foreach (var supportedAlg in supportedAlgs)
+        if (supportedAlgs != null)
         {
-            var key = new X509SecurityKey(issued.Certificate);
-            key.KeyId += supportedAlg;
-            var credential = new SigningCredentials(key, supportedAlg);
-            signingCredentialStore.Add(new InMemorySigningCredentialsStore(credential));
+            foreach (var supportedAlg in supportedAlgs)
+            {
+                var key = new X509SecurityKey(issued.Certificate);
+                key.KeyId += supportedAlg;
+                var credential = new SigningCredentials(key, supportedAlg);
+                signingCredentialStore.Add(new InMemorySigningCredentialsStore(credential));
+            }
         }
     }
 
@@ -239,7 +248,7 @@ public static class UdapConfigurationServiceCollectionExtensions
         var supportedAlgs = udapMetadataOptions.UdapMetadataConfigs
             .Single(c => c.Community == issued.Community).SignedMetadataConfig.TokenSigningAlgorithms;
 
-        if (supportedAlgs.Count == 0)
+        if (supportedAlgs != null && supportedAlgs.Count == 0)
         {
             supportedAlgs = DefaultAlgorithms.EcdsaTokenSigningAlgorithms;
         }
@@ -271,21 +280,22 @@ public static class UdapConfigurationServiceCollectionExtensions
             ecdsa.ImportECPrivateKey(key?.ExportECPrivateKey(), out _);
         }
 
-        
 
-        foreach (var supportedAlg in supportedAlgs)
+        if (supportedAlgs != null)
         {
-            var ecDsaSecurityKey = new ECDsaSecurityKey(ecdsa);
-            ecDsaSecurityKey.KeyId += issued.Thumbprint + supportedAlg;
-            var credential = new SigningCredentials(ecDsaSecurityKey, supportedAlg)
+            foreach (var supportedAlg in supportedAlgs)
             {
-                // If this routine is called multiple times then you must supply the CryptoProvider factory without caching.
-                // See: https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/1302#issuecomment-606776893
-                CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
-            };
-
-            
-            signingCredentialStore.Add(new InMemorySigningCredentialsStore(credential));
+                var ecDsaSecurityKey = new ECDsaSecurityKey(ecdsa);
+                ecDsaSecurityKey.KeyId += issued.Thumbprint + supportedAlg;
+                var credential = new SigningCredentials(ecDsaSecurityKey, supportedAlg)
+                {
+                    // If this routine is called multiple times then you must supply the CryptoProvider factory without caching.
+                    // See: https://github.com/AzureAD/azure-activedirectory-identitymodel-extensions-for-dotnet/issues/1302#issuecomment-606776893
+                    CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
+                };
+                
+                signingCredentialStore.Add(new InMemorySigningCredentialsStore(credential));
+            }
         }
     }
 }

@@ -291,10 +291,11 @@ namespace Udap.Client.System.Tests
             var certStore = sp.GetRequiredService<ITrustAnchorStore>();
             var certificateStore = await certStore.Resolve();
             var anchors = certificateStore.AnchorCertificates
-                .Where(c => c.Community == communityName);
+                .Where(c => c.Community == communityName)
+                .ToList();
 
             var intermediates = anchors
-                .SelectMany(a => a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate))).ToArray()
+                .SelectMany(a => a.Intermediates!.Select(i => X509Certificate2.CreateFromPem(i.Certificate))).ToArray()
                 .ToX509Collection();
 
             var anchorCertificates = anchors

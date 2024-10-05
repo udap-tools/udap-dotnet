@@ -45,7 +45,7 @@ public static class TieredOAuthHelpers
         var originalRequestParams = HttpUtility.ParseQueryString(returnUrl);
         var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
 
-        var parts = idp.Split(new[] { '?' }, StringSplitOptions.RemoveEmptyEntries);
+        var parts = idp.Split('?', StringSplitOptions.RemoveEmptyEntries);
 
         if (parts.Length > 1)
         {

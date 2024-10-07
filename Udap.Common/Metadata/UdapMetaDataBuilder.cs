@@ -79,7 +79,8 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
         if (udapMetadataConfig == null)
         {
-            _logger.LogWarning("Missing metadata for community: {Community}", System.Net.WebUtility.UrlEncode(community));
+            var sanitizedCommunity = community?.Replace("\r", "").Replace("\n", "");
+            _logger.LogWarning("Missing metadata for community: {Community}", System.Net.WebUtility.UrlEncode(sanitizedCommunity));
             return null;
         }
 

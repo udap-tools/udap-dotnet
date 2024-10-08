@@ -14,6 +14,7 @@ using Google.Apis.Auth.OAuth2;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 using IdentityModel;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using Serilog.Templates;
@@ -75,12 +76,9 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
         };
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("udapPolicy", policy =>
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("udapPolicy", policy =>
         policy.RequireAuthenticatedUser());
-});
-
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))

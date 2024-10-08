@@ -10,14 +10,15 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json.Serialization;
 using Google.Apis.Auth.OAuth2;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 using IdentityModel;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using Serilog.Templates;
-using Serilog.Templates.Themes;
+using Udap.CdsHooks.Model;
 using Udap.Common;
 using Udap.Proxy.Server;
 using Udap.Smart.Model;
@@ -25,22 +26,13 @@ using Udap.Util.Extensions;
 using Yarp.ReverseProxy.Transforms;
 using ZiggyCreatures.Caching.Fusion;
 
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateBootstrapLogger();
-
-Log.Information("Starting up");
-
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSerilog((services, lc) => lc
+Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
-    .ReadFrom.Services(services)
-    .Enrich.FromLogContext()
-    .WriteTo.Console(new ExpressionTemplate(
-        // Include trace and span ids when present.
-        "[{@t:HH:mm:ss} {@l:u3}{#if @tr is not null} ({substring(@tr,0,4)}:{substring(@sp,0,4)}){#end}] {@m}\n{@x}",
-        theme: TemplateTheme.Code)));
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Mount Cloud Secrets
 builder.Configuration.AddJsonFile("/secret/udapproxyserverappsettings", true, false);
@@ -48,9 +40,18 @@ builder.Configuration.AddJsonFile("/secret/udapproxyserverappsettings", true, fa
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    options.JsonSerializerOptions.Converters.Add(new FhirResourceConverter());
+});
+
+builder.Services.Configure<CdsServices>(builder.Configuration.GetRequiredSection("CdsServices"));
 builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSection("SmartMetadata"));
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
 
+builder.Services.AddCdsServices();
 builder.Services.AddSmartMetadata();
 builder.Services.AddUdapMetadataServer(builder.Configuration);
 builder.Services.AddFusionCache()
@@ -75,12 +76,19 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
         };
     });
 
-builder.Services.AddAuthorization(options =>
+builder.Services.AddCors(options =>
 {
-    options.AddPolicy("udapPolicy", policy =>
-        policy.RequireAuthenticatedUser());
+    options.AddPolicy("DefaultPolicy", builder =>
+    {
+        builder.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
 });
 
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("udapPolicy", policy =>
+        policy.RequireAuthenticatedUser());
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
@@ -163,7 +171,7 @@ builder.Services.AddReverseProxy()
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-
+app.UseCors("DefaultPolicy");
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -175,8 +183,10 @@ app.UseSerilogRequestLogging();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseMiddleware<RouteLoggingMiddleware>();
 app.MapReverseProxy();
 
+app.UseCdsServices("fhir/r4");
 app.UseSmartMetadata("fhir/r4");
 app.UseUdapMetadataServer("fhir/r4"); // Ensure metadata can only be called from this base URL.
 

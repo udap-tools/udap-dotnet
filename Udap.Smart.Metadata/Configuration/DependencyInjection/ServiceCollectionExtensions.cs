@@ -54,12 +54,24 @@ public static class ServiceCollectionExtensions
 
     public static IApplicationBuilder UseSmartMetadata(this WebApplication app, string? prefixRoute = null)
     {
-        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{SmartConstants.Discovery.DiscoveryEndpoint}",
-                async ([FromServices] SmartMetadataEndpoint endpoint) => await endpoint.Process())
+        var baseRoute =
+            $"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{SmartConstants.Discovery.DiscoveryEndpoint}";
+
+        app.MapGet(baseRoute, async ([FromServices] SmartMetadataEndpoint endpoint) => await endpoint.Process())
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // missing SmartMetadata
-        
+
+        app.MapMethods(baseRoute, new[] { "OPTIONS" }, async context =>
+        {
+            context.Response.Headers.Append("Allow", "GET, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Origin", "*"); 
+            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            context.Response.StatusCode = StatusCodes.Status204NoContent;
+            await context.Response.CompleteAsync();
+        });
+
         return app;
     }
 }

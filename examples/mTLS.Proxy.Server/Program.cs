@@ -51,11 +51,9 @@ builder.Services.AddFusionCache()
 
 if (builder.Configuration["BehindLoadBalancer"] == null)
 {
-    builder.Services.AddAuthorization(options =>
-    {
-        options.AddPolicy("mTLS_Policy", policy =>
+    builder.Services.AddAuthorizationBuilder()
+        .AddPolicy("mTLS_Policy", policy =>
             policy.RequireAuthenticatedUser());
-    });
 
     builder.WebHost.ConfigureKestrel((_, serverOptions) =>
     {

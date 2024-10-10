@@ -4,6 +4,16 @@
     <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/JoeShook/udap-dotnet</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Authors>Joseph Shook</Authors>
+    <Copyright>Copyright © Joseph.Shook@Surescripts.com 2022-2024</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <PackageIcon>UDAP_Ecosystem_Gears 48X48.jpg</PackageIcon>
+    <PackageTags>SMART;UDAP;FHIR;HL7;CDSHOOKS</PackageTags>
+    <Description>Package is a part of the UDAP reference implementation for .NET.  This package includes CdsHooks models.</Description>
   </PropertyGroup>
 
   <ItemGroup>

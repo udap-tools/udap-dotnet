@@ -36,6 +36,10 @@ jobs:
 
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Smart.Model/Udap.Smart.Model.csproj
         dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Smart.Metadata/Udap.Smart.Metadata.csproj 
+
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.CdsHooks.Endpoint/Udap.CdsHooks.Endpoint.csproj 
+        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.CdsHooks.Model/Udap.CdsHooks.Model.csproj 
+
     - name: Push
       run: |
         dotnet nuget push ./Udap.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
@@ -48,3 +52,6 @@ jobs:
       
         dotnet nuget push ./Udap.Smart.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
         dotnet nuget push ./Udap.Smart.Metadata/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+
+        dotnet nuget push ./Udap.CdsHooks.Endpoint/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
+        dotnet nuget push ./Udap.CdsHooks.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}

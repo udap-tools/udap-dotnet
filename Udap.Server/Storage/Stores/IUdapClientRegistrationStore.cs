@@ -36,11 +36,11 @@ public interface IUdapClientRegistrationStore
 
     Task<IEnumerable<Anchor>> GetAnchors(string? community, CancellationToken token = default);
 
-    Task<IEnumerable<X509Certificate2>>? GetCommunityCertificates(long communityId, CancellationToken token = default);
+    Task<IEnumerable<X509Certificate2>?> GetCommunityCertificates(long communityId, CancellationToken token = default);
 
     Task<X509Certificate2Collection?> GetIntermediateCertificates(CancellationToken token = default);
 
-    Task<X509Certificate2Collection> GetAnchorsCertificates(string? community, CancellationToken token = default);
+    Task<X509Certificate2Collection?> GetAnchorsCertificates(string? community, CancellationToken token = default);
     Task<int?> GetCommunityId(string community, CancellationToken token = default);
 
     Task<ICollection<Secret>?> RolloverClientSecrets(ParsedSecret secret, CancellationToken token = default);

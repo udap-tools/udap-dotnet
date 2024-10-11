@@ -41,7 +41,6 @@ using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.Registration;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.UI.Pages;
-using UnitTests.Common;
 using Constants = Udap.Server.Constants;
 
 namespace UdapServer.Tests.Common;

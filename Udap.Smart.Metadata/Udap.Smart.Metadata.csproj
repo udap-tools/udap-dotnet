@@ -13,7 +13,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageIcon>UDAP_Ecosystem_Gears 48X48.jpg</PackageIcon>
     <PackageTags>SMART;UDAP;FHIR;HL7</PackageTags>
-    <Description>Package is a part of the UDAP reference implementation for .NET.  This package includes a SMART endpoint or controller to a ASP.NET application.</Description>
+    <Description>Package is a part of the UDAP reference implementation for .NET.  This package includes a SMART endpoint to a ASP.NET application.</Description>
 
   </PropertyGroup>
 
@@ -21,9 +21,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
 
     <PackageReference Include="Microsoft.Extensions.Configuration" />
-
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
-
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
   </ItemGroup>

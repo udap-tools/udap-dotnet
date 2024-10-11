@@ -21,7 +21,7 @@ public class ServiceAccountCredentialCache
         return googleCredential.UnderlyingCredential.GetAccessTokenForRequestAsync();
     }
 
-    private GoogleCredential LoadCredential(string path, params string[] scopes)
+    private static GoogleCredential LoadCredential(string path, params string[] scopes)
     {
         return GoogleCredential
             .FromStream(File.Open(path, FileMode.Open))

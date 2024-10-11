@@ -43,9 +43,10 @@ namespace UdapServer.Tests.Conformance.Basic;
 [Collection("Udap.Auth.Server")]
 public class RegisterNonPKCERequired_UsePKCE_Tests
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
 
     private readonly ITestOutputHelper _testOutputHelper;
-    private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
 
 
     public RegisterNonPKCERequired_UsePKCE_Tests(ITestOutputHelper testOutputHelper)
@@ -98,7 +99,7 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[] {new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
+            Anchors = [new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
             {
                 BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                 EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
@@ -114,7 +115,7 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
                         Enabled = true
                     }
                 }
-            }}
+            }]
         });
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
@@ -127,12 +128,12 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new Claim[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney")
-            }
+            ]
         });
     }
 
@@ -163,7 +164,7 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
@@ -233,7 +234,7 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
         using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
         var formattedStatement = JsonSerializer.Serialize(
             jsonDocument,
-            new JsonSerializerOptions { WriteIndented = true }
+            IndentedJsonOptions
         );
 
         var formattedHeader = Base64UrlEncoder.Decode(jwt.EncodedHeader);
@@ -280,7 +281,7 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;

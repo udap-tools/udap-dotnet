@@ -10,14 +10,15 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json.Serialization;
 using Google.Apis.Auth.OAuth2;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 using IdentityModel;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
-using Serilog.Templates;
-using Serilog.Templates.Themes;
+using Udap.CdsHooks.Model;
 using Udap.Common;
 using Udap.Proxy.Server;
 using Udap.Smart.Model;
@@ -25,22 +26,13 @@ using Udap.Util.Extensions;
 using Yarp.ReverseProxy.Transforms;
 using ZiggyCreatures.Caching.Fusion;
 
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .CreateBootstrapLogger();
-
-Log.Information("Starting up");
-
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSerilog((services, lc) => lc
+Log.Logger = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
-    .ReadFrom.Services(services)
-    .Enrich.FromLogContext()
-    .WriteTo.Console(new ExpressionTemplate(
-        // Include trace and span ids when present.
-        "[{@t:HH:mm:ss} {@l:u3}{#if @tr is not null} ({substring(@tr,0,4)}:{substring(@sp,0,4)}){#end}] {@m}\n{@x}",
-        theme: TemplateTheme.Code)));
+    .CreateLogger();
+
+builder.Host.UseSerilog();
 
 // Mount Cloud Secrets
 builder.Configuration.AddJsonFile("/secret/udapproxyserverappsettings", true, false);
@@ -48,9 +40,18 @@ builder.Configuration.AddJsonFile("/secret/udapproxyserverappsettings", true, fa
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    options.JsonSerializerOptions.Converters.Add(new FhirResourceConverter());
+});
+
+builder.Services.Configure<CdsServices>(builder.Configuration.GetRequiredSection("CdsServices"));
 builder.Services.Configure<SmartMetadata>(builder.Configuration.GetRequiredSection("SmartMetadata"));
 builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
 
+builder.Services.AddCdsServices();
 builder.Services.AddSmartMetadata();
 builder.Services.AddUdapMetadataServer(builder.Configuration);
 builder.Services.AddFusionCache()
@@ -75,16 +76,23 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
         };
     });
 
-builder.Services.AddAuthorization(options =>
+builder.Services.AddCors(options =>
 {
-    options.AddPolicy("udapPolicy", policy =>
-        policy.RequireAuthenticatedUser());
+    options.AddPolicy("DefaultPolicy", builder =>
+    {
+        builder.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
 });
 
+builder.Services.AddAuthorizationBuilder()
+    .AddPolicy("udapPolicy", policy =>
+        policy.RequireAuthenticatedUser());
 
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
-    .ConfigureHttpClient((context, handler) =>
+    .ConfigureHttpClient((_, handler) =>
     {
         // this is required to decompress automatically.  *******   troubleshooting only   *******
         handler.AutomaticDecompression = System.Net.DecompressionMethods.All;
@@ -163,7 +171,7 @@ builder.Services.AddReverseProxy()
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-
+app.UseCors("DefaultPolicy");
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -175,8 +183,10 @@ app.UseSerilogRequestLogging();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseMiddleware<RouteLoggingMiddleware>();
 app.MapReverseProxy();
 
+app.UseCdsServices("fhir/r4");
 app.UseSmartMetadata("fhir/r4");
 app.UseUdapMetadataServer("fhir/r4"); // Ensure metadata can only be called from this base URL.
 
@@ -215,16 +225,13 @@ async Task<string?> ResolveAccessToken(IReadOnlyDictionary<string, string> metad
 
 }
 
-
-async Task<string> UdapMedatData(string s)
-{
-    return s;
-}
-
 async Task<byte[]?> GetFhirMetadata(ResponseTransformContext responseTransformContext,
     WebApplicationBuilder webApplicationBuilder)
 {
-    var stream = await responseTransformContext.ProxyResponse.Content.ReadAsStreamAsync();
+    var stream = responseTransformContext.ProxyResponse?.Content != null
+        ? await responseTransformContext.ProxyResponse.Content.ReadAsStreamAsync()
+        : Stream.Null;
+
     using var reader = new StreamReader(stream);
     var body = await reader.ReadToEndAsync();
 
@@ -261,7 +268,7 @@ async Task<byte[]?> GetFhirMetadata(ResponseTransformContext responseTransformCo
 
 void SetProxyHeaders(RequestTransformContext requestTransformContext)
 {
-    if (!requestTransformContext.HttpContext.Request.Headers.Authorization.Any())
+    if (requestTransformContext.HttpContext.Request.Headers.Authorization.Count == 0)
     {
         return;
     }
@@ -280,7 +287,7 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
 
     var tokenHandler = new JwtSecurityTokenHandler();
     var jsonToken = tokenHandler.ReadJwtToken(requestTransformContext.HttpContext.Request.Headers.Authorization.First()?.Replace("Bearer", "").Trim());
-    var scopes = jsonToken?.Claims.Where(c => c.Type == "scope");
+    var scopes = jsonToken.Claims.Where(c => c.Type == "scope");
     var iss = jsonToken.Claims.Where(c => c.Type == "iss");
     // var sub = jsonToken.Claims.Where(c => c.Type == "sub"); // figure out what subject should be for GCP
 
@@ -290,11 +297,11 @@ void SetProxyHeaders(RequestTransformContext requestTransformContext)
     requestTransformContext.ProxyRequest.Headers.Remove("X-Authorization-Issuer");
  
     // Google Cloud way of passing scopes to the Fhir Server
-    var spaceSeparatedString = scopes?.Select(s => s.Value)
+    var spaceSeparatedString = scopes.Select(s => s.Value)
         .Where(s => s != "udap") //gcp doesn't know udap  Need better filter to block unknown scopes
         .ToSpaceSeparatedString();
     
     requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Scope", spaceSeparatedString);
-    requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault().Value);
+    requestTransformContext.ProxyRequest.Headers.Add("X-Authorization-Issuer", iss.SingleOrDefault()?.Value);
     // context.ProxyRequest.Headers.Add("X-Authorization-Subject", sub.SingleOrDefault().Value);
 }

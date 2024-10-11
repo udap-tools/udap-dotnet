@@ -23,9 +23,9 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
 {
      public UdapClientRegistrationStoreTests(TestDatabaseProvider<UdapDbContext> fixture) : base(fixture)
     {
-        foreach (var options in TestDatabaseProviders.SelectMany(x => x.Select(y => (DbContextOptions<UdapDbContext>)y)).ToList())
+        foreach (var options in TestDatabaseProviders)
         {
-            using var context = new UdapDbContext(options, true);
+            using var context = new UdapDbContext((DbContextOptions<UdapDbContext>)options, true);
             context.Database.EnsureCreated();
         }
     }
@@ -38,7 +38,7 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
         {
             ClientId = "test_client",
             ClientName = "Test Client",
-            RedirectUris = new[] { "http://localhost" },
+            RedirectUris = ["http://localhost"],
             AllowedGrantTypes = new List<string>
             {
                 GrantType.AuthorizationCode
@@ -63,7 +63,7 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
         //
         // Re-register with different RedirectUrl
         //
-        testClient.RedirectUris = new[] { "http://localhost2" };
+        testClient.RedirectUris = ["http://localhost2"];
         result = await store.UpsertClient(testClient, default);
         result.Should().BeTrue();
         client = await store.GetClient(testClient);
@@ -80,7 +80,7 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
         {
             ClientId = "test_client_1",
             ClientName = "Test Client_1",
-            RedirectUris = new[] { "http://localhost" },
+            RedirectUris = ["http://localhost"],
             AllowedGrantTypes = new List<string>
             {
                 GrantType.AuthorizationCode
@@ -96,7 +96,7 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
         {
             ClientId = "test_client_2",
             ClientName = "Test Client_2",
-            RedirectUris = new[] { "http://localhost2" },
+            RedirectUris = ["http://localhost2"],
             AllowedGrantTypes = new List<string>
             {
                 GrantType.AuthorizationCode

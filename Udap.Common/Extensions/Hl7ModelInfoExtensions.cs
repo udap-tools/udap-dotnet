@@ -41,7 +41,7 @@ public static class Hl7ModelInfoExtensions
         string v2Suffix = "rs",
         HashSet<string>? scopes = null)
     {
-        scopes ??= new HashSet<string>();
+        scopes ??= [];
 
         BuildHl7FhirV1Scopes(prefix, specification, v1Suffix, scopes);
         BuildHl7FhirV2Scopes(prefix, specification, v2Suffix, scopes);
@@ -68,7 +68,7 @@ public static class Hl7ModelInfoExtensions
         string suffix = "rs",
         HashSet<string>? scopes = null)
     {
-        scopes ??= new HashSet<string>();
+        scopes ??= [];
         specification ??= r => true;
         var parameters = ScopeExtensions.GenerateCombinations(suffix);
 
@@ -102,7 +102,7 @@ public static class Hl7ModelInfoExtensions
         string suffix = "read",
         HashSet<string>? scopes = null)
     {
-        scopes ??= new HashSet<string>();
+        scopes ??= [];
         specification ??= r => true;
 
         foreach (var resName in ModelInfo.SupportedResources.Where(specification))

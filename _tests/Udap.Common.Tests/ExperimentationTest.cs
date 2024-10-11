@@ -14,16 +14,26 @@ using Hl7.Fhir.Specification;
 using Hl7.Fhir.Specification.Source;
 using Hl7.Fhir.Specification.Terminology;
 using Hl7.Fhir.Utility;
+
+#if NET7_0_OR_GREATER
 using IdentityModel;
+#endif
+
 using Microsoft.IdentityModel.Tokens;
 using Xunit.Abstractions;
 using Claim = System.Security.Claims.Claim;
 using Task = System.Threading.Tasks.Task;
+// ReSharper disable All
+#pragma warning disable xUnit1004
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
 namespace Udap.Common.Tests;
 
 public class ExperimentationTest
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
+
     private readonly ITestOutputHelper _testOutputHelper;
 
     public ExperimentationTest(ITestOutputHelper testOutputHelper)
@@ -45,7 +55,7 @@ public class ExperimentationTest
 
         fhirClient.Settings.PreferredFormat = ResourceFormat.Json;
         var codeSystem = await fhirClient.ReadAsync<Hl7.Fhir.Model.CodeSystem>("https://tx.fhir.org/r4/CodeSystem/v2-0203");
-        var codeSystemJson = await new FhirJsonSerializer().SerializeToStringAsync(codeSystem);
+        await new FhirJsonSerializer().SerializeToStringAsync(codeSystem!);
     }
 
     [Fact(Skip = "Experimenting")]
@@ -57,7 +67,7 @@ public class ExperimentationTest
             .WithValueSet(url: "http://hl7.org/fhir/us/identity-matching/ValueSet/Identity-Identifier-vs");
                 
         var joe = await termService.Expand(p);
-        _testOutputHelper.WriteLine(JsonSerializer.Serialize(joe, new JsonSerializerOptions(){WriteIndented = true}));
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(joe, IndentedJsonOptions));
         _testOutputHelper.WriteLine("Goodbye Joe");
     }
 
@@ -67,11 +77,11 @@ public class ExperimentationTest
     [Fact(Skip = "Experimenting")]
     public async Task FhirTermExternalTest()
     {
-        FhirPackageSource _clientResolver = new(new ModelInspector(FhirRelease.R4), PACKAGESERVER, new string[] { "hl7.fhir.r4.core@4.0.1", "hl7.fhir.r4.expansions@4.0.1", IDENTITY_MATCHING });
+        FhirPackageSource _clientResolver = new(new ModelInspector(FhirRelease.R4), PACKAGESERVER, ["hl7.fhir.r4.core@4.0.1", "hl7.fhir.r4.expansions@4.0.1", IDENTITY_MATCHING]);
         var termService = new LocalTerminologyService(resolver: _clientResolver);
         var p = new ExpandParameters().WithValueSet(url: "http://hl7.org/fhir/us/identity-matching/ValueSet/Identity-Identifier-vs");
         var joe = await termService.Expand(p);
-        _testOutputHelper.WriteLine(JsonSerializer.Serialize(joe, new JsonSerializerOptions() { WriteIndented = true }));
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(joe, IndentedJsonOptions));
         _testOutputHelper.WriteLine("Goodbye Joe");
     }
 
@@ -110,28 +120,28 @@ public class ExperimentationTest
         }
 
         ///<inheritdoc />
-        public async Task<Resource> Expand(Parameters parameters, string id = null, bool useGet = false)
+        public async Task<Resource> Expand(Parameters parameters, string? id = null, bool useGet = false)
         {
-            var joe = await _resolver.FindValueSetAsync(id);
-            return null;
+            _ = await _resolver.FindValueSetAsync(id);
+            return null!;
             // throw new NotImplementedException();
             // return await Endpoint.InstanceOperationAsync(constructUri<ValueSet>(id), RestOperation.EXPAND_VALUESET, parameters, useGet).ConfigureAwait(false);
         }
 
         ///<inheritdoc />
-        public Task<Parameters> ValueSetValidateCode(Parameters parameters, string id = null, bool useGet = false)
+        public Task<Parameters> ValueSetValidateCode(Parameters parameters, string? id = null, bool useGet = false)
         {
             throw new NotImplementedException();
         }
 
         ///<inheritdoc />
-        public Task<Parameters> Subsumes(Parameters parameters, string id = null, bool useGet = false)
+        public Task<Parameters> Subsumes(Parameters parameters, string? id = null, bool useGet = false)
         {
             throw new NotImplementedException();
         }
 
         ///<inheritdoc />
-        public Task<Parameters> CodeSystemValidateCode(Parameters parameters, string id = null, bool useGet = false)
+        public Task<Parameters> CodeSystemValidateCode(Parameters parameters, string? id = null, bool useGet = false)
         {
             throw new NotImplementedException();
         }
@@ -143,7 +153,7 @@ public class ExperimentationTest
         }
 
         ///<inheritdoc />
-        public Task<Parameters> Translate(Parameters parameters, string id = null, bool useGet = false)
+        public Task<Parameters> Translate(Parameters parameters, string? id = null, bool useGet = false)
         {
             throw new NotImplementedException();
         }
@@ -166,7 +176,7 @@ public class ExperimentationTest
         _testOutputHelper.WriteLine(new FhirJsonSerializer().SerializeToString(parametersResource.Parameter.Single(n => n.Name == "UdapEdPatientMatch").Resource));
 
         var patient = parametersResource.Parameter.Single(n => n.Name == "UdapEdPatientMatch").Resource as Patient;
-        Assert.Equal("1970-05-01", patient.BirthDate);
+        Assert.Equal("1970-05-01", patient!.BirthDate);
 
         var patientJson = await new FhirJsonSerializer().SerializeToStringAsync(parametersResource.Parameter
             .Single(n => n.Name == "UdapEdPatientMatch").Resource);
@@ -193,7 +203,7 @@ public class ExperimentationTest
 
         AsymmetricAlgorithm key = cert.GetECDsaPrivateKey();
 
-        byte[] encryptedPrivKeyBytes = key.ExportEncryptedPkcs8PrivateKey(
+        byte[] encryptedPrivKeyBytes = key!.ExportEncryptedPkcs8PrivateKey(
             "udap-test",
             new PbeParameters(
                 PbeEncryptionAlgorithm.Aes256Cbc,
@@ -224,11 +234,11 @@ public class ExperimentationTest
         var tokenHandler = new JwtSecurityTokenHandler();
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new Claim[]
-            {
+            Subject = new ClaimsIdentity(
+            [
                 new Claim(ClaimTypes.Name, "John Doe"),
                 new Claim(ClaimTypes.Email, "john.doe@example.com")
-            }),
+            ]),
             Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = signingCredentials
         };
@@ -252,7 +262,7 @@ public class ExperimentationTest
         var cert = new X509Certificate2(@"C:\Source\GitHub\JoeShook\udap-tools\udap-dotnet\_tests\Udap.PKI.Generator\certstores\localhost_fhirlabs_community6\issued\fhirLabsApiClientLocalhostCert6_ECDSA.pfx");
         //var cert = new X509Certificate2(@"/mnt/c/Source/GitHub/JoeShook/udap-tools/udap-dotnet/_tests/Udap.PKI.Generator/certstores/localhost_fhirlabs_community6/issued/fhirLabsApiClientLocalhostCert6_ECDSA.pfx", "udap-test", X509KeyStorageFlags.Exportable);
         var joe = cert.HasPrivateKey;
-        byte[] privateKeyBytes = cert.GetECDsaPrivateKey().ExportECPrivateKey(); //Might be DER encoded
+        byte[] privateKeyBytes = cert.GetECDsaPrivateKey()!.ExportECPrivateKey(); //Might be DER encoded
         // Console.WriteLine(privateKeyBytes.Length);
         // // Convert the private key to the appropriate format
         // // byte[] formattedPrivateKeyBytes = ConvertPrivateKeyToPkcs8(privateKeyBytes);
@@ -273,11 +283,11 @@ public class ExperimentationTest
         var tokenHandler = new JwtSecurityTokenHandler();
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new Claim[]
-            {
+            Subject = new ClaimsIdentity(
+            [
                 new Claim(ClaimTypes.Name, "John Doe"),
                 new Claim(ClaimTypes.Email, "john.doe@example.com")
-            }),
+            ]),
             Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = signingCredentials
         };
@@ -306,15 +316,15 @@ public class ExperimentationTest
         var rsaTokenHandler = new JwtSecurityTokenHandler();
         var rsaTokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new Claim[]
-            {
+            Subject = new ClaimsIdentity(
+            [
                 new Claim(ClaimTypes.Name, "Hobo Joe"),
                 new Claim(ClaimTypes.Email, "hobo.joe@example.com"),
                 new Claim("jti", CryptoRandom.CreateUniqueId()),
                 // Should be no longer than 5 minutes in the future
                 new (JwtClaimTypes.Expiration,
                     EpochTime.GetIntDate(DateTime.Now.AddMinutes(1).ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-            }),
+            ]),
             Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = rsaSigningCredentials,
             Issuer = "MyClientId",
@@ -338,7 +348,7 @@ public class ExperimentationTest
 
         var jwk = JsonWebKeyConverter.ConvertFromECDsaSecurityKey(new ECDsaSecurityKey(ecdsa));
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(jwk,
-            new JsonSerializerOptions { WriteIndented = true }));
+            IndentedJsonOptions));
 
         var jwks = new Jwks()
         {
@@ -353,22 +363,22 @@ public class ExperimentationTest
         // Generated public JWKS
         //
         _testOutputHelper.WriteLine(JsonSerializer.Serialize(jwks,
-            new JsonSerializerOptions { WriteIndented = true }));
+            IndentedJsonOptions));
 
 
         var signingCredentials = new SigningCredentials(new ECDsaSecurityKey(ecdsa), "ES384");
         var tokenHandler = new JwtSecurityTokenHandler();
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(new Claim[]
-            {
+            Subject = new ClaimsIdentity(
+            [
                 new Claim(ClaimTypes.Name, "Hobo Joe"),
                 new Claim(ClaimTypes.Email, "hobo.joe@example.com"),
                 new Claim("jti", CryptoRandom.CreateUniqueId()),
                 // Should be no longer than 5 minutes in the future
                 new (JwtClaimTypes.Expiration,
                     EpochTime.GetIntDate(DateTime.Now.AddMinutes(1).ToUniversalTime()).ToString(), ClaimValueTypes.Integer),
-            }),
+            ]),
             Expires = DateTime.UtcNow.AddHours(1),
             SigningCredentials = signingCredentials,
             Issuer = "MyClientId",
@@ -410,13 +420,13 @@ public class ExperimentationTest
                 {
                     RequireSignedTokens = true,
                     ValidateIssuer = true, // no issuer
-                    ValidIssuers = new string[] { "MyClientId" },
+                    ValidIssuers = ["MyClientId"],
                     ValidateIssuerSigningKey = true,
                     ValidateAudience = true, // No aud for UDAP metadata
-                    ValidAudiences = new string[] { "https://fhirlabs.net/fhir/r4" },
+                    ValidAudiences = ["https://fhirlabs.net/fhir/r4"],
                     ValidateLifetime = true,
                     IssuerSigningKey = new ECDsaSecurityKey(ecdsaValidate),
-                    ValidAlgorithms = new[] { "ES384" }
+                    ValidAlgorithms = ["ES384"]
                 });
 
             Assert.True(validatedToken.IsValid, validatedToken.Exception?.Message);
@@ -444,13 +454,13 @@ public class ExperimentationTest
                 {
                     RequireSignedTokens = true,
                     ValidateIssuer = true, // no issuer
-                    ValidIssuers = new string[] { "MyClientId" },
+                    ValidIssuers = ["MyClientId"],
                     ValidateIssuerSigningKey = true,
                     ValidateAudience = true, // No aud for UDAP metadata
-                    ValidAudiences = new string[] { "https://fhirlabs.net/fhir/r4" },
+                    ValidAudiences = ["https://fhirlabs.net/fhir/r4"],
                     ValidateLifetime = true,
                     IssuerSigningKey = new ECDsaSecurityKey(ecdsaValidate),
-                    ValidAlgorithms = new[] { "ES384" }
+                    ValidAlgorithms = ["ES384"]
                 });
 
             Assert.False(validatedToken.IsValid);
@@ -477,15 +487,11 @@ public class ExperimentationTest
     // Helper function to convert a private key to PKCS8 format
     public static byte[] ConvertPrivateKeyToPkcs8(byte[] privateKey)
     {
-        using (var stream = new MemoryStream(privateKey))
-        {
-            using (var reader = new StreamReader(stream))
-            {
-                var pemReader = new Org.BouncyCastle.OpenSsl.PemReader(reader);
-                var keyPair = pemReader.ReadObject() as Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair;
-                var pkcs8 = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(keyPair.Private).GetDerEncoded();
-                return pkcs8;
-            }
-        }
+        using var stream = new MemoryStream(privateKey);
+        using var reader = new StreamReader(stream);
+        var pemReader = new Org.BouncyCastle.OpenSsl.PemReader(reader);
+        var keyPair = pemReader.ReadObject() as Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair;
+        var pkcs8 = Org.BouncyCastle.Pkcs.PrivateKeyInfoFactory.CreatePrivateKeyInfo(keyPair!.Private).GetDerEncoded();
+        return pkcs8;
     }
 }

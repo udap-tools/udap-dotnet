@@ -16,9 +16,9 @@ public class Community
     /// </summary>
     public string Name { get; set; } = "Default";
 
-    public ICollection<string> Intermediates { get; set; } = new List<string>();
+    public ICollection<string> Intermediates { get; set; } = [];
 
-    public ICollection<AnchoFile> Anchors { get; set; } = new List<AnchoFile>();
+    public ICollection<AnchoFile> Anchors { get; set; } = [];
 
-    public ICollection<IssuedCertFile> IssuedCerts { get; set; } = new List<IssuedCertFile>();
+    public ICollection<IssuedCertFile> IssuedCerts { get; set; } = [];
 }

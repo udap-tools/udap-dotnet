@@ -14,5 +14,5 @@ namespace Udap.Common.Certificates;
 public interface IPrivateCertificateStore
 {
     ICollection<IssuedCertificate> IssuedCertificates { get; set; }
-    Task<IPrivateCertificateStore> Resolve();
+    Task<IPrivateCertificateStore> Resolve(CancellationToken token);
 }

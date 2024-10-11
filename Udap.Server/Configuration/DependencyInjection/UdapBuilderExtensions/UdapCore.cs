@@ -31,7 +31,10 @@ using Udap.Server.Stores;
 using Udap.Server.Validation;
 using Constants = Udap.Server.Constants;
 
+#pragma warning disable IDE0130 // Namespace does not match folder structure
+// ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static  class UdapServiceBuilderExtensionsCore
 {

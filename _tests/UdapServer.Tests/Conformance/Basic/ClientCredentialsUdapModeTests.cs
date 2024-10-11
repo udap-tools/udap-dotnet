@@ -1,4 +1,4 @@
-﻿#region (c) 2023 Joseph Shook. All rights reserved.
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,8 +7,6 @@
 // */
 #endregion
 
-
-using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -37,7 +35,6 @@ using Udap.Model.Statement;
 using Udap.Model.UdapAuthenticationExtensions;
 using Udap.Server.Configuration;
 using Udap.Server.Validation;
-using Udap.Util.Extensions;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
 using JwtHeaderParameterNames = Microsoft.IdentityModel.JsonWebTokens.JwtHeaderParameterNames;
@@ -48,7 +45,7 @@ namespace UdapServer.Tests.Conformance.Basic;
 public class ClientCredentialsUdapModeTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
 
     public ClientCredentialsUdapModeTests(ITestOutputHelper testOutputHelper)
     {
@@ -105,8 +102,8 @@ public class ClientCredentialsUdapModeTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
                 {
                     BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
@@ -124,7 +121,7 @@ public class ClientCredentialsUdapModeTests
                         }
                     }
                 }
-            }
+            ]
         });
 
         _mockPipeline.Communities.Add(new Community
@@ -132,8 +129,8 @@ public class ClientCredentialsUdapModeTests
             Name = "localhost_fhirlabs_community2",
             Enabled = true,
             Default = false,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(anchorCommunity2, "localhost_fhirlabs_community2")
                 {
                     BeginDate = anchorCommunity2.NotBefore.ToUniversalTime(),
@@ -151,7 +148,7 @@ public class ClientCredentialsUdapModeTests
                         }
                     }
                 }
-            }
+            ]
         });
         
 
@@ -159,15 +156,6 @@ public class ClientCredentialsUdapModeTests
         _mockPipeline.IdentityScopes.Add(new IdentityResources.Profile());
         _mockPipeline.ApiScopes.AddRange(new HL7SmartScopeExpander().ExpandToApiScopes("system/Patient.rs"));
         _mockPipeline.ApiScopes.AddRange(new HL7SmartScopeExpander().ExpandToApiScopes(" system/Appointment.rs"));
-    }
-
-    [Fact]
-    public async Task Todo()
-    {
-        //Need tests here:
-
-        // Ensure the missing scope test during /connect/token request works
-        // It should test in UDAP server mode and specifically UdapScopeResolverMiddleware and 
     }
 
     [Fact]
@@ -180,7 +168,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -232,7 +220,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -283,7 +271,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -356,7 +344,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -429,7 +417,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -511,7 +499,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -593,7 +581,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -630,7 +618,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -669,7 +657,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>(), Substitute.For<HashSet<string>>())
+        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -677,7 +665,7 @@ public class ClientCredentialsUdapModeTests
             "system/Patient.rs");
 
         regDocumentResult.GetError().Should().BeNull();
-        regDocumentResult!.Scope.Should().Be("system/Patient.rs");
+        regDocumentResult.Scope.Should().Be("system/Patient.rs");
 
         var clientIdWithDefaultSubAltName = regDocumentResult.ClientId;
 
@@ -689,7 +677,7 @@ public class ClientCredentialsUdapModeTests
             "system/Patient.rs system/Appointment.rs");
 
         regDocumentResult.GetError().Should().BeNull();
-        regDocumentResult!.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
+        regDocumentResult.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
 
         regDocumentResult.ClientId.Should().Be(clientIdWithDefaultSubAltName);
 
@@ -702,7 +690,7 @@ public class ClientCredentialsUdapModeTests
             "system/Patient.rs system/Appointment.rs",
             "https://fhirlabs.net:7016/fhir/r4");
         
-        regDocumentResultForSelectedSubAltName!.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
+        regDocumentResultForSelectedSubAltName.Scope.Should().Be("system/Appointment.rs system/Patient.rs");
         var clientIdWithSelectedSubAltName = regDocumentResultForSelectedSubAltName.ClientId;
         clientIdWithSelectedSubAltName.Should().NotBe(clientIdWithDefaultSubAltName);
 
@@ -715,7 +703,7 @@ public class ClientCredentialsUdapModeTests
             "system/Patient.rs",
             "https://fhirlabs.net:7016/fhir/r4");
         
-        regDocumentResultForSelectedSubAltNameSecond!.Scope.Should().Be("system/Patient.rs");
+        regDocumentResultForSelectedSubAltNameSecond.Scope.Should().Be("system/Patient.rs");
         regDocumentResultForSelectedSubAltNameSecond.ClientId.Should().Be(clientIdWithSelectedSubAltName);
 
     }
@@ -752,7 +740,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -791,7 +779,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
         
 
@@ -847,7 +835,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -889,7 +877,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -946,7 +934,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -983,7 +971,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -1022,7 +1010,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
 
@@ -1069,7 +1057,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -1108,7 +1096,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
 
@@ -1166,7 +1154,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -1208,7 +1196,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -1264,7 +1252,7 @@ public class ClientCredentialsUdapModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipeline.BrowserClient.PostAsync(

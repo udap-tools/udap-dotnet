@@ -54,8 +54,7 @@ public static class ClientExtensions
             {
                 var id = long.Parse(communityId);
 
-                var certificates = await store.GetCommunityCertificates(id);
-                return certificates;
+                return await store.GetCommunityCertificates(id);
             }
         }
 

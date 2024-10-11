@@ -13,17 +13,10 @@ namespace Udap.Client.Extensions;
 
 public static class StringExtensions
 {
-    //TODO: Not used?
-    [DebuggerStepThrough]
-    public static bool IsUri(this string? uri)
-    {
-        return Uri.TryCreate(uri, UriKind.Absolute, out Uri? result);
-    }
-    
     [DebuggerStepThrough]
     public static string AssertUri(this string? uri)
     {
-       if (!Uri.TryCreate(uri, UriKind.Absolute, out Uri? result))
+       if (!Uri.TryCreate(uri, UriKind.Absolute, out Uri? _))
        {
            throw new UriFormatException(uri);
        }

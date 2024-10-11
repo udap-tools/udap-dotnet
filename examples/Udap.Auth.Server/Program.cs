@@ -50,7 +50,7 @@ try
     builder.Configuration.AddJsonFile("/secret/udap_auth_appsettings", true, false);
 
     var app = builder
-        .ConfigureServices(args)
+        .ConfigureServices()
         .ConfigurePipeline(args);
 
     //

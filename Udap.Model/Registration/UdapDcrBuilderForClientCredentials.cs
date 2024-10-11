@@ -27,7 +27,7 @@ namespace Udap.Model.Registration;
 public class UdapDcrBuilderForClientCredentials
 {
     private readonly DateTime _now;
-    private UdapDynamicClientRegistrationDocument _document;
+    private readonly UdapDynamicClientRegistrationDocument _document;
     private X509Certificate2? _certificate;
 
     protected  UdapDynamicClientRegistrationDocument Document
@@ -44,7 +44,7 @@ public class UdapDcrBuilderForClientCredentials
     {
         _now = DateTime.UtcNow;
 
-        _document = new UdapDynamicClientRegistrationDocument();
+        _document = [];
         if (!cancelRegistration)
         {
             _document.GrantTypes = new HashSet<string> { OidcConstants.GrantTypes.ClientCredentials };
@@ -164,7 +164,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithClientName(string clientName)
+    public UdapDcrBuilderForClientCredentials WithClientName(string? clientName)
     {
         _document.ClientName = clientName;
         return this;
@@ -176,7 +176,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    public UdapDcrBuilderForClientCredentials WithTokenEndpointAuthMethod(string tokenEndpointAuthMethod)
+    public UdapDcrBuilderForClientCredentials WithTokenEndpointAuthMethod(string? tokenEndpointAuthMethod)
     {
         _document.TokenEndpointAuthMethod = tokenEndpointAuthMethod;
         return this;
@@ -200,7 +200,7 @@ public class UdapDcrBuilderForClientCredentials
         return this;
     }
 
-    private readonly Dictionary<string, object> _extensions = new Dictionary<string, object>();
+    private readonly Dictionary<string, object> _extensions = [];
 
     /// <summary>
     /// Add Typed extension object

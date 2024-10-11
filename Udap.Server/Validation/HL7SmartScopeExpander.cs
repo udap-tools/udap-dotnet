@@ -24,7 +24,7 @@ namespace Udap.Server.Validation;
 /// system/Patient.d
 ///
 /// </summary>
-public class HL7SmartScopeExpander : IScopeExpander
+public partial class HL7SmartScopeExpander : IScopeExpander
 {
 
     /// <summary>
@@ -39,13 +39,13 @@ public class HL7SmartScopeExpander : IScopeExpander
         
         foreach (var scope in scopes.ToList())
         {
-            var smartV2Regex = new Regex(@"^(system|user|patient)[\/].*\.[cruds]+$");
+            var smartV2Regex = SmartV2Regex();
             var smartV2Matches = smartV2Regex.Matches(scope);
 
-            var smartV1Regex = new Regex(@"^(system|user|patient)[\/].*\.(read|write)$");
+            var smartV1Regex = SmartV1Regex();
             var smartV1Matches = smartV1Regex.Matches(scope);
 
-            if (smartV2Matches.Any()) // Expand SMART V2 Scopes
+            if (smartV2Matches.Count != 0) // Expand SMART V2 Scopes
             {
                 foreach (Match match in smartV2Matches)
                 {
@@ -60,7 +60,7 @@ public class HL7SmartScopeExpander : IScopeExpander
                     }
                 }
             }
-            else if (smartV1Matches.Any()) // Just keep SMART V1 scopes
+            else if (smartV1Matches.Count != 0) // Just keep SMART V1 scopes
             {
                 expandedScopes.Add(scope);
             }
@@ -95,13 +95,13 @@ public class HL7SmartScopeExpander : IScopeExpander
        
         foreach (var scope in clientScopes.Where(s => s.Contains('*')))
         {
-            var smartV2Regex = new Regex(@"^(system|user|patient)\/\*\.[cruds]+$");
+            var smartV2Regex = SmartV2Regex2();
             var smartV2Matches = smartV2Regex.Matches(scope);
 
-            var smartV1Regex = new Regex(@"^(system|user|patient)\/\*\.(read|write)$");
+            var smartV1Regex = SmartV1Regex2();
             var smartV1Matches = smartV1Regex.Matches(scope);
 
-            if (smartV2Matches.Any())
+            if (smartV2Matches.Count != 0)
             {
                 foreach (Match match in smartV2Matches)
                 {
@@ -117,7 +117,7 @@ public class HL7SmartScopeExpander : IScopeExpander
                     }
                 }
             }
-            else if (smartV1Matches.Any())
+            else if (smartV1Matches.Count != 0)
             {
                 foreach (Match match in smartV1Matches)
                 {
@@ -162,7 +162,7 @@ public class HL7SmartScopeExpander : IScopeExpander
 
         foreach (var scope in scopes)
         {
-            var regex = new Regex("^(system|user|patient)[\\/].*\\.[c|r|u|d|s]+$");
+            var regex = SmartV2Regex3();
             if (regex.IsMatch(scope))
             {
                 matchedScopes.Add(scope);
@@ -202,4 +202,15 @@ public class HL7SmartScopeExpander : IScopeExpander
 
         return shrunkScopes.OrderBy(s => s);
     }
+
+    [GeneratedRegex(@"^(system|user|patient)[\/].*\.[cruds]+$")]
+    private static partial Regex SmartV2Regex();
+    [GeneratedRegex(@"^(system|user|patient)[\/].*\.(read|write)$")]
+    private static partial Regex SmartV1Regex();
+    [GeneratedRegex(@"^(system|user|patient)\/\*\.[cruds]+$")]
+    private static partial Regex SmartV2Regex2();
+    [GeneratedRegex(@"^(system|user|patient)\/\*\.(read|write)$")]
+    private static partial Regex SmartV1Regex2();
+    [GeneratedRegex("^(system|user|patient)[\\/].*\\.[c|r|u|d|s]+$")]
+    private static partial Regex SmartV2Regex3();
 }

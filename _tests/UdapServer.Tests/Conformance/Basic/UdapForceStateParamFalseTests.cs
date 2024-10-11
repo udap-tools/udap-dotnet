@@ -45,7 +45,7 @@ public class UdapForceStateParamFalseTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
     
-    private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
 
     public UdapForceStateParamFalseTests(ITestOutputHelper testOutputHelper)
     {
@@ -88,7 +88,7 @@ public class UdapForceStateParamFalseTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[] {new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
+            Anchors = [new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
             {
                 BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                 EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
@@ -104,7 +104,7 @@ public class UdapForceStateParamFalseTests
                         Enabled = true
                     }
                 }
-            }}
+            }]
         });
         
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
@@ -115,12 +115,12 @@ public class UdapForceStateParamFalseTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new Claim[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney")
-            }
+            ]
         });
     }
 

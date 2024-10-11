@@ -44,7 +44,6 @@ public interface IUdapClient : IUdapClientEvents
         DiscoveryPolicy? discoveryPolicy = null,
         CancellationToken token = default);
 
-    UdapMetadata? UdapDynamicClientRegistrationDocument { get; set; }
     UdapMetadata? UdapServerMetaData { get; set; }
 
 
@@ -155,9 +154,9 @@ public interface IUdapClient : IUdapClientEvents
 
     /// <summary>
     /// Generated PKCS and use in the authorization code flow.
-    /// <seealso cref="https://datatracker.ietf.org/doc/html/rfc7636"/>
-    /// <seealso cref="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/b2b.html#obtaining-an-authorization-code"/> 
-    /// <seealso cref="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/consumer.html#obtaining-an-authorization-code"/>
+    /// <a href="https://datatracker.ietf.org/doc/html/rfc7636"/>
+    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/b2b.html#obtaining-an-authorization-code"/> 
+    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/consumer.html#obtaining-an-authorization-code"/>
     /// </summary>
     public Pkce GeneratePkce();
 
@@ -167,6 +166,6 @@ public interface IUdapClient : IUdapClientEvents
         
     Task<IEnumerable<SecurityKey>?> ResolveJwtKeys(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default);
 
-    Task<DiscoveryDocumentResponse?> ResolveOpenIdConfig(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default);
+    Task<DiscoveryDocumentResponse> ResolveOpenIdConfig(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default);
     
 }

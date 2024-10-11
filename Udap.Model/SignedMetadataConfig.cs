@@ -11,8 +11,8 @@ public class SignedMetadataConfig
 {
     private TimeSpan _expirationTimeSpan = new TimeSpan(0, 5, 0);
 
-    public List<string> RegistrationSigningAlgorithms { get; set; } = new List<string>();
-    public List<string> TokenSigningAlgorithms { get; set; } = new List<string>();
+    public List<string>? RegistrationSigningAlgorithms { get; set; } = [];
+    public List<string>? TokenSigningAlgorithms { get; set; } = [];
 
     public string Issuer { get; set; } = string.Empty;
     public string Subject { get; set; } = string.Empty;
@@ -48,15 +48,15 @@ public class SignedMetadataConfig
 
 public static class DefaultAlgorithms
 {
-    public static List<string> RsaTokenSigningAlgorithms { get; } = new List<string>
-    {
+    public static List<string>? RsaTokenSigningAlgorithms { get; } =
+    [
         "RS256",
         "RS384"
-    };
+    ];
 
-    public static List<string> EcdsaTokenSigningAlgorithms { get; } = new List<string>
-    {
+    public static List<string>? EcdsaTokenSigningAlgorithms { get; } =
+    [
         "ES256",
         "ES384"
-    };
+    ];
 }

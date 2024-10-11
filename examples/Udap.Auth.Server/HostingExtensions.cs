@@ -22,13 +22,12 @@ using Udap.Common;
 using Udap.Server.Configuration;
 using Udap.Server.DbContexts;
 using Udap.Server.Security.Authentication.TieredOAuth;
-using Udap.UI.Pages;
 
 namespace Udap.Auth.Server;
 
 internal static class HostingExtensions
 {
-    public static WebApplication ConfigureServices(this WebApplicationBuilder builder, string[] args)
+    public static WebApplication ConfigureServices(this WebApplicationBuilder builder)
     {
         // if (! int.TryParse(Environment.GetEnvironmentVariable("ASPNETCORE_HTTPS_PORT"), out int sslPort))
         // {
@@ -106,7 +105,7 @@ internal static class HostingExtensions
 
 
 
-        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Common.Constants.UDAP_FILE_STORE_MANIFEST));
+        builder.Services.Configure<UdapFileCertStoreManifest>(builder.Configuration.GetSection(Constants.UDAP_FILE_STORE_MANIFEST));
 
 
         var identityServer = builder.Services.AddIdentityServer(options =>
@@ -252,7 +251,7 @@ internal static class HostingExtensions
 
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
         {
-            app.Use(async (ctx, next) =>
+            app.Use((ctx, next) =>
             {
                 var header = ctx.Request.Headers[ForwardedHeadersDefaults.XForwardedProtoHeaderName].FirstOrDefault();
                 if (header != null)
@@ -260,7 +259,7 @@ internal static class HostingExtensions
                     ctx.Request.Scheme = header;
                 }
 
-                await next();
+                return next();
             });
         }
         

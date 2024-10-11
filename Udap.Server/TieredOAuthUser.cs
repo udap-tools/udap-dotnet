@@ -98,7 +98,7 @@ public class TieredOAuthUser
             claims.Add(new Claim(JwtClaimTypes.AuthenticationTime, new DateTimeOffset(AuthenticationTime.Value).ToUnixTimeSeconds().ToString()));
         }
 
-        if (AuthenticationMethods.Any())
+        if (AuthenticationMethods.Count != 0)
         {
             foreach (var amr in AuthenticationMethods)
             {

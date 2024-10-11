@@ -17,7 +17,7 @@ namespace Udap.Auth.Server.Admin.Services.DataBase;
 public interface IAnchorService
 {
     Task<ICollection<Anchor>> Get(CancellationToken token = default);
-    Task<Anchor> Get(int? id, CancellationToken token = default);
+    Task<Anchor?> Get(int? id, CancellationToken token = default);
     Task<Anchor> Add(Anchor anchor, CancellationToken token = default);
     Task Update(Anchor anchor, CancellationToken token = default);
     Task<bool> Delete(long? id, CancellationToken token = default);
@@ -47,7 +47,7 @@ public class AnchorService: IAnchorService
 
             if (anchors.Any())
             {
-                throw new DuplicateAnchorException($"Duplicate anchor.  Anchor exists in \"{anchors.First().Community.Name}\" community");
+                throw new DuplicateAnchorException($"Duplicate anchor.  Anchor exists in \"{anchors.First().Community?.Name}\" community");
             }
         }
 
@@ -75,11 +75,11 @@ public class AnchorService: IAnchorService
         return true;
     }
 
-    public async Task<Anchor> Get(int? id, CancellationToken token)
+    public async Task<Anchor?> Get(int? id, CancellationToken token)
     {
         return await _dbContext.Anchors
             .Where(c => c.Id == id)
-            .SingleAsync(cancellationToken: token);
+            .SingleOrDefaultAsync(cancellationToken: token);
     }
 
     public async Task<ICollection<Anchor>> Get(CancellationToken token = default)

@@ -25,7 +25,7 @@ namespace UdapServer.Tests.Common;
 public class TestReplayCache : IReplayCache
 {
     private readonly IClock _clock;
-    Dictionary<string, DateTimeOffset> _values = new Dictionary<string, DateTimeOffset>();
+    readonly Dictionary<string, DateTimeOffset> _values = new Dictionary<string, DateTimeOffset>();
 
     public TestReplayCache(IClock clock)
     {

@@ -14,5 +14,5 @@ namespace Udap.Common;
 
 public class UdapFileCertStoreManifest
 {
-    public ICollection<Community> Communities { get; set; } = new List<Community>();
+    public ICollection<Community> Communities { get; set; } = [];
 }

@@ -32,6 +32,12 @@ public static class Tracing
         TraceNames.Validation,
         ServiceVersion);
 
+    /// <summary>
+    /// Detailed validation ActivitySource
+    /// </summary>
+    public static ActivitySource DiscoveryEndpointActivitySource { get; } = new(
+        TraceNames.Endpoints,
+        ServiceVersion);
 
     /// <summary>
     /// Service version
@@ -56,6 +62,11 @@ public static class Tracing
         /// Service name for detailed validation traces
         /// </summary>
         public static string Validation => Basic + ".Validation";
+
+        /// <summary>
+        /// Service name for discovery endpoint traces
+        /// </summary>
+        public static string Endpoints => Basic + ".Endpoints";
     }
 
     public static class Properties

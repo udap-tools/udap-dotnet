@@ -9,7 +9,6 @@
 
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
-using System.Web;
 using IdentityModel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -80,7 +79,8 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
         if (udapMetadataConfig == null)
         {
-            _logger.LogWarning($"Missing metadata for community: {System.Net.WebUtility.UrlEncode(community)}");
+            var sanitizedCommunity = community?.Replace("\r", "").Replace("\n", "");
+            _logger.LogWarning("Missing metadata for community: {Community}", System.Net.WebUtility.UrlEncode(sanitizedCommunity));
             return null;
         }
 
@@ -88,21 +88,22 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
         udapMetaData.TokenEndpoint = udapMetadataConfig.SignedMetadataConfig.TokenEndpoint;
         udapMetaData.RegistrationEndpoint = udapMetadataConfig.SignedMetadataConfig.RegistrationEndpoint;
 
-        if (udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms.Any())
+        if (udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms != null && udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms.Count != 0)
         {
             udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.RegistrationSigningAlgorithms;
         }
 
-        if (udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms.Any())
+        if (udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms != null && udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms.Count != 0)
         {
             udapMetaData.TokenEndpointAuthSigningAlgValuesSupported = udapMetadataConfig.SignedMetadataConfig.TokenSigningAlgorithms;
         }
 
-        var certificate = await Load(udapMetadataConfig);
+        var certificate = await Load(udapMetadataConfig, token);
 
         if (certificate == null)
         {
-            _logger.LogWarning($"Missing default community certificate: {System.Web.HttpUtility.UrlEncode(community)}");
+            var sanitizedCommunity = System.Web.HttpUtility.UrlEncode(community).Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
+            _logger.LogWarning("Missing default community certificate: {Community}", sanitizedCommunity);
             return null;
         }
 
@@ -125,21 +126,24 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
         var builder = SignedSoftwareStatementBuilder<ISoftwareStatementSerializer>.Create(certificate, jwtPayload);
 
-        if (udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.First().IsECDSA())
+        if (udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported != null && udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.First().IsECDSA())
         {
             udapMetaData.SignedMetadata = builder.BuildECDSA(udapMetaData.
                 RegistrationEndpointJwtSigningAlgValuesSupported.First());
         }
         else
         {
-            udapMetaData.SignedMetadata = builder.Build(udapMetaData.
-                RegistrationEndpointJwtSigningAlgValuesSupported.First());
+            if (udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported != null)
+            {
+                udapMetaData.SignedMetadata =
+                    builder.Build(udapMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.First());
+            }
         }
 
         return udapMetaData;
     }
 
-    private (string issuer, string subject) ResolveIssuer(string baseUrl, UdapMetadataConfig udapMetadataConfig, X509Certificate2 certificate)
+    private static (string issuer, string subject) ResolveIssuer(string baseUrl, UdapMetadataConfig udapMetadataConfig, X509Certificate2 certificate)
     {
         var issuer = udapMetadataConfig.SignedMetadataConfig.Issuer;
         var subject = udapMetadataConfig.SignedMetadataConfig.Subject;
@@ -158,17 +162,17 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
         return (issuer, subject);
     }
 
-    private async Task<X509Certificate2?> Load(UdapMetadataConfig udapMetadataConfig)
+    private async Task<X509Certificate2?> Load(UdapMetadataConfig udapMetadataConfig, CancellationToken token)
     {
-        var store = await _certificateStore.Resolve();
+        var store = await _certificateStore.Resolve(token);
 
         var entity = store.IssuedCertificates
             .Where(c => c.Community == udapMetadataConfig.Community)
-            .MaxBy(c => c.Certificate!.NotBefore);
+            .MaxBy(c => c.Certificate.NotBefore);
 
-        if (entity == null )
+        if (entity == null)
         {
-            _logger.LogInformation($"Missing certificate for community: {udapMetadataConfig.Community}");
+            _logger.LogInformation("Missing certificate for community: {Community}", udapMetadataConfig.Community);
             return null;
         }
 

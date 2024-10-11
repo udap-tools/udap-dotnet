@@ -30,7 +30,7 @@ public class HeaderAugmentationHandler : DelegatingHandler
         _udapClientOptions = udapClientOptions.CurrentValue;
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
         if (_udapClientOptions.Headers != null)
         {
@@ -40,7 +40,7 @@ public class HeaderAugmentationHandler : DelegatingHandler
             }
         }
 
-        return await base.SendAsync(request, cancellationToken);
+        return base.SendAsync(request, cancellationToken);
     }
 }
 
@@ -106,7 +106,7 @@ public class UdapClientMessageHandler : DelegatingHandler, IUdapClientEvents
         if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
         {
             _clientDiscoveryValidator.UdapServerMetaData = disco.Json?.Deserialize<UdapMetadata>();
-            _logger.LogDebug(_clientDiscoveryValidator.UdapServerMetaData?.SerializeToJson());
+            _logger.LogDebug("UdapServerMetaData: {UdapServerMetaDataJson}", _clientDiscoveryValidator.UdapServerMetaData?.SerializeToJson());
 
             if (!await _clientDiscoveryValidator.ValidateJwtToken(_clientDiscoveryValidator.UdapServerMetaData!, baseUrl!))
             {
@@ -129,7 +129,7 @@ public class UdapClientMessageHandler : DelegatingHandler, IUdapClientEvents
 
     private void NotifyTokenError(string message)
     {
-        _logger.LogWarning(message);
+        _logger.LogWarning("Token error occurred: {ErrorMessage}", message);
 
         if (TokenError != null)
         {

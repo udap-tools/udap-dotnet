@@ -83,11 +83,11 @@ internal class UdapAuthorizationResponseMiddleware
         {
             var requestParams = context.Request.Query;
 
-            if (requestParams.Any())
+            if (requestParams.Count != 0)
             {
                 if (udapServerOptions.ForceStateParamOnAuthorizationCode)
                 {
-                    if (!requestParams.TryGetValue(AuthorizeRequest.State, out var state))
+                    if (!requestParams.TryGetValue(AuthorizeRequest.State, out _))
                     {
                         var client =
                             await clients.FindClientByIdAsync(
@@ -118,8 +118,8 @@ internal class UdapAuthorizationResponseMiddleware
                     var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
                     
                     var scopes = scope?.FromSpaceSeparatedString();
-                    var udap = (scopes ?? new string[] { }).FirstOrDefault(s => s == "udap");
-                    var openid = (scopes ?? new string[] { }).FirstOrDefault(s => s == "openid");
+                    var udap = (scopes ?? Array.Empty<string>()).FirstOrDefault(s => s == "udap");
+                    var openid = (scopes ?? Array.Empty<string>()).FirstOrDefault(s => s == "openid");
 
                     if (client != null &&
                         client.ClientSecrets.Any(cs =>
@@ -150,10 +150,12 @@ internal class UdapAuthorizationResponseMiddleware
                     if (responseParams.TryGetValue(_options.UserInteraction.ErrorIdParameter, out var errorId))
                     {
                         var requestParamCollection = context.Request.Query.AsNameValueCollection();
-                        var client =
-                            await clients.FindClientByIdAsync(
-                                requestParamCollection.Get(AuthorizeRequest.ClientId));
-                        
+                        var clientId = requestParamCollection.Get(AuthorizeRequest.ClientId);
+                        Duende.IdentityServer.Models.Client? client = null;
+
+                        if(clientId != null){
+                            client = await clients.FindClientByIdAsync(clientId);
+                        }
 
                         if (client == null)
                         {
@@ -161,12 +163,10 @@ internal class UdapAuthorizationResponseMiddleware
                             return;
                         }
 
-                        if (client != null &&
-                            client.ClientSecrets.Any(cs =>
+                        if (client.ClientSecrets.Any(cs =>
                                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                         {
                             await RenderErrorResponse(context, interactionService, errorId);
-                            return;
                         }
                     }
                 }
@@ -176,7 +176,7 @@ internal class UdapAuthorizationResponseMiddleware
         await _next(context);
     }
 
-    private Task RenderRequiredScopeErrorResponse(HttpContext context)
+    private static Task RenderRequiredScopeErrorResponse(HttpContext context)
     {
         if (context.Request.Query.TryGetValue(
                 AuthorizeRequest.RedirectUri,
@@ -195,7 +195,7 @@ internal class UdapAuthorizationResponseMiddleware
     }
 
 
-    private Task RenderMissingStateErrorResponse(HttpContext context)
+    private static Task RenderMissingStateErrorResponse(HttpContext context)
     {
         if (context.Request.Query.TryGetValue(
                 AuthorizeRequest.RedirectUri,
@@ -213,14 +213,14 @@ internal class UdapAuthorizationResponseMiddleware
         return Task.CompletedTask;
     }
 
-    private async Task RenderErrorResponse(
+    private static async Task RenderErrorResponse(
         HttpContext context,
         IIdentityServerInteractionService interactionService,
         StringValues errorId)
     {
         var errorMessage = await interactionService.GetErrorContextAsync(errorId);
 
-        if (errorMessage.Error == AuthorizeErrors.UnsupportedResponseType
+        if (errorMessage?.Error == AuthorizeErrors.UnsupportedResponseType
             || errorMessage is { Error: AuthorizeErrors.InvalidRequest, ErrorDescription: "Missing response_type" }
             )
         {
@@ -256,31 +256,34 @@ internal class UdapAuthorizationResponseMiddleware
         HttpContext context, 
         StringValues redirectUri,
         string error,
-        string errorDescription)
+        string? errorDescription)
     {
         var sb = new StringBuilder();
 
-        sb.Append(redirectUri).Append("?");
+        sb.Append(redirectUri).Append('?');
 
         sb.Append(AuthorizeResponse.Error)
-            .Append("=")
+            .Append('=')
             // Transform error of unsupported_response_type to invalid_request
             // Seems reasonable if you read RFC 6749
             // TODO: PR to Duende?
             .Append(error);
 
-        sb.Append("&")
+        if(errorDescription != null)
+        {
+            sb.Append('&')
             .Append(AuthorizeResponse.ErrorDescription)
-            .Append("=")
+            .Append('=')
             .Append(errorDescription);
+        }
 
         if (context.Request.Query.TryGetValue(
                 AuthorizeRequest.ResponseType,
                 out StringValues responseType))
         {
-            sb.Append("&")
+            sb.Append('&')
                 .Append(AuthorizeRequest.ResponseType)
-                .Append("=")
+                .Append('=')
                 .Append(responseType);
         }
 
@@ -288,9 +291,9 @@ internal class UdapAuthorizationResponseMiddleware
                 AuthorizeRequest.Scope,
                 out StringValues scope))
         {
-            sb.Append("&")
+            sb.Append('&')
                 .Append(AuthorizeRequest.Scope)
-                .Append("=")
+                .Append('=')
                 .Append(scope);
         }
 
@@ -298,9 +301,9 @@ internal class UdapAuthorizationResponseMiddleware
                 AuthorizeRequest.State,
                 out StringValues state))
         {
-            sb.Append("&")
+            sb.Append('&')
                 .Append(AuthorizeRequest.State)
-                .Append("=")
+                .Append('=')
                 .Append(state);
         }
 
@@ -308,9 +311,9 @@ internal class UdapAuthorizationResponseMiddleware
                 AuthorizeRequest.Nonce,
                 out StringValues nonce))
         {
-            sb.Append("&")
+            sb.Append('&')
                 .Append(AuthorizeRequest.Nonce)
-                .Append("=")
+                .Append('=')
                 .Append(nonce);
         }
 

@@ -10,6 +10,7 @@
 using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Stores;
+using System;
 using Udap.Common;
 using Udap.Server.Validation;
 using Udap.Util.Extensions;
@@ -53,7 +54,7 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// <inheritdoc/>
     public Task<Resources> GetAllResourcesAsync()
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.GetAllResources");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
 
         var result = new Resources(_identityResources, _apiResources, _apiScopes);
         return Task.FromResult(result);
@@ -62,12 +63,12 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// <inheritdoc/>
     public Task<IEnumerable<ApiResource>> FindApiResourcesByNameAsync(IEnumerable<string> apiResourceNames)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.FindApiResourcesByName");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         var apiResourceNamesList = apiResourceNames as List<string> ?? apiResourceNames.ToList();
         activity?.SetTag(Tracing.Properties.ApiResourceNames, apiResourceNamesList.ToSpaceSeparatedString());
 
-        if (apiResourceNames == null) throw new ArgumentNullException(nameof(apiResourceNames));
-        
+        ArgumentNullException.ThrowIfNull(apiResourceNames);
+
         var query = from a in _apiResources
                     where apiResourceNamesList.Contains(a.Name)
                     select a;
@@ -79,11 +80,11 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// <inheritdoc/>
     public Task<IEnumerable<IdentityResource>> FindIdentityResourcesByScopeNameAsync(IEnumerable<string> scopeNames)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.FindIdentityResourcesByScopeName");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
         activity?.SetTag(Tracing.Properties.ScopeNames, scopeNamesList.ToSpaceSeparatedString());
 
-        if (scopeNames == null) throw new ArgumentNullException(nameof(scopeNames));
+        ArgumentNullException.ThrowIfNull(scopeNames);
 
         var identity = from i in _identityResources
                        where scopeNamesList.Contains(i.Name)
@@ -95,11 +96,11 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// <inheritdoc/>
     public Task<IEnumerable<ApiResource>> FindApiResourcesByScopeNameAsync(IEnumerable<string> scopeNames)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.FindApiResourcesByScopeName");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
         activity?.SetTag(Tracing.Properties.ScopeNames, scopeNamesList.ToSpaceSeparatedString());
 
-        if (scopeNames == null) throw new ArgumentNullException(nameof(scopeNames));
+        ArgumentNullException.ThrowIfNull(scopeNames);
 
         var query = from a in _apiResources
                     where a.Scopes.Any(x => scopeNamesList.Contains(x))
@@ -111,12 +112,12 @@ public class UdapInMemoryResourceStore : IResourceStore
     /// <inheritdoc/>
     public Task<IEnumerable<ApiScope>> FindApiScopesByNameAsync(IEnumerable<string> scopeNames)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryResourceStore.FindApiScopesByName");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
         activity?.SetTag(Tracing.Properties.ScopeNames, scopeNamesList.ToSpaceSeparatedString());
 
-        if (scopeNames == null) throw new ArgumentNullException(nameof(scopeNames));
-        
+        ArgumentNullException.ThrowIfNull(scopeNames);
+
         var query =
             from x in _apiScopes
             where scopeNamesList.Contains(x.Name)

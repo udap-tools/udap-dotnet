@@ -9,7 +9,6 @@
 
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -31,9 +30,9 @@ public class HL7B2BUserAuthorizationExtension
     public HL7B2BUserAuthorizationExtension()
     {
         Version = _version;
-        PurposeOfUse = new List<string>();
-        ConsentPolicy = new List<string>();
-        ConsentReference = new List<string>();
+        PurposeOfUse = [];
+        ConsentPolicy = [];
+        ConsentReference = [];
     }
 
     /// <summary>
@@ -120,41 +119,24 @@ public class HL7B2BUserAuthorizationExtension
             notes.Add($"Missing required {UdapConstants.HL7B2BUserAuthorizationExtension.UserPerson}");
         }
 
-        if (PurposeOfUse == null || !PurposeOfUse.Any())
+        if (PurposeOfUse == null || PurposeOfUse.Count == 0)
         {
             notes.Add($"Missing required {UdapConstants.HL7B2BUserAuthorizationExtension.PurposeOfUse}");
         }
 
         return notes;
     }
-
-    internal IList<string> GetIListClaims(string claimType)
-    {
-        var claimValues = new List<string>();
-
-        // Implement logic to retrieve claims based on claimType
-        // This method can be customized as per your requirements
-
-        return claimValues;
-    }
     
-    internal string? GetStandardClaim(string claimType)
-    {
-        // Implement logic to retrieve a standard claim based on claimType
-        // This method can be customized as per your requirements
-
-        return null;
-    }
-
     /// <summary>
     /// Serializes this instance to JSON.
     /// </summary>
     /// <returns>This instance as JSON.</returns>
-    public virtual string SerializeToJson(bool indented = false)
+    public virtual string SerializeToJson(bool indent = false)
     {
-        return JsonSerializer.Serialize(this, new JsonSerializerOptions
-        {
-            WriteIndented = indented
-        });
+        return JsonSerializer.Serialize(this, indent ? IndentedOptions : DefaultOptions);
     }
+
+    private static readonly JsonSerializerOptions DefaultOptions = new JsonSerializerOptions { WriteIndented = false };
+    private static readonly JsonSerializerOptions IndentedOptions = new JsonSerializerOptions { WriteIndented = true };
+
 }

@@ -16,6 +16,7 @@
 // Copyright (c) Duende Software. All rights reserved.
 // See LICENSE in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Headers;
@@ -48,8 +49,9 @@ namespace UdapServer.Tests.Conformance.Basic;
 [Collection("Udap.Auth.Server")]
 public class UdapResponseTypeResponseModeTests
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
     private readonly ITestOutputHelper _testOutputHelper;
-    private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
     
 
     public UdapResponseTypeResponseModeTests(ITestOutputHelper testOutputHelper)
@@ -60,7 +62,7 @@ public class UdapResponseTypeResponseModeTests
 
         _mockPipeline.OnPostConfigureServices += s =>
         {
-            s.AddSingleton<ServerSettings>(new ServerSettings
+            s.AddSingleton(new ServerSettings
             {
                 DefaultUserScopes = "user/*.read",
                 DefaultSystemScopes = "system/*.read",
@@ -69,7 +71,7 @@ public class UdapResponseTypeResponseModeTests
                 RequirePkce = false
             });
 
-            s.AddSingleton<UdapClientOptions>(new UdapClientOptions
+            s.AddSingleton(new UdapClientOptions
             {
                 ClientName = "Mock Client",
                 Contacts = new HashSet<string> { "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com" }
@@ -84,14 +86,11 @@ public class UdapResponseTypeResponseModeTests
             // They register Clients as IEnumerable<Client> in AddInMemoryClients extension
             s.AddSingleton(_mockPipeline.Clients);
 
-            s.AddScoped<IUdapClient>(sp =>
-            {
-                return new UdapClient(
-                    _mockPipeline.BackChannelClient,
-                    sp.GetRequiredService<UdapClientDiscoveryValidator>(),
-                    sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                    sp.GetRequiredService<ILogger<UdapClient>>());
-            });
+            s.AddScoped<IUdapClient>(sp => new UdapClient(
+                _mockPipeline.BackChannelClient,
+                sp.GetRequiredService<UdapClientDiscoveryValidator>(),
+                sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
+                sp.GetRequiredService<ILogger<UdapClient>>()));
         };
 
         _mockPipeline.Initialize(enableLogging: true);
@@ -102,7 +101,7 @@ public class UdapResponseTypeResponseModeTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[] {new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
+            Anchors = [new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
             {
                 BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
                 EndDate = sureFhirLabsAnchor.NotAfter.ToUniversalTime(),
@@ -118,7 +117,7 @@ public class UdapResponseTypeResponseModeTests
                         Enabled = true
                     }
                 }
-            }}
+            }]
         });
 
         _mockPipeline.IdentityScopes.Add(new IdentityResources.OpenId());
@@ -131,12 +130,12 @@ public class UdapResponseTypeResponseModeTests
         {
             SubjectId = "bob",
             Username = "bob",
-            Claims = new Claim[]
-            {
+            Claims =
+            [
                 new Claim("name", "Bob Loblaw"),
                 new Claim("email", "bob@loblaw.com"),
                 new Claim("role", "Attorney")
-            }
+            ]
         });
     }
 
@@ -187,7 +186,7 @@ public class UdapResponseTypeResponseModeTests
         var nonce = Guid.NewGuid().ToString();
 
         var url = _mockPipeline.CreateAuthorizeUrl(
-            clientId: resultDocument!.ClientId!,
+            clientId: resultDocument.ClientId!,
             responseType: "removeMe", // missing
             scope: "openid",
             redirectUri: "https://code_client/callback",
@@ -200,7 +199,7 @@ public class UdapResponseTypeResponseModeTests
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
-        var query = response.Headers.Location.Query;
+        var query = response.Headers.Location?.Query;
         // _testOutputHelper.WriteLine(query);
         var responseParams = QueryHelpers.ParseQuery(query);
         responseParams["error"].Should().BeEquivalentTo("invalid_request");
@@ -261,7 +260,7 @@ public class UdapResponseTypeResponseModeTests
         var nonce = Guid.NewGuid().ToString();
 
         var url = _mockPipeline.CreateAuthorizeUrl(
-            clientId: resultDocument!.ClientId!,
+            clientId: resultDocument.ClientId!,
             responseType: "code",
             scope: "openid",
             redirectUri: "https://code_client/callback",
@@ -330,7 +329,7 @@ public class UdapResponseTypeResponseModeTests
         var nonce = Guid.NewGuid().ToString();
 
         var url = _mockPipeline.CreateAuthorizeUrl(
-            clientId: resultDocument!.ClientId!,
+            clientId: resultDocument.ClientId!,
             responseType: "invalid_response_type", // invalid
             scope: "openid",
             redirectUri: "https://code_client/callback",
@@ -341,7 +340,7 @@ public class UdapResponseTypeResponseModeTests
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
         response.StatusCode.Should().Be(HttpStatusCode.Redirect);
-        var query = response.Headers.Location.Query;
+        var query = response.Headers.Location?.Query;
         // _testOutputHelper.WriteLine(query);
         var responseParams = QueryHelpers.ParseQuery(query);
         responseParams["error"].Should().BeEquivalentTo("invalid_request");
@@ -413,7 +412,7 @@ public class UdapResponseTypeResponseModeTests
         var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
         errorMessage.Should().NotBeNull();
         errorMessage!.Error.Should().Be("invalid_request"); //defined in Duende
-        errorMessage!.ErrorDescription.Should().BeEquivalentTo("Invalid client_id"); //defined in Duende
+        errorMessage.ErrorDescription.Should().BeEquivalentTo("Invalid client_id"); //defined in Duende
     }
 
     [Fact]
@@ -461,7 +460,7 @@ public class UdapResponseTypeResponseModeTests
         var nonce = Guid.NewGuid().ToString();
 
         var url = _mockPipeline.CreateAuthorizeUrl(
-            clientId: $"{resultDocument!.ClientId!}_Invalid",
+            clientId: $"{resultDocument.ClientId!}_Invalid",
             responseType: "code",
             scope: "openid",
             redirectUri: "https://code_client/callback",
@@ -475,7 +474,7 @@ public class UdapResponseTypeResponseModeTests
         var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
         errorMessage.Should().NotBeNull();
         errorMessage!.Error.Should().Be("unauthorized_client");
-        errorMessage!.ErrorDescription.Should().BeEquivalentTo("Unknown client or client not enabled");
+        errorMessage.ErrorDescription.Should().BeEquivalentTo("Unknown client or client not enabled");
     }
 
 
@@ -507,7 +506,7 @@ public class UdapResponseTypeResponseModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
        
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
@@ -522,7 +521,7 @@ public class UdapResponseTypeResponseModeTests
         resultDocument.Should().NotBeNull();
         resultDocument!.ClientId.Should().NotBeNull();
 
-        var clientId = resultDocument!.ClientId;
+        var clientId = resultDocument.ClientId;
         var state = Guid.NewGuid().ToString();
         var nonce = Guid.NewGuid().ToString();
 
@@ -530,7 +529,7 @@ public class UdapResponseTypeResponseModeTests
 
         // Authorize
         var url = _mockPipeline.CreateAuthorizeUrl(
-            clientId: resultDocument!.ClientId!,
+            clientId: resultDocument.ClientId!,
             responseType: "code",
             scope: "openid offline_access",
             redirectUri: "https://code_client/callback",
@@ -571,7 +570,7 @@ public class UdapResponseTypeResponseModeTests
         using var jsonDocument = JsonDocument.Parse(jwt.Payload.SerializeToJson());
         var formattedStatement = JsonSerializer.Serialize(
             jsonDocument,
-            new JsonSerializerOptions { WriteIndented = true }
+            IndentedJsonOptions
         );
 
         var formattedHeader = Base64UrlEncoder.Decode(jwt.EncodedHeader);
@@ -594,7 +593,7 @@ public class UdapResponseTypeResponseModeTests
     [Fact]
     public async Task Request_accepted_RegisterWithDifferentRedirectUrl()
     {
-        string _httpsCodeClientCallback = "https://code_client/callback";
+        string httpsCodeClientCallback = "https://code_client/callback";
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
 
         await _mockPipeline.LoginAsync("bob");
@@ -613,7 +612,7 @@ public class UdapResponseTypeResponseModeTests
             .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
             .WithScope("openid")
             .WithResponseTypes(new List<string> { "code" })
-            .WithRedirectUrls(new List<string> { _httpsCodeClientCallback })
+            .WithRedirectUrls(new List<string> { httpsCodeClientCallback })
             .Build();
 
 
@@ -626,142 +625,7 @@ public class UdapResponseTypeResponseModeTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
-
-        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
-
-        var response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        response.StatusCode.Should().Be(HttpStatusCode.Created);
-        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        resultDocument.Should().NotBeNull();
-        resultDocument!.ClientId.Should().NotBeNull();
-
-        var state = Guid.NewGuid().ToString();
-        var nonce = Guid.NewGuid().ToString();
-
-        var url = _mockPipeline.CreateAuthorizeUrl(
-            clientId: resultDocument!.ClientId!,
-            responseType: "code",
-            scope: "openid",
-            redirectUri: _httpsCodeClientCallback,
-            state: state,
-            nonce: nonce);
-
-        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
-        response = await _mockPipeline.BrowserClient.GetAsync(url);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
-
-        response.Headers.Location.Should().NotBeNull();
-        response.Headers.Location!.AbsoluteUri.Should().Contain(_httpsCodeClientCallback);
-        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
-        var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
-        queryParams.Should().Contain(p => p.Key == "code");
-        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");
-        queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
-        //iss ???
-
-
-        //
-        // Re-Register with different redirect url
-        //
-
-        _httpsCodeClientCallback = "https://code_client/different_callback";
-        document.RedirectUris = new List<string> { _httpsCodeClientCallback };
-        document.JwtId = CryptoRandom.CreateUniqueId();
-
-        signedSoftwareStatement =
-            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
-                .Create(clientCert, document)
-                .Build();
-
-        requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
-        );
-
-        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
-
-        response = await _mockPipeline.BrowserClient.PostAsync(
-            UdapAuthServerPipeline.RegistrationEndpoint,
-            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
-        resultDocument.Should().NotBeNull();
-        resultDocument!.ClientId.Should().NotBeNull();
-
-        //
-        // Get AccessToken again
-        //
-        state = Guid.NewGuid().ToString();
-        nonce = Guid.NewGuid().ToString();
-
-        url = _mockPipeline.CreateAuthorizeUrl(
-            clientId: resultDocument!.ClientId!,
-            responseType: "code",
-            scope: "openid",
-            redirectUri: _httpsCodeClientCallback,
-            state: state,
-            nonce: nonce);
-
-        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
-        response = await _mockPipeline.BrowserClient.GetAsync(url);
-
-        response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
-
-        response.Headers.Location.Should().NotBeNull();
-        response.Headers.Location!.AbsoluteUri.Should().Contain(_httpsCodeClientCallback);
-        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
-        queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
-        queryParams.Should().Contain(p => p.Key == "code");
-        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");
-        queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
-        //iss ???
-    }
-
-    /// <summary>
-    /// Found a bug when testing with AEGIS
-    /// Expect redirect_url requested to be persisted the same way as it was requested by the registering UDAP client.
-    /// </summary>
-    /// <returns></returns>
-    [Fact]
-    public async Task Request_accepted_URI_HostOnly()
-    {
-        var redirect_url = "https://code_client";
-
-        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
-
-        await _mockPipeline.LoginAsync("bob");
-
-        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
-            .Create(clientCert)
-            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
-            .WithExpiration(TimeSpan.FromMinutes(5))
-            .WithJwtId()
-            .WithClientName("mock test")
-            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
-            .WithContacts(new HashSet<string>
-            {
-                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
-            })
-            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
-            .WithScope("openid")
-            .WithResponseTypes(new List<string> { "code" })
-            .WithRedirectUrls(new List<string> { redirect_url })
-            .BuildSoftwareStatement();
-        
-        var requestBody = new UdapRegisterRequest
-        (
-            signedSoftwareStatement,
-            UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         _mockPipeline.BrowserClient.AllowAutoRedirect = true;
@@ -782,7 +646,7 @@ public class UdapResponseTypeResponseModeTests
             clientId: resultDocument.ClientId!,
             responseType: "code",
             scope: "openid",
-            redirectUri: redirect_url,
+            redirectUri: httpsCodeClientCallback,
             state: state,
             nonce: nonce);
 
@@ -792,7 +656,142 @@ public class UdapResponseTypeResponseModeTests
         response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
 
         response.Headers.Location.Should().NotBeNull();
-        response.Headers.Location!.AbsoluteUri.Should().Contain(redirect_url);
+        response.Headers.Location!.AbsoluteUri.Should().Contain(httpsCodeClientCallback);
+        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+        queryParams.Should().Contain(p => p.Key == "code");
+        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");
+        queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
+        //iss ???
+
+
+        //
+        // Re-Register with different redirect url
+        //
+
+        httpsCodeClientCallback = "https://code_client/different_callback";
+        document.RedirectUris = new List<string> { httpsCodeClientCallback };
+        document.JwtId = CryptoRandom.CreateUniqueId();
+
+        signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            Array.Empty<string>()
+        );
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+        response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapAuthServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        //
+        // Get AccessToken again
+        //
+        state = Guid.NewGuid().ToString();
+        nonce = Guid.NewGuid().ToString();
+
+        url = _mockPipeline.CreateAuthorizeUrl(
+            clientId: resultDocument.ClientId!,
+            responseType: "code",
+            scope: "openid",
+            redirectUri: httpsCodeClientCallback,
+            state: state,
+            nonce: nonce);
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
+        response = await _mockPipeline.BrowserClient.GetAsync(url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
+
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location!.AbsoluteUri.Should().Contain(httpsCodeClientCallback);
+        // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
+        queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+        queryParams.Should().Contain(p => p.Key == "code");
+        queryParams.Single(q => q.Key == "scope").Value.Should().BeEquivalentTo("openid");
+        queryParams.Single(q => q.Key == "state").Value.Should().BeEquivalentTo(state);
+        //iss ???
+    }
+
+    /// <summary>
+    /// Found a bug when testing with AEGIS
+    /// Expect redirect_url requested to be persisted the same way as it was requested by the registering UDAP client.
+    /// </summary>
+    /// <returns></returns>
+    [Fact]
+    public async Task Request_accepted_URI_HostOnly()
+    {
+        var redirectUrl = "https://code_client";
+
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+
+        await _mockPipeline.LoginAsync("bob");
+
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("openid")
+            .WithResponseTypes(new List<string> { "code" })
+            .WithRedirectUrls(new List<string> { redirectUrl })
+            .BuildSoftwareStatement();
+        
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            Array.Empty<string>()
+        );
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+        var response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapAuthServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        resultDocument.Should().NotBeNull();
+        resultDocument!.ClientId.Should().NotBeNull();
+
+        var state = Guid.NewGuid().ToString();
+        var nonce = Guid.NewGuid().ToString();
+
+        var url = _mockPipeline.CreateAuthorizeUrl(
+            clientId: resultDocument.ClientId!,
+            responseType: "code",
+            scope: "openid",
+            redirectUri: redirectUrl,
+            state: state,
+            nonce: nonce);
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
+        response = await _mockPipeline.BrowserClient.GetAsync(url);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Redirect, await response.Content.ReadAsStringAsync());
+
+        response.Headers.Location.Should().NotBeNull();
+        response.Headers.Location!.AbsoluteUri.Should().Contain(redirectUrl);
         // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
         queryParams.Should().Contain(p => p.Key == "code");
@@ -852,7 +851,7 @@ public class UdapResponseTypeResponseModeTests
 
         response = await udapClient.Authorize(
             authorizationUrl: UdapAuthServerPipeline.AuthorizeEndpoint,
-            clientId: resultDocument!.ClientId!,
+            clientId: resultDocument.ClientId!,
             responseType: "code",
             scope: "openid",
             redirectUri: "http://www.udap.org/",
@@ -865,6 +864,6 @@ public class UdapResponseTypeResponseModeTests
         var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
         errorMessage.Should().NotBeNull();
         errorMessage!.Error.Should().Be("invalid_request"); //defined in Duende
-        errorMessage!.ErrorDescription.Should().BeEquivalentTo("Invalid redirect_uri"); //defined in Duende
+        errorMessage.ErrorDescription.Should().BeEquivalentTo("Invalid redirect_uri"); //defined in Duende
     }
 }

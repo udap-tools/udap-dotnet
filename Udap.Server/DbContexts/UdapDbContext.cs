@@ -62,7 +62,7 @@ public class UdapDbContext : UdapDbContext<UdapDbContext>
 public class UdapDbContext<TContext> : DbContext, IUdapDbAdminContext, IUdapDbContext, IDataProtectionKeyContext
     where TContext : DbContext, IUdapDbAdminContext, IUdapDbContext
 {
-    private bool _migrateClientTables;
+    private readonly bool _migrateClientTables;
 
     /// <summary>
     /// The udap store options.

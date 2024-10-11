@@ -14,7 +14,6 @@ using Duende.IdentityServer.EntityFramework.DbContexts;
 using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
 using Duende.IdentityServer.Models;
-using Hl7.Fhir.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
@@ -30,7 +29,10 @@ namespace UdapServer.Tests;
 
 public static class SeedData
 {
+    // ReSharper disable once UnusedParameter.Global
+#pragma warning disable IDE0060 // Remove unused parameter
     public static async Task EnsureSeedData(string connectionString, ILogger logger)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         var services = new ServiceCollection();
 
@@ -66,8 +68,8 @@ public static class SeedData
 
         var configDbContext = scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>();
 
-        await scope.ServiceProvider.GetService<PersistedGrantDbContext>()?.Database.MigrateAsync();
-        await scope.ServiceProvider.GetService<ConfigurationDbContext>()?.Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<PersistedGrantDbContext>().Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<ConfigurationDbContext>().Database.MigrateAsync();
 
 
         var clientRegistrationStore = scope.ServiceProvider.GetRequiredService<IUdapClientRegistrationStore>();
@@ -75,17 +77,23 @@ public static class SeedData
 
         if (!udapContext.Communities.Any(c => c.Name == "http://localhost"))
         {
-            var community = new Community { Name = "http://localhost" };
-            community.Enabled = true;
-            community.Default = true;
+            var community = new Community
+            {
+                Name = "http://localhost",
+                Enabled = true,
+                Default = true
+            };
             udapContext.Communities.Add(community);
             await udapContext.SaveChangesAsync();
         }
 
         if (!udapContext.Communities.Any(c => c.Name == "udap://fhirlabs.net"))
         {
-            var community = new Community { Name = "udap://fhirlabs.net" };
-            community.Enabled = true;
+            var community = new Community
+            {
+                Name = "udap://fhirlabs.net",
+                Enabled = true
+            };
             udapContext.Communities.Add(community);
             await udapContext.SaveChangesAsync();
         }
@@ -219,7 +227,7 @@ public static class SeedData
 
     private static async Task SeedFhirScopes(
         ConfigurationDbContext configDbContext,
-        HashSet<string>? seedScopes,
+        HashSet<string> seedScopes,
         Dictionary<string, string> scopeProperties)
     {
         var apiScopes = configDbContext.ApiScopes
@@ -232,8 +240,10 @@ public static class SeedData
             if (!apiScopes.Any(s =>
                     s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "system")))
             {
-                var apiScope = new ApiScope(scopeName);
-                apiScope.ShowInDiscoveryDocument = false;
+                var apiScope = new ApiScope(scopeName)
+                {
+                    ShowInDiscoveryDocument = false
+                };
 
                 if (apiScope.Name.StartsWith("system/*."))
                 {
@@ -257,8 +267,10 @@ public static class SeedData
             if (!apiScopes.Any(s =>
                     s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "user")))
             {
-                var apiScope = new ApiScope(scopeName);
-                apiScope.ShowInDiscoveryDocument = false;
+                var apiScope = new ApiScope(scopeName)
+                {
+                    ShowInDiscoveryDocument = false
+                };
 
                 if (apiScope.Name.StartsWith("user/*."))
                 {
@@ -281,8 +293,10 @@ public static class SeedData
         {
             if (!apiScopes.Any(s => s.Name == scopeName && s.Properties.Exists(p => p.Key == "udap_prefix" && p.Value == "patient")))
             {
-                var apiScope = new ApiScope(scopeName);
-                apiScope.ShowInDiscoveryDocument = false;
+                var apiScope = new ApiScope(scopeName)
+                {
+                    ShowInDiscoveryDocument = false
+                };
 
                 if (apiScope.Name.StartsWith("patient/*."))
                 {

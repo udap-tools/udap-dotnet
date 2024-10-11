@@ -32,8 +32,8 @@ public class TEFCAIASAuthorizationExtension
     public TEFCAIASAuthorizationExtension()
     {
         Version = _version;
-        ConsentPolicy = new List<string>();
-        ConsentReference = new List<string>();
+        ConsentPolicy = [];
+        ConsentReference = [];
     }
 
     /// <summary>
@@ -169,33 +169,15 @@ public class TEFCAIASAuthorizationExtension
         return notes;
     }
 
-    internal IList<string> GetIListClaims(string claimType)
-    {
-        var claimValues = new List<string>();
-
-        // Implement logic to retrieve claims based on claimType
-        // This method can be customized as per your requirements
-
-        return claimValues;
-    }
-    
-    internal string? GetStandardClaim(string claimType)
-    {
-        // Implement logic to retrieve a standard claim based on claimType
-        // This method can be customized as per your requirements
-
-        return null;
-    }
-
     /// <summary>
     /// Serializes this instance to JSON.
     /// </summary>
     /// <returns>This instance as JSON.</returns>
-    public virtual string SerializeToJson(bool indented = false)
+    public virtual string SerializeToJson(bool indent = false)
     {
-        return JsonSerializer.Serialize(this, new JsonSerializerOptions
-        {
-            WriteIndented = indented
-        });
+        return JsonSerializer.Serialize(this, indent ? IndentedOptions : DefaultOptions);
     }
+
+    private static readonly JsonSerializerOptions DefaultOptions = new JsonSerializerOptions { WriteIndented = false };
+    private static readonly JsonSerializerOptions IndentedOptions = new JsonSerializerOptions { WriteIndented = true };
 }

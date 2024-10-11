@@ -73,7 +73,8 @@ public class UdapDynamicClientRegistrationEndpoint
         UdapRegisterRequest request;
         try
         {
-            request = await context.Request.ReadFromJsonAsync<UdapRegisterRequest>(cancellationToken: token) ?? throw new ArgumentNullException();
+            request = await context.Request.ReadFromJsonAsync<UdapRegisterRequest>(cancellationToken: token)
+                      ?? throw new ArgumentNullException(nameof(context.Request));
         }
         catch (Exception ex)
         {
@@ -98,13 +99,17 @@ public class UdapDynamicClientRegistrationEndpoint
 
         try
         {
-            // Not in pattern with other validators in IdentityServer.  Typically all errors handled in ValidateAsync...  TODO
+            // Not in pattern with other validators in IdentityServer.  Typically, all errors handled in ValidateAsync...  TODO
+            if (communityTrustAnchors == null)
+            {
+                throw new NullReferenceException("Missing Community Trust Anchors");
+            }
 
             result = await _validator.ValidateAsync(request, intermediateCertificates, communityTrustAnchors, anchors);
 
             if (result == null)
             {
-                throw new NullReferenceException("");
+                throw new NullReferenceException("Registration validator has not results.");
             }
             
         }
@@ -113,12 +118,9 @@ public class UdapDynamicClientRegistrationEndpoint
             _logger.LogError(ex, "Unhandled UdapDynamicClientRegistrationEndpoint Error");
         }
 
-        if (result == null)
-        {
-            result = new UdapDynamicClientRegistrationValidationResult(
+        result ??= new UdapDynamicClientRegistrationValidationResult(
                 UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
                 UdapDynamicClientRegistrationErrorDescriptions.MissingValidationResult);
-        }
 
         if (result.IsError)
         {
@@ -129,8 +131,8 @@ public class UdapDynamicClientRegistrationEndpoint
                 result.Error ?? string.Empty,
                 result.ErrorDescription ?? string.Empty
             );
-            
-            _logger.LogWarning(JsonSerializer.Serialize(error));
+
+            _logger.LogWarning("Error: {@Error}", error);
 
             await context.Response.WriteAsJsonAsync(error, cancellationToken: token);
 
@@ -142,7 +144,7 @@ public class UdapDynamicClientRegistrationEndpoint
         {
             try
             {
-                if (!result.Client.AllowedGrantTypes.Any())
+                if (result.Client.AllowedGrantTypes.Count == 0)
                 {
                     var numberOfClientsRemoved = await _store.CancelRegistration(result.Client, token);
                     result.Client.ClientId = "removed";
@@ -201,15 +203,13 @@ public class UdapDynamicClientRegistrationEndpoint
         await context.Response.WriteAsJsonAsync(registrationResponse, options, "application/json", cancellationToken: token);
     }
 
-    private async Task<string> GetBody(HttpContext context)
+    private static async Task<string> GetBody(HttpContext context)
     {
         context.Request.EnableBuffering();
-        using (var reader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true))
-        {
-            var bodyStr = await reader.ReadToEndAsync();
-            context.Request.Body.Seek(0, SeekOrigin.Begin);
-            return bodyStr;
-        }
+        using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true);
+        var bodyStr = await reader.ReadToEndAsync();
+        context.Request.Body.Seek(0, SeekOrigin.Begin);
+        return bodyStr;
     }
 
 

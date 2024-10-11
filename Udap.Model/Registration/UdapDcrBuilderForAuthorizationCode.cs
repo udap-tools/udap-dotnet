@@ -25,8 +25,8 @@ namespace Udap.Model.Registration;
 /// </summary>
 public class UdapDcrBuilderForAuthorizationCode
 {
-    private DateTime _now;
-    private UdapDynamicClientRegistrationDocument _document;
+    private readonly DateTime _now;
+    private readonly UdapDynamicClientRegistrationDocument _document;
     private X509Certificate2? _certificate;
     
     protected UdapDynamicClientRegistrationDocument Document
@@ -43,17 +43,17 @@ public class UdapDcrBuilderForAuthorizationCode
     {
         _now = DateTime.UtcNow;
 
-        _document = new UdapDynamicClientRegistrationDocument();
+        _document = [];
         if (!cancelRegistration)
         {
-            _document.GrantTypes = new List<string> { OidcConstants.GrantTypes.AuthorizationCode };
+            _document.GrantTypes = [OidcConstants.GrantTypes.AuthorizationCode];
         }
         else
         {
             //
             // Cancel registration is requested with an empty GranTypes array, not a missing grant_types element
             //
-            _document.GrantTypes = new List<string>();
+            _document.GrantTypes = [];
         }
         _document.IssuedAt = EpochTime.GetIntDate(_now.ToUniversalTime());
     }
@@ -161,7 +161,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithClientName(string clientName)
+    public UdapDcrBuilderForAuthorizationCode WithClientName(string? clientName)
     {
         _document.ClientName = clientName;
         return this;
@@ -173,7 +173,7 @@ public class UdapDcrBuilderForAuthorizationCode
         return this;
     }
 
-    public UdapDcrBuilderForAuthorizationCode WithTokenEndpointAuthMethod(string tokenEndpointAuthMethod)
+    public UdapDcrBuilderForAuthorizationCode WithTokenEndpointAuthMethod(string? tokenEndpointAuthMethod)
     {
         _document.TokenEndpointAuthMethod = tokenEndpointAuthMethod;
         return this;
@@ -216,7 +216,7 @@ public class UdapDcrBuilderForAuthorizationCode
 
     public UdapDynamicClientRegistrationDocument Build()
     {
-        if(_document.ResponseTypes == null || !_document.ResponseTypes.Any())
+        if(_document.ResponseTypes == null || _document.ResponseTypes.Count == 0)
         {
             _document.ResponseTypes = new HashSet<string> { "code" };
         }

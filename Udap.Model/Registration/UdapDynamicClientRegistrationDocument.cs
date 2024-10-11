@@ -45,14 +45,14 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     private long _issuedAt;
     private string? _jwtId;
     private string? _clientName;
-    private ICollection<string>? _redirectUris = new List<string>();
+    private ICollection<string>? _redirectUris = [];
     private string? _logoUri;
     private ICollection<string>? _contacts = new HashSet<string>();
     private ICollection<string>? _grantTypes = new HashSet<string>();
     private ICollection<string>? _responseTypes = new HashSet<string>();
     private string? _tokenEndpointAuthMethod;
     private string? _scope;
-    private Dictionary<string, object>? _extensions = new Dictionary<string, object>();
+    private Dictionary<string, object>? _extensions = [];
 
     /// <summary>
     /// Array of redirection URI strings for use in redirect-based flows
@@ -68,10 +68,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_clientId == null)
-            {
-                _clientId = GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientId);
-            }
+            _clientId ??= GetStandardClaim(UdapConstants.RegistrationDocumentValues.ClientId);
 
             return _clientId;
         }
@@ -87,10 +84,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_softwareStatement == null)
-            {
-                _softwareStatement = GetStandardClaim(UdapConstants.RegistrationDocumentValues.SoftwareStatement);
-            }
+            _softwareStatement ??= GetStandardClaim(UdapConstants.RegistrationDocumentValues.SoftwareStatement);
 
             return _softwareStatement;
         }
@@ -111,10 +105,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_issuer == null)
-            {
-                _issuer = GetStandardClaim(UdapConstants.RegistrationDocumentValues.Issuer);
-            }
+            _issuer ??= GetStandardClaim(UdapConstants.RegistrationDocumentValues.Issuer);
             return _issuer;
         }
         set
@@ -133,10 +124,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_subject == null)
-            {
-                _subject = GetStandardClaim(UdapConstants.RegistrationDocumentValues.Subject);
-            }
+            _subject ??= GetStandardClaim(UdapConstants.RegistrationDocumentValues.Subject);
             return _subject;
         }
         set
@@ -155,10 +143,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_audience == null)
-            {
-                _audience = GetStandardClaim(UdapConstants.RegistrationDocumentValues.Audience);
-            }
+            _audience ??= GetStandardClaim(UdapConstants.RegistrationDocumentValues.Audience);
             return _audience;
         }
         set
@@ -299,7 +284,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_redirectUris != null && !_redirectUris.Any())
+            if (_redirectUris != null && _redirectUris.Count == 0)
             {
                 _redirectUris = GetIListClaims(UdapConstants.RegistrationDocumentValues.RedirectUris);
             }
@@ -355,7 +340,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_contacts != null && !_contacts.Any())
+            if (_contacts != null && _contacts.Count == 0)
             {
                 _contacts = GetIListClaims(UdapConstants.RegistrationDocumentValues.Contacts);
             }
@@ -386,7 +371,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_grantTypes != null && !_grantTypes.Any())
+            if (_grantTypes != null && _grantTypes.Count == 0)
             {
                 _grantTypes = GetIListClaims(UdapConstants.RegistrationDocumentValues.GrantTypes);
             }
@@ -416,7 +401,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_responseTypes != null && !_responseTypes.Any())
+            if (_responseTypes != null && _responseTypes.Count == 0)
             {
                 _responseTypes = GetIListClaims(UdapConstants.RegistrationDocumentValues.ResponseTypes);
             }
@@ -510,7 +495,7 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
     {
         get
         {
-            if (_extensions != null && !_extensions.Any())
+            if (_extensions != null && _extensions.Count == 0)
             {
                 _extensions = GetDictionaryClaims(UdapConstants.RegistrationDocumentValues.Extensions);
             }
@@ -738,13 +723,17 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         return claim.Value;
     }
 
+    /// <summary>
+    /// Serializes this instance to JSON.
+    /// </summary>
+    /// <returns>This instance as JSON.</returns>
     public virtual string SerializeToJson(bool indent)
     {
-        return JsonSerializer.Serialize(this, new JsonSerializerOptions
-        {
-            WriteIndented = indent
-        });
+        return JsonSerializer.Serialize(this, indent ? IndentedOptions : DefaultOptions);
     }
+
+    private static readonly JsonSerializerOptions DefaultOptions = new JsonSerializerOptions { WriteIndented = false };
+    private static readonly JsonSerializerOptions IndentedOptions = new JsonSerializerOptions { WriteIndented = true };
 
     /// <summary>
     /// Serializes this instance to JSON.

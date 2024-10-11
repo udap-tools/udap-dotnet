@@ -19,6 +19,7 @@ namespace Udap.Common.Tests.Model.Registration
 {
     public class CertificationsDocumentTest
     {
+        private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
         private readonly ITestOutputHelper _testOutputHelper;
 
         public CertificationsDocumentTest(ITestOutputHelper testOutputHelper)
@@ -29,16 +30,13 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void UdapCertificationAndEndorsementDocument_SerializationTest()
         {
-            var document = new UdapCertificationAndEndorsementDocument("Test Certification");
-            document.Issuer = "joe";
-            document.Subject = "joe";
+            var document = new UdapCertificationAndEndorsementDocument("Test Certification")
+            {
+                Issuer = "joe",
+                Subject = "joe"
+            };
 
-            _testOutputHelper.WriteLine(JsonSerializer.Serialize(document,
-                new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                    , DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                }));
+            _testOutputHelper.WriteLine(JsonSerializer.Serialize(document, IndentedJsonOptions));
         }
 
         [Fact]
@@ -221,7 +219,6 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void JwtIdTests()
         {
-            var now = DateTime.Now.ToEpochTime();
             var certificationsDoc = UdapCertificationsAndEndorsementBuilder
                 .Create("Client Name")
                 .Build();
@@ -246,7 +243,6 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void CertificationDescriptionTests()
         {
-            var now = DateTime.Now.ToEpochTime();
             var certificationsDoc = UdapCertificationsAndEndorsementBuilder
                 .Create("Client Name")
                 .Build();

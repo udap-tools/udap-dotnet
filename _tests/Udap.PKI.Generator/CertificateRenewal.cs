@@ -9,13 +9,11 @@
 
 using System.Security.Cryptography.X509Certificates;
 using Xunit.Abstractions;
+#pragma warning disable xUnit1004
 
 namespace Udap.PKI.Generator;
 public class CertificateRenewal : CertificateBase
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-
-
     //
     // Community:SureFhirLabs:: Certificate Store File Constants
     //

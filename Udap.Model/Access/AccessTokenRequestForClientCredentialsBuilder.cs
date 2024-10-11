@@ -16,7 +16,6 @@ using System.Text.Json;
 using IdentityModel;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Model.Statement;
-using Udap.Model.UdapAuthenticationExtensions;
 
 namespace Udap.Model.Access;
 
@@ -26,12 +25,13 @@ namespace Udap.Model.Access;
 public  class AccessTokenRequestForClientCredentialsBuilder
 {
     
-    private List<Claim> _claims;
-    private string? _tokenEndoint;
-    private string? _clientId;
-    private DateTime _now;
-    private X509Certificate2 _certificate;
+    private readonly List<Claim> _claims;
+    private readonly string? _tokenEndoint;
+    private readonly string? _clientId;
+    private readonly DateTime _now;
+    private readonly X509Certificate2 _certificate;
     private string? _scope;
+    private readonly Dictionary<string, object> _extensions = [];
 
     private AccessTokenRequestForClientCredentialsBuilder(string? clientId, string? tokenEndpoint, X509Certificate2 certificate)
     {
@@ -40,13 +40,17 @@ public  class AccessTokenRequestForClientCredentialsBuilder
         _clientId = clientId;
         _certificate = certificate;
 
-        _claims = new List<Claim>
-        {
-            new Claim(JwtClaimTypes.Subject, _clientId),
+        _claims =
+        [
             new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(_now).ToString(), ClaimValueTypes.Integer),
-            new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+            new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId())
             // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
-        };
+        ];
+        
+        if (_clientId != null)
+        {
+            _claims.Add(new Claim(JwtClaimTypes.Subject, _clientId));
+        }
     }
 
     public static AccessTokenRequestForClientCredentialsBuilder Create(string? clientId, string? tokenEndpoint, X509Certificate2 certificate)
@@ -71,9 +75,6 @@ public  class AccessTokenRequestForClientCredentialsBuilder
         return this;
     }
     
-    private Dictionary<string, object> _extensions = new Dictionary<string, object>();
-    
-
     public AccessTokenRequestForClientCredentialsBuilder WithExtension<T>(string key, T value) where T : class
     {
         var jsonElement = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(value));
@@ -105,7 +106,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
     }
     
 
-    private string BuildClientAssertion(string algorithm)
+    private string BuildClientAssertion(string? algorithm)
     {
         var jwtPayload =
             //HL7 FHIR IG profile
@@ -117,7 +118,7 @@ public  class AccessTokenRequestForClientCredentialsBuilder
             _now.AddMinutes(5)
         );
 
-        if (_extensions.Any())
+        if (_extensions.Count != 0)
         {
             var payload = jwtPayload as Dictionary<string, object>;
             payload.Add(UdapConstants.JwtClaimTypes.Extensions, _extensions);

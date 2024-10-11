@@ -35,7 +35,7 @@ public class UdapJwtSecretValidator : ISecretValidator
     private readonly IReplayCache _replayCache;
     private readonly IServerUrls _urls;
     private readonly IdentityServerOptions _options;
-    private TrustChainValidator _trustChainValidator;
+    private readonly TrustChainValidator _trustChainValidator;
     private readonly IUdapClientRegistrationStore _clientStore;
     private readonly ILogger _logger;
 
@@ -74,7 +74,7 @@ public class UdapJwtSecretValidator : ISecretValidator
 
         await Task.Delay(50);
 
-        _logger.LogDebug($"parsedSecret {JsonSerializer.Serialize(parsedSecret)}");
+        _logger.LogDebug("Parsed secret: {ParsedSecret}", JsonSerializer.Serialize(parsedSecret));
 
         // return success;
 
@@ -114,9 +114,9 @@ public class UdapJwtSecretValidator : ISecretValidator
             RequireSignedTokens = true,
             RequireExpirationTime = true,
 
-            ValidAlgorithms =  new[] { 
+            ValidAlgorithms =  [ 
                 UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384,
-                UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384 },
+                UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384 ],
 
             ClockSkew = TimeSpan.FromMinutes(5),
 
@@ -127,18 +127,18 @@ public class UdapJwtSecretValidator : ISecretValidator
         
         if (!result.IsValid)
         {
-            _logger.LogError(result.Exception, "JWT token validation error");
+            _logger.LogError(result.Exception, "JWT token validation error for client_id: {ClientId}", parsedSecret.Id);
 
             var jsonWebToken = tokenHandler.ReadJsonWebToken(jwtTokenString);
 
             if (!jsonWebToken!.TryGetHeaderValue(JwtHeaderParameterNames.Alg, out string _))
             {
-                _logger.LogError($"Missing jwt x5c claim in header for client_id: {parsedSecret.Id}");
+                _logger.LogError("Missing jwt alg claim in header for client_id: {ClientId}", parsedSecret.Id);
             }
 
             if (!jsonWebToken.TryGetHeaderValue(JwtHeaderParameterNames.X5c, out string _))
             {
-                _logger.LogError($"Missing jwt x5c claim in header for client_id: {parsedSecret.Id}");
+                _logger.LogError("Missing jwt x5c claim in header for client_id: {ClientId}", parsedSecret.Id);
             }
 
             return fail;
@@ -185,12 +185,12 @@ public class UdapJwtSecretValidator : ISecretValidator
             var secretList = secrets.ToList();
             certChainList = await secretList.GetUdapChainsAsync(_clientStore);
 
-            if (certChainList == null && !secretList.Any())
+            if (certChainList == null && secretList.Count == 0)
             {
                 var rolledSecrets = await _clientStore.RolloverClientSecrets(parsedSecret);
-                if (rolledSecrets == null || !rolledSecrets.Any())
+                if (rolledSecrets == null || rolledSecrets.Count == 0)
                 {
-                    _logger.LogWarning($"Could not roll secrete for client id: {parsedSecret.Id}");
+                    _logger.LogWarning("Could not roll secret for client id: {ClientId}", parsedSecret.Id);
                 }
                 else{
                     certChainList = await rolledSecrets.GetUdapChainsAsync(_clientStore);
@@ -205,7 +205,7 @@ public class UdapJwtSecretValidator : ISecretValidator
 
         if (certChainList == null || !certChainList.Any())
         {
-            _logger.LogError($"There are no anchors available to validate client assertion for cient_id: {parsedSecret.Id}");
+            _logger.LogError("There are no anchors available to validate client assertion for client_id: {ClientId}", parsedSecret.Id);
 
             return fail;
         }

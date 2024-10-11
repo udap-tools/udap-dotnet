@@ -163,7 +163,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// </summary>
     /// <param name="description"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithCertificationDescription(string description)
+    public UdapCertificationsAndEndorsementBuilder WithCertificationDescription(string? description)
     {
         _document.CertificationDescription = description;
         return this;
@@ -215,7 +215,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// </summary>
     /// <param name="name"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithDeveloperName(string name)
+    public UdapCertificationsAndEndorsementBuilder WithDeveloperName(string? name)
     {
         _document.DeveloperName = name;
         return this;
@@ -239,7 +239,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// </summary>
     /// <param name="address"></param>
     /// <returns></returns>
-public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string address)
+public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string? address)
     {
         _document.DeveloperAddress = address;
         return this;
@@ -257,7 +257,7 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// </summary>
     /// <param name="clientName"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithClientName(string clientName)
+    public UdapCertificationsAndEndorsementBuilder WithClientName(string? clientName)
     {
         _document.ClientName = clientName;
         return this;
@@ -279,7 +279,7 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// </summary>
     /// <param name="softwareId"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithSoftwareId(string softwareId)
+    public UdapCertificationsAndEndorsementBuilder WithSoftwareId(string? softwareId)
     {
         _document.SoftwareId = softwareId;
         return this;
@@ -303,7 +303,7 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// </summary>
     /// <param name="softwareVersion"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithSoftwareVersion(string softwareVersion)
+    public UdapCertificationsAndEndorsementBuilder WithSoftwareVersion(string? softwareVersion)
     {
         _document.SoftwareVersion = softwareVersion;
         return this;
@@ -368,7 +368,7 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// </summary>
     /// <param name="termsOfService"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithTermsOfService(string termsOfService)
+    public UdapCertificationsAndEndorsementBuilder WithTermsOfService(string? termsOfService)
     {
         _document.TosUri = termsOfService;
         return this;
@@ -387,7 +387,7 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// </summary>
     /// <param name="policyUri"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithPolicyUri(string policyUri)
+    public UdapCertificationsAndEndorsementBuilder WithPolicyUri(string? policyUri)
     {
         _document.ClientUri = policyUri;
         return this;
@@ -491,7 +491,7 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// </summary>
     /// <param name="scope"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithScope(string scope)
+    public UdapCertificationsAndEndorsementBuilder WithScope(string? scope)
     {
         _document.Scope = scope;
         return this;
@@ -503,7 +503,7 @@ public UdapCertificationsAndEndorsementBuilder WithDeveloperAddress(string addre
     /// </summary>
     /// <param name="tokenEndpointAuthMethod"></param>
     /// <returns></returns>
-    public UdapCertificationsAndEndorsementBuilder WithTokenEndpointAuthMethod(string tokenEndpointAuthMethod)
+    public UdapCertificationsAndEndorsementBuilder WithTokenEndpointAuthMethod(string? tokenEndpointAuthMethod)
     {
         _document.TokenEndpointAuthMethod = tokenEndpointAuthMethod;
         return this;

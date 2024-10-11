@@ -22,12 +22,11 @@ public static class AuthTokenResponseMapper
             .CreateMapper();
     }
 
-    internal static IMapper Mapper { get; }
+    private static IMapper Mapper { get; }
 
     /// <summary>
     /// Maps a <see cref="OAuthTokenResponse"/> to a <see cref="Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse"/>.
     /// </summary>
-    /// <param name="entity">The OAuthTokenResponse.</param>
     /// <returns></returns>
     public static Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse ToMSAuthTokenResponse(this OAuthTokenResponse response)
     {
@@ -50,7 +49,7 @@ public class AuthTokenResponseMapperProfile : Profile
     public AuthTokenResponseMapperProfile()
     {
         CreateMap<OAuthTokenResponse, Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse>()
-            .ConstructUsing((src, context) =>
+            .ConstructUsing((src, _) =>
             {
                 if (src.Error != null)
                 {
@@ -58,7 +57,14 @@ public class AuthTokenResponseMapperProfile : Profile
                 }
                 else
                 {
-                    return Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse.Success(src.Response);
+                    if (src.Response != null)
+                    {
+                        return Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse.Success(src.Response);
+                    }
+                    else
+                    {
+                        return Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse.Failed(new Exception("Unknown"));
+                    }
                 }
             });
     }

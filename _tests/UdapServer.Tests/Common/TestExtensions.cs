@@ -26,6 +26,7 @@ public static class TestExtensions
     /// </summary>
     /// <param name="builder">The authentication builder.</param>
     /// <param name="configuration">The delegate used to configure the Tiered OAuth options.</param>
+    /// <param name="authServerPipeline"></param>
     /// <param name="pipelineIdp1">Wire httpClient to WebHostBuilder test harness</param>
     /// <param name="pipelineIdp2">Wire httpClient to WebHostBuilder test harness</param>
     /// <returns>The <see cref="AuthenticationBuilder"/>.</returns>
@@ -47,8 +48,7 @@ public static class TestExtensions
                     pipelineIdp1.BackChannelClient,
                     sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                     sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                    sp.GetRequiredService<ILogger<UdapClient>>(),
-                    false);
+                    sp.GetRequiredService<ILogger<UdapClient>>());
             }
 
             if (dynamicIdp.Name == "https://idpserver2")
@@ -58,16 +58,14 @@ public static class TestExtensions
                     pipelineIdp2.BackChannelClient,
                     sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                     sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                    sp.GetRequiredService<ILogger<UdapClient>>(),
-                    false);
+                    sp.GetRequiredService<ILogger<UdapClient>>());
             }
 
             return new UdapClient(
                 authServerPipeline.BrowserClient,
                 sp.GetRequiredService<UdapClientDiscoveryValidator>(),
                 sp.GetRequiredService<IOptionsMonitor<UdapClientOptions>>(),
-                sp.GetRequiredService<ILogger<UdapClient>>(),
-                false);
+                sp.GetRequiredService<ILogger<UdapClient>>());
             
         });
 

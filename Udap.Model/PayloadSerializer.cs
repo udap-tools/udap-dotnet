@@ -21,7 +21,6 @@ public static class PayloadSerializer
     /// <summary>
     /// <see cref="JsonElement"/> must be of ValueKind of <see cref="JsonValueKind.Object"/>
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     /// <param name="jsonElement"></param>
     /// <returns></returns>
     public static Dictionary<string, object> Deserialize(JsonElement jsonElement)
@@ -54,7 +53,10 @@ public static class PayloadSerializer
                 deserializedValue = JsonSerializer.Deserialize<object>(item.Value.GetRawText());
             }
 
-            claimValues.Add(item.Name, deserializedValue);
+            if (deserializedValue != null)
+            {
+                claimValues.Add(item.Name, deserializedValue);
+            }
         }
 
         return claimValues;
@@ -91,7 +93,10 @@ public static class PayloadSerializer
                 deserializedValue = JsonSerializer.Deserialize<object>(item.Value);
             }
 
-            claimValues.Add(item.Key, deserializedValue);
+            if (deserializedValue != null)
+            {
+                claimValues.Add(item.Key, deserializedValue);
+            }
         }
 
         return claimValues;

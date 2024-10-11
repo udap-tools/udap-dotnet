@@ -18,6 +18,7 @@ using Xunit.Abstractions;
 namespace Udap.Common.Tests.Model;
 public class PayloadSerializerTest
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
     private readonly ITestOutputHelper _testOutputHelper;
 
     public PayloadSerializerTest(ITestOutputHelper testOutputHelper)
@@ -93,7 +94,7 @@ public class PayloadSerializerTest
 
         var extensionsResult = PayloadSerializer.Deserialize(extensions);
 
-        _testOutputHelper.WriteLine(JsonSerializer.Serialize(extensionsResult, new JsonSerializerOptions(){WriteIndented = true}));
+        _testOutputHelper.WriteLine(JsonSerializer.Serialize(extensionsResult, IndentedJsonOptions));
 
         var b2bHl7Result = ((HL7B2BAuthorizationExtension)extensionsResult[UdapConstants.UdapAuthorizationExtensions.Hl7B2B]);
 

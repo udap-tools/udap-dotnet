@@ -59,12 +59,12 @@ public class FileCertificateStore : ICertificateStore
     {
         ICollection<Common.Metadata.Community>? communities;
         communities = manifestCurrentValue.Communities;
-        _logger.LogInformation($"{communities.Count} communities loaded");
+        _logger.LogInformation("{Count} communities loaded", communities.Count);
         
         foreach (var community in communities)
         {
             var intermediates = new List<Intermediate>();
-            if (community.Intermediates.Any())
+            if (community.Intermediates.Count != 0)
             {
                 foreach (var intermediateFilePath in community.Intermediates)
                 {
@@ -105,7 +105,7 @@ public class FileCertificateStore : ICertificateStore
 
                     if (!File.Exists(path))
                     {
-                        _logger.LogWarning($"Cannot find file: {path}");
+                        _logger.LogWarning("Cannot find file: {FilePath}", path);
                         continue;
                     }
 
@@ -140,11 +140,11 @@ public class FileCertificateStore : ICertificateStore
                                 if (authorityIdentifierValue == null ||
                                     subjectIdentifier?.SubjectKeyIdentifier == authorityIdentifierValue)
                                 {
-                                    _logger.LogInformation($"Ignore anchor in {path} certificate.  Never add the anchor to anchors if not already explicitly loaded.");
+                                    _logger.LogInformation("Ignore anchor in {FilePath} certificate. Never add the anchor to anchors if not already explicitly loaded.", path);
                                 }
                                 else
                                 {
-                                    _logger.LogInformation($"Found intermediate in {path} certificate.  Will add if not already explicitly loaded.");
+                                    _logger.LogInformation("Found intermediate in {FilePath} certificate. Will add if not already explicitly loaded.", path);
 
                                     var anchor = AnchorCertificates.SingleOrDefault(a =>
                                     {

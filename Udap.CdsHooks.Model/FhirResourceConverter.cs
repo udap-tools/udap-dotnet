@@ -1,7 +1,15 @@
-﻿using Hl7.Fhir.Model;
-using System;
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 
 namespace Udap.CdsHooks.Model;

@@ -8,7 +8,9 @@
 #endregion
 
 using Hl7.Fhir.Model;
+using Hl7.Fhir.Serialization;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Udap.CdsHooks.Model;
 using Xunit.Abstractions;
 
@@ -29,13 +31,15 @@ public class Experimental
         var options = new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true,
-            Converters = { new FhirResourceConverter() }
+            WriteIndented = true,
+            Converters = { new FhirResourceConverter() },
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
         var cdsRequest = JsonSerializer.Deserialize<CdsRequest>(json, options);
+        var serializedCdsRequest = JsonSerializer.Serialize(cdsRequest, options);
 
-        var patient = cdsRequest?.Prefetch?["patient"] as Patient;
-
-        _testOutputHelper.WriteLine(patient?.Name[0].Given.First());
+        _testOutputHelper.WriteLine(serializedCdsRequest);
     }
 }

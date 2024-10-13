@@ -10,6 +10,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
 
@@ -65,6 +66,8 @@ public class FhirResourceConverter : JsonConverter<Dictionary<string, Resource>>
         {
             writer.WritePropertyName(kvp.Key);
             var resourceJson = new FhirJsonSerializer(serializerSettings).SerializeToString(kvp.Value);
+            
+            // Console.WriteLine(resourceJson);
             var indentedResourceJson = IndentJson(resourceJson, 2);
             writer.WriteRawValue(indentedResourceJson);
         }
@@ -76,12 +79,12 @@ public class FhirResourceConverter : JsonConverter<Dictionary<string, Resource>>
     private string IndentJson(string json, int additionalIndentationLevels)
     {
         var indentedJson = new StringBuilder();
-        var lines = json.Split('\n');
+        var lines = Regex.Split(json, @"\r\n|\r|\n");
         var additionalIndentation = new string(' ', additionalIndentationLevels * 2); // Assuming 2 spaces per level
 
         foreach (var line in lines)
         {
-            indentedJson.Append(additionalIndentation + line);
+            indentedJson.AppendLine(additionalIndentation + line);
         }
 
         return indentedJson.ToString();

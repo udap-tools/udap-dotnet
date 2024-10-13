@@ -7,8 +7,6 @@
 // */
 #endregion
 
-using Hl7.Fhir.Model;
-using Hl7.Fhir.Serialization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Udap.CdsHooks.Model;
@@ -41,5 +39,6 @@ public class Experimental
         var serializedCdsRequest = JsonSerializer.Serialize(cdsRequest, options);
 
         _testOutputHelper.WriteLine(serializedCdsRequest);
+
     }
 }

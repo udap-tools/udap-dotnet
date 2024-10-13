@@ -93,7 +93,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "mTLS.Proxy.Server", "exampl
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tefca.Proxy.Server", "examples\Tefca.Proxy.Server\Tefca.Proxy.Server.csproj", "{FDB5712F-2EB4-4A36-9DEF-955B3575024D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Udap.CdsHooks.Model", "Udap.CdsHooks.Model\Udap.CdsHooks.Model.csproj", "{B36DAF60-41C0-46D4-AC6B-6EDE1A6197C0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.CdsHooks.Model", "Udap.CdsHooks.Model\Udap.CdsHooks.Model.csproj", "{B36DAF60-41C0-46D4-AC6B-6EDE1A6197C0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.CdsHooks.Endpoint", "Udap.CdsHooks.Endpoint\Udap.CdsHooks.Endpoint.csproj", "{F6752364-2DB3-425D-B6A0-031EE30A1747}"
 EndProject

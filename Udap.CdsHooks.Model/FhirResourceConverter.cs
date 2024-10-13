@@ -39,15 +39,13 @@ public class FhirResourceConverter : JsonConverter<Dictionary<string, Resource>>
                 throw new JsonException();
             }
 
-            string key = reader.GetString();
+            var key = reader.GetString() ?? string.Empty;
             reader.Read();
 
-            using (JsonDocument doc = JsonDocument.ParseValue(ref reader))
-            {
-                string resourceJson = doc.RootElement.GetRawText();
-                Resource resource = _fhirJsonParser.Parse<Resource>(resourceJson);
-                prefetch.Add(key, resource);
-            }
+            using JsonDocument doc = JsonDocument.ParseValue(ref reader);
+            var resourceJson = doc.RootElement.GetRawText();
+            var resource = _fhirJsonParser.Parse<Resource>(resourceJson);
+            prefetch.Add(key, resource);
         }
 
         throw new JsonException();

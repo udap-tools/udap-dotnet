@@ -4,7 +4,7 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges -->
-    <PackageVersion Include="Duende.IdentityServer.Storage" Version="7.0.6" />
+    <PackageVersion Include="Duende.IdentityServer.Storage" Version="7.0.8" />
     <PackageVersion Include="Google.Apis.Auth" Version="1.68.0" />
     <PackageVersion Include="Hl7.Fhir.Base" Version="5.10.3" />
     <PackageVersion Include="Hl7.Fhir.R4B" Version="5.10.3" />

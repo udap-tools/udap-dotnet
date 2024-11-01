@@ -19,7 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.0.7" />
+    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.0.8" />
     <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="5.10.3" />
     <PackageReference Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="8.0.10" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="5.2.2" />

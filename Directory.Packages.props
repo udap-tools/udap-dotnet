@@ -25,7 +25,7 @@
     <PackageVersion Include="AutoMapper" Version="13.0.1" />
     <PackageVersion Include="Duende.IdentityServer" Version="7.0.7" />
     <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="7.0.7" />
-    <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.0.7" />
+    <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.0.8" />
     <PackageVersion Include="IdentityModel.AspNetCore.OAuth2Introspection" Version="6.2.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="8.0.10" />

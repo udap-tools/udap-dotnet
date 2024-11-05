@@ -204,13 +204,6 @@ namespace Udap.Common.Certificates
                 {
                     bool isAnchor = roots?.FindByThumbprint(chainElement.Certificate.Thumbprint) != null;
 
-                    if (this.ChainElementHasProblems(chainElement))
-                    {
-                        this.NotifyProblem(chainElement);
-                        this.NotifyUntrusted(chainElement.Certificate);
-                        return false;
-                    }
-
                     if (isAnchor)
                     {
                         // Found a valid anchor!

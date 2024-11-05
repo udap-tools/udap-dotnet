@@ -299,6 +299,7 @@ namespace UdapServer.Tests
                 {
                     DisableCertificateDownloads = true,
                     UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                    RevocationMode = X509RevocationMode.NoCheck
                 }, 
                 problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
@@ -415,6 +416,7 @@ namespace UdapServer.Tests
                 {
                     DisableCertificateDownloads = true,
                     UrlRetrievalTimeout = TimeSpan.FromMicroseconds(1),
+                    RevocationMode = X509RevocationMode.NoCheck
                 },
                 problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));

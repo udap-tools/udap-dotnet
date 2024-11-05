@@ -13,6 +13,9 @@ namespace Udap.Common.Models;
 
 public class IssuedCertificate : IEquatable<IssuedCertificate>
 {
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
+    public IssuedCertificate(){} // do not remove
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
     public IssuedCertificate(X509Certificate2 certificate, string community = "")
     {
         Certificate = certificate;

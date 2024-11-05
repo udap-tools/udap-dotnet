@@ -1,6 +1,6 @@
 # udap-dotnet
 
-UDAP reference implementation for .NET.  
+UDAP SDK and reference implementation for .NET.  
 
 In short UDAP is a PKI extension profile to OAuth2.  One or more PKIs can be hosted by a `Community`.  Joining a `Community` results in a public/private key issued to a client.  The client also chooses to explicitly trust one of the issuing certificates in that chain by installing in your client.  In addition, all certificate chain validation including certificate revocation to a trusted root are performed.
 

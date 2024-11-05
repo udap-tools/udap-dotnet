@@ -32,7 +32,14 @@ public class ClientStoreTests : StorageFixture<ClientStoreTests, ConfigurationDb
 {
     public ClientStoreTests(TestDatabaseProvider<ConfigurationDbContext> fixture) : base(fixture)
     {
-        foreach (var options in TestDatabaseProviders.SelectMany(x => x.Select(y => (DbContextOptions<ConfigurationDbContext>)y)).ToList())
+        var optionsList = new List<DbContextOptions<ConfigurationDbContext>>();
+
+        foreach (var options in TestDatabaseProviders)
+        {
+            optionsList.Add((DbContextOptions<ConfigurationDbContext>)options);
+        }
+
+        foreach (var options in optionsList)
         {
             using var context = new ConfigurationDbContext(options);
             context.Database.EnsureCreated();

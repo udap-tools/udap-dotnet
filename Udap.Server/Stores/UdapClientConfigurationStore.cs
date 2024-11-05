@@ -19,7 +19,7 @@ namespace Udap.Server.Stores;
 /// <inheritdoc />
 public class UdapClientConfigurationStore : IUdapClientConfigurationStore
 {
-    private IUdapDbContext _dbContext;
+    private readonly IUdapDbContext _dbContext;
     
     public UdapClientConfigurationStore(IUdapDbContext dbContext)
     {

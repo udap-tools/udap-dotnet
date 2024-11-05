@@ -37,7 +37,7 @@ public static class StringExtensions
     public static IEnumerable<string> FromSpaceSeparatedString(this string input)
     {
         input = input.Trim();
-        return input.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+        return input.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
     }
 
     public static string DecodeJwtHeader(this string input)
@@ -53,7 +53,7 @@ public static class StringExtensions
             return string.Empty;
         }
 
-        return list.Any() ? string.Join(" ", list): string.Empty;
+        return list.Count != 0 ? string.Join(" ", list): string.Empty;
     }
 
     [DebuggerStepThrough]

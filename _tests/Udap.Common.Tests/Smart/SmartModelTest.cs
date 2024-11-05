@@ -1,16 +1,11 @@
 ﻿using FluentAssertions;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using Udap.Smart.Model;
 
 namespace Udap.Common.Tests.Smart; 
 public class SmartModelTest
 {
-    private string modelConfigSource = @"
+    private readonly string modelConfigSource = @"
    {
   ""issuer"": ""https://host.docker.internal:5002"",
   ""jwks_uri"": ""https://host.docker.internal:5002/.well-known/openid-configuration/jwks"",
@@ -45,9 +40,9 @@ public class SmartModelTest
 }";
 
     [Fact]
-    public async Task DeserializeSmartMetadata()
+    public void DeserializeSmartMetadata()
     {
         var smartMetadata = JsonSerializer.Deserialize<SmartMetadata>(modelConfigSource);
-        smartMetadata.issuer.Should().Be("https://host.docker.internal:5002");
+        smartMetadata!.issuer.Should().Be("https://host.docker.internal:5002");
     }
 }

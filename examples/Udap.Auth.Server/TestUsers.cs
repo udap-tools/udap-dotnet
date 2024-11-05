@@ -8,7 +8,7 @@ using Duende.IdentityServer;
 using Duende.IdentityServer.Test;
 using IdentityModel;
 
-namespace Udap.UI.Pages;
+namespace Udap.Auth.Server;
 
 public class TestUsers
 {

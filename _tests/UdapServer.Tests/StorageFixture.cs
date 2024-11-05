@@ -38,7 +38,13 @@ public class StorageFixture<TClass, TDbContext, TStoreOption> : IClassFixture<Te
 
     protected StorageFixture(TestDatabaseProvider<TDbContext> fixture)
     {
-        fixture.Options = TestDatabaseProviders.SelectMany(x => x.Select(y => (DbContextOptions<TDbContext>)y))
-            .ToList();
+        var optionsList = new List<DbContextOptions<TDbContext>>();
+
+        foreach (var options in TestDatabaseProviders)
+        {
+            optionsList.Add((DbContextOptions<TDbContext>)options);
+        }
+
+        fixture.Options = optionsList;
     }
 }

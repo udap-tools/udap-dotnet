@@ -6,7 +6,7 @@ namespace Udap.Common.Tests.Util;
 
 public class X509ExtensionTests
 {
-    private string CertStore = "../../../../Udap.PKI.Generator/certstores";
+    private readonly string CertStore = "../../../../Udap.PKI.Generator/certstores";
 
     [Fact]
     public void ResolveUriSubjAltNameTest()
@@ -34,5 +34,14 @@ public class X509ExtensionTests
         extensions.Should().NotBeNullOrEmpty();
 
         extensions.Single().KeyUsages.ToKeyUsageToString().Should().ContainInOrder("CrlSign", "KeyCertSign");
+    }
+
+    [Fact]
+    public void GetSubjectAltNames()
+    {
+        var certificate = new X509Certificate2($"{CertStore}/SurefhirCertificationLabs_Community/issued/FhirLabsAdminCertification.cer");
+
+        var subjectAltNames = certificate.GetSubjectAltNames();
+        subjectAltNames.Should().BeEmpty();
     }
 }

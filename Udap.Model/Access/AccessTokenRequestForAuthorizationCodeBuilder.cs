@@ -29,7 +29,7 @@ public class AccessTokenRequestForAuthorizationCodeBuilder
     private readonly string? _clientId;
     private readonly string? _code;
     private readonly string? _redirectUri;
-    private DateTime _now;
+    private readonly DateTime _now;
     private readonly X509Certificate2 _certificate;
 
     private AccessTokenRequestForAuthorizationCodeBuilder(string? clientId, string? tokenEndpoint, X509Certificate2 certificate, string? redirectUri, string? code)
@@ -40,14 +40,19 @@ public class AccessTokenRequestForAuthorizationCodeBuilder
         _certificate = certificate;
         _code = code;
         _redirectUri = redirectUri;
+
         
-        _claims = new List<Claim>
-        {
-            new Claim(JwtClaimTypes.Subject, _clientId),
-            new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(_now).ToString(), ClaimValueTypes.Integer),
-            new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
-            // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
-        };
+            _claims =
+            [
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(_now).ToString(), ClaimValueTypes.Integer),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId())
+                // new Claim(UdapConstants.JwtClaimTypes.Extensions, BuildHl7B2BExtensions() ) //see http://hl7.org/fhir/us/udap-security/b2b.html#constructing-authentication-token
+            ];
+
+            if (_clientId != null)
+            {
+                _claims.Add(new Claim(JwtClaimTypes.Subject, _clientId));
+            }
     }
 
     public static AccessTokenRequestForAuthorizationCodeBuilder Create(string? clientId, string? tokenEndpoint, X509Certificate2 certificate, string? redirectUri, string? code)
@@ -77,25 +82,23 @@ public class AccessTokenRequestForAuthorizationCodeBuilder
 
         return new UdapAuthorizationCodeTokenRequest()
         {
-            Address = _tokenEndpoint,
+            Address = _tokenEndpoint ?? throw new InvalidOperationException("TokenEndpoint cannot be null"),
             RequestUri = new Uri(_tokenEndpoint), //TODO
             //ClientId = result.ClientId, we use Implicit ClientId in the iss claim
-            Code = _code,
-            RedirectUri = _redirectUri,
+            Code = _code ?? throw new InvalidOperationException("Code cannot be null"),
+            RedirectUri = _redirectUri ?? throw new InvalidOperationException("RedirectUri cannot be null"),
             ClientAssertion = new ClientAssertion
             {
                 Type = OidcConstants.ClientAssertionTypes.JwtBearer,
-                Value = clientAssertion
+                Value = clientAssertion ?? throw new InvalidOperationException("ClientAssertion value cannot be null"),
             },
             Udap = UdapConstants.UdapVersionsSupportedValue
         };
     }
 
-    private string? BuildClientAssertion(string algorithm)
+    private string BuildClientAssertion(string? algorithm)
     {
-        JwtPayLoadExtension jwtPayload;
-
-        jwtPayload = new JwtPayLoadExtension(
+        var jwtPayload = new JwtPayLoadExtension(
             _clientId,
             _tokenEndpoint, //The FHIR Authorization Server's token endpoint URL
             _claims,

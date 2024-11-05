@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
 using Polly;
 using Serilog;
+using System.Text.Json.Serialization;
 using Udap.Auth.Server.Admin.Services;
 using Udap.Auth.Server.Admin.Services.DataBase;
 using Udap.Auth.Server.Admin.Services.State;
@@ -32,7 +33,13 @@ public static class HostingExtensions
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         builder.Services.AddEndpointsApiExplorer();
 
-        builder.Services.AddControllers();
+        builder.Services.AddControllers()
+            .AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve;
+                options.JsonSerializerOptions.PropertyNamingPolicy = null; // Use PascalCase
+            });
+
         builder.Services.AddProblemDetails();
         builder.Services.AddAutoMapper(typeof(Program));
         builder.Services.AddRazorPages();

@@ -45,7 +45,7 @@ public static class TieredOAuthHelpers
         var originalRequestParams = HttpUtility.ParseQueryString(returnUrl);
         var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
 
-        var parts = idp.Split(new[] { '?' }, StringSplitOptions.RemoveEmptyEntries);
+        var parts = idp.Split('?', StringSplitOptions.RemoveEmptyEntries);
 
         if (parts.Length > 1)
         {
@@ -75,7 +75,7 @@ public static class TieredOAuthHelpers
 
         var openIdConfig = await udapClient.ResolveOpenIdConfig(request);
 
-        // TODO: Properties will be protected in state in the BuildchallengeUrl.  Need to trim out some of these
+        // TODO: Properties will be protected in state in the BuildChallengeUrl.  Need to trim out some of these
         // during the protect process.
         props.Parameters.Add(UdapConstants.Discovery.AuthorizationEndpoint, openIdConfig.AuthorizeEndpoint);
         props.Parameters.Add(UdapConstants.Discovery.TokenEndpoint, openIdConfig.TokenEndpoint);

@@ -23,7 +23,7 @@ internal class UdapInMemoryIdentityProviderStore : IIdentityProviderStore
 
     public Task<IEnumerable<IdentityProviderName>> GetAllSchemeNamesAsync()
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryIdentityProviderStore.GetAllSchemeNames");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
 
         var items = _providers.Select(x => new IdentityProviderName
         {
@@ -35,11 +35,11 @@ internal class UdapInMemoryIdentityProviderStore : IIdentityProviderStore
         return Task.FromResult(items);
     }
 
-    public Task<IdentityProvider> GetBySchemeAsync(string scheme)
+    public Task<IdentityProvider?> GetBySchemeAsync(string scheme)
     {
-        using var activity = Tracing.StoreActivitySource.StartActivity("UdapInMemoryIdentityProviderStore.GetByScheme");
+        using var activity = Tracing.StoreActivitySource.StartActivity();
 
         var item = _providers.FirstOrDefault(x => x.Scheme == scheme);
-        return Task.FromResult<IdentityProvider>(item);
+        return Task.FromResult(item);
     }
 }

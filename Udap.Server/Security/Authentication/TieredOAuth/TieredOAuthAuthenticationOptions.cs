@@ -20,6 +20,8 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions
 
     private readonly JwtSecurityTokenHandler _defaultHandler = new JwtSecurityTokenHandler();
 
+    /// <inheritdoc />
+
     public TieredOAuthAuthenticationOptions()
     {
         SignInScheme = TieredOAuthAuthenticationDefaults.AuthenticationScheme;
@@ -58,13 +60,5 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions
     /// </summary>
     /// <remarks>Contains the types and definitions required for validating a token.</remarks>
     public TokenValidationParameters TokenValidationParameters { get; set; } = new TokenValidationParameters();
-
-    /// <summary>
-    /// The IdP’s base URL is the URL listed in the iss claim of ID tokens issued by the IdP as detailed in
-    /// Section 2 of the OpenID Connect Core 1.0 specification (OIDC Core)
-    /// <see cref="http://hl7.org/fhir/us/udap-security/user.html#client-authorization-request-to-data-holder"/>
-    /// </summary>
-    public string IdPBaseUrl { get; set; }
-
-    public string Community { get; set; }
+    
 }

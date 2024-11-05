@@ -46,8 +46,9 @@
             <MudTd DataLabel="Name">@context.Name</MudTd>
                 }
         <MudTd DataLabel="Enabled"><MudSwitch @bind-Value="@context.Enabled" Color="Color.Primary" /></MudTd>
-        <MudTd DataLabel="Certificate">@context.Certificate?.GetNameInfo(X509NameType.SimpleName, false) </MudTd>
         <MudTd DataLabel="Certificate">@context.Thumbprint </MudTd>
+        <MudTd DataLabel="Certificate">@context.Certificate?.GetNameInfo(X509NameType.SimpleName, false) </MudTd>
+        
         <MudTd @onclick:stopPropagation="true" Style="">
                     @if (context.Id != 0)
                     {

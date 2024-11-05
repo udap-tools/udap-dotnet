@@ -17,9 +17,10 @@ public class UdapUntrustedContext : ResultContext<TieredOAuthAuthenticationOptio
     /// <summary>
     /// Initializes a new instance of <see cref="T:Microsoft.AspNetCore.Authentication.ResultContext`1" />.
     /// </summary>
-    /// <param name="context">The context.</param>
-    /// <param name="scheme">The authentication scheme.</param>
-    /// <param name="options">The authentication options associated with the scheme.</param>
+    /// <param name="context">The <see cref="HttpContext"/></param>
+    /// <param name="scheme">The <see cref="AuthenticationScheme"/></param>
+    /// <param name="options">The <see cref="TieredOAuthAuthenticationOptions"/> associated with the scheme.</param>
+    /// <param name="properties">The <see cref="AuthenticationProperties"/></param>
     public UdapUntrustedContext(
         HttpContext context, 
         AuthenticationScheme scheme, 
@@ -28,7 +29,7 @@ public class UdapUntrustedContext : ResultContext<TieredOAuthAuthenticationOptio
     {
         foreach (var prop in properties.Parameters.Where(p => p.Key == "Untrusted").Select(p => p))
         {
-            context.Response.Headers.Add(prop.Key, new StringValues(prop.Value?.ToString()));
+            context.Response.Headers.Append(prop.Key, new StringValues(prop.Value?.ToString()));
         }
     }
 }

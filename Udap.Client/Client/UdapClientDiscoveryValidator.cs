@@ -103,12 +103,16 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
             return false;
         }
 
-        if (!udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported
+        if (udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported != null && !udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported
                 .Contains(jwt.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)))
         {
-            NotifyTokenError(
-                $"The x5c header does not match one of the algorithms listed in {UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported}:" +
-                $"{string.Join(", ", udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported)} ");
+            if (udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported != null)
+            {
+                NotifyTokenError(
+                    $"The x5c header does not match one of the algorithms listed in {UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported}:" +
+                    $"{string.Join(", ", udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported)} ");
+            }
+
             return false;
         }
 
@@ -138,8 +142,7 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new RsaSecurityKey(publicKey),
-                    ValidAlgorithms = new[]
-                        { jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+                    ValidAlgorithms = [jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)], //must match signing algorithm
                 });
 
             return validatedToken;
@@ -160,17 +163,16 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new ECDsaSecurityKey(ecdsaPublicKey),
-                    ValidAlgorithms = new[]
-                        { jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg) }, //must match signing algorithm
+                    ValidAlgorithms = [jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)], //must match signing algorithm
                 });
 
             return validatedToken;
         }
     }
 
-    public async Task<bool> ValidateTrustChain(string? community)
+    public Task<bool> ValidateTrustChain(string? community)
     {
-        return await ValidateTrustChain(community, null);
+        return ValidateTrustChain(community, null);
     }
 
     public async Task<bool> ValidateTrustChain(string? community, ITrustAnchorStore? clientSuppliedTrustAnchorStore)
@@ -186,7 +188,7 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
 
         var anchors = X509Certificate2Collection(community, store).ToList();
 
-        if (!anchors.Any())
+        if (anchors.Count == 0)
         {
             _logger.LogWarning($"{nameof(UdapClient)} does not contain any anchor certificates");
             return false;
@@ -236,7 +238,7 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
 
     private void NotifyTokenError(string message)
     {
-        _logger.LogWarning(message.Replace(Environment.NewLine, ""));
+        _logger.LogWarning("Token error: {Message}", message.Replace(Environment.NewLine, ""));
 
         if (TokenError != null)
         {

@@ -14,6 +14,7 @@ namespace Udap.Common.Models;
 
 public class Anchor: IEquatable<Anchor>
 {
+    public Anchor() { } // do not remove
     public Anchor(X509Certificate2 cert, string? communityName = null, string? name = null)
     {
         Certificate = cert.ToPemFormat();
@@ -27,10 +28,10 @@ public class Anchor: IEquatable<Anchor>
     public long Id { get; set; }
     public bool Enabled { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string? Community { get;  }
+    public string? Community { get; set; }
     public long CommunityId { get; set; }
-    public string Certificate { get; } 
-    public string Thumbprint { get; }
+    public string Certificate { get; set; } = string.Empty;
+    public string Thumbprint { get; set; } = string.Empty;
     public DateTime BeginDate { get; set; }
     public DateTime EndDate { get; set; }
 

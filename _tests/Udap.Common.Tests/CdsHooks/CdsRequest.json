@@ -1,0 +1,79 @@
+{
+    "hookInstance": "bad23e95-b946-46ac-b1c2-5515bd567449",
+    "hook": "patient-view",
+    "fhirServer": "https://launch.smarthealthit.org/v/r2/fhir",
+    "context": {
+        "patientId": "smart-1288992",
+        "userId": "Practitioner/COREPRACTITIONER1"
+    },
+    "prefetch": {
+        "patient": {
+            "resourceType": "Patient",
+            "id": "smart-1288992",
+            "meta": {
+                "versionId": "634",
+                "lastUpdated": "2021-05-12T02:30:37.942-04:00",
+                "tag": [
+                    {
+                        "system": "https://smarthealthit.org/tags",
+                        "code": "smart-8-2017"
+                    }
+                ]
+            },
+            "text": {
+                "status": "generated",
+                "div": "<div xmlns=\"http://www.w3.org/1999/xhtml\"> <p> Daniel Adams </p> </div>"
+            },
+            "identifier": [
+                {
+                    "use": "usual",
+                    "type": {
+                        "coding": [
+                            {
+                                "system": "http://hl7.org/fhir/v2/0203",
+                                "code": "MR",
+                                "display": "Medical record number"
+                            }
+                        ],
+                        "text": "Medical record number"
+                    },
+                    "system": "http://hospital.smarthealthit.org",
+                    "value": "1288992"
+                }
+            ],
+            "active": true,
+            "name": [
+                {
+                    "use": "official",
+                    "family": [
+                        "Adams"
+                    ],
+                    "given": [
+                        "Daniel",
+                        "X."
+                    ]
+                }
+            ],
+            "telecom": [
+                {
+                    "system": "email",
+                    "value": "daniel.adams@example.com"
+                }
+            ],
+            "gender": "male",
+            "birthDate": "1929-08-16",
+            "address": [
+                {
+                    "use": "home",
+                    "line": [
+                        "1 Hill AveApt 14"
+                    ],
+                    "city": "Tulsa",
+                    "state": "OK",
+                    "postalCode": "74117",
+                    "country": "USA"
+                }
+            ]
+        }
+    }
+}

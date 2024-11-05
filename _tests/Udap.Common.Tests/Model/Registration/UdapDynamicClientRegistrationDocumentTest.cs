@@ -7,8 +7,6 @@
 // */
 #endregion
 
-
-using System.Reflection.Metadata;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
@@ -23,12 +21,12 @@ using Udap.Model.Registration;
 using Udap.Model.Statement;
 using Udap.Model.UdapAuthenticationExtensions;
 using Xunit.Abstractions;
-using Xunit.Sdk;
 using Claim = System.Security.Claims.Claim;
 
 namespace Udap.Common.Tests.Model.Registration;
 public class UdapDynamicClientRegistrationDocumentTest
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions = new JsonSerializerOptions { WriteIndented = true };
     private readonly ITestOutputHelper _testOutputHelper;
 
     public UdapDynamicClientRegistrationDocumentTest(ITestOutputHelper testOutputHelper)
@@ -59,7 +57,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
             .Build();
 
-        document.AddClaims(new Claim[] { new("MyClaim", "Testing 123", ClaimValueTypes.String) });
+        document.AddClaims([new("MyClaim", "Testing 123", ClaimValueTypes.String)]);
 
         document.ClientId.Should().BeNull();
         document.Audience.Should().Be("https://securedcontrols.net/connect/register");
@@ -128,7 +126,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         buildSoftwareStatement.Should().NotThrow();
 
 
-        Action buildSoftwareStatementRS384 = () => UdapDcrBuilderForClientCredentials
+        Action buildSoftwareStatementRs384 = () => UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithAudience("https://securedcontrols.net/connect/register")
             .WithExpiration(expiration)
@@ -143,7 +141,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             .WithLogoUri("")
             .BuildSoftwareStatement();
 
-        buildSoftwareStatementRS384.Should().NotThrow();
+        buildSoftwareStatementRs384.Should().NotThrow();
 
     }
 
@@ -179,7 +177,7 @@ public class UdapDynamicClientRegistrationDocumentTest
     [Fact]
     public void AlternateSanClientCredentialsTest()
     {
-        var expiration = EpochTime.GetIntDate(DateTime.Now.Add(TimeSpan.FromMinutes(5)));
+        EpochTime.GetIntDate(DateTime.Now.Add(TimeSpan.FromMinutes(5)));
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
         var clientCert = new X509Certificate2(cert, "udap-test");
 
@@ -243,11 +241,11 @@ public class UdapDynamicClientRegistrationDocumentTest
             .Create()
             .Build();
 
-        document.AddClaims(new Claim[]
-        {
+        document.AddClaims(
+        [
             new Claim("error", "Poof"),
             new Claim("error_description", "Poof description")
-        });
+        ]);
 
         document.GetError().Should().Be("Poof");
         document.GetErrorDescription().Should().Be("Poof description");
@@ -262,8 +260,8 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         // var now = DateTime.Now.ToOADate().ToString(); 
 
-        document.AddClaims(new Claim[]
-        {
+        document.AddClaims(
+        [
             new Claim("bool", "true", ClaimValueTypes.Boolean),
             new Claim("string", "hello", ClaimValueTypes.String),
             new Claim("double", "10.5", ClaimValueTypes.Double),
@@ -272,15 +270,15 @@ public class UdapDynamicClientRegistrationDocumentTest
             new Claim("integer64", Int64.MaxValue.ToString(), ClaimValueTypes.Integer64),
             new Claim("json", "{\"joe\":\"test\"}", JsonClaimValueTypes.Json),
             new Claim("jsonarray", "[\"one\", \"two\"]", JsonClaimValueTypes.JsonArray)
-        });
+        ]);
 
         document["bool"].Should().Be(true);
         document["string"].Should().Be("hello");
         document["double"].Should().Be(10.5);
         document["null"].Should().Be("");
         document["integer64"].Should().Be(Int64.MaxValue);
-        (document["json"] as JsonObject).ToJsonString().Should().Be("{\"joe\":\"test\"}");
-        (document["jsonarray"] as JsonArray).ToJsonString().Should().Be("[\"one\",\"two\"]");
+        (document["json"] as JsonObject)?.ToJsonString().Should().Be("{\"joe\":\"test\"}");
+        (document["jsonarray"] as JsonArray)?.ToJsonString().Should().Be("[\"one\",\"two\"]");
         // document["datetime"].Should().Be(now);
     }
 
@@ -288,7 +286,7 @@ public class UdapDynamicClientRegistrationDocumentTest
     /// Without builder
     /// </summary>
     [Fact]
-    public void TestHl7b2bExtensionSerialization()
+    public void TestHl7B2BExtensionSerialization()
     {
         var subjectId = "urn:oid:2.16.840.1.113883.4.6#1234567890";
         var subjectName = "FhirLabs AI calendar prep";
@@ -296,7 +294,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         var organizationId = new Uri("https://fhirlabs.net/fhir/r4/Organization/99").OriginalString;
         var organizationName = "FhirLabs";
 
-        var hl7b2b = new HL7B2BAuthorizationExtension()
+        var hl7B2B = new HL7B2BAuthorizationExtension()
         {
             SubjectId = subjectId,
             SubjectName = subjectName,
@@ -305,29 +303,29 @@ public class UdapDynamicClientRegistrationDocumentTest
             OrganizationName = organizationName
         };
 
-        hl7b2b.PurposeOfUse.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
-        hl7b2b.ConsentPolicy.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
-        hl7b2b.ConsentReference.Add("https://fhirlabs.net/fhir/r4/Consent/99");
+        hl7B2B.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        hl7B2B.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
+        hl7B2B.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
 
-        var serializeDocument = hl7b2b.SerializeToJson();
+        var serializeDocument = hl7B2B.SerializeToJson();
 
         serializeDocument.Should().Contain("urn:oid:2.16.840.1.113883.5.8#TREAT");
         serializeDocument.Should().Contain("https://udaped.fhirlabs.net/Policy/Consent/99");
         serializeDocument.Should().Contain("https://fhirlabs.net/fhir/r4/Consent/99");
 
 
-        hl7b2b.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
-        hl7b2b.PurposeOfUse.Any().Should().BeFalse();
+        hl7B2B.PurposeOfUse?.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
+        hl7B2B.PurposeOfUse!.Count.Should().Be(0);
 
-        hl7b2b = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(hl7b2b.SerializeToJson());
-        hl7b2b.PurposeOfUse.Any().Should().BeFalse();
+        hl7B2B = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(hl7B2B.SerializeToJson());
+        hl7B2B?.PurposeOfUse!.Count.Should().Be(0);
     }
 
     /// <summary>
     /// Without builder
     /// </summary>
     [Fact]
-    public void TestHl7b2bUserExtensionSerialization()
+    public void TestHl7B2BUserExtensionSerialization()
     {
         var userPersonJson = File.ReadAllText("Model/Person-FASTIDUDAPPerson-Example.json");
         var parser = new FhirJsonParser();
@@ -343,39 +341,39 @@ public class UdapDynamicClientRegistrationDocumentTest
             userPersonElement = jasonDocument.RootElement.Clone();
         }
 
-        var hl7b2bUser = new HL7B2BUserAuthorizationExtension()
+        var hl7B2BUser = new HL7B2BUserAuthorizationExtension()
         {
             UserPerson = userPersonElement,
         };
 
-        hl7b2bUser.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
-        hl7b2bUser.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
-        hl7b2bUser.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
+        hl7B2BUser.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        hl7B2BUser.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
+        hl7B2BUser.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
 
-        var serializeDocument = hl7b2bUser.SerializeToJson();
+        var serializeDocument = hl7B2BUser.SerializeToJson();
 
         serializeDocument.Should().Contain("urn:oid:2.16.840.1.113883.5.8#TREAT");
         serializeDocument.Should().Contain("https://udaped.fhirlabs.net/Policy/Consent/99");
         serializeDocument.Should().Contain("https://fhirlabs.net/fhir/r4/Consent/99");
 
-        hl7b2bUser = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(serializeDocument);
+        hl7B2BUser = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(serializeDocument);
 
-        hl7b2bUser.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
-        hl7b2bUser.PurposeOfUse.Any().Should().BeFalse();
+        hl7B2BUser!.PurposeOfUse!.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
+        hl7B2BUser.PurposeOfUse.Count.Should().Be(0);
 
-        hl7b2bUser.ConsentPolicy?.Remove("https://udaped.fhirlabs.net/Policy/Consent/99");
-        hl7b2bUser.ConsentPolicy?.Any().Should().BeFalse();
+        hl7B2BUser.ConsentPolicy!.Remove("https://udaped.fhirlabs.net/Policy/Consent/99");
+        hl7B2BUser.ConsentPolicy!.Count.Should().Be(0);
 
-        hl7b2bUser.SerializeToJson().Should().NotContain("https://udaped.fhirlabs.net/Policy/Consent/99");
-        hl7b2bUser = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(hl7b2bUser.SerializeToJson());
-        hl7b2bUser?.ConsentPolicy?.Any().Should().BeFalse();
+        hl7B2BUser.SerializeToJson().Should().NotContain("https://udaped.fhirlabs.net/Policy/Consent/99");
+        hl7B2BUser = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(hl7B2BUser.SerializeToJson());
+        hl7B2BUser?.ConsentPolicy!.Count.Should().Be(0);
     }
 
     /// <summary>
     /// Without builder
     /// </summary>
     [Fact]
-    public void TestTefcaIASExtensionSerialization()
+    public void TestTefcaIasExtensionSerialization()
     {
         var relatedPersonJson = File.ReadAllText("Model/RelatedPersonExample.json");
         var relatedPersonResource = new FhirJsonParser().Parse<RelatedPerson>(relatedPersonJson);
@@ -433,26 +431,26 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         tefcaIas = JsonSerializer.Deserialize<TEFCAIASAuthorizationExtension>(serializeDocument);
 
-        tefcaIas.PurposeOfUse.Should().Be("T-IAS");
+        tefcaIas!.PurposeOfUse.Should().Be("T-IAS");
 
-        tefcaIas.ConsentPolicy?.Remove("https://udaped.fhirlabs.net/Policy/Consent/99");
-        tefcaIas.ConsentPolicy?.Any().Should().BeFalse();
+        tefcaIas.ConsentPolicy!.Remove("https://udaped.fhirlabs.net/Policy/Consent/99");
+        tefcaIas.ConsentPolicy.Count.Should().Be(0);
 
         tefcaIas.SerializeToJson().Should().NotContain("https://udaped.fhirlabs.net/Policy/Consent/99");
         tefcaIas = JsonSerializer.Deserialize<TEFCAIASAuthorizationExtension>(tefcaIas.SerializeToJson());
-        tefcaIas.ConsentPolicy?.Any().Should().BeFalse();
+        tefcaIas!.ConsentPolicy!.Count.Should().Be(0);
 
-        tefcaIas.IalVetted.Value.GetRawText().Should().BeEquivalentTo(identityTokenElement.GetRawText()
+        tefcaIas.IalVetted?.GetRawText().Should().BeEquivalentTo(identityTokenElement.GetRawText()
             .Replace("\n", "").Replace("\r", "").Replace(": ", ":").Replace(",  ", ","));
 
-        tefcaIas.IdToken.Value.GetRawText().Should().BeEquivalentTo(identityTokenElement.GetRawText()
+        tefcaIas.IdToken?.GetRawText().Should().BeEquivalentTo(identityTokenElement.GetRawText()
             .Replace("\n", "").Replace("\r", "").Replace(": ", ":").Replace(",  ", ","));
 
-        var realtedPersonResourceResult = new FhirJsonParser().Parse<RelatedPerson>(tefcaIas.UserInformation.Value.GetRawText());
-        var patientResourceResult = new FhirJsonParser().Parse<RelatedPerson>(tefcaIas.PatientInformation.Value.GetRawText());
+        var relatedPersonResourceResult = new FhirJsonParser().Parse<RelatedPerson>(tefcaIas.UserInformation?.GetRawText());
+        var patientResourceResult = new FhirJsonParser().Parse<RelatedPerson>(tefcaIas.PatientInformation?.GetRawText());
 
 
-        realtedPersonResourceResult.Should().BeEquivalentTo(relatedPersonResource);
+        relatedPersonResourceResult.Should().BeEquivalentTo(relatedPersonResource);
         patientResourceResult.Should().BeEquivalentTo(patientResource);
     }
 
@@ -468,7 +466,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         var organizationId = new Uri("https://fhirlabs.net/fhir/r4/Organization/99").OriginalString;
         var organizationName = "FhirLabs";
 
-        var hl7b2b = new HL7B2BAuthorizationExtension()
+        var hl7B2BUser = new HL7B2BAuthorizationExtension()
         {
             SubjectId = subjectId,
             SubjectName = subjectName,
@@ -477,11 +475,11 @@ public class UdapDynamicClientRegistrationDocumentTest
             OrganizationName = organizationName
         };
 
-        hl7b2b.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
-        hl7b2b.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
-        hl7b2b.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
+        hl7B2BUser.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        hl7B2BUser.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
+        hl7B2BUser.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
 
-        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7b2b);
+        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7B2BUser);
         var document = builder.Build();
 
         var serializeDocument = document.SerializeToJson(true);
@@ -507,7 +505,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         var organizationId = new Uri("https://fhirlabs.net/fhir/r4/Organization/99").OriginalString;
         var organizationName = "FhirLabs";
 
-        var hl7b2b = new HL7B2BAuthorizationExtension()
+        var hl7B2BUser = new HL7B2BAuthorizationExtension()
         {
             SubjectId = subjectId,
             SubjectName = subjectName,
@@ -516,14 +514,14 @@ public class UdapDynamicClientRegistrationDocumentTest
             OrganizationName = organizationName
         };
 
-        hl7b2b.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
-        hl7b2b.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
-        hl7b2b.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
+        hl7B2BUser.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        hl7B2BUser.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
+        hl7B2BUser.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
 
         var document = builder.Build();
         document.Extensions = new Dictionary<string, object>
         {
-            {UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7b2b}
+            {UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7B2BUser}
         };
 
         var serializeDocument = document.SerializeToJson(true);
@@ -538,7 +536,7 @@ public class UdapDynamicClientRegistrationDocumentTest
     }
 
     [Fact]
-    public void Hl7b2bExtensionTest()
+    public void Hl7B2BExtensionTest()
     {
         var builder = UdapDcrBuilderForClientCredentials
             .Create();
@@ -572,7 +570,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         userPerson.Should().NotBeNullOrEmpty();
         // _testOutputHelper.WriteLine(userPerson);
 
-        var hl7b2b = new HL7B2BAuthorizationExtension()
+        var hl7B2BUser = new HL7B2BAuthorizationExtension()
         {
             SubjectId = subjectId,
             SubjectName = subjectName,
@@ -591,7 +589,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             userPersonElement = jasonDocument.RootElement.Clone();
         }
 
-        var b2bUserHl7 = new HL7B2BUserAuthorizationExtension()
+        var b2BUserHl7 = new HL7B2BUserAuthorizationExtension()
         {
             UserPerson = userPersonElement,
             PurposeOfUse = purposeOfUse,
@@ -600,11 +598,11 @@ public class UdapDynamicClientRegistrationDocumentTest
         };
 
         // need to serialize to compare.
-        var hl7b2bSerialized = hl7b2b.SerializeToJson();
-        var hl7b2bUserSerialized = b2bUserHl7.SerializeToJson();
+        var hl7B2BSerialized = hl7B2BUser.SerializeToJson();
+        var hl7B2BUserSerialized = b2BUserHl7.SerializeToJson();
 
-        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7b2b);
-        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER, b2bUserHl7);
+        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7B2BUser);
+        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER, b2BUserHl7);
         
         var document = builder.Build();
 
@@ -616,10 +614,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         extensions!.Count.Should().Be(2);
        
 
-        var serializeDocument = JsonSerializer.Serialize(document, new JsonSerializerOptions()
-        {
-            WriteIndented = true
-        });
+        var serializeDocument = JsonSerializer.Serialize(document, IndentedJsonOptions);
 
         var documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
 
@@ -627,15 +622,15 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         extensions.Should().NotBeNull();
         extensions!.Count.Should().Be(2);
-        ((HL7B2BAuthorizationExtension)extensions["hl7-b2b"]).SerializeToJson().Should().BeEquivalentTo(hl7b2bSerialized);
+        ((HL7B2BAuthorizationExtension)extensions["hl7-b2b"]).SerializeToJson().Should().BeEquivalentTo(hl7B2BSerialized);
 
         
-        // _testOutputHelper.WriteLine(hl7b2bUserSerialized);
+        // _testOutputHelper.WriteLine(hl7B2BUserUserSerialized);
         // _testOutputHelper.WriteLine(((HL7B2BUserAuthorizationExtension)extentions["hl7-b2b-user"]).SerializeToJson(true));
         
 
 
-        ((HL7B2BUserAuthorizationExtension)extensions["hl7-b2b-user"]).SerializeToJson().Should().BeEquivalentTo(hl7b2bUserSerialized);
+        ((HL7B2BUserAuthorizationExtension)extensions["hl7-b2b-user"]).SerializeToJson().Should().BeEquivalentTo(hl7B2BUserSerialized);
 
         var extensionSerialized = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(((HL7B2BAuthorizationExtension)extensions["hl7-b2b"]).SerializeToJson());
         extensionSerialized!.Version.Should().Be("1");
@@ -648,13 +643,13 @@ public class UdapDynamicClientRegistrationDocumentTest
         extensionSerialized.PurposeOfUse.Should().ContainInOrder(purposeOfUse);
         extensionSerialized.ConsentPolicy.Should().ContainInOrder(consentPolicy);
 
-        hl7b2b = new HL7B2BAuthorizationExtension()
+        hl7B2BUser = new HL7B2BAuthorizationExtension()
         {
             SubjectId = subjectId
         };
 
         builder = UdapDcrBuilderForClientCredentials.Create();
-        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7b2b);
+        builder.WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, hl7B2BUser);
         document = builder.Build();
         serializeDocument = JsonSerializer.Serialize(document);
         documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
@@ -665,45 +660,45 @@ public class UdapDynamicClientRegistrationDocumentTest
     }
 
     [Fact]
-    public void Hl7b2bExtensionValidationTest()
+    public void Hl7B2BExtensionValidationTest()
     {
-        var hl7b2b = new HL7B2BAuthorizationExtension()
+        var hl7B2BUser = new HL7B2BAuthorizationExtension()
         {
-            Version = null
+            Version = null!
         };
 
-        var notes = hl7b2b.Validate();
+        var notes = hl7B2BUser.Validate();
         notes.Should().NotBeNull();
-        notes.Count().Should().Be(3);
+        notes.Count.Should().Be(3);
         notes.Should().ContainInOrder("Missing required version", "Missing required organization_id", "Missing required purpose_of_use");
     }
 
     [Fact]
-    public void Hl7b2bUserExtensionValidationTest()
+    public void Hl7B2BUserExtensionValidationTest()
     {
-        var hl7b2b = new HL7B2BUserAuthorizationExtension()
+        var hl7B2BUser = new HL7B2BUserAuthorizationExtension()
         {
-            Version = null
+            Version = null!
         };
 
-        var notes = hl7b2b.Validate();
+        var notes = hl7B2BUser.Validate();
         notes.Should().NotBeNull();
-        notes.Count().Should().Be(3);
+        notes.Count.Should().Be(3);
         notes.Should().ContainInOrder("Missing required version", "Missing required user_person", "Missing required purpose_of_use");
     }
 
     [Fact]
-    public void TefcaIASExtensionValidationTest()
+    public void TefcaIasExtensionValidationTest()
     {
-        var hl7b2b = new TEFCAIASAuthorizationExtension()
+        var hl7B2BUser = new TEFCAIASAuthorizationExtension()
         {
-            Version = null,
+            Version = null!,
             PurposeOfUse = "Bad"
         };
 
-        var notes = hl7b2b.Validate();
+        var notes = hl7B2BUser.Validate();
         notes.Should().NotBeNull();
-        notes.Count().Should().Be(4);
+        notes.Count.Should().Be(4);
         notes.Should().ContainInOrder("Missing required version", "Missing required user_information", "Missing required patient_information", "purpose_of_use must be T-IAS");
     }
 
@@ -716,14 +711,14 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         // var now = DateTime.Now.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss"); 
 
-        document.AddClaims(new Claim[]
-        {
+        document.AddClaims(
+        [
             new Claim("bool", "true", ClaimValueTypes.Boolean),
             new Claim("string", "hello", ClaimValueTypes.String),
             new Claim("double", "10.5", ClaimValueTypes.Double),
             new Claim("null", "null", JsonClaimValueTypes.JsonNull),
             // new Claim("datetime", now, ClaimValueTypes.DateTime),
-        });
+        ]);
 
         document["bool"].Should().Be(true);
         document["string"].Should().Be("hello");
@@ -757,7 +752,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
             .Build();
 
-        document.AddClaims(new Claim[] { new Claim("MyClaim", "Testing 123") });
+        document.AddClaims([new Claim("MyClaim", "Testing 123")]);
 
         document.ClientId.Should().BeNull();
         document.Audience.Should().Be("https://securedcontrols.net/connect/register");
@@ -822,7 +817,11 @@ public class UdapDynamicClientRegistrationDocumentTest
             SoftwareStatement = document.SoftwareStatement
         };
 
+
+        // ReSharper disable once ObjectCreationAsStatement
+#pragma warning disable CA1806
         Action act = () => new UdapDynamicClientRegistrationDocument()
+#pragma warning restore CA1806
         {
             ClientId = document.ClientId,
             SoftwareStatement = null
@@ -849,7 +848,7 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         buildSoftwareStatement.Should().NotThrow();
 
-        Action buildSoftwareStatementRS384 = () => UdapDcrBuilderForAuthorizationCode
+        Action buildSoftwareStatementRs384 = () => UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience("https://securedcontrols.net/connect/register")
             .WithExpiration(expiration)
@@ -865,7 +864,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
             .BuildSoftwareStatement(UdapConstants.SupportedAlgorithm.RS384);
 
-        buildSoftwareStatementRS384.Should().NotThrow();
+        buildSoftwareStatementRs384.Should().NotThrow();
     }
 
     /// <summary>
@@ -874,7 +873,7 @@ public class UdapDynamicClientRegistrationDocumentTest
     [Fact]
     public void AlternateSanAuthorizationCodeFlowTest()
     {
-        var expiration = EpochTime.GetIntDate(DateTime.Now.Add(TimeSpan.FromMinutes(5)));
+        EpochTime.GetIntDate(DateTime.Now.Add(TimeSpan.FromMinutes(5)));
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
         var clientCert = new X509Certificate2(cert, "udap-test");
 
@@ -989,11 +988,11 @@ public class UdapDynamicClientRegistrationDocumentTest
             .Create()
             .Build();
 
-        document.AddClaims(new Claim[]
-        {
+        document.AddClaims(
+        [
             new Claim("error", "Poof"),
             new Claim("error_description", "Poof description")
-        });
+        ]);
 
         document.GetError().Should().Be("Poof");
         document.GetErrorDescription().Should().Be("Poof description");

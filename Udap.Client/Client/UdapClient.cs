@@ -27,7 +27,6 @@ using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.Statement;
-using System.Text;
 
 
 #if NET7_0_OR_GREATER
@@ -50,7 +49,6 @@ namespace Udap.Client.Client
             UdapClientDiscoveryValidator clientDiscoveryValidator,
             IOptionsMonitor<UdapClientOptions> udapClientOptions,
             ILogger<UdapClient> logger,
-            bool enablePkceEnabled = true,
             DiscoveryPolicy? discoveryPolicy = null)
         {
             _httpClient = httpClient;
@@ -102,7 +100,7 @@ namespace Udap.Client.Client
 
             try
             {
-                var resultDocument = await RegisterAuthCodeFlow(certificates, scopes, _udapClientOptions.TieredOAuthClientLogo, new List<string>{ redirectUrl }, null, token);
+                var resultDocument = await RegisterAuthCodeFlow(certificates, scopes, _udapClientOptions.TieredOAuthClientLogo, [redirectUrl], null, token);
 
                 if(string.IsNullOrEmpty(resultDocument.GetError()))
                 {
@@ -153,7 +151,7 @@ namespace Udap.Client.Client
         }
 
         /// <inheritdoc />
-        public async Task<UdapDynamicClientRegistrationDocument> RegisterAuthCodeClient(
+        public Task<UdapDynamicClientRegistrationDocument> RegisterAuthCodeClient(
             X509Certificate2 certificate, 
             string scopes,
             string logo,
@@ -161,7 +159,7 @@ namespace Udap.Client.Client
             string? issuer,
             CancellationToken token = default)
         {
-            return await this.RegisterAuthCodeClient(
+            return this.RegisterAuthCodeClient(
                 new List<X509Certificate2> { certificate },
                 scopes, 
                 logo,
@@ -204,14 +202,14 @@ namespace Udap.Client.Client
         }
 
         //// <inheritdoc />
-        public async Task<UdapDynamicClientRegistrationDocument> RegisterClientCredentialsClient(
+        public Task<UdapDynamicClientRegistrationDocument> RegisterClientCredentialsClient(
             X509Certificate2 certificate, 
             string scopes,
             string? issuer, 
             string? logo,
             CancellationToken token = default)
         {
-            return await this.RegisterClientCredentialsClient(
+            return this.RegisterClientCredentialsClient(
                 new List<X509Certificate2> { certificate },
                 scopes, 
                 logo,
@@ -258,21 +256,18 @@ namespace Udap.Client.Client
                 uiLocales: uiLocales,
                 idTokenHint: idTokenHint,
                 requestUri: requestUri,
-                extra: Parameters.FromObject(extra)
+                extra: extra == null ? null : Parameters.FromObject(extra)
                 );
-
+            
             return _httpClient.GetAsync(url);
         }
-        
-
-        public bool PkcseEnabled { get; }
 
         /// <summary>
         /// UdapClient is enabled for PKCE by default in constructor.  This can be overridden by setting this property to false or at construction.
         /// Overriding at construction time will avoid the allocation of CodeVerifier and CodeChallenge.
-        /// <seealso cref="https://datatracker.ietf.org/doc/html/rfc7636"/>
-        /// <seealso cref="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/b2b.html#obtaining-an-authorization-code">adfaf</seealso> and 
-        /// <seealso cref="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/consumer.html#obtaining-an-authorization-code"/>
+        /// <a href="https://datatracker.ietf.org/doc/html/rfc7636"/>,
+        /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/b2b.html#obtaining-an-authorization-code" /> and 
+        /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/consumer.html#obtaining-an-authorization-code"/>
         /// </summary>
         public Pkce GeneratePkce()
         {
@@ -341,13 +336,13 @@ namespace Udap.Client.Client
         /// <param name="token"></param>
         /// <returns></returns>
         /// <exception cref="UnauthorizedAccessException"></exception>
-        public async Task<UdapDiscoveryDocumentResponse> ValidateResource(
+        public Task<UdapDiscoveryDocumentResponse> ValidateResource(
             string baseUrl,
             string? community,
             DiscoveryPolicy? discoveryPolicy,
             CancellationToken token = default)
         {
-            return await InternalValidateResource(baseUrl, null, community, discoveryPolicy, token);
+            return InternalValidateResource(baseUrl, null, community, discoveryPolicy, token);
         }
 
         private async Task<UdapDiscoveryDocumentResponse> InternalValidateResource(
@@ -379,7 +374,7 @@ namespace Udap.Client.Client
                 if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
                 {
                     UdapServerMetaData = disco.Json?.Deserialize<UdapMetadata>();
-                    _logger.LogDebug(UdapServerMetaData?.SerializeToJson());
+                    _logger.LogDebug("UdapServerMetaData: {UdapServerMetaDataJson}", UdapServerMetaData?.SerializeToJson());
 
                     if (baseUrl.Contains(UdapConstants.Discovery.DiscoveryEndpoint))
                     {
@@ -447,7 +442,7 @@ namespace Udap.Client.Client
             return keys;
         }
 
-        public async Task<DiscoveryDocumentResponse?> ResolveOpenIdConfig(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default)
+        public async Task<DiscoveryDocumentResponse> ResolveOpenIdConfig(DiscoveryDocumentRequest? request = null, CancellationToken cancellationToken = default)
         {
             ArgumentNullException.ThrowIfNull(request);
 
@@ -465,7 +460,7 @@ namespace Udap.Client.Client
 
         private void NotifyTokenError(string message)
         {
-            _logger.LogWarning(message);
+            _logger.LogWarning("Token error occurred: {ErrorMessage}", message);
 
             if (TokenError != null)
             {
@@ -489,7 +484,7 @@ namespace Udap.Client.Client
             CancellationToken token)
         {
             var x509Certificates = certificates.ToList();
-            if (certificates == null || !x509Certificates.Any())
+            if (certificates == null || x509Certificates.Count == 0)
             {
                 throw new Exception("Tiered OAuth: No client certificates provided.");
             }
@@ -503,7 +498,7 @@ namespace Udap.Client.Client
 
             foreach (var clientCert in x509Certificates)
             {
-                _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
+                _logger.LogDebug("Using certificate {CertificateSubjectName} [ {CertificateThumbprint} ]", clientCert.SubjectName.Name, clientCert.Thumbprint);
 
                 var builder = UdapDcrBuilderForAuthorizationCode
                     .Create(clientCert)
@@ -515,7 +510,7 @@ namespace Udap.Client.Client
                     .WithContacts(_udapClientOptions.Contacts)
                     .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                     .WithScope(scopes)
-                    .WithResponseTypes(new List<string> { "code" })
+                    .WithResponseTypes(["code"])
                     .WithRedirectUrls(redirectUrls);
 
                 if (!string.IsNullOrEmpty(issuer))
@@ -529,7 +524,7 @@ namespace Udap.Client.Client
                 (
                     signedSoftwareStatement,
                     UdapConstants.UdapVersionsSupportedValue
-                    // new string[] { }
+                    // Array.Empty<string>()
                 );
 
                 // New StringContent constructor taking a MediaTypeHeaderValue to ensure CharSet can be controlled
@@ -564,14 +559,11 @@ namespace Udap.Client.Client
                         await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>(
                             cancellationToken: token);
 
-                    if (resultDocument == null)
-                    {
-                        resultDocument = new UdapDynamicClientRegistrationDocument
+                    resultDocument ??= new UdapDynamicClientRegistrationDocument
                         {
                             { "error", "Unknown error" },
                             { "error_description", response.StatusCode }
                         };
-                    }
 
                     return resultDocument;
                 }
@@ -595,7 +587,7 @@ namespace Udap.Client.Client
            CancellationToken token)
         {
             var x509Certificates = certificates.ToList();
-            if (certificates == null || !x509Certificates.Any())
+            if (certificates == null || x509Certificates.Count == 0)
             {
                 throw new Exception("Tiered OAuth: No client certificates provided.");
             }
@@ -609,7 +601,7 @@ namespace Udap.Client.Client
 
             foreach (var clientCert in x509Certificates)
             {
-                _logger.LogDebug($"Using certificate {clientCert.SubjectName.Name} [ {clientCert.Thumbprint} ]");
+                _logger.LogDebug("Using certificate {CertificateSubjectName} [{CertificateThumbprint}]", clientCert.SubjectName.Name, clientCert.Thumbprint);
 
                 var builder = UdapDcrBuilderForClientCredentials
                     .Create(clientCert)
@@ -617,10 +609,14 @@ namespace Udap.Client.Client
                     .WithExpiration(TimeSpan.FromMinutes(5))
                     .WithJwtId()
                     .WithClientName(_udapClientOptions.ClientName)
-                    .WithLogoUri(logoUrl)
                     .WithContacts(_udapClientOptions.Contacts)
                     .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
                     .WithScope(scopes);
+
+                if (logoUrl != null)
+                {
+                    builder.WithLogoUri(logoUrl);
+                }
 
                 if (!string.IsNullOrEmpty(issuer))
                 {
@@ -638,7 +634,7 @@ namespace Udap.Client.Client
                 (
                     signedSoftwareStatement,
                     UdapConstants.UdapVersionsSupportedValue
-                // new string[] { }
+                // Array.Empty<string>()
                 );
 
                 // New StringContent constructor taking a MediaTypeHeaderValue to ensure CharSet can be controlled
@@ -664,14 +660,11 @@ namespace Udap.Client.Client
                         await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>(
                             cancellationToken: token);
 
-                    if (resultDocument == null)
-                    {
-                        resultDocument = new UdapDynamicClientRegistrationDocument
+                    resultDocument ??= new UdapDynamicClientRegistrationDocument
                         {
                             { "error", "Unknown error" },
                             { "error_description", response.StatusCode }
                         };
-                    }
 
                     return resultDocument;
                 }

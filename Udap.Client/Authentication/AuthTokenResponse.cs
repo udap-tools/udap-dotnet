@@ -54,7 +54,16 @@ public class OAuthTokenResponse : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        Response?.Dispose();
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Response?.Dispose();
+        }
     }
 
     /// <summary>

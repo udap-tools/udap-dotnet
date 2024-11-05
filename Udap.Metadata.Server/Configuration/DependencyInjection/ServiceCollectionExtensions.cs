@@ -27,7 +27,9 @@ using Udap.Metadata.Server;
 using Udap.Model;
 
 // ReSharper disable once CheckNamespace
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Microsoft.Extensions.DependencyInjection;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 public static class ServiceCollectionExtensions
 {
@@ -65,7 +67,8 @@ public static class ServiceCollectionExtensions
         where TUdapMetadataOptions : UdapMetadataOptions
         where TUdapMetadata : UdapMetadata
     {
-        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}", (
+        var baseRoute = $"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}";
+        app.MapGet(baseRoute, (
                     [FromServices] UdapMetaDataEndpoint<TUdapMetadataOptions, TUdapMetadata> endpoint,
                     HttpContext httpContext,
                     [FromQuery] string? community,
@@ -74,19 +77,50 @@ public static class ServiceCollectionExtensions
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
 
-        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}/communities",
+        app.MapMethods(baseRoute, new[] { "OPTIONS" }, async context =>
+        {
+            context.Response.Headers.Append("Allow", "GET, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            context.Response.StatusCode = StatusCodes.Status204NoContent;
+            await context.Response.CompleteAsync();
+        });
+
+        app.MapGet($"{baseRoute}/communities",
                 ([FromServices] UdapMetaDataEndpoint<TUdapMetadataOptions, TUdapMetadata> endpoint) => endpoint.GetCommunities())
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
 
-        app.MapGet($"/{prefixRoute?.EnsureTrailingSlash().RemovePrefix("/")}{UdapConstants.Discovery.DiscoveryEndpoint}/communities/ashtml",
+        app.MapMethods($"{baseRoute}/communities", new[] { "OPTIONS" }, async context =>
+        {
+            context.Response.Headers.Append("Allow", "GET, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            context.Response.StatusCode = StatusCodes.Status204NoContent;
+            await context.Response.CompleteAsync();
+        });
+
+        app.MapGet($"{baseRoute}/communities/ashtml",
                 (
                     [FromServices] UdapMetaDataEndpoint<TUdapMetadataOptions, TUdapMetadata> endpoint,
                     HttpContext httpContext) => endpoint.GetCommunitiesAsHtml(httpContext))
             .AllowAnonymous()
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound); // community doesn't exist
+
+        app.MapMethods($"{baseRoute}/communities/ashtml", new[] { "OPTIONS" }, async context =>
+        {
+            context.Response.Headers.Append("Allow", "GET, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+            context.Response.StatusCode = StatusCodes.Status204NoContent;
+            await context.Response.CompleteAsync();
+        });
+
 
         return app;
     }

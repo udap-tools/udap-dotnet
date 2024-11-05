@@ -27,12 +27,21 @@ public class TestDatabaseProvider<T> : IDisposable where T : DbContext
 
     public void Dispose()
     {
-        if (Options != null) // null check since fixtures are created even when tests are skipped
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
         {
-            foreach (var option in Options.ToList())
+            if (Options != null) // null check since fixtures are created even when tests are skipped
             {
-                using var context = (T)Activator.CreateInstance(typeof(T), option)!;
-                context!.Database.EnsureDeleted();
+                foreach (var option in Options.ToList())
+                {
+                    using var context = (T)Activator.CreateInstance(typeof(T), option)!;
+                    context!.Database.EnsureDeleted();
+                }
             }
         }
     }

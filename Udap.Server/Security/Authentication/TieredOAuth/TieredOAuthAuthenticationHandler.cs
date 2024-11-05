@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -41,6 +40,7 @@ namespace Udap.Server.Security.Authentication.TieredOAuth;
 
 public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenticationOptions>
 {
+    private static readonly JsonSerializerOptions IndentedJsonOptions =  new JsonSerializerOptions { WriteIndented = true };
     private readonly IUdapClient _udapClient;
     private readonly IPrivateCertificateStore _certificateStore;
     private readonly IUdapClientRegistrationStore _udapClientRegistrationStore;
@@ -53,12 +53,11 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         IOptionsMonitor<TieredOAuthAuthenticationOptions> options,
         ILoggerFactory logger, 
         UrlEncoder encoder, 
-        ISystemClock clock,
         IUdapClient udapClient,
         IPrivateCertificateStore certificateStore,
         IUdapClientRegistrationStore udapClientRegistrationStore
         ) :
-        base(options, logger, encoder, clock)
+        base(options, logger, encoder)
     {
         _udapClient = udapClient;
         _certificateStore = certificateStore;
@@ -106,18 +105,12 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             Options.TokenEndpoint = tokenEndpoint!;
         } 
 
-        var idpBaseUrl = properties.GetParameter<string>("idpBaseUrl");
-
-        if (string.IsNullOrEmpty(idpBaseUrl))
-        {
-            Options.IdPBaseUrl = idpBaseUrl;
-        }
-
         // Dynamic options
         return QueryHelpers.AddQueryString(authEndpoint, queryStrings!);
     }
     
 
+    // ReSharper disable once RedundantOverriddenMember
     /// <summary>
     /// Called after options/events have been initialized for the handler to finish initializing itself.
     /// </summary>
@@ -216,8 +209,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             }
 
 
-            JwtSecurityToken? jwt = null;
-            string? nonce = null;
+            // JwtSecurityToken? jwt = null;
+            // string? nonce = null;
             //
             // Options.ProtocolValidator.ValidateAuthenticationResponse(new OpenIdConnectProtocolValidationContext()
             // {
@@ -253,10 +246,15 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
             var validationParameters = Options.TokenValidationParameters.Clone();
 
-            var clientId = properties.Items["client_id"] ?? throw new InvalidOperationException($"ClientId not found in properties");
-            var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId) ?? throw new InvalidOperationException($"ClientId not found in registration store: {clientId}");
+            var clientId = properties.Items["client_id"] ?? throw new InvalidOperationException($"client_id not found in properties");
+            var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId, Context.RequestAborted) ?? throw new InvalidOperationException($"client_id not found in registration store: {clientId}");
 
-            // TODO: pre installed keys check?
+            if (string.IsNullOrEmpty(tieredClient.IdPBaseUrl))
+            {
+                throw new InvalidOperationException("Tiered Client is missing an IdP base url.");
+            }
+
+            // TODO: pre-installed keys check?
 
             var request = new DiscoveryDocumentRequest
             {
@@ -268,10 +266,11 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                 }
             };
 
-            var keys = await _udapClient.ResolveJwtKeys(request);
+            var keys = await _udapClient.ResolveJwtKeys(request, Context.RequestAborted);
             validationParameters.IssuerSigningKeys = keys;
 
-            var tokenEndpointUser = ValidateToken(idToken, tieredClient.IdPBaseUrl, clientId, validationParameters, out var tokenEndpointJwt);
+            var tokenEndpointUser =
+                ValidateToken(idToken, tieredClient.IdPBaseUrl, clientId, validationParameters); //out var tokenEndpointJwt);
 
             // nonce = tokenEndpointJwt.Payload.Nonce;
             // if (!string.IsNullOrEmpty(nonce))
@@ -290,8 +289,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             // properties = tokenValidatedContext.Properties;
             // jwt = tokenValidatedContext.SecurityToken;
             // nonce = tokenValidatedContext.Nonce;
-
-
+            
             return HandleRequestResult.Success(new AuthenticationTicket(tokenEndpointUser, properties, Scheme.Name));
         }
         catch (Exception exception)
@@ -305,8 +303,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         string idToken, 
         string idpBaseUrl,
         string clientId,
-        TokenValidationParameters validationParameters,
-        out JwtSecurityToken jwt)
+        TokenValidationParameters validationParameters)
     {
         if (!Options.SecurityTokenValidator.CanReadToken(idToken))
         {
@@ -330,9 +327,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         validationParameters.ValidateIssuerSigningKey = false;
         
         var principal = Options.SecurityTokenValidator.ValidateToken(idToken, validationParameters, out SecurityToken validatedToken);
-        if (validatedToken is JwtSecurityToken validatedJwt)
+
+        if (validatedToken is JwtSecurityToken)
         {
-            jwt = validatedJwt;
+            // jwt = validatedJwt;
         }
         else
         {
@@ -364,13 +362,13 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         return principal;
     }
 
-    /// <summary>
-    /// Searches <see cref="HttpRequest.Cookies"/> for a matching nonce.
-    /// </summary>
-    /// <param name="nonce">the nonce that we are looking for.</param>
-    /// <returns>echos 'nonce' if a cookie is found that matches, null otherwise.</returns>
-    /// <remarks>Examine <see cref="IRequestCookieCollection.Keys"/> of <see cref="HttpRequest.Cookies"/> that start with the prefix: 'OpenIdConnectAuthenticationDefaults.Nonce'.
-    /// <see cref="M:ISecureDataFormat{TData}.Unprotect"/> of <see cref="OpenIdConnectOptions.StringDataFormat"/> is used to obtain the actual 'nonce'. If the nonce is found, then <see cref="M:IResponseCookies.Delete"/> of <see cref="HttpResponse.Cookies"/> is called.</remarks>
+    // /// <summary>
+    // /// Searches <see cref="HttpRequest.Cookies"/> for a matching nonce.
+    // /// </summary>
+    // /// <param name="nonce">the nonce that we are looking for.</param>
+    // /// <returns>echos 'nonce' if a cookie is found that matches, null otherwise.</returns>
+    // /// <remarks>Examine <see cref="IRequestCookieCollection.Keys"/> of <see cref="HttpRequest.Cookies"/> that start with the prefix: 'OpenIdConnectAuthenticationDefaults.Nonce'.
+    // /// <see cref="M:ISecureDataFormat{TData}.Unprotect"/> of <see cref="OpenIdConnectOptions.StringDataFormat"/> is used to obtain the actual 'nonce'. If the nonce is found, then <see cref="M:IResponseCookies.Delete"/> of <see cref="HttpResponse.Cookies"/> is called.</remarks>
     // private string? ReadNonceCookie(string nonce)
     // {
     //     if (nonce == null)
@@ -403,28 +401,28 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     // }
 
     /// <inheritdoc />
-    protected override async Task<OAuthTokenResponse> ExchangeCodeAsync([NotNull] OAuthCodeExchangeContext context)
+    protected override async Task<OAuthTokenResponse> ExchangeCodeAsync(OAuthCodeExchangeContext context)
     {
         Logger.LogInformation("UDAP exchanging authorization code.");
-        Logger.LogDebug(context.Properties.Items["returnUrl"] ?? "~/");
-        Logger.LogDebug(Context.Request.QueryString.Value);
+        Logger.LogDebug("{ReturnUrl}", context.Properties.Items["returnUrl"] ?? "~/");
+        var sanitizedQueryString = Context.Request.QueryString.Value?.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
+        Logger.LogDebug("{QueryString}", sanitizedQueryString);
 
         var originalRequestParams = HttpUtility.ParseQueryString(context.Properties.Items["returnUrl"] ?? "~/");
         var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
         var idpUri = new Uri(idp);
         var communityParam = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
 
-        var clientId = context.Properties.Items["client_id"];
-        
+        var clientId = context.Properties.Items["client_id"] ?? throw new InvalidOperationException("client_id is null");
         var resourceHolderRedirectUrl =
             $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
 
         var requestParams = Context.Request.Query;
         var code = requestParams["code"];
-        var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId) ?? throw new InvalidOperationException($"ClientId not found: {clientId}");
+        var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId, Context.RequestAborted) ?? throw new InvalidOperationException($"client_id not found: {clientId}");
         var tieredClientId = tieredClient.ClientId;
             
-        await _certificateStore.Resolve();
+        await _certificateStore.Resolve(Context.RequestAborted);
 
         // Sign request for token 
         var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
@@ -457,13 +455,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var idpParam = (requestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
         var scope = (requestParams.GetValues("scope") ?? throw new InvalidOperationException()).First();
 
-        var udap = scope.FromSpaceSeparatedString().FirstOrDefault(s => s == UdapConstants.StandardScopes.Udap);
-
-        if (udap == null)
-        {
-            throw new Exception("Missing required udap scope from client for Tiered OAuth");
-        }
-
+        _ = scope.FromSpaceSeparatedString().FirstOrDefault(s => s == UdapConstants.StandardScopes.Udap) ?? throw new Exception("Missing required udap scope from client for Tiered OAuth");
         var clientRedirectUrl = (requestParams.GetValues("redirect_uri") ?? throw new InvalidOperationException()).Last();
         var updateRegistration = requestParams.GetValues("update_registration")?.Last();
 
@@ -487,17 +479,17 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         _udapClient.Untrusted += certificate2 => properties.Parameters.Add("Untrusted", certificate2.Subject);
         _udapClient.TokenError += message => properties.Parameters.Add("TokenError", message);
         
-        var response = await _udapClient.ValidateResource(idp, communityParam);
+        var response = await _udapClient.ValidateResource(idp, communityParam, token: Context.RequestAborted);
         
         var resourceHolderRedirectUrl =
             $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Options.CallbackPath}";
 
         if (response.IsError)
         {
-            Logger.LogError(response.Error);
+            Logger.LogError("OAuth token exchange error: {Error}", response.Error);
 
-
-            var untrustedContext = new UdapUntrustedContext(Context, Scheme, Options, properties);
+            // TODO: investigate what this might have been used for.  
+            // var untrustedContext = new UdapUntrustedContext(Context, Scheme, Options, properties);
             Response.StatusCode = 401;
 
             // await Response.WriteAsJsonAsync(_udapClient.UdapServerMetaData);
@@ -513,16 +505,16 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         }
 
 
-        Logger.LogInformation($"Validated UDAP signed_metadata from {idp}");
-        Logger.LogDebug(JsonSerializer.Serialize(
+        Logger.LogInformation("Validated UDAP signed_metadata from {Idp}", idp);
+        Logger.LogDebug("UDAP Server Metadata: {Metadata}", JsonSerializer.Serialize(
             _udapClient.UdapServerMetaData,
-            new JsonSerializerOptions { WriteIndented = true }));
+            IndentedJsonOptions));
 
         //
         // if not registered with IdP, then register.
         //
 
-        var idpClient = await _udapClientRegistrationStore.FindTieredClientById(idp);
+        var idpClient = await _udapClientRegistrationStore.FindTieredClientById(idp, Context.RequestAborted);
 
         var idpClientId = null as string;
 
@@ -535,7 +527,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         // Not sure if it stays here or lives in an Admin tool.
         if (idpClient == null || !idpClient.Enabled || updateRegistration == "true")
         {
-            await _certificateStore.Resolve();
+            await _certificateStore.Resolve(Context.RequestAborted);
             var communityName = communityParam ?? _certificateStore.IssuedCertificates.First().Community; //TODO: query by 
             var communityId = await _udapClientRegistrationStore.GetCommunityId(communityName, Context.RequestAborted);
 
@@ -563,7 +555,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
             if (document.GetError() != null)
             {
-                Logger.LogWarning(document.GetError() + ": " + document.GetErrorDescription());
+                Logger.LogWarning("Error: {Error}, Description: {Description}", document.GetError(), document.GetErrorDescription());
                 await base.HandleChallengeAsync(properties);
                 return;
             }
@@ -575,8 +567,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
           
             var tokenHandler = new JsonWebTokenHandler();
             var jsonWebToken = tokenHandler.ReadJsonWebToken(document.SoftwareStatement);
-            var publicCert = jsonWebToken.GetPublicCertificate();
-            
+            var publicCert = jsonWebToken.GetPublicCertificate() ?? throw new MissingFieldException("Missing x5c public certificate");
             var tieredClient = new TieredClient
             {
                 ClientName = document.ClientName,

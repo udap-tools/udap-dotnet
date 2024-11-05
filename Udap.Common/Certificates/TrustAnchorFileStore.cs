@@ -52,12 +52,12 @@ public class TrustAnchorFileStore : ITrustAnchorStore
     {
        var communities = manifestCurrentValue.Communities;
 
-        _logger.LogInformation($"{communities.Count} communities loaded");
+        _logger.LogInformation("{Count} communities loaded", communities.Count);
 
         foreach (var community in communities)
         {
             var intermediates = new List<Intermediate>();
-            if (community.Intermediates.Any())
+            if (community.Intermediates.Count != 0)
             {
                 foreach (var intermediateFilePath in community.Intermediates)
                 {

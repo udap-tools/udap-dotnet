@@ -7,6 +7,7 @@
 // */
 #endregion
 
+// ReSharper disable PropertyCanBeMadeInitOnly.Global
 namespace Udap.Server.Entities;
 
 public class TieredClient
@@ -24,5 +25,6 @@ public class TieredClient
     public int CommunityId { get; set; }
     public bool Enabled { get; set; }
 
-    public string TokenEndpoint { get; set; }
+    public string TokenEndpoint { get; set; } = default!;
+
 }

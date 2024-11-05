@@ -30,14 +30,14 @@ namespace Udap.Client.Client.Extensions
         /// <param name="address">The address.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>
-        public static async Task<UdapDiscoveryDocumentResponse> GetUdapDiscoveryDocument(
+        public static Task<UdapDiscoveryDocumentResponse> GetUdapDiscoveryDocument(
             this HttpClient client,
             string? address = null, 
             CancellationToken cancellationToken = default)
         {
-            return await client
+            return client
                 .GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest { Address = address },
-                    cancellationToken).ConfigureAwait(false);
+                    cancellationToken);
         }
 
         /// <summary>
@@ -55,7 +55,7 @@ namespace Udap.Client.Client.Extensions
             string address;
             if (request.Address.IsPresent())
             {
-                address = request.Address;
+                address = request.Address!;
             }
             else if (client is HttpClient httpClient && httpClient.BaseAddress != null)
             {
@@ -125,9 +125,18 @@ namespace Udap.Client.Client.Extensions
 
                         if (jwkResponse.IsError)
                         {
-                            return await ProtocolResponse
-                                .FromHttpResponseAsync<UdapDiscoveryDocumentResponse>(jwkResponse.HttpResponse,
-                                    $"Error connecting to {jwkUrl}: {jwkResponse.HttpErrorReason}").ConfigureAwait(false);
+                            if (jwkResponse.HttpResponse != null)
+                            {
+                                return await ProtocolResponse
+                                    .FromHttpResponseAsync<UdapDiscoveryDocumentResponse>(jwkResponse.HttpResponse,
+                                        $"Error connecting to {jwkUrl}: {jwkResponse.HttpErrorReason}").ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                return ProtocolResponse.FromException<UdapDiscoveryDocumentResponse>(
+                                    new InvalidOperationException("HttpResponse is null"),
+                                    $"Error connecting to {jwkUrl}: {jwkResponse.HttpErrorReason}");
+                            }
                         }
 
                         disco.KeySet = jwkResponse.KeySet;

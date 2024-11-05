@@ -33,6 +33,7 @@ using Udap.Support.Tests.Client;
 using Xunit.Abstractions;
 using static UdapMetadata.Tests.FhirLabsApi.UdapControllerCommunityTest;
 using fhirLabsProgram = FhirLabsApi.Program;
+#pragma warning disable xUnit1004
 
 
 namespace UdapMetadata.Tests.FhirLabsApi;
@@ -70,12 +71,12 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
 {
     private readonly ApiForCommunityTestFixture _fixture;
     private readonly ITestOutputHelper _testOutputHelper;
-    private IServiceProvider _serviceProvider;
+    private readonly IServiceProvider _serviceProvider;
     private readonly FakeValidatorDiagnostics _diagnosticsValidator = new FakeValidatorDiagnostics();
 
     public UdapControllerCommunityTest(ApiForCommunityTestFixture fixture, ITestOutputHelper testOutputHelper)
     {
-        if (fixture == null) throw new ArgumentNullException(nameof(fixture));
+        ArgumentNullException.ThrowIfNull(fixture);
         fixture.Output = testOutputHelper;
         _fixture = fixture;
         _testOutputHelper = testOutputHelper;
@@ -151,7 +152,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         var response = await client.GetAsync("fhir/r4/.well-known/udap/communities");
         response.EnsureSuccessStatusCode();
         var communities = await response.Content.ReadFromJsonAsync<List<string>>();
-        communities.Count.Should().Be(6);
+        communities.Should().HaveCount(6);
         communities.Should().Contain(c => c == "udap://fhirlabs1/");
         communities.Should().Contain(c => c == "udap://Provider2");
 
@@ -175,7 +176,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://Provider2");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
 
         disco = await udapClient.ValidateResource(
@@ -183,7 +184,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://Provider2");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     }
 
@@ -197,7 +198,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4/.well-known/udap?community=udap://Provider2");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
 
         disco = await udapClient.ValidateResource(
@@ -205,7 +206,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://Provider2");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     }
 
@@ -220,7 +221,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://ECDSA/");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
 
         var disco2 = await udapClient.ValidateResource(
@@ -230,7 +231,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
         disco.Raw.Should().NotBe(disco2.Raw);
 
         disco2.IsError.Should().BeFalse($"\nError: {disco2.Error} \nError Type: {disco2.ErrorType}\n{disco2.Raw}");
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     }
 
@@ -246,11 +247,11 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://IssMismatchToSubjAltName/");
 
         disco.IsError.Should().BeTrue(disco.Raw);
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
         _diagnosticsValidator.TokenErrorCalled.Should().BeTrue();
-        _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("Failed JWT Validation")).Should().BeTrue();
+        _diagnosticsValidator.ActualErrorMessages.Should().Contain(m => m.Contains("Failed JWT Validation"));
         // http://localhost/fhir/r99 is the subject alt used to sign software statement
-        _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("http://localhost/fhir/r99")).Should().BeTrue();
+        _diagnosticsValidator.ActualErrorMessages.Should().Contain(m => m.Contains("http://localhost/fhir/r99"));
     }
 
     [Fact]
@@ -264,9 +265,9 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://IssMismatchToBaseUrl/");
 
         disco.IsError.Should().BeTrue(disco.Raw);
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
         _diagnosticsValidator.TokenErrorCalled.Should().BeTrue();
-        _diagnosticsValidator.ActualErrorMessages.Any(m => m.Contains("JWT iss does not match baseUrl.")).Should().BeTrue();
+        _diagnosticsValidator.ActualErrorMessages.Should().Contain(m => m.Contains("JWT iss does not match baseUrl."));
     }
 
 
@@ -379,11 +380,10 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://Provider2");
 
         disco.IsError.Should().BeTrue($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
 
-        _diagnosticsValidator.ActualErrorMessages.Any(m =>
-                m.Contains("OfflineRevocation"))
-            .Should().BeTrue();
+        _diagnosticsValidator.ActualErrorMessages            .Should().Contain(m =>
+                m.Contains("OfflineRevocation"));
     }
 
 
@@ -433,7 +433,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://Provider2");
 
         disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-        Assert.NotNull(udapClient.UdapServerMetaData);
+        udapClient.UdapServerMetaData.Should().NotBeNull();
         _diagnosticsValidator.ProblemCalled.Should().BeFalse();
 
         //
@@ -481,7 +481,7 @@ public class UdapControllerCommunityCertificateResolverTests : IClassFixture<Api
     public UdapControllerCommunityCertificateResolverTests(ApiForCommunityTestFixture fixture,
         ITestOutputHelper testOutputHelper)
     {
-        if (fixture == null) throw new ArgumentNullException(nameof(fixture));
+        ArgumentNullException.ThrowIfNull(fixture);
         fixture.Output = testOutputHelper;
         _fixture = fixture;
         _testOutputHelper = testOutputHelper;
@@ -543,10 +543,10 @@ public async Task ValidateChainWithMyAnchorAndIntermediateTest()
                 new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert2.cer"))
                 {
                     //TODO:  Implement a ICertificateResolver, injected into TrustChainValidator to follow AIA extensions, resolving intermediate certificates
-                    Intermediates = new List<Intermediate>
-                    {
+                    Intermediates =
+                    [
                         new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert2.cer"))
-                    }
+                    ]
                 }
             }
         });
@@ -589,7 +589,7 @@ public async Task ValidateChainWithMyAnchorAndIntermediateTest()
         "udap://Provider2");
 
     disco.IsError.Should().BeFalse($"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-    Assert.NotNull(udapClient.UdapServerMetaData);
+    udapClient.UdapServerMetaData.Should().NotBeNull();
     _diagnosticsValidator.ProblemCalled.Should().BeFalse();
 }
 
@@ -667,7 +667,7 @@ public async Task ValidateChainWithMyAnchorTest()
         "udap://Provider2");
 
     disco.IsError.Should().BeTrue(disco.Raw);
-    Assert.NotNull(udapClient.UdapServerMetaData);
+    udapClient.UdapServerMetaData.Should().NotBeNull();
     _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
 }
 
@@ -706,10 +706,10 @@ public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
                 {
                     new Anchor(new X509Certificate2("./CertStore/anchors/caLocalhostCert.cer"), "udap://Provider2")
                     {
-                        Intermediates = new List<Intermediate>
-                        {
+                        Intermediates =
+                        [
                             new Intermediate(new X509Certificate2("./CertStore/intermediates/intermediateLocalhostCert.cer"))
-                        }
+                        ]
                     }
                 }
             });
@@ -754,7 +754,7 @@ public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
         "udap://Provider2");
 
     disco.IsError.Should().BeTrue(disco.Raw);
-    Assert.NotNull(udapClient.UdapServerMetaData);
+    udapClient.UdapServerMetaData.Should().NotBeNull();
     _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
     _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");
@@ -836,7 +836,7 @@ public async Task ValidateChainWithMyAnchorFailTest()
         "udap://Provider2");
 
     disco.IsError.Should().BeTrue(disco.Raw);
-    Assert.NotNull(udapClient.UdapServerMetaData);
+    udapClient.UdapServerMetaData.Should().NotBeNull();
     _diagnosticsValidator.ProblemCalled.Should().BeFalse();
     _diagnosticsValidator.UntrustedCalled.Should().BeTrue();
     _diagnosticsValidator.UnTrustedCertificate.Should().Be("CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US");

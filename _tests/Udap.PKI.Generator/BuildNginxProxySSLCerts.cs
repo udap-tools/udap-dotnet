@@ -12,6 +12,7 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Configuration;
 using Udap.Support.Tests.Extensions;
 using Xunit.Abstractions;
+#pragma warning disable xUnit1004
 
 namespace Udap.PKI.Generator;
 
@@ -44,49 +45,44 @@ public class BuildNginxProxySSLCerts : CertificateBase
     [Fact(Skip = "Enabled on desktop when needed.")]
     public void MakeCaWithIntermediateUdapAndSSLForDefaultCommunity()
     {
-        using (RSA parentRSAKey = RSA.Create(4096))
-        {
-            var parentReq = new CertificateRequest(
-                "CN=ngnix-proxy-TestCA, OU=Root, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                parentRSAKey,
-                HashAlgorithmName.SHA256,
-                RSASignaturePadding.Pkcs1);
+        using RSA parentRSAKey = RSA.Create(4096);
+        var parentReq = new CertificateRequest(
+            "CN=ngnix-proxy-TestCA, OU=Root, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+            parentRSAKey,
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1);
 
-            parentReq.CertificateExtensions.Add(
-                new X509BasicConstraintsExtension(true, false, 0, true));
+        parentReq.CertificateExtensions.Add(
+            new X509BasicConstraintsExtension(true, false, 0, true));
 
-            parentReq.CertificateExtensions.Add(
-                new X509KeyUsageExtension(
-                    X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.KeyCertSign,
-                    true));
+        parentReq.CertificateExtensions.Add(
+            new X509KeyUsageExtension(
+                X509KeyUsageFlags.CrlSign | X509KeyUsageFlags.KeyCertSign,
+                true));
 
-            parentReq.CertificateExtensions.Add(
-                new X509EnhancedKeyUsageExtension(
-                    new OidCollection
-                    {
+        parentReq.CertificateExtensions.Add(
+            new X509EnhancedKeyUsageExtension(
+                new OidCollection
+                {
                         new Oid("1.3.6.1.5.5.7.3.2"), // TLS Client auth
                         new Oid("1.3.6.1.5.5.7.3.1"), // TLS Server auth
                         new Oid("1.3.6.1.5.5.7.3.8") // Time Stamping
-                    },
-                    true));
+                },
+                true));
 
-            parentReq.CertificateExtensions.Add(
-                new X509SubjectKeyIdentifierExtension(parentReq.PublicKey, false));
+        parentReq.CertificateExtensions.Add(
+            new X509SubjectKeyIdentifierExtension(parentReq.PublicKey, false));
 
-            using (var caCert = parentReq.CreateSelfSigned(
-                       DateTimeOffset.UtcNow.AddDays(-1),
-                       DateTimeOffset.UtcNow.AddYears(10)))
-            {
-                var parentBytes = caCert.Export(X509ContentType.Pkcs12, "udap-test");
-                SureFhirLabsCertStore.EnsureDirectoryExists();
-                File.WriteAllBytes($"{SureFhirLabsCertStore}/ngnix-proxy-TestCA.pfx", parentBytes);
-                char[] caPem = PemEncoding.Write("CERTIFICATE", caCert.RawData);
-                File.WriteAllBytes($"{SureFhirLabsCertStore}/ngnix-proxy-TestCA.cer",
-                    caPem.Select(c => (byte)c).ToArray());
-                UpdateWindowsMachineStore(caCert);
-                
-            }
-        }
+        using var caCert = parentReq.CreateSelfSigned(
+                   DateTimeOffset.UtcNow.AddDays(-1),
+                   DateTimeOffset.UtcNow.AddYears(10));
+        var parentBytes = caCert.Export(X509ContentType.Pkcs12, "udap-test");
+        SureFhirLabsCertStore.EnsureDirectoryExists();
+        File.WriteAllBytes($"{SureFhirLabsCertStore}/ngnix-proxy-TestCA.pfx", parentBytes);
+        char[] caPem = PemEncoding.Write("CERTIFICATE", caCert.RawData);
+        File.WriteAllBytes($"{SureFhirLabsCertStore}/ngnix-proxy-TestCA.cer",
+            caPem.Select(c => (byte)c).ToArray());
+        UpdateWindowsMachineStore(caCert);
     }
 
     public static IEnumerable<object[]> SSLProxyCerts()
@@ -199,8 +195,10 @@ public class BuildNginxProxySSLCerts : CertificateBase
     }
 
     [Theory(Skip = "Enabled on desktop when needed.")]
+#pragma warning disable xUnit1042
     [MemberData(nameof(SSLProxyCerts))]
     [MemberData(nameof(Hl7SRI))]
+#pragma warning restore xUnit1042
     public void MakeIdentityProviderCertificates(string dn, string san)
     {
         using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/ngnix-proxy-TestCA.pfx", "udap-test");
@@ -218,15 +216,15 @@ public class BuildNginxProxySSLCerts : CertificateBase
 
 
 
-    private X509Certificate2 BuildSslCertificate(
-        X509Certificate2? caCert,
+    private void BuildSslCertificate(X509Certificate2 caCert,
         string distinguishedName,
         string subjectAltNames,
         string sslCertFilePath,
         string? crl = default,
         // string? buildAIAExtensionsPath = null,
         DateTimeOffset notBefore = default,
-        DateTimeOffset notAfter = default)
+        DateTimeOffset notAfter = default
+    )
     {
 
         if (notBefore == default)
@@ -294,15 +292,13 @@ public class BuildNginxProxySSLCerts : CertificateBase
         certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
         
         var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
-        File.WriteAllBytes($"{sslCertFilePath}.pfx", clientBytes);
+        File.WriteAllBytes($"{sslCertFilePath}.pfx", clientBytes!);
         var clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
         File.WriteAllBytes($"{sslCertFilePath}.cer", clientPem.Select(c => (byte)c).ToArray());
         File.WriteAllBytes($"{sslCertFilePath}.pem", clientPem.Select(c => (byte)c).ToArray());
 
         var key = PemEncoding.Write("RSA PRIVATE KEY", rsaKey.ExportRSAPrivateKey());
         File.WriteAllBytes($"{sslCertFilePath}.key", key.Select(c => (byte)c).ToArray());
-
-        return clientCert;
     }
 
 }

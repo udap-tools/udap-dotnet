@@ -34,8 +34,8 @@ namespace Udap.Common.Certificates
 {
     public class TrustChainValidator
     {
-        private X509ChainPolicy _validationPolicy;
-        private X509ChainStatusFlags _problemFlags;
+        private readonly X509ChainPolicy _validationPolicy;
+        private readonly X509ChainStatusFlags _problemFlags;
         private const X509RevocationMode DefaultX509RevocationMode = X509RevocationMode.Online;
         private const X509RevocationFlag DefaultX509RevocationFlag = X509RevocationFlag.ExcludeRoot;
         private readonly ILogger<TrustChainValidator> _logger;
@@ -133,22 +133,18 @@ namespace Udap.Common.Certificates
             communityId = null;
             chainElements = null;
 
-            if (certificate == null)
-            {
-                throw new ArgumentNullException(nameof(certificate));
-            }
-
             // Let's avoid complex state and/or race conditions by making copies of these collections.
-            X509Certificate2Collection roots = new X509Certificate2Collection(anchorCertificates); 
-            X509Certificate2Collection? intermeds = null;
+            var roots = new X509Certificate2Collection(anchorCertificates); 
+            X509Certificate2Collection? intermediatesCloned = null;
 
             if (intermediateCertificates != null)
             {
-                intermeds = new X509Certificate2Collection(intermediateCertificates);
+                intermediatesCloned = new X509Certificate2Collection(intermediateCertificates);
             }
 
+            // ReSharper disable once RedundantAssignment
             intermediateCertificates = null;
-            anchorCertificates = null;
+            
 
             // if there are no anchors we should always fail
             if (roots.IsNullOrEmpty())
@@ -168,6 +164,8 @@ namespace Udap.Common.Certificates
                 // In direct world this was just a way to resolve the intermediate in our own store
                 // I don't think on Windows we ever did this in practice.
                 // The chain builder in Windows and I believe in OpenSSL on Linux does the intermediate resolution.
+                // Note: I found if this is hosted on an Android device the intermediate certificate is not automatically
+                // resolved by the x509Chain.Build().
                 // Again more to test here.
                 //
 
@@ -181,9 +179,9 @@ namespace Udap.Common.Certificates
                 }
 
                 chainBuilder.ChainPolicy = chainPolicy;
-                if (intermeds != null)
+                if (intermediatesCloned != null)
                 {
-                    chainBuilder.ChainPolicy.ExtraStore.AddRange(intermeds!);
+                    chainBuilder.ChainPolicy.ExtraStore.AddRange(intermediatesCloned);
                 }
                 var result = chainBuilder.Build(certificate);
 
@@ -217,10 +215,13 @@ namespace Udap.Common.Certificates
                         // Found a valid anchor!
                         // Because we found an anchor we trust, we can skip trust
                         foundAnchor = true;
-                        if (anchors != null)
+                        var anchorList = (anchors ?? Array.Empty<Anchor>()).ToList();
+
+                        if (anchorList.Count != 0)
                         {
-                            communityId = anchors.First(a => a.Thumbprint == chainElement.Certificate.Thumbprint).CommunityId;
+                            communityId = anchorList.First(a => a.Thumbprint == chainElement.Certificate.Thumbprint).CommunityId;
                         }
+
                         continue;
                     }
 
@@ -237,7 +238,10 @@ namespace Udap.Common.Certificates
                     //
                     // Can end up here if problem flags exist that we do not care about.
                     //
-                    _logger.LogWarning($"Client:: {clientName} Problem Flags set:: {_problemFlags.ToString()} ChainStatus:: {chainElements.Summarize()}");
+                    _logger.LogWarning("Client: {ClientName} Problem Flags set: {ProblemFlags} ChainStatus: {ChainStatus}",
+                        clientName,
+                        _problemFlags.ToString(),
+                        chainElements.Summarize());
                 }
 
                 if (!foundAnchor)
@@ -275,7 +279,7 @@ namespace Udap.Common.Certificates
 
         private void NotifyUntrusted(X509Certificate2 cert)
         {
-            _logger.LogWarning($"{nameof(TrustChainValidator)} Untrusted: {cert.Subject}");
+            _logger.LogWarning("{Validator} Untrusted: {CertificateSubject}", nameof(TrustChainValidator), cert.Subject);
 
             if (this.Untrusted != null)
             {
@@ -293,7 +297,7 @@ namespace Udap.Common.Certificates
 
         private void NotifyProblem(X509ChainElement chainElement)
         {
-            _logger.LogWarning($"{nameof(TrustChainValidator)} Chain Problem: {chainElement.ChainElementStatus.Summarize(_problemFlags)}");
+            _logger.LogWarning("{Validator} Chain Problem: {ChainStatus}", nameof(TrustChainValidator), chainElement.ChainElementStatus.Summarize(_problemFlags));
 
             if (this.Problem != null)
             {
@@ -310,7 +314,7 @@ namespace Udap.Common.Certificates
 
         private void NotifyError(X509Certificate2 cert, Exception exception)
         {
-            _logger.LogWarning($"{nameof(TrustChainValidator)} Error: {exception.Message}");
+            _logger.LogWarning("{Validator} Error: {ErrorMessage}", nameof(TrustChainValidator), exception.Message);
 
             if (this.Error != null)
             {

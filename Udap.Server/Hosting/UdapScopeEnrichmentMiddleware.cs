@@ -9,7 +9,6 @@
 
 using System.IdentityModel.Tokens.Jwt;
 using Duende.IdentityServer.Extensions;
-using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
 using IdentityModel;
 using Microsoft.AspNetCore.Http;
@@ -17,7 +16,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Udap.Common.Extensions;
 using Udap.Server.Configuration;
-using Udap.Server.Extensions;
 using Udap.Util.Extensions;
 
 namespace Udap.Server.Hosting;
@@ -40,8 +38,7 @@ internal class UdapScopeEnrichmentMiddleware
 
     public async Task Invoke(
         HttpContext context,
-        IClientStore clients,
-        IIdentityServerInteractionService interactionService)
+        IClientStore clients)
     {
         if (
             context.Request.Path.Value != null &&
@@ -49,7 +46,7 @@ internal class UdapScopeEnrichmentMiddleware
         {
             var body = await context.Request.ReadFormAsync();
 
-            if (body.Any())
+            if (body.Count != 0)
             {
 
                 var clientAssertionType = body[OidcConstants.TokenRequest.ClientAssertionType].FirstOrDefault();
@@ -72,7 +69,7 @@ internal class UdapScopeEnrichmentMiddleware
 
                     if (client == null)
                     {
-                        _logger.LogWarning($"ClientId {clientId}, not found");
+                        _logger.LogWarning("ClientId {ClientId} not found", clientId);
                     }
                     else
                     {
@@ -95,7 +92,7 @@ internal class UdapScopeEnrichmentMiddleware
                             //
                             // Default scopes only added if we have none.
                             //
-                            if (defaultScopes != null && !client.AllowedScopes.Any())
+                            if (defaultScopes != null && client.AllowedScopes.Count == 0)
                             {
                                 foreach (var defaults in defaultScopes)
                                 {
@@ -103,7 +100,7 @@ internal class UdapScopeEnrichmentMiddleware
                                 }
                             }
 
-                            _logger.LogDebug($"Appending scopes; {scopes.ToSpaceSeparatedString()}");
+                            _logger.LogDebug("Appending scopes; {Scopes}", scopes.ToSpaceSeparatedString());
 
                             form.Set(OidcConstants.TokenRequest.Scope, scopes.ToSpaceSeparatedString());
                             var values = new Dictionary<string, StringValues>();

@@ -14,6 +14,7 @@ namespace Udap.Model.Registration;
 public class UdapDynamicClientRegistrationErrorResponse
 {
     /// <summary>Initializes a new instance of the <see cref="T:System.Object"></see> class.</summary>
+    [JsonConstructor]
     public UdapDynamicClientRegistrationErrorResponse(string error, string errorDescription)
     {
         Error = error;

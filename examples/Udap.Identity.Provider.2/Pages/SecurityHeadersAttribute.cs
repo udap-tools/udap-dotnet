@@ -18,9 +18,9 @@ public class SecurityHeadersAttribute : ActionFilterAttribute
 
         if (result is PageResult)
         {
-            var interaction = context.HttpContext.RequestServices.GetService<IIdentityServerInteractionService>();
+            var interaction = context.HttpContext.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
             var grants = await interaction.GetAllUserGrantsAsync();
-            var clients = context.HttpContext.RequestServices.GetService<IClientStore>();
+            var clients = context.HttpContext.RequestServices.GetRequiredService<IClientStore>();
             var logoList = new List<string>();
 
             foreach (var grant in grants)
@@ -28,21 +28,23 @@ public class SecurityHeadersAttribute : ActionFilterAttribute
                 var client = await clients.FindClientByIdAsync(grant.ClientId);
                 if (client != null && client.ClientSecrets.Any(s => s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                 {
-                    logoList.Add(client.LogoUri);
+                    if (client.LogoUri != null)
+                    {
+                        logoList.Add(client.LogoUri);
+                    }
                 }
             }
-
 
             // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options
             if (!context.HttpContext.Response.Headers.ContainsKey("X-Content-Type-Options"))
             {
-                context.HttpContext.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                context.HttpContext.Response.Headers["X-Content-Type-Options"] = "nosniff";
             }
 
             // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options
             if (!context.HttpContext.Response.Headers.ContainsKey("X-Frame-Options"))
             {
-                context.HttpContext.Response.Headers.Add("X-Frame-Options", "SAMEORIGIN");
+                context.HttpContext.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
             }
 
             // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy
@@ -55,19 +57,18 @@ public class SecurityHeadersAttribute : ActionFilterAttribute
             // once for standards compliant browsers
             if (!context.HttpContext.Response.Headers.ContainsKey("Content-Security-Policy"))
             {
-                context.HttpContext.Response.Headers.Add("Content-Security-Policy", csp);
+                context.HttpContext.Response.Headers["Content-Security-Policy"] = csp;
             }
             // and once again for IE
             if (!context.HttpContext.Response.Headers.ContainsKey("X-Content-Security-Policy"))
             {
-                context.HttpContext.Response.Headers.Add("X-Content-Security-Policy", csp);
+                context.HttpContext.Response.Headers["X-Content-Security-Policy"] = csp;
             }
 
             // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
-            var referrer_policy = "no-referrer";
             if (!context.HttpContext.Response.Headers.ContainsKey("Referrer-Policy"))
             {
-                context.HttpContext.Response.Headers.Add("Referrer-Policy", referrer_policy);
+                context.HttpContext.Response.Headers["Referrer-Policy"] = "no-referrer";
             }
         }
 

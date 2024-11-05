@@ -26,7 +26,7 @@ using Udap.Smart.Model;
 using Constants = Udap.Common.Constants;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Configuration.AddUserSecrets<Program>(optional:true);  // I want user secrets even in release mode.
+builder.Configuration.AddUserSecrets<Program>(optional: true);  // I want user secrets even in release mode.
 
 builder.Host.UseSerilog((ctx, lc) => lc
     .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}")
@@ -49,12 +49,29 @@ var settings = builder.Configuration.GetOption<ServerSettings>("ServerSettings")
 
 DirectorySystemService<IServiceProvider>.Directory = settings.ServerBaseDirectory;
 if (!Directory.Exists(DirectorySystemService<IServiceProvider>.Directory))
-    Directory.CreateDirectory(DirectorySystemService<IServiceProvider>.Directory);
+{
+
+    if (DirectorySystemService<IServiceProvider>.Directory == null)
+    {
+        Log.Error("ServerSettings.Directory is missing.");
+        throw (new Exception("ServerSettings.Directory is missing."));
+    }
+
+    try
+    {
+        Directory.CreateDirectory(DirectorySystemService<IServiceProvider>.Directory);
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Unable to create directory {Directory}", DirectorySystemService<IServiceProvider>.Directory);
+    }
+}
 
 //
 // s is unused.  Maybe the TODO above would make this go away.  
 //
-builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(s => {
+builder.Services.AddSingleton<IFhirSystemServiceR4<IServiceProvider>>(_ =>
+{
     var systemService = new DirectorySystemService<IServiceProvider>();
     systemService.InitializeIndexes();
     return systemService;
@@ -66,14 +83,14 @@ builder.Services
         // An example HTML formatter that puts the raw XML on the output
         options.OutputFormatters.Add(new SimpleHtmlFhirOutputFormatter());
         // need this to serialize udap metadata because UseFhirServerController clears OutputFormatters
-        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(JsonSerializerOptions.Default));        
+        options.OutputFormatters.Add(new SystemTextJsonOutputFormatter(JsonSerializerOptions.Default));
     })
     .AddNewtonsoftJson(options =>
     {
         options.SerializerSettings.ContractResolver = new DefaultContractResolver
         {
             NamingStrategy = new SnakeCaseNamingStrategy(),
-    
+
         };
         options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
         options.SerializerSettings.Formatting = Formatting.Indented;
@@ -86,8 +103,8 @@ builder.Services.AddAuthentication(OidcConstants.AuthenticationSchemes.Authoriza
     {
         options.Authority = builder.Configuration["Jwt:Authority"];
         options.RequireHttpsMetadata = bool.Parse(builder.Configuration["Jwt:RequireHttpsMetadata"] ?? "true");
-     
-        
+
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateAudience = false
@@ -101,7 +118,7 @@ builder.Services
     .AddUdapMetadataServer(builder.Configuration)
     .AddSingleton<IPrivateCertificateStore>(sp =>
         new IssuedCertificateStore(
-            sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(), 
+            sp.GetRequiredService<IOptionsMonitor<UdapFileCertStoreManifest>>(),
             sp.GetRequiredService<ILogger<IssuedCertificateStore>>()));
 
 
@@ -166,7 +183,7 @@ app.Use(async (context, next) =>
             await context.Response.CompleteAsync();
             return;
         }
-        
+
         context.Response.StatusCode = (int)HttpStatusCode.NotFound;
         await context.Response.CompleteAsync();
         return;
@@ -199,5 +216,6 @@ app.Run();
 //
 namespace FhirLabsApi
 {
+    // ReSharper disable once ClassNeverInstantiated.Global: Used for UnitTests
     public partial class Program { }
 }

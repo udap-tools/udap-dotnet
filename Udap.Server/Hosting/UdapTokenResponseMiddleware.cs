@@ -37,7 +37,7 @@ public class UdapTokenResponseMiddleware
                 if (context.Response.Headers.ContentType.ToString().ToLower().Equals("application/json; charset=utf-8"))
                 {
                     context.Response.Headers.Remove("Content-Type");
-                    context.Response.Headers.Add("Content-Type", new StringValues("application/json"));
+                    context.Response.Headers.Append("Content-Type", new StringValues("application/json"));
 
                     _logger.LogDebug("Changed Content-Type header to \"application/json\"");
                 }

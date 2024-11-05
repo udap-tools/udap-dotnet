@@ -16,11 +16,11 @@ using Duende.IdentityServer.Events;
 using Duende.IdentityServer.Services;
 using FluentAssertions;
 
-namespace UnitTests.Common;
+namespace UdapServer.Tests.Common;
 
 public class TestEventService : IEventService
 {
-    private Dictionary<Type, object> _events = new Dictionary<Type, object>();
+    private readonly Dictionary<Type, object> _events = new Dictionary<Type, object>();
 
     public Task RaiseAsync(Event evt)
     {

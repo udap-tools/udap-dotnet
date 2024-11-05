@@ -31,8 +31,8 @@ namespace UdapServer.Tests.Conformance.Basic;
 public class ReplayRegistrationTests
 {
     private readonly ITestOutputHelper _testOutputHelper;
-    private UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
-    private UdapAuthServerPipeline _mockPipelineReplay = new UdapAuthServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipeline = new UdapAuthServerPipeline();
+    private readonly UdapAuthServerPipeline _mockPipelineReplay = new UdapAuthServerPipeline();
 
     public ReplayRegistrationTests(ITestOutputHelper testOutputHelper)
     {
@@ -80,7 +80,7 @@ public class ReplayRegistrationTests
         
     }
 
-    private void BuildUdapAuthorizationServer(X509Certificate2 sureFhirLabsAnchor, X509Certificate2 intermediateCert, UdapAuthServerPipeline mockPipeline)
+    private static void BuildUdapAuthorizationServer(X509Certificate2 sureFhirLabsAnchor, X509Certificate2 intermediateCert, UdapAuthServerPipeline mockPipeline)
     {
 
         mockPipeline.OnPreConfigureServices += (_, s) =>
@@ -99,8 +99,8 @@ public class ReplayRegistrationTests
             Name = "udap://fhirlabs.net",
             Enabled = true,
             Default = true,
-            Anchors = new[]
-            {
+            Anchors =
+            [
                 new Anchor(sureFhirLabsAnchor, "udap://fhirlabs.net")
                 {
                     BeginDate = sureFhirLabsAnchor.NotBefore.ToUniversalTime(),
@@ -118,7 +118,7 @@ public class ReplayRegistrationTests
                         }
                     }
                 }
-            }
+            ]
         });
 
 
@@ -158,7 +158,7 @@ public class ReplayRegistrationTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -217,7 +217,7 @@ public class ReplayRegistrationTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipeline.BrowserClient.PostAsync(
@@ -264,7 +264,7 @@ public class ReplayRegistrationTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipelineReplay.BrowserClient.PostAsync(
@@ -319,7 +319,7 @@ public class ReplayRegistrationTests
         (
             signedSoftwareStatement,
             UdapConstants.UdapVersionsSupportedValue,
-            new string[] { }
+            Array.Empty<string>()
         );
 
         var regResponse = await _mockPipelineReplay.BrowserClient.PostAsync(

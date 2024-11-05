@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Udap.Client.Client;
 
@@ -36,8 +37,30 @@ namespace Udap.Client.Configuration;
 /// </pre>
 /// </remarks>
 
+
 public class UdapClientOptions
 {
+    public UdapClientOptions()
+    {
+        ClientName = string.Empty;
+        Contacts = [];
+        Headers = [];
+        TieredOAuthClientLogo = string.Empty;
+    }
+
+    [JsonConstructor]
+    public UdapClientOptions(
+        string? clientName = null,
+        HashSet<string>? contacts = null,
+        Dictionary<string, string>? headers = null,
+        string tieredOAuthClientLogo = "")
+    {
+        ClientName = clientName ?? string.Empty;
+        Contacts = contacts ?? [];
+        Headers = headers ?? [];
+        TieredOAuthClientLogo = tieredOAuthClientLogo;
+    }
+
     [JsonPropertyName("ClientName")]
     public string? ClientName { get; set; }
 

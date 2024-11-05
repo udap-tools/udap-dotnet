@@ -1,4 +1,4 @@
-﻿#region (c) 2023 Joseph Shook. All rights reserved.
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
 // /*
 //  Authors:
 //     Joseph Shook   Joseph.Shook@Surescripts.com
@@ -7,22 +7,15 @@
 // */
 #endregion
 
-using Duende.IdentityServer.Configuration;
-using Duende.IdentityServer.Hosting;
 using Duende.IdentityServer.ResponseHandling;
-using IdentityModel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Client.Client;
 using Udap.Client.Configuration;
-using Udap.Common;
 using Udap.Common.Certificates;
-using Udap.Common.Extensions;
 using Udap.Common.Models;
 using Udap.Model;
-using Udap.Server;
 using Udap.Server.Configuration;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.DbContexts;
@@ -31,14 +24,15 @@ using Udap.Server.Options;
 using Udap.Server.ResponseHandling;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Stores;
-using Udap.Server.Validation;
-using static Udap.Server.Constants;
 
 //
 // See reason for Microsoft.Extensions.DependencyInjection namespace
 // here: https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection-usage
 //
+// ReSharper disable once CheckNamespace
+#pragma warning disable IDE0130 // Namespace does not match folder structure
 namespace Microsoft.Extensions.DependencyInjection;
+#pragma warning restore IDE0130 // Namespace does not match folder structure
 
 /// <summary>
 /// Extensions to enable UDAP Server.

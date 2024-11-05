@@ -13,7 +13,7 @@ using Udap.Common.Extensions;
 namespace Udap.Common.Tests.Extensions;
 public class Hl7ModelInfoExtensionsTests
 {
-    Func<string, bool> treatmentSpecification = r => r is "Patient" or "AllergyIntolerance" or "Condition" or "Encounter";
+    readonly Func<string, bool> treatmentSpecification = r => r is "Patient" or "AllergyIntolerance" or "Condition" or "Encounter";
 
     [Fact]
     public void Test()

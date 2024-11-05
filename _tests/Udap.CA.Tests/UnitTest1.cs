@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Udap.CA.Services;
 using Udap.Util.Extensions;
+// ReSharper disable All
 
 
 namespace Udap.CA.Tests;

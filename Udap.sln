@@ -19,6 +19,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{522A1681-215E-4C39-B1AC-1324F7CE516E}"
 	ProjectSection(SolutionItems) = preProject
 		.dockerignore = .dockerignore
+		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		Common.props = Common.props
 		Directory.Build.props = Directory.Build.props
@@ -91,6 +92,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "mTLS.Proxy.Server", "examples\mTLS.Proxy.Server\mTLS.Proxy.Server.csproj", "{C984A7E5-A33B-4D9F-9467-697DB715E8D2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tefca.Proxy.Server", "examples\Tefca.Proxy.Server\Tefca.Proxy.Server.csproj", "{FDB5712F-2EB4-4A36-9DEF-955B3575024D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.CdsHooks.Model", "Udap.CdsHooks.Model\Udap.CdsHooks.Model.csproj", "{B36DAF60-41C0-46D4-AC6B-6EDE1A6197C0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Udap.CdsHooks.Endpoint", "Udap.CdsHooks.Endpoint\Udap.CdsHooks.Endpoint.csproj", "{F6752364-2DB3-425D-B6A0-031EE30A1747}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -279,6 +284,18 @@ Global
 		{FDB5712F-2EB4-4A36-9DEF-955B3575024D}.FullDebug|Any CPU.Build.0 = Debug|Any CPU
 		{FDB5712F-2EB4-4A36-9DEF-955B3575024D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FDB5712F-2EB4-4A36-9DEF-955B3575024D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B36DAF60-41C0-46D4-AC6B-6EDE1A6197C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B36DAF60-41C0-46D4-AC6B-6EDE1A6197C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B36DAF60-41C0-46D4-AC6B-6EDE1A6197C0}.FullDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B36DAF60-41C0-46D4-AC6B-6EDE1A6197C0}.FullDebug|Any CPU.Build.0 = Debug|Any CPU
+		{B36DAF60-41C0-46D4-AC6B-6EDE1A6197C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B36DAF60-41C0-46D4-AC6B-6EDE1A6197C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6752364-2DB3-425D-B6A0-031EE30A1747}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6752364-2DB3-425D-B6A0-031EE30A1747}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6752364-2DB3-425D-B6A0-031EE30A1747}.FullDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6752364-2DB3-425D-B6A0-031EE30A1747}.FullDebug|Any CPU.Build.0 = Debug|Any CPU
+		{F6752364-2DB3-425D-B6A0-031EE30A1747}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6752364-2DB3-425D-B6A0-031EE30A1747}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

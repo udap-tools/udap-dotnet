@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
+#pragma warning disable
 
 namespace IdentityServerDb.Migrations.ConfigurationDb
 {

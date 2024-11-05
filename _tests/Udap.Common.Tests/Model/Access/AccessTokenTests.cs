@@ -1,37 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
+﻿#region (c) 2024 Joseph Shook. All rights reserved.
+// /*
+//  Authors:
+//     Joseph Shook   Joseph.Shook@Surescripts.com
+// 
+//  See LICENSE in the project root for license information.
+// */
+#endregion
+
 using System.IdentityModel.Tokens.Jwt;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using FluentAssertions;
 using Hl7.Fhir.Model;
 using Hl7.Fhir.Serialization;
-using Microsoft.IdentityModel.Tokens;
 using Udap.Model;
 using Udap.Model.Access;
 using Udap.Model.Registration;
 using Udap.Model.UdapAuthenticationExtensions;
-using Xunit.Abstractions;
 
 namespace Udap.Common.Tests.Model.Access;
+
 public class AccessTokenTests
 {
-    private readonly ITestOutputHelper _testOutputHelper;
-
-    public AccessTokenTests(ITestOutputHelper testOutputHelper)
-    {
-        _testOutputHelper = testOutputHelper;
-    }
-
     /// <summary>
     /// Without builder
     /// </summary>
     [Fact]
-    public void TestHl7b2bExtensionSerialization()
+    public void TestHl7B2BExtensionSerialization()
     {
         var expiration = TimeSpan.FromMinutes(5);
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
@@ -65,7 +60,7 @@ public class AccessTokenTests
         var organizationId = new Uri("https://fhirlabs.net/fhir/r4/Organization/99").OriginalString;
         var organizationName = "FhirLabs";
 
-        var b2bHl7 = new HL7B2BAuthorizationExtension()
+        var b2BHl7 = new HL7B2BAuthorizationExtension()
         {
             SubjectId = subjectId,
             SubjectName = subjectName,
@@ -74,12 +69,12 @@ public class AccessTokenTests
             OrganizationName = organizationName
         };
 
-        b2bHl7.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
-        b2bHl7.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.9#TREATX");
-        b2bHl7.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
-        b2bHl7.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
+        b2BHl7.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.8#TREAT");
+        b2BHl7.PurposeOfUse?.Add("urn:oid:2.16.840.1.113883.5.9#TREATX");
+        b2BHl7.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/99");
+        b2BHl7.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/99");
 
-        b2bHl7.PurposeOfUse?.Remove("urn:oid:2.16.840.1.113883.5.9#TREATX");
+        b2BHl7.PurposeOfUse?.Remove("urn:oid:2.16.840.1.113883.5.9#TREATX");
 
         //
         // hl7-b2b-user
@@ -103,15 +98,15 @@ public class AccessTokenTests
         // _testOutputHelper.WriteLine(userPersonElement.GetProperty("text").GetRawText());
 
         
-        var b2bHl7User = new HL7B2BUserAuthorizationExtension()
+        var b2BHl7User = new HL7B2BUserAuthorizationExtension()
         {
             UserPerson = userPersonElement,
         };
         
 
-        b2bHl7User.PurposeOfUse?.Add("1.3.6.1.2.1.1.3.0#UPTIME");
-        b2bHl7User.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/199");
-        b2bHl7User.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/199");
+        b2BHl7User.PurposeOfUse?.Add("1.3.6.1.2.1.1.3.0#UPTIME");
+        b2BHl7User.ConsentPolicy?.Add("https://udaped.fhirlabs.net/Policy/Consent/199");
+        b2BHl7User.ConsentReference?.Add("https://fhirlabs.net/fhir/r4/Consent/199");
 
         
         var clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
@@ -119,8 +114,8 @@ public class AccessTokenTests
                 "https://server/connect/token",
                 clientCert)
             .WithScope("system/Patient.rs")
-            .WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, b2bHl7)
-            .WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER, b2bHl7User)
+            .WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, b2BHl7)
+            .WithExtension(UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER, b2BHl7User)
             .Build("RS384");
 
 
@@ -143,16 +138,16 @@ public class AccessTokenTests
 
 
         var extensions = PayloadSerializer.Deserialize((JsonElement)payload["extensions"]);
-        var b2bUserResult =
+        var b2BUserResult =
             extensions[UdapConstants.UdapAuthorizationExtensions.Hl7B2BUSER] as HL7B2BUserAuthorizationExtension;
-        b2bUserResult.UserPerson.Should().NotBeNull();
-        b2bUserResult.UserPerson.Value.GetRawText().Should().BeEquivalentTo(userPerson);
+        b2BUserResult!.UserPerson.Should().NotBeNull();
+        b2BUserResult.UserPerson!.Value.GetRawText().Should().BeEquivalentTo(userPerson);
         
 
-        b2bHl7.PurposeOfUse.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
-        b2bHl7.PurposeOfUse.Any().Should().BeFalse();
+        b2BHl7.PurposeOfUse!.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT").Should().BeTrue();
+        b2BHl7.PurposeOfUse.Count.Should().Be(0);
 
-        b2bHl7 = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(b2bHl7.SerializeToJson());
-        b2bHl7.PurposeOfUse.Any().Should().BeFalse();
+        b2BHl7 = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(b2BHl7.SerializeToJson());
+        b2BHl7!.PurposeOfUse!.Count.Should().Be(0);
     }
 }

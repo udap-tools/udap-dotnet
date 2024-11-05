@@ -22,8 +22,8 @@ public class TrustAnchorStore : ITrustAnchorStore
 
     public ICollection<Anchor> AnchorCertificates { get; set; }
 
-    public async Task<ITrustAnchorStore> Resolve()
+    public Task<ITrustAnchorStore> Resolve()
     {
-        return this;
+        return Task.FromResult<ITrustAnchorStore>(this);
     }
 }

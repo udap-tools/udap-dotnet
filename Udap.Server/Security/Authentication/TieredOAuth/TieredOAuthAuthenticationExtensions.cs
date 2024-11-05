@@ -85,9 +85,10 @@ public static class TieredOAuthAuthenticationExtensions
             {
                 var handler = new UdapClientMessageHandler(
                     sp.GetRequiredService<UdapClientDiscoveryValidator>(),
-                    sp.GetRequiredService<ILogger<UdapClient>>());
-
-                handler.InnerHandler = sp.GetRequiredService<HeaderAugmentationHandler>();
+                    sp.GetRequiredService<ILogger<UdapClient>>())
+                {
+                    InnerHandler = sp.GetRequiredService<HeaderAugmentationHandler>()
+                };
 
                 return handler;
             });

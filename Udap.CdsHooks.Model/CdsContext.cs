@@ -7,16 +7,15 @@
 // */
 #endregion
 
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Udap.CdsHooks.Model;
 
-/// <summary>
-/// Collection of CDS <see cref="CdsService"/> objects.  Convenience object for placing in appsettings."/>
-/// </summary>
-[Serializable]
-public class CdsServices
+public class CdsContext
 {
-    [JsonPropertyName("services")]
-    public List<CdsService>? Services { get; set; }
+    public string? UserId { get; set; }
+    public string? PatientId { get; set; }
+    public string? EncounterId { get; set; }
+    [JsonExtensionData] public Dictionary<string, JsonElement>? Fields { get; set; }
 }

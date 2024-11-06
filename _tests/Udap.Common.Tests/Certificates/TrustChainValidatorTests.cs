@@ -223,7 +223,16 @@ public class TrustChainValidatorTests
             .ToArray()
             .ToX509Collection();
 
-        var validator = new TrustChainValidator(new X509ChainPolicy(){RevocationMode = X509RevocationMode.Offline}, problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>());
+        var validator = new TrustChainValidator(new X509ChainPolicy()
+        {
+            RevocationMode = X509RevocationMode.Offline,
+            VerificationFlags = X509VerificationFlags.IgnoreCertificateAuthorityRevocationUnknown |
+                                                  X509VerificationFlags.IgnoreEndRevocationUnknown |
+                                                  X509VerificationFlags.AllowUnknownCertificateAuthority |
+                                                  X509VerificationFlags.IgnoreWrongUsage,
+            RevocationFlag = X509RevocationFlag.ExcludeRoot
+        }, problemFlags, _testOutputHelper.ToLogger<TrustChainValidator>());
+
         validator.Problem += _diagnosticsChainValidator.OnChainProblem;
 
         // Help while writing tests to see problems summarized.

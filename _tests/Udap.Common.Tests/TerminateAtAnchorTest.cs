@@ -87,10 +87,9 @@ public class TerminateAtAnchorTest
             + "\r\n" + string.Join("\r\n", diagnosticsChainValidator.ActualUntrustedMessages));
 
         diagnosticsChainValidator.ActualErrorMessages.Count.Should().Be(0);
-        // This is 4 on Windows and my Linux WSl but only 2 on Linux build server.
-        diagnosticsChainValidator.ActualProblemMessages.Count.Should().BeGreaterOrEqualTo(2);
-        // This is 2 on Windows and my Linux WSl but only 1 on Linux build server.
-        diagnosticsChainValidator.ActualUntrustedMessages.Count.Should().BeGreaterOrEqualTo(1);
+        diagnosticsChainValidator.ActualProblemMessages.Should()
+            .ContainMatch("Trust ERROR The revocation function was unable to check revocation for the certificate*");
+        diagnosticsChainValidator.ActualUntrustedMessages.Should().ContainMatch("Untrusted Certificate*");
     }
 
     
@@ -156,7 +155,7 @@ public class FakeChainValidatorDiagnostics
 
     public void OnUntrusted(X509Certificate2 certificate)
     {
-        _actualUntrustedMessages.Add($"\r\n Untrusted Certificate: {certificate}");
+        _actualUntrustedMessages.Add($"Untrusted Certificate: {certificate}");
         //Logger.Error("RESOLVER ERROR {0}, {1}", resolver.GetType().Name, error.Message);
     }
 }

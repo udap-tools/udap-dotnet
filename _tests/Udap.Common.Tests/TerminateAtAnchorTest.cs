@@ -87,8 +87,11 @@ public class TerminateAtAnchorTest
             + "\r\n" + string.Join("\r\n", diagnosticsChainValidator.ActualUntrustedMessages));
 
         diagnosticsChainValidator.ActualErrorMessages.Count.Should().Be(0);
-        diagnosticsChainValidator.ActualProblemMessages.Should()
-            .ContainMatch("Trust ERROR The revocation function was unable to check revocation for the certificate*");
+        
+        diagnosticsChainValidator.ActualProblemMessages.Should().Contain(message =>
+            message.Contains("Trust ERROR The revocation function was unable to check revocation for the certificate") ||
+            message.Contains("Trust ERROR unable to get certificate CRL")); // Some Linux experiences
+
         diagnosticsChainValidator.ActualUntrustedMessages.Should().ContainMatch("Untrusted Certificate*");
     }
 

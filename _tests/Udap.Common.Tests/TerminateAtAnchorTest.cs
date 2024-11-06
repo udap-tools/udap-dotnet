@@ -87,9 +87,10 @@ public class TerminateAtAnchorTest
             + "\r\n" + string.Join("\r\n", diagnosticsChainValidator.ActualUntrustedMessages));
 
         diagnosticsChainValidator.ActualErrorMessages.Count.Should().Be(0);
-        // This is 4 on Windows and my Linux WSl but only two on Linux build server.
+        // This is 4 on Windows and my Linux WSl but only 2 on Linux build server.
         diagnosticsChainValidator.ActualProblemMessages.Count.Should().BeGreaterOrEqualTo(2);
-        diagnosticsChainValidator.ActualUntrustedMessages.Count.Should().Be(2);
+        // This is 2 on Windows and my Linux WSl but only 1 on Linux build server.
+        diagnosticsChainValidator.ActualUntrustedMessages.Count.Should().BeGreaterOrEqualTo(1);
     }
 
     

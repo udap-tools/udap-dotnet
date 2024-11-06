@@ -378,7 +378,7 @@ public class UdapClientTests
         //
         // TrustChainValidator handle the x509 chain building, policy and validation
         //
-        var validator = new TrustChainValidator(new X509ChainPolicy(), _problemFlags, _serviceProvider.GetRequiredService<ILogger<TrustChainValidator>>())!;
+        var validator = new TrustChainValidator(new X509ChainPolicy(){RevocationMode = X509RevocationMode.NoCheck}, _problemFlags, _serviceProvider.GetRequiredService<ILogger<TrustChainValidator>>())!;
 
         //
         // TrustAnchorStore is using an ITrustAnchorStore implemented as a file store.

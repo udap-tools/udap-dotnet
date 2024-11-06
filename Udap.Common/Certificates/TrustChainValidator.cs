@@ -186,6 +186,11 @@ namespace Udap.Common.Certificates
                 }
                 var passedChainBuild = chainBuilder.Build(certificate);
 
+                _logger.LogDebug(string.Join(",", chainBuilder.ChainElements
+                    .ToList().Select(cs =>
+                        $"{Environment.NewLine}{cs.Certificate.Thumbprint} :: " +
+                        $"CN = {cs.Certificate.GetNameInfo(X509NameType.SimpleName, false)}")));
+
                 // We're using the system class as a helper to build the chain
                 // However, we will review each item in the chain ourselves, because we have our own rules...
                 chainElements = chainBuilder.ChainElements;

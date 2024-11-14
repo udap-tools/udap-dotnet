@@ -8,7 +8,7 @@
     <PackageVersion Include="Duende.IdentityServer.Storage" Version="7.0.0" />
     <PackageVersion Include="Firely.Fhir.Packages" Version="4.8.0" />
     <PackageVersion Include="Hl7.Fhir.Specification.R4B" Version="5.10.3" />
-    <PackageVersion Include="FluentAssertions" Version="6.12.1" />
+    <PackageVersion Include="FluentAssertions" Version="6.12.2" />
     <PackageVersion Include="FluentAssertions.Analyzers" Version="0.34.1" />
     <PackageVersion Include="IdentityModel" Version="7.0.0" />
     <PackageVersion Include="MartinCostello.Logging.XUnit" Version="0.4.0" />

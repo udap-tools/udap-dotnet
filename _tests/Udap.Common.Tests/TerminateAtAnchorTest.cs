@@ -72,7 +72,7 @@ public class TerminateAtAnchorTest
         var chainPolicy = new X509ChainPolicy
         {
             TrustMode = X509ChainTrustMode.CustomRootTrust,
-            RevocationMode = X509RevocationMode.Offline
+            RevocationMode = X509RevocationMode.Online
         };
 
         var validator = new TrustChainValidator(chainPolicy, logger);

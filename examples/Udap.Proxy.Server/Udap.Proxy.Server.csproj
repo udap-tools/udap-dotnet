@@ -25,19 +25,19 @@
     <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
     <PackageReference Include="Udap.CdsHooks.Endpoint" Version="0.4.*" />
     <PackageReference Include="Udap.Metadata.Server" Version="0.4.*" />
     <PackageReference Include="Udap.Smart.Metadata" Version="0.4.*" />
     <PackageReference Include="Udap.Util" Version="0.4.*" />
   </ItemGroup>
 
-  <!--<ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
+  <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="../../Udap.CdsHooks.Endpoint/Udap.CdsHooks.Endpoint.csproj" />
     <ProjectReference Include="../../Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
     <ProjectReference Include="../../Udap.Smart.Metadata/Udap.Smart.Metadata.csproj" />
     <ProjectReference Include="../../Udap.Util/Udap.Util.csproj" />
-  </ItemGroup>-->
+  </ItemGroup>
 
   <ItemGroup>
     <None Update="CertStore\issued\fhirlabs.net.client.pfx">

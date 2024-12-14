@@ -18,6 +18,7 @@ jobs:
       with:
         dotnet-version: |
           8.0.x
+          9.0.x
         source-url: ${{ env.REPOSITORY_URL }}
       env:
         NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}

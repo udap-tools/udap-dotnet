@@ -23,6 +23,7 @@ jobs:
       with:
         dotnet-version: |
           8.0.x
+          9.0.x
     - name: Generate PKI
       run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj
     - name: Build

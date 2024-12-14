@@ -40,26 +40,26 @@ public static  class UdapServiceBuilderExtensionsCore
 {
     public static IUdapServiceBuilder AddRegistrationEndpointToOpenIdConnectMetadata(
         this IUdapServiceBuilder builder,
-        string? baseUrl = null)
+        string? udapIdpBaseUrl = null)
     {
 
-        if (baseUrl == null)
+        if (udapIdpBaseUrl == null)
         {
-            baseUrl = Environment.GetEnvironmentVariable("UdapIdpBaseUrl");
+            udapIdpBaseUrl = Environment.GetEnvironmentVariable("UdapIdpBaseUrl");
 
-            if (string.IsNullOrEmpty(baseUrl))
+            if (string.IsNullOrEmpty(udapIdpBaseUrl))
             {
                 throw new Exception(
-                    "Missing ASPNETCORE_URLS environment variable.  Or missing baseUrl parameter in AddUdapServer extension method.");
+                    "Missing UdapIdpBaseUrl parameter or environment variable in AddUdapServer extension method.");
             }
         }
 
-        baseUrl = $"{baseUrl.EnsureTrailingSlash()}{Constants.ProtocolRoutePaths.Register}";
+        udapIdpBaseUrl = $"{udapIdpBaseUrl.EnsureTrailingSlash()}{Constants.ProtocolRoutePaths.Register}";
 
         builder.Services.Configure<IdentityServerOptions>(options =>
             options.Discovery.CustomEntries.Add(
                 OidcConstants.Discovery.RegistrationEndpoint,
-                baseUrl));
+                udapIdpBaseUrl));
 
         return builder;
     }

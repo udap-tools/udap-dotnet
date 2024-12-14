@@ -70,7 +70,7 @@ namespace Udap.Common.Tests.Model.Registration
 
             Action act = () => UdapCertificationsAndEndorsementBuilder
                 .Create("FhirLabs Administrator Certification", certificationCert)
-                .WithExpiration(DateTime.Now + TimeSpan.FromDays(365 * 3).Subtract(TimeSpan.FromSeconds(10)));
+            .WithExpiration(DateTime.Now.AddYears(3).Subtract(TimeSpan.FromSeconds(10)));
 
             act.Should().Throw<ArgumentOutOfRangeException>()
                 .WithParameterName("expirationOffset")
@@ -78,7 +78,7 @@ namespace Udap.Common.Tests.Model.Registration
 
             act = () => UdapCertificationsAndEndorsementBuilder
                 .Create("FhirLabs Administrator Certification", certificationCert)
-                .WithExpiration(DateTime.Now + TimeSpan.FromDays(365 * 3));
+                .WithExpiration(DateTime.Now.AddYears(3));
 
             act.Should().Throw<ArgumentOutOfRangeException>()
                 .WithParameterName("expirationOffset")
@@ -108,11 +108,7 @@ namespace Udap.Common.Tests.Model.Registration
             //
             act = () => UdapCertificationsAndEndorsementBuilder
                 .Create("FhirLabs Administrator Certification", certificationCert)
-                .WithExpiration(
-                    (DateTime.Now + TimeSpan.FromDays(365 * 3)
-                            .Subtract(TimeSpan.FromSeconds(10)))
-                    .ToEpochTime()
-                    );
+                .WithExpiration(DateTime.Now.AddYears(3).ToEpochTime());
 
             act.Should().Throw<ArgumentOutOfRangeException>()
                 .WithParameterName("expirationOffset")

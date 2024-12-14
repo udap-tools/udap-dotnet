@@ -32,12 +32,14 @@ public class UdapCertificationsAndEndorsementBuilder
 
     protected UdapCertificationsAndEndorsementBuilder(string certificationName, X509Certificate2 certificate) : this(certificationName)
     {
+        
+        _now = DateTime.Now;
         this.WithCertificate(certificate);
     }
 
     protected UdapCertificationsAndEndorsementBuilder(string certificationName)
     {
-        _now = DateTime.UtcNow;
+        _now = DateTime.Now;
         _document = new UdapCertificationAndEndorsementDocument(certificationName);
     }
 
@@ -81,7 +83,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithExpiration(TimeSpan expirationOffset)
     {
-        if (expirationOffset > TimeSpan.FromDays(365 * 3)) //ignoring leap year
+        if (expirationOffset > _now.AddYears(3) - _now)
         {
             throw new ArgumentOutOfRangeException(nameof(expirationOffset), "Expiration limit to 3 years");
         }
@@ -91,7 +93,7 @@ public class UdapCertificationsAndEndorsementBuilder
             throw new Exception("Certificate required");
         }
 
-        if (_certificate.NotAfter.ToUniversalTime() < (_now + expirationOffset))
+        if (_certificate.NotAfter.ToUniversalTime() < (_now.ToUniversalTime() + expirationOffset))
         {
             throw new ArgumentOutOfRangeException(nameof(expirationOffset), "Expiration must not expire after certificate");
         }
@@ -107,7 +109,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithExpiration(DateTime expiration)
     {
-        return WithExpiration(expiration.ToUniversalTime() - _now);
+        return WithExpiration(expiration - _now);
     }
 
     /// <summary>
@@ -117,7 +119,7 @@ public class UdapCertificationsAndEndorsementBuilder
     /// <returns></returns>
     public UdapCertificationsAndEndorsementBuilder WithExpiration(long secondsSinceEpoch)
     {
-        return WithExpiration(EpochTime.DateTime(secondsSinceEpoch));
+        return WithExpiration(EpochTime.DateTime(secondsSinceEpoch).ToLocalTime());
     }
 
     /// <summary>

@@ -158,6 +158,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
             {
                 DisableCertificateDownloads = true,
                 UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
+                RevocationMode = X509RevocationMode.NoCheck
             }, 
             problemFlags,
             testOutputHelper.ToLogger<TrustChainValidator>()));

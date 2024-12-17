@@ -15,6 +15,7 @@ using Duende.IdentityServer.EntityFramework.Mappers;
 using Duende.IdentityServer.EntityFramework.Storage;
 using Duende.IdentityServer.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Serilog;
 using Udap.Common.Extensions;
@@ -41,19 +42,23 @@ public static class SeedData
         services.AddOperationalDbContext(options =>
         {
             options.ConfigureDbContext = db => db.UseSqlite(connectionString,
-                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName))
+                // Added when upgrading from net8.0 to net9.0 instead of generating migrations when nothing has changed.
+                .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
         services.AddConfigurationDbContext(options =>
         {
             options.ConfigureDbContext = db => db.UseSqlite(connectionString,
-                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName))
+                .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
 
         services.AddScoped<IUdapClientRegistrationStore, UdapClientRegistrationStore>();
         services.AddUdapDbContext(options =>
         {
             options.UdapDbContext = db => db.UseSqlite(connectionString,
-                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName));
+                sql => sql.MigrationsAssembly(typeof(SeedData).Assembly.FullName))
+                .ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
 
         await using var serviceProvider = services.BuildServiceProvider();

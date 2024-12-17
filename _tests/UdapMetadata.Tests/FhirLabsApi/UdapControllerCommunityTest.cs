@@ -125,6 +125,7 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
                 {
                     DisableCertificateDownloads = true,
                     UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
+                    RevocationMode = X509RevocationMode.NoCheck
                 }, 
                 problemFlags,
                 _testOutputHelper.ToLogger<TrustChainValidator>()));
@@ -567,7 +568,8 @@ public async Task ValidateChainWithMyAnchorAndIntermediateTest()
             {
                 DisableCertificateDownloads = true,
                 UrlRetrievalTimeout = TimeSpan.FromMilliseconds(1),
-            }, 
+                RevocationMode = X509RevocationMode.NoCheck
+        }, 
             problemFlags,
             _testOutputHelper.ToLogger<TrustChainValidator>()));
 

@@ -69,10 +69,7 @@ namespace Udap.Common.Certificates
                    X509ChainStatusFlags.InvalidBasicConstraints |
                    X509ChainStatusFlags.CtlNotTimeValid |
                    X509ChainStatusFlags.OfflineRevocation |
-                   X509ChainStatusFlags.CtlNotSignatureValid |
-                   X509ChainStatusFlags.RevocationStatusUnknown | // can't trust the chain to check revocation.
-                   X509ChainStatusFlags.PartialChain |
-                   X509ChainStatusFlags.UntrustedRoot;
+                   X509ChainStatusFlags.CtlNotSignatureValid;
         }
 
         /// <summary>
@@ -81,7 +78,11 @@ namespace Udap.Common.Certificates
         public TrustChainValidator(ILogger<TrustChainValidator> logger)
             : this(new X509ChainPolicy(), BuildDefaultProblemFlags(), logger)
         {
-            _validationPolicy.VerificationFlags = X509VerificationFlags.IgnoreWrongUsage;
+            _validationPolicy.VerificationFlags = X509VerificationFlags.IgnoreCertificateAuthorityRevocationUnknown |
+                                                  X509VerificationFlags.IgnoreEndRevocationUnknown |
+                                                  X509VerificationFlags.AllowUnknownCertificateAuthority |
+                                                  X509VerificationFlags.IgnoreWrongUsage;
+
             _validationPolicy.RevocationFlag = DefaultX509RevocationFlag;
             _validationPolicy.RevocationMode = DefaultX509RevocationMode;
         }
@@ -134,7 +135,7 @@ namespace Udap.Common.Certificates
             chainElements = null;
 
             // Let's avoid complex state and/or race conditions by making copies of these collections.
-            var roots = new X509Certificate2Collection(anchorCertificates); 
+            var roots = new X509Certificate2Collection(anchorCertificates);
             X509Certificate2Collection? intermediatesCloned = null;
 
             if (intermediateCertificates != null)
@@ -144,7 +145,7 @@ namespace Udap.Common.Certificates
 
             // ReSharper disable once RedundantAssignment
             intermediateCertificates = null;
-            
+
 
             // if there are no anchors we should always fail
             if (roots.IsNullOrEmpty())
@@ -183,7 +184,12 @@ namespace Udap.Common.Certificates
                 {
                     chainBuilder.ChainPolicy.ExtraStore.AddRange(intermediatesCloned);
                 }
-                var result = chainBuilder.Build(certificate);
+                var passedChainBuild = chainBuilder.Build(certificate);
+
+                _logger.LogDebug(string.Join(",", chainBuilder.ChainElements
+                    .ToList().Select(cs =>
+                        $"{Environment.NewLine}{cs.Certificate.Thumbprint} :: " +
+                        $"CN = {cs.Certificate.GetNameInfo(X509NameType.SimpleName, false)}")));
 
                 // We're using the system class as a helper to build the chain
                 // However, we will review each item in the chain ourselves, because we have our own rules...
@@ -203,13 +209,6 @@ namespace Udap.Common.Certificates
                 {
                     bool isAnchor = roots?.FindByThumbprint(chainElement.Certificate.Thumbprint) != null;
 
-                    if (this.ChainElementHasProblems(chainElement))
-                    {
-                        this.NotifyProblem(chainElement);                        
-                        this.NotifyUntrusted(chainElement.Certificate);
-                        return false;
-                    }
-
                     if (isAnchor)
                     {
                         // Found a valid anchor!
@@ -221,19 +220,28 @@ namespace Udap.Common.Certificates
                         {
                             communityId = anchorList.First(a => a.Thumbprint == chainElement.Certificate.Thumbprint).CommunityId;
                         }
-
-                        continue;
                     }
 
-                    if (this.ChainElementHasProblems(chainElement))
+                    if (!passedChainBuild && this.ChainElementHasProblems(chainElement))
                     {
+                        // chain statuses can still be subscribed too.  There may be data to share with the consumer
+                        // that do not mean the chain is invalid.  passedChainBuild is the final arbiter of trust
+                        // for a x509Chain.
                         this.NotifyProblem(chainElement);
-                        this.NotifyUntrusted(chainElement.Certificate);
-                        return false;
+
+                        if (!passedChainBuild)
+                        {
+                            this.NotifyUntrusted(chainElement.Certificate);
+                        }
+
+                        if (passedChainBuild && foundAnchor)
+                        {
+                            return true;
+                        }
                     }
                 }
 
-                if (foundAnchor && !result)
+                if (foundAnchor && !passedChainBuild)
                 {
                     //
                     // Can end up here if problem flags exist that we do not care about.
@@ -249,7 +257,7 @@ namespace Udap.Common.Certificates
                     this.NotifyUntrusted(certificate);
                 }
 
-                return foundAnchor;  
+                return passedChainBuild;
             }
             catch (Exception ex)
             {
@@ -258,6 +266,7 @@ namespace Udap.Common.Certificates
             }
 
             this.NotifyUntrusted(certificate);
+
             return false;
         }
 

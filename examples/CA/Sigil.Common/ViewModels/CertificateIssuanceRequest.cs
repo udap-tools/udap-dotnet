@@ -26,9 +26,9 @@ public class CertificateIssuanceRequest
     public int TemplateId { get; set; }
 
     /// <summary>
-    /// The community this certificate belongs to.
+    /// The trustDomain this certificate belongs to.
     /// </summary>
-    public int CommunityId { get; set; }
+    public int TrustDomainId { get; set; }
 
     /// <summary>
     /// The X.500 distinguished name for the certificate subject.

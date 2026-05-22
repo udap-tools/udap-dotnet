@@ -59,7 +59,7 @@ if (builder.Configuration["BehindLoadBalancer"] == null)
     {
         serverOptions.ConfigureHttpsDefaults(options =>
         {
-            options.ServerCertificate = new X509Certificate2(
+            options.ServerCertificate = X509CertificateLoader.LoadPkcs12FromFile(
                 builder.Configuration["mTLS_Server_Certificate"]!,
                 builder.Configuration["mTLS_Server_Certificate_creds"]);
             options.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
@@ -73,7 +73,7 @@ if (builder.Configuration["BehindLoadBalancer"] == null)
             options.ChainTrustValidationMode = X509ChainTrustMode.CustomRootTrust;
             options.CustomTrustStore.Clear();
             options.CustomTrustStore.AddRange(new X509Certificate2Collection()
-                { new X509Certificate2("SureFhirmTLS_Intermediate.cer"), new X509Certificate2("SureFhirmTLS_CA.cer") });
+                { X509CertificateLoader.LoadCertificateFromFile("SureFhirmTLS_Intermediate.cer"), X509CertificateLoader.LoadCertificateFromFile("SureFhirmTLS_CA.cer") });
             options.AllowedCertificateTypes = CertificateTypes.Chained;
             options.RevocationMode = X509RevocationMode.Online;
 

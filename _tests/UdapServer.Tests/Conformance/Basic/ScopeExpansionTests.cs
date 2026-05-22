@@ -21,7 +21,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Client.Client.Extensions;
+using Udap.Client.Extensions;
 using Udap.Client.Configuration;
 using Udap.Common.Extensions;
 using Udap.Common.Models;
@@ -49,8 +49,13 @@ public class ScopeExpansionTests
     {
         _testOutputHelper = testOutputHelper;
 
+#if NET9_0_OR_GREATER
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#else
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#endif
 
         _mockPipeline.OnPostConfigureServices += services =>
         {
@@ -149,7 +154,11 @@ public class ScopeExpansionTests
     [Fact]
     public async Task ScopeV2WithClientCredentialsTest()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var resultDocument = await RegisterClientWithAuthServer("system/Patient.rs", clientCert);
         Assert.NotNull(resultDocument);
         Assert.NotNull(resultDocument!.ClientId);
@@ -325,7 +334,11 @@ public class ScopeExpansionTests
     [Fact]
     public async Task ScopeV2WithClientCredentialsExtendedTest()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var resultDocument = await RegisterClientWithAuthServer("system/Patient.rs", clientCert);
         Assert.NotNull(resultDocument);
         Assert.NotNull(resultDocument!.ClientId);
@@ -374,7 +387,11 @@ public class ScopeExpansionTests
     [Fact]
     public async Task ScopeV2WithClientCredentialsExtended2Test()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var resultDocument = await RegisterClientWithAuthServer("system/*.rs", clientCert);
         Assert.NotNull(resultDocument);
         Assert.NotNull(resultDocument!.ClientId);
@@ -422,7 +439,11 @@ public class ScopeExpansionTests
     [Fact]
     public async Task ScopeV2WithClientCredentialsWildcardTest()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var resultDocument = await RegisterClientWithAuthServer("system/*.read", clientCert);
         Assert.NotNull(resultDocument);
         Assert.NotNull(resultDocument!.ClientId);
@@ -470,7 +491,11 @@ public class ScopeExpansionTests
     [Fact]
     public async Task ScopeV2WithAuthCodeTest()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -540,7 +565,11 @@ public class ScopeExpansionTests
     [Fact]
     public async Task RegisterInvalidScopeTests()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var regResponse = await RegisterClientWithAuthServerResponse("system/Mars.read", clientCert);
         
         _testOutputHelper.WriteLine(await regResponse.Content.ReadAsStringAsync());
@@ -554,7 +583,11 @@ public class ScopeExpansionTests
     [Fact]
     public async Task RegisterEmptyScopeTests()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var regResponse = await RegisterClientWithAuthServerResponse("", clientCert);
 
         _testOutputHelper.WriteLine(await regResponse.Content.ReadAsStringAsync());
@@ -568,7 +601,11 @@ public class ScopeExpansionTests
     [Fact]
     public async Task TokenRequestWithInvalidScopeTest()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var resultDocument = await RegisterClientWithAuthServer("system/*.read", clientCert);
         Assert.NotNull(resultDocument);
         Assert.NotNull(resultDocument!.ClientId);
@@ -621,7 +658,11 @@ public class ScopeExpansionTests
     [Fact]
     public async Task TokenRequestWithMissingScopeTest()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var resultDocument = await RegisterClientWithAuthServer("system/*.read", clientCert);
         Assert.NotNull(resultDocument);
         Assert.NotNull(resultDocument!.ClientId);

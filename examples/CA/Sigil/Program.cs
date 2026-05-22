@@ -25,6 +25,7 @@ using Hangfire.Storage;
 using Sigil.Common.Services;
 using Sigil.Common.Services.Jobs;
 using Sigil.Common.Services.Signing;
+using Sigil.Common.Validators;
 using Sigil.Gcp;
 using Sigil.Services;
 using Sigil.Vault;
@@ -59,6 +60,14 @@ try
     builder.Services.AddScoped<Asn1ParsingService>();
     builder.Services.AddScoped<CrlImportService>();
     builder.Services.AddScoped<ChainValidationService>();
+    builder.Services.AddScoped<CertificateExportService>();
+    builder.Services.AddScoped<DashboardService>();
+    builder.Services.AddScoped<TemplateService>();
+    builder.Services.AddScoped<TrustDomainService>();
+    builder.Services.AddScoped<CertificateManagementService>();
+    builder.Services.AddScoped<CertificatePublishingService>();
+    builder.Services.AddSingleton<IssuanceValidator>();
+    builder.Services.AddScoped<SanListService>();
     builder.Services.AddHttpClient("SigilCrl");
     builder.Services.AddHttpClient();
 
@@ -87,6 +96,21 @@ try
     builder.Services.AddScoped<CrlGenerationService>();
     builder.Services.AddScoped<CrlAutoRenewalJob>();
     builder.Services.AddScoped<Sigil.UI.Services.TimeDisplayService>();
+    builder.Services.AddScoped<Sigil.UI.Services.IssuancePasswordCache>();
+
+    // System status — populate from existing options sections
+    builder.Services.AddOptions<SystemStatusOptions>().Configure<
+        IOptions<SigningProviderOptions>,
+        IOptions<VaultTransitOptions>,
+        IOptions<GcpKmsOptions>>((status, signing, vault, gcp) =>
+    {
+        status.DefaultProvider = signing.Value.Provider;
+        status.AvailableProviders = signing.Value.AvailableProviders;
+        status.VaultAddress = vault.Value.Address;
+        status.VaultToken = vault.Value.Token;
+        status.GcpProjectId = gcp.Value.ProjectId;
+    });
+    builder.Services.AddSingleton<SystemStatusService>();
 
     // Hangfire
     builder.Services.AddHangfire(config => config

@@ -82,7 +82,7 @@ public class BuildNginxProxySSLCerts : CertificateBase
         char[] caPem = PemEncoding.Write("CERTIFICATE", caCert.RawData);
         File.WriteAllBytes($"{SureFhirLabsCertStore}/ngnix-proxy-TestCA.cer",
             caPem.Select(c => (byte)c).ToArray());
-        UpdateWindowsMachineStore(caCert);
+        // UpdateWindowsMachineStore(caCert);
     }
 
     public static IEnumerable<object[]> SSLProxyCerts()
@@ -200,7 +200,11 @@ public class BuildNginxProxySSLCerts : CertificateBase
 #pragma warning restore xUnit1042
     public void MakeIdentityProviderCertificates(string dn, string san)
     {
+#if NET9_0_OR_GREATER
+        using var rootCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirLabsCertStore}/ngnix-proxy-TestCA.pfx", "udap-test");
+#else
         using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/ngnix-proxy-TestCA.pfx", "udap-test");
+#endif
 
         $"{SureFhirLabsCertStore}/ssl".EnsureDirectoryExists();
 
@@ -288,7 +292,11 @@ public class BuildNginxProxySSLCerts : CertificateBase
 
         var certPackage = new X509Certificate2Collection();
         certPackage.Add(clientCertWithKey);
+#if NET9_0_OR_GREATER
+        certPackage.Add(X509CertificateLoader.LoadCertificate(caCert.Export(X509ContentType.Cert)));
+#else
         certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
+#endif
         
         var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
         File.WriteAllBytes($"{sslCertFilePath}.pfx", clientBytes!);

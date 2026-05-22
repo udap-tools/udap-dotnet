@@ -19,13 +19,14 @@ public class SigilDbContext : DbContext
     {
     }
 
-    public DbSet<Community> Communities => Set<Community>();
-    public DbSet<CommunityBaseUrl> CommunityBaseUrls => Set<CommunityBaseUrl>();
+    public DbSet<TrustDomain> TrustDomains => Set<TrustDomain>();
+    public DbSet<TrustDomainBaseUrl> TrustDomainBaseUrls => Set<TrustDomainBaseUrl>();
     public DbSet<CaCertificate> CaCertificates => Set<CaCertificate>();
     public DbSet<IssuedCertificate> IssuedCertificates => Set<IssuedCertificate>();
     public DbSet<Crl> Crls => Set<Crl>();
     public DbSet<CertificateRevocation> CertificateRevocations => Set<CertificateRevocation>();
     public DbSet<CertificateTemplate> CertificateTemplates => Set<CertificateTemplate>();
+    public DbSet<SanList> SanLists => Set<SanList>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -33,25 +34,25 @@ public class SigilDbContext : DbContext
 
         modelBuilder.HasDefaultSchema("sigil");
 
-        // Community
-        modelBuilder.Entity<Community>(entity =>
+        // TrustDomain
+        modelBuilder.Entity<TrustDomain>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
             entity.HasIndex(e => e.Name).IsUnique();
         });
 
-        // CommunityBaseUrl
-        modelBuilder.Entity<CommunityBaseUrl>(entity =>
+        // TrustDomainBaseUrl
+        modelBuilder.Entity<TrustDomainBaseUrl>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Url).HasMaxLength(500).IsRequired();
             entity.Property(e => e.PublishingBasePath).HasMaxLength(500);
-            entity.HasIndex(e => new { e.CommunityId, e.SortOrder });
+            entity.HasIndex(e => new { e.TrustDomainId, e.SortOrder });
 
-            entity.HasOne(e => e.Community)
+            entity.HasOne(e => e.TrustDomain)
                 .WithMany(c => c.BaseUrls)
-                .HasForeignKey(e => e.CommunityId)
+                .HasForeignKey(e => e.TrustDomainId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
@@ -60,7 +61,7 @@ public class SigilDbContext : DbContext
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Thumbprint).IsUnique();
-            entity.HasIndex(e => e.CommunityId);
+            entity.HasIndex(e => e.TrustDomainId);
             entity.Property(e => e.Subject).HasMaxLength(500).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
             entity.Property(e => e.Thumbprint).HasMaxLength(64).IsRequired();
@@ -69,9 +70,9 @@ public class SigilDbContext : DbContext
             entity.Property(e => e.StoreProviderHint).HasMaxLength(200);
             entity.Ignore(e => e.IsRootCa);
 
-            entity.HasOne(e => e.Community)
+            entity.HasOne(e => e.TrustDomain)
                 .WithMany(c => c.CaCertificates)
-                .HasForeignKey(e => e.CommunityId)
+                .HasForeignKey(e => e.TrustDomainId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(e => e.Parent)
@@ -145,6 +146,18 @@ public class SigilDbContext : DbContext
             entity.Property(e => e.CdpUrlTemplate).HasMaxLength(500);
             entity.Property(e => e.AiaUrlTemplate).HasMaxLength(500);
             entity.Property(e => e.SubjectAltNameTypes).HasMaxLength(100);
+
+            entity.HasMany(e => e.SanLists)
+                .WithMany(s => s.Templates)
+                .UsingEntity("CertificateTemplateSanList");
+        });
+
+        // SanList
+        modelBuilder.Entity<SanList>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.HasIndex(e => e.Name).IsUnique();
         });
 
     }

@@ -43,8 +43,13 @@ namespace UdapServer.Tests
     public class DatabaseProviderFixture : IAsyncLifetime
     {
         public readonly string DatabaseName = "UdapTestDb";
+#if NET9_0_OR_GREATER
+        public required X509Certificate2 AnchorCert = X509CertificateLoader.LoadCertificateFromFile(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
+            "caWeatherApiLocalhostCert.cer"));
+#else
         public required X509Certificate2 AnchorCert = new X509Certificate2(Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/anchors"),
             "caWeatherApiLocalhostCert.cer"));
+#endif
 
         /// <summary>
         /// Called immediately after the class has been created, before it is used.
@@ -196,7 +201,11 @@ namespace UdapServer.Tests
             var jwtId = CryptoRandom.CreateUniqueId();
 
             var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"), "weatherApiClientLocalhostCert1.pfx");
+#if NET9_0_OR_GREATER
+            var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
             var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
             var securityKey = new X509SecurityKey(clientCert);
             var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
 
@@ -330,12 +339,16 @@ namespace UdapServer.Tests
 
             var validator = sp.GetRequiredService<IUdapDynamicClientRegistrationValidator>();
 
-            
+
             var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "weatherApiClientLocalhostCert1.pfx");
+#if NET9_0_OR_GREATER
+            var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
             var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
             var now = DateTime.UtcNow;
             var jwtId = CryptoRandom.CreateUniqueId();
-            
+
             var document = new UdapDynamicClientRegistrationDocument
             {
                 Issuer = "http://localhost/",
@@ -442,7 +455,11 @@ namespace UdapServer.Tests
 
 
             var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "weatherApiClientLocalhostCert1.pfx");
+#if NET9_0_OR_GREATER
+            var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
             var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
             var now = DateTime.UtcNow;
             var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -544,7 +561,11 @@ namespace UdapServer.Tests
             var jwtId = CryptoRandom.CreateUniqueId();
 
             var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"), "weatherApiClientLocalhostCert1.pfx");
+#if NET9_0_OR_GREATER
+            var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
             var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
             var securityKey = new X509SecurityKey(clientCert);
             var signingCredentials = new SigningCredentials(securityKey, UdapConstants.SupportedAlgorithm.RS256);
 
@@ -632,7 +653,11 @@ namespace UdapServer.Tests
         public void TestSerialization()
         {
             var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+            var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
             var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
 
             var document = UdapDcrBuilderForAuthorizationCode
                 .Create(clientCert)

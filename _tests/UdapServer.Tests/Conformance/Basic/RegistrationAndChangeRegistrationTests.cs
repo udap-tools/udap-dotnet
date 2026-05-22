@@ -40,11 +40,19 @@ public class RegistrationAndChangeRegistrationTests
     {
         _testOutputHelper = testOutputHelper;
 
+#if NET9_0_OR_GREATER
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+
+        var anchorCommunity2 = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/caLocalhostCert2.cer");
+        var intermediateCommunity2 = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/intermediateLocalhostCert2.cer");
+#else
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
 
         var anchorCommunity2 = new X509Certificate2("CertStore/anchors/caLocalhostCert2.cer");
         var intermediateCommunity2 = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert2.cer");
+#endif
 
         _mockPipeline.OnPostConfigureServices += services =>
         {
@@ -138,7 +146,11 @@ public class RegistrationAndChangeRegistrationTests
     [Fact]
     public async Task RegisterClientCredentialsThenRegisterAuthorizationCode()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         //
         // First Registration
@@ -233,7 +245,11 @@ public class RegistrationAndChangeRegistrationTests
     [Fact]
     public async Task CancelAuthorizationCodeRegistration()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         //
         // Registration

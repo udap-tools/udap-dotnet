@@ -6,7 +6,7 @@
 using Duende.IdentityModel.Client;
 using Udap.Model;
 
-namespace Udap.Client.Client;
+namespace Udap.Client;
 
 /// <summary>
 /// Security policy for retrieving a discovery document

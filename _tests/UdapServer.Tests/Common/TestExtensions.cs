@@ -13,7 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Client.Configuration;
 using Udap.Server.Security.Authentication.TieredOAuth;
 

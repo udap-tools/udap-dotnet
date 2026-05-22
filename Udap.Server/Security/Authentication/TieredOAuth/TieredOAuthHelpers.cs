@@ -12,7 +12,7 @@ using Duende.IdentityServer.Services;
 using Duende.IdentityModel;
 using Duende.IdentityModel.Client;
 using Microsoft.AspNetCore.Authentication;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Model;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;

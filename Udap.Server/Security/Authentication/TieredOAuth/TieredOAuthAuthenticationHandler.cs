@@ -27,7 +27,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Model;
@@ -491,7 +491,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         _udapClient.Untrusted += certificate2 => properties.Parameters.Add("Untrusted", certificate2.Subject);
         _udapClient.TokenError += message => properties.Parameters.Add("TokenError", message);
         
-        var response = await _udapClient.ValidateResource(idp, communityParam, token: Context.RequestAborted);
+        var response = await _udapClient.ValidateResource(idp, communityParam, cancellationToken: Context.RequestAborted);
         
         var resourceHolderRedirectUrl =
             $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Options.CallbackPath}";
@@ -504,7 +504,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             // var untrustedContext = new UdapUntrustedContext(Context, Scheme, Options, properties);
             Response.StatusCode = 401;
 
-            // await Response.WriteAsJsonAsync(_udapClient.UdapServerMetaData);
+            // await Response.WriteAsJsonAsync(_udapClient.UdapServerMetadata);
 
             foreach (var prop in properties.Parameters.Where(p => p.Key == "Untrusted").Select(p => p))
             {
@@ -519,7 +519,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         Logger.LogInformation("Validated UDAP signed_metadata from {Idp}", idp);
         Logger.LogDebug("UDAP Server Metadata: {Metadata}", JsonSerializer.Serialize(
-            _udapClient.UdapServerMetaData,
+            _udapClient.UdapServerMetadata,
             IndentedJsonOptions));
 
         //

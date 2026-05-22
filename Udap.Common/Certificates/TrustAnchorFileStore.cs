@@ -72,7 +72,11 @@ public class TrustAnchorFileStore : ITrustAnchorStore
             {
                 foreach (var intermediateFilePath in community.Intermediates)
                 {
+#if NET9_0_OR_GREATER
+                    intermediates.Add(new Intermediate(X509CertificateLoader.LoadCertificateFromFile(Path.Combine(AppContext.BaseDirectory, intermediateFilePath))));
+#else
                     intermediates.Add(new Intermediate(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, intermediateFilePath))));
+#endif
                 }
             }
 
@@ -90,7 +94,11 @@ public class TrustAnchorFileStore : ITrustAnchorStore
                     throw new FileNotFoundException($"Cannot find file: {path}");
                 }
 
+#if NET9_0_OR_GREATER
+                AnchorCertificates.Add(new Anchor(X509CertificateLoader.LoadCertificateFromFile(path), community.Name)
+#else
                 AnchorCertificates.Add(new Anchor(new X509Certificate2(path), community.Name)
+#endif
                 {
                     Intermediates = intermediates
                 });

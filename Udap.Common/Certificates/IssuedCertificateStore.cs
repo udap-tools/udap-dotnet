@@ -86,8 +86,12 @@ public class IssuedCertificateStore : IPrivateCertificateStore
                         continue;
                     }
 
+#if NET9_0_OR_GREATER
+                    var certificates = X509CertificateLoader.LoadPkcs12CollectionFromFile(path, communityIssuer.Password, X509KeyStorageFlags.Exportable);
+#else
                     var certificates = new X509Certificate2Collection();
                     certificates.Import(path, communityIssuer.Password, X509KeyStorageFlags.Exportable);
+#endif
 
                     foreach (var x509Cert in certificates)
                     {

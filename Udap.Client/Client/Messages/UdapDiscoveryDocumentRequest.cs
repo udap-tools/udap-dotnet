@@ -5,7 +5,7 @@
 
 using Duende.IdentityModel.Client;
 
-namespace Udap.Client.Client.Messages;
+namespace Udap.Client.Messages;
 
 /// <summary>
 /// Request for UDAP discovery document

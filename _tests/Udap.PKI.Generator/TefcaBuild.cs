@@ -347,8 +347,13 @@ public class TefcaBuild : CertificateBase
 
         var certPackage = new X509Certificate2Collection();
         certPackage.Add(clientCertWithKey);
+#if NET9_0_OR_GREATER
+        certPackage.Add(X509CertificateLoader.LoadCertificate(intermediateCert.Export(X509ContentType.Cert)));
+        certPackage.Add(X509CertificateLoader.LoadCertificate(caCert.Export(X509ContentType.Cert)));
+#else
         certPackage.Add(new X509Certificate2(intermediateCert.Export(X509ContentType.Cert)));
         certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
+#endif
 
         var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
         File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes!);
@@ -382,7 +387,7 @@ public class TefcaBuild : CertificateBase
 
         crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
             false,
-            new AuthorityKeyIdentifierStructure(bouncyCaCert.GetPublicKey()));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bouncyCaCert.GetPublicKey())));
 
         crlGen.AddExtension(X509Extensions.CrlNumber, false, new CrlNumber(BigInteger.One));
 

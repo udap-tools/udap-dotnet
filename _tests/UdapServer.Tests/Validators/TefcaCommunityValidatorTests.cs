@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -25,6 +26,72 @@ public class TefcaCommunityValidatorTests
 {
     private static readonly IOptions<TefcaValidationOptions> DefaultOptions =
         Options.Create(new TefcaValidationOptions());
+
+    #region AddUdapTefcaValidation DI Registration
+
+    [Fact]
+    public void AddUdapTefcaValidation_RegistersTokenValidator()
+    {
+        var services = new ServiceCollection();
+
+        services.AddUdapTefcaValidation();
+
+        var provider = services.BuildServiceProvider();
+        var validator = provider.GetService<ICommunityTokenValidator>();
+
+        Assert.NotNull(validator);
+        Assert.IsType<TefcaTokenValidator>(validator);
+    }
+
+    [Fact]
+    public void AddUdapTefcaValidation_RegistersRegistrationValidator()
+    {
+        var services = new ServiceCollection();
+
+        services.AddUdapTefcaValidation();
+
+        var provider = services.BuildServiceProvider();
+        var validator = provider.GetService<ICommunityRegistrationValidator>();
+
+        Assert.NotNull(validator);
+        Assert.IsType<TefcaRegistrationValidator>(validator);
+    }
+
+    [Fact]
+    public void AddUdapTefcaValidation_ConfiguresOptions()
+    {
+        var services = new ServiceCollection();
+
+        services.AddUdapTefcaValidation(options =>
+        {
+            options.Communities.Add("tefca://test-community");
+        });
+
+        var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<TefcaValidationOptions>>();
+
+        Assert.Contains("tefca://test-community", options.Value.Communities);
+    }
+
+    [Fact]
+    public void AddUdapTefcaValidation_DefaultOverload_RegistersWithDefaultCommunity()
+    {
+        var services = new ServiceCollection();
+
+        services.AddUdapTefcaValidation();
+
+        var provider = services.BuildServiceProvider();
+        var validator = provider.GetService<ICommunityTokenValidator>();
+        var regValidator = provider.GetService<ICommunityRegistrationValidator>();
+        var options = provider.GetRequiredService<IOptions<TefcaValidationOptions>>();
+
+        Assert.NotNull(validator);
+        Assert.NotNull(regValidator);
+        Assert.Contains(TefcaConstants.CommunityUri, options.Value.Communities);
+    }
+
+    #endregion
+
     #region TefcaRegistrationValidator
 
     [Theory]
@@ -203,6 +270,67 @@ public class TefcaCommunityValidatorTests
 
         Assert.True(validator.AppliesToCommunity(TefcaConstants.CommunityUri));
         Assert.False(validator.AppliesToCommunity("udap://fhirlabs1/"));
+    }
+
+    [Fact]
+    public void GetValidationRules_ClientCredentials_RequiresHl7B2B()
+    {
+        var validator = new TefcaTokenValidator(DefaultOptions);
+
+        var rules = validator.GetValidationRules("client_credentials");
+
+        Assert.NotNull(rules);
+        Assert.NotNull(rules.RequiredExtensions);
+        Assert.Contains(UdapConstants.UdapAuthorizationExtensions.Hl7B2B, rules.RequiredExtensions);
+        Assert.Equal(1, rules.MaxPurposeOfUseCount);
+    }
+
+    [Fact]
+    public void GetValidationRules_AuthorizationCode_NoExtensionsRequired()
+    {
+        var validator = new TefcaTokenValidator(DefaultOptions);
+
+        var rules = validator.GetValidationRules("authorization_code");
+
+        Assert.NotNull(rules);
+        Assert.NotNull(rules.RequiredExtensions);
+        Assert.Empty(rules.RequiredExtensions);
+        Assert.Equal(1, rules.MaxPurposeOfUseCount);
+    }
+
+    [Fact]
+    public void GetValidationRules_UnknownGrantType_ReturnsNullRequiredExtensions()
+    {
+        var validator = new TefcaTokenValidator(DefaultOptions);
+
+        var rules = validator.GetValidationRules("device_code");
+
+        Assert.NotNull(rules);
+        Assert.Null(rules.RequiredExtensions);
+    }
+
+    [Fact]
+    public void GetValidationRules_NullGrantType_ReturnsNullRequiredExtensions()
+    {
+        var validator = new TefcaTokenValidator(DefaultOptions);
+
+        var rules = validator.GetValidationRules(null);
+
+        Assert.NotNull(rules);
+        Assert.Null(rules.RequiredExtensions);
+    }
+
+    [Fact]
+    public void GetValidationRules_AllTefcaXpCodesPresent()
+    {
+        var validator = new TefcaTokenValidator(DefaultOptions);
+
+        var rules = validator.GetValidationRules("client_credentials");
+
+        Assert.NotNull(rules?.AllowedPurposeOfUse);
+        Assert.Equal(12, rules.AllowedPurposeOfUse.Count);
+        Assert.Contains($"urn:oid:{TefcaConstants.ExchangePurposeCodes.Oid}#T-TREAT", rules.AllowedPurposeOfUse);
+        Assert.Contains($"urn:oid:{TefcaConstants.ExchangePurposeCodes.Oid}#T-IAS", rules.AllowedPurposeOfUse);
     }
 
     #endregion

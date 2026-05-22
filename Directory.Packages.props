@@ -3,101 +3,99 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
-
   <!-- Framework-independent packages -->
   <ItemGroup>
     <!-- https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges -->
     <PackageVersion Include="BouncyCastle.Cryptography" Version="2.6.2" />
-    <PackageVersion Include="Duende.IdentityServer.Storage" Version="7.4.6" />
+    <PackageVersion Include="Duende.IdentityServer.Storage" Version="7.4.7" />
     <PackageVersion Include="Google.Apis.Auth" Version="1.73.0" />
     <PackageVersion Include="Google.Cloud.Storage.Control.V2" Version="1.7.0" />
     <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.14.0" />
-    <PackageVersion Include="Hl7.Fhir.Base" Version="5.13.2" />
-    <PackageVersion Include="Hl7.Fhir.R4B" Version="5.13.2" />
+    <PackageVersion Include="Hl7.Fhir.Base" Version="5.13.3" />
+    <PackageVersion Include="Hl7.Fhir.R4B" Version="5.13.3" />
     <PackageVersion Include="LazyCache" Version="2.4.0" />
     <PackageVersion Include="AspNetCoreRateLimit" Version="5.0.0" />
-    <PackageVersion Include="Hl7.Fhir.Specification.R4B" Version="5.13.2" />
+    <PackageVersion Include="Hl7.Fhir.Specification.R4B" Version="5.13.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc" Version="2.2.0" />
-    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.16.0" />
-    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.103" />
+    <PackageVersion Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.18.0" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
     <PackageVersion Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
     <PackageVersion Include="MSTest.TestAdapter" Version="4.1.0" />
     <PackageVersion Include="MSTest.TestFramework" Version="4.1.0" />
-    <PackageVersion Include="Duende.IdentityModel" Version="8.0.0" />
-    <PackageVersion Include="Duende.IdentityServer" Version="7.4.6" />
-    <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="7.4.6" />
-    <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.4.6" />
-    <PackageVersion Include="OpenTelemetry" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.0" />
+    <PackageVersion Include="Duende.IdentityModel" Version="8.1.0" />
+    <PackageVersion Include="Duende.IdentityServer" Version="7.4.7" />
+    <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="7.4.7" />
+    <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.4.7" />
+    <PackageVersion Include="OpenTelemetry" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.15.2" />
     <PackageVersion Include="Hangfire.Core" Version="1.8.20" />
     <PackageVersion Include="Hangfire.AspNetCore" Version="1.8.20" />
     <PackageVersion Include="Hangfire.PostgreSql" Version="1.20.10" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
-    <PackageVersion Include="Spectre.Console" Version="0.54.0" />
-    <PackageVersion Include="Spectre.Console.Cli" Version="0.53.1" />
-    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
+    <PackageVersion Include="Spectre.Console" Version="0.55.2" />
+    <PackageVersion Include="Spectre.Console.Cli" Version="0.55.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.18.0" />
     <PackageVersion Include="Udap.Metadata.Server" Version="0.3.24" />
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
-    <PackageVersion Include="ZiggyCreatures.FusionCache" Version="2.5.0" />
-
+    <PackageVersion Include="ZiggyCreatures.FusionCache" Version="2.6.0" />
     <!-- UDAP AI CLI -->
     <PackageVersion Include="Microsoft.SemanticKernel" Version="1.74.0" />
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.74.0" />
     <PackageVersion Include="Terminal.Gui" Version="2.0.0-develop.5203" />
-
     <!-- Unconditional: Hl7.Fhir 6.x requires Extensions.Caching.Memory 10.x which cascades to require
-         these at >= 10.0.1 for all TFMs. Duende.IdentityServer.Storage 7.4.6 requires
+         these at >= 10.0.1 for all TFMs. Duende.IdentityServer.Storage 7.4.7 requires
          DataProtection.Abstractions >= 10.0.0 for all TFMs. -->
-    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.5" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.Bcl.Memory" Version="10.0.8" />
   </ItemGroup>
-
   <!-- net8.0 ASP.NET Core framework-versioned packages -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.19" />
-    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="8.0.19" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="8.0.27" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="8.0.27" />
   </ItemGroup>
-
   <!-- net9.0 ASP.NET Core framework-versioned packages -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.8" />
-    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="9.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.16" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="9.0.16" />
   </ItemGroup>
-
-  <!-- net8.0 and net9.0 shared runtime-versioned packages -->
-  <!-- EFCore 9.0.9 required: Duende.IdentityServer.EntityFramework.Storage 7.4.6 pulls in EFCore.Relational 9.0.9 -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' Or '$(TargetFramework)' == 'net9.0'">
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.9" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.9" />
+  <!-- net8.0 EF Core packages (pinned to 9.0.x; Duende.IdentityServer.EntityFramework.Storage 7.4.7 requires >= 9.0.9) -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.16" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.16" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.16" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.16" />
   </ItemGroup>
-
+  <!-- net9.0 EF Core packages -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.16" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.16" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.16" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.16" />
+  </ItemGroup>
   <!-- net10.0 runtime-versioned packages -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.4" />
-    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.4" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.8" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
   </ItemGroup>
-
 </Project>

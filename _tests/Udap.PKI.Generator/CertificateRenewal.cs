@@ -33,8 +33,13 @@ public class CertificateRenewal : CertificateBase
     [Fact(Skip = "Experimenting")]
     public void RenewIntermediateCertificate()
     {
+#if NET9_0_OR_GREATER
+        using var rootCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
+        using var subCA = X509CertificateLoader.LoadPkcs12FromFile($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test");
+#else
         using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
         using var subCA = new X509Certificate2($"{SurefhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test");
+#endif
 
 
 

@@ -1,0 +1,42 @@
+@* (c) 2026 Joseph Shook. All rights reserved.
+   Authors: Joseph Shook   JoeShook@Gmail.com
+                            Joseph.Shook@Surescripts.com
+   See LICENSE in the project root for license information. *@
+
+@using Sigil.Common.ViewModels
+
+@if (Freshness != CrlFreshness.Fresh || ShowFresh)
+{
+    <span slot="end" title="@Tooltip()" style="display: inline-flex; align-items: center;">
+        <FluentIcon Value="@GetIcon()" Color="Color.Custom" CustomColor="@GetColor()" />
+    </span>
+}
+
+@code {
+    [Parameter] public CrlFreshness Freshness { get; set; }
+    [Parameter] public bool ShowFresh { get; set; } = false;
+
+    private Icon GetIcon() => Freshness switch
+    {
+        CrlFreshness.Expired => new Icons.Filled.Size16.ErrorCircle(),
+        CrlFreshness.ExpiringSoon => new Icons.Filled.Size16.Warning(),
+        CrlFreshness.Missing => new Icons.Regular.Size16.QuestionCircle(),
+        _ => new Icons.Filled.Size16.CheckmarkCircle()
+    };
+
+    private string GetColor() => Freshness switch
+    {
+        CrlFreshness.Expired => "#e94560",
+        CrlFreshness.ExpiringSoon => "#ff9800",
+        CrlFreshness.Missing => "#888",
+        _ => "#4caf50"
+    };
+
+    private string Tooltip() => Freshness switch
+    {
+        CrlFreshness.Expired => "CRL has expired",
+        CrlFreshness.ExpiringSoon => "CRL expires within 7 days",
+        CrlFreshness.Missing => "No CRL has been published yet",
+        _ => "CRL is current"
+    };
+}

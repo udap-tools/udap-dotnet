@@ -104,6 +104,24 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             existingClient.AllowOfflineAccess = client.AllowOfflineAccess;
             existingClient.RequirePkce = client.RequirePkce;
             existingClient.RequireDPoP = client.RequireDPoP;
+
+            var newCertSecret = client.ClientSecrets
+                .FirstOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE);
+            if (newCertSecret != null)
+            {
+                var existingCertSecret = existingClient.ClientSecrets
+                    .FirstOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE);
+                if (existingCertSecret != null)
+                {
+                    existingCertSecret.Value = newCertSecret.Value;
+                    existingCertSecret.Expiration = newCertSecret.Expiration;
+                }
+                else
+                {
+                    existingClient.ClientSecrets.Add(newCertSecret);
+                }
+            }
+
             //TODO update Certifications
             //TODO update others?
             return Task.FromResult(true);
@@ -327,6 +345,14 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
                 {
                     clientSecret.Expiration = endCertificate.NotAfter.ToUniversalTime();
                     rolled = true;
+                }
+
+                var certSecret = client.ClientSecrets.FirstOrDefault(cs =>
+                    cs.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE);
+                if (certSecret != null)
+                {
+                    certSecret.Value = Convert.ToBase64String(endCertificate.Export(X509ContentType.Cert));
+                    certSecret.Expiration = endCertificate.NotAfter.ToUniversalTime();
                 }
             }
         }

@@ -30,25 +30,6 @@ namespace Udap.Util.Extensions;
 public static class X509Extensions
 {
     /// <summary>
-    /// Performs a shallow clone or the specified <see cref="System.Security.Cryptography.X509Certificates.X509ChainPolicy"/>
-    /// </summary>
-    /// <param name="policy">The instance to clone.</param>
-    /// <returns>The shallow cloned instance.</returns>
-    public static X509ChainPolicy Clone(this X509ChainPolicy policy)
-    {
-        X509ChainPolicy newPolicy = new X509ChainPolicy();
-        newPolicy.ApplicationPolicy.Add(policy.ApplicationPolicy);
-        newPolicy.CertificatePolicy.Add(policy.CertificatePolicy);
-        newPolicy.ExtraStore.Add(policy.ExtraStore);
-        newPolicy.RevocationFlag = policy.RevocationFlag;
-        newPolicy.RevocationMode = policy.RevocationMode;
-        newPolicy.UrlRetrievalTimeout = policy.UrlRetrievalTimeout;
-        newPolicy.VerificationFlags = policy.VerificationFlags;
-
-        return newPolicy;
-    }
-
-    /// <summary>
     /// Adds a collection of <see cref="System.Security.Cryptography.Oid"/> instances to this collection.
     /// </summary>
     /// <param name="oids">The collection to which to add values</param>

@@ -184,6 +184,21 @@
 
 ---
 
+### Certificate Export
+- **Copy Key**: Extracts private key as PKCS#8 PEM and copies to clipboard (equivalent to `openssl pkcs12 -nocerts -nodes | openssl pkcs8 -topk8 -nocrypt`)
+- **Copy Cert**: Extracts certificate as base64-encoded DER and copies to clipboard (for `x5c` JWT headers in UDAP registration/token requests)
+- Both operations delegated to `CertificateExportService` in `Sigil.Common`
+- Security level enforcement: keys stored in HSM/Cloud KMS (`CertSecurityLevel != Software`) cannot be exported
+
+### Renewal Validation
+- **CDP/AIA URL change warning**: When renewing a certificate, if the selected template would change CDP or AIA URLs compared to the original certificate, a warning banner appears in the issuance dialog listing each added/removed URL
+- Business logic in `IssuanceValidator` (injected into `CertificateIssuanceService`), not in UI code-behind
+- Warnings are advisory — user can proceed or adjust the template
+
+### UI Enhancements
+- **Draggable dialog resize**: Issue Certificate and Template Add/Edit dialogs have a resize handle on the right edge. Uses center-based mouse tracking and sets `--dialog-width` CSS variable to penetrate FluentDialog's shadow DOM
+- Dialog min-width increased to 900px for better form layout
+
 ---
 
 ## Phase 5: Remote Signing & Aspire Orchestration (Complete)
@@ -242,8 +257,9 @@ examples/CA/
 ├── Sigil/                 # Blazor Server host (Program.cs, App.razor, wwwroot)
 ├── Sigil.Common/          # Class library (entities, services, ViewModels, migrations)
 │   ├── Data/Entities/     # Community, CaCertificate, IssuedCertificate, Crl, CertificateTemplate, Job
-│   ├── Services/          # Issuance, Validation, Parsing, Import, CRL, ASN.1, Extension helpers
+│   ├── Services/          # Issuance, Validation, Parsing, Import, Export, CRL, Dashboard, Template, Community, Management, Publishing
 │   ├── Services/Signing/  # ISigningProvider, LocalSigningProvider, RemoteCertificateBuilder
+│   ├── Validators/        # IssuanceValidator (pre-issuance business rules, injected into services)
 │   └── ViewModels/        # DTOs for UI and API consumers
 ├── Sigil.UI/              # Razor Class Library (all components, pages, shared, layout)
 │   ├── Components/Pages/  # Explorer, Communities, Templates, Import, Home, Jobs
@@ -260,6 +276,8 @@ examples/CA/
 
 ### Key Design Decisions
 - **Sigil.Common has no UI dependencies** — reusable by CLI tools, APIs, tests
+- **Service layer enforced**: Business logic lives in `Sigil.Common/Services/` (not in UI code-behinds). UI pages inject services, not `IDbContextFactory`. Services extracted: `DashboardService`, `TemplateService`, `CommunityService`, `CertificateManagementService`, `CertificatePublishingService`, `CertificateExportService`
+- **Validators as a separate concern**: `Sigil.Common/Validators/` contains business rule validators injected into services (e.g., `IssuanceValidator` into `CertificateIssuanceService`)
 - **Provider projects are separate assemblies** — `Sigil.Vault.Transit` and `Sigil.Gcp.Kms` implement `ISigningProvider` from `Sigil.Common`, keeping provider-specific dependencies (Vault HTTP, Google.Cloud.Kms) out of the core library
 - **CertificateIssuanceService** and all DTOs in Common for multi-host consumption
 - **Extension helpers** extracted from Udap.PKI.Generator test project into Sigil.Common

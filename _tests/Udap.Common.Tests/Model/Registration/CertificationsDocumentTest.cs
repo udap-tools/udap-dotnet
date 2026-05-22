@@ -64,8 +64,13 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void CertificationExpirationTests()
         {
+#if NET9_0_OR_GREATER
+            var certificationCert =
+                X509CertificateLoader.LoadPkcs12FromFile(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#else
             var certificationCert =
                 new X509Certificate2(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#endif
             var expiration = certificationCert.NotAfter; // remember cannot be greater than 3 years
 
             Action act = () => UdapCertificationsAndEndorsementBuilder
@@ -316,7 +321,11 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void BuildCertification()
         {
+#if NET9_0_OR_GREATER
+            var certificationCert = X509CertificateLoader.LoadPkcs12FromFile(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#else
             var certificationCert = new X509Certificate2(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#endif
             var expiration = certificationCert.NotAfter; // remember cannot be greater than 3 years
             
             var certificationsDoc = UdapCertificationsAndEndorsementBuilder
@@ -396,8 +405,13 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void BuildSotwareStatementForCertification()
         {
+#if NET9_0_OR_GREATER
+            var certificationCert =
+                X509CertificateLoader.LoadPkcs12FromFile(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#else
             var certificationCert =
                 new X509Certificate2(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#endif
             var expiration = certificationCert.NotAfter; // remember cannot be greater than 3 years
 
             var signedSoftwareStatement = UdapCertificationsAndEndorsementBuilder
@@ -438,7 +452,11 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void ClampedExpiration_DefaultsToFiveMinutes()
         {
+#if NET9_0_OR_GREATER
+            var cert = X509CertificateLoader.LoadPkcs12FromFile(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#else
             var cert = new X509Certificate2(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#endif
             var before = DateTime.UtcNow.AddMinutes(5).AddSeconds(-5);
             var after = DateTime.UtcNow.AddMinutes(5).AddSeconds(5);
 
@@ -453,7 +471,11 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void ClampedExpiration_NegativeOffset_Throws()
         {
+#if NET9_0_OR_GREATER
+            var cert = X509CertificateLoader.LoadPkcs12FromFile(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#else
             var cert = new X509Certificate2(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#endif
 
             Action act = () => UdapCertificationsAndEndorsementBuilder.WithClampedExpiration(TimeSpan.FromSeconds(-1), cert);
             var ex = Assert.Throws<ArgumentOutOfRangeException>(act);
@@ -463,7 +485,11 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void ClampedExpiration_ExceedsThreeYearPolicy_Clamped()
         {
+#if NET9_0_OR_GREATER
+            var cert = X509CertificateLoader.LoadPkcs12FromFile(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#else
             var cert = new X509Certificate2(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#endif
 
             var requested = TimeSpan.FromDays(365 * 5); // 5 years
             var exp = UdapCertificationsAndEndorsementBuilder.WithClampedExpiration(requested, cert);
@@ -476,7 +502,11 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void ClampedExpiration_ExceedsCertificate_NotAfterSafetyApplied()
         {
+#if NET9_0_OR_GREATER
+            var cert = X509CertificateLoader.LoadPkcs12FromFile(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#else
             var cert = new X509Certificate2(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#endif
             var safetySeconds = 7;
             var huge = TimeSpan.FromDays(2000);
 
@@ -577,8 +607,13 @@ namespace Udap.Common.Tests.Model.Registration
         [Fact]
         public void AdditionalClaims_IncludedInSignedSoftwareStatement()
         {
+#if NET9_0_OR_GREATER
+            var certificationCert =
+                X509CertificateLoader.LoadPkcs12FromFile(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#else
             var certificationCert =
                 new X509Certificate2(Path.Combine("CertStore/issued", "FhirLabsAdminCertification.pfx"), "udap-test");
+#endif
 
             var signedJwt = UdapCertificationsAndEndorsementBuilder
                 .Create("TEFCA Basic App Certification", certificationCert)

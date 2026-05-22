@@ -16,7 +16,13 @@ namespace Sigil.Common.Services.Signing;
 public class SigningProviderOptions
 {
     /// <summary>
-    /// The active signing provider: "local", "vault-transit", or "gcp-kms".
+    /// The default signing provider: "local", "vault-transit", or "gcp-kms".
     /// </summary>
     public string Provider { get; set; } = "local";
+
+    /// <summary>
+    /// Providers available for per-issuance selection in the UI.
+    /// When more than one is listed, a Key Storage dropdown appears.
+    /// </summary>
+    public List<string> AvailableProviders { get; set; } = new() { "local" };
 }

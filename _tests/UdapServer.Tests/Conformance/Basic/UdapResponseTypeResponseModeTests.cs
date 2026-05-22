@@ -32,7 +32,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
@@ -56,8 +56,13 @@ public class UdapResponseTypeResponseModeTests
     public UdapResponseTypeResponseModeTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
+#if NET9_0_OR_GREATER
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#else
         var sureFhirLabsAnchor  = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#endif
 
         _mockPipeline.OnPostConfigureServices += s =>
         {
@@ -143,7 +148,11 @@ public class UdapResponseTypeResponseModeTests
     [Fact]
     public async Task Request_response_type_missing_results_in_unsupported_response_type()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         await _mockPipeline.LoginAsync("bob");
 
@@ -218,7 +227,11 @@ public class UdapResponseTypeResponseModeTests
     [Fact]
     public async Task Request_state_missing_results_in_unsupported_response_type()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         
         await _mockPipeline.LoginAsync("bob");
 
@@ -286,7 +299,11 @@ public class UdapResponseTypeResponseModeTests
     [Fact]
     public async Task Request_response_type_invalid_results_in_unsupported_response_type()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         await _mockPipeline.LoginAsync("bob");
 
@@ -355,7 +372,11 @@ public class UdapResponseTypeResponseModeTests
     [Fact]
     public async Task Request_client_id_missing_results_in_invalid_request()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         await _mockPipeline.LoginAsync("bob");
 
@@ -418,7 +439,11 @@ public class UdapResponseTypeResponseModeTests
     [Fact]
     public async Task Request_client_id_invalid_results_in_unauthorized_client()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         await _mockPipeline.LoginAsync("bob");
 
@@ -482,7 +507,11 @@ public class UdapResponseTypeResponseModeTests
     public async Task AuthorizeWithoutPKCSE_accepted()
     {
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -595,7 +624,11 @@ public class UdapResponseTypeResponseModeTests
     public async Task Request_accepted_RegisterWithDifferentRedirectUrl()
     {
         string httpsCodeClientCallback = "https://code_client/callback";
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         await _mockPipeline.LoginAsync("bob");
 
@@ -738,7 +771,11 @@ public class UdapResponseTypeResponseModeTests
     {
         var redirectUrl = "https://code_client";
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         await _mockPipeline.LoginAsync("bob");
 
@@ -808,7 +845,11 @@ public class UdapResponseTypeResponseModeTests
     [Fact]
     public async Task Request_invalid_redirect_url_results_in_invalid_request()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         await _mockPipeline.LoginAsync("bob");
 

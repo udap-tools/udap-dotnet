@@ -26,7 +26,7 @@ public class UdapMetadataOptionsProvider : IUdapMetadataOptionsProvider
                     ReadCommentHandling = JsonCommentHandling.Skip
                 })!;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             throw new InvalidOperationException("UDAP metadata configuration could not be loaded. Please contact the administrator.");
         }

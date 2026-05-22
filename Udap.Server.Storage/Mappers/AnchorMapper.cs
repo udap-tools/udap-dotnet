@@ -26,8 +26,14 @@ public static class AnchorMapper
             .Replace("-----END CERTIFICATE-----", "")
             .Trim();
 
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(certBase64));
+#else
+        var cert = new X509Certificate2(Convert.FromBase64String(certBase64));
+#endif
+
         return new Udap.Common.Models.Anchor(
-            new X509Certificate2(Convert.FromBase64String(certBase64)),
+            cert,
             entity.Community == null ? null : entity.Community.Name,
             entity.Name)
         {

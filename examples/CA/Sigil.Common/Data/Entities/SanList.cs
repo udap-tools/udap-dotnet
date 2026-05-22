@@ -10,15 +10,18 @@
 
 namespace Sigil.Common.Data.Entities;
 
-public class Community
+public class SanList
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
 
-    public bool Enabled { get; set; } = true;
+    /// <summary>
+    /// Semicolon-delimited SAN entries: "URI:urn:oid:...#T-TRTMNT;URI:urn:oid:...#T-TREAT;DNS:example.com"
+    /// </summary>
+    public string Items { get; set; } = string.Empty;
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public ICollection<CommunityBaseUrl> BaseUrls { get; set; } = new List<CommunityBaseUrl>();
-    public ICollection<CaCertificate> CaCertificates { get; set; } = new List<CaCertificate>();
+    public ICollection<CertificateTemplate> Templates { get; set; } = new List<CertificateTemplate>();
 }

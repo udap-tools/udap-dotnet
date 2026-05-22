@@ -22,8 +22,13 @@ public class TerminateAtAnchorTest
     public TerminateAtAnchorTest(ITestOutputHelper output)
     {
         _output = output;
+#if NET9_0_OR_GREATER
+        cert = X509CertificateLoader.LoadPkcs12FromFile(Path.Combine("CertStore/issued", "fhirlabs.net.client.pfx"), "udap-test");
+        anchor = X509CertificateLoader.LoadCertificateFromFile(Path.Combine("CertStore/intermediates", "SureFhirLabs_Intermediate.cer"));
+#else
         cert = new X509Certificate2(Path.Combine("CertStore/issued", "fhirlabs.net.client.pfx"), "udap-test");
         anchor = new X509Certificate2(Path.Combine("CertStore/intermediates", "SureFhirLabs_Intermediate.cer"));
+#endif
     }
     [Fact]
     public async Task TestAnchorTermination()
@@ -47,9 +52,9 @@ public class TerminateAtAnchorTest
             + "\r\n" + string.Join("\r\n", diagnosticsChainValidator.ActualErrorMessages)
             + "\r\n" + string.Join("\r\n", diagnosticsChainValidator.ActualUntrustedMessages));
 
-        Assert.Equal(0, diagnosticsChainValidator.ActualErrorMessages.Count);
-        Assert.Equal(0, diagnosticsChainValidator.ActualProblemMessages.Count);
-        Assert.Equal(0, diagnosticsChainValidator.ActualUntrustedMessages.Count);
+        Assert.Empty(diagnosticsChainValidator.ActualErrorMessages);
+        Assert.Empty(diagnosticsChainValidator.ActualProblemMessages);
+        Assert.Empty(diagnosticsChainValidator.ActualUntrustedMessages);
     }
 
     [Fact(Skip = "Anchor Termination works but I have some details to work out for this test to pass")]
@@ -68,7 +73,7 @@ public class TerminateAtAnchorTest
             + "\r\n" + string.Join("\r\n", diagnosticsChainValidator.ActualErrorMessages)
             + "\r\n" + string.Join("\r\n", diagnosticsChainValidator.ActualUntrustedMessages));
 
-        Assert.Equal(0, diagnosticsChainValidator.ActualErrorMessages.Count);
+        Assert.Empty(diagnosticsChainValidator.ActualErrorMessages);
 
         Assert.Contains(diagnosticsChainValidator.ActualProblemMessages, message =>
             message.Contains("Trust ERROR"));

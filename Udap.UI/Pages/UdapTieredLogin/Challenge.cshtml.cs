@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Server.Security.Authentication.TieredOAuth;
 
 namespace Udap.UI.Pages.UdapTieredLogin;

@@ -154,7 +154,7 @@ public partial class BuildTestCerts : CertificateBase
             File.WriteAllBytes($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", parentBytes);
             char[] caPem = PemEncoding.Write("CERTIFICATE", caCert.RawData);
             File.WriteAllBytes($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer", caPem.Select(c => (byte)c).ToArray());
-            UpdateWindowsMachineStore(caCert);
+            // UpdateWindowsMachineStore(caCert);
 
             #endregion
 
@@ -205,7 +205,7 @@ public partial class BuildTestCerts : CertificateBase
             File.WriteAllBytes($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", intermediateBytes);
             char[] intermediatePem = PemEncoding.Write("CERTIFICATE", intermediateCertWithoutKey.RawData);
             File.WriteAllBytes($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.cer", intermediatePem.Select(c => (byte)c).ToArray());
-            UpdateWindowsMachineStore(intermediateCertWithoutKey);
+            // UpdateWindowsMachineStore(intermediateCertWithoutKey);
 
             #endregion
 
@@ -222,8 +222,13 @@ public partial class BuildTestCerts : CertificateBase
     [Fact(Skip = "Enabled on desktop when needed.")]
     public void MakeEndCertsForDefaultCommunity()
     {
+#if NET9_0_OR_GREATER
+        using var caCert = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test", X509KeyStorageFlags.Exportable);
+        using var subCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test", X509KeyStorageFlags.Exportable);
+#else
         using var caCert = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test", X509KeyStorageFlags.Exportable);
         using var subCA = new X509Certificate2($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test", X509KeyStorageFlags.Exportable);
+#endif
 
         SureFhirlabsUdapIssued.EnsureDirectoryExists();
 
@@ -445,7 +450,7 @@ public partial class BuildTestCerts : CertificateBase
 
             crlIntermediateGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
                 false,
-                new AuthorityKeyIdentifierStructure(bouncyCaCert.GetPublicKey()));
+                X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bouncyCaCert.GetPublicKey())));
 
             var nextsureFhirIntermediateCrlNum = GetNextCrlNumber(sureFhirIntermediateCrlFilename);
 
@@ -480,7 +485,7 @@ public partial class BuildTestCerts : CertificateBase
 
             crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
                 false,
-                new AuthorityKeyIdentifierStructure(bouncyIntermediateCert.GetPublicKey()));
+                X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bouncyIntermediateCert.GetPublicKey())));
 
             var nextSureFhirClientCrlNum = GetNextCrlNumber(sureFhirClientCrlFilename);
 
@@ -620,8 +625,13 @@ public partial class BuildTestCerts : CertificateBase
     [Fact]
     public void MakeNegativeTestCertsForFhirLabsReferenceImplementationServer() // ordered by method name.  Notice ITestCaseOrderer
     {
+#if NET9_0_OR_GREATER
+        using var rootCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
+        using var subCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test");
+#else
         using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
         using var subCA = new X509Certificate2($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test");
+#endif
 
         //
         // Expired certificate
@@ -684,8 +694,13 @@ public partial class BuildTestCerts : CertificateBase
         );
 
 
+#if NET9_0_OR_GREATER
+        using var rootCA_localhost = X509CertificateLoader.LoadPkcs12FromFile($"{LocalhostCertStore}/localhost_fhirlabs_community1/caLocalhostCert.pfx", "udap-test");
+        using var subCA_localhost = X509CertificateLoader.LoadPkcs12FromFile($"{LocalhostCertStore}/localhost_fhirlabs_community1/intermediates/intermediateLocalhostCert.pfx", "udap-test");
+#else
         using var rootCA_localhost = new X509Certificate2($"{LocalhostCertStore}/localhost_fhirlabs_community1/caLocalhostCert.pfx", "udap-test");
         using var subCA_localhost = new X509Certificate2($"{LocalhostCertStore}/localhost_fhirlabs_community1/intermediates/intermediateLocalhostCert.pfx", "udap-test");
+#endif
 
         //
         // Untrusted Use Case:  the CA is not published.
@@ -725,9 +740,15 @@ public partial class BuildTestCerts : CertificateBase
     [Fact(Skip = "Enabled on desktop when needed.")]
     public void MakeIdentityProviderCertificates()
     {
+#if NET9_0_OR_GREATER
+        using var rootCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
+        using var subCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx",
+            "udap-test");
+#else
         using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
         using var subCA = new X509Certificate2($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx",
             "udap-test");
+#endif
 
 
 
@@ -784,9 +805,15 @@ public partial class BuildTestCerts : CertificateBase
     [Fact (Skip = "Enabled on desktop when needed.  Actually I performed the work around in SignedSoftwareStatementBuilder<T>.BuildECDSA")]
     public void GenerateCrlForFailTests()
     {
+#if NET9_0_OR_GREATER
+        var subCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test", X509KeyStorageFlags.Exportable);
+        var revokeCertificate =
+            X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirlabsUdapIssued}/fhirlabs.net.revoked.client.pfx", "udap-test");
+#else
         var subCA = new X509Certificate2($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test", X509KeyStorageFlags.Exportable);
         var revokeCertificate =
             new X509Certificate2($"{SureFhirlabsUdapIssued}/fhirlabs.net.revoked.client.pfx", "udap-test");
+#endif
 
         // var x509CrlParser = new X509CrlParser();
         X509Crl? x509Crl = null;
@@ -825,7 +852,7 @@ public partial class BuildTestCerts : CertificateBase
 
         crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
             false,
-            new AuthorityKeyIdentifierStructure(bouncyIntermediateCert.GetPublicKey()));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bouncyIntermediateCert.GetPublicKey())));
 
         var nextSureFhirClientCrlNum = GetNextCrlNumber(sureFhirClientCrlFilename);
 
@@ -835,7 +862,7 @@ public partial class BuildTestCerts : CertificateBase
         // var randomGenerator = new CryptoApiRandomGenerator();
         // var random = new SecureRandom(randomGenerator);
 
-            
+
         var Akp = DotNetUtilities.GetKeyPair(subCA.GetRSAPrivateKey()).Private;
 
         //var crl = crlGen.Generate(Akp, random);
@@ -1209,7 +1236,7 @@ public partial class BuildTestCerts : CertificateBase
 
             crlIntermediateGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
                 false,
-                new AuthorityKeyIdentifierStructure(bouncyCaCert.GetPublicKey()));
+                X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bouncyCaCert.GetPublicKey())));
 
             var nextsureFhirIntermediateCrlNum = GetNextCrlNumber(AnchorCrlFilePath);
 
@@ -1244,7 +1271,7 @@ public partial class BuildTestCerts : CertificateBase
 
             crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
                 false,
-                new AuthorityKeyIdentifierStructure(bouncyIntermediateCert.GetPublicKey()));
+                X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bouncyIntermediateCert.GetPublicKey())));
 
             var nextSureFhirClientCrlNum = GetNextCrlNumber(IntermediateCrlFilePath);
 
@@ -1372,8 +1399,13 @@ public partial class BuildTestCerts : CertificateBase
     [Fact (Skip = "Enabled on desktop when needed.")]
     public void MakeGFhirLabsCerts()
     {
+#if NET9_0_OR_GREATER
+        using var rootCA_localhost = X509CertificateLoader.LoadPkcs12FromFile($"{LocalhostCertStore}/surefhirlabs_community/SureFhirLabs_CA.pfx", "udap-test");
+        using var subCA_localhost = X509CertificateLoader.LoadPkcs12FromFile($"{LocalhostCertStore}/surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.pfx", "udap-test");
+#else
         using var rootCA_localhost = new X509Certificate2($"{LocalhostCertStore}/surefhirlabs_community/SureFhirLabs_CA.pfx", "udap-test");
         using var subCA_localhost = new X509Certificate2($"{LocalhostCertStore}/surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.pfx", "udap-test");
+#endif
             
         //
         // Build a client cert for the gFhirLabs 
@@ -1420,8 +1452,13 @@ public partial class BuildTestCerts : CertificateBase
     [Fact] //(Skip = "Enabled on desktop when needed.")]
     public void MakeMultiDomainCertsForSureFhirLabs()
     {
+#if NET9_0_OR_GREATER
+        using var rootCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
+        using var subCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test");
+#else
         using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
         using var subCA = new X509Certificate2($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx", "udap-test");
+#endif
 
         var domainSegments = new[] { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten" };
 
@@ -1461,9 +1498,15 @@ public partial class BuildTestCerts : CertificateBase
     [Fact(Skip = "Enabled on desktop when needed.")]
     public void BuildOptumClientCertificateForBrett()
     {
+#if NET9_0_OR_GREATER
+        using var rootCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
+        using var subCA = X509CertificateLoader.LoadPkcs12FromFile($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx",
+            "udap-test");
+#else
         using var rootCA = new X509Certificate2($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx", "udap-test");
         using var subCA = new X509Certificate2($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx",
             "udap-test");
+#endif
 
         //
         // Expired Certtificate
@@ -1576,14 +1619,19 @@ public partial class BuildTestCerts : CertificateBase
 
         var certPackage = new X509Certificate2Collection();
         certPackage.Add(clientCertWithKey);
+#if NET9_0_OR_GREATER
+        certPackage.Add(X509CertificateLoader.LoadCertificate(intermediateCert.Export(X509ContentType.Cert)));
+        certPackage.Add(X509CertificateLoader.LoadCertificate(caCert.Export(X509ContentType.Cert)));
+#else
         certPackage.Add(new X509Certificate2(intermediateCert.Export(X509ContentType.Cert)));
         certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
-            
+#endif
+
         var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
         File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes!);
         var clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
         File.WriteAllBytes($"{clientCertFilePath}.cer", clientPem.Select(c => (byte)c).ToArray());
-            
+
         return clientCert;
     }
 
@@ -1670,10 +1718,15 @@ public partial class BuildTestCerts : CertificateBase
 
         var certPackage = new X509Certificate2Collection();
         certPackage.Add(clientCertWithKey);
+#if NET9_0_OR_GREATER
+        certPackage.Add(X509CertificateLoader.LoadCertificate(intermediateCert.Export(X509ContentType.Cert)));
+        certPackage.Add(X509CertificateLoader.LoadCertificate(caCert.Export(X509ContentType.Cert)));
+#else
         certPackage.Add(new X509Certificate2(intermediateCert.Export(X509ContentType.Cert)));
         certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
+#endif
 
-            
+
         var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
         File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes!);
         var clientPem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);

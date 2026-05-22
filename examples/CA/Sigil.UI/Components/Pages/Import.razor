@@ -44,7 +44,7 @@
         </FluentStack>
 
         <FluentDataGrid Items="@previews.AsQueryable()" Style="margin-top: 0.5rem;">
-            <PropertyColumn Property="@(p => p.CommunityName)" Title="Community" Sortable="true" />
+            <PropertyColumn Property="@(p => p.TrustDomainName)" Title="Trust Domain" Sortable="true" />
             <PropertyColumn Property="@(p => p.RootCaCount)" Title="Root CAs" />
             <PropertyColumn Property="@(p => p.IntermediateCount)" Title="Intermediates" />
             <PropertyColumn Property="@(p => p.IssuedCertCount)" Title="Issued" />
@@ -83,7 +83,7 @@
                 <div style="margin-bottom: 0.5rem;">
                     <FluentBadge BackgroundColor="@(result.errors.Count == 0 ? "#4caf50" : "#ff9800")"
                                  Color="white">
-                        @result.community
+                        @result.trustDomain
                     </FluentBadge>
                     <span style="margin-left: 0.5rem;">@result.imported item(s) imported</span>
                     @if (result.errors.Count > 0)

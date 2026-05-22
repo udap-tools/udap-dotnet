@@ -119,8 +119,8 @@ builder.Services.ConfigureDPoPTokensForScheme("token", configure =>
     // required each time the API is invoked.
     //
     // See RFC 9449 for more details.
-    configure.ValidationMode = ExpirationValidationMode.IssuedAt;
-    configure.TokenMode = DPoPMode.DPoPAndBearer; // Some clients are issued without DPoP capability
+    configure.ProofTokenExpirationMode = DPoPProofExpirationMode.IssuedAt;
+    configure.AllowBearerTokens = true; // Some clients are issued without DPoP capability
 });
 
 

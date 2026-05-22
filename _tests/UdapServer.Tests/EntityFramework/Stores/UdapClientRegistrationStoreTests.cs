@@ -7,6 +7,8 @@
 // */
 #endregion
 
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using Duende.IdentityServer.Models;
 using Xunit;
 using Microsoft.EntityFrameworkCore;
@@ -169,5 +171,88 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
             client = await store.GetClient(testClient_community2);
             Assert.NotNull(client);
         }
+    }
+
+    [Theory]
+    [MemberData(nameof(TestDatabaseProviders))]
+    public async Task RegisterWithCertificateAndUpdateOnReRegistration(DbContextOptions<UdapDbContext> options)
+    {
+        using var cert1 = CreateSelfSignedCert("CN=TestClient1");
+        var cert1Base64 = Convert.ToBase64String(cert1.Export(X509ContentType.Cert));
+
+        var testClient = new Client
+        {
+            ClientId = "test_client_cert",
+            ClientName = "Test Client With Cert",
+            AllowedGrantTypes = new List<string> { GrantType.ClientCredentials },
+            ClientSecrets = new List<Secret>
+            {
+                new Secret("http://localhost") { Type = UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME, Expiration = cert1.NotAfter },
+                new Secret("1") { Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY, Expiration = cert1.NotAfter },
+                new Secret(cert1Base64) { Type = UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE, Expiration = cert1.NotAfter }
+            },
+            Properties = new Dictionary<string, string>
+            {
+                { UdapServerConstants.ClientPropertyConstants.Organization, UdapServerConstants.ClientPropertyConstants.DefaultOrgMap },
+                { UdapServerConstants.ClientPropertyConstants.DataHolder, UdapServerConstants.ClientPropertyConstants.DefaultOrgMap }
+            }
+        };
+
+        // Initial registration
+        await using (var context = new UdapDbContext(options))
+        {
+            var store = new UdapClientRegistrationStore(context, Substitute.For<ILogger<UdapClientRegistrationStore>>());
+            var result = await store.UpsertClient(testClient);
+            Assert.False(result);
+        }
+
+        // Verify certificate was stored
+        await using (var context = new UdapDbContext(options))
+        {
+            var entity = await context.Clients
+                .Include(c => c.ClientSecrets)
+                .SingleAsync(c => c.ClientId == testClient.ClientId);
+
+            var certSecret = entity.ClientSecrets.SingleOrDefault(s => s.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE);
+            Assert.NotNull(certSecret);
+            Assert.Equal(cert1Base64, certSecret.Value);
+        }
+
+        // Re-register with a new certificate
+        using var cert2 = CreateSelfSignedCert("CN=TestClient2");
+        var cert2Base64 = Convert.ToBase64String(cert2.Export(X509ContentType.Cert));
+
+        testClient.ClientSecrets = new List<Secret>
+        {
+            new Secret("http://localhost") { Type = UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME, Expiration = cert2.NotAfter },
+            new Secret("1") { Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY, Expiration = cert2.NotAfter },
+            new Secret(cert2Base64) { Type = UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE, Expiration = cert2.NotAfter }
+        };
+
+        await using (var context = new UdapDbContext(options))
+        {
+            var store = new UdapClientRegistrationStore(context, Substitute.For<ILogger<UdapClientRegistrationStore>>());
+            var result = await store.UpsertClient(testClient);
+            Assert.True(result);
+        }
+
+        // Verify certificate was updated
+        await using (var context = new UdapDbContext(options))
+        {
+            var entity = await context.Clients
+                .Include(c => c.ClientSecrets)
+                .SingleAsync(c => c.ClientId == testClient.ClientId);
+
+            var certSecret = entity.ClientSecrets.SingleOrDefault(s => s.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE);
+            Assert.NotNull(certSecret);
+            Assert.Equal(cert2Base64, certSecret.Value);
+        }
+    }
+
+    private static X509Certificate2 CreateSelfSignedCert(string subject)
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest(subject, rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        return request.CreateSelfSigned(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1));
     }
 }

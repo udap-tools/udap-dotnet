@@ -5,7 +5,10 @@
 
 @inherits LayoutComponentBase
 @using Microsoft.JSInterop
+@using Sigil.Common.Services
+@using Sigil.Common.ViewModels
 @inject Sigil.UI.Services.TimeDisplayService TimeDisplay
+@inject SystemStatusService StatusService
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -18,6 +21,75 @@
         <span style="font-weight: bold; font-size: 1.1rem;">Sigil</span>
         <span style="opacity: 0.6; margin-left: 0.5rem; font-size: 0.85rem;">PKI Management</span>
         <FluentSpacer />
+        <div style="position: relative;">
+            <FluentButton Id="status-button" Appearance="Appearance.Stealth"
+                          OnClick="ToggleStatusAsync"
+                          Title="System status">
+                <span style="display: inline-flex; align-items: center; gap: 0.4rem;">
+                    <span style="width: 10px; height: 10px; border-radius: 50%; background: @StatusDotColor(); display: inline-block;"></span>
+                    <span style="font-size: 0.85rem; opacity: 0.8;">System</span>
+                </span>
+            </FluentButton>
+            @if (statusOpen)
+            {
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 999;"
+                     @onclick="@(() => statusOpen = false)"></div>
+                <div style="position: absolute; right: 0; top: 100%; z-index: 1000;
+                            background: var(--neutral-layer-floating); color: var(--neutral-foreground-rest);
+                            border: 1px solid var(--neutral-stroke-rest);
+                            border-radius: 8px; padding: 1rem; min-width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                    <FluentLabel Typo="Typography.Subject" Style="margin-bottom: 0.5rem;">System Status</FluentLabel>
+                    @if (status != null)
+                    {
+                        <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 0.75rem; font-size: 0.85rem;">
+                            <span style="opacity: 0.7;">Database</span>
+                            <span style="color: @(status.DatabaseConnected ? "#4caf50" : "#e94560");">
+                                @(status.DatabaseConnected ? "Connected" : "Error: " + status.DatabaseError)
+                            </span>
+
+                            <span style="opacity: 0.7;">Default Provider</span>
+                            <span><strong>@status.DefaultProvider</strong></span>
+
+                            <span style="opacity: 0.7;">Available</span>
+                            <span>@string.Join(", ", status.AvailableProviders)</span>
+
+                            <span style="opacity: 0.7;">Vault Transit</span>
+                            <span style="color: @ComponentColor(status.VaultStatus);">
+                                @ComponentLabel(status.VaultStatus)
+                                @if (!string.IsNullOrEmpty(status.VaultAddress) && status.VaultStatus != ComponentStatus.NotConfigured)
+                                {
+                                    <span style="opacity: 0.6; margin-left: 0.25rem;">(@status.VaultAddress)</span>
+                                }
+                            </span>
+
+                            <span style="opacity: 0.7;">GCP KMS</span>
+                            <span style="color: @ComponentColor(status.GcpKmsStatus);">
+                                @ComponentLabel(status.GcpKmsStatus)
+                                @if (!string.IsNullOrEmpty(status.GcpProjectId) && status.GcpKmsStatus != ComponentStatus.NotConfigured)
+                                {
+                                    <span style="opacity: 0.6; margin-left: 0.25rem;">(@status.GcpProjectId)</span>
+                                }
+                            </span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.75rem;
+                                    padding-top: 0.5rem; border-top: 1px solid var(--neutral-stroke-rest);">
+                            <span style="font-size: 0.75rem; opacity: 0.6;">
+                                Checked @status.CheckedAt.LocalDateTime.ToString("HH:mm:ss")
+                            </span>
+                            <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small"
+                                          OnClick="RefreshStatusAsync"
+                                          IconStart="@(new Icons.Regular.Size16.ArrowSync())">
+                                Refresh
+                            </FluentButton>
+                        </div>
+                    }
+                    else
+                    {
+                        <FluentProgressRing />
+                    }
+                </div>
+            }
+        </div>
         <div style="position: relative;">
             <FluentButton Id="settings-button" Appearance="Appearance.Stealth"
                           OnClick="@(() => settingsOpen = !settingsOpen)"
@@ -54,9 +126,12 @@
     <div style="display: flex; height: calc(100vh - 50px); overflow: hidden;">
         <FluentNavMenu Width="220" Collapsible="true" Title="Navigation">
             <FluentNavLink Href="/" Match="NavLinkMatch.All" Icon="@(new Icons.Regular.Size20.Home())">Dashboard</FluentNavLink>
-            <FluentNavLink Href="/communities" Icon="@(new Icons.Regular.Size20.Organization())">Communities</FluentNavLink>
+            <FluentNavLink Href="/trust-domains" Icon="@(new Icons.Regular.Size20.Organization())">Trust Domains</FluentNavLink>
             <FluentNavLink Href="/explorer" Icon="@(new Icons.Regular.Size20.Certificate())">Certificate Explorer</FluentNavLink>
-            <FluentNavLink Href="/templates" Icon="@(new Icons.Regular.Size20.DocumentBulletList())">Templates</FluentNavLink>
+            <FluentNavGroup Title="Templates" Icon="@(new Icons.Regular.Size20.DocumentBulletList())">
+                <FluentNavLink Href="/templates" Icon="@(new Icons.Regular.Size20.DocumentBulletList())">X509 Templates</FluentNavLink>
+                <FluentNavLink Href="/san-lists" Icon="@(new Icons.Regular.Size20.TextBulletListTree())">SAN Lists</FluentNavLink>
+            </FluentNavGroup>
             <FluentNavLink Href="/jobs" Icon="@(new Icons.Regular.Size20.Timer())">Jobs</FluentNavLink>
             <FluentNavLink Href="/import" Icon="@(new Icons.Regular.Size20.ArrowImport())">Import</FluentNavLink>
         </FluentNavMenu>
@@ -70,16 +145,58 @@
 
 <FluentDialogProvider />
 <FluentToastProvider />
+<FluentMenuProvider />
 
 @code {
     private DesignThemeModes themeMode = DesignThemeModes.Dark;
     private bool hasLoadedTimeZone;
     private bool settingsOpen;
+    private bool statusOpen;
+    private SystemStatusViewModel? status;
 
     protected override void OnInitialized()
     {
         TimeDisplay.OnChanged += StateHasChanged;
     }
+
+    protected override async Task OnInitializedAsync()
+    {
+        status = await StatusService.GetStatusAsync();
+    }
+
+    private async Task ToggleStatusAsync()
+    {
+        statusOpen = !statusOpen;
+        if (statusOpen)
+            status = await StatusService.GetStatusAsync();
+    }
+
+    private async Task RefreshStatusAsync()
+    {
+        status = await StatusService.GetStatusAsync(forceRefresh: true);
+    }
+
+    private string StatusDotColor()
+    {
+        if (status == null) return "#999";
+        if (status.IsCritical) return "#e94560";
+        if (!status.IsHealthy) return "#ff9800";
+        return "#4caf50";
+    }
+
+    private static string ComponentColor(ComponentStatus s) => s switch
+    {
+        ComponentStatus.Reachable => "#4caf50",
+        ComponentStatus.Unreachable => "#e94560",
+        _ => "#888"
+    };
+
+    private static string ComponentLabel(ComponentStatus s) => s switch
+    {
+        ComponentStatus.Reachable => "Reachable",
+        ComponentStatus.Unreachable => "Unreachable",
+        _ => "Not configured"
+    };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

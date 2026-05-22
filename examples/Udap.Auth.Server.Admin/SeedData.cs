@@ -99,7 +99,7 @@ public static class SeedData
         var x509Certificate2Collection = clientRegistrationStore.GetIntermediateCertificates().Result;
         if (x509Certificate2Collection != null && !x509Certificate2Collection.Any())
         {
-            var rootCert = new X509Certificate2(
+            var rootCert = X509CertificateLoader.LoadCertificateFromFile(
                 Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
 
             udapContext.IntermediateCertificates.Add(new Intermediate
@@ -117,7 +117,7 @@ public static class SeedData
 
         if (!clientRegistrationStore.GetAnchors("http://localhost").Result.Any())
         {
-            var anchorLocalhostCert = new X509Certificate2(
+            var anchorLocalhostCert = X509CertificateLoader.LoadCertificateFromFile(
                 Path.Combine(assemblyPath!, certStoreBasePath, "localhost_community/anchorLocalhostCert.cer"));
         
             var community = udapContext.Communities.Single(c => c.Name == "http://localhost");
@@ -139,7 +139,7 @@ public static class SeedData
         
         if (!clientRegistrationStore.GetAnchors("udap://fhirlabs.net").Result.Any())
         {
-            var sureFhirLabsAnchor = new X509Certificate2(
+            var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile(
                 Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
         
             var commnity = udapContext.Communities.Single(c => c.Name == "udap://fhirlabs.net");

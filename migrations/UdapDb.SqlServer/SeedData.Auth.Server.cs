@@ -132,7 +132,7 @@ public static class SeedDataAuthServer
         //
         // Anchor surefhirlabs_community
         //
-        var sureFhirLabsAnchor = new X509Certificate2(
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://fhirlabs1/"))
@@ -155,7 +155,7 @@ public static class SeedDataAuthServer
             await udapContext.SaveChangesAsync();
         }
 
-        var intermediateCert = new X509Certificate2(
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath,
                 "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
 
@@ -192,7 +192,7 @@ public static class SeedDataAuthServer
         //
         // Anchor for Community udap://stage.healthtogo.me/
         //
-        var emrDirectTestCA = new X509Certificate2(
+        var emrDirectTestCA = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "EmrDirect/EMRDirectTestCA.crt"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://stage.healthtogo.me/"))
@@ -220,7 +220,7 @@ public static class SeedDataAuthServer
         //
         // Anchor localhost_community
         //
-        var anchorLocalhostCert = new X509Certificate2(
+        var anchorLocalhostCert = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community1/caLocalhostCert.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("http://localhost"))
@@ -246,7 +246,7 @@ public static class SeedDataAuthServer
             //
             var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
 
-            intermediateCert = new X509Certificate2(
+            intermediateCert = X509CertificateLoader.LoadCertificateFromFile(
                 Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community1/intermediates/intermediateLocalhostCert.cer"));
 
             if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()
@@ -273,7 +273,7 @@ public static class SeedDataAuthServer
         //
         // Anchor localhost_fhirlabs_community2 for Udap.Identity.Provider2
         //
-        var anchorUdapIdentityProvider2 = new X509Certificate2(
+        var anchorUdapIdentityProvider2 = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community2/caLocalhostCert2.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://Provider2"))
@@ -296,7 +296,7 @@ public static class SeedDataAuthServer
             await udapContext.SaveChangesAsync();
         }
 
-        var intermediateCertProvider2 = new X509Certificate2(
+        var intermediateCertProvider2 = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath,
                 "localhost_fhirlabs_community2/intermediates/intermediateLocalhostCert2.cer"));
 
@@ -335,7 +335,7 @@ public static class SeedDataAuthServer
         //
         // Anchor udap://ECDSA/ community for Udap.Identity.Provider2
         //
-        var anchorUdapECDSA = new X509Certificate2(
+        var anchorUdapECDSA = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community6/caLocalhostCert6.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://ECDSA/"))
@@ -358,7 +358,7 @@ public static class SeedDataAuthServer
             await udapContext.SaveChangesAsync();
         }
 
-        var intermediateECDSA= new X509Certificate2(
+        var intermediateECDSA= X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath,
                 "localhost_fhirlabs_community6/intermediates/intermediateLocalhostCert6.cer"));
 

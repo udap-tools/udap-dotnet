@@ -71,10 +71,11 @@
 
 @* Add/Edit Dialog *@
 <FluentDialog @bind-Hidden="@dialogHidden" Modal="true" TrapFocus="true"
-              Style="min-width: 600px; max-height: 80vh; overflow-y: auto;">
+              Style="--dialog-width: 900px; min-width: 700px; max-width: 95vw; max-height: 80vh; position: relative;">
+    <div class="sigil-resize-handle"></div>
     <FluentDialogHeader>@(isEditing ? "Edit Template" : "Add Template")</FluentDialogHeader>
     <FluentDialogBody>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; max-width: 100%; min-width: 0; overflow-x: hidden;">
 
             @* General *@
             <FluentLabel Typo="Typography.Subject" Style="margin-top: 0.25rem;">General</FluentLabel>
@@ -181,6 +182,23 @@
                 <FluentCheckbox @bind-Value="editSanEmail" Label="Email" />
                 <FluentCheckbox @bind-Value="editSanIp" Label="IP" />
             </div>
+
+            @* SAN Lists *@
+            @if (availableSanLists.Count > 0)
+            {
+                <FluentLabel Typo="Typography.Subject" Style="margin-top: 0.5rem;">SAN Lists</FluentLabel>
+                <FluentLabel Style="font-size: 0.8rem; opacity: 0.7; margin-bottom: 0.25rem;">
+                    Attach reusable SAN lists. During issuance, users can pick SANs from these lists.
+                </FluentLabel>
+                @foreach (var sl in availableSanLists)
+                {
+                    var isChecked = editSelectedSanListIds.Contains(sl.Id);
+                    <FluentCheckbox Value="@isChecked"
+                                    ValueChanged="@(v => { if (v) editSelectedSanListIds.Add(sl.Id); else editSelectedSanListIds.Remove(sl.Id); })"
+                                    Label="@($"{sl.Name} ({CountSanItems(sl.Items)} SANs)")"
+                                    Style="display: block; margin-bottom: 0.15rem;" />
+                }
+            }
         </div>
     </FluentDialogBody>
     <FluentDialogFooter>
@@ -193,3 +211,12 @@
         </FluentButton>
     </FluentDialogFooter>
 </FluentDialog>
+
+<Sigil.UI.Components.Shared.ImpactConfirmDialog Hidden="@impactDialogHidden"
+                                                Title="@impactDialogTitle"
+                                                Message="@impactDialogMessage"
+                                                ConfirmLabel="@impactDialogConfirmLabel"
+                                                Impacts="@impactDialogImpacts"
+                                                IsBusy="@impactDialogBusy"
+                                                OnConfirm="OnImpactDialogConfirmAsync"
+                                                OnCancel="OnImpactDialogCancel" />

@@ -19,6 +19,7 @@
         CertificateStatus.Expired => "#e94560",
         CertificateStatus.Revoked => "#9c27b0",
         CertificateStatus.Untrusted => "#d32f2f",
+        CertificateStatus.Stale => "#2196f3",
         _ => "#666"
     };
 
@@ -29,6 +30,7 @@
         CertificateStatus.Expired => "Expired",
         CertificateStatus.Revoked => "Revoked",
         CertificateStatus.Untrusted => "Untrusted",
+        CertificateStatus.Stale => "Superseded CA",
         _ => "Unknown"
     };
 }

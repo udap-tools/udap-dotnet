@@ -58,7 +58,11 @@ public class CrlAutoRenewalJob
                 || latestCrl.NextUpdate <= DateTime.UtcNow.AddHours(24);
 
             if (!needsRenewal)
+            {
+                _logger.LogDebug("CRL for CA '{CaName}' (ID {CaId}) is current, republishing to filesystem", ca.Name, ca.Id);
+                await _crlGenerationService.PublishCrlAsync(ca.Id, ct);
                 continue;
+            }
 
             _logger.LogInformation("CRL renewal needed for CA '{CaName}' (ID {CaId})", ca.Name, ca.Id);
 
@@ -73,7 +77,8 @@ public class CrlAutoRenewalJob
             else
             {
                 _logger.LogWarning(
-                    "CRL auto-renewal failed for CA '{CaName}': {Error}", ca.Name, result.Error);
+                    "CRL auto-renewal failed for CA '{CaName}': {Error}. Republishing existing CRL if available.", ca.Name, result.Error);
+                await _crlGenerationService.PublishCrlAsync(ca.Id, ct);
             }
         }
     }

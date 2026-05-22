@@ -13,10 +13,10 @@
 #endregion
 
 using Duende.IdentityModel.Client;
-using Udap.Client.Client.Messages;
+using Udap.Client.Messages;
 using Udap.Common.Extensions;
 
-namespace Udap.Client.Client.Extensions
+namespace Udap.Client.Extensions
 {
     /// <summary>
     /// HttpClient extensions for UDAP discovery

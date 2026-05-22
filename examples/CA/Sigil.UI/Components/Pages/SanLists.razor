@@ -1,0 +1,94 @@
+@* (c) 2026 Joseph Shook. All rights reserved.
+   Authors: Joseph Shook   JoeShook@Gmail.com
+                            Joseph.Shook@Surescripts.com
+   See LICENSE in the project root for license information. *@
+
+@page "/san-lists"
+@using Sigil.Common.Data.Entities
+@using Sigil.Common.ViewModels
+
+<PageTitle>Sigil - SAN Lists</PageTitle>
+
+<FluentLabel Typo="Typography.PageTitle">SAN Lists</FluentLabel>
+
+<FluentCard Style="margin-top: 1rem;">
+    <FluentStack Orientation="Orientation.Horizontal" Style="align-items: center; gap: 0.5rem;">
+        <FluentLabel Typo="Typography.Subject">Reusable Subject Alternative Name Lists</FluentLabel>
+        <FluentSpacer />
+        <FluentButton Appearance="Appearance.Accent" OnClick="ShowAddDialog"
+                      IconStart="@(new Icons.Regular.Size16.Add())">
+            New SAN List
+        </FluentButton>
+    </FluentStack>
+
+    <FluentDataGrid Items="@sanLists.AsQueryable()" Style="margin-top: 0.5rem;" ResizableColumns="true"
+                    GridTemplateColumns="minmax(150px, 1.5fr) minmax(150px, 2fr) 100px 120px auto">
+        <PropertyColumn Property="@(s => s.Name)" Title="Name" Sortable="true" IsDefaultSortColumn="true" />
+        <PropertyColumn Property="@(s => s.Description)" Title="Description" />
+        <TemplateColumn Title="SANs">
+            @(CountItems(context.Items))
+        </TemplateColumn>
+        <TemplateColumn Title="Templates">
+            @context.Templates.Count
+        </TemplateColumn>
+        <TemplateColumn Title="Actions">
+            <FluentStack Orientation="Orientation.Horizontal" Style="gap: 0.25rem;">
+                <FluentButton Size="ButtonSize.Small" Appearance="Appearance.Outline"
+                              IconStart="@(new Icons.Regular.Size16.Edit())"
+                              OnClick="@(() => ShowEditDialog(context))">
+                    Edit
+                </FluentButton>
+                <FluentButton Size="ButtonSize.Small" Appearance="Appearance.Outline"
+                              IconStart="@(new Icons.Regular.Size16.Delete())"
+                              OnClick="@(() => DeleteSanListAsync(context))">
+                    Delete
+                </FluentButton>
+            </FluentStack>
+        </TemplateColumn>
+    </FluentDataGrid>
+</FluentCard>
+
+<FluentDialog @bind-Hidden="@dialogHidden" Modal="true" TrapFocus="true"
+              Style="min-width: 700px; max-height: 80vh; overflow: auto;">
+    <FluentDialogHeader>@(isEditing ? "Edit SAN List" : "New SAN List")</FluentDialogHeader>
+    <FluentDialogBody>
+        <FluentTextField @bind-Value="editName" Label="Name" Style="width: 100%;"
+                         Placeholder="TEFCA Exchange Purpose Codes" />
+        <FluentTextField @bind-Value="editDescription" Label="Description" Style="width: 100%; margin-top: 0.5rem;"
+                         Placeholder="XP codes for TEFCA participant certificates" />
+
+        <FluentLabel Typo="Typography.Subject" Style="margin-top: 0.75rem;">SAN Entries</FluentLabel>
+        @foreach (var entry in editEntries)
+        {
+            <FluentStack Orientation="Orientation.Horizontal" Style="gap: 0.5rem; align-items: end; margin-bottom: 0.25rem;">
+                <FluentSelect TOption="string" Value="@entry.Type" ValueChanged="@(v => entry.Type = v ?? "URI")"
+                              Style="width: 100px;">
+                    @foreach (var t in sanTypeNames)
+                    {
+                        <FluentOption Value="@t">@t</FluentOption>
+                    }
+                </FluentSelect>
+                <FluentTextField @bind-Value="entry.Value" Style="flex: 1;"
+                                 Placeholder="urn:oid:2.16.840.1.113883.3.7204.1.5.2.1#T-TRTMNT" />
+                <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small"
+                              IconStart="@(new Icons.Regular.Size16.Delete())"
+                              OnClick="@(() => editEntries.Remove(entry))" />
+            </FluentStack>
+        }
+        <FluentButton Appearance="Appearance.Outline" Size="ButtonSize.Small"
+                      IconStart="@(new Icons.Regular.Size16.Add())"
+                      OnClick="@(() => editEntries.Add(new SanEntry()))"
+                      Style="margin-top: 0.25rem;">
+            Add SAN
+        </FluentButton>
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="Appearance.Accent" OnClick="SaveAsync"
+                      Disabled="@(string.IsNullOrWhiteSpace(editName))">
+            @(isEditing ? "Save" : "Create")
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Outline" OnClick="@(() => dialogHidden = true)">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>

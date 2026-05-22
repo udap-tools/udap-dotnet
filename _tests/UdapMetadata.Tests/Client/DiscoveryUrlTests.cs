@@ -1,4 +1,4 @@
-﻿using Udap.Client.Client;
+﻿using Udap.Client;
 using Xunit;
 
 namespace UdapMetadata.Tests.Client;

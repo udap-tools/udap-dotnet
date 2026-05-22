@@ -18,16 +18,16 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Udap.Client.Client;
-using Udap.Client.Client.Extensions;
-using Udap.Client.Client.Messages;
+using Udap.Client;
+using Udap.Client.Extensions;
+using Udap.Client.Messages;
 using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Model;
 using Udap.Util.Extensions;
 using Xunit.Abstractions;
-using DiscoveryPolicy = Udap.Client.Client.DiscoveryPolicy;
+using DiscoveryPolicy = Udap.Client.DiscoveryPolicy;
 
 namespace Udap.Client.System.Tests
 {
@@ -190,7 +190,11 @@ namespace Udap.Client.System.Tests
             // _testOutputHelper.WriteLine(tokenHeader.X5c);
             var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray()!;
 
+#if NET9_0_OR_GREATER
+            var cert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5CArray.First()!.ToString()));
+#else
             var cert = new X509Certificate2(Convert.FromBase64String(x5CArray.First()!.ToString()));
+#endif
             var tokenHandler = new JwtSecurityTokenHandler();
 
             tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
@@ -227,7 +231,7 @@ namespace Udap.Client.System.Tests
             var result = await udapClient.ValidateResource("https://dev-mtx-interop.meditech.com", "urn:oid:4.5.6");
             Assert.False(result.IsError, result.Error);
 
-            var metaData = udapClient.UdapServerMetaData;
+            var metaData = udapClient.UdapServerMetadata;
             Assert.NotNull(metaData);
         }
 
@@ -254,7 +258,11 @@ namespace Udap.Client.System.Tests
             // _testOutputHelper.WriteLine(tokenHeader.X5c);
             var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray()!;
             
+#if NET9_0_OR_GREATER
+            var cert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5CArray.First()!.ToString()));
+#else
             var cert = new X509Certificate2(Convert.FromBase64String(x5CArray.First()!.ToString()));
+#endif
             var tokenHandler = new JwtSecurityTokenHandler();
             
             tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters

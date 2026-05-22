@@ -6,7 +6,7 @@
 using Udap.Common.Extensions;
 using Udap.Model;
 
-namespace Udap.Client.Client;
+namespace Udap.Client;
 
 /// <summary>
 /// Represents a URL to a discovery endpoint - parsed to separate the URL and authority

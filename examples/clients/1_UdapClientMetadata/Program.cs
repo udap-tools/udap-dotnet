@@ -13,7 +13,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Common.Certificates;
 using Udap.Common.Models;
 using Udap.Util.Extensions;
@@ -88,7 +88,7 @@ Other --community options to try against the https://fhirlabs.net/fhir/r4 baseUr
         TrustAnchorMemoryStore? trustAnchorStore = null;
         if (!string.IsNullOrEmpty(options.TrustAnchor))
         {
-            var anchorCert = new X509Certificate2(options.TrustAnchor);
+            var anchorCert = X509CertificateLoader.LoadCertificateFromFile(options.TrustAnchor);
             trustAnchorStore = new TrustAnchorMemoryStore()
             {
                 AnchorCertificates = new HashSet<Anchor>
@@ -100,7 +100,7 @@ Other --community options to try against the https://fhirlabs.net/fhir/r4 baseUr
 
         string? community = options.Community;
 
-        udapClient.Problem += element => logger.LogWarning(element.ChainElementStatus.Summarize(TrustChainValidator.DefaultProblemFlags));
+        udapClient.Problem += element => logger.LogWarning(element.Problems.Summarize(TrustChainValidator.DefaultProblemFlags));
         udapClient.Untrusted += certificate2 => logger.LogWarning("Untrusted: " + certificate2.Subject);
         udapClient.TokenError += message => logger.LogWarning("TokenError: " + message);
 
@@ -113,7 +113,7 @@ Other --community options to try against the https://fhirlabs.net/fhir/r4 baseUr
         }
         else
         {
-            logger.LogInformation(JsonSerializer.Serialize(udapClient.UdapServerMetaData, new JsonSerializerOptions{WriteIndented = true}));
+            logger.LogInformation(JsonSerializer.Serialize(udapClient.UdapServerMetadata, new JsonSerializerOptions{WriteIndented = true}));
         }
     }
 }

@@ -10,7 +10,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Options;
-using Udap.Client.Client;
+using Udap.Client;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 

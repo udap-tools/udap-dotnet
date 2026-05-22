@@ -24,7 +24,7 @@ using Udap.Model;
 using Udap.Model.Access;
 using TokenResponse = Duende.IdentityModel.Client.TokenResponse;
 
-namespace Udap.Client.Client.Extensions;
+namespace Udap.Client.Extensions;
 
 /// <summary>
 /// HttpClient extensions for UDAP extended OAuth token requests
@@ -57,12 +57,12 @@ public static class HttpClientTokenRequestExtensions
     /// </summary>
     /// <param name="client">The client.</param>
     /// <param name="tokenRequest">The request.</param>
-    /// <param name="token">The cancellation token.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns></returns>
     public static Task<TokenResponse> ExchangeCodeForTokenResponse(
-        this HttpMessageInvoker client, 
+        this HttpMessageInvoker client,
         AuthorizationCodeTokenRequest tokenRequest,
-        CancellationToken token = default)
+        CancellationToken cancellationToken = default)
     {
         var clone = tokenRequest.Clone();
 
@@ -81,7 +81,7 @@ public static class HttpClientTokenRequestExtensions
             clone.Parameters.AddRequired(OidcConstants.TokenRequest.Resource, resource, allowDuplicates: true);
         }
 
-        return client.RequestTokenAsync(clone, token);
+        return client.RequestTokenAsync(clone, cancellationToken);
     }
 
     internal static async Task<TokenResponse> RequestTokenAsync(this HttpMessageInvoker client, ProtocolRequest request, CancellationToken cancellationToken = default)
@@ -151,9 +151,7 @@ public static class HttpClientTokenRequestExtensions
             false => PrepareFailedOAuthTokenResponse(JsonDocument.Parse(body))
         };
     }
-
-    //TODO: how can I refactor out the OAuthTokenResponse?  It requires the Microsoft.AspNetCore.App framework to be included.
-    // I need a Udap.TieredOauth package so simple clients do not need this reference.
+    
     private static OAuthTokenResponse PrepareFailedOAuthTokenResponse(JsonDocument jsonDocument)
     {
         var root = jsonDocument.RootElement;

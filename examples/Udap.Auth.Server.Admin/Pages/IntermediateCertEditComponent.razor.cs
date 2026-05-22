@@ -186,7 +186,7 @@ public partial class IntermediateCertEditComponent
         await uploadStream.CopyToAsync(ms);
         var certBytes = ms.ToArray();
 
-        var cert = new X509Certificate2(certBytes);
+        var cert = X509CertificateLoader.LoadCertificate(certBytes);
 
         if (_intermediateCertificateRowInEdit != null)
         {

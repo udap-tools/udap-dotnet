@@ -24,8 +24,8 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
-using Udap.Client.Client;
-using Udap.Client.Client.Extensions;
+using Udap.Client;
+using Udap.Client.Extensions;
 using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
@@ -51,11 +51,19 @@ public class ClientCredentialsUdapModeTests
     {
         _testOutputHelper = testOutputHelper;
 
+#if NET9_0_OR_GREATER
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+
+        var anchorCommunity2 = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/caLocalhostCert2.cer");
+        var intermediateCommunity2 = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/intermediateLocalhostCert2.cer");
+#else
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
 
         var anchorCommunity2 = new X509Certificate2("CertStore/anchors/caLocalhostCert2.cer");
         var intermediateCommunity2 = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert2.cer");
+#endif
 
         _mockPipeline.OnPostConfigureServices += services =>
         {
@@ -162,14 +170,18 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task GetAccessToken()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -214,14 +226,18 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task GetAccessToken_Rollover_Expired_Secret()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -265,14 +281,18 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task GetAccessToken_Without_algorithm()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -338,14 +358,18 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task GetAccessToken_Without_x5c()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -411,14 +435,18 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task GetAccessToken_With_invalid_alg()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -493,14 +521,18 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task GetAccessToken_Without_iss()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -574,15 +606,20 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task GetAccessTokenECDSA_ES256()
     {
-        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test", 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test",
             X509KeyStorageFlags.Exportable);
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test",
+            X509KeyStorageFlags.Exportable);
+#endif
 
         var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -611,15 +648,20 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task GetAccessTokenECDSA_ES384()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test",
+            X509KeyStorageFlags.Exportable);
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.ecdsa.client.pfx", "udap-test",
             X509KeyStorageFlags.Exportable);
+#endif
 
         var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -648,7 +690,11 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task UpdateRegistration()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         //
         // First Registration
@@ -658,7 +704,7 @@ public class ClientCredentialsUdapModeTests
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
         var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
@@ -713,7 +759,11 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task CancelRegistration()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         //
         // Registration
@@ -906,8 +956,13 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task RegisterTwoCommunitiesWithSameISS_AndCancelOne()
     {
+#if NET9_0_OR_GREATER
+        var clientCert1 = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+        var clientCert2 = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirLabsApiClientLocalhostCert2.pfx", "udap-test");
+#else
         var clientCert1 = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
         var clientCert2 = new X509Certificate2("CertStore/issued/fhirLabsApiClientLocalhostCert2.pfx", "udap-test");
+#endif
 
         //
         // Register Client 1 from community "udap://fhirlabs.net"
@@ -1023,14 +1078,18 @@ public class ClientCredentialsUdapModeTests
 
 
         //Store validation
-        Assert.Equal(1, _mockPipeline.Clients.Count);
+        Assert.Single(_mockPipeline.Clients);
 
     }
 
     [Fact]
     public async Task Missing_grant_types_RegistrationResultsIn_invalid_client()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         //
         // Registration
@@ -1225,7 +1284,11 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task ReplayRegistration()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         //
         // First Registration
@@ -1276,7 +1339,7 @@ public class ClientCredentialsUdapModeTests
         Assert.Equal(HttpStatusCode.BadRequest, regResponse.StatusCode);
         var errorResult = await regResponse.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
         Assert.NotNull(errorResult);
-        Assert.Equal("invalid_client_metadata", errorResult!.Error);
+        Assert.Equal("invalid_client_metadata", errorResult.Error);
         Assert.Equal("software_statement replayed", errorResult.ErrorDescription);
         
     }
@@ -1290,7 +1353,11 @@ public class ClientCredentialsUdapModeTests
     [Fact]
     public async Task GetAccessToken_With_Standard_X509CertificateBase64_Secret()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var clientId = "test_client_x509";
 
         _mockPipeline.Clients.Add(new Client

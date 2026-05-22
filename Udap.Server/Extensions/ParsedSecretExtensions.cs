@@ -25,7 +25,11 @@ public static class ParsedSecretExtensions
         }
 
         var certificates = x5cArray
+#if NET9_0_OR_GREATER
+            .Select(s => X509CertificateLoader.LoadCertificate(Convert.FromBase64String(s.ToString())))
+#else
             .Select(s => new X509Certificate2(Convert.FromBase64String(s.ToString())))
+#endif
             .Select(c =>
             {
                 if (c.PublicKey.GetRSAPublicKey() != null)

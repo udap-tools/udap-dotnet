@@ -33,7 +33,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Common;
 using Udap.Common.Certificates;
 using Udap.Common.Models;

@@ -33,7 +33,11 @@ public class HealthGorillaTests
 
     public HealthGorillaTests()
     {
+#if NET9_0_OR_GREATER
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#else
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#endif
 
         _mockPipeline.OnPostConfigureServices += services =>
         {

@@ -134,7 +134,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     UdapDynamicClientRegistrationErrorDescriptions.CannotFindorParseX5c));
         }
 
+#if NET9_0_OR_GREATER
+        var publicCert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5cArray.First()));
+#else
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
+#endif
         var subAltNames = publicCert.GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI);
         TokenValidationResult? validatedToken;
         var publicKey = publicCert.PublicKey.GetRSAPublicKey();
@@ -690,7 +694,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         // TODO: no test cases for x5c with intermediate certificates.
         if (x5cArray != null)
         {
+#if NET9_0_OR_GREATER
+            var cert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5cArray.First()));
+#else
             var cert = new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
+#endif
 
             var result = await _trustChainValidator.IsTrustedCertificateAsync(
                 context.Document?.ClientName ?? string.Empty,

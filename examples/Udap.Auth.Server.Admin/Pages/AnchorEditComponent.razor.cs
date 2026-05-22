@@ -174,7 +174,7 @@ public partial class AnchorEditComponent
         await uploadStream.CopyToAsync(ms);
         var certBytes = ms.ToArray();
 
-        var cert = new X509Certificate2(certBytes);
+        var cert = X509CertificateLoader.LoadCertificate(certBytes);
 
         _anchorRowInEdit.Certificate = cert;
 

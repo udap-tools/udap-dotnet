@@ -12,7 +12,7 @@ namespace Sigil.Common.ViewModels;
 
 public class ImportPreviewViewModel
 {
-    public string CommunityName { get; set; } = string.Empty;
+    public string TrustDomainName { get; set; } = string.Empty;
     public string DirectoryPath { get; set; } = string.Empty;
     public int RootCaCount { get; set; }
     public int IntermediateCount { get; set; }

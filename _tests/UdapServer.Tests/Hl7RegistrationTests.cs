@@ -21,7 +21,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using NSubstitute;
-using Udap.Client.Client.Extensions;
+using Udap.Client.Extensions;
 using Udap.Common.Certificates;
 using Udap.Model;
 using Udap.Model.Registration;
@@ -176,7 +176,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
             "weatherApiClientLocalhostCert1.pfx");
 
         _testOutputHelper.WriteLine($"Path to Cert: {cert}");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
         
@@ -283,7 +287,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
             "weatherApiClientLocalhostCert1.pfx");
 
         _testOutputHelper.WriteLine($"Path to Cert: {cert}");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         
         var jwtId = CryptoRandom.CreateUniqueId();
@@ -382,7 +390,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
         
@@ -448,7 +460,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
        
@@ -514,7 +530,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -581,7 +601,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -645,7 +669,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -711,7 +739,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -776,7 +808,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -841,7 +877,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -906,7 +946,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -971,7 +1015,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -1036,7 +1084,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -1101,7 +1153,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -1166,7 +1222,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -1232,7 +1292,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -1339,7 +1403,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 
@@ -1408,7 +1476,11 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "weatherApiClientLocalhostCert1.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
         var now = DateTime.UtcNow;
         var jwtId = CryptoRandom.CreateUniqueId();
 

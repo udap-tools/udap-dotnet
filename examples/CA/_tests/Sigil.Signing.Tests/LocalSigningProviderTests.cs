@@ -9,7 +9,7 @@
 #endregion
 
 using System.Security.Cryptography;
-using FluentAssertions;
+using Shouldly;
 using Sigil.Common.Services.Signing;
 
 namespace Sigil.Signing.Tests;
@@ -21,7 +21,7 @@ public class LocalSigningProviderTests : IDisposable
     [Fact]
     public void ProviderName_ReturnsLocal()
     {
-        _provider.ProviderName.Should().Be("local");
+        _provider.ProviderName.ShouldBe("local");
     }
 
     [Theory]
@@ -34,10 +34,10 @@ public class LocalSigningProviderTests : IDisposable
     {
         var keyRef = await _provider.GenerateKeyAsync(algorithm, keySize, curve);
 
-        keyRef.Provider.Should().Be("local");
-        keyRef.KeyAlgorithm.Should().Be(algorithm);
-        keyRef.KeyIdentifier.Should().NotBeNullOrEmpty();
-        keyRef.KeySize.Should().BeGreaterThan(0);
+        keyRef.Provider.ShouldBe("local");
+        keyRef.KeyAlgorithm.ShouldBe(algorithm);
+        keyRef.KeyIdentifier.ShouldNotBeNullOrEmpty();
+        keyRef.KeySize.ShouldBeGreaterThan(0);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class LocalSigningProviderTests : IDisposable
 
         using var publicKey = await _provider.GetPublicKeyAsync(keyRef);
 
-        publicKey.Should().BeAssignableTo<RSA>();
+        publicKey.ShouldBeAssignableTo<RSA>();
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class LocalSigningProviderTests : IDisposable
 
         using var publicKey = await _provider.GetPublicKeyAsync(keyRef);
 
-        publicKey.Should().BeAssignableTo<ECDsa>();
+        publicKey.ShouldBeAssignableTo<ECDsa>();
     }
 
     [Fact]
@@ -67,8 +67,8 @@ public class LocalSigningProviderTests : IDisposable
 
         var act = () => _provider.GetPublicKeyAsync(bogusRef);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*not found*");
+        var ex = await Should.ThrowAsync<InvalidOperationException>(act);
+        ex.Message.ShouldContain("not found");
     }
 
     [Fact]
@@ -79,12 +79,12 @@ public class LocalSigningProviderTests : IDisposable
 
         var signature = await _provider.SignDataAsync(data, HashAlgorithmName.SHA256, keyRef);
 
-        signature.Should().NotBeNullOrEmpty();
+        signature.ShouldNotBeEmpty();
 
         // Verify the signature using the public key
         using var rsa = (RSA)await _provider.GetPublicKeyAsync(keyRef);
         var isValid = rsa.VerifyData(data, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-        isValid.Should().BeTrue();
+        isValid.ShouldBeTrue();
     }
 
     [Fact]
@@ -95,12 +95,12 @@ public class LocalSigningProviderTests : IDisposable
 
         var signature = await _provider.SignDataAsync(data, HashAlgorithmName.SHA384, keyRef);
 
-        signature.Should().NotBeNullOrEmpty();
+        signature.ShouldNotBeEmpty();
 
         // Verify the signature using the public key
         using var ecdsa = (ECDsa)await _provider.GetPublicKeyAsync(keyRef);
         var isValid = ecdsa.VerifyData(data, signature, HashAlgorithmName.SHA384);
-        isValid.Should().BeTrue();
+        isValid.ShouldBeTrue();
     }
 
     [Fact]
@@ -111,8 +111,8 @@ public class LocalSigningProviderTests : IDisposable
 
         var act = () => _provider.SignDataAsync(data, HashAlgorithmName.SHA256, bogusRef);
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*not found*");
+        var ex = await Should.ThrowAsync<InvalidOperationException>(act);
+        ex.Message.ShouldContain("not found");
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class LocalSigningProviderTests : IDisposable
         var sig1 = await _provider.SignDataAsync(data1, HashAlgorithmName.SHA256, keyRef);
         var sig2 = await _provider.SignDataAsync(data2, HashAlgorithmName.SHA256, keyRef);
 
-        sig1.Should().NotBeEquivalentTo(sig2);
+        sig1.SequenceEqual(sig2).ShouldBeFalse();
     }
 
     [Fact]
@@ -134,7 +134,7 @@ public class LocalSigningProviderTests : IDisposable
         var keyRef1 = await _provider.GenerateKeyAsync("RSA", 2048);
         var keyRef2 = await _provider.GenerateKeyAsync("RSA", 2048);
 
-        keyRef1.KeyIdentifier.Should().NotBe(keyRef2.KeyIdentifier);
+        keyRef1.KeyIdentifier.ShouldNotBe(keyRef2.KeyIdentifier);
     }
 
     [Theory]
@@ -149,11 +149,11 @@ public class LocalSigningProviderTests : IDisposable
 
         var signature = await _provider.SignDataAsync(data, hashAlgorithm, keyRef);
 
-        signature.Should().NotBeNullOrEmpty();
+        signature.ShouldNotBeEmpty();
 
         using var rsa = (RSA)await _provider.GetPublicKeyAsync(keyRef);
         rsa.VerifyData(data, signature, hashAlgorithm, RSASignaturePadding.Pkcs1)
-            .Should().BeTrue();
+            .ShouldBeTrue();
     }
 
     public void Dispose()

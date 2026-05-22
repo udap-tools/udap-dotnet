@@ -288,7 +288,11 @@ namespace Udap.Common.Certificates
                         }
                     }
 
+#if NET9_0_OR_GREATER
+                    var element = new ChainElementInfo(dotNetCert ?? X509CertificateLoader.LoadCertificate(bcCert.GetEncoded()), problems);
+#else
                     var element = new ChainElementInfo(dotNetCert ?? new X509Certificate2(bcCert.GetEncoded()), problems);
+#endif
                     chainElements.Add(element);
 
                     // Check if this element has problems we care about
@@ -552,7 +556,11 @@ namespace Udap.Common.Certificates
             try
             {
                 var data = await _httpClient!.GetByteArrayAsync(url, timeoutCts.Token);
+#if NET9_0_OR_GREATER
+                return X509CertificateLoader.LoadCertificate(data);
+#else
                 return new X509Certificate2(data);
+#endif
             }
             catch (Exception ex)
             {

@@ -19,17 +19,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.4.6" />
+    <PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.4.7" />
     <PackageReference Include="EFCore.NamingConventions" Version="10.0.1" />
-    <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="5.13.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
+    <PackageReference Include="Hl7.Fhir.Specification.R4B" Version="5.13.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
-    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
     <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
   </ItemGroup>

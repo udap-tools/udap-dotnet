@@ -1,0 +1,26 @@
+@* (c) 2026 Joseph Shook. All rights reserved.
+   Authors: Joseph Shook   JoeShook@Gmail.com
+                            Joseph.Shook@Surescripts.com
+   See LICENSE in the project root for license information. *@
+
+@using Sigil.Common.ViewModels
+
+@if (Node.KeyStorage == "vault-transit")
+{
+    @if (Node.RemoteKeyMissing == true)
+    {
+        <span slot="end" title="Vault Transit key is MISSING — re-create this certificate">
+            <FluentIcon Value="@(new Icons.Regular.Size16.Warning())" Color="Color.Custom" CustomColor="#e94560" />
+        </span>
+    }
+    else
+    {
+        <span slot="end" title="Vault Transit">
+            <FluentIcon Value="@(new Icons.Regular.Size16.LockShield())" Color="Color.Custom" CustomColor="#1565c0" />
+        </span>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public CertificateChainNodeViewModel Node { get; set; } = default!;
+}

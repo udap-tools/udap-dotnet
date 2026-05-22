@@ -130,7 +130,17 @@ public sealed class VaultTransitSigningProvider : ISigningProvider
             $"/v1/{_options.MountPath}/sign/{keyRef.KeyIdentifier}",
             JsonContent(requestBody),
             ct);
-        response.EnsureSuccessStatusCode();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorBody = await response.Content.ReadAsStringAsync(ct);
+            _logger.LogError(
+                "Vault Transit sign failed for key '{KeyName}': {Status} — body: {Body}. Request: hash={Hash}, sigAlg={SigAlg}, keyAlg={KeyAlg}, dataLen={DataLen}",
+                keyRef.KeyIdentifier, (int)response.StatusCode, errorBody,
+                vaultHash, signatureAlgorithm ?? "(default)", keyRef.KeyAlgorithm, data.Length);
+            throw new InvalidOperationException(
+                $"Vault Transit sign failed ({(int)response.StatusCode}) for key '{keyRef.KeyIdentifier}': {errorBody}");
+        }
 
         var json = await response.Content.ReadAsStringAsync(ct);
         var doc = JsonDocument.Parse(json);
@@ -154,6 +164,25 @@ public sealed class VaultTransitSigningProvider : ISigningProvider
         }
 
         return signatureBytes;
+    }
+
+    /// <summary>
+    /// Checks whether a Transit key exists in Vault.
+    /// Returns true if the key exists, false if Vault returns 404 or the request fails.
+    /// </summary>
+    public async Task<bool> KeyExistsAsync(string keyName, CancellationToken ct = default)
+    {
+        try
+        {
+            using var client = CreateClient();
+            using var response = await client.GetAsync($"/v1/{_options.MountPath}/keys/{keyName}", ct);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Vault Transit key existence check failed for '{Name}'", keyName);
+            return false;
+        }
     }
 
     /// <summary>

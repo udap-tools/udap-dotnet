@@ -34,5 +34,40 @@ public class CertificateChainNodeViewModel
     /// </summary>
     public string? KeyStorage { get; set; }
 
+    /// <summary>
+    /// For remote-keyed entries, the provider-specific key identifier (e.g. Vault Transit
+    /// key name). Used to verify the key still exists in the remote provider.
+    /// </summary>
+    public string? KeyIdentifier { get; set; }
+
+    public bool IsSuperseded { get; set; }
+
+    /// <summary>
+    /// For remote-keyed certificates (Vault Transit, GCP KMS): true when the remote
+    /// signing key is missing in the provider (e.g. Vault dev mode was restarted).
+    /// null = not checked or not applicable (local key).
+    /// </summary>
+    public bool? RemoteKeyMissing { get; set; }
+
+    /// <summary>
+    /// For CA nodes: freshness of the most recently published CRL. Surfaced on the tree
+    /// row so operators can spot an expired CRL without expanding the node.
+    /// </summary>
+    public CrlFreshness LatestCrlFreshness { get; set; } = CrlFreshness.Missing;
+
+    /// <summary>
+    /// For CRL nodes: true when this is the most recent (highest CrlNumber) non-archived
+    /// CRL for its issuing CA. Re-publishing only makes sense for the latest CRL.
+    /// </summary>
+    public bool IsLatestCrl { get; set; }
+
     public List<CertificateChainNodeViewModel> Children { get; set; } = new();
+}
+
+public enum CrlFreshness
+{
+    Missing,
+    Fresh,
+    ExpiringSoon,
+    Expired
 }

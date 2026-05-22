@@ -8,7 +8,6 @@
 #endregion
 
 using System.Net;
-using System.Net.Http.Json;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Duende.IdentityModel.Client;
@@ -20,8 +19,11 @@ using Udap.Common.Certificates;
 using Udap.Common.Extensions;
 using Udap.Model;
 
-namespace Udap.Client.Client;
+namespace Udap.Client;
 
+/// <summary>
+/// An HTTP message handler that injects custom headers from <see cref="UdapClientOptions"/> into every outgoing request.
+/// </summary>
 public class HeaderAugmentationHandler : DelegatingHandler
 {
     private readonly UdapClientOptions _udapClientOptions;
@@ -45,6 +47,10 @@ public class HeaderAugmentationHandler : DelegatingHandler
     }
 }
 
+/// <summary>
+/// An HTTP message handler that performs UDAP metadata discovery validation (JWT + trust chain) on responses
+/// before they reach the caller, used internally by <see cref="UdapClient"/>.
+/// </summary>
 public class UdapClientMessageHandler : DelegatingHandler, IUdapClientEvents
 {
     private readonly UdapClientDiscoveryValidator _clientDiscoveryValidator;
@@ -59,6 +65,9 @@ public class UdapClientMessageHandler : DelegatingHandler, IUdapClientEvents
         _logger = logger;
     }
 
+    /// <summary>
+    /// Gets or sets the validated UDAP server metadata obtained during discovery.
+    /// </summary>
     public UdapMetadata? UdapDynamicClientRegistrationDocument { get; set; }
 
 
@@ -97,19 +106,14 @@ public class UdapClientMessageHandler : DelegatingHandler, IUdapClientEvents
         var metadata = await base.SendAsync(request, cancellationToken);
         metadata.EnsureSuccessStatusCode();
 
-        var disco = await metadata.Content.ReadFromJsonAsync<DiscoveryDocumentResponse>(cancellationToken: cancellationToken);
-
-        if (disco == null)
-        {
-            throw new SecurityTokenInvalidTypeException("Failed to read UDAP Discovery Document");
-        }
+        var disco = await ProtocolResponse.FromHttpResponseAsync<ProtocolResponse>(metadata);
 
         if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
         {
-            _clientDiscoveryValidator.UdapServerMetaData = disco.Json?.Deserialize<UdapMetadata>();
-            _logger.LogDebug("UdapServerMetaData: {UdapServerMetaDataJson}", _clientDiscoveryValidator.UdapServerMetaData?.SerializeToJson());
+            _clientDiscoveryValidator.UdapServerMetadata = disco.Json?.Deserialize<UdapMetadata>();
+            _logger.LogDebug("UdapServerMetadata: {UdapServerMetadataJson}", _clientDiscoveryValidator.UdapServerMetadata?.SerializeToJson());
 
-            if (!await _clientDiscoveryValidator.ValidateJwtToken(_clientDiscoveryValidator.UdapServerMetaData!, baseUrl!))
+            if (!await _clientDiscoveryValidator.ValidateJwtToken(_clientDiscoveryValidator.UdapServerMetadata!, baseUrl!))
             {
                 throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
             }

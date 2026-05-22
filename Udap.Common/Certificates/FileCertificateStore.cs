@@ -79,7 +79,11 @@ public class FileCertificateStore : ICertificateStore
             {
                 foreach (var intermediateFilePath in community.Intermediates)
                 {
+#if NET9_0_OR_GREATER
+                    intermediates.Add(new Intermediate(X509CertificateLoader.LoadCertificateFromFile(Path.Combine(AppContext.BaseDirectory, intermediateFilePath))));
+#else
                     intermediates.Add(new Intermediate(new X509Certificate2(Path.Combine(AppContext.BaseDirectory, intermediateFilePath))));
+#endif
                 }
             }
 
@@ -97,7 +101,11 @@ public class FileCertificateStore : ICertificateStore
                     throw new FileNotFoundException($"Cannot find file: {path}");
                 }
 
+#if NET9_0_OR_GREATER
+                AnchorCertificates.Add(new Anchor(X509CertificateLoader.LoadCertificateFromFile(path), community.Name)
+#else
                 AnchorCertificates.Add(new Anchor(new X509Certificate2(path), community.Name)
+#endif
                 {
                     Intermediates = intermediates
                 });
@@ -120,8 +128,12 @@ public class FileCertificateStore : ICertificateStore
                         continue;
                     }
 
+#if NET9_0_OR_GREATER
+                    var certificates = X509CertificateLoader.LoadPkcs12CollectionFromFile(path, communityIssuer.Password, X509KeyStorageFlags.Exportable);
+#else
                     var certificates = new X509Certificate2Collection();
                     certificates.Import(path, communityIssuer.Password, X509KeyStorageFlags.Exportable);
+#endif
 
                     foreach (var x509Cert in certificates)
                     {

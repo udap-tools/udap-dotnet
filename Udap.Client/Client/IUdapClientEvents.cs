@@ -10,7 +10,7 @@
 using System.Security.Cryptography.X509Certificates;
 using Udap.Common.Certificates;
 
-namespace Udap.Client.Client;
+namespace Udap.Client;
 
 public interface IUdapClientEvents
 {

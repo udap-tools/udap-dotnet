@@ -25,7 +25,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using NSubstitute;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
@@ -61,11 +61,19 @@ public class TieredOauthTests
     public TieredOauthTests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
+#if NET9_0_OR_GREATER
+        _community1Anchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/caLocalhostCert.cer");
+        _community1IntermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/intermediateLocalhostCert.cer");
+
+        _community2Anchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/caLocalhostCert2.cer");
+        _community2IntermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/intermediateLocalhostCert2.cer");
+#else
         _community1Anchor = new X509Certificate2("CertStore/anchors/caLocalhostCert.cer");
         _community1IntermediateCert = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert.cer");
 
         _community2Anchor = new X509Certificate2("CertStore/anchors/caLocalhostCert2.cer");
         _community2IntermediateCert = new X509Certificate2("CertStore/intermediates/intermediateLocalhostCert2.cer");
+#endif
     }
 
     private void BuildUdapAuthorizationServer(List<string>? tieredOAuthScopes = null)
@@ -516,7 +524,7 @@ public class TieredOauthTests
         Assert.StartsWith("https://idpserver/connect/authorize", backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
         
         // _testOutputHelper.WriteLine(backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
-        Assert.NotEmpty(QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value);
+        Assert.True(QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.Count > 0);
         var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "state").Value.ToString();
         Assert.False(string.IsNullOrEmpty(backChannelState));
         
@@ -546,7 +554,7 @@ public class TieredOauthTests
         Assert.NotNull(authorizeCallbackResult.Headers.Location);
         Assert.StartsWith("https://server/federation/udap-tiered/signin?", authorizeCallbackResult.Headers.Location!.AbsoluteUri);
 
-        Assert.NotEmpty(QueryHelpers.ParseQuery(authorizeCallbackResult.Headers.Location.Query).Single(p => p.Key == "code").Value);
+        Assert.True(QueryHelpers.ParseQuery(authorizeCallbackResult.Headers.Location.Query).Single(p => p.Key == "code").Value.Count > 0);
 
         //
         // Validate backchannel state is the same
@@ -807,7 +815,7 @@ public class TieredOauthTests
         Assert.StartsWith("https://idpserver2/connect/authorize", backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
 
         // _testOutputHelper.WriteLine(backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
-        Assert.NotEmpty(QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value);
+        Assert.True(QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.Count > 0);
         var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "state").Value.ToString();
         Assert.False(string.IsNullOrEmpty(backChannelState));
 
@@ -1194,7 +1202,7 @@ public class TieredOauthTests
         Assert.StartsWith("https://idpserver/connect/authorize", backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
 
         // _testOutputHelper.WriteLine(backChannelChallengeResponse.Headers.Location!.AbsoluteUri);
-        Assert.NotEmpty(QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value);
+        Assert.True(QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query).Single(p => p.Key == "client_id").Value.Count > 0);
         var backChannelState = QueryHelpers.ParseQuery(backChannelChallengeResponse.Headers.Location.Query)
             .Single(p => p.Key == "state").Value.ToString();
         Assert.False(string.IsNullOrEmpty(backChannelState));
@@ -1220,14 +1228,18 @@ public class TieredOauthTests
 
     private async Task<UdapDynamicClientRegistrationDocument?> RegisterClientWithAuthServer()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test");
+#endif
 
         var udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
 
         //
         // Typically the client would validate a server before proceeding to registration.
         //
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
             { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
 
 

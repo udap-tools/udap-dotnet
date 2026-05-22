@@ -77,4 +77,5 @@ public class CertificateTemplate
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<IssuedCertificate> IssuedCertificates { get; set; } = new List<IssuedCertificate>();
+    public ICollection<SanList> SanLists { get; set; } = new List<SanList>();
 }

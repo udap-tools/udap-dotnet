@@ -32,17 +32,17 @@ public class CrlImportService
     }
 
     /// <summary>
-    /// Imports a CRL file, validates its signature against the issuing CA in the community,
+    /// Imports a CRL file, validates its signature against the issuing CA in the trustDomain,
     /// and stores the CRL entity + revocation entries.
     /// </summary>
     public async Task<CrlImportResult> ImportCrlAsync(
         byte[] crlBytes,
         string fileName,
-        int communityId,
+        int trustDomainId,
         CancellationToken ct = default)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
-        return await ImportCrlAsync(db, crlBytes, fileName, communityId, ct);
+        return await ImportCrlAsync(db, crlBytes, fileName, trustDomainId, ct);
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ public class CrlImportService
         SigilDbContext db,
         byte[] crlBytes,
         string fileName,
-        int communityId,
+        int trustDomainId,
         CancellationToken ct = default)
     {
         var crlParser = new X509CrlParser();
@@ -61,7 +61,7 @@ public class CrlImportService
 
         // Find the issuing CA by matching issuer DN
         var cas = await db.CaCertificates
-            .Where(ca => ca.CommunityId == communityId)
+            .Where(ca => ca.TrustDomainId == trustDomainId)
             .ToListAsync(ct);
 
         CaCertificate? issuingCa = null;
@@ -97,7 +97,7 @@ public class CrlImportService
 
         if (issuingCa == null)
         {
-            return CrlImportResult.Failed($"No CA in this community matches CRL issuer: {issuerDn}");
+            return CrlImportResult.Failed($"No CA in this trust domain matches CRL issuer: {issuerDn}");
         }
 
         // Extract CRL number

@@ -19,44 +19,44 @@ public static class JwtExtensions
 {
     public static JsonArray? Getx5cArray(this JsonWebToken jwt)
     {
-        var x5cArray = jwt.GetHeaderValue<string>("x5c");
-
-        if (x5cArray == null)
+        if (!jwt.TryGetHeaderValue<string>("x5c", out var x5cArray))
         {
             return [];
         }
-        
-        return JsonNode.Parse(x5cArray)?.AsArray();
+
+        return JsonNode.Parse(x5cArray) as JsonArray;
     }
 
     public static ICollection<X509Certificate2>? GetCertificateList(this JsonWebToken jwt)
     {
-        var x5cArray = jwt.GetHeaderValue<string>("x5c");
+        if (!jwt.TryGetHeaderValue<string>("x5c", out var x5cArray))
+        {
+            return null;
+        }
 
-        if (x5cArray == null)
+        var x5cJsonArray = JsonNode.Parse(x5cArray) as JsonArray;
+
+        if (x5cJsonArray == null)
         {
             return null;
         }
 
         var certificates = new List<X509Certificate2>();
 
-        var x5cJsonArray = JsonNode.Parse(x5cArray)?.AsArray();
-        
-        if (x5cJsonArray == null)
-        {
-            return null;
-        }
-
-        foreach (var jsonNode in x5cJsonArray) 
+        foreach (var jsonNode in x5cJsonArray)
         {
             if (jsonNode == null)
             {
-                return null; 
+                return null;
             }
 
+#if NET9_0_OR_GREATER
+            certificates.Add(X509CertificateLoader.LoadCertificate(Convert.FromBase64String(jsonNode.ToString())));
+#else
             certificates.Add(new X509Certificate2(Convert.FromBase64String(jsonNode.ToString())));
+#endif
         }
-        
+
         return certificates;
     }
 
@@ -87,6 +87,10 @@ public static class JwtExtensions
             return null;
         }
 
+#if NET9_0_OR_GREATER
+        return X509CertificateLoader.LoadCertificate(Convert.FromBase64String(firstNode.ToString()));
+#else
         return new X509Certificate2(Convert.FromBase64String(firstNode.ToString()));
+#endif
     }
 }

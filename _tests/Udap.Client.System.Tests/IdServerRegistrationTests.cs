@@ -23,8 +23,8 @@ using Duende.IdentityModel.Client;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Client.Client.Extensions;
-using Udap.Client.Client.Messages;
+using Udap.Client.Extensions;
+using Udap.Client.Messages;
 using Udap.Common;
 using Udap.Model;
 using Udap.Model.Access;
@@ -77,7 +77,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await fhirClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://stage.healthtogo.me:8181/fhir/r4/stage",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
@@ -115,10 +115,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "udap-sandbox-surescripts.p12");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
+#endif
 
         var now = DateTime.UtcNow;
         
@@ -251,7 +258,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await fhirClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://api-conn.qa.healthgorilla.com/unit/qhin",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
@@ -289,10 +296,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "udap-sandbox-surescripts.p12");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "https://api-conn.qa.healthgorilla.com/unit/qhin").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "https://api-conn.qa.healthgorilla.com/unit/qhin").Single().IssuedCerts.First().Password);
+#endif
 
         var now = DateTime.UtcNow;
 
@@ -425,7 +439,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await fhirClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://test.udap.org/fhir/r4/stage",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
@@ -443,10 +457,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "udap-sandbox-surescripts.p12");
         
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
+#endif
         
         //
         // Could use JwtPayload.  But because we have a typed object, UdapDynamicClientRegistrationDocument
@@ -519,7 +540,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://national-directory.meteorapp.com",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
@@ -537,10 +558,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "udap-sandbox-surescripts.p12");
         
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
+#endif
 
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -591,7 +619,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await client.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://udap.fast.poolnook.me",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
@@ -609,10 +637,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
             "udap-sandbox-surescripts.p12");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "https://stage.healthtogo.me:8181").Single().IssuedCerts.First().Password);
+#endif
 
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -665,7 +700,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://localhost:4081/fhir/r4",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
@@ -696,7 +731,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
+#if NET9_0_OR_GREATER
+        var publicCert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#else
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#endif
 
         var validatedToken = await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
             {
@@ -722,10 +761,24 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
 
-        var clientCert = new X509Certificate2(
-            cert, 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#else
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#else
+        var clientCert = new X509Certificate2(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#endif
+#endif
         
         var signedSoftwareStatement = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -875,8 +928,13 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
             {
                 chain!.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+#if NET9_0_OR_GREATER
+                chain.ChainPolicy.CustomTrustStore.Add(X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer"));
+                chain.ChainPolicy.ExtraStore.Add(X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
+#else
                 chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
                 chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
+#endif
                 return chain.Build(cert!);
             }
         };
@@ -887,7 +945,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://localhost:7016/fhir/r4",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
@@ -918,7 +976,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
+#if NET9_0_OR_GREATER
+        var publicCert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#else
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#endif
 
         var validatedToken = await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
             {
@@ -944,10 +1006,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -1111,7 +1180,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://localhost:7016/fhir/r4",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
@@ -1142,7 +1211,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
+#if NET9_0_OR_GREATER
+        var publicCert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#else
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#endif
 
         await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
             {
@@ -1165,10 +1238,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#endif
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -1341,7 +1421,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://fhirlabs.net/fhir/r4",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
@@ -1372,7 +1452,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
+#if NET9_0_OR_GREATER
+        var publicCert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#else
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#endif
 
         await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
             {
@@ -1395,10 +1479,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#endif
 
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -1524,7 +1615,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://fhirlabs.net/fhir/r4",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             },
@@ -1568,10 +1659,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#endif
 
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -1713,8 +1811,13 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
             ServerCertificateCustomValidationCallback = (_, cert, chain, _) =>
             {
                 chain!.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+#if NET9_0_OR_GREATER
+                chain.ChainPolicy.CustomTrustStore.Add(X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer"));
+                chain.ChainPolicy.ExtraStore.Add(X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
+#else
                 chain.ChainPolicy.CustomTrustStore.Add(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
                 chain.ChainPolicy.ExtraStore.Add(new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
+#endif
                 return chain.Build(cert!);
             }
         };
@@ -1725,7 +1828,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://fhirlabs.net/fhir/r4",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             }
@@ -1756,7 +1859,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
+#if NET9_0_OR_GREATER
+        var publicCert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#else
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#endif
 
         await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
             {
@@ -1779,10 +1886,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#endif
 
         var redirectUrls = new List<string?>
             { new Uri($"https://client.fhirlabs.net/redirect/{Guid.NewGuid()}").AbsoluteUri };
@@ -1954,7 +2068,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
             Address = "https://localhost:7016/fhir/r4",
-            Policy = new Udap.Client.Client.DiscoveryPolicy
+            Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
             },
@@ -1987,7 +2101,11 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         var tokenHandler = new JsonWebTokenHandler();
 
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray();
+#if NET9_0_OR_GREATER
+        var publicCert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#else
         var publicCert = new X509Certificate2(Convert.FromBase64String(x5CArray!.First()!.ToString()));
+#endif
 
         var validatedToken = await tokenHandler.ValidateTokenAsync(metadata.SignedMetadata, new TokenValidationParameters
             {
@@ -2012,10 +2130,17 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(
+            cert,
+            _fixture.Manifest.Communities
+                .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#else
         var clientCert = new X509Certificate2(
             cert,
             _fixture.Manifest.Communities
                 .Where(c => c.Name == "udap://fhirlabs.net").Single().IssuedCerts.First().Password);
+#endif
 
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)

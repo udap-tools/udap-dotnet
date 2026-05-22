@@ -37,22 +37,22 @@ public class ChainValidationService
     }
 
     /// <summary>
-    /// Validates all certificates in a community in one pass (parses CAs once).
+    /// Validates all certificates in a trustDomain in one pass (parses CAs once).
     /// Uses stored CRLs only (no HTTP) for speed.
     /// Returns a dictionary keyed by thumbprint.
     /// </summary>
-    public async Task<Dictionary<string, ChainValidationResult>> ValidateCommunityAsync(
-        int communityId, CancellationToken ct = default)
+    public async Task<Dictionary<string, ChainValidationResult>> ValidateTrustDomainAsync(
+        int trustDomainId, CancellationToken ct = default)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
 
         var allCas = await db.CaCertificates
-            .Where(c => c.CommunityId == communityId)
+            .Where(c => c.TrustDomainId == trustDomainId)
             .Include(c => c.IssuedCertificates)
             .ToListAsync(ct);
 
         var allCrls = await db.Crls
-            .Where(c => c.CaCertificate.CommunityId == communityId)
+            .Where(c => c.CaCertificate.TrustDomainId == trustDomainId)
             .Include(c => c.Revocations)
             .ToListAsync(ct);
 
@@ -109,18 +109,18 @@ public class ChainValidationService
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
 
         var caCert = await db.CaCertificates
-            .Include(c => c.Community)
+            .Include(c => c.TrustDomain)
             .FirstOrDefaultAsync(c => c.Id == caCertificateId, ct);
 
         if (caCert == null)
             return ChainValidationResult.Failed("Certificate not found");
 
         var allCas = await db.CaCertificates
-            .Where(c => c.CommunityId == caCert.CommunityId)
+            .Where(c => c.TrustDomainId == caCert.TrustDomainId)
             .ToListAsync(ct);
 
         var allCrls = await db.Crls
-            .Where(c => c.CaCertificate.CommunityId == caCert.CommunityId)
+            .Where(c => c.CaCertificate.TrustDomainId == caCert.TrustDomainId)
             .Include(c => c.Revocations)
             .ToListAsync(ct);
 
@@ -134,20 +134,20 @@ public class ChainValidationService
 
         var issued = await db.IssuedCertificates
             .Include(i => i.IssuingCaCertificate)
-                .ThenInclude(ca => ca.Community)
+                .ThenInclude(ca => ca.TrustDomain)
             .FirstOrDefaultAsync(i => i.Id == issuedCertificateId, ct);
 
         if (issued == null)
             return ChainValidationResult.Failed("Certificate not found");
 
-        var communityId = issued.IssuingCaCertificate.CommunityId;
+        var trustDomainId = issued.IssuingCaCertificate.TrustDomainId;
 
         var allCas = await db.CaCertificates
-            .Where(c => c.CommunityId == communityId)
+            .Where(c => c.TrustDomainId == trustDomainId)
             .ToListAsync(ct);
 
         var allCrls = await db.Crls
-            .Where(c => c.CaCertificate.CommunityId == communityId)
+            .Where(c => c.CaCertificate.TrustDomainId == trustDomainId)
             .Include(c => c.Revocations)
             .ToListAsync(ct);
 
@@ -157,20 +157,20 @@ public class ChainValidationService
     /// <summary>
     /// Validates a certificate chain using only online resolution (CDP for CRLs, AIA for
     /// intermediate certs). The only data used from the database is the root CA trust anchor(s)
-    /// for the community. This simulates how an external relying party would validate the chain.
+    /// for the trustDomain. This simulates how an external relying party would validate the chain.
     /// </summary>
     public async Task<ChainValidationResult> ValidateOnlineAsync(
-        string leafPem, string leafName, int communityId, CancellationToken ct = default)
+        string leafPem, string leafName, int trustDomainId, CancellationToken ct = default)
     {
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
 
         // Only load root CAs as trust anchors
         var rootCas = await db.CaCertificates
-            .Where(c => c.CommunityId == communityId && c.ParentId == null)
+            .Where(c => c.TrustDomainId == trustDomainId && c.ParentId == null)
             .ToListAsync(ct);
 
         if (rootCas.Count == 0)
-            return ChainValidationResult.Failed("No root CA trust anchors found in this community");
+            return ChainValidationResult.Failed("No root CA trust anchors found in this trust domain");
 
         var parser = new X509CertificateParser();
 
@@ -265,7 +265,7 @@ public class ChainValidationService
                 }
                 else
                 {
-                    link.Problems.Add("Root CA not found in community trust store");
+                    link.Problems.Add("Root CA not found in trust domain trust store");
                 }
 
                 chainLinks.Add(link);
@@ -355,7 +355,7 @@ public class ChainValidationService
         await using var db = await _dbFactory.CreateDbContextAsync(ct);
         var caCert = await db.CaCertificates.FindAsync(new object[] { caCertificateId }, ct);
         if (caCert == null) return ChainValidationResult.Failed("Certificate not found");
-        return await ValidateOnlineAsync(caCert.X509CertificatePem, caCert.Name, caCert.CommunityId, ct);
+        return await ValidateOnlineAsync(caCert.X509CertificatePem, caCert.Name, caCert.TrustDomainId, ct);
     }
 
     /// <summary>
@@ -370,31 +370,31 @@ public class ChainValidationService
             .FirstOrDefaultAsync(i => i.Id == issuedCertificateId, ct);
         if (issued == null) return ChainValidationResult.Failed("Certificate not found");
         return await ValidateOnlineAsync(issued.X509CertificatePem, issued.Name,
-            issued.IssuingCaCertificate.CommunityId, ct);
+            issued.IssuingCaCertificate.TrustDomainId, ct);
     }
 
     public async Task<ChainValidationResult> ValidateChainAsync(
         string leafPem,
         string leafName,
-        List<CaCertificate> communityCas,
-        List<Crl> communityCrls,
+        List<CaCertificate> trustDomainCas,
+        List<Crl> trustDomainCrls,
         CancellationToken ct = default)
     {
-        return await ValidateChainAsync(leafPem, leafName, communityCas, communityCrls,
+        return await ValidateChainAsync(leafPem, leafName, trustDomainCas, trustDomainCrls,
             skipOnlineCrl: false, ct);
     }
 
     public async Task<ChainValidationResult> ValidateChainAsync(
         string leafPem,
         string leafName,
-        List<CaCertificate> communityCas,
-        List<Crl> communityCrls,
+        List<CaCertificate> trustDomainCas,
+        List<Crl> trustDomainCrls,
         bool skipOnlineCrl,
         CancellationToken ct = default)
     {
         var parser = new X509CertificateParser();
         var bcCas = new List<(CaCertificate entity, BcX509Certificate bcCert)>();
-        foreach (var ca in communityCas)
+        foreach (var ca in trustDomainCas)
         {
             try
             {
@@ -408,14 +408,14 @@ public class ChainValidationService
             }
         }
 
-        return await ValidateChainInternal(leafPem, leafName, bcCas, communityCrls, skipOnlineCrl, ct);
+        return await ValidateChainInternal(leafPem, leafName, bcCas, trustDomainCrls, skipOnlineCrl, ct);
     }
 
     private async Task<ChainValidationResult> ValidateChainInternal(
         string leafPem,
         string leafName,
         List<(CaCertificate entity, BcX509Certificate bcCert)> bcCas,
-        List<Crl> communityCrls,
+        List<Crl> trustDomainCrls,
         bool skipOnlineCrl,
         CancellationToken ct)
     {
@@ -473,7 +473,7 @@ public class ChainValidationService
             // Check CRL revocation (skip for self-signed roots)
             if (!current.IssuerDN.Equivalent(current.SubjectDN))
             {
-                await CheckCrlRevocationAsync(current, link, bcCas, communityCrls, skipOnlineCrl, ct);
+                await CheckCrlRevocationAsync(current, link, bcCas, trustDomainCrls, skipOnlineCrl, ct);
             }
 
             // Self-signed root
@@ -499,7 +499,7 @@ public class ChainValidationService
                 }
                 else
                 {
-                    link.Problems.Add("Root CA not found in community trust store");
+                    link.Problems.Add("Root CA not found in trust domain trust store");
                 }
 
                 chainLinks.Add(link);
@@ -549,7 +549,7 @@ public class ChainValidationService
             if (issuerBc == null)
             {
                 link.SignatureValid = false;
-                link.Problems.Add("Issuer not found in community — chain is incomplete");
+                link.Problems.Add("Issuer not found in trust domain — chain is incomplete");
                 chainLinks.Add(link);
                 break;
             }
@@ -573,7 +573,7 @@ public class ChainValidationService
         BcX509Certificate cert,
         ChainLink link,
         List<(CaCertificate entity, BcX509Certificate bcCert)> bcCas,
-        List<Crl> communityCrls,
+        List<Crl> trustDomainCrls,
         bool skipOnlineCrl,
         CancellationToken ct)
     {
@@ -600,7 +600,7 @@ public class ChainValidationService
         }
 
         // Try stored CRLs first
-        var storedCrls = communityCrls
+        var storedCrls = trustDomainCrls
             .Where(c => c.CaCertificateId == issuerCa.Value.entity.Id)
             .OrderByDescending(c => c.CrlNumber)
             .ToList();

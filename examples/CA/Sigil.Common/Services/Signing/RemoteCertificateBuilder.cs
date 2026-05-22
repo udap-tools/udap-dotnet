@@ -76,7 +76,7 @@ public static class RemoteCertificateBuilder
         // Assemble the final X.509 certificate: SEQUENCE { tbsCertificate, signatureAlgorithm, signatureValue }
         var certDer = AssembleCertificateDer(tbsCert, sigAlgId, signature);
 
-        return new X509Certificate2(certDer);
+        return X509CertificateLoader.LoadCertificate(certDer);
     }
 
     /// <summary>
@@ -131,7 +131,7 @@ public static class RemoteCertificateBuilder
         // Assemble the final certificate
         var certDer = AssembleCertificateDer(tbsCert, sigAlgId, signature);
 
-        return new X509Certificate2(certDer);
+        return X509CertificateLoader.LoadCertificate(certDer);
     }
 
     /// <summary>

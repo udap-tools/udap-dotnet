@@ -25,10 +25,6 @@ public static class TefcaConstants
         /// </summary>
         public const string TEFCAIAS = "tefca-ias";
 
-        /// <summary>
-        /// TEFCA SMART Authorization Extension Object key name.
-        /// </summary>
-        public const string TEFCASMART = "tefca_smart";
     }
 
     /// <summary>
@@ -49,15 +45,6 @@ public static class TefcaConstants
         /// <summary>Array of FHIR DocumentReference or Consent resource URLs. <a href="https://rce.sequoiaproject.org/wp-content/uploads/2026/02/SOP-Facilitated-FHIR-Implementation-2.0-Draft-508.pdf#page=17">Table 4</a></summary>
         public const string ConsentReference = "consent_reference";
         /// <summary>The CSP-provided OpenID Connect token. <a href="https://rce.sequoiaproject.org/wp-content/uploads/2026/02/SOP-Facilitated-FHIR-Implementation-2.0-Draft-508.pdf#page=16">Table 4</a></summary>
-        public const string IdToken = "id_token";
-    }
-
-    public static class TEFCASMARTAuthorizationExtension
-    {
-        public const string Version = "version";
-        public const string PurposeOfUse = "purpose_of_use";
-        public const string ConsentPolicy = "consent_policy";
-        public const string ConsentReference = "consent_reference";
         public const string IdToken = "id_token";
     }
 

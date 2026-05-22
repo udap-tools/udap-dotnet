@@ -20,7 +20,7 @@ using Duende.IdentityModel.Jwk;
 using Udap.Common.Extensions;
 using Udap.Model;
 
-namespace Udap.Client.Client.Messages;
+namespace Udap.Client.Messages;
 
 
 /// <summary>
@@ -28,6 +28,9 @@ namespace Udap.Client.Client.Messages;
 /// </summary>
 public class UdapDiscoveryDocumentResponse : ProtocolResponse
 {
+    /// <summary>
+    /// Gets or sets the discovery policy used to validate the metadata endpoints.
+    /// </summary>
     public DiscoveryPolicy? Policy { get; set; }
 
     protected override Task InitializeAsync(object? initializationData = null)
@@ -53,6 +56,9 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
         return Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Gets the signed JWT containing the UDAP server metadata, as defined by the UDAP discovery profile.
+    /// </summary>
     public string? SignedMetadata => TryGetString(UdapConstants.Discovery.SignedMetadata);
 
     /// <summary>
@@ -63,26 +69,79 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     /// </value>
     public JsonWebKeySet? KeySet { get; set; }
 
-    // strongly typed
+    /// <summary>
+    /// Gets the UDAP versions supported by the server (e.g., "1").
+    /// </summary>
     public IEnumerable<string>? UdapVersionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapVersionsSupported);
+
+    /// <summary>
+    /// Gets the UDAP profiles supported by the server (e.g., "udap_dcr", "udap_authn", "udap_authz").
+    /// </summary>
     public IEnumerable<string>? UdapProfilesSupported => TryGetStringArray(UdapConstants.Discovery.UdapProfilesSupported);
+
+    /// <summary>
+    /// Gets the authorization extension objects supported by the server (e.g., "hl7-b2b", "acme-ext").
+    /// </summary>
     public IEnumerable<string>? UdapAuthorizationExtensionsSupported => TryGetStringArray(UdapConstants.Discovery.UdapAuthorizationExtensionsSupported);
+
+    /// <summary>
+    /// Gets the authorization extension objects required by the server in token requests.
+    /// </summary>
     public IEnumerable<string>? UdapAuthorizationExtensionsRequired => TryGetStringArray(UdapConstants.Discovery.UdapAuthorizationExtensionsRequired);
+
+    /// <summary>
+    /// Gets the certification URIs supported by the server for client certifications during registration.
+    /// </summary>
     public IEnumerable<string>? UdapCertificationsSupported => TryGetStringArray(UdapConstants.Discovery.UdapCertificationsSupported);
+
+    /// <summary>
+    /// Gets the certification URIs required by the server during dynamic client registration.
+    /// </summary>
     public IEnumerable<string>? UdapCertificationsRequired => TryGetStringArray(UdapConstants.Discovery.UdapCertificationsRequired);
+
+    /// <summary>
+    /// Gets the OAuth 2.0 grant types supported by the server (e.g., "authorization_code", "client_credentials").
+    /// </summary>
     public IEnumerable<string>? GrantTypesSupported => TryGetStringArray(UdapConstants.Discovery.GrantTypesSupported);
+
+    /// <summary>
+    /// Gets the scopes supported by the server.
+    /// </summary>
     public IEnumerable<string>? ScopesSupported => TryGetStringArray(UdapConstants.Discovery.ScopesSupported);
+
+    /// <summary>
+    /// Gets the token endpoint authentication methods supported by the server (e.g., "private_key_jwt").
+    /// </summary>
     public IEnumerable<string>? TokenEndpointAuthMethodsSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthMethodsSupported);
+
+    /// <summary>
+    /// Gets the signing algorithms supported for token endpoint client authentication JWTs (e.g., "RS256", "ES384").
+    /// </summary>
     public IEnumerable<string>? TokenEndpointAuthSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported);
+
+    /// <summary>
+    /// Gets the signing algorithms supported for software statement JWTs submitted to the registration endpoint.
+    /// </summary>
     public IEnumerable<string>? RegistrationEndpointJwtSigningAlgValuesSupported => TryGetStringArray(UdapConstants.Discovery.RegistrationEndpointJwtSigningAlgValuesSupported);
 
+    /// <summary>
+    /// Gets the URL of the server's JSON Web Key Set document.
+    /// </summary>
     public string? JwksUri => TryGetString(UdapConstants.Discovery.JwksUri);
+
+    /// <summary>
+    /// Gets the authorization endpoint URL used to initiate the authorization code flow.
+    /// </summary>
     public string? AuthorizeEndpoint => TryGetString(UdapConstants.Discovery.AuthorizationEndpoint);
 
     /// <summary>
-    /// The FHIR Authorization Server's token endpoint URL
+    /// Gets the FHIR Authorization Server's token endpoint URL.
     /// </summary>
     public string? TokenEndpoint => TryGetString(UdapConstants.Discovery.TokenEndpoint);
+
+    /// <summary>
+    /// Gets the UDAP dynamic client registration endpoint URL.
+    /// </summary>
     public string? RegistrationEndpoint => TryGetString(UdapConstants.Discovery.RegistrationEndpoint);
 
     // generic
@@ -133,12 +192,7 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
 
                 var isValidUri = Uri.TryCreate(endpoint, UriKind.Absolute, out Uri? uri);
 
-                if (uri == null)
-                {
-                    return $"{element.Name} endpoint is missing a value";
-                }
-
-                if (!isValidUri)
+                if (!isValidUri || uri == null)
                 {
                     return $"Malformed endpoint: {endpoint}";
                 }

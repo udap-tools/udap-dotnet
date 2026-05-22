@@ -10,7 +10,7 @@
 using Duende.IdentityServer.ResponseHandling;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Client.Configuration;
 using Udap.Common.Certificates;
 using Udap.Common.Models;

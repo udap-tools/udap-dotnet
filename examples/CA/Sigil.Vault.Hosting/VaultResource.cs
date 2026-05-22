@@ -39,6 +39,19 @@ public sealed class VaultResource(string name) : ContainerResource(name), IResou
     internal List<TransitKeySpec> TransitKeys { get; } = [];
 
     /// <summary>
+    /// When true, Vault runs in server mode with file-backed persistent storage.
+    /// Init keys / root token are saved to <see cref="HostInitStatePath"/>.
+    /// When false (default), Vault runs in dev mode (in-memory, wiped on every restart).
+    /// </summary>
+    internal bool IsPersistent { get; set; }
+
+    /// <summary>
+    /// Host filesystem path where init state (root token + unseal keys) is persisted.
+    /// Only meaningful when <see cref="IsPersistent"/> is true.
+    /// </summary>
+    internal string? HostInitStatePath { get; set; }
+
+    /// <summary>
     /// Connection string expression returning the Vault HTTP address.
     /// </summary>
     public ReferenceExpression ConnectionStringExpression =>

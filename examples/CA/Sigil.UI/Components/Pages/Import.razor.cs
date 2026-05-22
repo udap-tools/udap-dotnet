@@ -23,7 +23,7 @@ public partial class Import
     private bool isScanning;
     private bool isImporting;
     private List<ImportPreviewViewModel> previews = new();
-    private List<(string community, int imported, List<string> errors)> importResults = new();
+    private List<(string trustDomain, int imported, List<string> errors)> importResults = new();
 
     protected override void OnInitialized()
     {
@@ -62,10 +62,10 @@ public partial class Import
 
         try
         {
-            var (imported, errors) = await ImportService.ImportCommunityAsync(
+            var (imported, errors) = await ImportService.ImportTrustDomainAsync(
                 preview.DirectoryPath, pfxPassword);
 
-            importResults.Add((preview.CommunityName, imported, errors));
+            importResults.Add((preview.TrustDomainName, imported, errors));
 
             // Remove from preview list after import
             previews.Remove(preview);
@@ -85,10 +85,10 @@ public partial class Import
             var toImport = previews.Where(p => p.IsValid).ToList();
             foreach (var preview in toImport)
             {
-                var (imported, errors) = await ImportService.ImportCommunityAsync(
+                var (imported, errors) = await ImportService.ImportTrustDomainAsync(
                     preview.DirectoryPath, pfxPassword);
 
-                importResults.Add((preview.CommunityName, imported, errors));
+                importResults.Add((preview.TrustDomainName, imported, errors));
                 previews.Remove(preview);
                 StateHasChanged();
             }

@@ -9,7 +9,7 @@
 #endregion
 
 using System.Security.Cryptography;
-using FluentAssertions;
+using Shouldly;
 using Sigil.Vault;
 
 namespace Sigil.Signing.Tests;
@@ -35,7 +35,7 @@ public class VaultTransitP1363ConversionTests
 
         // Verify the DER signature
         var isValid = ecdsa.VerifyData(data, der, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence);
-        isValid.Should().BeTrue("DER-converted signature should verify against original key");
+        isValid.ShouldBeTrue("DER-converted signature should verify against original key");
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class VaultTransitP1363ConversionTests
         var der = VaultTransitSigningProvider.ConvertP1363ToDer(p1363);
 
         var isValid = ecdsa.VerifyData(data, der, HashAlgorithmName.SHA384, DSASignatureFormat.Rfc3279DerSequence);
-        isValid.Should().BeTrue();
+        isValid.ShouldBeTrue();
     }
 
     [Fact]
@@ -60,8 +60,8 @@ public class VaultTransitP1363ConversionTests
 
         var der = VaultTransitSigningProvider.ConvertP1363ToDer(p1363);
 
-        der[0].Should().Be(0x30, "DER SEQUENCE tag");
-        der[2].Should().Be(0x02, "first DER INTEGER tag (r)");
+        der[0].ShouldBe((byte)0x30, "DER SEQUENCE tag");
+        der[2].ShouldBe((byte)0x02, "first DER INTEGER tag (r)");
     }
 
     [Fact]
@@ -82,11 +82,11 @@ public class VaultTransitP1363ConversionTests
         var der = VaultTransitSigningProvider.ConvertP1363ToDer(p1363);
 
         // r should have a leading 0x00 pad
-        der[0].Should().Be(0x30); // SEQUENCE
-        der[2].Should().Be(0x02); // INTEGER
-        der[3].Should().Be((byte)(halfLen + 1)); // length includes pad
-        der[4].Should().Be(0x00); // padding byte
-        der[5].Should().Be(0x80); // original first byte
+        der[0].ShouldBe((byte)0x30); // SEQUENCE
+        der[2].ShouldBe((byte)0x02); // INTEGER
+        der[3].ShouldBe((byte)(halfLen + 1)); // length includes pad
+        der[4].ShouldBe((byte)0x00); // padding byte
+        der[5].ShouldBe((byte)0x80); // original first byte
     }
 
     [Fact]
@@ -108,9 +108,9 @@ public class VaultTransitP1363ConversionTests
         var der = VaultTransitSigningProvider.ConvertP1363ToDer(p1363);
 
         // r INTEGER should have trimmed leading zeros
-        der[2].Should().Be(0x02); // INTEGER tag
+        der[2].ShouldBe((byte)0x02); // INTEGER tag
         var rLen = der[3];
-        rLen.Should().Be((byte)(halfLen - 2)); // trimmed 2 leading zeros
+        rLen.ShouldBe((byte)(halfLen - 2)); // trimmed 2 leading zeros
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class VaultTransitP1363ConversionTests
 
             var isValid = ecdsa.VerifyData(data, der, HashAlgorithmName.SHA384,
                 DSASignatureFormat.Rfc3279DerSequence);
-            isValid.Should().BeTrue($"round-trip iteration {i} should produce valid DER");
+            isValid.ShouldBeTrue($"round-trip iteration {i} should produce valid DER");
 
             // Vary the data for each iteration
             data[i % data.Length] ^= 0xFF;

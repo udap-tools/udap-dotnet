@@ -94,7 +94,7 @@ public static class SeedDataIdentityProvider2
         //
         // Anchor localhost_fhirlabs_community2 for Udap.Identity.Provider2
         //
-        var anchorUdapIdentityProvider2 = new X509Certificate2(
+        var anchorUdapIdentityProvider2 = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community2/caLocalhostCert2.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://Provider2"))
@@ -117,7 +117,7 @@ public static class SeedDataIdentityProvider2
             await udapContext.SaveChangesAsync();
         }
 
-        var intermediateCertProvider2 = new X509Certificate2(
+        var intermediateCertProvider2 = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath,
                 "localhost_fhirlabs_community2/intermediates/intermediateLocalhostCert2.cer"));
 

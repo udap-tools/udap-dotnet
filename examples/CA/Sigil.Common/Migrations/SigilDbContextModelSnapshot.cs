@@ -18,10 +18,25 @@ namespace Sigil.Common.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("sigil")
-                .HasAnnotation("ProductVersion", "10.0.4")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("CertificateTemplateSanList", b =>
+                {
+                    b.Property<int>("SanListsId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TemplatesId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("SanListsId", "TemplatesId");
+
+                    b.HasIndex("TemplatesId");
+
+                    b.ToTable("CertificateTemplateSanList", "sigil");
+                });
 
             modelBuilder.Entity("Sigil.Common.Data.Entities.CaCertificate", b =>
                 {
@@ -42,9 +57,6 @@ namespace Sigil.Common.Migrations
 
                     b.Property<byte>("CertSecurityLevel")
                         .HasColumnType("smallint");
-
-                    b.Property<int>("CommunityId")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -114,18 +126,21 @@ namespace Sigil.Common.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<int>("TrustDomainId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("X509CertificatePem")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CommunityId");
-
                     b.HasIndex("ParentId");
 
                     b.HasIndex("Thumbprint")
                         .IsUnique();
+
+                    b.HasIndex("TrustDomainId");
 
                     b.ToTable("CaCertificates", "sigil");
                 });
@@ -257,66 +272,6 @@ namespace Sigil.Common.Migrations
                         .IsUnique();
 
                     b.ToTable("CertificateTemplates", "sigil");
-                });
-
-            modelBuilder.Entity("Sigil.Common.Data.Entities.Community", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("text");
-
-                    b.Property<bool>("Enabled")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("Communities", "sigil");
-                });
-
-            modelBuilder.Entity("Sigil.Common.Data.Entities.CommunityBaseUrl", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CommunityId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PublishingBasePath")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Url")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CommunityId", "SortOrder");
-
-                    b.ToTable("CommunityBaseUrls", "sigil");
                 });
 
             modelBuilder.Entity("Sigil.Common.Data.Entities.Crl", b =>
@@ -475,22 +430,131 @@ namespace Sigil.Common.Migrations
                     b.ToTable("IssuedCertificates", "sigil");
                 });
 
-            modelBuilder.Entity("Sigil.Common.Data.Entities.CaCertificate", b =>
+            modelBuilder.Entity("Sigil.Common.Data.Entities.SanList", b =>
                 {
-                    b.HasOne("Sigil.Common.Data.Entities.Community", "Community")
-                        .WithMany("CaCertificates")
-                        .HasForeignKey("CommunityId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Items")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("SanLists", "sigil");
+                });
+
+            modelBuilder.Entity("Sigil.Common.Data.Entities.TrustDomain", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CrlValidityDays")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("Enabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("TrustDomains", "sigil");
+                });
+
+            modelBuilder.Entity("Sigil.Common.Data.Entities.TrustDomainBaseUrl", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("PublishingBasePath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TrustDomainId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TrustDomainId", "SortOrder");
+
+                    b.ToTable("TrustDomainBaseUrls", "sigil");
+                });
+
+            modelBuilder.Entity("CertificateTemplateSanList", b =>
+                {
+                    b.HasOne("Sigil.Common.Data.Entities.SanList", null)
+                        .WithMany()
+                        .HasForeignKey("SanListsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Sigil.Common.Data.Entities.CertificateTemplate", null)
+                        .WithMany()
+                        .HasForeignKey("TemplatesId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Sigil.Common.Data.Entities.CaCertificate", b =>
+                {
                     b.HasOne("Sigil.Common.Data.Entities.CaCertificate", "Parent")
                         .WithMany("Children")
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("Community");
+                    b.HasOne("Sigil.Common.Data.Entities.TrustDomain", "TrustDomain")
+                        .WithMany("CaCertificates")
+                        .HasForeignKey("TrustDomainId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Parent");
+
+                    b.Navigation("TrustDomain");
                 });
 
             modelBuilder.Entity("Sigil.Common.Data.Entities.CertificateRevocation", b =>
@@ -502,17 +566,6 @@ namespace Sigil.Common.Migrations
                         .IsRequired();
 
                     b.Navigation("Crl");
-                });
-
-            modelBuilder.Entity("Sigil.Common.Data.Entities.CommunityBaseUrl", b =>
-                {
-                    b.HasOne("Sigil.Common.Data.Entities.Community", "Community")
-                        .WithMany("BaseUrls")
-                        .HasForeignKey("CommunityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Community");
                 });
 
             modelBuilder.Entity("Sigil.Common.Data.Entities.Crl", b =>
@@ -544,6 +597,17 @@ namespace Sigil.Common.Migrations
                     b.Navigation("Template");
                 });
 
+            modelBuilder.Entity("Sigil.Common.Data.Entities.TrustDomainBaseUrl", b =>
+                {
+                    b.HasOne("Sigil.Common.Data.Entities.TrustDomain", "TrustDomain")
+                        .WithMany("BaseUrls")
+                        .HasForeignKey("TrustDomainId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TrustDomain");
+                });
+
             modelBuilder.Entity("Sigil.Common.Data.Entities.CaCertificate", b =>
                 {
                     b.Navigation("Children");
@@ -558,16 +622,16 @@ namespace Sigil.Common.Migrations
                     b.Navigation("IssuedCertificates");
                 });
 
-            modelBuilder.Entity("Sigil.Common.Data.Entities.Community", b =>
+            modelBuilder.Entity("Sigil.Common.Data.Entities.Crl", b =>
+                {
+                    b.Navigation("Revocations");
+                });
+
+            modelBuilder.Entity("Sigil.Common.Data.Entities.TrustDomain", b =>
                 {
                     b.Navigation("BaseUrls");
 
                     b.Navigation("CaCertificates");
-                });
-
-            modelBuilder.Entity("Sigil.Common.Data.Entities.Crl", b =>
-                {
-                    b.Navigation("Revocations");
                 });
 #pragma warning restore 612, 618
         }

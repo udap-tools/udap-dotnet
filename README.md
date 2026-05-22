@@ -73,7 +73,6 @@ UDAP is a PKI extension profile to OAuth 2.0. One or more PKIs can be hosted by 
 | `hl7-b2b` | SSRAA / TEFCA | :white_check_mark: | B2B extension for client_credentials — purpose_of_use enforcement |
 | `hl7-b2b-user` | SSRAA | :white_check_mark: | B2B extension for authorization_code with user context (FHIR Person) |
 | `tefca-ias` | TEFCA | :white_check_mark: | Individual Access Services — patient/user info, consent, id_token |
-| `tefca_smart` | TEFCA | :black_square_button: | Constants defined; model and validation not yet implemented |
 
 **Pluggable validation** via `IUdapAuthorizationExtensionValidator` with per-community rules:
 - **SSRAA** — validates against HL7 v3 PurposeOfUse value set (60+ codes)
@@ -115,7 +114,7 @@ UDAP is a PKI extension profile to OAuth 2.0. One or more PKIs can be hosted by 
 | Package | Description |
 |:---|:---|
 | [![Udap.Ssraa.Server](https://img.shields.io/nuget/v/Udap.Ssraa.Server?label=Udap.Ssraa.Server)](https://www.nuget.org/packages/Udap.Ssraa.Server) | SSRAA community validation (purpose_of_use value set, required extensions) |
-| [![Udap.Tefca.Model](https://img.shields.io/nuget/v/Udap.Tefca.Model?label=Udap.Tefca.Model)](https://www.nuget.org/packages/Udap.Tefca.Model) | TEFCA extension models (`tefca-ias`, `tefca_smart`, XP constants) |
+| [![Udap.Tefca.Model](https://img.shields.io/nuget/v/Udap.Tefca.Model?label=Udap.Tefca.Model)](https://www.nuget.org/packages/Udap.Tefca.Model) | TEFCA extension models (`tefca-ias`, XP constants) |
 | [![Udap.Tefca.Server](https://img.shields.io/nuget/v/Udap.Tefca.Server?label=Udap.Tefca.Server)](https://www.nuget.org/packages/Udap.Tefca.Server) | TEFCA community validation (XP codes, SAN matching) |
 
 ### Configuration Docs

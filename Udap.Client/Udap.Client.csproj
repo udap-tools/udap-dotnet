@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <PackageReference Include="Duende.IdentityModel" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.SourceLink.GitHub">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -39,8 +40,5 @@
     <None Include="../artwork/UDAP_Ecosystem_Gears 48X48.jpg" Pack="true" PackagePath="\" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Authentication\" />
-  </ItemGroup>
 
 </Project>

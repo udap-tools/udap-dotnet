@@ -42,8 +42,12 @@ public class UdapDynamicClientRegistrationDocumentTest
         var expiration = TimeSpan.FromMinutes(5);
         var expirationEpochTime = EpochTime.GetIntDate(DateTime.Now.Add(expiration));
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
-        
+#endif
+
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
             .WithAudience("https://securedcontrols.net/connect/register")
@@ -72,8 +76,8 @@ public class UdapDynamicClientRegistrationDocumentTest
         Assert.Equal(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue, document.TokenEndpointAuthMethod);
         Assert.Equal("system/Patient.rs system/Practitioner.read", document.Scope);
         Assert.Equal("https://avatars.githubusercontent.com/u/77421324?s=48&v=4", document.LogoUri);
-        Assert.Empty(document.ResponseTypes);
-        Assert.Equal(1, document.GrantTypes!.Count);
+        Assert.Empty(document.ResponseTypes!);
+        Assert.Single(document.GrantTypes!);
         Assert.Contains("client_credentials", document.GrantTypes);
 
         var iat = EpochTime.DateTime(document.IssuedAt.GetValueOrDefault()).ToUniversalTime();
@@ -89,13 +93,13 @@ public class UdapDynamicClientRegistrationDocumentTest
         Assert.Equal(document.Expiration, documentDeserialize.Expiration);
         Assert.Equal(document.JwtId, documentDeserialize.JwtId);
         Assert.Equal(document.ClientName, documentDeserialize.ClientName);
-        foreach (var contact in document.Contacts) { Assert.Contains(contact, documentDeserialize.Contacts); }
+        foreach (var contact in document.Contacts) { Assert.Contains(contact, documentDeserialize.Contacts!); }
         Assert.Equal(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue, documentDeserialize.TokenEndpointAuthMethod);
         Assert.Equal(document.Scope, documentDeserialize.Scope);
         Assert.Equal(document.LogoUri, documentDeserialize.LogoUri);
-        Assert.Equal(1, documentDeserialize.GrantTypes!.Count);
+        Assert.Single(documentDeserialize.GrantTypes!);
         Assert.Equal(document.SoftwareStatement, documentDeserialize.SoftwareStatement); //echo back software statement
-        Assert.Empty(documentDeserialize.ResponseTypes);
+        Assert.Empty(documentDeserialize.ResponseTypes!);
         Assert.Equal("Testing 123", documentDeserialize["MyClaim"].ToString());
         Assert.Equal(EpochTime.GetIntDate(iat), documentDeserialize.IssuedAt);
 
@@ -105,8 +109,8 @@ public class UdapDynamicClientRegistrationDocumentTest
         document.Extensions = null;
         serializeDocument = JsonSerializer.Serialize(document);
         documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
-        Assert.Empty(documentDeserialize!.Contacts);
-        Assert.Empty(documentDeserialize.Extensions);
+        Assert.Empty(documentDeserialize!.Contacts!);
+        Assert.Empty(documentDeserialize.Extensions!);
 
         //
         // Empty logo and software statement test.  Some upstream builders pass an empty logo because it is not required by client_credentials
@@ -155,7 +159,11 @@ public class UdapDynamicClientRegistrationDocumentTest
     {
         var expiration = EpochTime.GetIntDate(DateTime.Now.Add(TimeSpan.FromMinutes(5)));
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
 
         var document = UdapDcrBuilderForClientCredentials
             .Cancel(clientCert)
@@ -172,7 +180,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             .WithLogoUri("")
         .Build();
 
-        Assert.Empty(document.GrantTypes);
+        Assert.Empty(document.GrantTypes!);
     }
 
 
@@ -184,7 +192,11 @@ public class UdapDynamicClientRegistrationDocumentTest
     {
         EpochTime.GetIntDate(DateTime.Now.Add(TimeSpan.FromMinutes(5)));
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
 
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -208,7 +220,11 @@ public class UdapDynamicClientRegistrationDocumentTest
         var expiration = EpochTime.GetIntDate(DateTime.Now.Add(TimeSpan.FromMinutes(5)));
         var issuedAt = EpochTime.GetIntDate(DateTime.Now);
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
 
         var document = UdapDcrBuilderForClientCredentials
             .Create(clientCert)
@@ -320,7 +336,7 @@ public class UdapDynamicClientRegistrationDocumentTest
 
 
         Assert.True(hl7B2B.PurposeOfUse?.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT"));
-        Assert.Equal(0, hl7B2B.PurposeOfUse!.Count);
+        Assert.Empty(hl7B2B.PurposeOfUse!);
 
         hl7B2B = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(hl7B2B.SerializeToJson());
         Assert.Equal(0, hl7B2B?.PurposeOfUse!.Count);
@@ -364,14 +380,14 @@ public class UdapDynamicClientRegistrationDocumentTest
         hl7B2BUser = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(serializeDocument);
 
         Assert.True(hl7B2BUser!.PurposeOfUse!.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT"));
-        Assert.Equal(0, hl7B2BUser.PurposeOfUse.Count);
+        Assert.Empty(hl7B2BUser.PurposeOfUse);
 
         hl7B2BUser.ConsentPolicy!.Remove("https://udaped.fhirlabs.net/Policy/Consent/99");
-        Assert.Equal(0, hl7B2BUser.ConsentPolicy!.Count);
+        Assert.Empty(hl7B2BUser.ConsentPolicy!);
 
         Assert.DoesNotContain("https://udaped.fhirlabs.net/Policy/Consent/99", hl7B2BUser.SerializeToJson());
         hl7B2BUser = JsonSerializer.Deserialize<HL7B2BUserAuthorizationExtension>(hl7B2BUser.SerializeToJson());
-        Assert.Equal(0, hl7B2BUser?.ConsentPolicy!.Count);
+        Assert.Empty(hl7B2BUser?.ConsentPolicy!);
     }
 
     /// <summary>
@@ -434,12 +450,12 @@ public class UdapDynamicClientRegistrationDocumentTest
 
         tefcaIas = JsonSerializer.Deserialize<TEFCAIASAuthorizationExtension>(serializeDocument);
 
-        tefcaIas.ConsentPolicy!.Remove("https://udaped.fhirlabs.net/Policy/Consent/99");
-        Assert.Equal(0, tefcaIas.ConsentPolicy.Count);
+        tefcaIas!.ConsentPolicy!.Remove("https://udaped.fhirlabs.net/Policy/Consent/99");
+        Assert.Empty(tefcaIas.ConsentPolicy);
 
         Assert.DoesNotContain("https://udaped.fhirlabs.net/Policy/Consent/99", tefcaIas.SerializeToJson());
         tefcaIas = JsonSerializer.Deserialize<TEFCAIASAuthorizationExtension>(tefcaIas.SerializeToJson());
-        Assert.Equal(0, tefcaIas!.ConsentPolicy!.Count);
+        Assert.Empty(tefcaIas!.ConsentPolicy!);
 
         Assert.Equal(identityTokenElement.GetRawText()
             .Replace("\n", "").Replace("\r", "").Replace(": ", ":").Replace(",  ", ","),
@@ -489,7 +505,7 @@ public class UdapDynamicClientRegistrationDocumentTest
 }";
 
         var udapRegistrationDocument = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(json);
-        var serializedJson = udapRegistrationDocument.SerializeToJson(true);
+        var serializedJson = udapRegistrationDocument!.SerializeToJson(true);
         Assert.Contains("1736962786", serializedJson);
         Assert.DoesNotContain("\"1736962786\"", serializedJson);
         // _testOutputHelper.WriteLine(serializedJson);
@@ -503,7 +519,7 @@ public class UdapDynamicClientRegistrationDocumentTest
                 }
             });
 
-        Assert.Equal(1736962486, udapRegistrationDocument.IssuedAt);
+        Assert.Equal(1736962486, udapRegistrationDocument!.IssuedAt);
         Assert.Equal(1736962786, udapRegistrationDocument.Expiration);
     }
 
@@ -541,9 +557,9 @@ public class UdapDynamicClientRegistrationDocumentTest
         document = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
 
         var b2BAuthExtension = document?.Extensions?["hl7-b2b"] as HL7B2BAuthorizationExtension;
-        Assert.Contains("urn:oid:2.16.840.1.113883.5.8#TREAT", b2BAuthExtension?.PurposeOfUse);
-        Assert.Contains("https://udaped.fhirlabs.net/Policy/Consent/99", b2BAuthExtension?.ConsentPolicy);
-        Assert.Contains("https://fhirlabs.net/fhir/r4/Consent/99", b2BAuthExtension?.ConsentReference);
+        Assert.Contains("urn:oid:2.16.840.1.113883.5.8#TREAT", b2BAuthExtension?.PurposeOfUse!);
+        Assert.Contains("https://udaped.fhirlabs.net/Policy/Consent/99", b2BAuthExtension?.ConsentPolicy!);
+        Assert.Contains("https://fhirlabs.net/fhir/r4/Consent/99", b2BAuthExtension?.ConsentReference!);
     }
 
     [Fact]
@@ -583,9 +599,9 @@ public class UdapDynamicClientRegistrationDocumentTest
         document = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
 
         var b2BAuthExtension = document?.Extensions?["hl7-b2b"] as HL7B2BAuthorizationExtension;
-        Assert.Contains("urn:oid:2.16.840.1.113883.5.8#TREAT", b2BAuthExtension?.PurposeOfUse);
-        Assert.Contains("https://udaped.fhirlabs.net/Policy/Consent/99", b2BAuthExtension?.ConsentPolicy);
-        Assert.Contains("https://fhirlabs.net/fhir/r4/Consent/99", b2BAuthExtension?.ConsentReference);
+        Assert.Contains("urn:oid:2.16.840.1.113883.5.8#TREAT", b2BAuthExtension?.PurposeOfUse!);
+        Assert.Contains("https://udaped.fhirlabs.net/Policy/Consent/99", b2BAuthExtension?.ConsentPolicy!);
+        Assert.Contains("https://fhirlabs.net/fhir/r4/Consent/99", b2BAuthExtension?.ConsentReference!);
     }
 
     [Fact]
@@ -708,7 +724,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
         extensionSerialized = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(((HL7B2BAuthorizationExtension)documentDeserialize!.Extensions!["hl7-b2b"]).SerializeToJson());
         Assert.Null(extensionSerialized!.SubjectName);
-        Assert.Empty(extensionSerialized.ConsentReference);
+        Assert.Empty(extensionSerialized.ConsentReference!);
 
     }
 
@@ -785,7 +801,11 @@ public class UdapDynamicClientRegistrationDocumentTest
         var expiration = TimeSpan.FromMinutes(5);
         var expirationEpochTime = EpochTime.GetIntDate(DateTime.Now.Add(expiration));
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -815,12 +835,12 @@ public class UdapDynamicClientRegistrationDocumentTest
         Assert.Contains("mailto:JoeShook@gmail.com", document.Contacts);
         Assert.Equal(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue, document.TokenEndpointAuthMethod);
         Assert.Equal("system/Patient.rs system/Practitioner.read", document.Scope);
-        Assert.Contains("code", document.ResponseTypes);
+        Assert.Contains("code", document.ResponseTypes!);
         Assert.Equal("https://fhirlabs.net/fhir/r4", document.Issuer); // same as first subject alternative name
-        Assert.Equal(1, document.RedirectUris!.Count);
+        Assert.Single(document.RedirectUris!);
         Assert.Contains("https://client.fhirlabs.net/redirect/", document.RedirectUris);
         Assert.Equal("https://avatars.githubusercontent.com/u/77421324?s=48&v=4", document.LogoUri);
-        Assert.Equal(1, document.GrantTypes!.Count);
+        Assert.Single(document.GrantTypes!);
         Assert.Contains("authorization_code", document.GrantTypes);
 
         var signedDocument = SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
@@ -846,7 +866,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         Assert.Equal(document.Issuer, documentDeserialize.Issuer);
         Assert.Equal(document.RedirectUris!.ToList(), documentDeserialize.RedirectUris!.ToList());
         Assert.Equal(document.LogoUri, documentDeserialize.LogoUri);
-        Assert.Equal(1, documentDeserialize.GrantTypes!.Count);
+        Assert.Single(documentDeserialize.GrantTypes!);
         foreach (var gt in document.GrantTypes!) { Assert.Contains(gt, documentDeserialize.GrantTypes); }
         Assert.Equal("Testing 123", documentDeserialize["MyClaim"].ToString());
 
@@ -857,10 +877,10 @@ public class UdapDynamicClientRegistrationDocumentTest
         document.RedirectUris = null;
         serializeDocument = JsonSerializer.Serialize(document);
         documentDeserialize = JsonSerializer.Deserialize<UdapDynamicClientRegistrationDocument>(serializeDocument);
-        Assert.Empty(documentDeserialize!.Contacts);
-        Assert.Empty(documentDeserialize.ResponseTypes);
-        Assert.Empty(documentDeserialize.GrantTypes);
-        Assert.Empty(documentDeserialize.RedirectUris);
+        Assert.Empty(documentDeserialize!.Contacts!);
+        Assert.Empty(documentDeserialize.ResponseTypes!);
+        Assert.Empty(documentDeserialize.GrantTypes!);
+        Assert.Empty(documentDeserialize.RedirectUris!);
 
         // What might happen on responding from Server
         var _ = new UdapDynamicClientRegistrationDocument()
@@ -931,8 +951,13 @@ public class UdapDynamicClientRegistrationDocumentTest
         var expiration = TimeSpan.FromMinutes(5);
         var endCertPath = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
         var intermediateCertPath = Path.Combine(AppContext.BaseDirectory, "CertStore/intermediates", "SureFhirLabs_Intermediate.cer");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(endCertPath, "udap-test");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile(intermediateCertPath);
+#else
         var clientCert = new X509Certificate2(endCertPath, "udap-test");
         var intermediateCert = new X509Certificate2(intermediateCertPath);
+#endif
         var chain = new List<X509Certificate2> { clientCert, intermediateCert };
 
         var document = UdapDcrBuilderForAuthorizationCode
@@ -961,7 +986,7 @@ public class UdapDynamicClientRegistrationDocumentTest
 
 
         var tokenHandler = new JsonWebTokenHandler();
-        var jsonWebToken = tokenHandler.ReadJsonWebToken(documentDeserialize.SoftwareStatement);
+        var jsonWebToken = tokenHandler.ReadJsonWebToken(documentDeserialize!.SoftwareStatement);
 
 
         var certificates = jsonWebToken.GetCertificateList();
@@ -979,8 +1004,13 @@ public class UdapDynamicClientRegistrationDocumentTest
     {
         var endCertPath = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
         var intermediateCertPath = Path.Combine(AppContext.BaseDirectory, "CertStore/intermediates", "SureFhirLabs_Intermediate.cer");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(endCertPath, "udap-test");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile(intermediateCertPath);
+#else
         var clientCert = new X509Certificate2(endCertPath, "udap-test");
         var intermediateCert = new X509Certificate2(intermediateCertPath);
+#endif
         var chain = new List<X509Certificate2> { clientCert, intermediateCert };
 
         var softwareStatement = UdapDcrBuilderForAuthorizationCode
@@ -995,7 +1025,7 @@ public class UdapDynamicClientRegistrationDocumentTest
         Assert.Equal(clientCert.Thumbprint, certificates.First().Thumbprint);
         Assert.Equal(intermediateCert.Thumbprint, certificates.Last().Thumbprint);
     }
-    
+
     /// <summary>
     /// Test that the UdapDcrBuilderForAuthorizationCode can add multiple x5c certificates to the header
     /// </summary>
@@ -1004,8 +1034,13 @@ public class UdapDynamicClientRegistrationDocumentTest
     {
         var endCertPath = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
         var intermediateCertPath = Path.Combine(AppContext.BaseDirectory, "CertStore/intermediates", "SureFhirLabs_Intermediate.cer");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(endCertPath, "udap-test");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile(intermediateCertPath);
+#else
         var clientCert = new X509Certificate2(endCertPath, "udap-test");
         var intermediateCert = new X509Certificate2(intermediateCertPath);
+#endif
         var chain = new List<X509Certificate2> { clientCert, intermediateCert };
 
         var softwareStatement = UdapDcrBuilderForAuthorizationCode
@@ -1028,7 +1063,11 @@ public class UdapDynamicClientRegistrationDocumentTest
     public void AlternateSanAuthorizationCodeFlowTest()
     {
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -1050,7 +1089,11 @@ public class UdapDynamicClientRegistrationDocumentTest
     {
         var expiration = EpochTime.GetIntDate(DateTime.Now.Add(TimeSpan.FromMinutes(5)));
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Cancel(clientCert)
@@ -1068,7 +1111,7 @@ public class UdapDynamicClientRegistrationDocumentTest
             .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
             .Build();
 
-        Assert.Empty(document.GrantTypes);
+        Assert.Empty(document.GrantTypes!);
     }
 
     [Fact]
@@ -1077,7 +1120,11 @@ public class UdapDynamicClientRegistrationDocumentTest
         var expiration = EpochTime.GetIntDate(DateTime.Now.Add(TimeSpan.FromMinutes(5)));
         var issuedAt = EpochTime.GetIntDate(DateTime.Now);
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -1094,8 +1141,12 @@ public class UdapDynamicClientRegistrationDocumentTest
     {
         var expiration = EpochTime.GetIntDate(DateTime.Now.Add(TimeSpan.FromMinutes(5)));
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
-        
+#endif
+
         var documentAuthCode = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
             .WithAudience("https://securedcontrols.net/connect/register")

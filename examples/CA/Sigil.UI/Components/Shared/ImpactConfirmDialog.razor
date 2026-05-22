@@ -1,0 +1,85 @@
+@* (c) 2026 Joseph Shook. All rights reserved.
+   Authors: Joseph Shook   JoeShook@Gmail.com
+                            Joseph.Shook@Surescripts.com
+   See LICENSE in the project root for license information. *@
+
+@using Sigil.Common.ViewModels
+
+<FluentDialog Hidden="@Hidden" Modal="true" TrapFocus="true" Style="min-width: 480px;">
+    <FluentDialogHeader>@Title</FluentDialogHeader>
+    <FluentDialogBody>
+        @if (!string.IsNullOrEmpty(Message))
+        {
+            <p style="margin: 0 0 0.75rem 0;">@Message</p>
+        }
+        @if (Impacts is { Count: > 0 })
+        {
+            <FluentMessageBar Title="What will be affected" Intent="@DialogIntent()" Style="margin-top: 0.25rem;">
+                <ul style="margin: 0.25rem 0; padding-left: 1.25rem;">
+                    @foreach (var item in Impacts)
+                    {
+                        <li style="color: @SeverityColor(item.Severity);">
+                            <strong>@item.Count</strong> @item.Label
+                        </li>
+                    }
+                </ul>
+            </FluentMessageBar>
+        }
+        else if (Impacts != null)
+        {
+            <p style="font-size: 0.85rem; opacity: 0.7; margin: 0;">No dependents detected.</p>
+        }
+    </FluentDialogBody>
+    <FluentDialogFooter>
+        <FluentButton Appearance="@(IsCritical() ? Appearance.Accent : Appearance.Accent)"
+                      Style="@(IsCritical() ? "background-color: #e94560;" : "")"
+                      OnClick="ConfirmAsync"
+                      Disabled="@IsBusy">
+            @(IsBusy ? "Working..." : ConfirmLabel)
+        </FluentButton>
+        <FluentButton Appearance="Appearance.Outline" OnClick="CancelAsync" Disabled="@IsBusy">
+            Cancel
+        </FluentButton>
+    </FluentDialogFooter>
+</FluentDialog>
+
+@code {
+    [Parameter] public bool Hidden { get; set; } = true;
+    [Parameter] public string Title { get; set; } = "Confirm";
+    [Parameter] public string Message { get; set; } = string.Empty;
+    [Parameter] public string ConfirmLabel { get; set; } = "Confirm";
+    [Parameter] public List<ImpactItem>? Impacts { get; set; }
+    [Parameter] public EventCallback OnConfirm { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public bool IsBusy { get; set; }
+
+    private async Task ConfirmAsync()
+    {
+        if (OnConfirm.HasDelegate)
+            await OnConfirm.InvokeAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        if (OnCancel.HasDelegate)
+            await OnCancel.InvokeAsync();
+    }
+
+    private bool IsCritical() =>
+        Impacts?.Any(i => i.Severity == ImpactSeverity.Critical) == true;
+
+    private MessageIntent DialogIntent()
+    {
+        if (Impacts == null) return MessageIntent.Info;
+        if (Impacts.Any(i => i.Severity == ImpactSeverity.Critical)) return MessageIntent.Error;
+        if (Impacts.Any(i => i.Severity == ImpactSeverity.Warning)) return MessageIntent.Warning;
+        return MessageIntent.Info;
+    }
+
+    private static string SeverityColor(ImpactSeverity s) => s switch
+    {
+        ImpactSeverity.Critical => "#e94560",
+        ImpactSeverity.Warning => "#ff9800",
+        _ => "inherit"
+    };
+}

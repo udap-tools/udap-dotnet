@@ -59,25 +59,25 @@ public partial class CertificateBase
 
     protected string? DefaultPKCS12Password { get; set; }
 
-    protected static void UpdateWindowsMachineStore(X509Certificate2 certificate)
-    {
-        //This could be modified to handle Linux also... Maybe later.
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
-            store.Open(OpenFlags.ReadWrite);
-
-            var oldCert = store.Certificates.SingleOrDefault(c => c.Subject == certificate.Subject);
-
-            if (oldCert != null)
-            {
-                store.Remove(oldCert);
-            }
-
-            store.Add(certificate);
-            store.Close();
-        }
-    }
+    // protected static void UpdateWindowsMachineStore(X509Certificate2 certificate)
+    // {
+    //     //This could be modified to handle Linux also... Maybe later.
+    //     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+    //     {
+    //         var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
+    //         store.Open(OpenFlags.ReadWrite);
+    //
+    //         var oldCert = store.Certificates.SingleOrDefault(c => c.Subject == certificate.Subject);
+    //
+    //         if (oldCert != null)
+    //         {
+    //             store.Remove(oldCert);
+    //         }
+    //
+    //         store.Add(certificate);
+    //         store.Close();
+    //     }
+    // }
 
     protected static void AddAuthorityKeyIdentifier(X509Certificate2 caCert, CertificateRequest intermediateReq, ITestOutputHelper testOutputHelper)
     {

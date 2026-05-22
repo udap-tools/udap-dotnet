@@ -16,8 +16,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using Udap.Client.Client;
-using Udap.Client.Client.Extensions;
+using Udap.Client;
+using Udap.Client.Extensions;
 using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
@@ -63,7 +63,11 @@ public class AuthorizationExtensionEnforcementTests
                 services.AddSingleton<ICommunityTokenValidator>(communityValidator);
             });
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var regResult = await RegisterClient(pipeline, clientCert);
 
         var b2b = new HL7B2BAuthorizationExtension
@@ -110,7 +114,11 @@ public class AuthorizationExtensionEnforcementTests
                 services.AddSingleton<ICommunityTokenValidator>(communityValidator);
             });
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var regResult = await RegisterClient(pipeline, clientCert);
 
         // Token request WITHOUT extension
@@ -152,7 +160,11 @@ public class AuthorizationExtensionEnforcementTests
                 services.AddSingleton<ICommunityTokenValidator>(communityValidator);
             });
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var regResult = await RegisterClient(pipeline, clientCert);
 
         // B2B extension with missing organization_id
@@ -190,7 +202,11 @@ public class AuthorizationExtensionEnforcementTests
             SsraaVersion = SsraaVersion.V1_1
         });
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var regResult = await RegisterClient(pipeline, clientCert);
 
         // Token request without any extension — should work when nothing is required
@@ -229,7 +245,11 @@ public class AuthorizationExtensionEnforcementTests
                 services.AddSingleton<ICommunityTokenValidator>(communityValidator);
             });
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var regResult = await RegisterClient(pipeline, clientCert);
 
         // Token request without extension — community validator requires it
@@ -272,7 +292,11 @@ public class AuthorizationExtensionEnforcementTests
                 services.AddSingleton<ICommunityTokenValidator>(communityValidator);
             });
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var regResult = await RegisterClient(pipeline, clientCert);
 
         var b2b = new HL7B2BAuthorizationExtension
@@ -316,7 +340,11 @@ public class AuthorizationExtensionEnforcementTests
                 services.AddSingleton<IUdapAuthorizationExtensionValidator>(customValidator);
             });
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var regResult = await RegisterClient(pipeline, clientCert);
 
         var clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
@@ -343,7 +371,11 @@ public class AuthorizationExtensionEnforcementTests
             SsraaVersion = SsraaVersion.V1_1
         });
 
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var regResult = await RegisterClient(pipeline, clientCert);
 
         // Build a valid token request, then tamper with the JWT signature
@@ -378,8 +410,13 @@ public class AuthorizationExtensionEnforcementTests
     {
         var pipeline = new UdapAuthServerPipeline();
 
+#if NET9_0_OR_GREATER
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#else
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#endif
 
         pipeline.OnPostConfigureServices += services =>
         {
@@ -455,7 +492,7 @@ public class AuthorizationExtensionEnforcementTests
     {
         var udapClient = pipeline.Resolve<IUdapClient>();
 
-        udapClient.UdapServerMetaData = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
         {
             RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint
         };

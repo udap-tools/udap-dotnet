@@ -20,7 +20,7 @@ var udapClient = serviceProvider.GetRequiredService<IUdapClient>();
 var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 var logger = loggerFactory.CreateLogger(typeof(Program));
 
-udapClient.Problem += element => logger.LogWarning(element.ChainElementStatus
+udapClient.Problem += element => logger.LogWarning(element.Problems
     .Summarize(TrustChainValidator.DefaultProblemFlags));
 
 udapClient.Untrusted += certificate2 => logger.LogWarning("Untrusted: " + certificate2.Subject);

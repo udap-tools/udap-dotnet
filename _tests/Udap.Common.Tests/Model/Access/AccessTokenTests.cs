@@ -29,7 +29,11 @@ public class AccessTokenTests
     {
         var expiration = TimeSpan.FromMinutes(5);
         var cert = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
         var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
 
         var document = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -145,20 +149,28 @@ public class AccessTokenTests
 
 
         Assert.True(b2BHl7.PurposeOfUse!.Remove("urn:oid:2.16.840.1.113883.5.8#TREAT"));
-        Assert.Equal(0, b2BHl7.PurposeOfUse.Count);
+        Assert.Empty(b2BHl7.PurposeOfUse);
 
         b2BHl7 = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(b2BHl7.SerializeToJson());
-        Assert.Equal(0, b2BHl7!.PurposeOfUse!.Count);
+        Assert.Empty(b2BHl7!.PurposeOfUse!);
     }
 
     [Fact]
     public void ClientCredentials_WithCertificateChain_IncludesMultipleX5cEntries()
     {
         var certPath = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(certPath, "udap-test");
+#else
         var clientCert = new X509Certificate2(certPath, "udap-test");
+#endif
 
         var intermediatePath = Path.Combine(AppContext.BaseDirectory, "CertStore/intermediates", "SureFhirLabs_Intermediate.cer");
+#if NET9_0_OR_GREATER
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile(intermediatePath);
+#else
         var intermediateCert = new X509Certificate2(intermediatePath);
+#endif
 
         var certificates = new List<X509Certificate2> { clientCert, intermediateCert };
 
@@ -185,10 +197,18 @@ public class AccessTokenTests
     public void AuthorizationCode_WithCertificateChain_IncludesMultipleX5cEntries()
     {
         var certPath = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(certPath, "udap-test");
+#else
         var clientCert = new X509Certificate2(certPath, "udap-test");
+#endif
 
         var intermediatePath = Path.Combine(AppContext.BaseDirectory, "CertStore/intermediates", "SureFhirLabs_Intermediate.cer");
+#if NET9_0_OR_GREATER
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile(intermediatePath);
+#else
         var intermediateCert = new X509Certificate2(intermediatePath);
+#endif
 
         var certificates = new List<X509Certificate2> { clientCert, intermediateCert };
 
@@ -216,7 +236,11 @@ public class AccessTokenTests
     public void ClientCredentials_SingleCert_StillWorks()
     {
         var certPath = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(certPath, "udap-test");
+#else
         var clientCert = new X509Certificate2(certPath, "udap-test");
+#endif
 
         var clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
                 "test-client-id",
@@ -240,7 +264,11 @@ public class AccessTokenTests
     public void AuthorizationCode_SingleCert_StillWorks()
     {
         var certPath = Path.Combine(AppContext.BaseDirectory, "CertStore/issued", "fhirlabs.net.client.pfx");
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(certPath, "udap-test");
+#else
         var clientCert = new X509Certificate2(certPath, "udap-test");
+#endif
 
         var tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
                 "test-client-id",

@@ -70,9 +70,15 @@ public class ChainElementExtensionsTests
     [Fact]
     public void Summarize_ChainElements_WithProblems_IncludesNonNoneProblems()
     {
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadPkcs12FromFile(
+            Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
+            "udap-test");
+#else
         var cert = new X509Certificate2(
             Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
             "udap-test");
+#endif
 
         var elements = new List<ChainElementInfo>
         {
@@ -91,9 +97,15 @@ public class ChainElementExtensionsTests
     [Fact]
     public void Summarize_ChainElements_WithNoneStatus_ExcludesNoneProblems()
     {
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadPkcs12FromFile(
+            Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
+            "udap-test");
+#else
         var cert = new X509Certificate2(
             Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
             "udap-test");
+#endif
 
         var elements = new List<ChainElementInfo>
         {
@@ -121,9 +133,15 @@ public class ChainElementExtensionsTests
     [Fact]
     public void Summarize_ChainElements_NoProblems_ReturnsNewlineOnly()
     {
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadPkcs12FromFile(
+            Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
+            "udap-test");
+#else
         var cert = new X509Certificate2(
             Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
             "udap-test");
+#endif
 
         var elements = new List<ChainElementInfo>
         {
@@ -136,11 +154,56 @@ public class ChainElementExtensionsTests
     }
 
     [Fact]
-    public void Summarize_ChainElements_MultipleElementsWithMixedProblems()
+    public void HasProblems_WithProblems_ReturnsTrue()
     {
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadPkcs12FromFile(
+            Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
+            "udap-test");
+#else
         var cert = new X509Certificate2(
             Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
             "udap-test");
+#endif
+
+        var element = new ChainElementInfo(cert, new List<ChainProblem>
+        {
+            new ChainProblem(ChainProblemStatus.NotTimeValid, "Expired")
+        });
+
+        Assert.True(element.HasProblems);
+    }
+
+    [Fact]
+    public void HasProblems_NoProblems_ReturnsFalse()
+    {
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadPkcs12FromFile(
+            Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
+            "udap-test");
+#else
+        var cert = new X509Certificate2(
+            Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
+            "udap-test");
+#endif
+
+        var element = new ChainElementInfo(cert);
+
+        Assert.False(element.HasProblems);
+    }
+
+    [Fact]
+    public void Summarize_ChainElements_MultipleElementsWithMixedProblems()
+    {
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadPkcs12FromFile(
+            Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
+            "udap-test");
+#else
+        var cert = new X509Certificate2(
+            Path.Combine(AppContext.BaseDirectory, "CertStore/issued/fhirlabs.net.client.pfx"),
+            "udap-test");
+#endif
 
         var elements = new List<ChainElementInfo>
         {

@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -25,6 +26,76 @@ public class SsraaCommunityValidatorTests
 {
     private readonly ILogger<DefaultUdapAuthorizationExtensionValidator> _logger =
         Substitute.For<ILogger<DefaultUdapAuthorizationExtensionValidator>>();
+
+    #region AddUdapSsraaValidation DI Registration
+
+    [Fact]
+    public void AddUdapSsraaValidation_RegistersTokenValidator()
+    {
+        var services = new ServiceCollection();
+
+        services.AddUdapSsraaValidation(options =>
+        {
+            options.Communities.Add("udap://fhirlabs.net");
+        });
+
+        var provider = services.BuildServiceProvider();
+        var validator = provider.GetService<ICommunityTokenValidator>();
+
+        Assert.NotNull(validator);
+        Assert.IsType<SsraaTokenValidator>(validator);
+    }
+
+    [Fact]
+    public void AddUdapSsraaValidation_ConfiguresOptions()
+    {
+        var services = new ServiceCollection();
+
+        services.AddUdapSsraaValidation(options =>
+        {
+            options.Communities.Add("udap://fhirlabs.net");
+            options.Communities.Add("udap://other-community");
+        });
+
+        var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<SsraaValidationOptions>>();
+
+        Assert.Contains("udap://fhirlabs.net", options.Value.Communities);
+        Assert.Contains("udap://other-community", options.Value.Communities);
+    }
+
+    [Fact]
+    public void AddUdapSsraaValidation_DefaultOverload_RegistersWithEmptyOptions()
+    {
+        var services = new ServiceCollection();
+
+        services.AddUdapSsraaValidation();
+
+        var provider = services.BuildServiceProvider();
+        var validator = provider.GetService<ICommunityTokenValidator>();
+        var options = provider.GetRequiredService<IOptions<SsraaValidationOptions>>();
+
+        Assert.NotNull(validator);
+        Assert.Empty(options.Value.Communities);
+    }
+
+    [Fact]
+    public void AddUdapSsraaValidation_OptionsHaveCorrectDefaults()
+    {
+        var services = new ServiceCollection();
+
+        services.AddUdapSsraaValidation();
+
+        var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<SsraaValidationOptions>>();
+
+        Assert.NotNull(options.Value.ClientCredentialsExtensionsRequired);
+        Assert.Contains(UdapConstants.UdapAuthorizationExtensions.Hl7B2B,
+            options.Value.ClientCredentialsExtensionsRequired!);
+        Assert.Null(options.Value.AuthorizationCodeExtensionsRequired);
+    }
+
+    #endregion
 
     #region SsraaTokenValidator Unit Tests
 
@@ -94,6 +165,28 @@ public class SsraaCommunityValidatorTests
 
         Assert.NotNull(rules);
         Assert.Null(rules.MaxPurposeOfUseCount);
+    }
+
+    [Fact]
+    public void GetValidationRules_UnknownGrantType_ReturnsNullRequiredExtensions()
+    {
+        var validator = CreateSsraaValidator("udap://fhirlabs.net");
+
+        var rules = validator.GetValidationRules("device_code");
+
+        Assert.NotNull(rules);
+        Assert.Null(rules.RequiredExtensions);
+    }
+
+    [Fact]
+    public void GetValidationRules_NullGrantType_ReturnsNullRequiredExtensions()
+    {
+        var validator = CreateSsraaValidator("udap://fhirlabs.net");
+
+        var rules = validator.GetValidationRules(null);
+
+        Assert.NotNull(rules);
+        Assert.Null(rules.RequiredExtensions);
     }
 
     [Fact]
@@ -235,7 +328,41 @@ public class SsraaCommunityValidatorTests
 
     #endregion
 
+    #region ICommunityTokenValidator default interface method
+
+    [Fact]
+    public void GetValidationRules_DefaultImplementation_ReturnsNull()
+    {
+        ICommunityTokenValidator validator = new MinimalCommunityTokenValidator();
+
+        var rules = validator.GetValidationRules("client_credentials");
+
+        Assert.Null(rules);
+    }
+
+    [Fact]
+    public void GetValidationRules_DefaultImplementation_ReturnsNullForNullGrantType()
+    {
+        ICommunityTokenValidator validator = new MinimalCommunityTokenValidator();
+
+        var rules = validator.GetValidationRules(null);
+
+        Assert.Null(rules);
+    }
+
+    #endregion
+
     #region Helpers
+
+    private class MinimalCommunityTokenValidator : ICommunityTokenValidator
+    {
+        public bool AppliesToCommunity(string communityName) => false;
+
+        public Task<AuthorizationExtensionValidationResult> ValidateAsync(
+            UdapAuthorizationExtensionValidationContext context)
+            => Task.FromResult(AuthorizationExtensionValidationResult.Success());
+    }
+
 
     private static SsraaTokenValidator CreateSsraaValidator(params string[] communities)
     {

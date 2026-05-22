@@ -63,6 +63,7 @@ namespace Udap.Server.Storage.Stores
                 .Include(c => c.AllowedScopes)
                 .Include(c => c.RedirectUris)
                 .Include(c => c.AllowedGrantTypes)
+                .Include(c => c.ClientSecrets)
                 .Include(c => c.Properties)
                 .SingleOrDefaultAsync(c =>
                     // ISS
@@ -90,6 +91,29 @@ namespace Udap.Server.Storage.Stores
                 existingClient.RequirePkce = client.RequirePkce;
                 existingClient.RequireDPoP = client.RequireDPoP;
                 existingClient.LogoUri = client.LogoUri;
+
+                var newCertSecret = client.ClientSecrets
+                    .FirstOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE);
+                if (newCertSecret != null)
+                {
+                    var existingCertSecret = existingClient.ClientSecrets
+                        .FirstOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE);
+                    if (existingCertSecret != null)
+                    {
+                        existingCertSecret.Value = newCertSecret.Value;
+                        existingCertSecret.Expiration = newCertSecret.Expiration;
+                    }
+                    else
+                    {
+                        existingClient.ClientSecrets.Add(new Duende.IdentityServer.EntityFramework.Entities.ClientSecret
+                        {
+                            ClientId = existingClient.Id,
+                            Type = UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE,
+                            Value = newCertSecret.Value,
+                            Expiration = newCertSecret.Expiration
+                        });
+                    }
+                }
 
                 await _dbContext.SaveChangesAsync(token);
                 _logger.LogInformation("Updated client: {Id}", existingClient.Id);
@@ -325,6 +349,14 @@ namespace Udap.Server.Storage.Stores
                     {
                         clientSecret.Expiration = endCertificate.NotAfter.ToUniversalTime();
                         rolled = true;
+                    }
+
+                    var certSecret = entity.ClientSecrets.FirstOrDefault(cs =>
+                        cs.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE);
+                    if (certSecret != null)
+                    {
+                        certSecret.Value = Convert.ToBase64String(endCertificate.Export(X509ContentType.Cert));
+                        certSecret.Expiration = endCertificate.NotAfter.ToUniversalTime();
                     }
                 }
 

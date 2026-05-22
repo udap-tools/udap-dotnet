@@ -191,7 +191,7 @@ public class CertificateDownloadCacheTests
         caCertGenerator.SetPublicKey(caKeyPair.Public);
         caCertGenerator.AddExtension(X509Extensions.BasicConstraints, true, new BasicConstraints(true));
         caCertGenerator.AddExtension(X509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(caKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(caKeyPair.Public)));
 
         var caSigner = new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private);
         var bcRootCert = caCertGenerator.Generate(caSigner);
@@ -219,7 +219,7 @@ public class CertificateDownloadCacheTests
         leafCertGenerator.AddExtension(X509Extensions.CrlDistributionPoints, false,
             new CrlDistPoint(new[] { crlDp }));
         leafCertGenerator.AddExtension(X509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
 
         var leafSigner = new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private);
         var bcLeafCert = leafCertGenerator.Generate(leafSigner);
@@ -250,8 +250,13 @@ public class CertificateDownloadCacheTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
 
         var anchors = new X509Certificate2Collection(rootDotNet);
 
@@ -283,7 +288,7 @@ public class CertificateDownloadCacheTests
         caCertGenerator.SetPublicKey(caKeyPair.Public);
         caCertGenerator.AddExtension(X509Extensions.BasicConstraints, true, new BasicConstraints(true));
         caCertGenerator.AddExtension(X509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(caKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(caKeyPair.Public)));
 
         var caSigner = new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private);
         var bcRootCert = caCertGenerator.Generate(caSigner);
@@ -312,7 +317,7 @@ public class CertificateDownloadCacheTests
         leafCertGenerator.AddExtension(X509Extensions.CrlDistributionPoints, false,
             new CrlDistPoint(new[] { crlDp }));
         leafCertGenerator.AddExtension(X509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
 
         var leafSigner = new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private);
         var bcLeafCert = leafCertGenerator.Generate(leafSigner);
@@ -344,8 +349,13 @@ public class CertificateDownloadCacheTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
 
         var anchors = new X509Certificate2Collection(rootDotNet);
         
@@ -377,7 +387,7 @@ public class CertificateDownloadCacheTests
         caCertGenerator.SetPublicKey(caKeyPair.Public);
         caCertGenerator.AddExtension(X509Extensions.BasicConstraints, true, new BasicConstraints(true));
         caCertGenerator.AddExtension(X509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(caKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(caKeyPair.Public)));
 
         var caSigner = new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private);
         var bcRootCert = caCertGenerator.Generate(caSigner);
@@ -406,7 +416,7 @@ public class CertificateDownloadCacheTests
         leafCertGenerator.AddExtension(X509Extensions.CrlDistributionPoints, false,
             new CrlDistPoint(new[] { crlDp }));
         leafCertGenerator.AddExtension(X509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
 
         var leafSigner = new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private);
         var bcLeafCert = leafCertGenerator.Generate(leafSigner);
@@ -441,8 +451,13 @@ public class CertificateDownloadCacheTests
             validatorLogger,
             downloadCache: downloadCache);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
 
         var anchors = new X509Certificate2Collection(rootDotNet);
 

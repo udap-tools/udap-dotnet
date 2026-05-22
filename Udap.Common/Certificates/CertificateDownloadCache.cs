@@ -61,14 +61,22 @@ public class CertificateDownloadCache : ICertificateDownloadCache
         var result = await _cache.TryGetAsync<byte[]>(cacheKey, token: cancellationToken);
         if (result.HasValue)
         {
+#if NET9_0_OR_GREATER
+            return X509CertificateLoader.LoadCertificate(result.Value);
+#else
             return new X509Certificate2(result.Value);
+#endif
         }
 
         try
         {
             _logger.LogDebug("Downloading intermediate certificate from {Url}", url);
             var data = await _httpClient.GetByteArrayAsync(url, cancellationToken);
+#if NET9_0_OR_GREATER
+            var cert = X509CertificateLoader.LoadCertificate(data);
+#else
             var cert = new X509Certificate2(data);
+#endif
 
             var timeToExpiry = cert.NotAfter.ToUniversalTime() - DateTime.UtcNow;
             var options = new FusionCacheEntryOptions();

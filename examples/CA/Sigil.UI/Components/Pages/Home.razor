@@ -25,8 +25,8 @@ else
     @* --- Quick Stats Row --- *@
     <FluentStack Orientation="Orientation.Horizontal" Wrap="true" Style="margin-top: 1rem; gap: 1rem;">
         <FluentCard Style="min-width: 160px; flex: 1; text-align: center;">
-            <div style="font-size: 2rem; font-weight: 700; color: #1976d2; margin-bottom: 0.35rem;">@communityCount</div>
-            <FluentLabel Typo="Typography.Body" Style="opacity: 0.7;">Communities</FluentLabel>
+            <div style="font-size: 2rem; font-weight: 700; color: #1976d2; margin-bottom: 0.35rem;">@trustDomainCount</div>
+            <FluentLabel Typo="Typography.Body" Style="opacity: 0.7;">Trust Domains</FluentLabel>
         </FluentCard>
         <FluentCard Style="min-width: 160px; flex: 1; text-align: center;">
             <div style="font-size: 2rem; font-weight: 700; color: #2d6a4f; margin-bottom: 0.35rem;">@caCertCount</div>
@@ -49,23 +49,50 @@ else
         }
     </FluentStack>
 
-    @* --- Community Health --- *@
-    @if (communitySummaries.Count > 0)
+    @* --- Quick Actions --- *@
+    <FluentCard Style="margin-top: 1.5rem;">
+        <FluentLabel Typo="Typography.Subject" Style="margin-bottom: 0.5rem;">Quick Actions</FluentLabel>
+        <FluentStack Orientation="Orientation.Horizontal" Wrap="true" Style="gap: 0.5rem;">
+            <FluentButton Appearance="Appearance.Accent"
+                          IconStart="@(new Icons.Regular.Size16.Organization())"
+                          OnClick="@(() => Navigation.NavigateTo("/trust-domains?action=new"))">
+                Create Trust Domain
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Outline"
+                          IconStart="@(new Icons.Regular.Size16.ArrowImport())"
+                          OnClick="@(() => Navigation.NavigateTo("/explorer"))">
+                Import Certificate
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Outline"
+                          IconStart="@(new Icons.Regular.Size16.ShieldKeyhole())"
+                          OnClick="@(() => Navigation.NavigateTo("/explorer"))">
+                New Root CA
+            </FluentButton>
+            <FluentButton Appearance="Appearance.Outline"
+                          IconStart="@(new Icons.Regular.Size16.DocumentBulletList())"
+                          OnClick="@(() => Navigation.NavigateTo("/templates?action=new"))">
+                New Template
+            </FluentButton>
+        </FluentStack>
+    </FluentCard>
+
+    @* --- Trust Domain Health --- *@
+    @if (trustDomainSummaries.Count > 0)
     {
-        <FluentLabel Typo="Typography.Subject" Style="margin-top: 1.5rem;">Community Health</FluentLabel>
+        <FluentLabel Typo="Typography.Subject" Style="margin-top: 1.5rem;">Trust Domain Health</FluentLabel>
         <FluentStack Orientation="Orientation.Horizontal" Wrap="true" Style="margin-top: 0.5rem; gap: 1rem;">
-            @foreach (var community in communitySummaries)
+            @foreach (var trustDomain in trustDomainSummaries)
             {
                 <FluentCard Style="min-width: 280px; flex: 1; cursor: pointer;"
-                            @onclick="() => NavigateToCommunity(community.Id)">
+                            @onclick="() => NavigateToTrustDomain(trustDomain.Id)">
                     <FluentStack Orientation="Orientation.Horizontal" Style="align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <FluentLabel Typo="Typography.Subject">@community.Name</FluentLabel>
+                        <FluentLabel Typo="Typography.Subject">@trustDomain.Name</FluentLabel>
                         <FluentSpacer />
-                        @if (community.IsHealthy)
+                        @if (trustDomain.IsHealthy)
                         {
                             <FluentBadge BackgroundColor="#4caf50" Color="white" Style="font-size: 0.7rem;">Healthy</FluentBadge>
                         }
-                        else if (community.TotalExpired > 0)
+                        else if (trustDomain.TotalExpired > 0)
                         {
                             <FluentBadge BackgroundColor="#e94560" Color="white" Style="font-size: 0.7rem;">Action Needed</FluentBadge>
                         }
@@ -77,23 +104,23 @@ else
 
                     <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.25rem 1rem; font-size: 0.85rem;">
                         <span>CA Certificates</span>
-                        <strong>@community.CaCount</strong>
+                        <strong>@trustDomain.CaCount</strong>
                         <span>Issued Certificates</span>
-                        <strong>@community.IssuedCount</strong>
-                        @if (community.TotalExpiring > 0)
+                        <strong>@trustDomain.IssuedCount</strong>
+                        @if (trustDomain.TotalExpiring > 0)
                         {
                             <span style="color: #ff9800;">Expiring Soon</span>
-                            <strong style="color: #ff9800;">@community.TotalExpiring</strong>
+                            <strong style="color: #ff9800;">@trustDomain.TotalExpiring</strong>
                         }
-                        @if (community.TotalExpired > 0)
+                        @if (trustDomain.TotalExpired > 0)
                         {
                             <span style="color: #e94560;">Expired</span>
-                            <strong style="color: #e94560;">@community.TotalExpired</strong>
+                            <strong style="color: #e94560;">@trustDomain.TotalExpired</strong>
                         }
-                        @if (community.OverdueCrlCount > 0)
+                        @if (trustDomain.OverdueCrlCount > 0)
                         {
                             <span style="color: #e94560;">Overdue CRLs</span>
-                            <strong style="color: #e94560;">@community.OverdueCrlCount</strong>
+                            <strong style="color: #e94560;">@trustDomain.OverdueCrlCount</strong>
                         }
                     </div>
                 </FluentCard>
@@ -105,7 +132,7 @@ else
         <FluentCard Style="margin-top: 1rem;">
             <FluentLabel Typo="Typography.Subject">Getting Started</FluentLabel>
             <p style="margin-top: 0.5rem;">
-                No communities found. <a href="/communities">Create a community</a> and then
+                No trustDomains found. <a href="/trust-domains">Create a trustDomain</a> and then
                 <a href="/explorer">import certificates</a> or generate a new Root CA to get started.
             </p>
         </FluentCard>
@@ -121,12 +148,12 @@ else
             </FluentLabel>
             <FluentDataGrid Items="@expiringCerts.AsQueryable()" Class="dashboard-grid" Style="width: 100%;" GridTemplateColumns="1fr 0.6fr 0.8fr 0.5fr 0.5fr">
                 <TemplateColumn Title="Name" Align="Align.Start">
-                    <a href="/explorer/@context.CommunityId?thumbprint=@context.Thumbprint" style="color: #1976d2; cursor: pointer;"
-                       @onclick="() => NavigateToCert(context.CommunityId, context.Thumbprint)" @onclick:preventDefault>
+                    <a href="/explorer/@context.TrustDomainId?thumbprint=@context.Thumbprint" style="color: #1976d2; cursor: pointer;"
+                       @onclick="() => NavigateToCert(context.TrustDomainId, context.Thumbprint)" @onclick:preventDefault>
                         @context.Name
                     </a>
                 </TemplateColumn>
-                <PropertyColumn Property="@(c => c.CommunityName)" Title="Community" Align="Align.Start" />
+                <PropertyColumn Property="@(c => c.TrustDomainName)" Title="Trust Domain" Align="Align.Start" />
                 <TemplateColumn Title="Expires" Align="Align.Start">
                     <span style="color: @(context.DaysRemaining <= 7 ? "#e94560" : context.DaysRemaining <= 30 ? "#ff9800" : "inherit");">
                         @TimeDisplay.FormatShort(context.NotAfter)
@@ -153,12 +180,12 @@ else
             </FluentLabel>
             <FluentDataGrid Items="@expiredCerts.AsQueryable()" Class="dashboard-grid" Style="width: 100%;" GridTemplateColumns="1fr 0.6fr 0.8fr 0.5fr 0.5fr">
                 <TemplateColumn Title="Name" Align="Align.Start">
-                    <a href="/explorer/@context.CommunityId?thumbprint=@context.Thumbprint" style="color: #1976d2; cursor: pointer;"
-                       @onclick="() => NavigateToCert(context.CommunityId, context.Thumbprint)" @onclick:preventDefault>
+                    <a href="/explorer/@context.TrustDomainId?thumbprint=@context.Thumbprint" style="color: #1976d2; cursor: pointer;"
+                       @onclick="() => NavigateToCert(context.TrustDomainId, context.Thumbprint)" @onclick:preventDefault>
                         @context.Name
                     </a>
                 </TemplateColumn>
-                <PropertyColumn Property="@(c => c.CommunityName)" Title="Community" Align="Align.Start" />
+                <PropertyColumn Property="@(c => c.TrustDomainName)" Title="Trust Domain" Align="Align.Start" />
                 <TemplateColumn Title="Expired On" Align="Align.Start">
                     <span style="color: #e94560;">@TimeDisplay.FormatShort(context.NotAfter)</span>
                 </TemplateColumn>
@@ -182,13 +209,13 @@ else
             </FluentLabel>
             <FluentDataGrid Items="@overdueCrls.AsQueryable()" Class="dashboard-grid" Style="width: 100%;" GridTemplateColumns="0.4fr 1fr 0.8fr 0.8fr 0.5fr">
                 <TemplateColumn Title="CRL #" Align="Align.Start">
-                    <a href="/explorer/@context.CommunityId?thumbprint=@context.CaThumbprint" style="color: #1976d2; cursor: pointer;"
-                       @onclick="() => NavigateToCert(context.CommunityId, context.CaThumbprint)" @onclick:preventDefault>
+                    <a href="/explorer/@context.TrustDomainId?thumbprint=@context.CaThumbprint" style="color: #1976d2; cursor: pointer;"
+                       @onclick="() => NavigateToCert(context.TrustDomainId, context.CaThumbprint)" @onclick:preventDefault>
                         #@context.CrlNumber
                     </a>
                 </TemplateColumn>
                 <PropertyColumn Property="@(c => c.CaName)" Title="Issuing CA" Align="Align.Start" />
-                <PropertyColumn Property="@(c => c.CommunityName)" Title="Community" Align="Align.Start" />
+                <PropertyColumn Property="@(c => c.TrustDomainName)" Title="Trust Domain" Align="Align.Start" />
                 <TemplateColumn Title="Next Update" Align="Align.Start">
                     <span style="color: #e94560;">@TimeDisplay.FormatShort(context.NextUpdate)</span>
                 </TemplateColumn>
@@ -202,7 +229,7 @@ else
     }
 
     @* --- All Clear --- *@
-    @if (communitySummaries.Count > 0 && expiringCerts.Count == 0 && expiredCerts.Count == 0 && overdueCrls.Count == 0)
+    @if (trustDomainSummaries.Count > 0 && expiringCerts.Count == 0 && expiredCerts.Count == 0 && overdueCrls.Count == 0)
     {
         <FluentCard Style="margin-top: 1.5rem; text-align: center; padding: 2rem;">
             <FluentIcon Value="@(new Icons.Regular.Size24.CheckmarkCircle())" Color="Color.Custom" CustomColor="#4caf50" />

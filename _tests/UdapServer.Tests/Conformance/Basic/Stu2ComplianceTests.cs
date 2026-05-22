@@ -20,7 +20,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
@@ -56,8 +56,13 @@ public class Stu2ComplianceTests
     private UdapAuthServerPipeline CreateStu2Pipeline()
     {
         var mockPipeline = new UdapAuthServerPipeline();
+#if NET9_0_OR_GREATER
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#else
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#endif
 
         mockPipeline.OnPostConfigureServices += s =>
         {
@@ -145,8 +150,13 @@ public class Stu2ComplianceTests
     private UdapAuthServerPipeline CreateStu2PipelineWithOverrides(bool? requirePkce = null, bool? forceState = null)
     {
         var mockPipeline = new UdapAuthServerPipeline();
+#if NET9_0_OR_GREATER
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#else
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#endif
 
         mockPipeline.OnPostConfigureServices += s =>
         {
@@ -233,8 +243,13 @@ public class Stu2ComplianceTests
     private UdapAuthServerPipeline CreateStu1Pipeline()
     {
         var mockPipeline = new UdapAuthServerPipeline();
+#if NET9_0_OR_GREATER
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#else
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#endif
 
         mockPipeline.OnPostConfigureServices += s =>
         {
@@ -327,7 +342,11 @@ public class Stu2ComplianceTests
     public async Task UdapRegistration_OnStu2Server_Succeeds()
     {
         var mockPipeline = CreateStu2Pipeline();
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -367,7 +386,11 @@ public class Stu2ComplianceTests
     public async Task Stu2Server_SetsClientRequirePkce_OnRegistration()
     {
         var mockPipeline = CreateStu2Pipeline();
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -408,7 +431,11 @@ public class Stu2ComplianceTests
     public async Task Stu2Server_RequiresPkce_ForAuthCodeClients()
     {
         var mockPipeline = CreateStu2Pipeline();
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -470,7 +497,11 @@ public class Stu2ComplianceTests
     public async Task Stu2Server_RequiresState_ForAuthCodeClients()
     {
         var mockPipeline = CreateStu2Pipeline();
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -537,7 +568,11 @@ public class Stu2ComplianceTests
     public async Task UdapRegistration_OnStu1Server_Succeeds()
     {
         var mockPipeline = CreateStu1Pipeline();
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -576,7 +611,11 @@ public class Stu2ComplianceTests
     public async Task Stu1Server_DoesNotSetClientRequirePkce_OnRegistration()
     {
         var mockPipeline = CreateStu1Pipeline();
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -616,7 +655,11 @@ public class Stu2ComplianceTests
     public async Task Stu1Server_DoesNotRequireState_ForAuthCodeClients()
     {
         var mockPipeline = CreateStu1Pipeline();
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -678,7 +721,11 @@ public class Stu2ComplianceTests
     public async Task Stu2Server_RequiresPkce_NoPkceParamsAtAll()
     {
         var mockPipeline = CreateStu2Pipeline();
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -738,7 +785,11 @@ public class Stu2ComplianceTests
     public async Task Stu2Server_RequirePkceOptOut_AllowsNoPkce()
     {
         var mockPipeline = CreateStu2PipelineWithOverrides(requirePkce: false);
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -801,7 +852,11 @@ public class Stu2ComplianceTests
     public async Task Stu2Server_ForceStateOptOut_AllowsNoState()
     {
         var mockPipeline = CreateStu2PipelineWithOverrides(forceState: false);
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -871,7 +926,11 @@ public class Stu2ComplianceTests
     public async Task InvalidUdapVersion_ReturnsError()
     {
         var mockPipeline = CreateStu2Pipeline();
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -910,7 +969,11 @@ public class Stu2ComplianceTests
     public async Task MissingUdapVersion_ReturnsError()
     {
         var mockPipeline = CreateStu2Pipeline();
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)

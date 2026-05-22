@@ -197,7 +197,11 @@ public class ExperimentationTest
         byte[] keyBytes = Encoding.UTF8.GetBytes(secretKey);
 
         // Load the private key from a file or other source
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadPkcs12FromFile(@"C:\Source\GitHub\JoeShook\udap-tools\udap-dotnet\_tests\Udap.PKI.Generator\certstores\localhost_fhirlabs_community6\issued\fhirLabsApiClientLocalhostCert6_ECDSA.pfx", "udap-test", X509KeyStorageFlags.Exportable);
+#else
         var cert = new X509Certificate2(@"C:\Source\GitHub\JoeShook\udap-tools\udap-dotnet\_tests\Udap.PKI.Generator\certstores\localhost_fhirlabs_community6\issued\fhirLabsApiClientLocalhostCert6_ECDSA.pfx", "udap-test", X509KeyStorageFlags.Exportable);
+#endif
 
 
 
@@ -259,7 +263,11 @@ public class ExperimentationTest
         byte[] keyBytes = Encoding.UTF8.GetBytes(secretKey);
 
         // Load the private key from a file or other source
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadPkcs12FromFile(@"C:\Source\GitHub\JoeShook\udap-tools\udap-dotnet\_tests\Udap.PKI.Generator\certstores\localhost_fhirlabs_community6\issued\fhirLabsApiClientLocalhostCert6_ECDSA.pfx", null);
+#else
         var cert = new X509Certificate2(@"C:\Source\GitHub\JoeShook\udap-tools\udap-dotnet\_tests\Udap.PKI.Generator\certstores\localhost_fhirlabs_community6\issued\fhirLabsApiClientLocalhostCert6_ECDSA.pfx");
+#endif
         //var cert = new X509Certificate2(@"/mnt/c/Source/GitHub/JoeShook/udap-tools/udap-dotnet/_tests/Udap.PKI.Generator/certstores/localhost_fhirlabs_community6/issued/fhirLabsApiClientLocalhostCert6_ECDSA.pfx", "udap-test", X509KeyStorageFlags.Exportable);
         var joe = cert.HasPrivateKey;
         byte[] privateKeyBytes = cert.GetECDsaPrivateKey()!.ExportECPrivateKey(); //Might be DER encoded

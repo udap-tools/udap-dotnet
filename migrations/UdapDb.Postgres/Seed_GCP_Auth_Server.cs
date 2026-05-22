@@ -98,7 +98,7 @@ public static class Seed_GCP_Auth_Server
         //
         // Anchor surefhirlabs_community
         //
-        var sureFhirLabsAnchor = new X509Certificate2(
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://fhirlabs.net/"))
@@ -121,7 +121,7 @@ public static class Seed_GCP_Auth_Server
             await udapContext.SaveChangesAsync();
         }
 
-        var intermediateCert = new X509Certificate2(
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath,
                 "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
 
@@ -158,7 +158,7 @@ public static class Seed_GCP_Auth_Server
         //
         // Anchor for Community udap://stage.healthtogo.me/
         //
-        var emrDirectTestCA = new X509Certificate2(
+        var emrDirectTestCA = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "EmrDirect/EMRDirectTestCA.crt"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://stage.healthtogo.me/"))

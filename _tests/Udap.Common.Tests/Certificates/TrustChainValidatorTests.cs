@@ -80,7 +80,11 @@ public class TrustChainValidatorTests
         // _testOutputHelper.WriteLine(tokenHeader.X5c);
         var x5CArray = JsonNode.Parse(tokenHeader.X5c)?.AsArray()!;
         
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5CArray.First()!.ToString()));
+#else
         var cert = new X509Certificate2(Convert.FromBase64String(x5CArray.First()!.ToString()));
+#endif
         var tokenHandler = new JwtSecurityTokenHandler();
         
         tokenHandler.ValidateToken(metadata.SignedMetadata, new TokenValidationParameters
@@ -218,7 +222,7 @@ public class TrustChainValidatorTests
         var anchors = certificateStore.AnchorCertificates.ToList();
 
         // Coverage for frameworks not hosted in example projects.  Funky but works.
-        Assert.NotEmpty(certStore.AnchorCertificates.AsEnumerable().ToX509Collection());
+        Assert.NotEmpty(certStore.AnchorCertificates.AsEnumerable().ToX509Collection()!);
 
         var intermediates = anchors
             .SelectMany(a => a.Intermediates!.Select(i => X509Certificate2.CreateFromPem(i.Certificate))).ToArray()
@@ -243,7 +247,11 @@ public class TrustChainValidatorTests
         validator.Problem += element => _testOutputHelper.WriteLine("Problem: " + element.Problems.Summarize(problemFlags));
         validator.Untrusted += certificate2 => _testOutputHelper.WriteLine("Untrusted: " + certificate2.Subject);
 
+#if NET9_0_OR_GREATER
+        var cert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.untrusted.client.pfx", "udap-test", X509KeyStorageFlags.Exportable);
+#else
         var cert = new X509Certificate2("CertStore/issued/fhirlabs.net.untrusted.client.pfx", "udap-test", X509KeyStorageFlags.Exportable);
+#endif
 
         var trusted = await validator.IsTrustedCertificateAsync(
             "client_name",
@@ -282,7 +290,7 @@ public class TrustChainValidatorTests
             .ToList();
 
         // Coverage for frameworks not hosted in example projects.  Funky but works.
-        Assert.NotEmpty(certStore.AnchorCertificates.AsEnumerable().ToX509Collection());
+        Assert.NotEmpty(certStore.AnchorCertificates.AsEnumerable().ToX509Collection()!);
 
         var intermediates = anchors
             .SelectMany(a => a.Intermediates!.Select(i => X509Certificate2.CreateFromPem(i.Certificate))).ToArray()
@@ -351,8 +359,13 @@ public class TrustChainValidatorTests
         validator.Problem += element => problemEvents.Add(element);
         validator.Untrusted += cert => untrustedEvents.Add(cert);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -411,8 +424,13 @@ public class TrustChainValidatorTests
         validator.Problem += element => problemEvents.Add(element);
         validator.Untrusted += cert => untrustedEvents.Add(cert);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -472,8 +490,13 @@ public class TrustChainValidatorTests
         validator.Untrusted += cert => untrustedEvents.Add(cert);
         validator.Error += (cert, ex) => errorEvents.Add((cert, ex));
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -516,8 +539,13 @@ public class TrustChainValidatorTests
         var problemEvents = new List<ChainElementInfo>();
         validator.Problem += element => problemEvents.Add(element);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -558,8 +586,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: new HttpClient());
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var chainResult = await validator.IsTrustedCertificateAsync(
@@ -598,8 +631,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: new HttpClient());
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var chainResult = await validator.IsTrustedCertificateAsync(
@@ -645,8 +683,13 @@ public class TrustChainValidatorTests
         var problemEvents = new List<ChainElementInfo>();
         validator.Problem += element => problemEvents.Add(element);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var chainResult = await validator.IsTrustedCertificateAsync(
@@ -696,8 +739,13 @@ public class TrustChainValidatorTests
         var problemEvents = new List<ChainElementInfo>();
         validator.Problem += element => problemEvents.Add(element);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -747,8 +795,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var chainResult = await validator.IsTrustedCertificateAsync(
@@ -790,8 +843,13 @@ public class TrustChainValidatorTests
         var problemEvents = new List<ChainElementInfo>();
         validator.Problem += element => problemEvents.Add(element);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var chainResult = await validator.IsTrustedCertificateAsync(
@@ -843,8 +901,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -890,8 +953,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -937,8 +1005,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -984,8 +1057,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1022,7 +1100,7 @@ public class TrustChainValidatorTests
         certGenerator.SetPublicKey(keyPair.Public);
         certGenerator.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         certGenerator.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(keyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(keyPair.Public)));
 
         var crlDp = new DistributionPoint(
             new DistributionPointName(
@@ -1057,7 +1135,11 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var dotNetCert = X509CertificateLoader.LoadCertificate(bcCert.GetEncoded());
+#else
         var dotNetCert = new X509Certificate2(bcCert.GetEncoded());
+#endif
         // Use the same cert as both the leaf and the anchor
         var anchors = new X509Certificate2Collection(dotNetCert);
 
@@ -1089,7 +1171,7 @@ public class TrustChainValidatorTests
         leafCertGenerator.SetNotAfter(DateTime.UtcNow.AddYears(1));
         leafCertGenerator.SetPublicKey(leafKeyPair.Public);
         leafCertGenerator.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
         // Add a malformed CDP extension (raw garbage bytes wrapped in OCTET STRING)
         leafCertGenerator.AddExtension(BcX509Extensions.CrlDistributionPoints, false,
             new Org.BouncyCastle.Asn1.DerUtf8String("not-a-valid-cdp"));
@@ -1114,8 +1196,13 @@ public class TrustChainValidatorTests
         var problemEvents = new List<ChainElementInfo>();
         validator.Problem += element => problemEvents.Add(element);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1162,8 +1249,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var chainResult = await validator.IsTrustedCertificateAsync(
@@ -1213,8 +1305,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1267,8 +1364,13 @@ public class TrustChainValidatorTests
         validator.Error += (cert, ex) => errorEvents.Add((cert, ex));
         validator.Untrusted += cert => untrustedEvents.Add(cert);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchorCerts = new X509Certificate2Collection(rootDotNet);
 
         // Create an IEnumerable<Anchor> that throws on enumeration.
@@ -1329,8 +1431,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1373,8 +1480,13 @@ public class TrustChainValidatorTests
             logger,
             downloadCache: downloadCache);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         // First call: downloads and caches
@@ -1417,8 +1529,13 @@ public class TrustChainValidatorTests
         var untrustedEvents = new List<X509Certificate2>();
         validator.Untrusted += cert => untrustedEvents.Add(cert);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1459,8 +1576,13 @@ public class TrustChainValidatorTests
         var untrustedEvents = new List<X509Certificate2>();
         validator.Untrusted += cert => untrustedEvents.Add(cert);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1505,8 +1627,13 @@ public class TrustChainValidatorTests
         var untrustedEvents = new List<X509Certificate2>();
         validator.Untrusted += cert => untrustedEvents.Add(cert);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1546,8 +1673,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1587,8 +1719,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1628,8 +1765,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1667,8 +1809,13 @@ public class TrustChainValidatorTests
         var untrustedEvents = new List<X509Certificate2>();
         validator.Untrusted += cert => untrustedEvents.Add(cert);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1706,9 +1853,9 @@ public class TrustChainValidatorTests
         intCertGen.SetPublicKey(intKeyPair.Public);
         intCertGen.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         intCertGen.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(intKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(intKeyPair.Public)));
         intCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
         var bcIntCert = intCertGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
 
         // Leaf with malformed AIA extension
@@ -1720,7 +1867,7 @@ public class TrustChainValidatorTests
         leafCertGen.SetNotAfter(DateTime.UtcNow.AddYears(1));
         leafCertGen.SetPublicKey(leafKeyPair.Public);
         leafCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcIntCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcIntCert.GetPublicKey())));
         // Malformed AIA: raw garbage instead of proper ASN.1 structure
         leafCertGen.AddExtension(BcX509Extensions.AuthorityInfoAccess, false,
             new Org.BouncyCastle.Asn1.DerUtf8String("not-valid-aia"));
@@ -1746,8 +1893,13 @@ public class TrustChainValidatorTests
         var untrustedEvents = new List<X509Certificate2>();
         validator.Untrusted += cert => untrustedEvents.Add(cert);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1786,9 +1938,9 @@ public class TrustChainValidatorTests
         int1CertGen.SetPublicKey(int1KeyPair.Public);
         int1CertGen.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         int1CertGen.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(int1KeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(int1KeyPair.Public)));
         int1CertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
         var bcInt1Cert = int1CertGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
 
         // Intermediate 2 (signed by Int1, AIA points to Int1)
@@ -1805,9 +1957,9 @@ public class TrustChainValidatorTests
         int2CertGen.SetPublicKey(int2KeyPair.Public);
         int2CertGen.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         int2CertGen.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(int2KeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(int2KeyPair.Public)));
         int2CertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcInt1Cert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcInt1Cert.GetPublicKey())));
         // AIA pointing to Int1
         int2CertGen.AddExtension(BcX509Extensions.AuthorityInfoAccess, false,
             new AuthorityInformationAccess(AccessDescription.IdADCAIssuers,
@@ -1827,7 +1979,7 @@ public class TrustChainValidatorTests
         leafCertGen.SetNotAfter(DateTime.UtcNow.AddYears(1));
         leafCertGen.SetPublicKey(leafKeyPair.Public);
         leafCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcInt2Cert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcInt2Cert.GetPublicKey())));
         leafCertGen.AddExtension(BcX509Extensions.AuthorityInfoAccess, false,
             new AuthorityInformationAccess(AccessDescription.IdADCAIssuers,
                 new GeneralName(GeneralName.UniformResourceIdentifier, int2Url)));
@@ -1852,8 +2004,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1901,8 +2058,13 @@ public class TrustChainValidatorTests
             downloadCache: null,
             httpClient: httpClient);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         var result = await validator.IsTrustedCertificateAsync(
@@ -1953,8 +2115,13 @@ public class TrustChainValidatorTests
             validatorLogger,
             downloadCache: downloadCache);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchors = new X509Certificate2Collection(rootDotNet);
 
         // First call: downloads and caches the expired CRL, then evicts it
@@ -1985,8 +2152,13 @@ public class TrustChainValidatorTests
         var leafSerialNumber = BigInteger.ProbablePrime(120, new Random());
         var bcLeafCert = CreateLeafCertWithoutCrlDp(caKeyPair, bcRootCert, leafSerialNumber);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchorCertificates = new X509Certificate2Collection(rootDotNet);
 
         var expectedCommunityId = 42L;
@@ -2026,10 +2198,18 @@ public class TrustChainValidatorTests
         var leafSerialNumber = BigInteger.ProbablePrime(120, new Random());
         var bcLeafCert = CreateLeafCertWithoutCrlDp(caKeyPair, bcRootCert, leafSerialNumber);
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
+#endif
         // Use a different root so the chain is untrusted → triggers NotifyUntrusted
         var (_, differentRoot) = CreateCaKeyPairAndRoot();
+#if NET9_0_OR_GREATER
+        var differentRootDotNet = X509CertificateLoader.LoadCertificate(differentRoot.GetEncoded());
+#else
         var differentRootDotNet = new X509Certificate2(differentRoot.GetEncoded());
+#endif
         var anchorCerts = new X509Certificate2Collection(differentRootDotNet);
 
         var services = new ServiceCollection();
@@ -2073,11 +2253,16 @@ public class TrustChainValidatorTests
         leafCertGenerator.SetNotAfter(DateTime.UtcNow.AddYears(-1)); // expired
         leafCertGenerator.SetPublicKey(leafKeyPair.Public);
         leafCertGenerator.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
         var bcExpiredLeaf = leafCertGenerator.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcExpiredLeaf.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcExpiredLeaf.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchorCerts = new X509Certificate2Collection(rootDotNet);
 
         var services = new ServiceCollection();
@@ -2134,8 +2319,13 @@ public class TrustChainValidatorTests
         // Subscribe an Error handler that throws — covers the catch block in NotifyError
         validator.Error += (_, _) => throw new InvalidOperationException("Error handler blew up");
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
         var anchorCerts = new X509Certificate2Collection(rootDotNet);
 
         // Use faulty anchors to trigger the outer catch → NotifyError
@@ -2191,12 +2381,21 @@ public class TrustChainValidatorTests
         certGenB.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         var bcCertB = certGenB.Generate(new Asn1SignatureFactory("SHA256WithRSA", keyPairA.Private));
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcCertA.GetEncoded());
+        var intermediateDotNet = X509CertificateLoader.LoadCertificate(bcCertB.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcCertA.GetEncoded());
         var intermediateDotNet = new X509Certificate2(bcCertB.GetEncoded());
+#endif
 
         // Use an unrelated anchor so the chain won't terminate at a trust anchor
         var (_, unrelatedRoot) = CreateCaKeyPairAndRoot();
+#if NET9_0_OR_GREATER
+        var anchorCerts = new X509Certificate2Collection(X509CertificateLoader.LoadCertificate(unrelatedRoot.GetEncoded()));
+#else
         var anchorCerts = new X509Certificate2Collection(new X509Certificate2(unrelatedRoot.GetEncoded()));
+#endif
 
         var services = new ServiceCollection();
         services.AddLogging(b => b.AddXUnit(_testOutputHelper));
@@ -2258,8 +2457,13 @@ public class TrustChainValidatorTests
         leafCertGen.SetPublicKey(leafKeyPair.Public);
         var bcLeaf = leafCertGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPairA.Private));
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeaf.GetEncoded());
+        var rootBDotNet = X509CertificateLoader.LoadCertificate(bcRootB.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeaf.GetEncoded());
         var rootBDotNet = new X509Certificate2(bcRootB.GetEncoded());
+#endif
         var anchorCerts = new X509Certificate2Collection(rootBDotNet);
 
         var services = new ServiceCollection();
@@ -2321,8 +2525,13 @@ public class TrustChainValidatorTests
         // Intentionally no AuthorityKeyIdentifier
         var bcLeaf = leafGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeaf.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRoot.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeaf.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRoot.GetEncoded());
+#endif
         var anchorCerts = new X509Certificate2Collection(rootDotNet);
 
         var services = new ServiceCollection();
@@ -2366,7 +2575,7 @@ public class TrustChainValidatorTests
         rootGen.SetPublicKey(realCaKeyPair.Public);
         rootGen.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         rootGen.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(realCaKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(realCaKeyPair.Public)));
         var bcRoot = rootGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", realCaKeyPair.Private));
 
         // Create an intermediate with SubjectDN == IssuerDN == "CN=Shared DN" but signed
@@ -2384,9 +2593,9 @@ public class TrustChainValidatorTests
         intermediateGen.SetPublicKey(fakeKeyPair.Public); // different key
         intermediateGen.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         intermediateGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRoot));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRoot.GetPublicKey())));
         intermediateGen.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(fakeKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(fakeKeyPair.Public)));
         var bcIntermediate = intermediateGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", realCaKeyPair.Private));
 
         // Create leaf signed by the intermediate
@@ -2402,12 +2611,18 @@ public class TrustChainValidatorTests
         leafGen.SetNotAfter(DateTime.UtcNow.AddYears(1));
         leafGen.SetPublicKey(leafKeyPair.Public);
         leafGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcIntermediate));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcIntermediate.GetPublicKey())));
         var bcLeaf = leafGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", fakeKeyPair.Private));
 
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeaf.GetEncoded());
+        var intermediateDotNet = X509CertificateLoader.LoadCertificate(bcIntermediate.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRoot.GetEncoded());
+#else
         var leafDotNet = new X509Certificate2(bcLeaf.GetEncoded());
         var intermediateDotNet = new X509Certificate2(bcIntermediate.GetEncoded());
         var rootDotNet = new X509Certificate2(bcRoot.GetEncoded());
+#endif
         var anchorCerts = new X509Certificate2Collection(rootDotNet);
 
         var services = new ServiceCollection();
@@ -2447,7 +2662,7 @@ public class TrustChainValidatorTests
         caCertGenerator.SetPublicKey(caKeyPair.Public);
         caCertGenerator.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         caCertGenerator.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(caKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(caKeyPair.Public)));
 
         var bcRootCert = caCertGenerator.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
         return (caKeyPair, bcRootCert);
@@ -2479,7 +2694,7 @@ public class TrustChainValidatorTests
         leafCertGenerator.AddExtension(BcX509Extensions.CrlDistributionPoints, false,
             new CrlDistPoint(new[] { crlDp }));
         leafCertGenerator.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
 
         return leafCertGenerator.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
     }
@@ -2519,7 +2734,7 @@ public class TrustChainValidatorTests
         leafCertGenerator.AddExtension(BcX509Extensions.CrlDistributionPoints, false,
             new CrlDistPoint(new[] { relativeDp, validDp }));
         leafCertGenerator.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
 
         return leafCertGenerator.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
     }
@@ -2557,7 +2772,7 @@ public class TrustChainValidatorTests
         leafCertGenerator.AddExtension(BcX509Extensions.CrlDistributionPoints, false,
             new CrlDistPoint(new[] { dp }));
         leafCertGenerator.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
 
         return leafCertGenerator.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
     }
@@ -2594,7 +2809,7 @@ public class TrustChainValidatorTests
         leafCertGenerator.AddExtension(BcX509Extensions.CrlDistributionPoints, false,
             new CrlDistPoint(new[] { dp }));
         leafCertGenerator.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
 
         return leafCertGenerator.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
     }
@@ -2631,7 +2846,7 @@ public class TrustChainValidatorTests
         leafCertGenerator.AddExtension(BcX509Extensions.CrlDistributionPoints, false,
             new CrlDistPoint(new[] { dp }));
         leafCertGenerator.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
 
         return leafCertGenerator.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
     }
@@ -2653,7 +2868,7 @@ public class TrustChainValidatorTests
         leafCertGenerator.SetNotAfter(DateTime.UtcNow.AddYears(1));
         leafCertGenerator.SetPublicKey(leafKeyPair.Public);
         leafCertGenerator.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
 
         return leafCertGenerator.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
     }
@@ -2686,9 +2901,9 @@ public class TrustChainValidatorTests
         intCertGen.SetPublicKey(intKeyPair.Public);
         intCertGen.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         intCertGen.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(intKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(intKeyPair.Public)));
         intCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
         var bcIntCert = intCertGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
 
         var leafKeyPairGen = new RsaKeyPairGenerator();
@@ -2703,7 +2918,7 @@ public class TrustChainValidatorTests
         leafCertGen.SetNotAfter(DateTime.UtcNow.AddYears(1));
         leafCertGen.SetPublicKey(leafKeyPair.Public);
         leafCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcIntCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcIntCert.GetPublicKey())));
         if (aiaUrl != null)
         {
             leafCertGen.AddExtension(BcX509Extensions.AuthorityInfoAccess, false,
@@ -2741,9 +2956,9 @@ public class TrustChainValidatorTests
         intCertGen.SetPublicKey(intKeyPair.Public);
         intCertGen.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         intCertGen.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(intKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(intKeyPair.Public)));
         intCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
         var bcIntCert = intCertGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
 
         var leafKeyPairGen = new RsaKeyPairGenerator();
@@ -2758,7 +2973,7 @@ public class TrustChainValidatorTests
         leafCertGen.SetNotAfter(DateTime.UtcNow.AddYears(1));
         leafCertGen.SetPublicKey(leafKeyPair.Public);
         leafCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcIntCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcIntCert.GetPublicKey())));
         leafCertGen.AddExtension(BcX509Extensions.AuthorityInfoAccess, false,
             new AuthorityInformationAccess(AccessDescription.IdADCAIssuers,
                 new GeneralName(GeneralName.UniformResourceIdentifier, aiaUrl)));
@@ -2801,9 +3016,9 @@ public class TrustChainValidatorTests
         intCertGen.SetPublicKey(intKeyPair.Public);
         intCertGen.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         intCertGen.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(intKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(intKeyPair.Public)));
         intCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
         var bcIntCert = intCertGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
 
         var leafKeyPairGen = new RsaKeyPairGenerator();
@@ -2818,7 +3033,7 @@ public class TrustChainValidatorTests
         leafCertGen.SetNotAfter(DateTime.UtcNow.AddYears(1));
         leafCertGen.SetPublicKey(leafKeyPair.Public);
         leafCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcIntCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcIntCert.GetPublicKey())));
         // Two AIA entries: OCSP (skipped) + caIssuers (used)
         var aiaEntries = new[]
         {
@@ -2861,9 +3076,9 @@ public class TrustChainValidatorTests
         intCertGen.SetPublicKey(intKeyPair.Public);
         intCertGen.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         intCertGen.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(intKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(intKeyPair.Public)));
         intCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
         var bcIntCert = intCertGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
 
         var leafKeyPairGen = new RsaKeyPairGenerator();
@@ -2878,7 +3093,7 @@ public class TrustChainValidatorTests
         leafCertGen.SetNotAfter(DateTime.UtcNow.AddYears(1));
         leafCertGen.SetPublicKey(leafKeyPair.Public);
         leafCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcIntCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcIntCert.GetPublicKey())));
         // Two AIA entries: DirectoryName (skipped) + valid URI
         var aiaEntries = new[]
         {
@@ -2921,9 +3136,9 @@ public class TrustChainValidatorTests
         intCertGen.SetPublicKey(intKeyPair.Public);
         intCertGen.AddExtension(BcX509Extensions.BasicConstraints, true, new BasicConstraints(true));
         intCertGen.AddExtension(BcX509Extensions.SubjectKeyIdentifier, false,
-            new SubjectKeyIdentifierStructure(intKeyPair.Public));
+            X509ExtensionUtilities.CreateSubjectKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(intKeyPair.Public)));
         intCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcRootCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcRootCert.GetPublicKey())));
         var bcIntCert = intCertGen.Generate(new Asn1SignatureFactory("SHA256WithRSA", caKeyPair.Private));
 
         var leafKeyPairGen = new RsaKeyPairGenerator();
@@ -2938,7 +3153,7 @@ public class TrustChainValidatorTests
         leafCertGen.SetNotAfter(DateTime.UtcNow.AddYears(1));
         leafCertGen.SetPublicKey(leafKeyPair.Public);
         leafCertGen.AddExtension(BcX509Extensions.AuthorityKeyIdentifier, false,
-            new AuthorityKeyIdentifierStructure(bcIntCert));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bcIntCert.GetPublicKey())));
         // Two AIA entries: empty URL (skipped) + valid URL
         var aiaEntries = new[]
         {

@@ -31,24 +31,4 @@ public static class AuthTokenResponseMapper
 
         return Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse.Failed(new Exception("Unknown"));
     }
-
-    /// <summary>
-    /// Maps a <see cref="Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse"/> to a <see cref="OAuthTokenResponse"/>.
-    /// </summary>
-    /// <param name="response">The OAuthTokenResponse.</param>
-    /// <returns></returns>
-    public static OAuthTokenResponse ToClientAuthTokenResponse(this Microsoft.AspNetCore.Authentication.OAuth.OAuthTokenResponse response)
-    {
-        if (response.Error != null)
-        {
-            return OAuthTokenResponse.Failed(response.Error);
-        }
-
-        if (response.Response != null)
-        {
-            return OAuthTokenResponse.Success(response.Response);
-        }
-
-        return OAuthTokenResponse.Failed(new Exception("Unknown"));
-    }
 }

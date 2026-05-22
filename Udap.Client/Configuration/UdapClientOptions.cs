@@ -9,7 +9,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using Udap.Client.Client;
 using Udap.Model;
 
 namespace Udap.Client.Configuration;
@@ -74,6 +73,9 @@ public class UdapClientOptions
     [JsonPropertyName("Headers")]
     public Dictionary<string, string>? Headers { get; set; }
 
+    /// <summary>
+    /// Gets or sets the logo URI sent in the Tiered OAuth dynamic client registration request.
+    /// </summary>
     [JsonPropertyName("TieredOAuthClientLogo")]
     public string TieredOAuthClientLogo { get; set; }
 

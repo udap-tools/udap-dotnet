@@ -169,7 +169,14 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         set
         {
             _expiration = value;
-            this[UdapConstants.RegistrationDocumentValues.Expiration] = value;
+            if (value.HasValue)
+            {
+                this[UdapConstants.RegistrationDocumentValues.Expiration] = value.Value;
+            }
+            else
+            {
+                this.Remove(UdapConstants.RegistrationDocumentValues.Expiration);
+            }
         }
     }
 
@@ -188,7 +195,14 @@ public class UdapDynamicClientRegistrationDocument : Dictionary<string, object>,
         set
         {
             _issuedAt = value;
-            this[UdapConstants.RegistrationDocumentValues.IssuedAt] = value;
+            if (value.HasValue)
+            {
+                this[UdapConstants.RegistrationDocumentValues.IssuedAt] = value.Value;
+            }
+            else
+            {
+                this.Remove(UdapConstants.RegistrationDocumentValues.IssuedAt);
+            }
         }
     }
 

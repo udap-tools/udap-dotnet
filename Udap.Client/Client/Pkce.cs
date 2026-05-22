@@ -11,15 +11,16 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Udap.Client.Client;
+namespace Udap.Client;
 
+/// <summary>
+/// Represents a Proof Key for Code Exchange (PKCE) pair as defined in RFC 7636, used in the UDAP authorization code flow.
+/// </summary>
+/// <seealso href="https://datatracker.ietf.org/doc/html/rfc7636"/>
 public record Pkce
 {
     /// <summary>
-    /// PKCE generated and used in the authorization code flow.
-    /// <a href="https://datatracker.ietf.org/doc/html/rfc7636"/>
-    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/b2b.html#obtaining-an-authorization-code"/> 
-    /// <a href="https://build.fhir.org/ig/HL7/fhir-udap-security-ig/consumer.html#obtaining-an-authorization-code"/>
+    /// Initializes a new <see cref="Pkce"/> instance, generating a cryptographically random code verifier and its S256 challenge.
     /// </summary>
     public Pkce()
     {
@@ -44,6 +45,13 @@ public record Pkce
     }
 
 
+    /// <summary>
+    /// Gets the high-entropy cryptographic random string used as the PKCE code verifier.
+    /// </summary>
     public string CodeVerifier { get; }
+
+    /// <summary>
+    /// Gets the Base64url-encoded SHA-256 hash of the <see cref="CodeVerifier"/>, sent as the code challenge in the authorization request.
+    /// </summary>
     public string CodeChallenge { get; }
 }

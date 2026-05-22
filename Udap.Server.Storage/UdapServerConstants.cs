@@ -15,6 +15,7 @@ public static class UdapServerConstants
     {
         public const string UDAP_SAN_URI_ISS_NAME = "UDAP_SAN_URI_ISS_NAME";
         public const string UDAP_COMMUNITY = "UDAP_COMMUNITY";
+        public const string UDAP_X509_CERTIFICATE = "X509CertificateBase64";
     }
 
     public static class ClientPropertyConstants

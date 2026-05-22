@@ -20,7 +20,11 @@ public class ModelTests
     [Fact]
     public void SimpleAnchorTest()
     {
+#if NET9_0_OR_GREATER
+        var certificate = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+#else
         var certificate = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
+#endif
 
         var anchor = new Anchor(certificate, "community1");
 
@@ -47,14 +51,22 @@ public class ModelTests
     [Fact]
     public void IntermediateTest()
     {
+#if NET9_0_OR_GREATER
+        var intermediateCertificate = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#else
         var intermediateCertificate = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#endif
 
         var intermediate = new Intermediate(intermediateCertificate);
 
         Assert.True(intermediate.Equals(intermediate));
         Assert.True(intermediate.Equals(intermediate as object));
 
+#if NET9_0_OR_GREATER
+        var secondAnchor = new Anchor(X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer"));
+#else
         var secondAnchor = new Anchor(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
+#endif
         Assert.False(intermediate.Equals(secondAnchor));
 
         Assert.False(intermediate.Equals(new object()));
@@ -68,19 +80,31 @@ public class ModelTests
 
         Assert.Contains("| Name CN=SureFhir-Intermediate, OU=Intermediate, O=Fhir Coding, L=Portland, S=Oregon, C=US", intermediate.ToString());
 
+#if NET9_0_OR_GREATER
+        var anchorCertificate = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+#else
         var anchorCertificate = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
+#endif
         intermediate.Anchor = new Anchor(anchorCertificate);
         Assert.Equal(0, intermediate.AnchorId);
         Assert.False(string.IsNullOrWhiteSpace(intermediate.Anchor.Thumbprint));
 
+#if NET9_0_OR_GREATER
+        var secondIntermediate = new Intermediate(X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer"));
+#else
         var secondIntermediate = new Intermediate(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer"));
+#endif
         Assert.NotEqual(secondIntermediate.GetHashCode(), intermediate.GetHashCode());
     }
 
     [Fact]
     public void IssuedCertificateTest()
     {
+#if NET9_0_OR_GREATER
+        var issuedCertificate = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var issuedCertificate = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
         var issued = new IssuedCertificate(issuedCertificate);
 
         Assert.True(issued.Equals(issued));
@@ -96,6 +120,12 @@ public class ModelTests
         Assert.NotEqual(secondIssued.GetHashCode(), issued!.GetHashCode());
     }
 
+    [Fact]
+    public void IssuedCertificate_DefaultConstructor()
+    {
+        var issued = new IssuedCertificate();
+        Assert.NotNull(issued);
+    }
 
     [Fact]
     public void Anchor_DefaultConstructor_CanSetProperties()
@@ -159,8 +189,13 @@ public class ModelTests
             Default = true,
             Anchors = new List<Anchor>()
         };
+#if NET9_0_OR_GREATER
+        community.Anchors.Add(new Anchor(X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer")));
+        community.Anchors.Add(new Anchor(X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer")));
+#else
         community.Anchors.Add(new Anchor(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer")));
         community.Anchors.Add(new Anchor(new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer")));
+#endif
         community.Certifications = new List<Certification>();
         community.Certifications.Add(new Certification());
         community.Certifications.Add(new Certification());

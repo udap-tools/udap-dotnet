@@ -8,7 +8,7 @@
 // */
 #endregion
 
-using FluentAssertions;
+using Shouldly;
 using Sigil.Common.Services.Signing;
 
 namespace Sigil.Signing.Tests;
@@ -21,7 +21,7 @@ public class SigningKeyReferenceTests
         var ref1 = new SigningKeyReference("vault-transit", "key-1", "RSA", 4096);
         var ref2 = new SigningKeyReference("vault-transit", "key-1", "RSA", 4096);
 
-        ref1.Should().Be(ref2);
+        ref1.ShouldBe(ref2);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public class SigningKeyReferenceTests
         var ref1 = new SigningKeyReference("vault-transit", "key-1", "RSA", 4096);
         var ref2 = new SigningKeyReference("gcp-kms", "key-1", "RSA", 4096);
 
-        ref1.Should().NotBe(ref2);
+        ref1.ShouldNotBe(ref2);
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class SigningKeyReferenceTests
         var ref1 = new SigningKeyReference("local", "aaa", "RSA", 2048);
         var ref2 = new SigningKeyReference("local", "bbb", "RSA", 2048);
 
-        ref1.Should().NotBe(ref2);
+        ref1.ShouldNotBe(ref2);
     }
 
     [Fact]
@@ -49,9 +49,9 @@ public class SigningKeyReferenceTests
 
         var (provider, keyId, algorithm, size) = keyRef;
 
-        provider.Should().Be("gcp-kms");
-        keyId.Should().Be("sigil-abc123");
-        algorithm.Should().Be("ECDSA");
-        size.Should().Be(384);
+        provider.ShouldBe("gcp-kms");
+        keyId.ShouldBe("sigil-abc123");
+        algorithm.ShouldBe("ECDSA");
+        size.ShouldBe(384);
     }
 }

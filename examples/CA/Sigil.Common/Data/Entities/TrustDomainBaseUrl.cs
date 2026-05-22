@@ -10,11 +10,11 @@
 
 namespace Sigil.Common.Data.Entities;
 
-public class CommunityBaseUrl
+public class TrustDomainBaseUrl
 {
     public int Id { get; set; }
-    public int CommunityId { get; set; }
-    public Community Community { get; set; } = null!;
+    public int TrustDomainId { get; set; }
+    public TrustDomain TrustDomain { get; set; } = null!;
     public string Url { get; set; } = string.Empty;
     public int SortOrder { get; set; }
 

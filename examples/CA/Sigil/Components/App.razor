@@ -26,6 +26,24 @@
             return navigator.clipboard.writeText(text).then(function() { return true; }, function() { return false; });
         };
 
+        // Tree right-click → call back into Blazor to open the FluentMenu at the cursor.
+        // Done in JS because Blazor's contextmenu directive on FluentTreeItem (a web component
+        // with shadow DOM) doesn't fire reliably from inside the shadow content.
+        window.sigilInitTreeContextMenu = function(dotnetRef) {
+            window.sigilTreeMenuRef = dotnetRef;
+        };
+        document.addEventListener('contextmenu', function(e) {
+            var item = e.target && e.target.closest && e.target.closest('fluent-tree-item');
+            if (!item) return;
+            e.preventDefault();
+            var ref = window.sigilTreeMenuRef;
+            if (ref && item.id) {
+                try {
+                    ref.invokeMethodAsync('OnTreeContextMenuAsync', item.id, e.clientX, e.clientY);
+                } catch (err) { /* page navigated away; ref is stale */ }
+            }
+        });
+
         window.sigilFolderUpload = function(inputId) {
             var input = document.getElementById(inputId);
             if (input) {
@@ -71,6 +89,40 @@
             }
         };
 
+        window.sigilDialogResize = (function() {
+            document.addEventListener('mousedown', function(e) {
+                var handle = e.target.closest('.sigil-resize-handle');
+                if (!handle) return;
+                e.preventDefault();
+                var dialog = handle.closest('fluent-dialog');
+                if (!dialog) return;
+                var control = dialog.shadowRoot && dialog.shadowRoot.querySelector('[part="control"]');
+                var target = control || dialog;
+                var rect = target.getBoundingClientRect();
+                var centerX = rect.left + rect.width / 2;
+                // Capture the dialog's declared min-width once and honor it during resize.
+                // (After the first resize we overwrite style.minWidth, so we cache it.)
+                var floorW = parseInt(dialog.getAttribute('data-sigil-min-width'));
+                if (!floorW) {
+                    floorW = parseInt(dialog.style.minWidth)
+                          || parseInt(getComputedStyle(dialog).minWidth)
+                          || 500;
+                    dialog.setAttribute('data-sigil-min-width', floorW);
+                }
+                function onMove(ev) {
+                    var newW = Math.max(floorW, 2 * (ev.clientX - centerX));
+                    dialog.style.setProperty('--dialog-width', newW + 'px');
+                    dialog.style.minWidth = newW + 'px';
+                }
+                function onUp() {
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup', onUp);
+                }
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup', onUp);
+            });
+        })();
+
         window.sigilColResize = function(table) {
             if (!table) return;
             var cols = table.querySelectorAll('col');
@@ -92,6 +144,90 @@
                     document.addEventListener('mouseup', onUp);
                 });
             });
+        };
+
+        window.sigilInitDragDrop = function(dotnetHelper, dragItems, dropTargets) {
+            // Clean up any previous drag state
+            document.querySelectorAll('[draggable="true"]').forEach(function(el) {
+                el.removeAttribute('draggable');
+            });
+
+            dragItems.forEach(function(item) {
+                var el = document.getElementById('tree-' + item.thumbprint);
+                if (!el) return;
+                el.setAttribute('draggable', 'true');
+                el.style.cursor = 'grab';
+                el.dataset.dragCertId = item.id;
+                el.dataset.dragEntity = item.entityType;
+            });
+
+            dropTargets.forEach(function(target) {
+                var el = document.getElementById('tree-' + target.thumbprint);
+                if (!el) return;
+                el.dataset.dropCaId = target.id;
+                el.dataset.dropCaName = target.name;
+            });
+
+            // Event delegation on the document (handles shadow DOM tree items)
+            if (window._sigilDragCleanup) window._sigilDragCleanup();
+
+            function onDragStart(e) {
+                var src = e.target.closest('[data-drag-cert-id]');
+                if (!src) return;
+                e.dataTransfer.setData('text/plain', src.dataset.dragCertId + '|' + src.dataset.dragEntity);
+                e.dataTransfer.effectAllowed = 'move';
+                src.classList.add('sigil-dragging');
+                // Highlight all drop targets
+                document.querySelectorAll('[data-drop-ca-id]').forEach(function(t) {
+                    t.classList.add('sigil-drop-target');
+                });
+            }
+            function onDragOver(e) {
+                var tgt = e.target.closest('[data-drop-ca-id]');
+                if (!tgt) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                tgt.classList.add('sigil-drag-over');
+            }
+            function onDragLeave(e) {
+                var tgt = e.target.closest('[data-drop-ca-id]');
+                if (!tgt) return;
+                tgt.classList.remove('sigil-drag-over');
+            }
+            function onDrop(e) {
+                var tgt = e.target.closest('[data-drop-ca-id]');
+                if (!tgt) return;
+                e.preventDefault();
+                var data = e.dataTransfer.getData('text/plain').split('|');
+                var certId = parseInt(data[0]);
+                var entityType = data[1];
+                var caId = parseInt(tgt.dataset.dropCaId);
+                var caName = tgt.dataset.dropCaName;
+                cleanup();
+                dotnetHelper.invokeMethodAsync('OnDragDropRenew', certId, entityType, caId, caName);
+            }
+            function onDragEnd() {
+                cleanup();
+            }
+            function cleanup() {
+                document.querySelectorAll('.sigil-dragging').forEach(function(el) { el.classList.remove('sigil-dragging'); });
+                document.querySelectorAll('.sigil-drop-target').forEach(function(el) { el.classList.remove('sigil-drop-target'); });
+                document.querySelectorAll('.sigil-drag-over').forEach(function(el) { el.classList.remove('sigil-drag-over'); });
+            }
+
+            document.addEventListener('dragstart', onDragStart);
+            document.addEventListener('dragover', onDragOver);
+            document.addEventListener('dragleave', onDragLeave);
+            document.addEventListener('drop', onDrop);
+            document.addEventListener('dragend', onDragEnd);
+
+            window._sigilDragCleanup = function() {
+                document.removeEventListener('dragstart', onDragStart);
+                document.removeEventListener('dragover', onDragOver);
+                document.removeEventListener('dragleave', onDragLeave);
+                document.removeEventListener('drop', onDrop);
+                document.removeEventListener('dragend', onDragEnd);
+            };
         };
     </script>
 </body>

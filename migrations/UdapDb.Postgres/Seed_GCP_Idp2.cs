@@ -98,7 +98,7 @@ public static class Seed_GCP_Idp2
         //
         // Anchor surefhirlabs_community
         //
-        var sureFhirLabsAnchor = new X509Certificate2(
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "surefhirlabs_community/SureFhirLabs_CA.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://fhirlabs.net/"))
@@ -121,7 +121,7 @@ public static class Seed_GCP_Idp2
             await udapContext.SaveChangesAsync();
         }
 
-        var intermediateCert = new X509Certificate2(
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath,
                 "surefhirlabs_community/intermediates/SureFhirLabs_Intermediate.cer"));
 
@@ -158,7 +158,7 @@ public static class Seed_GCP_Idp2
         //
         // Anchor localhost_community
         //
-        var anchorLocalhostCert = new X509Certificate2(
+        var anchorLocalhostCert = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community1/caLocalhostCert.cer"));
 
         if ((await clientRegistrationStore.GetAnchors("http://localhost"))
@@ -184,7 +184,7 @@ public static class Seed_GCP_Idp2
             //
             var x509Certificate2Collection = await clientRegistrationStore.GetIntermediateCertificates();
 
-            intermediateCert = new X509Certificate2(
+            intermediateCert = X509CertificateLoader.LoadCertificateFromFile(
                 Path.Combine(assemblyPath!, certStoreBasePath, "localhost_fhirlabs_community1/intermediates/intermediateLocalhostCert.cer"));
 
             if (x509Certificate2Collection != null && x509Certificate2Collection.ToList()

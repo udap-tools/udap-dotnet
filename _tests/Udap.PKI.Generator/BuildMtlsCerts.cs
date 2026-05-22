@@ -97,7 +97,7 @@ public class BuildMtlsCerts : CertificateBase
         char[] caPem = PemEncoding.Write("CERTIFICATE", caCert.RawData);
         File.WriteAllBytes($"{SureFhirmTLSCertStore}/SureFhirmTLS_CA.cer",
             caPem.Select(c => (byte)c).ToArray());
-        UpdateWindowsMachineStore(caCert);
+        // UpdateWindowsMachineStore(caCert);
 
         var pemCert = File.ReadAllText($"{SureFhirmTLSCertStore}/SureFhirmTLS_CA.cer");
         File.WriteAllText($"{SureFhirmTLSCertStore}/SureFhirmTLS_CA_SingleLine.cer",
@@ -151,7 +151,7 @@ public class BuildMtlsCerts : CertificateBase
         File.WriteAllBytes(
             $"{SureFhirmTLSIntermediates}/SureFhirmTLS_Intermediate.cer",
             intermediatePem.Select(c => (byte)c).ToArray());
-        UpdateWindowsMachineStore(intermediateCertWithoutKey);
+        // UpdateWindowsMachineStore(intermediateCertWithoutKey);
 
         var intermediateCert = File.ReadAllText($"{SureFhirmTLSIntermediates}/SureFhirmTLS_Intermediate.cer");
         File.WriteAllText($"{SureFhirmTLSIntermediates}/SureFhirmTLS_Intermediate_SingleLine.cer",
@@ -201,7 +201,7 @@ public class BuildMtlsCerts : CertificateBase
 
         crlIntermediateGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
             false,
-            new AuthorityKeyIdentifierStructure(bouncyCaCert.GetPublicKey()));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bouncyCaCert.GetPublicKey())));
 
         var nextsureFhirIntermediateCrlNum = GetNextCrlNumber(sureFhirIntermediateCrlFilename);
 
@@ -236,7 +236,7 @@ public class BuildMtlsCerts : CertificateBase
 
         crlGen.AddExtension(X509Extensions.AuthorityKeyIdentifier,
             false,
-            new AuthorityKeyIdentifierStructure(bouncyIntermediateCert.GetPublicKey()));
+            X509ExtensionUtilities.CreateAuthorityKeyIdentifier(SubjectPublicKeyInfoFactory.CreateSubjectPublicKeyInfo(bouncyIntermediateCert.GetPublicKey())));
 
         var nextSureFhirClientCrlNum = GetNextCrlNumber(sureFhirClientCrlFilename);
 
@@ -352,8 +352,13 @@ public class BuildMtlsCerts : CertificateBase
 
         var certPackage = new X509Certificate2Collection();
         certPackage!.Add(clientCertWithKey);
+#if NET9_0_OR_GREATER
+        certPackage.Add(X509CertificateLoader.LoadCertificate(intermediateCert.Export(X509ContentType.Cert)));
+        certPackage.Add(X509CertificateLoader.LoadCertificate(caCert.Export(X509ContentType.Cert)));
+#else
         certPackage.Add(new X509Certificate2(intermediateCert.Export(X509ContentType.Cert)));
         certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
+#endif
 
         var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
         File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes!);
@@ -459,8 +464,13 @@ public class BuildMtlsCerts : CertificateBase
 
         var certPackage = new X509Certificate2Collection();
         certPackage!.Add(clientCertWithKey);
+#if NET9_0_OR_GREATER
+        certPackage.Add(X509CertificateLoader.LoadCertificate(intermediateCert.Export(X509ContentType.Cert)));
+        certPackage.Add(X509CertificateLoader.LoadCertificate(caCert.Export(X509ContentType.Cert)));
+#else
         certPackage.Add(new X509Certificate2(intermediateCert.Export(X509ContentType.Cert)));
         certPackage.Add(new X509Certificate2(caCert.Export(X509ContentType.Cert)));
+#endif
 
         var clientBytes = certPackage.Export(X509ContentType.Pkcs12, "udap-test");
         File.WriteAllBytes($"{clientCertFilePath}.pfx", clientBytes!);

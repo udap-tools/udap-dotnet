@@ -55,7 +55,7 @@ else
         }
     </FluentCard>
 
-    @* --- CRL Status grouped by Community --- *@
+    @* --- CRL Status grouped by TrustDomain --- *@
     <FluentLabel Typo="Typography.Subject" Style="margin-top: 1rem;">CRL Auto-Renewal Status</FluentLabel>
 
     @if (crlStatuses.Count == 0)
@@ -66,7 +66,7 @@ else
     }
     else
     {
-        @foreach (var group in crlStatusesByCommunity)
+        @foreach (var group in crlStatusesByTrustDomain)
         {
             <FluentCard Style="margin-top: 0.5rem;">
                 <FluentLabel Typo="Typography.Body" Weight="FontWeight.Bold">@group.Key</FluentLabel>

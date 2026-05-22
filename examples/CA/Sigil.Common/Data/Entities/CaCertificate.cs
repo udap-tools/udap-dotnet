@@ -21,8 +21,8 @@ public class CaCertificate
 {
     public int Id { get; set; }
 
-    public int CommunityId { get; set; }
-    public Community Community { get; set; } = null!;
+    public int TrustDomainId { get; set; }
+    public TrustDomain TrustDomain { get; set; } = null!;
 
     /// <summary>
     /// Null for root CAs; set for intermediates pointing to their issuing CA.

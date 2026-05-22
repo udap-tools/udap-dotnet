@@ -225,5 +225,6 @@ examples/clients/UdapEd/Client/wwwroot/temp/MudBlazor.min.css
 /examples/Udap.Proxy.Server/CertStore/issued/fhirLabsApiClientLocalhostCert.pfx
 /examples/Udap.Proxy.Server/CertStore/issued/gfhirlabs.healthcare.client.pfx
 /coverage-results
-/.claude
+# Ignore .claude directories (Claude Code per-project settings) anywhere in the tree
+.claude/
 docs/specifications/SSRAA/V2.0.0/ssraa_full-ig_v2.0.0.zip

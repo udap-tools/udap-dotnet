@@ -111,8 +111,13 @@ public static class SeedData
         //
         if (!clientRegistrationStore.GetAnchors("http://localhost").Result.Any())
         {
+#if NET9_0_OR_GREATER
+            var anchorLocalhostCert = X509CertificateLoader.LoadCertificateFromFile(
+                Path.Combine(assemblyPath!, "CertStore/anchors/caWeatherApiLocalhostCert.cer"));
+#else
             var anchorLocalhostCert = new X509Certificate2(
                 Path.Combine(assemblyPath!, "CertStore/anchors/caWeatherApiLocalhostCert.cer"));
+#endif
 
             var community = udapContext.Communities.Single(c => c.Name == "http://localhost");
 
@@ -135,8 +140,13 @@ public static class SeedData
             var x509Certificate2Collection = clientRegistrationStore.GetIntermediateCertificates().Result;
             if (x509Certificate2Collection != null && !x509Certificate2Collection.Any())
             { 
+#if NET9_0_OR_GREATER
+                var rootCert = X509CertificateLoader.LoadCertificateFromFile(
+                    Path.Combine(assemblyPath!, "CertStore/intermediates/intermediateWeatherApiLocalhostCert.cer"));
+#else
                 var rootCert = new X509Certificate2(
                     Path.Combine(assemblyPath!, "CertStore/intermediates/intermediateWeatherApiLocalhostCert.cer"));
+#endif
 
                 udapContext.IntermediateCertificates.Add(new Intermediate
                 {
@@ -161,8 +171,13 @@ public static class SeedData
         //
         if (!clientRegistrationStore.GetAnchors("udap://fhirlabs.net").Result.Any())
         {
+#if NET9_0_OR_GREATER
+            var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile(
+                Path.Combine(assemblyPath!, "CertStore/anchors/SureFhirLabs_CA.cer"));
+#else
             var sureFhirLabsAnchor = new X509Certificate2(
                 Path.Combine(assemblyPath!, "CertStore/anchors/SureFhirLabs_CA.cer"));
+#endif
 
             var community = udapContext.Communities.Single(c => c.Name == "udap://fhirlabs.net");
 
@@ -186,8 +201,13 @@ public static class SeedData
             var x509Certificate2Collection = clientRegistrationStore.GetIntermediateCertificates().Result;
             if (x509Certificate2Collection != null && !x509Certificate2Collection.Any())
             {
+#if NET9_0_OR_GREATER
+                var rootCert = X509CertificateLoader.LoadCertificateFromFile(
+                    Path.Combine(assemblyPath!, "CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
+#else
                 var rootCert = new X509Certificate2(
                     Path.Combine(assemblyPath!, "CertStore/intermediates/SureFhirLabs_Intermediate.cer"));
+#endif
 
                 udapContext.IntermediateCertificates.Add(new Intermediate
                 {

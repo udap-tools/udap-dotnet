@@ -24,7 +24,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Client.Configuration;
 using Udap.Common.Models;
 using Udap.Model;
@@ -51,8 +51,13 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
     public RegisterNonPKCERequired_UsePKCE_Tests(ITestOutputHelper testOutputHelper)
     {
         _testOutputHelper = testOutputHelper;
+#if NET9_0_OR_GREATER
+        var sureFhirLabsAnchor = X509CertificateLoader.LoadCertificateFromFile("CertStore/anchors/SureFhirLabs_CA.cer");
+        var intermediateCert = X509CertificateLoader.LoadCertificateFromFile("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#else
         var sureFhirLabsAnchor = new X509Certificate2("CertStore/anchors/SureFhirLabs_CA.cer");
         var intermediateCert = new X509Certificate2("CertStore/intermediates/SureFhirLabs_Intermediate.cer");
+#endif
 
         _mockPipeline.OnPostConfigureServices += s =>
         {
@@ -140,7 +145,11 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
     [Fact]
     public async Task AuthorizeWithPKCSE_accepted()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -258,7 +267,11 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
     [Fact]
     public async Task AuthorizeWithPKCSE_Invalid_code_verifier()
     {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
         var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
 
         var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
             .Create(clientCert)
@@ -353,10 +366,10 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
         Assert.Equal("invalid_grant", tokenResponse.Error);
 
         //
-        // a second valid code_verifier should just fail for invalid_client
+        // a second valid code_verifier should just fail for invalid_grant
         // because it was already attempted and the session was tossed out.
         //
-        
+
         tokenRequest.CodeVerifier = pkce.CodeVerifier;
         tokenResponse = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
         Assert.True(tokenResponse.IsError);
@@ -365,6 +378,6 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
         Assert.Null(tokenResponse.IdentityToken);
         Assert.Null(tokenResponse.AccessToken);
 
-        Assert.Equal("invalid_client", tokenResponse.Error);
+        Assert.Equal("invalid_grant", tokenResponse.Error);
     }
 }

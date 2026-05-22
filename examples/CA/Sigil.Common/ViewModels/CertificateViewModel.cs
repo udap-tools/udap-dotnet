@@ -52,5 +52,6 @@ public enum CertificateStatus
     Expiring,
     Expired,
     Revoked,
-    Untrusted
+    Untrusted,
+    Stale
 }

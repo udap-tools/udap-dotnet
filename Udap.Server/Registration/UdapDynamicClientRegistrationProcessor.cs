@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Security.Cryptography.X509Certificates;
 using Duende.IdentityModel;
 using Duende.IdentityServer.Models;
 using Microsoft.Extensions.Logging;
@@ -85,6 +86,16 @@ public class UdapDynamicClientRegistrationProcessor : IUdapDynamicClientRegistra
                 Expiration = context.CertificateExpiration ?? DateTime.UtcNow,
                 Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY,
                 Value = context.CommunityId.Value.ToString()
+            });
+        }
+
+        if (context.ClientCertificate != null)
+        {
+            clientSecrets.Add(new Secret
+            {
+                Type = UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE,
+                Value = Convert.ToBase64String(context.ClientCertificate.Export(X509ContentType.Cert)),
+                Expiration = context.CertificateExpiration
             });
         }
 

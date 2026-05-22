@@ -70,6 +70,10 @@ public static class ClientExtensions
             return null;
         }
 
+#if NET9_0_OR_GREATER
+        return X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5cArray.First()));
+#else
         return new X509Certificate2(Convert.FromBase64String(x5cArray.First()));
+#endif
     }
 }

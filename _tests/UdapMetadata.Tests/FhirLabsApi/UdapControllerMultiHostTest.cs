@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
-using Udap.Client.Client;
+using Udap.Client;
 using Udap.Client.Configuration;
 using Udap.Common;
 using Udap.Common.Certificates;
@@ -102,7 +102,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
 
             Assert.False(disco.IsError,
                 $"Segment '{segment}': {disco.Error} | {disco.ErrorType} | {string.Join("; ", _diagnosticsValidator.ActualErrorMessages)}");
-            Assert.NotNull(udapClient.UdapServerMetaData);
+            Assert.NotNull(udapClient.UdapServerMetadata);
             Assert.False(_diagnosticsValidator.ProblemCalled,
                 $"Segment '{segment}': chain problem: {string.Join("; ", _diagnosticsValidator.ActualErrorMessages)}");
             Assert.False(_diagnosticsValidator.UntrustedCalled,
@@ -121,7 +121,11 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
 
             // Verify signing cert SAN matches the base URL
             var x5cArray = jwt.Header["x5c"] as List<object>;
+#if NET9_0_OR_GREATER
+            var cert = X509CertificateLoader.LoadCertificate(Convert.FromBase64String(x5cArray!.First().ToString()!));
+#else
             var cert = new X509Certificate2(Convert.FromBase64String(x5cArray!.First().ToString()!));
+#endif
             var subjectAltName = cert.GetNameInfo(X509NameType.UrlName, false);
             Assert.Equal(baseUrl, subjectAltName);
 

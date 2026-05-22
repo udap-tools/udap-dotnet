@@ -92,7 +92,7 @@ public static class Seed_GCP_Idp1
         //
         // Anchor for Trust Community udap://stage.healthtogo.me/
         //
-        var emrDirectTestCA = new X509Certificate2(
+        var emrDirectTestCA = X509CertificateLoader.LoadCertificateFromFile(
             Path.Combine(assemblyPath!, certStoreBasePath, "EmrDirect/EMRDirectTestCA.crt"));
 
         if ((await clientRegistrationStore.GetAnchors("udap://stage.healthtogo.me/"))

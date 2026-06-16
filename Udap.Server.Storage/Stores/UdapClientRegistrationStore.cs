@@ -164,7 +164,16 @@ namespace Udap.Server.Storage.Stores
             var entity = await _dbContext.TieredClients
                 .SingleOrDefaultAsync(t => t.ClientId == clientId, token);
 
-            return entity.ToModel();
+            // ToModel() returns a non-null empty object for a null entity, so map only when found.
+            return entity?.ToModel();
+        }
+
+        public async Task<TieredClient?> FindTieredClientByIdPBaseUrl(string idpBaseUrl, CancellationToken token = default)
+        {
+            var entity = await _dbContext.TieredClients
+                .SingleOrDefaultAsync(t => t.IdPBaseUrl == idpBaseUrl, token);
+
+            return entity?.ToModel();
         }
 
         public async Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)

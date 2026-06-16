@@ -526,7 +526,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         // if not registered with IdP, then register.
         //
 
-        var idpClient = await _udapClientRegistrationStore.FindTieredClientById(idp, Context.RequestAborted);
+        var idpClient = await _udapClientRegistrationStore.FindTieredClientByIdPBaseUrl(idp, Context.RequestAborted);
 
         var idpClientId = null as string;
 

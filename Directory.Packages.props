@@ -7,7 +7,7 @@
   <ItemGroup>
     <!-- https://learn.microsoft.com/en-us/nuget/concepts/package-versioning#version-ranges -->
     <PackageVersion Include="BouncyCastle.Cryptography" Version="2.6.2" />
-    <PackageVersion Include="Duende.IdentityServer.Storage" Version="7.4.7" />
+    <PackageVersion Include="Duende.IdentityServer.Storage" Version="8.0.2" />
     <PackageVersion Include="Google.Apis.Auth" Version="1.73.0" />
     <PackageVersion Include="Google.Cloud.Storage.Control.V2" Version="1.7.0" />
     <PackageVersion Include="Google.Cloud.Storage.V1" Version="4.14.0" />
@@ -23,9 +23,9 @@
     <PackageVersion Include="MSTest.TestAdapter" Version="4.1.0" />
     <PackageVersion Include="MSTest.TestFramework" Version="4.1.0" />
     <PackageVersion Include="Duende.IdentityModel" Version="8.1.0" />
-    <PackageVersion Include="Duende.IdentityServer" Version="7.4.7" />
-    <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="7.4.7" />
-    <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.4.7" />
+    <PackageVersion Include="Duende.IdentityServer" Version="8.0.2" />
+    <PackageVersion Include="Duende.IdentityServer.AspNetIdentity" Version="8.0.2" />
+    <PackageVersion Include="Duende.IdentityServer.EntityFramework.Storage" Version="8.0.2" />
     <PackageVersion Include="OpenTelemetry" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
@@ -49,7 +49,7 @@
     <PackageVersion Include="Microsoft.SemanticKernel.Connectors.AzureOpenAI" Version="1.74.0" />
     <PackageVersion Include="Terminal.Gui" Version="2.0.0-develop.5203" />
     <!-- Unconditional: Hl7.Fhir 6.x requires Extensions.Caching.Memory 10.x which cascades to require
-         these at >= 10.0.1 for all TFMs. Duende.IdentityServer.Storage 7.4.7 requires
+         these at >= 10.0.1 for all TFMs. Duende.IdentityServer.Storage 8.0.2 requires
          DataProtection.Abstractions >= 10.0.0 for all TFMs. -->
     <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.8" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.8" />

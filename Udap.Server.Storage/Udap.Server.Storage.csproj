@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-		<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+		<TargetFramework>net10.0</TargetFramework>
 	  <ImplicitUsings>enable</ImplicitUsings>
 	  <Nullable>enable</Nullable>
 	  <AssemblyName>Udap.Server.Storage</AssemblyName>
@@ -21,14 +21,11 @@
   </PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="7.4.7" />
-		<PackageReference Include="Duende.IdentityServer.Storage" Version="7.4.7" />
+		<PackageReference Include="Duende.IdentityServer.EntityFramework.Storage" Version="8.0.2" />
+		<PackageReference Include="Duende.IdentityServer.Storage" Version="8.0.2" />
 		<PackageReference Include="Microsoft.Bcl.Memory" Version="10.0.8" />
-		<PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="8.0.27" Condition="'$(TargetFramework)' == 'net8.0'" />
-		<PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="9.0.16" Condition="'$(TargetFramework)' == 'net9.0'" />
-		<PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.8" Condition="'$(TargetFramework)' == 'net10.0'" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.16" Condition="'$(TargetFramework)' != 'net10.0'" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" Condition="'$(TargetFramework)' == 'net10.0'" />
+		<PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.8" />
 		<PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.300">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

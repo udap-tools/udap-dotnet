@@ -482,7 +482,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
             var scopes = document.Scope.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             // todo: ideally scope names get checked against configuration store?
 
-            var resources = await _resourceStore.GetAllEnabledResourcesAsync();
+            var resources = await _resourceStore.GetAllEnabledResourcesAsync(
+                _httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None);
             var expandedScopes = _scopeExpander.Expand(scopes).ToList();
             var explodedScopes = _scopeExpander.WildCardExpand(expandedScopes, resources.ApiScopes.Select(a => a.Name).ToList()).ToList();
             var allowedApiScopes = resources.ApiScopes.Where(s => explodedScopes.Contains(s.Name));
@@ -665,7 +666,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         }
 
-        if (await _replayCache.ExistsAsync(Purpose, jti))
+        if (await _replayCache.ExistsAsync(Purpose, jti,
+                _httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None))
         {
             _logger.LogWarning("jti is found in replay cache. Possible replay attack.");
 
@@ -675,7 +677,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
         else
         {
-            await _replayCache.AddAsync(Purpose, jti, DateTimeOffset.FromUnixTimeSeconds(exp));
+            await _replayCache.AddAsync(Purpose, jti, DateTimeOffset.FromUnixTimeSeconds(exp),
+                _httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None);
         }
 
         return new UdapDynamicClientRegistrationValidationResult(string.Empty);

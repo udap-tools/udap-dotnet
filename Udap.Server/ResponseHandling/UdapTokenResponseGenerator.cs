@@ -26,7 +26,7 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
     /// Initializes a new instance of the <see cref="T:Duende.IdentityServer.ResponseHandling.TokenResponseGenerator" /> class.
     /// </summary>
     /// <param name="profile"></param>
-    /// <param name="clock">The clock.</param>
+    /// <param name="timeProvider">The time provider.</param>
     /// <param name="tokenService">The token service.</param>
     /// <param name="refreshTokenService">The refresh token service.</param>
     /// <param name="scopeParser">The scope parser.</param>
@@ -34,14 +34,14 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
     /// <param name="clients">The clients.</param>
     /// <param name="logger">The logger.</param>
     public UdapTokenResponseGenerator(
-        IProfileService profile, 
-        IClock clock, 
-        ITokenService tokenService, 
-        IRefreshTokenService refreshTokenService, 
-        IScopeParser scopeParser, 
-        IResourceStore resources, 
-        IClientStore clients, 
-        ILogger<TokenResponseGenerator> logger) : base(clock, tokenService, refreshTokenService, scopeParser, resources, clients, logger)
+        IProfileService profile,
+        TimeProvider timeProvider,
+        ITokenService tokenService,
+        IRefreshTokenService refreshTokenService,
+        IScopeParser scopeParser,
+        IResourceStore resources,
+        IClientStore clients,
+        ILogger<TokenResponseGenerator> logger) : base(timeProvider, tokenService, refreshTokenService, scopeParser, resources, clients, logger)
     {
         _profile = profile;
     }
@@ -50,13 +50,14 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
     /// Creates the response for an authorization code request.
     /// </summary>
     /// <param name="request">The request.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns></returns>
     /// <exception cref="System.InvalidOperationException">Client does not exist anymore.</exception>
-    protected override async Task<TokenResponse> ProcessAuthorizationCodeRequestAsync(TokenRequestValidationResult request)
+    protected override async Task<TokenResponse> ProcessAuthorizationCodeRequestAsync(TokenRequestValidationResult request, CancellationToken ct)
     {
         Logger.LogTrace("Creating response for authorization code request");
 
-        var response = await ProcessTokenRequestAsync(request);
+        var response = await ProcessTokenRequestAsync(request, ct);
         
         if (request.ValidatedRequest.AuthorizationCode == null)
         {
@@ -75,9 +76,9 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
                 ValidatedRequest = request.ValidatedRequest
             };
 
-            var idToken = await TokenService.CreateIdentityTokenAsync(tokenRequest);
-            await AugmentClaimsAsync(idToken, request.ValidatedRequest);
-            var jwt = await TokenService.CreateSecurityTokenAsync(idToken);
+            var idToken = await TokenService.CreateIdentityTokenAsync(tokenRequest, ct);
+            await AugmentClaimsAsync(idToken, request.ValidatedRequest, ct);
+            var jwt = await TokenService.CreateSecurityTokenAsync(idToken, ct);
             response.IdentityToken = jwt;
         }
 
@@ -85,7 +86,7 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
     }
 
     //TODO: Configure propagated claims and test with AspNetIdentity persistence.
-    private async Task AugmentClaimsAsync(Token idToken, ValidatedRequest validationResult)
+    private async Task AugmentClaimsAsync(Token idToken, ValidatedRequest validationResult, CancellationToken ct)
     {
         var context = new ProfileDataRequestContext(
             validationResult.Subject!,
@@ -94,7 +95,7 @@ public class UdapTokenResponseGenerator : TokenResponseGenerator
             new List<string>() { UdapConstants.JwtClaimTypes.Hl7Identifier });
         // context.RequestedResources = validatedResources;
 
-        await _profile.GetProfileDataAsync(context);
+        await _profile.GetProfileDataAsync(context, ct);
 
         foreach (var contextIssuedClaim in context.IssuedClaims)
         {

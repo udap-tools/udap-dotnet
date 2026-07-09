@@ -66,7 +66,7 @@ internal class UdapScopeEnrichmentMiddleware
                         return;
                     }
 
-                    var client = await clients.FindClientByIdAsync(clientId);
+                    var client = await clients.FindClientByIdAsync(clientId, context.RequestAborted);
 
                     if (client == null)
                     {

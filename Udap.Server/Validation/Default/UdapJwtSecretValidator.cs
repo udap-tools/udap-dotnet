@@ -70,8 +70,9 @@ public class UdapJwtSecretValidator : ISecretValidator
     /// <summary>Validates a secret</summary>
     /// <param name="secrets">The stored secrets.</param>
     /// <param name="parsedSecret">The received secret.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns>A validation result</returns>
-    public async Task<SecretValidationResult> ValidateAsync(IEnumerable<Secret> secrets, ParsedSecret parsedSecret)
+    public async Task<SecretValidationResult> ValidateAsync(IEnumerable<Secret> secrets, ParsedSecret parsedSecret, CancellationToken ct)
     {
         var fail = new SecretValidationResult { Success = false };
         var success = new SecretValidationResult { Success = true };
@@ -163,7 +164,7 @@ public class UdapJwtSecretValidator : ISecretValidator
             return fail;
         }
 
-        if (await _replayCache.ExistsAsync(Purpose, jti))
+        if (await _replayCache.ExistsAsync(Purpose, jti, ct))
         {
             _logger.LogError("jti is found in replay cache. Possible replay attack.");
             SetErrorDescription("jti is found in replay cache. Possible replay attack");
@@ -171,7 +172,7 @@ public class UdapJwtSecretValidator : ISecretValidator
         }
         else
         {
-            await _replayCache.AddAsync(Purpose, jti, exp.AddMinutes(5));
+            await _replayCache.AddAsync(Purpose, jti, exp.AddMinutes(5), ct);
         }
 
         IList<X509Certificate2>? certChainList;

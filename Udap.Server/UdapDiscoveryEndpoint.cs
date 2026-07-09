@@ -65,11 +65,11 @@ namespace Udap.Server
             }
 
             var baseUrl = _urls.BaseUrl;
-            var issuerUri = await _issuerNameService.GetCurrentAsync();
+            var issuerUri = await _issuerNameService.GetCurrentAsync(context.RequestAborted);
 
             // generate response
             _logger.LogTrace("Calling into discovery response generator: {type}", _responseGenerator.GetType().FullName);
-            var response = await _responseGenerator.CreateDiscoveryDocumentAsync(baseUrl, issuerUri);
+            var response = await _responseGenerator.CreateDiscoveryDocumentAsync(baseUrl, issuerUri, context.RequestAborted);
 
             return new DiscoveryDocumentResult(response, _options.Discovery.ResponseCacheInterval);
         }

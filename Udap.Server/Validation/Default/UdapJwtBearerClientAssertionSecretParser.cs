@@ -42,10 +42,11 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
     /// Tries to find a secret on the context that can be used for authentication
     /// </summary>
     /// <param name="context">The HTTP context.</param>
+    /// <param name="ct">The cancellation token.</param>
     /// <returns>
     /// A parsed secret
     /// </returns>
-    public async Task<ParsedSecret?> ParseAsync(HttpContext context)
+    public async Task<ParsedSecret?> ParseAsync(HttpContext context, CancellationToken ct)
     {
         _logger.LogDebug("Start parsing for JWT client assertion in post body");
 
@@ -55,7 +56,7 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
             return null;
         }
 
-        var body = await context.Request.ReadFormAsync();
+        var body = await context.Request.ReadFormAsync(ct);
 
         _logger.LogDebug("Form body content: {FormBody}", JsonSerializer.Serialize(body));
 

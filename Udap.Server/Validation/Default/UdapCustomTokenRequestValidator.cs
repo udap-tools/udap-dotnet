@@ -54,7 +54,7 @@ public class UdapCustomTokenRequestValidator : ICustomTokenRequestValidator
         _logger = logger;
     }
 
-    public async Task ValidateAsync(CustomTokenRequestValidationContext context)
+    public async Task ValidateAsync(CustomTokenRequestValidationContext context, CancellationToken ct)
     {
         var request = context.Result?.ValidatedRequest;
 

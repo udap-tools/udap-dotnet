@@ -53,6 +53,33 @@ dotnet test _tests/Udap.Common.Tests --filter "ClassName=TrustChainValidatorTest
 - Avoid `Udap.Client.System.Tests` in CI - these test against live servers
 - If SQLite DB sync issues occur, clean the bin folder in affected test projects
 
+### Known issue: Udap.Idi.Patient.Match.Tests and the FHIR package cache
+
+If every validation test in `Udap.Idi.Patient.Match.Tests` fails with
+`An item with the same key has already been added. Key: hl7.terminology.r4`,
+the cause is the machine's FHIR package cache (`~/.fhir/packages`), not the code.
+
+- The test fixture loads the identity-matching IG from a local `.tgz`
+  (`examples/Udap.Proxy.Server/IDIPatientMatch/Packages/`), but Firely silently
+  consults the global cache when building the IG's dependency closure — test
+  results depend on machine state.
+- Firely.Fhir.Packages **4.9.1** (pinned) crashes when two manifests declare the
+  same *missing* package at different versions (raw `Dictionary.Add` writing the
+  missing-deps lock file). Trigger: cache contains `hl7.fhir.us.core#6.1.0` but
+  NOT `hl7.terminology.r4` / `hl7.fhir.uv.extensions.r4` — the IG wants
+  terminology 6.4.0 / extensions 5.2.0, cached us.core wants 5.0.0 / 1.0.0 →
+  duplicate names in the missing list → crash.
+- **Fix:** install `hl7.terminology.r4#6.4.0` and `hl7.fhir.uv.extensions.r4#5.2.0`
+  into `~/.fhir/packages` (tgz from `https://packages.simplifier.net/<name>/<version>`,
+  extracted so the layout is `<name>#<version>/package/...`).
+- **Do not bump Firely.Fhir.Packages past 4.9.1** to get the upstream fix (5.0.2):
+  it pulls Hl7.Fhir.Base 6.x, which removed `BaseFhirParser`/`CommonFhirJsonSerializer`
+  still used by `Udap.Proxy.Server` — that is the deferred Hl7.Fhir 6.x migration
+  (rolled back in commits 881c0581 / b58d9868). Pinned combo:
+  Firely.Fhir.Packages 4.9.1 + Firely.Fhir.Validation.R4B 2.7.1 + Hl7.Fhir 5.13.x.
+  When the 6.x migration happens, bump Firely.Fhir.Packages ≥ 5.0.2 and this
+  failure class disappears.
+
 ## Running Examples Locally
 
 ```bash

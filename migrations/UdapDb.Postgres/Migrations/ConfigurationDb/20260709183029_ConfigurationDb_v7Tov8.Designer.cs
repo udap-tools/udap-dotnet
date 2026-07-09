@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Udap.Server.Storage.DbContexts;
@@ -12,9 +13,11 @@ using Udap.Server.Storage.DbContexts;
 namespace UdapDb.Postgres.Migrations.ConfigurationDb
 {
     [DbContext(typeof(NpgsqlConfigurationDbContext))]
-    partial class NpgsqlConfigurationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260709183029_ConfigurationDb_v7Tov8")]
+    partial class ConfigurationDb_v7Tov8
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -180,7 +180,7 @@ public class CommunityClaimTests
 
         pipeline.BrowserClient.AllowAutoRedirect = false;
         response = await pipeline.BrowserClient.GetAsync(url);
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location!.Query);
         Assert.Contains(queryParams, p => p.Key == "code");
 

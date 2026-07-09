@@ -401,7 +401,7 @@ public class UdapIdentityServerPipeline
     {
         var interaction = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
         LoginReturnUrl = ctx.Request.Query[Options.UserInteraction.LoginReturnUrlParameter].FirstOrDefault();
-        LoginRequest = await interaction.GetAuthorizationContextAsync(LoginReturnUrl);
+        LoginRequest = await interaction.GetAuthorizationContextAsync(LoginReturnUrl, ctx.RequestAborted);
     }
 
     private async Task IssueLoginCookie(HttpContext ctx)
@@ -432,7 +432,7 @@ public class UdapIdentityServerPipeline
     private async Task ReadLogoutRequest(HttpContext ctx)
     {
         var interaction = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
-        LogoutRequest = await interaction.GetLogoutContextAsync(ctx.Request.Query["logoutId"].FirstOrDefault());
+        LogoutRequest = await interaction.GetLogoutContextAsync(ctx.Request.Query["logoutId"].FirstOrDefault(), ctx.RequestAborted);
     }
 
     public bool ConsentWasCalled { get; set; }
@@ -448,14 +448,14 @@ public class UdapIdentityServerPipeline
     private async Task ReadConsentMessage(HttpContext ctx)
     {
         var interaction = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
-        ConsentRequest = await interaction.GetAuthorizationContextAsync(ctx.Request.Query["returnUrl"].FirstOrDefault());
+        ConsentRequest = await interaction.GetAuthorizationContextAsync(ctx.Request.Query["returnUrl"].FirstOrDefault(), ctx.RequestAborted);
     }
     private async Task CreateConsentResponse(HttpContext ctx)
     {
         if (ConsentRequest != null && ConsentResponse != null)
         {
             var interaction = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
-            await interaction.GrantConsentAsync(ConsentRequest, ConsentResponse);
+            await interaction.GrantConsentAsync(ConsentRequest, ConsentResponse, ctx.RequestAborted);
             ConsentResponse = null;
 
             var url = ctx.Request.Query[Options.UserInteraction.ConsentReturnUrlParameter].FirstOrDefault();
@@ -473,7 +473,7 @@ public class UdapIdentityServerPipeline
     {
         CustomWasCalled = true;
         var interaction = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
-        CustomRequest = await interaction.GetAuthorizationContextAsync(ctx.Request.Query[Options.UserInteraction.ConsentReturnUrlParameter].FirstOrDefault());
+        CustomRequest = await interaction.GetAuthorizationContextAsync(ctx.Request.Query[Options.UserInteraction.ConsentReturnUrlParameter].FirstOrDefault(), ctx.RequestAborted);
     }
 
     public bool ErrorWasCalled { get; set; }
@@ -494,7 +494,7 @@ public class UdapIdentityServerPipeline
     private async Task ReadErrorMessage(HttpContext ctx)
     {
         var interaction = ctx.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
-        ErrorMessage = await interaction.GetErrorContextAsync(ctx.Request.Query["errorId"].FirstOrDefault());
+        ErrorMessage = await interaction.GetErrorContextAsync(ctx.Request.Query["errorId"].FirstOrDefault(), ctx.RequestAborted);
     }
 
     /* helpers */

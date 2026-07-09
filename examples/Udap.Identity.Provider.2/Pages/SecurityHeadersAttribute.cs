@@ -19,13 +19,13 @@ public class SecurityHeadersAttribute : ActionFilterAttribute
         if (result is PageResult)
         {
             var interaction = context.HttpContext.RequestServices.GetRequiredService<IIdentityServerInteractionService>();
-            var grants = await interaction.GetAllUserGrantsAsync();
+            var grants = await interaction.GetAllUserGrantsAsync(context.HttpContext.RequestAborted);
             var clients = context.HttpContext.RequestServices.GetRequiredService<IClientStore>();
             var logoList = new List<string>();
 
             foreach (var grant in grants)
             {
-                var client = await clients.FindClientByIdAsync(grant.ClientId);
+                var client = await clients.FindClientByIdAsync(grant.ClientId, context.HttpContext.RequestAborted);
                 if (client != null && client.ClientSecrets.Any(s => s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                 {
                     if (client.LogoUri != null)

@@ -27,6 +27,7 @@ var builder = WebApplication.CreateBuilder(args);
 var connStrName = Environment.GetEnvironmentVariable("ConnStrName");
 var connectionString = builder.Configuration.GetConnectionString(connStrName);
 
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(new UdapConfigurationStoreOptions());
 
 builder.Services.AddUdapDbContext(options =>

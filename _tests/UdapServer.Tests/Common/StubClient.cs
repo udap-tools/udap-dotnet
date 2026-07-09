@@ -16,12 +16,11 @@
 //
 
 
-using Duende.IdentityServer;
-
 namespace UdapServer.Tests.Common;
 
-internal class StubClock : IClock
+internal class StubClock : TimeProvider
 {
     public Func<DateTime> UtcNowFunc { get; set; } = () => DateTime.UtcNow;
     public DateTimeOffset UtcNow => new DateTimeOffset(UtcNowFunc());
+    public override DateTimeOffset GetUtcNow() => UtcNow;
 }

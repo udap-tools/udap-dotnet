@@ -206,7 +206,7 @@ public class PKCERequiredTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = false;
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
 
         Assert.NotNull(response.Headers.Location);
         Assert.Contains("https://code_client/callback", response.Headers.Location!.AbsoluteUri);
@@ -403,7 +403,7 @@ public class PKCERequiredTests
         _mockPipeline.BrowserClient.AllowAutoRedirect = false;
         response = await _mockPipeline.BrowserClient.GetAsync(url);
 
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
 
         Assert.NotNull(response.Headers.Location);
         Assert.Contains("https://code_client/callback", response.Headers.Location!.AbsoluteUri);

@@ -61,8 +61,8 @@ public class ClientStoreTests : StorageFixture<ClientStoreTests, ConfigurationDb
         // so the actual failure was many lines below where the debugger blows up in FindClientByIdAsync.
         //
 
-        var store = new ClientStore(context, Substitute.For<ILogger<ClientStore>>(), new NoneCancellationTokenProvider());
-        var client = await store.FindClientByIdAsync(Guid.NewGuid().ToString());
+        var store = new ClientStore(context, Substitute.For<ILogger<ClientStore>>());
+        var client = await store.FindClientByIdAsync(Guid.NewGuid().ToString(), CancellationToken.None);
         Assert.Null(client);
     }
 }

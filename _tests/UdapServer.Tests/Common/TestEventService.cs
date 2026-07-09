@@ -22,7 +22,7 @@ public class TestEventService : IEventService
 {
     private readonly Dictionary<Type, object> _events = new Dictionary<Type, object>();
 
-    public Task RaiseAsync(Event evt)
+    public Task RaiseAsync(Event evt, CancellationToken ct)
     {
         _events.Add(evt.GetType(), evt);
         return Task.CompletedTask;

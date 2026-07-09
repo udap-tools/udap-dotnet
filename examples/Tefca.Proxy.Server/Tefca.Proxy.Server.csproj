@@ -26,10 +26,10 @@
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
-    <PackageReference Include="Udap.Metadata.Server" Version="0.8.*" />
-    <PackageReference Include="Udap.Tefca.Model" Version="0.8.*" />
-    <PackageReference Include="Udap.Smart.Metadata" Version="0.8.*" />
-    <PackageReference Include="Udap.Util" Version="0.8.*" />
+    <PackageReference Include="Udap.Metadata.Server" Version="0.9.*" />
+    <PackageReference Include="Udap.Tefca.Model" Version="0.9.*" />
+    <PackageReference Include="Udap.Smart.Metadata" Version="0.9.*" />
+    <PackageReference Include="Udap.Util" Version="0.9.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">

@@ -24,7 +24,7 @@ namespace Udap.Server.Validation.Default;
 /// <summary>
 /// Custom token request validator that enforces UDAP authorization extension
 /// requirements (e.g., hl7-b2b, hl7-b2b-user) for UDAP clients.
-/// Profile-specific extensions (e.g., tefca-ias) are supported via
+/// Profile-specific extensions (e.g., tefca_ias) are supported via
 /// <see cref="IAuthorizationExtensionDeserializer"/> registrations.
 /// Runs after client authentication succeeds, returning <c>invalid_grant</c>
 /// with a descriptive error when required extensions are missing or invalid.

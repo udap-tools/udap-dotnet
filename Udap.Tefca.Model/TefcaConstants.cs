@@ -7,6 +7,8 @@
 // */
 #endregion
 
+using System.Collections.Generic;
+
 namespace Udap.Tefca.Model;
 
 /// <summary>
@@ -20,10 +22,11 @@ public static class TefcaConstants
     {
         /// <summary>
         /// TEFCA IAS Authorization Extension Object key name.
+        /// Table 4 defines the extension name as "tefca_ias" (underscore).
         ///
         /// <a href="https://rce.sequoiaproject.org/wp-content/uploads/2026/02/SOP-Facilitated-FHIR-Implementation-2.0-Draft-508.pdf#page=16">SOP v2.0 — Section 6.11 IAS, Table 4</a>
         /// </summary>
-        public const string TEFCAIAS = "tefca-ias";
+        public const string TEFCAIAS = "tefca_ias";
 
     }
 
@@ -51,7 +54,7 @@ public static class TefcaConstants
     /// <summary>
     /// TEFCA Exchange Purpose (XP) codes OID: 2.16.840.1.113883.3.7204.1.5.2.1
     ///
-    /// <a href="https://rce.sequoiaproject.org/wp-content/uploads/2025/01/SOP-Exchange-Purposes_CA-v2_v4-508.pdf#page=4">SOP: Exchange Purposes (XPs) v4.0 — Table 1</a>
+    /// <a href="https://rce.sequoiaproject.org/wp-content/uploads/2026/07/Exchange-Purposes-SOP-v5.1_7.1.2026_508.pdf#page=6">SOP: Exchange Purposes (XPs) v5.1 — Table 1</a>
     /// </summary>
     public static class ExchangePurposeCodes
     {
@@ -63,12 +66,42 @@ public static class TefcaConstants
         public const string HealthCareOperations = "T-HCO";
         public const string CareCoordination = "T-HCO-CC";
         public const string HedisReporting = "T-HCO-HED";
-        public const string QualityMeasureReporting = "T-HCO-QM";
+        public const string QualityAssessmentAndImprovement = "T-HCO-QAI";
+        public const string PopulationBasedActivities = "T-HCO-POP";
+        public const string PatientSafety = "T-HCO-PTSAFETY";
+        public const string PerformanceReview = "T-HCO-PERF";
         public const string PublicHealth = "T-PH";
         public const string ElectronicCaseReporting = "T-PH-ECR";
         public const string ElectronicLabReporting = "T-PH-ELR";
         public const string IndividualAccessServices = "T-IAS";
         public const string GovernmentBenefitsDetermination = "T-GOVDTRM";
+        public const string SocialSecurityDetermination = "T-GOVDTRM-SSD";
+        public const string AccessConsentPolicy = "T-GOVDTRM-ACP";
+
+        /// <summary>
+        /// All authorized XP codes from Table 1 of the Exchange Purposes (XPs) SOP v5.1.
+        /// Single authoritative list for validators and UI code lists.
+        /// </summary>
+        public static IReadOnlyList<string> All { get; } =
+        [
+            Treatment,
+            TefcaRequiredTreatment,
+            Payment,
+            HealthCareOperations,
+            CareCoordination,
+            HedisReporting,
+            QualityAssessmentAndImprovement,
+            PopulationBasedActivities,
+            PatientSafety,
+            PerformanceReview,
+            PublicHealth,
+            ElectronicCaseReporting,
+            ElectronicLabReporting,
+            IndividualAccessServices,
+            GovernmentBenefitsDetermination,
+            SocialSecurityDetermination,
+            AccessConsentPolicy
+        ];
     }
 
     /// <summary>

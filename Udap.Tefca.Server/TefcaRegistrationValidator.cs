@@ -30,21 +30,13 @@ public class TefcaRegistrationValidator : ICommunityRegistrationValidator
         _options = options.Value;
     }
 
-    private static readonly HashSet<string> ValidExchangePurposes = new(StringComparer.Ordinal)
-    {
-        TefcaConstants.ExchangePurposeCodes.Treatment,
-        TefcaConstants.ExchangePurposeCodes.TefcaRequiredTreatment,
-        TefcaConstants.ExchangePurposeCodes.Payment,
-        TefcaConstants.ExchangePurposeCodes.HealthCareOperations,
-        TefcaConstants.ExchangePurposeCodes.CareCoordination,
-        TefcaConstants.ExchangePurposeCodes.HedisReporting,
-        TefcaConstants.ExchangePurposeCodes.QualityMeasureReporting,
-        TefcaConstants.ExchangePurposeCodes.PublicHealth,
-        TefcaConstants.ExchangePurposeCodes.ElectronicCaseReporting,
-        TefcaConstants.ExchangePurposeCodes.ElectronicLabReporting,
-        TefcaConstants.ExchangePurposeCodes.IndividualAccessServices,
-        TefcaConstants.ExchangePurposeCodes.GovernmentBenefitsDetermination,
-    };
+    /// <summary>
+    /// Authorized XP codes per the Exchange Purposes (XPs) SOP v5.1 Table 1, sourced from
+    /// <see cref="TefcaConstants.ExchangePurposeCodes.All"/>.
+    /// </summary>
+    private static readonly HashSet<string> ValidExchangePurposes = new(
+        TefcaConstants.ExchangePurposeCodes.All,
+        StringComparer.Ordinal);
 
     /// <inheritdoc />
     public bool AppliesToCommunity(string communityName)

@@ -213,7 +213,8 @@ public class TefcaBuild : CertificateBase
 
         #region Client Certificate with all Exchange Purposes in SAN
 
-        // Single client cert with all XP codes plus one invalid SAN for testing
+        // Single client cert with all XP codes (Exchange Purposes SOP v5.1 Table 1)
+        // plus one invalid SAN for testing
         BuildTefcaClientCert(
             intermediateCert, caCert, intermediateKey,
             "all-xp",
@@ -225,12 +226,17 @@ public class TefcaBuild : CertificateBase
                 "urn:oid:2.999#T-HCO",
                 "urn:oid:2.999#T-HCO-CC",
                 "urn:oid:2.999#T-HCO-HED",
-                "urn:oid:2.999#T-HCO-QM",
+                "urn:oid:2.999#T-HCO-QAI",
+                "urn:oid:2.999#T-HCO-POP",
+                "urn:oid:2.999#T-HCO-PTSAFETY",
+                "urn:oid:2.999#T-HCO-PERF",
                 "urn:oid:2.999#T-PH",
                 "urn:oid:2.999#T-PH-ECR",
                 "urn:oid:2.999#T-PH-ELR",
                 "urn:oid:2.999#T-IAS",
                 "urn:oid:2.999#T-GOVDTRM",
+                "urn:oid:2.999#T-GOVDTRM-SSD",
+                "urn:oid:2.999#T-GOVDTRM-ACP",
                 "urn:oid:2.999#INVALID"
             },
             $"{issuedDir}/fhirlabs.net.tefca.client",

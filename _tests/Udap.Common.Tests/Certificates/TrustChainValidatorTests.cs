@@ -2189,6 +2189,48 @@ public class TrustChainValidatorTests
 
         Assert.True(result.IsValid);
         Assert.Equal(expectedCommunityId, result.CommunityId);
+        Assert.NotNull(result.MatchedAnchor);
+        Assert.Equal(rootDotNet.Thumbprint, result.MatchedAnchor!.Thumbprint);
+        Assert.Equal("test-community", result.MatchedAnchor.Community);
+        Assert.Equal(expectedCommunityId, result.MatchedAnchor.CommunityId);
+    }
+
+    [Fact]
+    public async Task IsTrustedCertificateAsync_WithoutAnchors_LeavesMatchedAnchorNull()
+    {
+        var (caKeyPair, bcRootCert) = CreateCaKeyPairAndRoot();
+        var leafSerialNumber = BigInteger.ProbablePrime(120, new Random());
+        var bcLeafCert = CreateLeafCertWithoutCrlDp(caKeyPair, bcRootCert, leafSerialNumber);
+
+#if NET9_0_OR_GREATER
+        var leafDotNet = X509CertificateLoader.LoadCertificate(bcLeafCert.GetEncoded());
+        var rootDotNet = X509CertificateLoader.LoadCertificate(bcRootCert.GetEncoded());
+#else
+        var leafDotNet = new X509Certificate2(bcLeafCert.GetEncoded());
+        var rootDotNet = new X509Certificate2(bcRootCert.GetEncoded());
+#endif
+        var anchorCertificates = new X509Certificate2Collection(rootDotNet);
+
+        var services = new ServiceCollection();
+        services.AddLogging(b => b.AddXUnit(_testOutputHelper));
+        var sp = services.BuildServiceProvider();
+        var logger = sp.GetRequiredService<ILogger<TrustChainValidator>>();
+
+        var validator = new TrustChainValidator(
+            TrustChainValidator.DefaultProblemFlags,
+            false,
+            logger);
+
+        // No Anchor models supplied — chain still validates but there is nothing to resolve to.
+        var result = await validator.IsTrustedCertificateAsync(
+            "test_client",
+            leafDotNet,
+            intermediateCertificates: null,
+            anchorCertificates,
+            anchors: null);
+
+        Assert.True(result.IsValid);
+        Assert.Null(result.MatchedAnchor);
     }
 
     [Fact]

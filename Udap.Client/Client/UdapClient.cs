@@ -65,6 +65,9 @@ namespace Udap.Client
         public UdapMetadata? UdapServerMetadata { get; set; }
 
         /// <inheritdoc/>
+        public ChainValidationResult? TrustChainValidationResult { get; private set; }
+
+        /// <inheritdoc/>
         public event Action<X509Certificate2>? Untrusted
         {
             add => _clientDiscoveryValidator.Untrusted += value;
@@ -421,7 +424,10 @@ namespace Udap.Client
                         throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
                     }
 
-                    if (!await _clientDiscoveryValidator.ValidateTrustChain(community, trustAnchorStore))
+                    var trustChainValid = await _clientDiscoveryValidator.ValidateTrustChain(community, trustAnchorStore);
+                    TrustChainValidationResult = _clientDiscoveryValidator.LastChainValidationResult;
+
+                    if (!trustChainValid)
                     {
                         throw new UnauthorizedAccessException("Failed Trust Chain Validation");
                     }

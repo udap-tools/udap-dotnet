@@ -66,6 +66,12 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
     public UdapMetadata? UdapServerMetadata { get; set; }
 
     /// <summary>
+    /// The result of the most recent trust chain validation, including the matching
+    /// <see cref="Anchor"/> and community. Populated by <see cref="ValidateTrustChain(string?, ITrustAnchorStore?)"/>.
+    /// </summary>
+    public ChainValidationResult? LastChainValidationResult { get; private set; }
+
+    /// <summary>
     /// Validates the signed JWT in the UDAP server metadata, verifying the signature, issuer, lifetime, and algorithm constraints.
     /// </summary>
     /// <param name="udapServerMetaData">The deserialized UDAP metadata containing the signed metadata JWT.</param>
@@ -251,7 +257,7 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
             return false;
         }
 
-        return await _trustChainValidator.IsTrustedCertificateAsync(
+        var result = await _trustChainValidator.IsTrustedCertificateAsync(
             nameof(UdapClient),
             _publicCertificate,
             anchors.SelectMany(a =>
@@ -259,7 +265,12 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
                         ? Enumerable.Empty<X509Certificate2>()
                         : a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate)))
                 .ToArray().ToX509Collection(),
-            anchorCertificates);
+            anchorCertificates,
+            anchors);
+
+        LastChainValidationResult = result;
+
+        return result.IsValid;
     }
 
     private static IEnumerable<Anchor> X509Certificate2Collection(string? community, ITrustAnchorStore? store)

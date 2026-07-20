@@ -8,6 +8,7 @@
 #endregion
 
 using System.Security.Cryptography.X509Certificates;
+using Udap.Common.Models;
 
 namespace Udap.Common.Certificates;
 
@@ -120,12 +121,15 @@ public class ChainValidationResult
     /// <param name="isValid">Whether the chain is valid and trusted.</param>
     /// <param name="chainElements">The chain elements with their validation problems.</param>
     /// <param name="communityId">The community identifier from the matching trust anchor, if resolved.</param>
-    public ChainValidationResult(bool isValid, IReadOnlyList<ChainElementInfo> chainElements, long? communityId = null, string? communityName = null)
+    /// <param name="communityName">The community name (URI) from the matching trust anchor, if resolved.</param>
+    /// <param name="matchedAnchor">The trust anchor the certificate chained to, if resolved.</param>
+    public ChainValidationResult(bool isValid, IReadOnlyList<ChainElementInfo> chainElements, long? communityId = null, string? communityName = null, Anchor? matchedAnchor = null)
     {
         IsValid = isValid;
         ChainElements = chainElements;
         CommunityId = communityId;
         CommunityName = communityName;
+        MatchedAnchor = matchedAnchor;
     }
 
     /// <summary>Gets whether the certificate chain is valid and trusted.</summary>
@@ -139,4 +143,12 @@ public class ChainValidationResult
 
     /// <summary>Gets the community name (URI) from the matching trust anchor, or <c>null</c> if not resolved.</summary>
     public string? CommunityName { get; }
+
+    /// <summary>
+    /// Gets the <see cref="Anchor"/> the end-entity certificate chained to, or <c>null</c> if the
+    /// chain was validated without caller-supplied <see cref="Anchor"/> models or no anchor matched.
+    /// Resolved by thumbprint against the anchors passed to
+    /// <see cref="TrustChainValidator.IsTrustedCertificateAsync(string, X509Certificate2, X509Certificate2Collection?, X509Certificate2Collection, IEnumerable{Anchor}?, System.Threading.CancellationToken)"/>.
+    /// </summary>
+    public Anchor? MatchedAnchor { get; }
 }

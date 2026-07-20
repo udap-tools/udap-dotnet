@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using MartinCostello.Logging.XUnit;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -206,6 +207,64 @@ public class UdapClientTests
         Assert.False(disco.IsError, $"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
         Assert.Equal(HttpStatusCode.OK, disco.HttpStatusCode);
         Assert.NotNull(udapClient.UdapServerMetadata);
+    }
+
+    [Fact]
+    public async Task ValidateResource_Success_ExposesMatchedAnchor_DiscriminatesAmongAnchors()
+    {
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, fileStore) = await BuildClientSupport();
+
+        // The file store holds the real fhirlabs anchor. Add decoy anchors the server cert does
+        // NOT chain to, so a passing assertion proves MatchedAnchor discriminated the correct
+        // anchor rather than trivially returning "the only one in the store".
+        var realAnchors = (await fileStore.Resolve()).AnchorCertificates.ToList();
+        var realThumbprints = realAnchors.Select(a => a.Thumbprint).ToHashSet();
+
+        var decoyA = MakeDecoyAnchor("CN=Decoy Anchor A");
+        var decoyB = MakeDecoyAnchor("CN=Decoy Anchor B");
+        var decoyThumbprints = new HashSet<string> { decoyA.Thumbprint, decoyB.Thumbprint };
+
+        var multiStore = new TrustAnchorMemoryStore
+        {
+            AnchorCertificates = realAnchors.Concat(new[] { decoyA, decoyB }).ToHashSet()
+        };
+
+        // Sanity: we really are validating against multiple, distinct anchors.
+        Assert.True(multiStore.AnchorCertificates.Count >= 3);
+        Assert.NotEmpty(realThumbprints);
+
+        var udapClient = new UdapClient(
+            httpClientMock,
+            udapClientDiscoveryValidator,
+            udapClientIOptions,
+            _serviceProvider.GetRequiredService<ILogger<UdapClient>>());
+
+        var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4", multiStore);
+
+        Assert.False(disco.IsError, $"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
+
+        var matched = udapClient.TrustChainValidationResult?.MatchedAnchor;
+        Assert.NotNull(udapClient.TrustChainValidationResult);
+        Assert.True(udapClient.TrustChainValidationResult!.IsValid);
+        Assert.NotNull(matched);
+
+        // Discriminated the correct trust anchor: one of the real anchors, not either decoy.
+        Assert.DoesNotContain(matched!.Thumbprint, decoyThumbprints);
+        Assert.Contains(matched.Thumbprint, realThumbprints);
+    }
+
+    private static Udap.Common.Models.Anchor MakeDecoyAnchor(string subjectName)
+    {
+        using var key = RSA.Create(2048);
+        var req = new CertificateRequest(
+            subjectName, key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        req.CertificateExtensions.Add(new X509BasicConstraintsExtension(true, false, 0, true));
+        using var cert = req.CreateSelfSigned(
+            DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddYears(5));
+
+        // Pass the cert directly — Anchor copies the PEM/thumbprint, so this avoids
+        // X509CertificateLoader (net9+ only) and keeps the test building on net8.0.
+        return new Udap.Common.Models.Anchor(cert, "udap://decoy/");
     }
 
     [Fact]

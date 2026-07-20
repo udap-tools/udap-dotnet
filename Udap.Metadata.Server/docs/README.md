@@ -92,7 +92,7 @@ The `UdapMetadataOptions` class defines the configurable properties:
 
 - **UdapVersionsSupported**: Array of supported UDAP versions (e.g., `["1"]`)
 - **UdapProfilesSupported**: Array of supported UDAP profiles (e.g., `["udap_dcr", "udap_authn"]`)
-- **UdapAuthorizationExtensionsSupported**: Array of supported authorization extensions (e.g., `["hl7-b2b", "tefca-ias"]`)
+- **UdapAuthorizationExtensionsSupported**: Array of supported authorization extensions (e.g., `["hl7-b2b", "tefca_ias"]`)
 - **UdapAuthorizationExtensionsRequired**: Array of required authorization extensions
 - **UdapCertificationsSupported**: Array of supported certifications
 - **UdapCertificationsRequired**: Array of required certifications

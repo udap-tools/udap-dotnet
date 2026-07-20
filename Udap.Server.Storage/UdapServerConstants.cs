@@ -23,6 +23,7 @@ public static class UdapServerConstants
         public const string Organization = "org";
         public const string DataHolder = "data_holder";
         public const string DefaultOrgMap = "empty";
+        public const string Community = "community";
     }
 
     public static class HttpContextItems

@@ -31,17 +31,17 @@ public class UdapInMemoryResourceStore : IResourceStore
         IEnumerable<ApiResource>? apiResources = null,
         IEnumerable<ApiScope>? apiScopes = null)
     {
-        if (identityResources?.HasDuplicates(m => m.Name) == true)
+        if (identityResources?.GroupBy(m => m.Name).Any(g => g.Count() > 1) == true)
         {
             throw new ArgumentException("Identity resources must not contain duplicate names");
         }
 
-        if (apiResources?.HasDuplicates(m => m.Name) == true)
+        if (apiResources?.GroupBy(m => m.Name).Any(g => g.Count() > 1) == true)
         {
             throw new ArgumentException("Api resources must not contain duplicate names");
         }
 
-        if (apiScopes?.HasDuplicates(m => m.Name) == true)
+        if (apiScopes?.GroupBy(m => m.Name).Any(g => g.Count() > 1) == true)
         {
             throw new ArgumentException("Scopes must not contain duplicate names");
         }
@@ -52,7 +52,7 @@ public class UdapInMemoryResourceStore : IResourceStore
     }
 
     /// <inheritdoc/>
-    public Task<Resources> GetAllResourcesAsync()
+    public Task<Resources> GetAllResourcesAsync(CancellationToken ct)
     {
         using var activity = Tracing.StoreActivitySource.StartActivity();
 
@@ -61,7 +61,7 @@ public class UdapInMemoryResourceStore : IResourceStore
     }
 
     /// <inheritdoc/>
-    public Task<IEnumerable<ApiResource>> FindApiResourcesByNameAsync(IEnumerable<string> apiResourceNames)
+    public Task<IReadOnlyCollection<ApiResource>> FindApiResourcesByNameAsync(IEnumerable<string> apiResourceNames, CancellationToken ct)
     {
         using var activity = Tracing.StoreActivitySource.StartActivity();
         var apiResourceNamesList = apiResourceNames as List<string> ?? apiResourceNames.ToList();
@@ -69,16 +69,16 @@ public class UdapInMemoryResourceStore : IResourceStore
 
         ArgumentNullException.ThrowIfNull(apiResourceNames);
 
-        var query = from a in _apiResources
+        IReadOnlyCollection<ApiResource> query = (from a in _apiResources
                     where apiResourceNamesList.Contains(a.Name)
-                    select a;
+                    select a).ToList();
 
 
         return Task.FromResult(query);
     }
 
     /// <inheritdoc/>
-    public Task<IEnumerable<IdentityResource>> FindIdentityResourcesByScopeNameAsync(IEnumerable<string> scopeNames)
+    public Task<IReadOnlyCollection<IdentityResource>> FindIdentityResourcesByScopeNameAsync(IEnumerable<string> scopeNames, CancellationToken ct)
     {
         using var activity = Tracing.StoreActivitySource.StartActivity();
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
@@ -86,15 +86,15 @@ public class UdapInMemoryResourceStore : IResourceStore
 
         ArgumentNullException.ThrowIfNull(scopeNames);
 
-        var identity = from i in _identityResources
+        IReadOnlyCollection<IdentityResource> identity = (from i in _identityResources
                        where scopeNamesList.Contains(i.Name)
-                       select i;
+                       select i).ToList();
 
         return Task.FromResult(identity);
     }
 
     /// <inheritdoc/>
-    public Task<IEnumerable<ApiResource>> FindApiResourcesByScopeNameAsync(IEnumerable<string> scopeNames)
+    public Task<IReadOnlyCollection<ApiResource>> FindApiResourcesByScopeNameAsync(IEnumerable<string> scopeNames, CancellationToken ct)
     {
         using var activity = Tracing.StoreActivitySource.StartActivity();
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
@@ -102,15 +102,15 @@ public class UdapInMemoryResourceStore : IResourceStore
 
         ArgumentNullException.ThrowIfNull(scopeNames);
 
-        var query = from a in _apiResources
+        IReadOnlyCollection<ApiResource> query = (from a in _apiResources
                     where a.Scopes.Any(x => scopeNamesList.Contains(x))
-                    select a;
+                    select a).ToList();
 
         return Task.FromResult(query);
     }
 
     /// <inheritdoc/>
-    public Task<IEnumerable<ApiScope>> FindApiScopesByNameAsync(IEnumerable<string> scopeNames)
+    public Task<IReadOnlyCollection<ApiScope>> FindApiScopesByNameAsync(IEnumerable<string> scopeNames, CancellationToken ct)
     {
         using var activity = Tracing.StoreActivitySource.StartActivity();
         var scopeNamesList = scopeNames as List<string> ?? scopeNames.ToList();
@@ -118,11 +118,11 @@ public class UdapInMemoryResourceStore : IResourceStore
 
         ArgumentNullException.ThrowIfNull(scopeNames);
 
-        var query =
-            from x in _apiScopes
+        IReadOnlyCollection<ApiScope> query =
+            (from x in _apiScopes
             where scopeNamesList.Contains(x.Name)
-            select x;
-        
+            select x).ToList();
+
         return Task.FromResult(query);
     }
 }

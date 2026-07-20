@@ -13,7 +13,7 @@ using Udap.Model.UdapAuthenticationExtensions;
 namespace Udap.Tefca.Model;
 
 /// <summary>
-/// Deserializer for the TEFCA IAS authorization extension ("tefca-ias").
+/// Deserializer for the TEFCA IAS authorization extension ("tefca_ias").
 /// Register via DI to enable PayloadSerializer to handle this extension type.
 /// </summary>
 public class TefcaIasDeserializer : IAuthorizationExtensionDeserializer

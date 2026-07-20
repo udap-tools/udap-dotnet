@@ -232,6 +232,7 @@ namespace Udap.Common.Certificates
                 bool foundAnchor = false;
                 long? communityId = null;
                 string? communityName = null;
+                Anchor? matchedAnchor = null;
                 bool chainValid = true;
 
                 for (int i = 0; i < bcChain.Count; i++)
@@ -284,6 +285,7 @@ namespace Udap.Common.Certificates
                             {
                                 communityId = matchingAnchor.CommunityId;
                                 communityName = matchingAnchor.Community;
+                                matchedAnchor = matchingAnchor;
                             }
                         }
                     }
@@ -332,7 +334,7 @@ namespace Udap.Common.Certificates
                     NotifyUntrusted(certificate);
                 }
 
-                return new ChainValidationResult(isValid, chainElements, communityId, communityName);
+                return new ChainValidationResult(isValid, chainElements, communityId, communityName, matchedAnchor);
             }
             catch (Exception ex)
             {

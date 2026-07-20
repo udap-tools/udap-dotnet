@@ -33,6 +33,14 @@ public interface IUdapClientRegistrationStore
     Task<bool> UpsertTieredClient(TieredClient client, CancellationToken token = default);
 
     Task<TieredClient?> FindTieredClientById(string clientId, CancellationToken token = default);
+
+    /// <summary>
+    /// Finds a registered Tiered (federated) client by the IdP's base URL — the key
+    /// <see cref="UpsertTieredClient"/> stores records under. Use this from the Tiered OAuth
+    /// challenge, where the lookup value is the IdP base URL, not the issued client_id.
+    /// Returns null when no matching record exists.
+    /// </summary>
+    Task<TieredClient?> FindTieredClientByIdPBaseUrl(string idpBaseUrl, CancellationToken token = default);
     /// <summary>
     /// Cancel registration by passing an empty grant_types claim.  The cancel registration will cancel the
     /// community specific registration based on the signed_software statement. 

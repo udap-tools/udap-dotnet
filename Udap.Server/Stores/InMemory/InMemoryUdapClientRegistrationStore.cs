@@ -161,6 +161,11 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         return Task.FromResult(_tieredClients.SingleOrDefault(t => t.ClientId == clientId));
     }
 
+    public Task<TieredClient?> FindTieredClientByIdPBaseUrl(string idpBaseUrl, CancellationToken token = default)
+    {
+        return Task.FromResult(_tieredClients.SingleOrDefault(t => t.IdPBaseUrl == idpBaseUrl));
+    }
+
     public Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
     {
 

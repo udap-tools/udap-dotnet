@@ -92,6 +92,16 @@ public class ServerSettings
     /// </summary>
     public bool ForceDPoP { get; set; }
 
+    /// <summary>
+    /// When true, the community a client belongs to is surfaced in two ways:
+    /// at registration the community name (URI) is written to the client's
+    /// <c>community</c> property, and at token time a <c>udap_community</c> claim
+    /// is added to the access token. The claim value is resolved from the client's
+    /// stored community id, so a later community rename is reflected automatically.
+    /// Default is false.
+    /// </summary>
+    public bool IncludeCommunityClaim { get; set; }
+
 
 }
 

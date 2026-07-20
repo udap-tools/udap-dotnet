@@ -704,7 +704,7 @@ public class Stu2ComplianceTests
         response = await mockPipeline.BrowserClient.GetAsync(url);
 
         // Should redirect to callback with code, not an error
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
         Assert.Contains("https://code_client/callback", response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
@@ -836,7 +836,7 @@ public class Stu2ComplianceTests
         mockPipeline.BrowserClient.AllowAutoRedirect = false;
         response = await mockPipeline.BrowserClient.GetAsync(url);
 
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
         Assert.Contains("https://code_client/callback", response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
@@ -906,7 +906,7 @@ public class Stu2ComplianceTests
         mockPipeline.BrowserClient.AllowAutoRedirect = false;
         response = await mockPipeline.BrowserClient.GetAsync(url);
 
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
         Assert.Contains("https://code_client/callback", response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);

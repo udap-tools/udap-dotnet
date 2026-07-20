@@ -12,7 +12,7 @@ namespace Udap.Server.Validation;
 /// <summary>
 /// Validates authorization extension objects from a UDAP client assertion JWT
 /// during token endpoint authentication. Implementors can enforce community-specific
-/// rules for extensions such as hl7-b2b, hl7-b2b-user, or tefca-ias.
+/// rules for extensions such as hl7-b2b, hl7-b2b-user, or tefca_ias.
 /// </summary>
 public interface IUdapAuthorizationExtensionValidator
 {

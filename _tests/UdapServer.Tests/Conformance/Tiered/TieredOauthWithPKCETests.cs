@@ -458,7 +458,7 @@ public class TieredOauthWithPKCETests
         // We want to skip that and get a redirect to the login page
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = false;
         var response = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
         Assert.Contains("https://server/Account/Login", response.Headers.Location!.AbsoluteUri);
         // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
@@ -539,7 +539,7 @@ public class TieredOauthWithPKCETests
         var backChannelAuthResult = await _mockIdPPipeline.BrowserClient.GetAsync(backChannelChallengeResponse.Headers.Location);
 
         
-        Assert.Equal(HttpStatusCode.Redirect, backChannelAuthResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, backChannelAuthResult.StatusCode);
         // _testOutputHelper.WriteLine(backChannelAuthResult.Headers.Location!.AbsoluteUri);
         Assert.StartsWith("https://idpserver/Account/Login", backChannelAuthResult.Headers.Location!.AbsoluteUri);
 
@@ -553,7 +553,7 @@ public class TieredOauthWithPKCETests
         var authorizeCallbackResult = await _mockIdPPipeline.BrowserClient.GetAsync(
             $"https://idpserver{loginCallbackResult.Headers.Location!.OriginalString}");
         // _testOutputHelper.WriteLine(authorizeCallbackResult.Headers.Location!.OriginalString);
-        Assert.Equal(HttpStatusCode.Redirect, authorizeCallbackResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, authorizeCallbackResult.StatusCode);
         Assert.NotNull(authorizeCallbackResult.Headers.Location);
         Assert.StartsWith("https://server/federation/udap-tiered/signin?", authorizeCallbackResult.Headers.Location!.AbsoluteUri);
 
@@ -616,7 +616,7 @@ public class TieredOauthWithPKCETests
         var clientCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(
                        $"https://server{schemeCallbackResult.Headers.Location!.OriginalString}");
 
-        Assert.Equal(HttpStatusCode.Redirect, clientCallbackResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, clientCallbackResult.StatusCode);
         Assert.NotNull(clientCallbackResult.Headers.Location);
         Assert.StartsWith("https://code_client/callback?", clientCallbackResult.Headers.Location!.AbsoluteUri);
         // _testOutputHelper.WriteLine(clientCallbackResult.Headers.Location!.AbsoluteUri);
@@ -761,7 +761,7 @@ public class TieredOauthWithPKCETests
         // We want to skip that and get a redirect to the login page
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = false;
         var response = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
         Assert.Contains("https://server/Account/Login", response.Headers.Location!.AbsoluteUri);
         // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
@@ -841,7 +841,7 @@ public class TieredOauthWithPKCETests
         var backChannelAuthResult = await _mockIdPPipeline2.BrowserClient!.GetAsync(backChannelChallengeResponse.Headers.Location);
 
 
-        Assert.Equal(HttpStatusCode.Redirect, backChannelAuthResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, backChannelAuthResult.StatusCode);
         // _testOutputHelper.WriteLine(backChannelAuthResult.Headers.Location!.AbsoluteUri);
         Assert.StartsWith("https://idpserver2/Account/Login", backChannelAuthResult.Headers.Location!.AbsoluteUri);
 
@@ -855,7 +855,7 @@ public class TieredOauthWithPKCETests
         var authorizeCallbackResult = await _mockIdPPipeline2.BrowserClient.GetAsync(
             $"https://idpserver2{loginCallbackResult.Headers.Location!.OriginalString}");
         // _testOutputHelper.WriteLine(authorizeCallbackResult.Headers.Location!.OriginalString);
-        Assert.Equal(HttpStatusCode.Redirect, authorizeCallbackResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, authorizeCallbackResult.StatusCode);
         Assert.NotNull(authorizeCallbackResult.Headers.Location);
         Assert.StartsWith("https://server/federation/udap-tiered/signin?", authorizeCallbackResult.Headers.Location!.AbsoluteUri);
 
@@ -930,7 +930,7 @@ public class TieredOauthWithPKCETests
         var clientCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(
                        $"https://server{schemeCallbackResult.Headers.Location!.OriginalString}");
 
-        Assert.Equal(HttpStatusCode.Redirect, clientCallbackResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, clientCallbackResult.StatusCode);
         Assert.NotNull(clientCallbackResult.Headers.Location);
         Assert.StartsWith("https://code_client/callback?", clientCallbackResult.Headers.Location!.AbsoluteUri);
         // _testOutputHelper.WriteLine(clientCallbackResult.Headers.Location!.AbsoluteUri);
@@ -1069,7 +1069,7 @@ public class TieredOauthWithPKCETests
         // We want to skip that and get a redirect to the login page
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = false;
         var response = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
         Assert.Contains("https://server/Account/Login", response.Headers.Location!.AbsoluteUri);
         // _testOutputHelper.WriteLine(response.Headers.Location!.AbsoluteUri);
@@ -1149,7 +1149,7 @@ public class TieredOauthWithPKCETests
         var backChannelAuthResult = await _mockIdPPipeline2.BrowserClient!.GetAsync(backChannelChallengeResponse.Headers.Location);
 
 
-        Assert.Equal(HttpStatusCode.Redirect, backChannelAuthResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, backChannelAuthResult.StatusCode);
         // _testOutputHelper.WriteLine(backChannelAuthResult.Headers.Location!.AbsoluteUri);
         Assert.StartsWith("https://idpserver2/Account/Login", backChannelAuthResult.Headers.Location!.AbsoluteUri);
 
@@ -1163,7 +1163,7 @@ public class TieredOauthWithPKCETests
         var authorizeCallbackResult = await _mockIdPPipeline2.BrowserClient.GetAsync(
             $"https://idpserver2{loginCallbackResult.Headers.Location!.OriginalString}");
         // _testOutputHelper.WriteLine(authorizeCallbackResult.Headers.Location!.OriginalString);
-        Assert.Equal(HttpStatusCode.Redirect, authorizeCallbackResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, authorizeCallbackResult.StatusCode);
         Assert.NotNull(authorizeCallbackResult.Headers.Location);
         Assert.StartsWith("https://server/federation/udap-tiered/signin?", authorizeCallbackResult.Headers.Location!.AbsoluteUri);
 
@@ -1228,7 +1228,7 @@ public class TieredOauthWithPKCETests
         var clientCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(
                        $"https://server{schemeCallbackResult.Headers.Location!.OriginalString}");
 
-        Assert.Equal(HttpStatusCode.Redirect, clientCallbackResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, clientCallbackResult.StatusCode);
         Assert.NotNull(clientCallbackResult.Headers.Location);
         Assert.StartsWith("https://code_client/callback?", clientCallbackResult.Headers.Location!.AbsoluteUri);
         // _testOutputHelper.WriteLine(clientCallbackResult.Headers.Location!.AbsoluteUri);
@@ -1379,7 +1379,7 @@ public class TieredOauthWithPKCETests
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
         _mockAuthorServerPipeline.BrowserClient.AllowCookies = false;
         var response = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
-        Assert.Equal(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
         Assert.Contains("https://server/Account/Login", response.Headers.Location!.AbsoluteUri);
         var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
@@ -1428,7 +1428,7 @@ public class TieredOauthWithPKCETests
         Debug.Assert(_mockIdPPipeline.BrowserClient != null, "_mockIdPPipeline.BrowserClient != null");
         var backChannelAuthResult = await _mockIdPPipeline.BrowserClient.GetAsync(backChannelChallengeResponse.Headers.Location);
 
-        Assert.Equal(HttpStatusCode.Redirect, backChannelAuthResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, backChannelAuthResult.StatusCode);
         Assert.StartsWith("https://idpserver/Account/Login", backChannelAuthResult.Headers.Location!.AbsoluteUri);
 
         // Run IdP /Account/Login
@@ -1439,7 +1439,7 @@ public class TieredOauthWithPKCETests
         // Run IdP /connect/authorize/callback
         var authorizeCallbackResult = await _mockIdPPipeline.BrowserClient.GetAsync(
             $"https://idpserver{loginCallbackResult.Headers.Location!.OriginalString}");
-        Assert.Equal(HttpStatusCode.Redirect, authorizeCallbackResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, authorizeCallbackResult.StatusCode);
         Assert.NotNull(authorizeCallbackResult.Headers.Location);
         Assert.StartsWith("https://server/federation/udap-tiered/signin?", authorizeCallbackResult.Headers.Location!.AbsoluteUri);
 
@@ -1477,7 +1477,7 @@ public class TieredOauthWithPKCETests
         var clientCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(
                        $"https://server{schemeCallbackResult.Headers.Location!.OriginalString}");
 
-        Assert.Equal(HttpStatusCode.Redirect, clientCallbackResult.StatusCode);
+        Assert.Equal(HttpStatusCode.SeeOther, clientCallbackResult.StatusCode);
         Assert.NotNull(clientCallbackResult.Headers.Location);
         Assert.StartsWith("https://code_client/callback?", clientCallbackResult.Headers.Location!.AbsoluteUri);
 

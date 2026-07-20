@@ -89,7 +89,7 @@
 
     {
       "Community": "urn:oid:2.16.840.1.113883.3.7204.1.5",
-      "UdapAuthorizationExtensionsSupported": [ "hl7-b2b", "tefca-ias" ],
+      "UdapAuthorizationExtensionsSupported": [ "hl7-b2b", "tefca_ias" ],
       "UdapAuthorizationExtensionsRequired": [ "hl7-b2b" ],
       "UdapCertificationsSupported": [ "https://rce.sequoiaproject.org/udap/profiles/basic-app-certification" ],
       "UdapCertificationsRequired": [ "https://rce.sequoiaproject.org/udap/profiles/basic-app-certification" ],

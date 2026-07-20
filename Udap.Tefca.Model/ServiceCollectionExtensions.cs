@@ -17,7 +17,7 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Registers TEFCA authorization extension deserializers so that
     /// the UDAP server can deserialize and validate TEFCA-specific
-    /// extension objects (e.g., tefca-ias) from client assertion JWTs.
+    /// extension objects (e.g., tefca_ias) from client assertion JWTs.
     /// </summary>
     public static IServiceCollection AddUdapTefcaExtensions(this IServiceCollection services)
     {

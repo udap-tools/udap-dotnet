@@ -16,7 +16,6 @@
 //
 
 
-using Duende.IdentityServer;
 using Duende.IdentityServer.Services;
 
 
@@ -24,25 +23,25 @@ namespace UdapServer.Tests.Common;
 
 public class TestReplayCache : IReplayCache
 {
-    private readonly IClock _clock;
+    private readonly TimeProvider _clock;
     readonly Dictionary<string, DateTimeOffset> _values = new Dictionary<string, DateTimeOffset>();
 
-    public TestReplayCache(IClock clock)
+    public TestReplayCache(TimeProvider clock)
     {
         _clock = clock;
     }
 
-    public Task AddAsync(string purpose, string handle, DateTimeOffset expiration)
+    public Task AddAsync(string purpose, string handle, DateTimeOffset expiration, CancellationToken ct)
     {
         _values[purpose + handle] = expiration;
         return Task.CompletedTask;
     }
 
-    public Task<bool> ExistsAsync(string purpose, string handle)
+    public Task<bool> ExistsAsync(string purpose, string handle, CancellationToken ct)
     {
         if (_values.TryGetValue(purpose + handle, out var expiration))
         {
-            return Task.FromResult(_clock.UtcNow <= expiration);
+            return Task.FromResult(_clock.GetUtcNow() <= expiration);
         }
         return Task.FromResult(false);
     }

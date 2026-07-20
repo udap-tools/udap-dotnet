@@ -12,12 +12,12 @@ namespace Udap.Model.UdapAuthenticationExtensions;
 /// <summary>
 /// Registers a custom authorization extension deserializer for use by <see cref="PayloadSerializer"/>.
 /// Implementations are discovered via DI and used to deserialize extension objects
-/// by their key name (e.g., "tefca-ias").
+/// by their key name (e.g., "tefca_ias").
 /// </summary>
 public interface IAuthorizationExtensionDeserializer
 {
     /// <summary>
-    /// The extension key this deserializer handles (e.g., "tefca-ias").
+    /// The extension key this deserializer handles (e.g., "tefca_ias").
     /// </summary>
     string ExtensionKey { get; }
 

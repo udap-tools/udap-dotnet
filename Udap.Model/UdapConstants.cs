@@ -210,6 +210,12 @@ public static class UdapConstants
     {
         public const string Extensions = "extensions";
         public const string Hl7Identifier = "hl7_identifier";
+
+        /// <summary>
+        /// Claim added to access tokens identifying the UDAP community (URI) the client
+        /// belongs to. Emitted when <c>ServerSettings.IncludeCommunityClaim</c> is enabled.
+        /// </summary>
+        public const string UdapCommunity = "udap_community";
     }
 
     public static class TokenRequest

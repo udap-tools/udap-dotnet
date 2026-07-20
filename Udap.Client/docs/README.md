@@ -44,7 +44,27 @@ else
 Experiment with this example code in the [1_UdapClientMetadata CLI Project](../../examples/clients/1_UdapClientMetadata)
 
 Example command line run: ```dotnet run  --baseUrl https://fhirlabs.net/fhir/r4 --trustAnchor "C:\SureFhirLabs_CA.cer" --community udap://ECDSA/```
- 
+
+### Discovering which trust anchor matched
+
+After a successful ```ValidateResource``` call, ```IUdapClient.TrustChainValidationResult``` exposes the outcome of the trust chain validation, including the ```Anchor``` the server's signing certificate actually chained to. This is useful when you pass a store containing anchors from multiple communities and need to know which one was matched — for example, to resolve the community or anchor record in your own data store without re-running validation per anchor.
+
+```csharp
+var response = await udapClient.ValidateResource(options.BaseUrl, trustAnchorStore, community);
+
+if (!response.IsError)
+{
+    var result = udapClient.TrustChainValidationResult; // ChainValidationResult
+    var matchedAnchor = result?.MatchedAnchor;          // Udap.Common.Models.Anchor
+
+    logger.LogInformation(
+        "Chained to anchor {Thumbprint} in community {Community}",
+        matchedAnchor?.Thumbprint, result?.CommunityName);
+}
+```
+
+```MatchedAnchor``` is resolved by thumbprint against the ```Anchor``` models in the supplied ```ITrustAnchorStore```; it is populated whenever the chain terminates at one of those anchors and is ```null``` if validation failed or no anchor matched. ```CommunityId``` and ```CommunityName``` on the same result carry the matching anchor's community.
+
  ---
 
  **NOTE** The above example [trust anchor (download)](https://storage.googleapis.com/crl.fhircerts.net/certs/SureFhirLabs_CA.cer) is used by most communities in the https://fhirlabs.net/fhir/r4 test server.

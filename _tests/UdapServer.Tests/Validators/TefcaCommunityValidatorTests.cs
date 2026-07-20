@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -101,12 +102,17 @@ public class TefcaCommunityValidatorTests
     [InlineData("T-HCO")]
     [InlineData("T-HCO-CC")]
     [InlineData("T-HCO-HED")]
-    [InlineData("T-HCO-QM")]
+    [InlineData("T-HCO-QAI")]
+    [InlineData("T-HCO-POP")]
+    [InlineData("T-HCO-PTSAFETY")]
+    [InlineData("T-HCO-PERF")]
     [InlineData("T-PH")]
     [InlineData("T-PH-ECR")]
     [InlineData("T-PH-ELR")]
     [InlineData("T-IAS")]
     [InlineData("T-GOVDTRM")]
+    [InlineData("T-GOVDTRM-SSD")]
+    [InlineData("T-GOVDTRM-ACP")]
     public async Task Registration_ValidExchangePurpose_Succeeds(string xpCode)
     {
         var validator = new TefcaRegistrationValidator(DefaultOptions);
@@ -128,6 +134,20 @@ public class TefcaCommunityValidatorTests
         Assert.NotNull(result);
         Assert.True(result.IsError);
         Assert.Contains("INVALID", result.ErrorDescription);
+    }
+
+    [Fact]
+    public async Task Registration_RetiredExchangePurpose_IsRejected()
+    {
+        // T-HCO-QM was removed in Exchange Purposes SOP v5.x (replaced by T-HCO-QAI)
+        var validator = new TefcaRegistrationValidator(DefaultOptions);
+        var context = CreateRegistrationContext("urn:oid:2.999#T-HCO-QM");
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.NotNull(result);
+        Assert.True(result.IsError);
+        Assert.Contains("T-HCO-QM", result.ErrorDescription);
     }
 
     [Fact]
@@ -328,9 +348,12 @@ public class TefcaCommunityValidatorTests
         var rules = validator.GetValidationRules("client_credentials");
 
         Assert.NotNull(rules?.AllowedPurposeOfUse);
-        Assert.Equal(12, rules.AllowedPurposeOfUse.Count);
+        Assert.Equal(17, rules.AllowedPurposeOfUse.Count);
         Assert.Contains($"urn:oid:{TefcaConstants.ExchangePurposeCodes.Oid}#T-TREAT", rules.AllowedPurposeOfUse);
         Assert.Contains($"urn:oid:{TefcaConstants.ExchangePurposeCodes.Oid}#T-IAS", rules.AllowedPurposeOfUse);
+        Assert.Contains($"urn:oid:{TefcaConstants.ExchangePurposeCodes.Oid}#T-HCO-QAI", rules.AllowedPurposeOfUse);
+        Assert.Contains($"urn:oid:{TefcaConstants.ExchangePurposeCodes.Oid}#T-GOVDTRM-SSD", rules.AllowedPurposeOfUse);
+        Assert.DoesNotContain($"urn:oid:{TefcaConstants.ExchangePurposeCodes.Oid}#T-HCO-QM", rules.AllowedPurposeOfUse);
     }
 
     #endregion
@@ -420,6 +443,125 @@ public class TefcaCommunityValidatorTests
         Assert.True(result.IsValid);
     }
 
+    [Fact]
+    public async Task Token_TefcaIasWithoutIdToken_IsRejected()
+    {
+        // id_token is Required in the tefca_ias AEO (Facilitated FHIR SOP v2.0 Table 4)
+        var validator = new TefcaTokenValidator(DefaultOptions);
+        var context = CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-IAS",
+            purposeOfUse: "T-IAS",
+            grantType: "client_credentials",
+            includeTefcaIas: true,
+            includeIasIdToken: false);
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.False(result.IsValid);
+        Assert.Equal("invalid_grant", result.Error);
+        Assert.Contains("id_token", result.ErrorDescription);
+    }
+
+    #endregion
+
+    #region Treatment organization identifiers (Treatment XP SOP v2.0 Section 6.2)
+
+    private static readonly IOptions<TefcaValidationOptions> TreatmentEnforcedOptions =
+        Options.Create(new TefcaValidationOptions { EnforceTreatmentOrganizationIdentifiers = true });
+
+    [Theory]
+    [InlineData("T-TREAT")]
+    [InlineData("T-TRTMNT")]
+    public async Task Token_Treatment_Enforced_NpiInOrganizationName_Succeeds(string xpCode)
+    {
+        var validator = new TefcaTokenValidator(TreatmentEnforcedOptions);
+        var context = CreateTokenContext(
+            sanUri: $"urn:oid:2.999#{xpCode}",
+            purposeOfUse: xpCode,
+            organizationName: "FhirLabs Clinic | NPI 1234567890");
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Token_Treatment_Enforced_TinInOrganizationName_Succeeds()
+    {
+        var validator = new TefcaTokenValidator(TreatmentEnforcedOptions);
+        var context = CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-TRTMNT",
+            purposeOfUse: "T-TRTMNT",
+            organizationName: "FhirLabs Clinic | TIN 123456789");
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Token_Treatment_Enforced_NoIdentifierInOrganizationName_IsRejected()
+    {
+        var validator = new TefcaTokenValidator(TreatmentEnforcedOptions);
+        var context = CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-TRTMNT",
+            purposeOfUse: "T-TRTMNT",
+            organizationName: "FhirLabs Clinic");
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.False(result.IsValid);
+        Assert.Equal("invalid_grant", result.Error);
+        Assert.Contains("organization_name", result.ErrorDescription);
+    }
+
+    [Fact]
+    public async Task Token_Treatment_Enforced_MissingOrganizationId_IsRejected()
+    {
+        var validator = new TefcaTokenValidator(TreatmentEnforcedOptions);
+        var context = CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-TREAT",
+            purposeOfUse: "T-TREAT",
+            organizationName: "FhirLabs Clinic | NPI 1234567890",
+            organizationId: null);
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.False(result.IsValid);
+        Assert.Equal("invalid_grant", result.Error);
+        Assert.Contains("organization_id", result.ErrorDescription);
+    }
+
+    [Fact]
+    public async Task Token_Treatment_NotEnforced_NoIdentifiers_Succeeds()
+    {
+        // Default options: Section 6.2 enforcement is opt-in
+        var validator = new TefcaTokenValidator(DefaultOptions);
+        var context = CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-TRTMNT",
+            purposeOfUse: "T-TRTMNT",
+            organizationName: "FhirLabs Clinic");
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.True(result.IsValid);
+    }
+
+    [Fact]
+    public async Task Token_NonTreatment_Enforced_NoIdentifiers_Succeeds()
+    {
+        // Enforcement only applies to the Treatment exchange purposes
+        var validator = new TefcaTokenValidator(TreatmentEnforcedOptions);
+        var context = CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-PYMNT",
+            purposeOfUse: "T-PYMNT",
+            organizationName: "FhirLabs Clinic");
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.True(result.IsValid);
+    }
+
     #endregion
 
     #region Helpers
@@ -438,7 +580,10 @@ public class TefcaCommunityValidatorTests
         string? sanUri,
         string? purposeOfUse,
         string grantType = "client_credentials",
-        bool includeTefcaIas = false)
+        bool includeTefcaIas = false,
+        bool includeIasIdToken = true,
+        string? organizationName = "Test Org",
+        string? organizationId = "Organization/1.2.3")
     {
         var handler = new JsonWebTokenHandler();
         var jwt = handler.ReadJsonWebToken(
@@ -454,8 +599,8 @@ public class TefcaCommunityValidatorTests
         {
             var b2b = new HL7B2BAuthorizationExtension
             {
-                OrganizationId = "Organization/1.2.3",
-                OrganizationName = "Test Org"
+                OrganizationId = organizationId,
+                OrganizationName = organizationName
             };
             b2b.PurposeOfUse!.Add(purposeOfUse);
 
@@ -466,8 +611,12 @@ public class TefcaCommunityValidatorTests
 
             if (includeTefcaIas)
             {
-                extensions[TefcaConstants.UdapAuthorizationExtensions.TEFCAIAS] =
-                    new TEFCAIASAuthorizationExtension();
+                var ias = new TEFCAIASAuthorizationExtension();
+                if (includeIasIdToken)
+                {
+                    ias.IdToken = JsonSerializer.SerializeToElement("mock-oidc-id-token");
+                }
+                extensions[TefcaConstants.UdapAuthorizationExtensions.TEFCAIAS] = ias;
             }
         }
 

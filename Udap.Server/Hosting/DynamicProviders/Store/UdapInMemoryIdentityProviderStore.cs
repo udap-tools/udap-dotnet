@@ -21,21 +21,21 @@ internal class UdapInMemoryIdentityProviderStore : IIdentityProviderStore
         _providers = providers;
     }
 
-    public Task<IEnumerable<IdentityProviderName>> GetAllSchemeNamesAsync()
+    public Task<IReadOnlyCollection<IdentityProviderName>> GetAllSchemeNamesAsync(CancellationToken ct)
     {
         using var activity = Tracing.StoreActivitySource.StartActivity();
 
-        var items = _providers.Select(x => new IdentityProviderName
+        IReadOnlyCollection<IdentityProviderName> items = _providers.Select(x => new IdentityProviderName
         {
             Enabled = x.Enabled,
             DisplayName = x.DisplayName,
             Scheme = x.Scheme
-        });
+        }).ToList();
 
         return Task.FromResult(items);
     }
 
-    public Task<IdentityProvider?> GetBySchemeAsync(string scheme)
+    public Task<IdentityProvider?> GetBySchemeAsync(string scheme, CancellationToken ct)
     {
         using var activity = Tracing.StoreActivitySource.StartActivity();
 

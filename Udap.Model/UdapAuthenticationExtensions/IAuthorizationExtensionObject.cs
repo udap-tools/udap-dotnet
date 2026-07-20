@@ -12,7 +12,7 @@ using System.Collections.Generic;
 namespace Udap.Model.UdapAuthenticationExtensions;
 
 /// <summary>
-/// Common interface for authorization extension objects (e.g., hl7-b2b, tefca-ias).
+/// Common interface for authorization extension objects (e.g., hl7-b2b, tefca_ias).
 /// Implementations provide self-validation and optional purpose_of_use extraction.
 /// </summary>
 public interface IAuthorizationExtensionObject

@@ -72,11 +72,11 @@ UDAP is a PKI extension profile to OAuth 2.0. One or more PKIs can be hosted by 
 |:---|:---|:---:|:---|
 | `hl7-b2b` | SSRAA / TEFCA | :white_check_mark: | B2B extension for client_credentials — purpose_of_use enforcement |
 | `hl7-b2b-user` | SSRAA | :white_check_mark: | B2B extension for authorization_code with user context (FHIR Person) |
-| `tefca-ias` | TEFCA | :white_check_mark: | Individual Access Services — patient/user info, consent, id_token |
+| `tefca_ias` | TEFCA | :white_check_mark: | Individual Access Services — patient/user info, consent, id_token |
 
 **Pluggable validation** via `IUdapAuthorizationExtensionValidator` with per-community rules:
 - **SSRAA** — validates against HL7 v3 PurposeOfUse value set (60+ codes)
-- **TEFCA** — validates against 12 TEFCA Exchange Purpose (XP) codes, enforces single purpose_of_use, SAN URI matching
+- **TEFCA** — validates against the 17 TEFCA Exchange Purpose (XP) codes (Exchange Purposes SOP v5.1), enforces single purpose_of_use, SAN URI matching
 
 </details>
 
@@ -85,11 +85,12 @@ UDAP is a PKI extension profile to OAuth 2.0. One or more PKIs can be hosted by 
 
 | Feature | Status |
 |:---|:---:|
-| Exchange Purpose validation (all 12 XP codes) | :white_check_mark: |
+| Exchange Purpose validation (all 17 XP codes, SOP v5.1) | :white_check_mark: |
 | SAN URI exchange purpose matching | :white_check_mark: |
 | Organization ID validation (RCE Directory format) | :white_check_mark: |
 | TEFCA Authorization Error extension (consent_required) | :white_check_mark: |
-| IAS flow via `tefca-ias` extension | :white_check_mark: |
+| IAS flow via `tefca_ias` extension | :white_check_mark: |
+| Treatment org identifier validation (Treatment XP SOP v2.0 §6.2, opt-in) | :white_check_mark: |
 
 </details>
 
@@ -114,7 +115,7 @@ UDAP is a PKI extension profile to OAuth 2.0. One or more PKIs can be hosted by 
 | Package | Description |
 |:---|:---|
 | [![Udap.Ssraa.Server](https://img.shields.io/nuget/v/Udap.Ssraa.Server?label=Udap.Ssraa.Server)](https://www.nuget.org/packages/Udap.Ssraa.Server) | SSRAA community validation (purpose_of_use value set, required extensions) |
-| [![Udap.Tefca.Model](https://img.shields.io/nuget/v/Udap.Tefca.Model?label=Udap.Tefca.Model)](https://www.nuget.org/packages/Udap.Tefca.Model) | TEFCA extension models (`tefca-ias`, XP constants) |
+| [![Udap.Tefca.Model](https://img.shields.io/nuget/v/Udap.Tefca.Model?label=Udap.Tefca.Model)](https://www.nuget.org/packages/Udap.Tefca.Model) | TEFCA extension models (`tefca_ias`, XP constants) |
 | [![Udap.Tefca.Server](https://img.shields.io/nuget/v/Udap.Tefca.Server?label=Udap.Tefca.Server)](https://www.nuget.org/packages/Udap.Tefca.Server) | TEFCA community validation (XP codes, SAN matching) |
 
 ### Configuration Docs

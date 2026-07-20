@@ -59,6 +59,13 @@ public interface IUdapClient : IUdapClientEvents
     /// </summary>
     UdapMetadata? UdapServerMetadata { get; set; }
 
+    /// <summary>
+    /// The result of the trust chain validation performed during the most recent <see cref="ValidateResource"/>
+    /// call, including the matching <see cref="Udap.Common.Models.Anchor"/> and community. <c>null</c> until
+    /// a trust chain has been validated.
+    /// </summary>
+    ChainValidationResult? TrustChainValidationResult { get; }
+
 
     /// <summary>
     /// Register a TieredClient in the Authorization Server.

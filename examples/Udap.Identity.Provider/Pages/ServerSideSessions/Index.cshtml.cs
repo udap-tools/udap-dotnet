@@ -43,7 +43,7 @@ namespace Udap.Identity.Provider.Pages.ServerSideSessions
                     DisplayName = DisplayNameFilter,
                     SessionId = SessionIdFilter,
                     SubjectId = SubjectIdFilter
-                });
+                }, HttpContext.RequestAborted);
             }
         }
 
@@ -52,9 +52,9 @@ namespace Udap.Identity.Provider.Pages.ServerSideSessions
 
         public async Task<IActionResult> OnPost()
         {
-            await _sessionManagementService.RemoveSessionsAsync(new RemoveSessionsContext { 
+            await _sessionManagementService.RemoveSessionsAsync(new RemoveSessionsContext {
                 SessionId = SessionId,
-            });
+            }, HttpContext.RequestAborted);
             return RedirectToPage("/ServerSideSessions/Index", new { Token, DisplayNameFilter, SessionIdFilter, SubjectIdFilter, Prev });
         }
     }

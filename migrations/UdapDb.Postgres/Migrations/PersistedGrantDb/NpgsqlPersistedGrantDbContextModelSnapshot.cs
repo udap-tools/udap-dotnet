@@ -7,7 +7,6 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Udap.Server.Storage.DbContexts;
 
 #nullable disable
-#pragma warning disable
 
 namespace UdapDb.Postgres.Migrations.PersistedGrantDb
 {
@@ -19,7 +18,7 @@ namespace UdapDb.Postgres.Migrations.PersistedGrantDb
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("udap")
-                .HasAnnotation("ProductVersion", "8.0.3")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -58,8 +57,7 @@ namespace UdapDb.Postgres.Migrations.PersistedGrantDb
                         .HasColumnType("character varying(200)")
                         .HasColumnName("device_code");
 
-                    b.Property<DateTime?>("Expiration")
-                        .IsRequired()
+                    b.Property<DateTime>("Expiration")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("expiration");
 
@@ -250,6 +248,121 @@ namespace UdapDb.Postgres.Migrations.PersistedGrantDb
                     b.ToTable("pushed_authorization_requests", "udap");
                 });
 
+            modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.SamlLogoutSession", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<string>("LogoutId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("logout_id");
+
+                    b.Property<string>("SerializedSession")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("serialized_session");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Id")
+                        .HasName("pk_saml_logout_sessions");
+
+                    b.HasIndex("ExpiresAtUtc")
+                        .HasDatabaseName("ix_saml_logout_sessions_expires_at_utc");
+
+                    b.HasIndex("LogoutId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_saml_logout_sessions_logout_id");
+
+                    b.ToTable("saml_logout_sessions", "udap");
+                });
+
+            modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.SamlLogoutSessionRequestIndex", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("RequestId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("request_id");
+
+                    b.Property<long>("SamlLogoutSessionId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("saml_logout_session_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_saml_logout_session_request_indices");
+
+                    b.HasIndex("RequestId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_saml_logout_session_request_indices_request_id");
+
+                    b.HasIndex("SamlLogoutSessionId")
+                        .HasDatabaseName("ix_saml_logout_session_request_indices_saml_logout_session_id");
+
+                    b.ToTable("saml_logout_session_request_indices", "udap");
+                });
+
+            modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.SamlSigninState", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at_utc");
+
+                    b.Property<string>("SerializedState")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("serialized_state");
+
+                    b.Property<string>("ServiceProviderEntityId")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("service_provider_entity_id");
+
+                    b.Property<Guid>("StateId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("state_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_saml_signin_states");
+
+                    b.HasIndex("ExpiresAtUtc")
+                        .HasDatabaseName("ix_saml_signin_states_expires_at_utc");
+
+                    b.HasIndex("StateId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_saml_signin_states_state_id");
+
+                    b.ToTable("saml_signin_states", "udap");
+                });
+
             modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.ServerSideSession", b =>
                 {
                     b.Property<long>("Id")
@@ -324,6 +437,23 @@ namespace UdapDb.Postgres.Migrations.PersistedGrantDb
                         .HasDatabaseName("ix_server_side_sessions_subject_id");
 
                     b.ToTable("server_side_sessions", "udap");
+                });
+
+            modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.SamlLogoutSessionRequestIndex", b =>
+                {
+                    b.HasOne("Duende.IdentityServer.EntityFramework.Entities.SamlLogoutSession", "SamlLogoutSession")
+                        .WithMany("RequestIndices")
+                        .HasForeignKey("SamlLogoutSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_saml_logout_session_request_indices_saml_logout_sessions_sa~");
+
+                    b.Navigation("SamlLogoutSession");
+                });
+
+            modelBuilder.Entity("Duende.IdentityServer.EntityFramework.Entities.SamlLogoutSession", b =>
+                {
+                    b.Navigation("RequestIndices");
                 });
 #pragma warning restore 612, 618
         }

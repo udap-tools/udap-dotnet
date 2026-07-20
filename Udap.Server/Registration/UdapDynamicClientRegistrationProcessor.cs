@@ -66,6 +66,13 @@ public class UdapDynamicClientRegistrationProcessor : IUdapDynamicClientRegistra
             client.Properties[UdapServerConstants.ClientPropertyConstants.DataHolder] = UdapServerConstants.ClientPropertyConstants.DefaultOrgMap;
         }
 
+        // Community name property (feature-flagged). The udap_community access-token claim is
+        // resolved from the community id at token time; this property surfaces the name for display.
+        if (_serverSettings.IncludeCommunityClaim && !string.IsNullOrWhiteSpace(context.CommunityName))
+        {
+            client.Properties[UdapServerConstants.ClientPropertyConstants.Community] = context.CommunityName;
+        }
+
         // Client secrets from certificate chain
         var clientSecrets = client.ClientSecrets = new List<Secret>();
 

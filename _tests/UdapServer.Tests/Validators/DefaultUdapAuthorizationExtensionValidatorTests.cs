@@ -467,14 +467,14 @@ public class DefaultUdapAuthorizationExtensionValidatorTests
         validatorB.ValidateAsync(Arg.Any<UdapAuthorizationExtensionValidationContext>())
             .Returns(Task.FromResult(AuthorizationExtensionValidationResult.Success()));
 
-        // Client in community-b should need both hl7-b2b and tefca-ias
+        // Client in community-b should need both hl7-b2b and tefca_ias
         var validator = CreateValidator(clientStore, [validatorA, validatorB]);
         var context = CreateContext(communityId: "2", extensions: CreateValidB2BExtensions());
 
         var result = await validator.ValidateAsync(context);
 
         Assert.False(result.IsValid);
-        Assert.Contains("tefca-ias", result.ErrorDescription);
+        Assert.Contains("tefca_ias", result.ErrorDescription);
     }
 
     [Fact]

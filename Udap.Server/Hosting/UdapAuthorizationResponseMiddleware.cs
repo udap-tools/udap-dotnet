@@ -95,7 +95,8 @@ internal class UdapAuthorizationResponseMiddleware
                 {
                     var client =
                         await clients.FindClientByIdAsync(
-                            requestParams.AsNameValueCollection().Get(AuthorizeRequest.ClientId) ?? string.Empty);
+                            requestParams.AsNameValueCollection().Get(AuthorizeRequest.ClientId) ?? string.Empty,
+                            context.RequestAborted);
 
                     if (client != null &&
                         client.ClientSecrets.Any(cs =>
@@ -122,7 +123,8 @@ internal class UdapAuthorizationResponseMiddleware
                     var requestParamCollection = context.Request.Query.AsNameValueCollection();
                     var client =
                         await clients.FindClientByIdAsync(
-                            requestParamCollection.Get(AuthorizeRequest.ClientId) ?? string.Empty);
+                            requestParamCollection.Get(AuthorizeRequest.ClientId) ?? string.Empty,
+                            context.RequestAborted);
                     var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
                     
                     var scopes = scope?.FromSpaceSeparatedString();
@@ -133,7 +135,7 @@ internal class UdapAuthorizationResponseMiddleware
                         client.ClientSecrets.Any(cs =>
                             cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                     {
-                        if (udap.IsNullOrEmpty() || openid.IsNullOrEmpty())
+                        if (string.IsNullOrEmpty(udap) || string.IsNullOrEmpty(openid))
                         {
                             await RenderRequiredScopeErrorResponse(context);
                             _logger.LogInformation($"{nameof(UdapAuthorizationResponseMiddleware)} executed");
@@ -146,8 +148,11 @@ internal class UdapAuthorizationResponseMiddleware
 
             context.Response.OnStarting(async () =>
             {
-                if (context.Response.StatusCode == (int)HttpStatusCode.Redirect &&
-                    !context.Response.Headers.Location.IsNullOrEmpty()
+                // Duende v8 issues HTTP 303 (See Other) for authorization endpoint
+                // redirects (FAPI 2.0); 302 kept for any remaining legacy paths.
+                if ((context.Response.StatusCode == (int)HttpStatusCode.Redirect ||
+                     context.Response.StatusCode == (int)HttpStatusCode.SeeOther) &&
+                    !StringValues.IsNullOrEmpty(context.Response.Headers.Location)
                    )
                 {
                     var uri = new Uri(context.Response.Headers.Location!);
@@ -162,7 +167,7 @@ internal class UdapAuthorizationResponseMiddleware
                         Duende.IdentityServer.Models.Client? client = null;
 
                         if(clientId != null){
-                            client = await clients.FindClientByIdAsync(clientId);
+                            client = await clients.FindClientByIdAsync(clientId, context.RequestAborted);
                         }
 
                         if (client == null)
@@ -226,7 +231,7 @@ internal class UdapAuthorizationResponseMiddleware
         IIdentityServerInteractionService interactionService,
         StringValues errorId)
     {
-        var errorMessage = await interactionService.GetErrorContextAsync(errorId);
+        var errorMessage = await interactionService.GetErrorContextAsync(errorId, context.RequestAborted);
 
         if (errorMessage?.Error == AuthorizeErrors.UnsupportedResponseType
             || errorMessage is { Error: AuthorizeErrors.InvalidRequest, ErrorDescription: "Missing response_type" }

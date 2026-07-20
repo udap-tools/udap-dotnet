@@ -262,8 +262,9 @@ public class UdapClientTests
         using var cert = req.CreateSelfSigned(
             DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddYears(5));
 
-        return new Udap.Common.Models.Anchor(
-            X509CertificateLoader.LoadCertificate(cert.Export(X509ContentType.Cert)), "udap://decoy/");
+        // Pass the cert directly — Anchor copies the PEM/thumbprint, so this avoids
+        // X509CertificateLoader (net9+ only) and keeps the test building on net8.0.
+        return new Udap.Common.Models.Anchor(cert, "udap://decoy/");
     }
 
     [Fact]

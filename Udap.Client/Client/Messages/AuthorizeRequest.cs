@@ -10,10 +10,34 @@
 namespace Udap.Client.Messages;
 
 /// <summary>
+/// HTTP method used to send an authorization request to the authorization endpoint.
+/// Per SSRAA (see <a href="https://jira.hl7.org/browse/FHIR-52960">FHIR-52960</a>) Authorization Servers
+/// SHALL support both GET and POST requests to their authorization endpoint for the
+/// authorization code flow; clients SHALL support at least one of the two.
+/// </summary>
+public enum AuthorizeHttpMethod
+{
+    /// <summary>
+    /// Send the authorization request as an HTTP GET with query string parameters (RFC 6749 default).
+    /// </summary>
+    Get,
+
+    /// <summary>
+    /// Send the authorization request as an HTTP POST with an application/x-www-form-urlencoded body.
+    /// </summary>
+    Post
+}
+
+/// <summary>
 /// Encapsulates parameters for an OAuth 2.0 authorization request.
 /// </summary>
 public class AuthorizeRequest
 {
+    /// <summary>
+    /// The HTTP method used to send the authorization request. Defaults to <see cref="AuthorizeHttpMethod.Get"/>.
+    /// </summary>
+    public AuthorizeHttpMethod Method { get; init; } = AuthorizeHttpMethod.Get;
+
     /// <summary>
     /// The authorization endpoint URL.
     /// </summary>

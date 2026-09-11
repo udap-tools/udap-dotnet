@@ -77,6 +77,16 @@ app.MapRazorPages().RequireAuthorization();
 app.Run();
 ```
 
+## Authorization Requests by GET or POST
+
+`UdapAuthorizationResponseMiddleware` reads the `/connect/authorize` parameters from the
+query string on GET and from the `application/x-www-form-urlencoded` body on POST, so the
+`state` requirement, the tiered OAuth `udap`/`openid` scope check and the RFC 6749 error
+redirects behave the same for both transports (SSRAA requires authorization servers to
+accept both; see [FHIR-52960](https://jira.hl7.org/browse/FHIR-52960)). Error redirect
+parameters are URL-encoded and appended correctly when the `redirect_uri` already carries
+a query string.
+
 ## Community Validation Rules
 
 UDAP supports multiple trust communities, each with its own validation rules for token requests and client registration. The validation pipeline is pluggable via `ICommunityTokenValidator` and `ICommunityRegistrationValidator`.

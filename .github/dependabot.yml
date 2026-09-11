@@ -12,6 +12,22 @@ updates:
       interval: "daily"
     open-pull-requests-limit: 10
     target-branch: "develop"
+    groups:
+      # These package families must move together or NU1109 downgrade errors
+      # break the build when only one member is bumped.
+      duende:
+        patterns:
+          - "Duende.IdentityServer*"
+      identitymodel:
+        patterns:
+          - "Microsoft.IdentityModel.*"
+          - "System.IdentityModel.Tokens.Jwt"
+    ignore:
+      # Firely.Fhir.Packages >= 5.0 pulls Hl7.Fhir.Base 6.x, which removed
+      # BaseFhirParser/CommonFhirJsonSerializer still used by Udap.Proxy.Server.
+      # Pinned to 4.9.1 until the deferred Hl7.Fhir 6.x migration (see CLAUDE.md).
+      - dependency-name: "Firely.Fhir.Packages"
+        update-types: ["version-update:semver-major"]
   
   - package-ecosystem: "dotnet-sdk"
     directory: "/"

@@ -151,37 +151,14 @@ public interface IUdapClient : IUdapClientEvents
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sends an authorization request using the specified parameters.
+    /// Sends an authorization request using the specified parameters.  The request is sent with
+    /// HTTP GET by default; set <see cref="AuthorizeRequest.Method"/> to <see cref="AuthorizeHttpMethod.Post"/>
+    /// to send the parameters as an application/x-www-form-urlencoded body instead
+    /// (see <a href="https://jira.hl7.org/browse/FHIR-52960">FHIR-52960</a>).
     /// </summary>
     /// <param name="request">The authorization request parameters.</param>
     /// <returns>The HTTP response from the authorization endpoint.</returns>
     Task<HttpResponseMessage> Authorize(AuthorizeRequest request);
-
-    /// <summary>
-    /// Sends an authorization request with individual parameters.
-    /// </summary>
-    [Obsolete("Use the Authorize(AuthorizeRequest) overload instead.")]
-    Task<HttpResponseMessage> Authorize(
-        string authorizationUrl,
-        string clientId,
-        string? responseType = null,
-        string? scope = null,
-        string? redirectUri = null,
-        string? state = null,
-        string? nonce = null,
-        string? loginHint = null,
-        string? acrValues = null,
-        string? prompt = null,
-        string? responseMode = null,
-        string? codeChallenge = null,
-        string? codeChallengeMethod = null,
-        string? display = null,
-        int? maxAge = null,
-        string? uiLocales = null,
-        string? idTokenHint = null,
-        string? requestUri = null,
-        object? extra = null);
-
 
     /// <summary>
     /// Generated PKCS and use in the authorization code flow.

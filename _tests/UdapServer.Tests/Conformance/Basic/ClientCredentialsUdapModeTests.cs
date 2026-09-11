@@ -1345,9 +1345,97 @@ public class ClientCredentialsUdapModeTests
     }
 
     /// <summary>
+    /// A UDAP-registered client whose trust chain can no longer be validated at token time (anchor
+    /// disabled/rotated, revocation failure, etc.) must be rejected — even though the pipeline also
+    /// registers Duende's AddJwtBearerClientAuthentication() for non-UDAP private_key_jwt clients.
+    /// Guards against UDAP client cert secrets being stored under Duende's X509CertificateBase64
+    /// secret type, which let the stock PrivateKeyJwtSecretValidator validate the assertion by
+    /// signature alone and bypass UDAP trust-chain enforcement.
+    /// </summary>
+    [Fact]
+    public async Task GetAccessToken_Fails_When_TrustChainInvalid_Despite_JwtBearerClientAuthentication()
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+            { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
+
+        Assert.Null(regDocumentResult.GetError());
+
+        //
+        // Break the trust chain at token time: remove every community's anchors so chain resolution
+        // fails. (Disabling the community is not enough — the token-time lookup resolves the client's
+        // community by id and does not consult Enabled.)
+        //
+        foreach (var community in _mockPipeline.Communities)
+        {
+            community.Anchors = new List<Anchor>();
+        }
+
+        var clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
+                regDocumentResult.ClientId,
+                IdentityServerPipeline.TokenEndpoint,
+                clientCert)
+            .WithScope("system/Patient.rs")
+            .Build("RS384");
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        Assert.True(tokenResponse.IsError,
+            "token was issued even though the UDAP trust chain could not be validated — " +
+            "the stock PrivateKeyJwtSecretValidator must not be able to validate UDAP client secrets");
+        Assert.Equal("invalid_client", tokenResponse.Error);
+    }
+
+    /// <summary>
+    /// Pins the type separation: UDAP registration must store the client certificate under the
+    /// UDAP-specific secret type, never Duende's X509CertificateBase64 (see test above for why).
+    /// </summary>
+    [Fact]
+    public async Task Registration_Stores_Certificate_Under_Udap_Secret_Type()
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+            { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
+
+        Assert.Null(regDocumentResult.GetError());
+
+        var registeredClient = _mockPipeline.Clients.Single(c => c.ClientId == regDocumentResult.ClientId);
+        var certSecrets = registeredClient.ClientSecrets
+            .Where(s => s.Value == Convert.ToBase64String(clientCert.RawData))
+            .ToList();
+
+        Assert.NotEmpty(certSecrets);
+        Assert.All(certSecrets, s =>
+        {
+            Assert.Equal(Udap.Server.Storage.UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE, s.Type);
+            Assert.NotEqual(IdentityServerConstants.SecretTypes.X509CertificateBase64, s.Type);
+        });
+    }
+
+    /// <summary>
     /// Don't forget to add .AddJwtBearerClientAuthentication() to the IdentityServer configuration
     /// if you are going to enable compact JWS that are not UDAP.  They can coexist with UDAP
-    /// in your client store. 
+    /// in your client store.
     /// </summary>
     /// <returns></returns>
     [Fact]

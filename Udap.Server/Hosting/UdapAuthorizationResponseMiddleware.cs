@@ -7,8 +7,8 @@
 // */
 #endregion
 
+using System.Collections.Specialized;
 using System.Net;
-using System.Text;
 using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Services;
@@ -19,6 +19,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Udap.Model;
 using Udap.Server.Configuration;
+using Udap.Server.Extensions;
 using Udap.Server.Storage;
 using Udap.Util.Extensions;
 using static Duende.IdentityModel.OidcConstants;
@@ -35,17 +36,21 @@ namespace Udap.Server.Hosting;
 ///
 /// Require state parameter from clients by configuring the
 /// <see cref="ServerSettings.ForceStateParamOnAuthorizationCode"/> to true.
+///
+/// The authorization request may arrive as GET (query string) or POST
+/// (application/x-www-form-urlencoded body); both are read into one parameter
+/// collection so every check and error redirect behaves the same way.
 /// </summary>
 internal class UdapAuthorizationResponseMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IdentityServerOptions _options;
-    private readonly ILogger<UdapTokenResponseMiddleware> _logger;
+    private readonly ILogger<UdapAuthorizationResponseMiddleware> _logger;
 
     public UdapAuthorizationResponseMiddleware(
         RequestDelegate next,
         IdentityServerOptions options,
-        ILogger<UdapTokenResponseMiddleware> logger)
+        ILogger<UdapAuthorizationResponseMiddleware> logger)
     {
         _next = next;
         _options = options;
@@ -83,7 +88,7 @@ internal class UdapAuthorizationResponseMiddleware
         if (context.Request.Path.Value != null &&
             context.Request.Path.Value.Contains(Constants.ProtocolRoutePaths.Authorize))
         {
-            var requestParams = context.Request.Query;
+            var requestParams = await ReadRequestParametersAsync(context);
 
             if (requestParams.Count != 0)
             {
@@ -91,11 +96,11 @@ internal class UdapAuthorizationResponseMiddleware
                 // 1. Explicit config (ForceStateParamOnAuthorizationCode)
                 // 2. Server only supports V2 (EffectiveForceState)
                 // 3. Client is a V2 client (based on stored property)
-                if (!requestParams.TryGetValue(AuthorizeRequest.State, out _))
+                if (requestParams.Get(AuthorizeRequest.State) == null)
                 {
                     var client =
                         await clients.FindClientByIdAsync(
-                            requestParams.AsNameValueCollection().Get(AuthorizeRequest.ClientId) ?? string.Empty,
+                            requestParams.Get(AuthorizeRequest.ClientId) ?? string.Empty,
                             context.RequestAborted);
 
                     if (client != null &&
@@ -106,8 +111,8 @@ internal class UdapAuthorizationResponseMiddleware
 
                         if (requireState)
                         {
-                            await RenderMissingStateErrorResponse(context);
-                            _logger.LogInformation($"{nameof(UdapAuthorizationResponseMiddleware)} executed");
+                            RenderMissingStateErrorResponse(context, requestParams);
+                            _logger.LogInformation("{Middleware} rejected an authorization request with no state", nameof(UdapAuthorizationResponseMiddleware));
 
                             return;
                         }
@@ -120,12 +125,11 @@ internal class UdapAuthorizationResponseMiddleware
                 //
                 if (udapServerOptions.TieredIdp)
                 {
-                    var requestParamCollection = context.Request.Query.AsNameValueCollection();
                     var client =
                         await clients.FindClientByIdAsync(
-                            requestParamCollection.Get(AuthorizeRequest.ClientId) ?? string.Empty,
+                            requestParams.Get(AuthorizeRequest.ClientId) ?? string.Empty,
                             context.RequestAborted);
-                    var scope = requestParamCollection.Get(AuthorizeRequest.Scope);
+                    var scope = requestParams.Get(AuthorizeRequest.Scope);
                     
                     var scopes = scope?.FromSpaceSeparatedString();
                     var udap = (scopes ?? Array.Empty<string>()).FirstOrDefault(s => s == "udap");
@@ -137,8 +141,8 @@ internal class UdapAuthorizationResponseMiddleware
                     {
                         if (string.IsNullOrEmpty(udap) || string.IsNullOrEmpty(openid))
                         {
-                            await RenderRequiredScopeErrorResponse(context);
-                            _logger.LogInformation($"{nameof(UdapAuthorizationResponseMiddleware)} executed");
+                            RenderRequiredScopeErrorResponse(context, requestParams);
+                            _logger.LogInformation("{Middleware} rejected a tiered OAuth request missing the udap or openid scope", nameof(UdapAuthorizationResponseMiddleware));
 
                             return;
                         }
@@ -162,8 +166,7 @@ internal class UdapAuthorizationResponseMiddleware
 
                     if (responseParams.TryGetValue(_options.UserInteraction.ErrorIdParameter, out var errorId))
                     {
-                        var requestParamCollection = context.Request.Query.AsNameValueCollection();
-                        var clientId = requestParamCollection.Get(AuthorizeRequest.ClientId);
+                        var clientId = requestParams.Get(AuthorizeRequest.ClientId);
                         Duende.IdentityServer.Models.Client? client = null;
 
                         if(clientId != null){
@@ -172,14 +175,14 @@ internal class UdapAuthorizationResponseMiddleware
 
                         if (client == null)
                         {
-                            await RenderErrorResponse(context, interactionService, errorId);
+                            await RenderErrorResponse(context, interactionService, errorId, requestParams);
                             return;
                         }
 
                         if (client.ClientSecrets.Any(cs =>
                                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                         {
-                            await RenderErrorResponse(context, interactionService, errorId);
+                            await RenderErrorResponse(context, interactionService, errorId, requestParams);
                         }
                     }
                 }
@@ -189,47 +192,75 @@ internal class UdapAuthorizationResponseMiddleware
         await _next(context);
     }
 
-    private static Task RenderRequiredScopeErrorResponse(HttpContext context)
+    /// <summary>
+    /// Reads the authorization request parameters from the form body for a POST or
+    /// from the query string otherwise. <see cref="HttpRequest.ReadFormAsync(CancellationToken)"/>
+    /// caches the parsed form on the request, so the authorize endpoint downstream
+    /// sees the same values.
+    /// </summary>
+    private static async Task<NameValueCollection> ReadRequestParametersAsync(HttpContext context)
     {
-        if (context.Request.Query.TryGetValue(
-                AuthorizeRequest.RedirectUri,
-                out StringValues redirectUri))
+        IEnumerable<KeyValuePair<string, StringValues>> source;
+
+        if (HttpMethods.IsPost(context.Request.Method) && context.Request.HasApplicationFormContentType())
+        {
+            source = await context.Request.ReadFormAsync(context.RequestAborted);
+        }
+        else
+        {
+            source = context.Request.Query;
+        }
+
+        var parameters = new NameValueCollection();
+
+        foreach (var (key, values) in source)
+        {
+            foreach (var value in values)
+            {
+                parameters.Add(key, value);
+            }
+        }
+
+        return parameters;
+    }
+
+    private static void RenderRequiredScopeErrorResponse(HttpContext context, NameValueCollection requestParams)
+    {
+        var redirectUri = requestParams.Get(AuthorizeRequest.RedirectUri);
+
+        if (redirectUri != null)
         {
             var url = BuildRedirectUrl(
-                context,
+                requestParams,
                 redirectUri,
                 AuthorizeErrors.InvalidRequest,
                 "Missing udap and/or openid scope between data holder and IdP");
 
             context.Response.Redirect(url);
         }
-
-        return Task.CompletedTask;
     }
 
-
-    private static Task RenderMissingStateErrorResponse(HttpContext context)
+    private static void RenderMissingStateErrorResponse(HttpContext context, NameValueCollection requestParams)
     {
-        if (context.Request.Query.TryGetValue(
-                AuthorizeRequest.RedirectUri,
-                out StringValues redirectUri))
+        var redirectUri = requestParams.Get(AuthorizeRequest.RedirectUri);
+
+        if (redirectUri != null)
         {
             var url = BuildRedirectUrl(
-                context, 
+                requestParams,
                 redirectUri,
-                AuthorizeErrors.InvalidRequest, 
+                AuthorizeErrors.InvalidRequest,
                 "Missing state");
 
             context.Response.Redirect(url);
         }
-
-        return Task.CompletedTask;
     }
 
     private static async Task RenderErrorResponse(
         HttpContext context,
         IIdentityServerInteractionService interactionService,
-        StringValues errorId)
+        StringValues errorId,
+        NameValueCollection requestParams)
     {
         var errorMessage = await interactionService.GetErrorContextAsync(errorId, context.RequestAborted);
 
@@ -240,14 +271,13 @@ internal class UdapAuthorizationResponseMiddleware
             //
             // Include error in redirect
             //
+            var redirectUri = requestParams.Get(AuthorizeRequest.RedirectUri);
 
-            if (context.Request.Query.TryGetValue(
-                    AuthorizeRequest.RedirectUri,
-                    out StringValues redirectUri))
+            if (redirectUri != null)
             {
                 var url = BuildRedirectUrl(
-                    context, 
-                    redirectUri, 
+                    requestParams,
+                    redirectUri,
                     AuthorizeErrors.InvalidRequest,
                     errorMessage.ErrorDescription);
 
@@ -265,72 +295,46 @@ internal class UdapAuthorizationResponseMiddleware
         await context.Response.Body.FlushAsync();
     }
 
+    /// <summary>
+    /// Builds the RFC 6749 error redirect. Values are URL-encoded and appended with
+    /// <see cref="QueryHelpers.AddQueryString(string, IEnumerable{KeyValuePair{string, string?}})"/>
+    /// so a redirect_uri that already carries a query string stays valid.
+    /// </summary>
     private static string BuildRedirectUrl(
-        HttpContext context, 
-        StringValues redirectUri,
+        NameValueCollection requestParams,
+        string redirectUri,
         string error,
         string? errorDescription)
     {
-        var sb = new StringBuilder();
-
-        sb.Append(redirectUri).Append('?');
-
-        sb.Append(AuthorizeResponse.Error)
-            .Append('=')
+        var parameters = new List<KeyValuePair<string, string?>>
+        {
             // Transform error of unsupported_response_type to invalid_request
             // Seems reasonable if you read RFC 6749
             // TODO: PR to Duende?
-            .Append(error);
+            new(AuthorizeResponse.Error, error)
+        };
 
-        if(errorDescription != null)
+        if (errorDescription != null)
         {
-            sb.Append('&')
-            .Append(AuthorizeResponse.ErrorDescription)
-            .Append('=')
-            .Append(errorDescription);
+            parameters.Add(new KeyValuePair<string, string?>(AuthorizeResponse.ErrorDescription, errorDescription));
         }
 
-        if (context.Request.Query.TryGetValue(
-                AuthorizeRequest.ResponseType,
-                out StringValues responseType))
+        foreach (var name in new[]
+                 {
+                     AuthorizeRequest.ResponseType,
+                     AuthorizeRequest.Scope,
+                     AuthorizeRequest.State,
+                     AuthorizeRequest.Nonce
+                 })
         {
-            sb.Append('&')
-                .Append(AuthorizeRequest.ResponseType)
-                .Append('=')
-                .Append(responseType);
+            var value = requestParams.Get(name);
+
+            if (value != null)
+            {
+                parameters.Add(new KeyValuePair<string, string?>(name, value));
+            }
         }
 
-        if (context.Request.Query.TryGetValue(
-                AuthorizeRequest.Scope,
-                out StringValues scope))
-        {
-            sb.Append('&')
-                .Append(AuthorizeRequest.Scope)
-                .Append('=')
-                .Append(scope);
-        }
-
-        if (context.Request.Query.TryGetValue(
-                AuthorizeRequest.State,
-                out StringValues state))
-        {
-            sb.Append('&')
-                .Append(AuthorizeRequest.State)
-                .Append('=')
-                .Append(state);
-        }
-
-        if (context.Request.Query.TryGetValue(
-                AuthorizeRequest.Nonce,
-                out StringValues nonce))
-        {
-            sb.Append('&')
-                .Append(AuthorizeRequest.Nonce)
-                .Append('=')
-                .Append(nonce);
-        }
-
-        return sb.ToString();
+        return QueryHelpers.AddQueryString(redirectUri, parameters);
     }
-
 }

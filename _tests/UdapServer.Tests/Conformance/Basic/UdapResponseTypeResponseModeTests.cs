@@ -34,6 +34,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Client;
 using Udap.Client.Configuration;
+using Udap.Client.Extensions;
+using Udap.Client.Messages;
 using Udap.Common.Models;
 using Udap.Model;
 using Udap.Model.Access;
@@ -894,16 +896,265 @@ public class UdapResponseTypeResponseModeTests
 
         var udapClient = _mockPipeline.Resolve<IUdapClient>();
 
-        response = await udapClient.Authorize(
-            authorizationUrl: UdapAuthServerPipeline.AuthorizeEndpoint,
+        response = await udapClient.Authorize(new AuthorizeRequest
+        {
+            AuthorizationUrl = UdapAuthServerPipeline.AuthorizeEndpoint,
+            ClientId = resultDocument.ClientId!,
+            ResponseType = "code",
+            Scope = "openid",
+            RedirectUri = "http://www.udap.org/",
+            State = state,
+            Nonce = nonce
+        });
+
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();
+        Assert.NotNull(errorMessage);
+        Assert.Equal("invalid_request", errorMessage!.Error); //defined in Duende
+        Assert.Equal("Invalid redirect_uri", errorMessage.ErrorDescription, StringComparer.OrdinalIgnoreCase); //defined in Duende
+    }
+
+    /// <summary>
+    /// FHIR-52960 (SSRAA): Authorization Servers SHALL support both GET and POST requests
+    /// to their authorization endpoint for the authorization code flow.
+    /// <a href="https://jira.hl7.org/browse/FHIR-52960"/>
+    /// </summary>
+    [Fact]
+    public async Task Authorize_POST_method_accepted()
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("openid")
+            .WithResponseTypes(new List<string> { "code" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
+            .BuildSoftwareStatement();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            Array.Empty<string>()
+        );
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+        // Register
+        var response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapAuthServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        Assert.NotNull(resultDocument);
+        Assert.NotNull(resultDocument!.ClientId);
+
+        var clientId = resultDocument.ClientId;
+        var state = Guid.NewGuid().ToString();
+        var nonce = Guid.NewGuid().ToString();
+
+        await _mockPipeline.LoginAsync("bob");
+
+        // Authorize via POST (application/x-www-form-urlencoded) rather than GET
+        var formFields = new Dictionary<string, string>
+        {
+            { "client_id", clientId! },
+            { "response_type", "code" },
+            { "scope", "openid" },
+            { "redirect_uri", "https://code_client/callback" },
+            { "state", state },
+            { "nonce", nonce }
+        };
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
+        response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapAuthServerPipeline.AuthorizeEndpoint,
+            new FormUrlEncodedContent(formFields));
+
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
+
+        Assert.NotNull(response.Headers.Location);
+        Assert.Contains("https://code_client/callback", response.Headers.Location!.AbsoluteUri);
+        var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+        Assert.Contains(queryParams, p => p.Key == "code");
+        Assert.Equal(state, queryParams.Single(q => q.Key == "state").Value.ToString(), StringComparer.OrdinalIgnoreCase);
+
+        // Request Token From Auth Code issued via the POSTed authorization request
+        var tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
+                clientId,
+                "https://server/connect/token",
+                clientCert,
+                "https://code_client/callback",
+                queryParams.First(p => p.Key == "code").Value)
+            .Build();
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+        var tokenResponse = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);
+
+        Assert.NotNull(tokenResponse);
+        Assert.NotNull(tokenResponse.IdentityToken);
+        Assert.NotNull(new JwtSecurityToken(tokenResponse.AccessToken));
+    }
+
+    /// <summary>
+    /// FHIR-52960 (SSRAA): Exercise the Udap.Client POST option.  The
+    /// <see cref="HttpClientAuthorizeExtensions.AuthorizeAsync"/> extension converts a fully built
+    /// authorize URL into a form-urlencoded POST, which the server processes identically to a GET.
+    /// <a href="https://jira.hl7.org/browse/FHIR-52960"/>
+    /// </summary>
+    [Fact]
+    public async Task Authorize_POST_via_client_extension_accepted()
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("openid")
+            .WithResponseTypes(new List<string> { "code" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
+            .BuildSoftwareStatement();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue,
+            Array.Empty<string>()
+        );
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+        // Register
+        var response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapAuthServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        Assert.NotNull(resultDocument);
+        Assert.NotNull(resultDocument!.ClientId);
+
+        var state = Guid.NewGuid().ToString();
+        var nonce = Guid.NewGuid().ToString();
+
+        await _mockPipeline.LoginAsync("bob");
+
+        var url = _mockPipeline.CreateAuthorizeUrl(
             clientId: resultDocument.ClientId!,
             responseType: "code",
             scope: "openid",
-            redirectUri: "http://www.udap.org/",
+            redirectUri: "https://code_client/callback",
             state: state,
-            nonce: nonce
+            nonce: nonce);
+
+        _mockPipeline.BrowserClient.AllowAutoRedirect = false;
+        response = await _mockPipeline.BrowserClient.AuthorizeAsync(url, AuthorizeHttpMethod.Post);
+
+        Assert.Equal(HttpStatusCode.SeeOther, response.StatusCode);
+
+        Assert.NotNull(response.Headers.Location);
+        Assert.Contains("https://code_client/callback", response.Headers.Location!.AbsoluteUri);
+        var queryParams = QueryHelpers.ParseQuery(response.Headers.Location.Query);
+        Assert.Contains(queryParams, p => p.Key == "code");
+        Assert.Equal(state, queryParams.Single(q => q.Key == "state").Value.ToString(), StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// FHIR-52960 (SSRAA): Exercise <see cref="IUdapClient.Authorize(AuthorizeRequest)"/> with
+    /// <see cref="AuthorizeHttpMethod.Post"/>.  The server rejecting the invalid redirect_uri proves
+    /// it parsed the form-urlencoded parameters sent by the client's POST path.
+    /// <a href="https://jira.hl7.org/browse/FHIR-52960"/>
+    /// </summary>
+    [Fact]
+    public async Task Authorize_POST_via_UdapClient_invalid_redirect_url_results_in_invalid_request()
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        await _mockPipeline.LoginAsync("bob");
+
+        var signedSoftwareStatement = UdapDcrBuilderForAuthorizationCode
+            .Create(clientCert)
+            .WithAudience(UdapAuthServerPipeline.RegistrationEndpoint)
+            .WithExpiration(TimeSpan.FromMinutes(5))
+            .WithJwtId()
+            .WithClientName("mock test")
+            .WithLogoUri("https://avatars.githubusercontent.com/u/77421324?s=48&v=4")
+            .WithContacts(new HashSet<string>
+            {
+                "mailto:Joseph.Shook@Surescripts.com", "mailto:JoeShook@gmail.com"
+            })
+            .WithTokenEndpointAuthMethod(UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue)
+            .WithScope("openid system/*.read")
+            .WithResponseTypes(new List<string> { "code" })
+            .WithRedirectUrls(new List<string> { "https://code_client/callback" })
+            .BuildSoftwareStatement();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
         );
 
+        _mockPipeline.BrowserClient.AllowAutoRedirect = true;
+
+        var response = await _mockPipeline.BrowserClient.PostAsync(
+            UdapAuthServerPipeline.RegistrationEndpoint,
+            new StringContent(JsonSerializer.Serialize(requestBody), new MediaTypeHeaderValue("application/json")));
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var resultDocument = await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationDocument>();
+        Assert.NotNull(resultDocument);
+        Assert.NotNull(resultDocument!.ClientId);
+
+        var state = Guid.NewGuid().ToString();
+        var nonce = Guid.NewGuid().ToString();
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+
+        response = await udapClient.Authorize(new AuthorizeRequest
+        {
+            Method = AuthorizeHttpMethod.Post,
+            AuthorizationUrl = UdapAuthServerPipeline.AuthorizeEndpoint,
+            ClientId = resultDocument.ClientId!,
+            ResponseType = "code",
+            Scope = "openid",
+            RedirectUri = "http://www.udap.org/",
+            State = state,
+            Nonce = nonce
+        });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var errorMessage = await response.Content.ReadFromJsonAsync<ErrorMessage>();

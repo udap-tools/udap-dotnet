@@ -368,7 +368,17 @@ public class RegisterNonPKCERequired_UsePKCE_Tests
         //
         // a second valid code_verifier should just fail for invalid_grant
         // because it was already attempted and the session was tossed out.
+        // Build a fresh request: reusing the first request's client assertion would be
+        // rejected as a jti replay (invalid_client) before the grant is ever evaluated.
         //
+
+        tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
+                clientId,
+                "https://server/connect/token",
+                clientCert,
+                "https://code_client/callback",
+                queryParams.First(p => p.Key == "code").Value)
+        .Build();
 
         tokenRequest.CodeVerifier = pkce.CodeVerifier;
         tokenResponse = await udapClient.ExchangeCodeForTokenResponse(tokenRequest);

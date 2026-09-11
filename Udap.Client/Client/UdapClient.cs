@@ -226,72 +226,28 @@ namespace Udap.Client
         /// <inheritdoc />
         public Task<HttpResponseMessage> Authorize(AuthorizeRequest request)
         {
-            return Authorize(
-                request.AuthorizationUrl,
-                request.ClientId,
-                request.ResponseType,
-                request.Scope,
-                request.RedirectUri,
-                request.State,
-                request.Nonce,
-                request.LoginHint,
-                request.AcrValues,
-                request.Prompt,
-                request.ResponseMode,
-                request.CodeChallenge,
-                request.CodeChallengeMethod,
-                request.Display,
-                request.MaxAge,
-                request.UiLocales,
-                request.IdTokenHint,
-                request.RequestUri,
-                request.Extra);
-        }
-
-        /// <inheritdoc />
-        [Obsolete("Use the Authorize(AuthorizeRequest) overload instead.")]
-        public Task<HttpResponseMessage> Authorize(
-            string authorizationUrl,
-            string clientId,
-            string? responseType = null,
-            string? scope = null,
-            string? redirectUri = null,
-            string? state = null,
-            string? nonce = null,
-            string? loginHint = null,
-            string? acrValues = null,
-            string? prompt = null,
-            string? responseMode = null,
-            string? codeChallenge = null,
-            string? codeChallengeMethod = null,
-            string? display = null,
-            int? maxAge = null,
-            string? uiLocales = null,
-            string? idTokenHint = null,
-            string? requestUri = null,
-            object? extra = null)
-        {
-            var url = new RequestUrl(authorizationUrl).CreateAuthorizeUrl(
-                clientId: clientId,
-                responseType: responseType,
-                scope: scope,
-                redirectUri: redirectUri,
-                state: state,
-                nonce: nonce,
-                loginHint: loginHint,
-                acrValues: acrValues,
-                responseMode: responseMode,
-                codeChallenge: codeChallenge,
-                codeChallengeMethod: codeChallengeMethod,
-                display: display,
-                maxAge: maxAge,
-                uiLocales: uiLocales,
-                idTokenHint: idTokenHint,
-                requestUri: requestUri,
-                extra: extra == null ? null : Parameters.FromObject(extra)
+            var url = new RequestUrl(request.AuthorizationUrl).CreateAuthorizeUrl(
+                clientId: request.ClientId,
+                responseType: request.ResponseType,
+                scope: request.Scope,
+                redirectUri: request.RedirectUri,
+                state: request.State,
+                nonce: request.Nonce,
+                loginHint: request.LoginHint,
+                acrValues: request.AcrValues,
+                prompt: request.Prompt,
+                responseMode: request.ResponseMode,
+                codeChallenge: request.CodeChallenge,
+                codeChallengeMethod: request.CodeChallengeMethod,
+                display: request.Display,
+                maxAge: request.MaxAge,
+                uiLocales: request.UiLocales,
+                idTokenHint: request.IdTokenHint,
+                requestUri: request.RequestUri,
+                extra: request.Extra == null ? null : Parameters.FromObject(request.Extra)
                 );
 
-            return _httpClient.GetAsync(url);
+            return _httpClient.AuthorizeAsync(url, request.Method);
         }
 
         /// <summary>

@@ -34,7 +34,7 @@ namespace Udap.PKI.Generator;
 ///
 /// Two variants are generated:
 ///   - TEFCA_Community: AIA/CRL point to crl.fhircerts.net (for deployment)
-///   - TEFCA_Community_Desk: AIA/CRL point to host.docker.internal:5033 (for local dev)
+///   - TEFCA_Community_Desk: AIA/CRL point to udap-cert-server.dev.localhost:5033 (for local dev)
 ///
 /// <a href="https://rce.sequoiaproject.org/wp-content/uploads/2026/02/SOP-Facilitated-FHIR-Implementation-2.0-Draft-508.pdf#page=14">SOP v2.0 — Section 6.11</a>
 /// </summary>
@@ -73,7 +73,7 @@ public class TefcaBuild : CertificateBase
 
     /// <summary>
     /// Generates TEFCA PKI for local desktop development — AIA/CRL URLs point to
-    /// host.docker.internal:5033 (Udap.Certificates.Server).
+    /// udap-cert-server.dev.localhost:5033 (Udap.Certificates.Server).
     /// Output directory: certstores/TEFCA_Community_Desk
     /// </summary>
     [Fact]
@@ -84,13 +84,13 @@ public class TefcaBuild : CertificateBase
             CertStoreName = "TEFCA_Community_Desk",
             IntermediateCrlFilename = "TefcaTestIntermediateCrl.crl",
             RootCrlFilename = "TefcaTestRootCrl.crl",
-            CrlBaseUrl = "http://host.docker.internal:5033/crl",
-            CaPublicCertUrl = "http://host.docker.internal:5033/certs/TEFCA_Test_CA.cer",
-            IntermediatePublicCertUrl = "http://host.docker.internal:5033/certs/intermediates/TEFCA_Test_Intermediate.cer",
+            CrlBaseUrl = $"{BuildTestCerts.LocalCertServer}/crl",
+            CaPublicCertUrl = $"{BuildTestCerts.LocalCertServer}/certs/TEFCA_Test_CA.cer",
+            IntermediatePublicCertUrl = $"{BuildTestCerts.LocalCertServer}/certs/intermediates/TEFCA_Test_Intermediate.cer",
             ServerSans = new List<string>
             {
-                "https://localhost:7016/fhir/r4",
-                "https://localhost:7074/fhir/r4"
+                "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4",
+                "https://udap-proxy.dev.localhost:7074/fhir/r4"
             }
         };
 
@@ -107,7 +107,7 @@ public class TefcaBuild : CertificateBase
     ///           ├── T-IAS client cert (SAN: urn:oid:2.999#T-IAS)
     ///           ├── T-TREAT client cert (SAN: urn:oid:2.999#T-TREAT)
     ///           ├── T-PYMNT client cert (SAN: urn:oid:2.999#T-PYMNT)
-    ///           └── server cert (SANs: fhirlabs.net, localhost:7016, localhost:7074)
+    ///           └── server cert (SANs: fhirlabs.net, udap-fhirlabs-api.dev.localhost:7016, udap-proxy.dev.localhost:7074)
     /// </summary>
     private void BuildTefcaPki(TefcaPkiConfig config, bool distribute = false)
     {
@@ -332,12 +332,7 @@ public class TefcaBuild : CertificateBase
         AddAuthorityKeyIdentifier(intermediateCert, clientReq, _testOutputHelper);
         clientReq.CertificateExtensions.Add(MakeCdp(cdpUrl));
 
-        var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-        foreach (var san in subjectAltNames)
-        {
-            subAltNameBuilder.AddUri(new Uri(san));
-        }
-        clientReq.CertificateExtensions.Add(subAltNameBuilder.Build());
+        clientReq.CertificateExtensions.Add(SubjectAltName.FromUris(subjectAltNames));
 
         var aiaBuilder = new AuthorityInformationAccessBuilder();
         aiaBuilder.AddCertificateAuthorityIssuerUri(new Uri(aiaUrl));

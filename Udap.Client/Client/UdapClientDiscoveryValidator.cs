@@ -39,26 +39,18 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
         _logger = logger;
     }
 
-    /// <inheritdoc/>
-    public event Action<X509Certificate2>? Untrusted
-    {
-        add => _trustChainValidator.Untrusted += value;
-        remove => _trustChainValidator.Untrusted -= value;
-    }
+    // These events belong to this validator, not to the TrustChainValidator, which may be shared
+    // (the server registers it as a singleton). ValidateTrustChain relays its events only for the
+    // certificate it is validating, so handlers never pile up on, or fire for, another caller's validation.
 
     /// <inheritdoc/>
-    public event Action<ChainElementInfo>? Problem
-    {
-        add => _trustChainValidator.Problem += value;
-        remove => _trustChainValidator.Problem -= value;
-    }
+    public event Action<X509Certificate2>? Untrusted;
 
     /// <inheritdoc/>
-    public event Action<X509Certificate2, Exception>? Error
-    {
-        add => _trustChainValidator.Error += value;
-        remove => _trustChainValidator.Error -= value;
-    }
+    public event Action<ChainElementInfo>? Problem;
+
+    /// <inheritdoc/>
+    public event Action<X509Certificate2, Exception>? Error;
 
     /// <inheritdoc/>
     public event Action<string>? TokenError;
@@ -257,18 +249,57 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
             return false;
         }
 
-        var result = await _trustChainValidator.IsTrustedCertificateAsync(
-            nameof(UdapClient),
-            _publicCertificate,
-            anchors.SelectMany(a =>
-                    a.Intermediates == null
-                        ? Enumerable.Empty<X509Certificate2>()
-                        : a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate)))
-                .ToArray().ToX509Collection(),
-            anchorCertificates,
-            anchors);
+        var certificate = _publicCertificate;
+        var untrusted = new List<X509Certificate2>();
+        var problems = new List<ChainElementInfo>();
+        var errors = new List<(X509Certificate2 Certificate, Exception Exception)>();
+
+        void OnUntrusted(X509Certificate2 c) { if (ReferenceEquals(c, certificate)) { lock (untrusted) untrusted.Add(c); } }
+        void OnProblem(ChainElementInfo e) { lock (problems) problems.Add(e); }
+        void OnError(X509Certificate2 c, Exception ex) { if (ReferenceEquals(c, certificate)) { lock (errors) errors.Add((c, ex)); } }
+
+        _trustChainValidator.Untrusted += OnUntrusted;
+        _trustChainValidator.Problem += OnProblem;
+        _trustChainValidator.Error += OnError;
+
+        ChainValidationResult result;
+        try
+        {
+            result = await _trustChainValidator.IsTrustedCertificateAsync(
+                nameof(UdapClient),
+                certificate,
+                anchors.SelectMany(a =>
+                        a.Intermediates == null
+                            ? Enumerable.Empty<X509Certificate2>()
+                            : a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate)))
+                    .ToArray().ToX509Collection(),
+                anchorCertificates,
+                anchors);
+        }
+        finally
+        {
+            _trustChainValidator.Untrusted -= OnUntrusted;
+            _trustChainValidator.Problem -= OnProblem;
+            _trustChainValidator.Error -= OnError;
+        }
 
         LastChainValidationResult = result;
+
+        // Relay only what this validation reported: problems are the chain elements of this result.
+        foreach (var problem in problems.Where(p => result.ChainElements.Any(e => ReferenceEquals(e, p))))
+        {
+            Problem?.Invoke(problem);
+        }
+
+        foreach (var error in errors)
+        {
+            Error?.Invoke(error.Certificate, error.Exception);
+        }
+
+        foreach (var cert in untrusted)
+        {
+            Untrusted?.Invoke(cert);
+        }
 
         return result.IsValid;
     }

@@ -20,7 +20,7 @@ namespace Udap.Pki.Cli;
 
 public class UpdateCrlCommand : AsyncCommand<UpdateCrlSettings>
 {
-    protected override async Task<int> ExecuteAsync(CommandContext context, UpdateCrlSettings settings, CancellationToken cancellationToken)
+    public override async Task<int> ExecuteAsync(CommandContext context, UpdateCrlSettings settings, CancellationToken cancellationToken)
     {
         var password = ResolvePassword(settings);
         return await UpdateCrl(settings.Type, password, settings.IsProduction, settings.Days, "PrivatePkiStore");

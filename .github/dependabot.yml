@@ -22,11 +22,33 @@ updates:
         patterns:
           - "Microsoft.IdentityModel.*"
           - "System.IdentityModel.Tokens.Jwt"
+      # The OpenTelemetry packages share the core OpenTelemetry dependency; separate PRs conflict on it.
+      opentelemetry:
+        patterns:
+          - "OpenTelemetry*"
+      # One PR per .NET servicing release instead of one per package and project.
+      # A new major version stays its own PR: it is a target framework decision.
+      dotnet-servicing:
+        patterns:
+          - "Microsoft.AspNetCore.*"
+          - "Microsoft.EntityFrameworkCore*"
+          - "Microsoft.Extensions.*"
+          - "Microsoft.Bcl.*"
+          - "System.Configuration.ConfigurationManager"
+          - "System.Security.Cryptography.*"
+          - "dotnet-ef"
+        update-types:
+          - "minor"
+          - "patch"
     ignore:
       # Firely.Fhir.Packages >= 5.0 pulls Hl7.Fhir.Base 6.x, which removed
       # BaseFhirParser/CommonFhirJsonSerializer still used by Udap.Proxy.Server.
       # Pinned to 4.9.1 until the deferred Hl7.Fhir 6.x migration (see CLAUDE.md).
       - dependency-name: "Firely.Fhir.Packages"
+        update-types: ["version-update:semver-major"]
+      # Firely.Fhir.Validation.R4B 3.x belongs to the same Hl7.Fhir 6.x migration;
+      # it stays on 2.7.1 alongside Firely.Fhir.Packages 4.9.1.
+      - dependency-name: "Firely.Fhir.Validation.R4B"
         update-types: ["version-update:semver-major"]
   
   - package-ecosystem: "dotnet-sdk"
@@ -34,3 +56,14 @@ updates:
     schedule:
       interval: "weekly"
     target-branch: "develop"
+
+  # The workflows pin every action to a commit; this keeps those pins current.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    target-branch: "develop"
+    groups:
+      actions:
+        patterns:
+          - "*"

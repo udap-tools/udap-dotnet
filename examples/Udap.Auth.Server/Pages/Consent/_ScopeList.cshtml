@@ -1,0 +1,74 @@
+@model IReadOnlyList<Udap.UI.Services.UdapScope>
+@*
+    One row per permission, worded twice: plain language for the person granting access (ScopeLanguage) and the
+    technical scope for testers. The Plain language / Technical toggle (labels.js) shows one or the other;
+    without script the page stays in plain language.
+
+    A required permission is a ticked, disabled checkbox with no name plus a hidden input that carries it,
+    so it is posted exactly once (a disabled checkbox is never submitted).
+*@
+<ul role="list" class="sc-scopes">
+    @foreach (var scope in Model)
+    {
+        var id = "scope_" + System.Text.RegularExpressions.Regex.Replace(scope.Value, "[^A-Za-z0-9_-]", "_");
+        var wording = UdapScopeLanguage.Describe(scope.Value);
+        // A scope SecuredControls Auth can't word, but the authorization server's catalog names: use the catalog's words.
+        var title = !wording.Known && scope.DisplayName != scope.Value ? scope.DisplayName : wording.Title;
+        var detail = !wording.Known && !string.IsNullOrEmpty(scope.Description) ? scope.Description : wording.Detail;
+        <li>
+            <label class="sc-check" for="@id">
+                @if (scope.Required)
+                {
+                    <input type="checkbox" id="@id" checked disabled />
+                }
+                else
+                {
+                    <input type="checkbox" id="@id" name="Input.ScopesConsented" value="@scope.Value" checked="@scope.Checked" />
+                }
+                <span class="sc-scope">
+                    <span class="sc-lbl-plain">
+                        <span class="sc-scope-name">
+                            @title
+                            @if (scope.Required)
+                            {
+                                <span class="sc-scope-required">(required)</span>
+                            }
+                        </span>
+                        <span class="sc-scope-desc">@detail</span>
+                    </span>
+                    <span class="sc-lbl-tech">
+                        <span class="sc-scope-name">
+                            <code>@scope.Value</code>
+                            @if (scope.Required)
+                            {
+                                <span class="sc-scope-required">(required)</span>
+                            }
+                        </span>
+                        <span class="sc-scope-desc">@wording.Technical</span>
+                        @if (scope.DisplayName != scope.Value || !string.IsNullOrEmpty(scope.Description))
+                        {
+                            <span class="sc-scope-desc">Catalog: @scope.DisplayName@(string.IsNullOrEmpty(scope.Description) ? "" : $". {scope.Description}")</span>
+                        }
+                    </span>
+                    @if (wording.AllowsChanges || wording.BeyondYou)
+                    {
+                        <span class="sc-scope-flags">
+                            @if (wording.AllowsChanges)
+                            {
+                                <span class="sc-flag sc-flag--change">Can change records</span>
+                            }
+                            @if (wording.BeyondYou)
+                            {
+                                <span class="sc-flag">Not limited to you</span>
+                            }
+                        </span>
+                    }
+                </span>
+            </label>
+            @if (scope.Required)
+            {
+                <input type="hidden" name="Input.ScopesConsented" value="@scope.Value" />
+            }
+        </li>
+    }
+</ul>

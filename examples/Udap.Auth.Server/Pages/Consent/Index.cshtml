@@ -1,0 +1,74 @@
+@page
+@model Udap.Auth.Server.Pages.Consent.Index
+@{
+    var view = Model.View!;
+    ViewData["Title"] = $"Allow {view.ClientName}?";
+    var all = view.Scopes.IdentityScopes.Concat(view.Scopes.ApiScopes).ToList();
+    var panel = RequestPanelModel.ForClient(view.Client,
+        ("For", SignedInUser.DisplayName(User)),
+        ("Asks for", $"{all.Count} {(all.Count == 1 ? "item" : "items")}, listed here"),
+        ("Lasts", all.Any(s => s.Value == "offline_access") ? "Until you remove it" : "This visit"));
+}
+
+<div class="sc-page sc-page--aside-first">
+    <section class="sc-stack" aria-labelledby="consent-title">
+        <div class="sc-stack-sm">
+            <h1 id="consent-title">Allow @view.ClientName to reach your records?</h1>
+            <p class="sc-lede">Untick anything you don't want to share. Required items are needed for the app to work.</p>
+        </div>
+
+        <partial name="_Errors" />
+
+        <form method="post" class="sc-stack">
+            <input type="hidden" asp-for="Input.ReturnUrl" />
+
+            <div class="sc-labels" role="group" aria-label="How permissions are described" data-labels-toggle hidden>
+                <button type="button" data-labels="plain" aria-pressed="true">Plain language</button>
+                <button type="button" data-labels="technical" aria-pressed="false">Technical</button>
+            </div>
+
+            @if (view.Scopes.IdentityScopes.Count > 0)
+            {
+                <fieldset class="sc-stack-sm">
+                    <legend><h2>About you</h2></legend>
+                    <partial name="_ScopeList" model="view.Scopes.IdentityScopes" />
+                </fieldset>
+            }
+
+            @if (view.Scopes.ApiScopes.Count > 0)
+            {
+                <fieldset class="sc-stack-sm">
+                    <legend><h2>Your health records</h2></legend>
+                    <partial name="_ScopeList" model="view.Scopes.ApiScopes" />
+                </fieldset>
+            }
+
+            @if (view.AllowRememberConsent)
+            {
+                <label class="sc-check">
+                    <input asp-for="Input.RememberConsent" />
+                    <span>Remember my choice for @view.ClientName</span>
+                </label>
+            }
+
+            <div class="sc-actions">
+                <button class="sc-button" name="Input.Button" value="yes" autofocus>Allow</button>
+                <button class="sc-button sc-button--quiet" name="Input.Button" value="no">Don't allow</button>
+            </div>
+        </form>
+    </section>
+
+    <aside class="sc-aside" aria-label="The app asking">
+        <partial name="_RequestPanel" model="panel" />
+        @if (!string.IsNullOrEmpty(view.ClientUrl))
+        {
+            <p class="sc-small sc-muted">
+                Learn about this app at <a href="@view.ClientUrl" rel="noopener noreferrer" target="_blank">@view.ClientUrl</a>.
+            </p>
+        }
+    </aside>
+</div>
+
+@section scripts {
+    <script type="module" src="~/js/labels.js" asp-append-version="true"></script>
+}

@@ -15,7 +15,6 @@ using Duende.IdentityModel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.IdentityModel.Tokens.Jwt;
-using System.Text.Json;
 using Udap.Common.Extensions;
 using Udap.Server.Extensions;
 
@@ -58,7 +57,8 @@ public class UdapJwtBearerClientAssertionSecretParser : ISecretParser
 
         var body = await context.Request.ReadFormAsync(ct);
 
-        _logger.LogDebug("Form body content: {FormBody}", JsonSerializer.Serialize(body));
+        // Field names only: the values include the client assertion, authorization code, code_verifier and refresh token.
+        _logger.LogDebug("Form body fields: {FormFields}", string.Join(", ", body.Keys));
 
         if (body.Count != 0)
         {

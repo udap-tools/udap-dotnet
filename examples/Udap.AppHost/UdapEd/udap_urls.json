@@ -1,0 +1,24 @@
+{
+  "CertDefaultBaseUrls": [
+    "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4",
+    "https://udap-proxy.dev.localhost:7074/fhir/r4",
+    "https://udap-tefca-proxy.dev.localhost:7075/fhir/r4",
+    "https://fhirlabs.net/fhir/r4",
+    "https://stage.healthtogo.me:8181/fhir/r4/stage",
+    "https://dev-mtx-interop.meditech.com",
+    "https://dev-mtx-interop.meditech.com/v2/uscore/STU6",
+    "https://securefhir.zimt.work/udap-public",
+    "https://identity-matching.fast.hl7.org/fhir",
+    "https://national-directory.fast.hl7.org/fhir",
+    "https://udap.fhir.poolnook.me/evernorth",
+    "https://fhir-udap.azurewebsites.net",
+    "https://ihe-nimbus.epic.com/Interconnect-FHIR/api/fhir/r4"
+  ],
+  "IdPBaseUrls": [
+    "https://udap-idp2.dev.localhost:5057",
+    "https://udap-idp1.dev.localhost:5055",
+    "https://udap.zimt.work/oauth2/aus5wvee13EWm169M1d7",
+    "https://idp1.securedcontrols.net",
+    "https://stage.healthtogo.me:8181/fhir/r4/idp"
+  ]
+}

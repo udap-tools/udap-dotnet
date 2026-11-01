@@ -18,6 +18,7 @@ using Udap.Common.Models;
 using Udap.Server.Storage.DbContexts;
 using Udap.Server.Storage.Extensions;
 using Udap.Server.Storage.Mappers;
+using Udap.Util.Extensions;
 using Secret = Duende.IdentityServer.Models.Secret;
 
 namespace Udap.Server.Storage.Stores
@@ -112,6 +113,23 @@ namespace Udap.Server.Storage.Stores
                             Value = newCertSecret.Value,
                             Expiration = newCertSecret.Expiration
                         });
+                    }
+                }
+
+                // Re-registration with a renewed certificate: roll the UDAP identity secrets forward
+                // to the new certificate's expiration. Duende drops expired secrets before secret
+                // validation, so stale expirations here make the client unable to authenticate.
+                var newIdentityExpiration = client.ClientSecrets
+                    .FirstOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+                    ?.Expiration;
+
+                if (newIdentityExpiration.HasValue)
+                {
+                    foreach (var identitySecret in existingClient.ClientSecrets.Where(cs =>
+                                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME ||
+                                 cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY))
+                    {
+                        identitySecret.Expiration = newIdentityExpiration;
                     }
                 }
 
@@ -266,9 +284,9 @@ namespace Udap.Server.Storage.Stores
 
             foreach (var intCert in encodedCerts.SelectMany(anchor => anchor.Intermediates))
             {
-                _ = certificates.Append(X509Certificate2.CreateFromPem(intCert.X509Certificate));
+                certificates.Add(X509Certificate2.CreateFromPem(intCert.X509Certificate));
             }
-           
+
             return certificates;
         }
 
@@ -348,9 +366,15 @@ namespace Udap.Server.Storage.Stores
             if (entity != null)
             {
                 var endCertificate = secret.GetUdapEndCert();
+                var registeredIssuer = entity.ClientSecrets
+                    .FirstOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+                    ?.Value;
 
+                // Only a renewal of the client's own certificate rolls forward: it must carry the registered issuer as a URI SAN.
                 if(endCertificate != null && endCertificate.NotBefore < DateTime.Now.ToUniversalTime()
-                                          && endCertificate.NotAfter > DateTime.Now.ToUniversalTime())
+                                          && endCertificate.NotAfter > DateTime.Now.ToUniversalTime()
+                                          && registeredIssuer != null
+                                          && endCertificate.HasUriSubjectAltName(registeredIssuer))
                 {
                     foreach (var clientSecret in entity.ClientSecrets.Where(cs =>
                                               cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME ||
@@ -373,7 +397,7 @@ namespace Udap.Server.Storage.Stores
             }
 
             activity?.SetTag("Rolled", rolled);
-            return entity.ToModel().ClientSecrets;
+            return entity?.ToModel().ClientSecrets;
         }
 
         private static string ShowSummary(IEnumerable<Anchor> anchors)

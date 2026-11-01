@@ -1,43 +1,38 @@
 @page
 @model Udap.Identity.Provider.Pages.Home.Index
+@{
+    ViewData["Title"] = "Start";
+}
 
-<div class="welcome-page">
-    
-    <h1>
-        Welcome to Identity Server. (Provider 1)  <br />Includes A UDAP powered Plugin for <br />
-        <img src="~/duende-logo.svg" class="logo">
-        Duende IdentityServer
-        <small class="text-muted">(version @Model.Version)</small>
-    </h1>
+<div class="sc-single sc-stack">
+    <div class="sc-stack-sm">
+        <h1>SecuredControls Identity</h1>
+        <p class="sc-lede">
+            A UDAP identity provider. Authorization servers such as SecuredControls Auth send people here to sign in
+            through UDAP Tiered OAuth, and register with it dynamically using their UDAP certificates.
+        </p>
+    </div>
 
-    <ul>
-        <li>
-            IdentityServer publishes a
-            <a href="~/.well-known/openid-configuration">discovery document</a>
-            where you can find metadata and links to all the endpoints, key material, etc.
-        </li>
-        <li>
-            UDAP Server publishes a
-            <a href="~/.well-known/udap">discovery document</a>
-            where you can find the UDAP Metadata as profiled by 
-            <a href="https://www.udap.org/udap-server-metadata-stu1.html">UDAP SERVER METADATA</a>
-        </li>
-        <li>
-            Click <a href="~/diagnostics">here</a> to see the claims for your current session.
-        </li>
-        <li>
-            Click <a href="~/grants">here</a> to manage your stored grants.
-        </li>
-        <li>
-            Click <a href="~/serversidesessions">here</a> to view the server side sessions.
-        </li>
-        @* <li> *@
-        @*     Click <a href="~/ciba/all">here</a> to view your pending CIBA login requests. *@
-        @* </li> *@
-        <li>
-            Here are links to the
-            <a href="https://github.com/udap-tools/udap-dotnet">source code repository</a>,
-            and <a href="https://github.com/udap-tools/udap-dotnet/tree/main/examples">ready to use examples</a>.
-        </li>
-    </ul>
+    <div class="sc-actions">
+        @if (User.Identity?.IsAuthenticated == true)
+        {
+            <a class="sc-button sc-button--quiet" href="~/Account/Logout">Sign out</a>
+        }
+        else
+        {
+            <a class="sc-button" href="~/Account/Login">Sign in</a>
+        }
+    </div>
+
+    <section class="sc-panel">
+        <h2 class="sc-panel-title">For developers</h2>
+        <ul class="sc-stack-sm">
+            <li><a href="~/.well-known/udap">UDAP discovery</a></li>
+            <li><a href="~/.well-known/openid-configuration">OpenID Connect discovery</a></li>
+            <li><a href="~/diagnostics">Claims in your current session</a></li>
+            <li><a href="~/grants">Apps you've allowed</a></li>
+            <li><a href="https://github.com/JoeShook/udap-dotnet">udap-dotnet on GitHub</a></li>
+        </ul>
+        <p class="sc-small sc-muted">Duende IdentityServer @Model.Version</p>
+    </section>
 </div>

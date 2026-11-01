@@ -1,10 +1,14 @@
 @page
 @model Udap.Identity.Provider.Pages.Account.AccessDeniedModel
 @{
+    ViewData["Title"] = "No access";
 }
-<div class="row">
-    <div class="col">
-        <h1>Access Denied</h1>
-        <p>You do not have permission to access that resource.</p>
+
+<div class="sc-single sc-stack">
+    <h1>You can't open this page</h1>
+    <p class="sc-lede">Your account doesn't have access to it.</p>
+    <div class="sc-actions">
+        <a class="sc-button sc-button--quiet" href="~/Account/Logout">Sign in as someone else</a>
+        <a class="sc-button sc-button--quiet" href="~/">Go to the start page</a>
     </div>
 </div>

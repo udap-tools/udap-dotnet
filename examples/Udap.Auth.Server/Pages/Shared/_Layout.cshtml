@@ -1,0 +1,55 @@
+@*
+    SecuredControls Auth: the reference UDAP authorization server's own look. Its sign-in, hand-off to an
+    upstream identity provider, consent, sign-out and error pages are pages in this project calling
+    Udap.UI's interaction services (AddUdapUI). Udap.UI's developer pages this server does not restyle
+    (grants, diagnostics, device, CIBA) render in this layout through securedcontrols.css's legacy layer.
+    SecuredControls Identity shares this stylesheet with its own accent (data-product).
+*@
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Environment
+@{
+    var title = ViewData["Title"] as string;
+}
+<!DOCTYPE html>
+<html lang="en" data-product="auth">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>@(string.IsNullOrEmpty(title) ? "SecuredControls Auth" : $"{title} | SecuredControls Auth")</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/favicon.svg" />
+    <link rel="preload" href="~/fonts/ibm-plex-sans-400-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="~/css/securedcontrols.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="sc-skip" href="#main">Skip to content</a>
+
+    <header class="sc-bar">
+        <a class="sc-brand" href="~/">
+            <partial name="_Mark" />
+            <span class="sc-wordmark">SecuredControls</span>
+            <span class="sc-product">Auth</span>
+        </a>
+        <div class="sc-bar-meta">
+            <span class="sc-env" title="Environment and the host this page was served from">@Environment.EnvironmentName · @Context.Request.Host</span>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <span>Signed in as <strong>@SignedInUser.DisplayName(User)</strong></span>
+                <a href="~/udapaccount/logout">Sign out</a>
+            }
+        </div>
+    </header>
+
+    <main id="main" class="sc-main">
+        @RenderBody()
+    </main>
+
+    <footer class="sc-footer">
+        <p>
+            SecuredControls Auth is a UDAP authorization server built on the open source udap-dotnet libraries and
+            Duende IdentityServer. It decides which apps may reach FHIR data, and asks you before an app can see yours.
+        </p>
+    </footer>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

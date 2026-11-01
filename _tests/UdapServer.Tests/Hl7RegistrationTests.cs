@@ -192,8 +192,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         //
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "http://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -203,7 +203,7 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
             Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
             GrantTypes = new HashSet<string> { "authorization_code", "refresh_token" },
             ResponseTypes = new HashSet<string> { "code" },
-            RedirectUris = new List<string>(){ "http://localhost/signin-oidc" },
+            RedirectUris = new List<string>(){ "https://localhost/signin-oidc" },
             TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
             Scope = "user/Patient.read"
         };
@@ -263,7 +263,7 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
             .Single(c => c.ClientId == responseUdapDocument.ClientId);
         Assert.False(clientEntity.RequirePkce);
 
-        Assert.Equal("http://localhost/signin-oidc", clientEntity.RedirectUris.Single().RedirectUri);
+        Assert.Equal("https://localhost/signin-oidc", clientEntity.RedirectUris.Single().RedirectUri);
         Assert.True(clientEntity.AllowOfflineAccess);
     }
 
@@ -298,8 +298,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -470,8 +470,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
        
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost:5002/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -540,8 +540,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost:9999/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost:9999",
+            Subject = "http://localhost",
             Audience = "https://localhost:5002/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -611,8 +611,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            // Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            // Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost:5002/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -679,8 +679,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            // Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            // Subject = "http://localhost",
             Audience = "https://localhost:5002/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -749,8 +749,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost:9999/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost:9999",
             Audience = "https://localhost:5002/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -818,8 +818,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             // Audience = "https://localhost:5002/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -887,8 +887,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost:5002/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -956,8 +956,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost:5002/connect/register",
             // Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -1025,8 +1025,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost:5002/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(-5).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -1068,6 +1068,78 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         Assert.Contains($"{UdapDynamicClientRegistrationErrorDescriptions.ExpExpired}", errorResponse.ErrorDescription);
     }
 
+    /// <summary>
+    /// UDAP DCR section 4.3 recommends a maximum software statement lifetime of 5 minutes.
+    /// An unexpired statement whose exp is one hour past a valid iat must still be rejected.
+    /// </summary>
+    [Fact]
+    public async Task RegistrationInvalidSoftwareStatement_exp_ExceedsMaxLifetime_Test()
+    {
+        using var client = _fixture.CreateClient();
+        var disco = await client.GetUdapDiscoveryDocument();
+
+        Assert.Equal(HttpStatusCode.OK, disco.HttpResponse?.StatusCode);
+        Assert.False(disco.IsError, $"{disco.Error} :: {disco.HttpErrorReason}");
+
+        var regEndpoint = disco.RegistrationEndpoint;
+        var reg = new Uri(regEndpoint!);
+
+        var cert = Path.Combine(Path.Combine(AppContext.BaseDirectory, "CertStore/issued"),
+            "weatherApiClientLocalhostCert1.pfx");
+
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile(cert, "udap-test");
+#else
+        var clientCert = new X509Certificate2(cert, "udap-test");
+#endif
+        var now = DateTime.UtcNow;
+        var jwtId = CryptoRandom.CreateUniqueId();
+
+        var document = new UdapDynamicClientRegistrationDocument
+        {
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
+            Audience = "https://localhost/connect/register",
+            Expiration = EpochTime.GetIntDate(now.AddHours(1).ToUniversalTime()),
+            IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
+            JwtId = jwtId,
+            ClientName = "udapTestClient",
+            Contacts = new HashSet<string> { "FhirJoe@BridgeTown.lab", "FhirJoe@test.lab" },
+            GrantTypes = new HashSet<string> { "client_credentials" },
+            TokenEndpointAuthMethod = UdapConstants.RegistrationDocumentValues.TokenEndpointAuthMethodValue,
+            Scope = "system/Patient.* system/Practitioner.read"
+        };
+
+        var signedSoftwareStatement =
+            SignedSoftwareStatementBuilder<UdapDynamicClientRegistrationDocument>
+                .Create(clientCert, document)
+                .Build();
+
+        var requestBody = new UdapRegisterRequest
+        (
+            signedSoftwareStatement,
+            UdapConstants.UdapVersionsSupportedValue
+        );
+
+        var response = await client.PostAsJsonAsync(reg, requestBody);
+
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+            _testOutputHelper.WriteLine(await response.Content.ReadAsStringAsync());
+        }
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+        var errorResponse =
+            await response.Content.ReadFromJsonAsync<UdapDynamicClientRegistrationErrorResponse>();
+
+        Assert.NotNull(errorResponse);
+        Assert.Equal(UdapDynamicClientRegistrationErrors.InvalidSoftwareStatement, errorResponse!.Error);
+        Assert.Equal(
+            string.Format(UdapDynamicClientRegistrationErrorDescriptions.ExpExceedsMaxLifetime, 300),
+            errorResponse.ErrorDescription);
+    }
+
     //invalid_software_statement
     [Fact]
     public async Task RegistrationInvalidSoftwareStatement_iat_Missing_Test()
@@ -1094,8 +1166,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             //IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -1163,8 +1235,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -1232,8 +1304,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -1305,8 +1377,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         //
         var document = new UdapDynamicClientRegistrationDocument
         { 
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -1348,8 +1420,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
         //
         document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -1413,8 +1485,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -1486,8 +1558,8 @@ public class Hl7RegistrationTests : IClassFixture<Hl7ApiTestFixture>
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),

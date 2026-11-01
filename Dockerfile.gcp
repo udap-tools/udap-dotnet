@@ -12,7 +12,10 @@
 #   gcloud auth application-default login
 #   gcloud config set project <YOUR_PROJECT_ID>
 
-FROM mcr.microsoft.com/dotnet/sdk:10.0
+# Pinned to the SDK version in global.json (10.0.403, rollForward latestFeature): an older SDK,
+# even an older patch, fails `dotnet restore`. Bump this tag whenever global.json changes.
+# A cached floating sdk:10.0 tag can lag behind too.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.403
 
 # Install gcloud CLI
 RUN apt-get update && \

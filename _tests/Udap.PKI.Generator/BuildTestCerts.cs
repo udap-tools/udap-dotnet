@@ -113,6 +113,18 @@ public partial class BuildTestCerts : CertificateBase
         Console.WriteLine("*************************************");
 
         //
+        // Never replace an existing SureFhirLabs CA: every certificate issued under it (and every trust
+        // store that anchors it) would silently stop matching. A clean checkout (CI) has no CA yet and
+        // builds one; a developer machine keeps the one it has. Delete the certstore deliberately to start over.
+        //
+        if (File.Exists($"{SureFhirLabsCertStore}/SureFhirLabs_CA.pfx") &&
+            File.Exists($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.pfx"))
+        {
+            _testOutputHelper.WriteLine("SureFhirLabs CA and intermediate already exist; not regenerating the default community.");
+            return;
+        }
+
+        //
         // https://stackoverflow.com/a/48210587/6115838
         //
 
@@ -182,10 +194,8 @@ public partial class BuildTestCerts : CertificateBase
 
 
 
-            var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-            subAltNameBuilder.AddUri(new Uri("udap://fhirlabs.net")); // embedding a community uri in intermediate cert
-            var x509Extension = subAltNameBuilder.Build();
-            intermediateReq.CertificateExtensions.Add(x509Extension);
+            // embedding a community uri in intermediate cert
+            intermediateReq.CertificateExtensions.Add(SubjectAltName.FromUris(["udap://fhirlabs.net"]));
 
             var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
             authorityInfoAccessBuilder.AddCertificateAuthorityIssuerUri(new Uri(SureFhirLabsCaPublicCertHosted));
@@ -505,62 +515,7 @@ public partial class BuildTestCerts : CertificateBase
 
             #endregion
 
-            #region host.docker.internal certificate
-
-            using RSA rsaHostDockerInternal = RSA.Create(2048);
-
-            var hostDockerInternal = new CertificateRequest(
-                "CN=host.docker.internal, OU=SSL, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                rsaHostDockerInternal,
-                HashAlgorithmName.SHA256,
-                RSASignaturePadding.Pkcs1);
-
-            hostDockerInternal.CertificateExtensions.Add(
-                new X509BasicConstraintsExtension(false, false, 0, true));
-
-            hostDockerInternal.CertificateExtensions.Add(
-                new X509KeyUsageExtension(
-                    X509KeyUsageFlags.DigitalSignature,
-                    true));
-
-            hostDockerInternal.CertificateExtensions.Add(
-                new X509SubjectKeyIdentifierExtension(hostDockerInternal.PublicKey, false));
-
-            AddAuthorityKeyIdentifier(caCert, hostDockerInternal, _testOutputHelper);
-            // hostDockerInternal.CertificateExtensions.Add(MakeCdp(SureFhirLabsRootCrl));
-
-            subAltNameBuilder = new SubjectAlternativeNameBuilder();
-            subAltNameBuilder.AddDnsName("host.docker.internal");
-            subAltNameBuilder.AddDnsName("localhost");
-            x509Extension = subAltNameBuilder.Build();
-            hostDockerInternal.CertificateExtensions.Add(x509Extension);
-
-            hostDockerInternal.CertificateExtensions.Add(
-                new X509EnhancedKeyUsageExtension(
-                    new OidCollection {
-                            new Oid("1.3.6.1.5.5.7.3.2"), // TLS Client auth
-                            new Oid("1.3.6.1.5.5.7.3.1"), // TLS Server auth
-                    },
-                    true));
-
-            using (var clientCert = hostDockerInternal.Create(
-                        caCert,
-                        DateTimeOffset.UtcNow.AddDays(-1),
-                        DateTimeOffset.UtcNow.AddYears(2),
-                        new ReadOnlySpan<byte>(RandomNumberGenerator.GetBytes(16))))
-            {
-                // Do something with these certs, like export them to PFX,
-                // or add them to an X509Store, or whatever.
-                var sslCert = clientCert.CopyWithPrivateKey(rsaHostDockerInternal);
-
-                SureFhirLabsSslIdentityServer.EnsureDirectoryExists();
-                var clientBytes = sslCert.Export(X509ContentType.Pkcs12, "udap-test");
-                File.WriteAllBytes($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx", clientBytes);
-                char[] certificatePem = PemEncoding.Write("CERTIFICATE", clientCert.RawData);
-                File.WriteAllBytes($"{SureFhirLabsSslIdentityServer}/host.docker.internal.cer", certificatePem.Select(c => (byte)c).ToArray());
-            }
-
-            #endregion
+            // Local HTTPS uses the ASP.NET Core development certificate (SAN *.dev.localhost); no SSL cert is generated here.
 
         //Distribute
 
@@ -604,21 +559,6 @@ public partial class BuildTestCerts : CertificateBase
         // Copy CA to Udap.Auth.Server so it can be added to the Docker Container trust store.
         File.Copy($"{SureFhirLabsCertStore}/SureFhirLabs_CA.cer",
             $"{BaseDir}/../../examples/Udap.Auth.Server/SureFhirLabs_CA.cer",
-            true);
-
-        // SubAltName is localhost and host.docker.internal. Udap.Idp server can then be reached from
-        // other docker images via host.docker.internal host name.
-        // Example: FhirLabsApi project calling Udap.Idp via the back channel OpenIdConnect access token validation.
-        File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
-            $"{BaseDir}/../../examples/Udap.Auth.Server/host.docker.internal.pfx",
-            true);
-
-        File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
-            $"{BaseDir}/../../examples/FhirLabsApi/host.docker.internal.pfx",
-            true);
-
-        File.Copy($"{SureFhirLabsSslIdentityServer}/host.docker.internal.pfx",
-            $"{BaseDir}/../../examples/Udap.Auth.Server.Admin/host.docker.internal.pfx",
             true);
     }
 
@@ -875,6 +815,10 @@ public partial class BuildTestCerts : CertificateBase
     }
 
        
+    /// <summary>Udap.Certificates.Server as local apps reach it: the CRL (CDP) and AIA host baked into local-community certs.</summary>
+    internal const string LocalCertServerHost = "http://udap-cert-server.dev.localhost";
+    internal const string LocalCertServer = LocalCertServerHost + ":5033";
+
     //
     // Community:localhost:: Certificate Store File Constants  Community used for unit tests
     //
@@ -912,11 +856,9 @@ public partial class BuildTestCerts : CertificateBase
             new List<string>
             {
                 "http://localhost/fhir/r4",
-                "https://localhost:7016/fhir/r4",
-                "https://host.docker.internal:7016/fhir/r4",
+                "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4",
                 // For IdP Server
-                "https://localhost:5055",
-                "https://host.docker.internal:5055"
+                "https://udap-idp1.dev.localhost:5055"
             },                                                                          //SubjAltNames
             "FhirLabsApi",                                                              //deliveryProjectPath    
             "RSA"
@@ -932,11 +874,9 @@ public partial class BuildTestCerts : CertificateBase
             new List<string>
             {
                 "http://localhost/fhir/r4",
-                "https://localhost:7016/fhir/r4",
-                "https://host.docker.internal:7016/fhir/r4",
+                "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4",
                 // For IdP Server
-                "https://localhost:5057",
-                "https://host.docker.internal:5057"
+                "https://udap-idp2.dev.localhost:5057"
             },
             "FhirLabsApi",                                                              //deliveryProjectPath    
             "RSA"
@@ -951,7 +891,7 @@ public partial class BuildTestCerts : CertificateBase
             "CN=localhost3, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",//issuedDistinguishedName
             new List<string> { 
                 "http://localhost/fhir/r4",
-                "https://host.docker.internal:7016/fhir/r4" },                            //SubjAltNames
+                "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4" },                            //SubjAltNames
             "FhirLabsApi",                                                              //deliveryProjectPath    
             "RSA"
         };
@@ -1003,8 +943,7 @@ public partial class BuildTestCerts : CertificateBase
             new List<string>
             {
                 "http://localhost/fhir/r4", 
-                "https://localhost:7016/fhir/r4",
-                "https://host.docker.internal:7016/fhir/r4"
+                "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4"
             },                                                                          //SubjAltNames
             "FhirLabsApi",                                                              //deliveryProjectPath    
             "ECDSA"
@@ -1020,7 +959,7 @@ public partial class BuildTestCerts : CertificateBase
             "CN=localhost, OU=WeatherApi, O=Fhir Coding, L=Portland, S=Oregon, C=US",   //issuedDistinguishedName
             new List<string>
             {
-                "http://localhost/",
+                "http://localhost",
                 "https://localhost:5021"
             },                                                                          //SubjAltNames
             null!,                                                                      //deliveryProjectPath    
@@ -1036,7 +975,7 @@ public partial class BuildTestCerts : CertificateBase
             "CN=localhost2, OU=WeatherApi, O=Fhir Coding, L=Portland, S=Oregon, C=US",  //issuedDistinguishedName
             new List<string>
             {
-                "http://localhost/",
+                "http://localhost",
                 "https://localhost:5021"
             },
             null!,                                                                      //deliveryProjectPath    
@@ -1070,7 +1009,7 @@ public partial class BuildTestCerts : CertificateBase
         string cryptoAlgorithm)
     {
         var LocalhostCrl = $"{communityStorePath}/crl";
-        var LocalhostCdp = "http://host.docker.internal:5033/crl";
+        var LocalhostCdp = $"{LocalCertServer}/crl";
         var LocalhostUdapIntermediates = $"{communityStorePath}/intermediates";
         var LocalhostUdapIssued = $"{communityStorePath}/issued";
 
@@ -1134,10 +1073,7 @@ public partial class BuildTestCerts : CertificateBase
             intermediateReq.CertificateExtensions.Add(
                 MakeCdp($"{LocalhostCdp}/{anchorName}.crl"));
 
-            var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-            subAltNameBuilder.AddUri(new Uri("http://host.docker.internal"));
-            var x509Extension = subAltNameBuilder.Build();
-            intermediateReq.CertificateExtensions.Add(x509Extension);
+            intermediateReq.CertificateExtensions.Add(SubjectAltName.FromUris([LocalCertServerHost]));
 
             using var intermediateCert = intermediateReq.Create(
                 caCert,
@@ -1166,7 +1102,7 @@ public partial class BuildTestCerts : CertificateBase
                     issuedSubjectAltNames,
                     $"{LocalhostUdapIssued}/{issuedName}",
                     $"{LocalhostCdp}/{intermediateName}.crl",
-                    $"http://host.docker.internal:5033/certs/{intermediateName}.cer"
+                    $"{LocalCertServer}/certs/{intermediateName}.cer"
                 );
             }
             else
@@ -1179,7 +1115,7 @@ public partial class BuildTestCerts : CertificateBase
                     issuedSubjectAltNames,
                     $"{LocalhostUdapIssued}/{issuedName}",
                     $"{LocalhostCdp}/{intermediateName}.crl",
-                    $"http://host.docker.internal:5033/certs/{intermediateName}.cer"
+                    $"{LocalCertServer}/certs/{intermediateName}.cer"
                 );
 
                 if (issuedName == "fhirLabsApiClientLocalhostCert")
@@ -1195,7 +1131,7 @@ public partial class BuildTestCerts : CertificateBase
                         },
                         $"{LocalhostUdapIssued}/idpserver",
                         $"{LocalhostCdp}/{intermediateName}.crl",
-                        $"http://host.docker.internal:5033/certs/{intermediateName}.cer"
+                        $"{LocalCertServer}/certs/{intermediateName}.cer"
                     );
                 }
 
@@ -1212,7 +1148,7 @@ public partial class BuildTestCerts : CertificateBase
                         },
                         $"{LocalhostUdapIssued}/idpserver2",
                         $"{LocalhostCdp}/{intermediateName}.crl",
-                        $"http://host.docker.internal:5033/certs/{intermediateName}.cer"
+                        $"{LocalCertServer}/certs/{intermediateName}.cer"
                     );
                 }
             }
@@ -1424,23 +1360,6 @@ public partial class BuildTestCerts : CertificateBase
             "http://crl.fhircerts.net/crl/surefhirlabsIntermediateCrl.crl",
             "http://crl.fhircerts.net/certs/intermediates/SureFhirLabs_Intermediate.cer"
         );
-
-        //
-        // Build a client cert for the ss UdapLabsFhirStore 
-        //
-        // BuildClientCertificate(
-        //     subCA_localhost,
-        //     rootCA_localhost,
-        //     subCA_localhost.GetRSAPrivateKey()!,
-        //     "CN=proxy for sandbox, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-        //     new List<string>
-        //     {
-        //         "https://localhost:7074/sandbox/fhir/"
-        //     },
-        //     $"{LocalhostCertStore}surefhirlabs_community/issued/sandbox.UdapLabsFhirStore.healthcare.client",
-        //     "http://localhost:5033/crl/intermediateLocalhostCert.crl",
-        //     "http://localhost:5033/certs/intermediateLocalhostCert.cer"
-        // );
     }
 
 
@@ -1469,7 +1388,7 @@ public partial class BuildTestCerts : CertificateBase
                 rootCA,
                 subCA.GetRSAPrivateKey()!,
                 $"CN=fhirlabs.net {segment}, OU=UDAP, O=Fhir Coding, L=Portland, S=Oregon, C=US",
-                new List<string> { $"https://localhost:7016/{segment}/fhir/r4", $"https://localhost:7074/{segment}/fhir/r4", $"https://host.docker.internal:7016/{segment}/fhir/r4", $"https://fhirlabs.net/{segment}/fhir/r4" },
+                new List<string> { $"https://udap-fhirlabs-api.dev.localhost:7016/{segment}/fhir/r4", $"https://udap-proxy.dev.localhost:7074/{segment}/fhir/r4", $"https://fhirlabs.net/{segment}/fhir/r4" },
                 $"{SureFhirlabsUdapIssued}/fhirlabs.net.{segment}.client",
                 SureFhirLabsIntermediateCrl,
                 SureFhirLabsIntermediatePublicCertHosted
@@ -1493,6 +1412,49 @@ public partial class BuildTestCerts : CertificateBase
         File.Copy($"{SureFhirlabsUdapIntermediates}/SureFhirLabs_Intermediate.cer",
             $"{BaseDir}/../UdapMetadata.Tests/CertStore/intermediates/SureFhirLabs_Intermediate.cer",
             true);
+    }
+
+    /// <summary>
+    /// Udap.Proxy.Server's metadata signing cert for local runs, issued by the existing localhost community 1
+    /// intermediate, so it chains to caLocalhostCert like FhirLabsApi's cert and nothing else changes.
+    /// Run MakeCaWithIntermediateUdapForLocalhostCommunity first; rerun this after it, since that replaces the intermediate.
+    /// </summary>
+    [Fact]
+    public void MakeUdapProxyLocalhostCert()
+    {
+        var communityStorePath = $"{LocalhostCertStore}localhost_fhirlabs_community1";
+        const string intermediateName = "intermediateLocalhostCert";
+        const string issuedName = "udapProxyLocalhostCert";
+
+        if (!File.Exists($"{communityStorePath}/intermediates/{intermediateName}.pfx"))
+        {
+            _testOutputHelper.WriteLine($"No {intermediateName} yet. Run MakeCaWithIntermediateUdapForLocalhostCommunity, then this test.");
+            return;
+        }
+
+#if NET9_0_OR_GREATER
+        using var caCert = X509CertificateLoader.LoadPkcs12FromFile($"{communityStorePath}/caLocalhostCert.pfx", "udap-test");
+        using var intermediateCert = X509CertificateLoader.LoadPkcs12FromFile($"{communityStorePath}/intermediates/{intermediateName}.pfx", "udap-test");
+#else
+        using var caCert = new X509Certificate2($"{communityStorePath}/caLocalhostCert.pfx", "udap-test");
+        using var intermediateCert = new X509Certificate2($"{communityStorePath}/intermediates/{intermediateName}.pfx", "udap-test");
+#endif
+
+        BuildUdapClientCertificate(
+            intermediateCert,
+            caCert,
+            intermediateCert.GetRSAPrivateKey()!,
+            "CN=udap-proxy, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US",
+            new List<string> { "https://udap-proxy.dev.localhost:7074/fhir/r4" },
+            $"{communityStorePath}/issued/{issuedName}",
+            $"{LocalCertServer}/crl/{intermediateName}.crl",
+            $"{LocalCertServer}/certs/{intermediateName}.cer"
+        );
+
+        // CertStore is not in git, so the folder is missing on a clean checkout.
+        var proxyIssued = $"{BaseDir}/../../examples/Udap.Proxy.Server/CertStore/issued";
+        proxyIssued.EnsureDirectoryExists();
+        File.Copy($"{communityStorePath}/issued/{issuedName}.pfx", $"{proxyIssued}/{issuedName}.pfx", true);
     }
 
     [Fact(Skip = "Enabled on desktop when needed.")]
@@ -1590,14 +1552,7 @@ public partial class BuildTestCerts : CertificateBase
             clientCertRequest.CertificateExtensions.Add(MakeCdp(crl));
         }
 
-        var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-        foreach (var subjectAltName in subjectAltNames)
-        {
-            subAltNameBuilder.AddUri(new Uri(subjectAltName)); //Same as iss claim
-        }
-
-        var x509Extension = subAltNameBuilder.Build();
-        clientCertRequest.CertificateExtensions.Add(x509Extension);
+        clientCertRequest.CertificateExtensions.Add(SubjectAltName.FromUris(subjectAltNames)); //Same as iss claim
 
         if (buildAIAExtensionsPath != null)
         {
@@ -1688,14 +1643,7 @@ public partial class BuildTestCerts : CertificateBase
             clientCertRequest.CertificateExtensions.Add(MakeCdp(crl));
         }
 
-        var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-        foreach (var subjectAltName in subjectAltNames)
-        {
-            subAltNameBuilder.AddUri(new Uri(subjectAltName)); //Same as iss claim
-        }
-
-        var x509Extension = subAltNameBuilder.Build();
-        clientCertRequest.CertificateExtensions.Add(x509Extension);
+        clientCertRequest.CertificateExtensions.Add(SubjectAltName.FromUris(subjectAltNames)); //Same as iss claim
 
         if (buildAIAExtensionsPath != null)
         {

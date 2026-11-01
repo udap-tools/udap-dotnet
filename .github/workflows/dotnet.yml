@@ -1,34 +1,52 @@
-# This workflow will build a .NET project
+# Builds and tests every branch and every pull request into main or develop.
+# Version tags are left to release.yml; the tagged commit was already built on its branch.
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
 
 name: .NET
 
 on:
   push:
-    # branches: [ "main" ]
-    branches-ignore: ["develop"]
+    branches: [ "**" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
   build:
-
+    name: Build and test
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
       with:
         dotnet-version: |
           8.0.x
           9.0.x
           10.0.x
+    - name: Restore
+      run: dotnet restore Udap.sln
+    - name: Refuse vulnerable packages
+      run: bash .github/scripts/check-vulnerable.sh
     - name: Generate PKI
       run: dotnet test -c Release _tests/Udap.PKI.Generator/Udap.PKI.Generator.csproj
     - name: Build
       run: dotnet build -c Release Udap.sln
+    # Udap.Common.Tests targets net8.0, net9.0 and net10.0, so it runs once per framework the libraries ship.
     - name: Test Udap.Common.Tests
       run: dotnet test -c Release _tests/Udap.Common.Tests/Udap.Common.Tests.csproj --no-build --verbosity normal
     - name: Test UdapMetadata.Tests
@@ -36,3 +54,31 @@ jobs:
     - name: Test UdapServer.Tests
       run: dotnet test -c Release _tests/UdapServer.Tests/UdapServer.Tests.csproj --no-build --verbosity normal
 
+  pack:
+    name: Pack, validate and SBOM
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Setup .NET
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+          10.0.x
+    - name: Restore
+      run: |
+        dotnet tool restore
+        dotnet restore Udap.sln
+    # Packs exactly as a release does, so a public API break against the package validation baseline
+    # or a packaging problem fails here rather than at release time.
+    - name: Pack
+      run: bash .github/scripts/pack.sh "0.0.0-ci.${{ github.run_number }}" artifacts
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: packages
+        path: artifacts

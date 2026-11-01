@@ -106,7 +106,9 @@ public static class UdapServerServiceCollectionExtensions
 
         builder.AddPrivateFileStore(resourceServerName);
 
-        builder.Services.TryAddSingleton<UdapClientDiscoveryValidator>();
+        // Transient: the validator holds the certificate between ValidateJwtToken and ValidateTrustChain,
+        // so concurrent Tiered OAuth challenges must never share an instance.
+        builder.Services.TryAddTransient<UdapClientDiscoveryValidator>();
         builder.Services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
 
         // TODO: TrustAnchor has to be singleton because

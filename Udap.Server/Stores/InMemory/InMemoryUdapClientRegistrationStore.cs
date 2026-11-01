@@ -14,6 +14,7 @@ using Udap.Common.Models;
 using Udap.Server.Storage;
 using Udap.Server.Storage.Extensions;
 using Udap.Server.Storage.Stores;
+using Udap.Util.Extensions;
 using ParsedSecret = Udap.Common.Models.ParsedSecret;
 
 namespace Udap.Server.Stores.InMemory;
@@ -119,6 +120,22 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
                 else
                 {
                     existingClient.ClientSecrets.Add(newCertSecret);
+                }
+            }
+
+            // Re-registration with a renewed certificate: roll the UDAP identity secrets forward
+            // to the new certificate's expiration (see UdapClientRegistrationStore.UpsertClient).
+            var newIdentityExpiration = client.ClientSecrets
+                .FirstOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+                ?.Expiration;
+
+            if (newIdentityExpiration.HasValue)
+            {
+                foreach (var identitySecret in existingClient.ClientSecrets.Where(cs =>
+                             cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME ||
+                             cs.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY))
+                {
+                    identitySecret.Expiration = newIdentityExpiration;
                 }
             }
 
@@ -340,9 +357,15 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         if (client != null)
         {
             var endCertificate = secret.GetUdapEndCert();
+            var registeredIssuer = client.ClientSecrets
+                .FirstOrDefault(cs => cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME)
+                ?.Value;
 
+            // Only a renewal of the client's own certificate rolls forward: it must carry the registered issuer as a URI SAN.
             if (endCertificate != null && endCertificate.NotBefore < DateTime.Now.ToUniversalTime()
-                                       && endCertificate.NotAfter > DateTime.Now.ToUniversalTime())
+                                       && endCertificate.NotAfter > DateTime.Now.ToUniversalTime()
+                                       && registeredIssuer != null
+                                       && endCertificate.HasUriSubjectAltName(registeredIssuer))
             {
                 foreach (var clientSecret in client.ClientSecrets.Where(cs =>
                              cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME ||

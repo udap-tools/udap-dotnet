@@ -14,9 +14,9 @@
     {
       "Community": "udap://fhirlabs1/",
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5002/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register"
+        "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+        "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token",
+        "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register"
       }
     },
 
@@ -32,9 +32,9 @@
     // {
     //  "Community": "udap://fhirlabs1/",
     //  "SignedMetadataConfig": {
-    //    "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-    //    "TokenEndpoint": "https://host.docker.internal:5002/connect/token?orgA=https://host.docker.internal:7016/fhir/r4",
-    //    "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register?orgA=https://host.docker.internal:7016/fhir/r4"
+    //    "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+    //    "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token?orgA=https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4",
+    //    "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register?orgA=https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4"
     //  }
     //},
 
@@ -43,36 +43,36 @@
       "SignedMetadataConfig": {
         "RegistrationSigningAlgorithms": [ "RS384", "RS256" ],
         "TokenSigningAlgorithms": [ "RS256", "RS384" ],
-        "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5002/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register"
+        "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+        "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token",
+        "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register"
       }
     },
 
     {
       "Community": "udap://Untrusted/",
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5002/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register"
+        "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+        "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token",
+        "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register"
       }
     },
 
     {
       "Community": "udap://IssMismatchToSubjAltName/",
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5002/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register"
+        "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+        "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token",
+        "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register"
       }
     },
 
     {
       "Community": "udap://IssMismatchToBaseUrl/",
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5002/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register"
+        "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+        "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token",
+        "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register"
       }
     },
 
@@ -81,9 +81,9 @@
       "SignedMetadataConfig": {
         "RegistrationSigningAlgorithms": [ "ES384" ],
         "TokenSigningAlgorithms": [ "ES384" ],
-        "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5002/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register"
+        "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+        "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token",
+        "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register"
       }
     },
 
@@ -94,18 +94,18 @@
       "UdapCertificationsSupported": [ "https://rce.sequoiaproject.org/udap/profiles/basic-app-certification" ],
       "UdapCertificationsRequired": [ "https://rce.sequoiaproject.org/udap/profiles/basic-app-certification" ],
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5002/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register"
+        "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+        "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token",
+        "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register"
       }
     },
 
     {
       "Community": "udap://multihost/",
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5002/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register"
+        "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+        "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token",
+        "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register"
       }
     }
   ]

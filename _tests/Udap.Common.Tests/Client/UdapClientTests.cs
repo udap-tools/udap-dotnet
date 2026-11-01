@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using MartinCostello.Logging.XUnit;
@@ -1036,5 +1037,74 @@ public class UdapClientTests
             () => udapClient.RemoveCachedCrlAsync("https://example.com/crl.crl"));
 
         Assert.Contains(nameof(ICertificateDownloadCache), ex.Message);
+    }
+
+    /// <summary>
+    /// Two discovery validators sharing one TrustChainValidator, as the server shares its singleton:
+    /// each validator reports only its own validation's events, and nothing stays subscribed to the
+    /// shared TrustChainValidator afterwards.
+    /// </summary>
+    [Fact]
+    public async Task DiscoveryValidators_Sharing_A_TrustChainValidator_Report_Only_Their_Own_Events()
+    {
+        var sharedValidator = new TrustChainValidator(_problemFlags, false, _serviceProvider.GetRequiredService<ILogger<TrustChainValidator>>());
+        var anchorStore = new TrustAnchorMemoryStore
+        {
+            AnchorCertificates = new HashSet<Udap.Common.Models.Anchor> { MakeDecoyAnchor("CN=Unrelated Anchor") }
+        };
+        var logger = _serviceProvider.GetRequiredService<ILogger<UdapClientDiscoveryValidator>>();
+        var validatorA = new UdapClientDiscoveryValidator(sharedValidator, logger, anchorStore);
+        var validatorB = new UdapClientDiscoveryValidator(sharedValidator, logger, anchorStore);
+
+        Assert.True(await validatorA.ValidateJwtToken(SelfSignedMetadata("https://a.example.com/fhir"), "https://a.example.com/fhir"));
+        Assert.True(await validatorB.ValidateJwtToken(SelfSignedMetadata("https://b.example.com/fhir"), "https://b.example.com/fhir"));
+
+        var untrustedA = new List<X509Certificate2>();
+        var untrustedB = new List<X509Certificate2>();
+        validatorA.Untrusted += untrustedA.Add;
+        validatorB.Untrusted += untrustedB.Add;
+
+        Assert.False(await validatorA.ValidateTrustChain(null));
+
+        var reported = Assert.Single(untrustedA);
+        Assert.Equal("CN=https://a.example.com/fhir", reported.Subject);
+        Assert.Empty(untrustedB);
+
+        Assert.False(await validatorB.ValidateTrustChain(null));
+
+        Assert.Single(untrustedA);
+        Assert.Equal("CN=https://b.example.com/fhir", Assert.Single(untrustedB).Subject);
+
+        foreach (var eventName in new[] { nameof(TrustChainValidator.Untrusted), nameof(TrustChainValidator.Problem), nameof(TrustChainValidator.Error) })
+        {
+            var handlers = typeof(TrustChainValidator)
+                .GetField(eventName, BindingFlags.Instance | BindingFlags.NonPublic)!
+                .GetValue(sharedValidator);
+            Assert.Null(handlers);
+        }
+    }
+
+    private static UdapMetadata SelfSignedMetadata(string baseUrl)
+    {
+        using var key = RSA.Create(2048);
+        var request = new CertificateRequest($"CN={baseUrl}", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var san = new SubjectAlternativeNameBuilder();
+        san.AddUri(new Uri(baseUrl));
+        request.CertificateExtensions.Add(san.Build());
+        using var certificate = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(1));
+
+        var now = DateTime.UtcNow;
+        var signedMetadata = new JsonWebTokenHandler().CreateToken(new SecurityTokenDescriptor
+        {
+            Issuer = baseUrl,
+            IssuedAt = now,
+            NotBefore = now,
+            Expires = now.AddMinutes(5),
+            Claims = new Dictionary<string, object> { { "sub", baseUrl }, { "jti", Guid.NewGuid().ToString() } },
+            AdditionalHeaderClaims = new Dictionary<string, object> { { "x5c", new[] { Convert.ToBase64String(certificate.RawData) } } },
+            SigningCredentials = new SigningCredentials(new RsaSecurityKey(key), SecurityAlgorithms.RsaSha256)
+        });
+
+        return new UdapMetadata { SignedMetadata = signedMetadata };
     }
 }

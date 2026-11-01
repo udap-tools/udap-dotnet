@@ -104,8 +104,8 @@ public class UdapDcrValidatorTests
         var expires = now.AddMinutes(1).ToUniversalTime();
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(expires),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -194,6 +194,49 @@ public class UdapDcrValidatorTests
         Assert.Equal(UdapDynamicClientRegistrationErrorDescriptions.Replay, result.ErrorDescription);
     }
 
+    [Theory]
+    [InlineData("https://client.example.com/callback", null)]
+    [InlineData("https://client.example.com/callback?tenant=1", null)]
+    [InlineData("http://client.example.com/callback", UdapDynamicClientRegistrationErrorDescriptions.RedirectUriSchemeNotHttps)]
+    [InlineData("http://localhost/callback", UdapDynamicClientRegistrationErrorDescriptions.RedirectUriSchemeNotHttps)]
+    [InlineData("javascript:alert(1)", UdapDynamicClientRegistrationErrorDescriptions.RedirectUriSchemeNotHttps)]
+    [InlineData("data:text/html,hello", UdapDynamicClientRegistrationErrorDescriptions.RedirectUriSchemeNotHttps)]
+    [InlineData("https://client.example.com/callback#fragment", UdapDynamicClientRegistrationErrorDescriptions.RedirectUriHasFragment)]
+    [InlineData("https://client.example.com/redirect/*", UdapDynamicClientRegistrationErrorDescriptions.RedirectUriHasWildcard)]
+    [InlineData("/relative/callback", UdapDynamicClientRegistrationErrorDescriptions.MalformedRedirectUri)]
+    [InlineData("not a uri", UdapDynamicClientRegistrationErrorDescriptions.MalformedRedirectUri)]
+    [InlineData("", UdapDynamicClientRegistrationErrorDescriptions.MalformedRedirectUri)]
+    public void ValidateRedirectUri_Requires_Fully_Specified_Https(string redirectUri, string? expectedError)
+    {
+        var validator = BuildValidator(new ServerSettings());
+
+        Assert.Equal(expectedError, validator.ValidateRedirectUri(redirectUri));
+    }
+
+    [Theory]
+    [InlineData("http://localhost/callback", null)]
+    [InlineData("http://127.0.0.1:8080/callback", null)]
+    [InlineData("http://[::1]/callback", null)]
+    [InlineData("http://client.example.com/callback", UdapDynamicClientRegistrationErrorDescriptions.RedirectUriSchemeNotHttps)]
+    public void ValidateRedirectUri_Allows_Loopback_Http_Only_When_Enabled(string redirectUri, string? expectedError)
+    {
+        var validator = BuildValidator(new ServerSettings { AllowLoopbackHttpRedirectUris = true });
+
+        Assert.Equal(expectedError, validator.ValidateRedirectUri(redirectUri));
+    }
+
+    private UdapDynamicClientRegistrationValidator BuildValidator(ServerSettings serverSettings)
+    {
+        return new UdapDynamicClientRegistrationValidator(
+            Substitute.For<TrustChainValidator>(Substitute.For<ILogger<TrustChainValidator>>(), null),
+            new HttpClient(),
+            new TestReplayCache(_clock),
+            serverSettings,
+            Substitute.For<IHttpContextAccessor>(),
+            new DefaultScopeExpander(),
+            Substitute.For<IResourceStore>(),
+            Substitute.For<ILogger<UdapDynamicClientRegistrationValidator>>());
+    }
 
     private static UdapDynamicClientRegistrationDocument BuildUdapDcrValidator(
         HttpClient httpClient,
@@ -205,8 +248,8 @@ public class UdapDcrValidatorTests
 
         var document = new UdapDynamicClientRegistrationDocument
         {
-            Issuer = "http://localhost/",
-            Subject = "http://localhost/",
+            Issuer = "http://localhost",
+            Subject = "http://localhost",
             Audience = "https://localhost/connect/register",
             Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
             IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),

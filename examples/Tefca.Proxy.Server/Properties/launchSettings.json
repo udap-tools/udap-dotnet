@@ -9,7 +9,7 @@
         "AccessToken": "your bearer token"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7075"
+      "applicationUrl": "https://udap-tefca-proxy.dev.localhost:7075"
     },
     "Container (Dockerfile)": {
       "commandName": "Docker",

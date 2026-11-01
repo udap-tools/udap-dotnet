@@ -8,17 +8,17 @@
     {
       "Community": "udap://fhirlabs1/",
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://host.docker.internal:5055/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5055/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5055/connect/register"
+        "AuthorizationEndpoint": "https://udap-idp1.dev.localhost:5055/connect/authorize",
+        "TokenEndpoint": "https://udap-idp1.dev.localhost:5055/connect/token",
+        "RegistrationEndpoint": "https://udap-idp1.dev.localhost:5055/connect/register"
       }
     },
     {
       "Community": "udap://Provider2",
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://host.docker.internal:5055/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5055/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5055/connect/register"
+        "AuthorizationEndpoint": "https://udap-idp1.dev.localhost:5055/connect/authorize",
+        "TokenEndpoint": "https://udap-idp1.dev.localhost:5055/connect/token",
+        "RegistrationEndpoint": "https://udap-idp1.dev.localhost:5055/connect/register"
       }
     }
   ]

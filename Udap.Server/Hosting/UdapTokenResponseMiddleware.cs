@@ -79,7 +79,13 @@ public class UdapTokenResponseMiddleware
 
                     if (root.ValueKind == JsonValueKind.Object)
                     {
+                        // The stored description explains a failed client assertion, so it belongs only on
+                        // invalid_client. Any other error (e.g. invalid_grant for a revoked refresh token)
+                        // means the client authenticated, and the text would mislead.
                         var needsErrorDescription = hasErrorDescription
+                            && root.TryGetProperty("error", out var error)
+                            && error.ValueKind == JsonValueKind.String
+                            && error.GetString() == "invalid_client"
                             && !root.TryGetProperty("error_description", out _);
                         var needsExtensions = hasErrorExtensions
                             && !root.TryGetProperty("extensions", out _);

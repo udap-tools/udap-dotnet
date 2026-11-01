@@ -13,7 +13,12 @@ public class ViewModel
 
     public bool IsExternalLoginOnly => EnableLocalLogin == false && ExternalProviders?.Count() == 1;
     public string ExternalLoginScheme => IsExternalLoginOnly ? ExternalProviders?.SingleOrDefault()?.AuthenticationScheme : null;
-        
+
+    /// <summary>
+    /// Test credentials offered as fill-in buttons on the login form. Empty hides the helper.
+    /// </summary>
+    public IEnumerable<TestAccount> TestAccounts { get; set; } = Enumerable.Empty<TestAccount>();
+
     public class ExternalProvider
     {
         public string DisplayName { get; set; }

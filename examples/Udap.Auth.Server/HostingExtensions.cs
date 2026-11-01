@@ -27,6 +27,8 @@ using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Storage.DbContexts;
 using Udap.Tefca.Model;
 using Udap.Tefca.Server;
+using Udap.UI;
+using Udap.UI.Pages.Account.Login;
 
 namespace Udap.Auth.Server;
 
@@ -64,6 +66,13 @@ internal static class HostingExtensions
         builder.Services.AddInMemoryRateLimiting();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddRazorPages();
+
+        // SecuredControls Auth: this server's own sign-in, consent, sign-out and error pages (Pages/) call the
+        // Udap.UI interaction services. The library's developer pages (grants, diagnostics...) still render.
+        builder.Services.AddUdapUI();
+
+        // Login page helper: one sign-in row per test user (alice, bob) so testers need not remember credentials.
+        builder.Services.AddLoginTestAccounts(TestUsers.Users);
 
         
         

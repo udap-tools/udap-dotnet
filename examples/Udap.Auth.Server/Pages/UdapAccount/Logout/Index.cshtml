@@ -1,0 +1,16 @@
+@page
+@model Udap.Auth.Server.Pages.UdapAccount.Logout.Index
+@{
+    ViewData["Title"] = "Sign out";
+}
+
+<section class="sc-stack" aria-labelledby="sign-out-title">
+    <h1 id="sign-out-title">Sign out of SecuredControls Auth?</h1>
+    <p class="sc-lede">Apps you allowed through SecuredControls Auth will ask you to sign in again next time. Their access stays until you remove it under Apps you allowed.</p>
+
+    <form method="post" class="sc-actions">
+        <input type="hidden" asp-for="LogoutId" />
+        <button class="sc-button">Sign out</button>
+        <a class="sc-button sc-button--quiet" href="~/">Stay signed in</a>
+    </form>
+</section>

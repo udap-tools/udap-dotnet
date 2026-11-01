@@ -51,6 +51,9 @@ namespace Udap.Common.Certificates
         private readonly ILogger<TrustChainValidator> _logger;
         private readonly TimeSpan _downloadTimeout;
         private const int MaxChainDepth = 10;
+
+        // AIA URLs come from certificates that are not trusted yet, so one validation downloads at most this many.
+        private const int MaxAiaDownloads = 3;
         private bool _noCacheWarningLogged;
 
         /// <summary>
@@ -92,7 +95,7 @@ namespace Udap.Common.Certificates
         public TrustChainValidator(
             ILogger<TrustChainValidator> logger,
             ICertificateDownloadCache? downloadCache = null)
-            : this(DefaultProblemFlags, true, logger, downloadCache, downloadCache == null ? new HttpClient() : null)
+            : this(DefaultProblemFlags, true, logger, downloadCache, downloadCache == null ? new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false }) : null)
         {
         }
 
@@ -235,6 +238,10 @@ namespace Udap.Common.Certificates
                 Anchor? matchedAnchor = null;
                 bool chainValid = true;
 
+                // Revocation is only checked for a chain that reaches a trust anchor. An untrusted chain fails
+                // anyway, and its CRL distribution points were chosen by whoever issued it.
+                bool reachesAnchor = IsAnchor(bcChain[^1], bcAnchors);
+
                 for (int i = 0; i < bcChain.Count; i++)
                 {
                     var bcCert = bcChain[i];
@@ -266,8 +273,8 @@ namespace Udap.Common.Certificates
                         }
                     }
 
-                    // Check CRL revocation (skip for anchor/root)
-                    if (_checkRevocation && !isAnchor)
+                    // Check CRL revocation (skip for anchor/root, and for a chain that never reaches an anchor)
+                    if (_checkRevocation && reachesAnchor && !isAnchor)
                     {
                         var revocationResult = await CheckRevocationAsync(bcCert, bcChain, i, cancellationToken);
                         problems.AddRange(revocationResult);
@@ -354,6 +361,7 @@ namespace Udap.Common.Certificates
             var chain = new List<BcX509Certificate> { leaf };
             var current = leaf;
             var visited = new HashSet<string> { GetThumbprint(leaf) };
+            var aiaDownloads = new AiaDownloadBudget(MaxAiaDownloads);
 
             for (int depth = 0; depth < MaxChainDepth; depth++)
             {
@@ -387,7 +395,7 @@ namespace Udap.Common.Certificates
                 // If not found, try AIA chasing
                 if (issuer == null && (_downloadCache != null || _httpClient != null))
                 {
-                    issuer = await ChaseAiaAsync(current, cancellationToken);
+                    issuer = await ChaseAiaAsync(current, aiaDownloads, cancellationToken);
 
                     if (issuer != null)
                     {
@@ -481,6 +489,7 @@ namespace Udap.Common.Certificates
 
         private async Task<BcX509Certificate?> ChaseAiaAsync(
             BcX509Certificate cert,
+            AiaDownloadBudget aiaDownloads,
             CancellationToken cancellationToken)
         {
             var aiaValue = cert.GetExtensionValue(BcX509Extensions.AuthorityInfoAccess);
@@ -508,9 +517,16 @@ namespace Udap.Common.Certificates
                     }
 
                     var url = location.Name.ToString();
-                    if (string.IsNullOrEmpty(url))
+                    if (!CertificateDownloader.IsHttpUrl(url))
                     {
+                        _logger.LogDebug("Skipping AIA location that is not an http or https URL: {Url}", url);
                         continue;
+                    }
+
+                    if (!aiaDownloads.TryTake())
+                    {
+                        _logger.LogWarning("AIA download limit of {MaxAiaDownloads} reached; not following {Url}", MaxAiaDownloads, url);
+                        return null;
                     }
 
                     _logger.LogDebug("AIA chasing intermediate from {Url}", url);
@@ -557,7 +573,7 @@ namespace Udap.Common.Certificates
 
             try
             {
-                var data = await _httpClient!.GetByteArrayAsync(url, timeoutCts.Token);
+                var data = await CertificateDownloader.GetBytesAsync(_httpClient!, url, CertificateDownloader.MaxCertificateBytes, timeoutCts.Token);
 #if NET9_0_OR_GREATER
                 return X509CertificateLoader.LoadCertificate(data);
 #else
@@ -592,13 +608,28 @@ namespace Udap.Common.Certificates
 
             try
             {
-                var data = await _httpClient.GetByteArrayAsync(url, timeoutCts.Token);
+                var data = await CertificateDownloader.GetBytesAsync(_httpClient, url, CertificateDownloader.MaxCrlBytes, timeoutCts.Token);
                 return new X509CrlParser().ReadCrl(data);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to download CRL from {Url}", url);
                 return null;
+            }
+        }
+
+        /// <summary>Counts the AIA downloads one chain build may still make.</summary>
+        private sealed class AiaDownloadBudget(int remaining)
+        {
+            public bool TryTake()
+            {
+                if (remaining <= 0)
+                {
+                    return false;
+                }
+
+                remaining--;
+                return true;
             }
         }
 

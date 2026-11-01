@@ -1,28 +1,53 @@
+@*
+    SecuredControls Identity: the reference UDAP identity provider's look. It shares securedcontrols.css
+    with SecuredControls Auth; data-product="identity" gives it the emerald accent and its pages use the
+    centred single-card layout, so the two servers are told apart at a glance but read as one family.
+*@
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Environment
+@{
+    var title = ViewData["Title"] as string;
+    var signedInAs = User.FindFirst("name")?.Value ?? User.Identity?.Name;
+}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-product="identity">
 <head>
     <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
-
-    <title>UDAP Identity Server (Provider 1)</title>
-    
-    <link rel="icon" type="image/x-icon" href="~/favicon.ico" />
-    <link rel="shortcut icon" type="image/x-icon" href="~/favicon.ico" />
-    
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/lib/bootstrap4-glyphicons/css/bootstrap-glyphicons.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>@(string.IsNullOrEmpty(title) ? "SecuredControls Identity" : $"{title} | SecuredControls Identity")</title>
+    <link rel="icon" type="image/svg+xml" href="~/img/favicon.svg" />
+    <link rel="preload" href="~/fonts/ibm-plex-sans-400-700.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="~/css/securedcontrols.css" asp-append-version="true" />
 </head>
 <body>
-    <partial name="_Nav" />
-   
-    <div class="container body-container">
-        @RenderBody()
-    </div>
+    <a class="sc-skip" href="#main">Skip to content</a>
 
-    <script src="~/lib/jquery/dist/jquery.slim.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <header class="sc-bar">
+        <a class="sc-brand" href="~/">
+            <partial name="_Mark" />
+            <span class="sc-wordmark">SecuredControls</span>
+            <span class="sc-product">Identity</span>
+        </a>
+        <div class="sc-bar-meta">
+            <span class="sc-env" title="Environment and the host this page was served from">@Environment.EnvironmentName · @Context.Request.Host</span>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <span>Signed in as <strong>@signedInAs</strong></span>
+                <a href="~/Account/Logout">Sign out</a>
+            }
+        </div>
+    </header>
+
+    <main id="main" class="sc-main">
+        @RenderBody()
+    </main>
+
+    <footer class="sc-footer">
+        <p>
+            SecuredControls Identity is a UDAP identity provider built on the open source udap-dotnet libraries and
+            Duende IdentityServer. Authorization servers send you here to sign in (UDAP Tiered OAuth).
+        </p>
+    </footer>
 
     @RenderSection("scripts", required: false)
 </body>

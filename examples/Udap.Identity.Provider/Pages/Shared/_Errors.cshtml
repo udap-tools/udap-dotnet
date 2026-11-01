@@ -1,0 +1,24 @@
+@* Validation and sign-in errors, announced to screen readers. *@
+@{
+    var errors = ViewContext.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+        .Where(m => !string.IsNullOrWhiteSpace(m)).Distinct().ToList();
+}
+@if (errors.Count > 0)
+{
+    <div class="sc-alert sc-alert--error" role="alert">
+        @if (errors.Count == 1)
+        {
+            <strong>@errors[0]</strong>
+        }
+        else
+        {
+            <strong>Check the following and try again</strong>
+            <ul>
+                @foreach (var error in errors)
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        }
+    </div>
+}

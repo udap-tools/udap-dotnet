@@ -45,7 +45,7 @@ public class TestFixture
     public TestFixture()
     {
         // SeedData.EnsureSeedData(
-        //     "Data Source=host.docker.internal;Initial Catalog=Udap.Idp.db;User ID=udap_user;Password=udap_password1;TrustServerCertificate=True;", 
+        //     "Data Source=localhost;Initial Catalog=Udap.Idp.db;User ID=udap_user;Password=udap_password1;TrustServerCertificate=True;", 
         //     Substitute.For<Serilog.ILogger>().Object);
 
         TestConfig = new ConfigurationBuilder()
@@ -907,7 +907,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = await fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
+        var patientResponse = await fhirLabsClient.GetAsync("https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4/Patient/$count-em");
 
         patientResponse.EnsureSuccessStatusCode();
 
@@ -944,7 +944,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
-            Address = "https://localhost:7016/fhir/r4",
+            Address = "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4",
             Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
@@ -1163,7 +1163,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = await fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
+        var patientResponse = await fhirLabsClient.GetAsync("https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4/Patient/$count-em");
 
         patientResponse.EnsureSuccessStatusCode();
 
@@ -1179,7 +1179,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
-            Address = "https://localhost:7016/fhir/r4",
+            Address = "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4",
             Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
@@ -1223,7 +1223,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidateIssuer = true,
                 ValidIssuers =
                 [
-                    "https://localhost:7016/fhir/r4"
+                    "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4"
                 ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
@@ -1399,7 +1399,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
         //
         // fhirLabsClient.DefaultRequestHeaders.Authorization =
         //     new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        // var patientResponse = fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
+        // var patientResponse = fhirLabsClient.GetAsync("https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4/Patient/$count-em");
         //
         // patientResponse.Result.EnsureSuccessStatusCode();
         //
@@ -1464,7 +1464,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
                 ValidateIssuer = true,
                 ValidIssuers =
                 [
-                    "https://localhost:7016/fhir/r4"
+                    "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4"
                 ], //With ValidateIssuer = true issuer is validated against this list.  Docs are not clear on this, thus this example.
                 ValidateAudience = false, // No aud for UDAP metadata
                 ValidateLifetime = true,
@@ -2067,7 +2067,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         var disco = await fhirLabsClient.GetUdapDiscoveryDocument(new UdapDiscoveryDocumentRequest()
         {
-            Address = "https://localhost:7016/fhir/r4",
+            Address = "https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4",
             Policy = new Udap.Client.DiscoveryPolicy
             {
                 ValidateEndpoints = false // Authority endpoints are not hosted on same domain as Identity Provider.
@@ -2249,7 +2249,7 @@ public class IdServerRegistrationTests : IClassFixture<TestFixture>
 
         fhirLabsClient.DefaultRequestHeaders.Authorization =
             new AuthenticationHeaderValue(TokenRequestTypes.Bearer, tokenResponse.AccessToken);
-        var patientResponse = await fhirLabsClient.GetAsync("https://localhost:7016/fhir/r4/Patient/$count-em");
+        var patientResponse = await fhirLabsClient.GetAsync("https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4/Patient/$count-em");
 
         patientResponse.EnsureSuccessStatusCode();
 

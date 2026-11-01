@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 UDAP SDK for .NET - A comprehensive implementation of the UDAP (Unified Data Access Profiles) security framework. UDAP is a PKI extension profile to OAuth2 designed primarily for FHIR healthcare servers, enabling secure dynamic client registration and authentication.
 
 **Repository**: https://github.com/JoeShook/udap-dotnet
-**Target Frameworks**: .NET 8.0 and 9.0
+**Target Frameworks**: .NET 8.0, 9.0 and 10.0 (libraries); the examples target .NET 10.0
 **Primary Maintainer**: Joseph Shook (Surescripts)
 
 ## Line Endings
@@ -83,15 +83,24 @@ the cause is the machine's FHIR package cache (`~/.fhir/packages`), not the code
 ## Running Examples Locally
 
 ```bash
-# Install Tye (one-time)
-dotnet tool install -g Microsoft.Tye --version "0.12.0-*" --add-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet6/nuget/v3/index.json
-
-# Start all example services with hot reload
-tye run --watch
-
-# Or with Docker (release builds)
-tye run tye.docker.yaml
+# Aspire AppHost: Postgres + pgAdmin (persistent containers), the UdapDb.Postgres seeders, and the servers
+dotnet run --project examples/Udap.AppHost
 ```
+
+- Every server answers on `https://udap-<name>.dev.localhost:<port>` (auth-server 5002, idp1 5055, idp2 5057,
+  fhirlabs-api 7016, cert-server 5033 over http, proxy 7074, tefca-proxy 7075, mtls-proxy 7057, auth-admin 5253).
+  HTTPS is the ASP.NET dev cert (SAN `*.dev.localhost`); `*.localhost` resolves to loopback with no hosts file.
+- The UDAP test certificates' SANs, CRL distribution points and AIA URLs use these names. When a name changes,
+  regenerate only the local PKIs (never the whole generator, never the SureFhirLabs CA):
+  `dotnet test _tests/Udap.PKI.Generator --filter "FullyQualifiedName~MakeCaWithIntermediateUdapForLocalhostCommunity|FullyQualifiedName~MakeNegativeTestCerts|FullyQualifiedName~MakeMultiDomainCertsForSureFhirLabs|FullyQualifiedName~BuildTefcaTestPkiDesk"`
+- New anchors leave UdapServer.Tests' SQLite files (`bin/Debug/net10.0/Udap.Idp.db.*`) seeded with the old
+  ones; delete them before rerunning those tests.
+- SAN URIs are written verbatim through `SubjectAltName.FromUris` (BouncyCastle), never through .NET's
+  `SubjectAlternativeNameBuilder.AddUri`, which canonicalizes a path-less URI to end in `/`. SSRAA requires the
+  JWT `iss` to match the SAN exactly, so a SAN never ends in a trailing slash; the helper throws if one does.
+- The desktop-only generators (`MakeEndCertsForDefaultCommunity`, `MakeIdentityProviderCertificates`) reissue
+  end-entity certs from the on-disk SureFhirLabs CA. `MakeEndCertsForDefaultCommunity` also overwrites the
+  tracked `examples/Udap.Auth.Server/SureFhirLabs_CA.cer`; run `git restore` on it afterwards.
 
 ## Architecture
 

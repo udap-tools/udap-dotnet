@@ -12,4 +12,33 @@
   <PropertyGroup>
     <NoWarn>$(NoWarn);NU1507</NoWarn>
   </PropertyGroup>
+
+  <!-- The packages published to nuget.org (packed by .github/scripts/pack.sh). -->
+  <PropertyGroup>
+    <UdapPackages>;Udap.Model;Udap.Util;Udap.Common;Udap.Metadata.Server;Udap.Server;Udap.Server.Storage;Udap.Client;Udap.UI;Udap.Smart.Model;Udap.Smart.Metadata;Udap.CdsHooks.Endpoint;Udap.CdsHooks.Model;Udap.Tefca.Model;Udap.Tefca.Server;Udap.Ssraa.Server;</UdapPackages>
+    <IsUdapPackage>false</IsUdapPackage>
+    <IsUdapPackage Condition="$(UdapPackages.Contains(';$(MSBuildProjectName);'))">true</IsUdapPackage>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IsUdapPackage)' == 'true'">
+    <!-- Symbols go to the nuget.org symbol server as a .snupkg; SourceLink points the debugger at the exact commit. -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- Packing fails when the public API breaks against the baseline release on nuget.org.
+         An intended break is recorded with: dotnet pack -p:ApiCompatGenerateSuppressionFile=true -->
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageValidationBaselineVersion>0.9.14</PackageValidationBaselineVersion>
+  </PropertyGroup>
+
+  <!-- Deterministic package builds in CI, with repository-relative source paths in the PDBs. -->
+  <PropertyGroup Condition="'$(IsUdapPackage)' == 'true' and '$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- pack.sh writes each package's CycloneDX SBOM to UdapSbomDirectory and ships it inside the .nupkg. -->
+  <ItemGroup Condition="'$(IsUdapPackage)' == 'true' and '$(UdapSbomDirectory)' != ''">
+    <None Include="$(UdapSbomDirectory)/$(MSBuildProjectName).cdx.json" Pack="true" PackagePath="sbom/" Visible="false" />
+  </ItemGroup>
 </Project>

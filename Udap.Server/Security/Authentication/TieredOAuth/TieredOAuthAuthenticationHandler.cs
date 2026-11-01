@@ -411,8 +411,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
     {
         Logger.LogInformation("UDAP exchanging authorization code.");
         Logger.LogDebug("{ReturnUrl}", context.Properties.Items["returnUrl"] ?? "~/");
-        var sanitizedQueryString = Context.Request.QueryString.Value?.Replace(Environment.NewLine, "").Replace("\n", "").Replace("\r", "");
-        Logger.LogDebug("{QueryString}", sanitizedQueryString);
+        // Parameter names only: the callback query carries the authorization code.
+        Logger.LogDebug("Callback query parameters: {QueryParameters}", string.Join(", ", Context.Request.Query.Keys));
 
         var originalRequestParams = HttpUtility.ParseQueryString(context.Properties.Items["returnUrl"] ?? "~/");
         var idp = (originalRequestParams.GetValues("idp") ?? throw new InvalidOperationException()).Last();
@@ -430,18 +430,23 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             
         await _certificateStore.Resolve(Context.RequestAborted);
 
-        // Sign request for token 
+        var communityCertificates = communityParam == null
+            ? _certificateStore.IssuedCertificates.Select(ic => ic.Certificate).ToList()
+            : _certificateStore.IssuedCertificates.Where(ic => ic.Community == communityParam).Select(ic => ic.Certificate).ToList();
+
+        // Sign with the certificate this server registered with: the IdP only accepts a client assertion
+        // whose certificate carries the issuer (URI SAN) the client registered.
+        var signingCertificate = (tieredClient.ClientUriSan == null
+                                     ? null
+                                     : communityCertificates.FirstOrDefault(c => c.HasUriSubjectAltName(tieredClient.ClientUriSan)))
+                                 ?? communityCertificates.First();
+
+        // Sign request for token
         var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
             tieredClientId,
             tieredClient.TokenEndpoint,
-            communityParam == null
-                ?
-                _certificateStore.IssuedCertificates.First().Certificate
-                :
-                _certificateStore.IssuedCertificates.Where(ic => ic.Community == communityParam)
-                //TODO: multiple certs or latest cert?
-                    .Select(ic => ic.Certificate).First(),
-            
+            signingCertificate,
+
             resourceHolderRedirectUrl,
             code);
 
@@ -487,9 +492,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             }
         }
         
-        _udapClient.Problem += element => properties.Parameters.Add("Problem", element.Problems.Summarize(TrustChainValidator.DefaultProblemFlags));
-        _udapClient.Untrusted += certificate2 => properties.Parameters.Add("Untrusted", certificate2.Subject);
-        _udapClient.TokenError += message => properties.Parameters.Add("TokenError", message);
+        // Assign rather than Add: one validation can report the same kind of event more than once.
+        _udapClient.Problem += element => properties.Parameters["Problem"] = element.Problems.Summarize(TrustChainValidator.DefaultProblemFlags);
+        _udapClient.Untrusted += certificate2 => properties.Parameters["Untrusted"] = certificate2.Subject;
+        _udapClient.TokenError += message => properties.Parameters["TokenError"] = message;
         
         var response = await _udapClient.ValidateResource(idp, communityParam, cancellationToken: Context.RequestAborted);
         
@@ -586,7 +592,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                 ClientId = document.ClientId,
                 IdPBaseUrl = idp,
                 RedirectUri = clientRedirectUrl,
-                ClientUriSan = publicCert.GetSubjectAltNames().First().Item2,   //TODO: can a AuthServer register multiple times per community?
+                // The issuer the IdP registered: one of the certificate's URI SANs, which need not be the first SAN.
+                ClientUriSan = jsonWebToken.Issuer,
                 CommunityId = communityId.Value,
                 Enabled = true,
                 TokenEndpoint = properties.Parameters[UdapConstants.Discovery.TokenEndpoint] as string ?? throw new InvalidOperationException("Missing IdP token endpoint."),

@@ -1,0 +1,20 @@
+@page
+@model Udap.UI.Pages.Redirect.IndexModel
+@*
+    Loading page for native (non-https redirect URI) clients. The page model is Udap.UI's: it
+    refuses any redirect that isn't a local URL.
+*@
+@{
+    ViewData["Title"] = "Returning to the app";
+}
+
+<section class="sc-stack" aria-labelledby="redirect-title">
+    <h1 id="redirect-title">Returning you to the app</h1>
+    <p class="sc-lede">Once the app opens, you can close this tab.</p>
+</section>
+
+<meta http-equiv="refresh" content="0;url=@Model.RedirectUri" data-url="@Model.RedirectUri">
+
+@section scripts {
+    <script src="~/js/signin-redirect.js" asp-append-version="true"></script>
+}

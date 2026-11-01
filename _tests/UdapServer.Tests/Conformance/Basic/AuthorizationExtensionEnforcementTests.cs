@@ -402,7 +402,127 @@ public class AuthorizationExtensionEnforcementTests
         _testOutputHelper.WriteLine($"error_description: {tokenResponse.ErrorDescription}");
     }
 
+    [Fact]
+    public async Task TokenRequest_ExtensionValidatorInvalidGrant_StillCarriesItsErrorExtensions()
+    {
+        // The stored error extensions are deliberate on the invalid_grant path and must survive the
+        // middleware's narrowing of description injection to invalid_client.
+        var customValidator = Substitute.For<IUdapAuthorizationExtensionValidator>();
+        customValidator.ValidateAsync(Arg.Any<UdapAuthorizationExtensionValidationContext>())
+            .Returns(AuthorizationExtensionValidationResult.Failure(
+                "invalid_grant",
+                "Consent required",
+                new Dictionary<string, object> { ["hl7-b2b"] = new Dictionary<string, object> { ["consent_required"] = new[] { "https://consent.example" } } }));
+
+        var pipeline = BuildPipeline(
+            new ServerSettings
+            {
+                DefaultSystemScopes = "udap",
+                DefaultUserScopes = "udap",
+                SsraaVersion = SsraaVersion.V1_1
+            },
+            configureServices: services =>
+            {
+                services.AddSingleton<IUdapAuthorizationExtensionValidator>(customValidator);
+            });
+
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+        var regResult = await RegisterClient(pipeline, clientCert);
+
+        var clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
+                regResult.ClientId,
+                IdentityServerPipeline.TokenEndpoint,
+                clientCert)
+            .WithScope("system/Patient.rs")
+            .Build("RS384");
+
+        var tokenResponse = await pipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        Assert.True(tokenResponse.IsError);
+        Assert.Equal("invalid_grant", tokenResponse.Error);
+        Assert.Equal("Consent required", tokenResponse.ErrorDescription);
+        Assert.NotNull(tokenResponse.Json);
+        Assert.True(tokenResponse.Json.Value.TryGetProperty("extensions", out var extensions));
+        Assert.True(extensions.TryGetProperty("hl7-b2b", out _));
+    }
+
+    [Fact]
+    public async Task TokenRequest_ClientAuthenticatedByAnotherSecretValidator_InvalidGrant_HasNoClientAssertionDescription()
+    {
+        // A non-UDAP client (no x5c in its assertion) is authenticated by a second secret validator. The
+        // UDAP validator declines first; its client-assertion description must not end up on the
+        // unrelated invalid_grant that follows (here: an unknown refresh token).
+        var pipeline = BuildPipeline(
+            new ServerSettings
+            {
+                DefaultSystemScopes = "udap",
+                DefaultUserScopes = "udap",
+                SsraaVersion = SsraaVersion.V1_1
+            },
+            configureServices: services =>
+            {
+                services.AddTransient<Duende.IdentityServer.Validation.ISecretValidator, AcceptAssertionSecretValidator>();
+            });
+
+        pipeline.Clients.Add(new Client
+        {
+            ClientId = AcceptAssertionSecretValidator.ClientId,
+            ClientSecrets = { new Secret("not-used") { Type = AcceptAssertionSecretValidator.SecretType } },
+            AllowedGrantTypes = GrantTypes.Code,
+            RedirectUris = { "https://app.example/callback" },
+            AllowOfflineAccess = true,
+            AllowedScopes = { "openid" }
+        });
+
+        var tokenResponse = await pipeline.BackChannelClient.RequestRefreshTokenAsync(new RefreshTokenRequest
+        {
+            Address = IdentityServerPipeline.TokenEndpoint,
+            ClientId = AcceptAssertionSecretValidator.ClientId,
+            ClientCredentialStyle = ClientCredentialStyle.PostBody,
+            ClientAssertion = new ClientAssertion
+            {
+                Type = Duende.IdentityModel.OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = AcceptAssertionSecretValidator.AssertionWithoutX5c()
+            },
+            RefreshToken = "unknown-refresh-token"
+        });
+
+        Assert.True(tokenResponse.IsError);
+        Assert.Equal("invalid_grant", tokenResponse.Error);
+        Assert.Null(tokenResponse.ErrorDescription);
+    }
+
     #region Helpers
+
+    /// <summary>
+    /// Stands in for a non-UDAP client-assertion validator (e.g. private_key_jwt against a registered
+    /// JWKS): accepts any JWT assertion for its own client.
+    /// </summary>
+    private sealed class AcceptAssertionSecretValidator : Duende.IdentityServer.Validation.ISecretValidator
+    {
+        public const string ClientId = "second-validator-client";
+        public const string SecretType = "test_assertion";
+
+        public Task<Duende.IdentityServer.Validation.SecretValidationResult> ValidateAsync(
+            IEnumerable<Secret> secrets, Duende.IdentityServer.Models.ParsedSecret parsedSecret, CancellationToken ct = default) =>
+            Task.FromResult(new Duende.IdentityServer.Validation.SecretValidationResult
+            {
+                Success = parsedSecret.Id == ClientId && secrets.Any(s => s.Type == SecretType)
+            });
+
+        public static string AssertionWithoutX5c()
+        {
+            static string B64(string json) => Microsoft.IdentityModel.Tokens.Base64UrlEncoder.Encode(json);
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var header = B64("{\"alg\":\"RS256\",\"typ\":\"JWT\",\"kid\":\"k1\"}");
+            var payload = B64($"{{\"iss\":\"{ClientId}\",\"sub\":\"{ClientId}\",\"aud\":\"{IdentityServerPipeline.TokenEndpoint}\",\"jti\":\"{Guid.NewGuid():N}\",\"iat\":{now},\"exp\":{now + 300}}}");
+            return $"{header}.{payload}.c2lnbmF0dXJl";
+        }
+    }
 
     private UdapAuthServerPipeline BuildPipeline(
         ServerSettings serverSettings,

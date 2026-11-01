@@ -169,6 +169,7 @@ public class Index : PageModel
             View = new ViewModel
             {
                 EnableLocalLogin = local,
+                TestAccounts = TestAccount.FromTestUsers(TestUsers.Users)
             };
 
             Input.Username = context?.LoginHint;
@@ -216,7 +217,8 @@ public class Index : PageModel
         {
             AllowRememberLogin = LoginOptions.AllowRememberLogin,
             EnableLocalLogin = allowLocal && LoginOptions.AllowLocalLogin,
-            ExternalProviders = providers.ToArray()
+            ExternalProviders = providers.ToArray(),
+            TestAccounts = TestAccount.FromTestUsers(TestUsers.Users)
         };
     }
 }

@@ -128,7 +128,93 @@ public class UdapCustomTokenRequestValidator : ICustomTokenRequestValidator
                 request,
                 result.Error ?? "invalid_grant",
                 result.ErrorDescription);
+
+            return;
         }
+
+        AddPurposeOfUseClaims(request, extensions);
+    }
+
+    /// <summary>
+    /// When <see cref="ServerSettings.IncludePurposeOfUseClaims"/> is enabled, copies the
+    /// purpose-of-use codes declared by the (already validated) authorization extensions into
+    /// the access token as a repeated <c>purpose_of_use</c> claim, one claim per distinct code,
+    /// value verbatim. For <c>hl7-b2b</c> the <c>organization_id</c> and <c>organization_name</c>
+    /// travel too. Resource servers need this to enforce purpose of use per request and to
+    /// propagate it downstream; without it the declaration is validated here and then lost.
+    /// </summary>
+    private void AddPurposeOfUseClaims(ValidatedTokenRequest request, Dictionary<string, object>? extensions)
+    {
+        if (!_serverSettings.IncludePurposeOfUseClaims || extensions == null || extensions.Count == 0)
+        {
+            return;
+        }
+
+        var codes = new List<string>();
+        var organizationClaims = new List<Claim>();
+
+        foreach (var (key, value) in extensions)
+        {
+            if (value is not IAuthorizationExtensionObject extensionObject)
+            {
+                continue;
+            }
+
+            foreach (var code in extensionObject.GetPurposeOfUse() ?? Array.Empty<string>())
+            {
+                if (!string.IsNullOrWhiteSpace(code) && !codes.Contains(code, StringComparer.Ordinal))
+                {
+                    codes.Add(code);
+                }
+            }
+
+            if (key == UdapConstants.UdapAuthorizationExtensions.Hl7B2B && value is HL7B2BAuthorizationExtension b2b)
+            {
+                if (!string.IsNullOrWhiteSpace(b2b.OrganizationId))
+                {
+                    organizationClaims.Add(new Claim(UdapConstants.JwtClaimTypes.OrganizationId, b2b.OrganizationId));
+                }
+
+                if (!string.IsNullOrWhiteSpace(b2b.OrganizationName))
+                {
+                    organizationClaims.Add(new Claim(UdapConstants.JwtClaimTypes.OrganizationName, b2b.OrganizationName));
+                }
+            }
+        }
+
+        if (codes.Count == 0 && organizationClaims.Count == 0)
+        {
+            return;
+        }
+
+        EnsureBareClientClaims(request);
+
+        foreach (var code in codes)
+        {
+            request.ClientClaims.Add(new Claim(UdapConstants.JwtClaimTypes.PurposeOfUse, code));
+        }
+
+        foreach (var claim in organizationClaims)
+        {
+            request.ClientClaims.Add(claim);
+        }
+
+        _logger.LogDebug(
+            "Added purpose_of_use claims {Codes} for client_id {ClientId}",
+            string.Join(" ", codes), request.ClientId);
+    }
+
+    /// <summary>
+    /// Emit client claims without the default "client_" prefix so they appear under their own
+    /// names (<c>udap_community</c>, <c>purpose_of_use</c>, ...). UDAP-registered clients carry no
+    /// other client claims, so clearing the per-request prefix is safe and does not persist.
+    /// AlwaysSendClientClaims is required so the claims are emitted on the authorization_code
+    /// flow too (Duende only sends client claims on the client_credentials flow by default).
+    /// </summary>
+    private static void EnsureBareClientClaims(ValidatedTokenRequest request)
+    {
+        request.Client.ClientClaimsPrefix = string.Empty;
+        request.Client.AlwaysSendClientClaims = true;
     }
 
     /// <summary>
@@ -159,13 +245,7 @@ public class UdapCustomTokenRequestValidator : ICustomTokenRequestValidator
             return;
         }
 
-        // Emit the claim without the default "client_" prefix so it appears as "udap_community".
-        // UDAP-registered clients carry no other client claims, so clearing the per-request
-        // prefix is safe and does not persist. AlwaysSendClientClaims is required so the claim
-        // is emitted on the authorization_code flow too (Duende only sends client claims on the
-        // client_credentials flow by default).
-        request.Client.ClientClaimsPrefix = string.Empty;
-        request.Client.AlwaysSendClientClaims = true;
+        EnsureBareClientClaims(request);
         request.ClientClaims.Add(new Claim(UdapConstants.JwtClaimTypes.UdapCommunity, communityName));
     }
 

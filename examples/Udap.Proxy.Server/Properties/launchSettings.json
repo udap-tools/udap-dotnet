@@ -8,7 +8,7 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7074;https://proxy.fhirlabs.net:7074"
+      "applicationUrl": "https://udap-proxy.dev.localhost:7074"
     },
     "https-no-compression": {
       "commandName": "Project",
@@ -19,7 +19,7 @@
         "ASPNETCORE_RESPONSE_COMPRESSION_DISSABLED": "true"
       },
       "dotnetRunMessages": true,
-      "applicationUrl": "https://localhost:7074;https://proxy.fhirlabs.net:7074"
+      "applicationUrl": "https://udap-proxy.dev.localhost:7074"
     },
     "Container (Dockerfile)": {
       "commandName": "Docker",

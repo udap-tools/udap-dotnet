@@ -351,8 +351,8 @@ namespace UdapServer.Tests
 
             var document = new UdapDynamicClientRegistrationDocument
             {
-                Issuer = "http://localhost/",
-                Subject = "http://localhost/",
+                Issuer = "http://localhost",
+                Subject = "http://localhost",
                 Audience = "http://localhost:5001/connect/register",
                 Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
                 IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),
@@ -465,8 +465,8 @@ namespace UdapServer.Tests
 
             var document = new UdapDynamicClientRegistrationDocument
             {
-                Issuer = "http://localhost/",
-                Subject = "http://localhost/",
+                Issuer = "http://localhost",
+                Subject = "http://localhost",
                 Audience = "http://localhost:5001/connect/register",
                 Expiration = EpochTime.GetIntDate(now.AddMinutes(1).ToUniversalTime()),
                 IssuedAt = EpochTime.GetIntDate(now.ToUniversalTime()),

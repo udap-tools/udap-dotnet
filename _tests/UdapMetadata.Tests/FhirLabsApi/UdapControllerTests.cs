@@ -95,7 +95,7 @@ public class SmartControllerTests : IClassFixture<ApiTestFixture>
 
         var smartMetadata = await result.Content.ReadFromJsonAsync<SmartMetadata>();
         Assert.NotNull(smartMetadata);
-        Assert.Equal("https://host.docker.internal:5002", smartMetadata!.issuer);
+        Assert.Equal("https://udap-auth-server.dev.localhost:5002", smartMetadata!.issuer);
 
         result = await httpClient.GetAsync("fhir/r4/.well-known/smart-configurationx");
         Assert.Equal(HttpStatusCode.NotFound, result.StatusCode);
@@ -365,7 +365,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
         var authorizationEndpoint = disco.AuthorizeEndpoint;
-        Assert.Equal("https://host.docker.internal:5002/connect/authorize", authorizationEndpoint);
+        Assert.Equal("https://udap-auth-server.dev.localhost:5002/connect/authorize", authorizationEndpoint);
     }
 
     [Fact]
@@ -377,7 +377,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
         var tokenEndpoint = disco.TokenEndpoint;
-        Assert.Equal("https://host.docker.internal:5002/connect/token", tokenEndpoint);
+        Assert.Equal("https://udap-auth-server.dev.localhost:5002/connect/token", tokenEndpoint);
     }
 
     [Fact]
@@ -389,7 +389,7 @@ public class UdapControllerTests : IClassFixture<ApiTestFixture>
             _fixture.CreateClient().BaseAddress?.AbsoluteUri + "fhir/r4");
 
         var registrationEndpoint = disco.RegistrationEndpoint;
-        Assert.Equal("https://host.docker.internal:5002/connect/register", registrationEndpoint);
+        Assert.Equal("https://udap-auth-server.dev.localhost:5002/connect/register", registrationEndpoint);
     }
 
     [Fact]

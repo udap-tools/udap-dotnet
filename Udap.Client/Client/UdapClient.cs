@@ -274,7 +274,10 @@ namespace Udap.Client
             CancellationToken cancellationToken = default)
         {
             var response = await _httpClient.ExchangeCodeForTokenResponse(tokenRequest, cancellationToken);
-            _logger.LogDebug("OAuth Client Access Token: {TokenResponse}", JsonSerializer.Serialize(response));
+            // Never the tokens themselves.
+            _logger.LogDebug(
+                "OAuth token response: status {StatusCode}, error {Error} {ErrorDescription}, token type {TokenType}, expires in {ExpiresIn}, scope {Scope}",
+                response.HttpStatusCode, response.Error, response.ErrorDescription, response.TokenType, response.ExpiresIn, response.Scope);
             return response;
         }
         
@@ -292,7 +295,10 @@ namespace Udap.Client
         {
             var response = await _httpClient.ExchangeCodeForAuthTokenResponse(tokenRequest, cancellationToken);
 
-            _logger.LogDebug("Tiered OAuth Client Access Token: {TokenResponse}", JsonSerializer.Serialize(response));
+            // Never the tokens themselves.
+            _logger.LogDebug(
+                "Tiered OAuth token response: error {Error}, token type {TokenType}, expires in {ExpiresIn}",
+                response.Error?.Message, response.TokenType, response.ExpiresIn);
             return response;
         }
 

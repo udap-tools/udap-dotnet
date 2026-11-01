@@ -1,0 +1,37 @@
+@page
+@model Udap.Auth.Server.Pages.UdapAccount.Logout.LoggedOut
+@{
+    ViewData["Title"] = "Signed out";
+}
+
+<section class="sc-stack" aria-labelledby="signed-out-title">
+    <h1 id="signed-out-title">You're signed out</h1>
+
+    @if (Model.View.PostLogoutRedirectUri != null)
+    {
+        <p class="sc-lede">You can close this tab, or go back to @(Model.View.ClientName ?? "the app").</p>
+        <div class="sc-actions">
+            <a class="sc-button PostLogoutRedirectUri" href="@Model.View.PostLogoutRedirectUri">Back to @(Model.View.ClientName ?? "the app")</a>
+        </div>
+    }
+    else
+    {
+        <p class="sc-lede">You can close this tab.</p>
+        <div class="sc-actions">
+            <a class="sc-button sc-button--quiet" href="~/">Go to the start page</a>
+        </div>
+    }
+
+    @if (Model.View.SignOutIframeUrl != null)
+    {
+        @* Front-channel sign-out of the apps that used this session *@
+        <iframe width="0" height="0" class="sc-visually-hidden" title="Signing out of apps" src="@Model.View.SignOutIframeUrl"></iframe>
+    }
+</section>
+
+@section scripts {
+    @if (Model.View.AutomaticRedirectAfterSignOut)
+    {
+        <script src="~/js/signout-redirect.js" asp-append-version="true"></script>
+    }
+}

@@ -1,77 +1,141 @@
-# Running examples
+# Running the examples
 
-To get the most out of the example project run them all together.  To make that easier [Project Tye](https://github.com/dotnet/tye) can spin all the services up together and give you a portal to see what is running on which port.  Tye is not required and you can start each service by hand.
+The example servers are meant to run together. [`Udap.AppHost`](./Udap.AppHost/) is a .NET Aspire AppHost that starts them all, plus Postgres and pgAdmin, and gives you a dashboard of what is running where.
 
-### dotnet tye
+## Before the first run
 
-```txt
-dotnet tool install -g Microsoft.Tye --version "0.12.0-*" --add-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet6/nuget/v3/index.json
+- **.NET 10 SDK** and **Docker** (Docker Desktop or Podman) running.
+- **A trusted ASP.NET dev certificate.** Every server serves HTTPS with it, and its SAN includes `*.dev.localhost`:
+
+  ```bash
+  dotnet dev-certs https --trust
+  ```
+
+- **The test PKI.** The UDAP certificates the servers sign metadata with, and trust, come from `_tests/Udap.PKI.Generator` (see [Certificates](#certificates)).
+
+## Start
+
+```bash
+dotnet run --project examples/Udap.AppHost
 ```
 
-### Start the services
+The console prints the dashboard login link. The AppHost creates the databases, runs `migrations/UdapDb.Postgres` once per database to apply the schema and seed data, then starts the servers.
 
-The following will start the services and watch for changes.  Think hot reload.  When you change a .cs file the service will be recompiled and restarted.
+| Server | URL | Starts |
+|:---|:---|:---|
+| Udap.Auth.Server | https://udap-auth-server.dev.localhost:5002 | automatically |
+| Udap.Identity.Provider | https://udap-idp1.dev.localhost:5055 | automatically |
+| Udap.Identity.Provider.2 | https://udap-idp2.dev.localhost:5057 | automatically |
+| FhirLabsApi | https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4 | automatically |
+| Udap.Certificates.Server (CRLs and AIA) | http://udap-cert-server.dev.localhost:5033 | automatically |
+| Udap.Proxy.Server | https://udap-proxy.dev.localhost:7074 | from the dashboard |
+| Tefca.Proxy.Server | https://udap-tefca-proxy.dev.localhost:7075 | from the dashboard |
+| mTLS.Proxy.Server | https://udap-mtls-proxy.dev.localhost:7057 | from the dashboard |
+| Udap.Auth.Server.Admin | http://udap-auth-admin.dev.localhost:5253 | from the dashboard |
+| UdapEd (container) | https://udaped.dev.localhost:7041 | automatically |
+| pgAdmin | http://localhost:5050 | automatically |
 
-```txt
-tye run --watch
-```
+There is no hosts file to edit. Browsers, curl and .NET resolve any `*.localhost` name to the loopback address themselves. If a name ever stops resolving (some VPN clients, or macOS resolvers), the AppHost logs which one and the hosts-file line that fixes it.
 
-### Docker
+Under the AppHost there are no connection strings to set up: it hands each server and seeder its database's connection string.
 
-Disclaimer: only tested on Windows running a Linux images.
+[UdapEd](https://github.com/JoeShook/UdapEd) runs from its published image, `ghcr.io/joeshook/udaped`. It serves the dev certificate, trusts it, and reaches the servers by the same names as your browser, so you can point it straight at `https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4`. To skip it, or to pin an image tag, set `UdapEd:Enabled` or `UdapEd:ImageTag` in the AppHost's user secrets.
 
-An alternative ```tye.yaml``` file called ```tye.docker.yaml``` has been created for launching the following as Docker images.
+### Running a server on its own
 
-- FhirLabsApi
-- Udap.Auth.Server
-- Udap.Identity.Provider
-- Udap.Identity.Provider.2
+You can run any server with `dotnet run --project examples/<Server>`. Its default launch profile uses the same name and port as under the AppHost. A server that uses a database then needs a Postgres you provide, with its database seeded. Put the connection strings in each project's `secrets.json`, which overrides `appsettings*.json` in Development. Open it with **Manage User Secrets** in Visual Studio, or set values with `dotnet user-secrets`.
 
-The following is running locally.
-
-- Udap.Certificate.Server
-
-Run Tye using the Docker technique with the following command.
-
-```txt
-tye run tye.docker.yaml
-```
-
-There is no watch option on this one.  The Docker images are release builds, similar to how you would deploy Docker images into production where the ```tye run --watch``` technique is similar to launching docker from Visual Studio where it mounts local volumes and can debug.  
-
-:spiral_notepad: Note: The docker run args include ```--env=ASPNETCORE_ENVIRONMENT=Development```.  This will let it pick ```appsettings.Development.json```.  This is important because configuration for running locally with certificates generated for testing are available.
-
-## Certificates for testing
-
-Remember to run the tests in Udap.PKI.Generator
-
-It will generate a PKI including the host.docker.intenal.pfx SSL Certificate and SurefhirCA.cer.  This is critical to enable SSL to work for Docker to Docker communications and Docker to desktop communications.  The test that generates this is ```MakeCaWithIntermediateUdapAndSSLForDefaultCommunity```.  While it will generate many others the SSL certificates are the only important certificates for running locally.  They should be copied automatically to the projects.  Each project already has the configuration in ```appsettings.json``` to load this certificate.
+**The seeder** (`migrations/UdapDb.Postgres`) needs all three. Each `Local_*_Migrate` launch profile picks one by name:
 
 ```json
-"Kestrel": {
-  "Certificates": {
-    "Default": {
-      "Path": "host.docker.internal.pfx",
-      "Password": "udap-test"
-    }
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Port=5432;Database=Udap.Auth.db;Username=<user>;Password=<password>",
+    "db_identity_provider": "Host=localhost;Port=5432;Database=Udap.Identity.Provider.db;Username=<user>;Password=<password>",
+    "db_identity_provider2": "Host=localhost;Port=5432;Database=Udap.Identity.Provider2.db;Username=<user>;Password=<password>"
   }
-}```
-
-:spiral_notepad: Note: On Windows some Docker Desktop instances will map the local IP and host.docker.internal host name automatically.  My desktop used to do it then stopped an now works again.  So you may have to manually set it.  Example:
-
-```txt
-# Added by Docker Desktop
-192.168.86.40 host.docker.internal
-192.168.86.40 gateway.docker.internal
-# To allow the same kube context to work on the host and the container:
-127.0.0.1 kubernetes.docker.internal
-# End of section
+}
 ```
 
-:spiral_notepad: Note: The host.docker.internal.pfx file is created withe both ```localhost``` and ```host.docker.internal``` in the DNS SAN X509 Extension.  This allows the cert to work like the typical ASP.NET Test certificate and lets Docker find other services.  Of course the SureFhirCA.cer anchor certificate must be installed in the trust stores of Docker and Windows.  For Windows the ```MakeCaWithIntermediateUdapAndSSLForDefaultCommunity``` will do this.  Note the script must be ran as admin to install automatically.  If it is problem then comment out the call to ```UpdateWindowsMachineStore``` and install the CA into your Windows personal Trust store yourself.  For Linux images running in Docker, the Dockerfile already has the build steps in place to do this.  
+Run the profile for each database you need. The user must be allowed to create the database:
 
-Also run the MakeCaWithIntermediateUdapForLocalhostCommunity unit test to generated many UDAP certificates used for testing.  
+```bash
+dotnet run --project migrations/UdapDb.Postgres --launch-profile Local_Auth_Migrate
+dotnet run --project migrations/UdapDb.Postgres --launch-profile Local_Idp1_Migrate
+dotnet run --project migrations/UdapDb.Postgres --launch-profile Local_Idp2_Migrate
+```
+
+**Each server** reads `DefaultConnection`:
+
+| Project | Database |
+|:---|:---|
+| Udap.Auth.Server | Udap.Auth.db |
+| Udap.Auth.Server.Admin | Udap.Auth.db |
+| Udap.Identity.Provider | Udap.Identity.Provider.db |
+| Udap.Identity.Provider.2 | Udap.Identity.Provider2.db |
+
+```bash
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=Udap.Auth.db;Username=<user>;Password=<password>" --project examples/Udap.Auth.Server
+```
+
+Without secrets, the servers fall back to `udap_user` / `udap_password1` on `localhost:5432` (their `appsettings.Development.json`). The seeder falls back to `admin` / `admin1234` (its `appsettings.json`).
+
+FhirLabsApi, the certificate server and the proxies use no database.
+
+### Udap.Proxy.Server and Google Cloud
+
+In Development, Udap.Proxy.Server forwards FHIR calls to a Google Cloud Healthcare FHIR store and calls it with a Google access token.
+
+Under the AppHost, the proxy has a Google login of its own, kept in a separate gcloud config folder (`~/.udap-gcloud`, set by `UdapProxy:GcloudConfigDir`). Your usual gcloud login, and every other tool on the machine, never sees it. To sign in, start **gcloud-login** under udap-proxy on the dashboard and sign in with the Google account that can read the FHIR store. Then start or restart udap-proxy. The AppHost hands the proxy that login's credentials file at each start. Sign in again the same way to switch accounts.
+
+Run on its own, the proxy uses Google application default credentials, the account from `gcloud auth application-default login`, shared by every tool on the machine. To give it other credentials, point `GoogleCredentialsFile` in its user secrets at a credential file that can read the store, either a service account key or a user's `application_default_credentials.json`:
+
+```bash
+dotnet user-secrets set GoogleCredentialsFile "<path to the credential file>" --project examples/Udap.Proxy.Server
+```
+
+Keep the credential file outside the repo.
+
+### Sharing an existing Postgres and pgAdmin
+
+Postgres and pgAdmin are persistent containers, by default `udap-postgres` and `udap-pgadmin`. Their names, volumes and image tags come from [`appsettings.json`](./Udap.AppHost/appsettings.json). To use a Postgres and pgAdmin you already run for other projects, override them in the AppHost's user secrets. Aspire reuses a container whose name and spec match, rather than creating a new one:
+
+```bash
+cd examples/Udap.AppHost
+dotnet user-secrets set Parameters:postgres-password "<that server's postgres password>"
+dotnet user-secrets set Postgres:ContainerName "<postgres container>"
+dotnet user-secrets set Postgres:DataVolume "<its data volume>"
+dotnet user-secrets set PgAdmin:ContainerName "<pgadmin container>"
+dotnet user-secrets set PgAdmin:DataVolume "<its data volume>"
+dotnet user-secrets set PgAdmin:ServersFile "<the servers.json file it mounts>"
+```
+
+The image tags, volumes and pgAdmin servers file must match how the other project declares the containers, or Aspire recreates them with this spec. The data stays on the volumes, but the other project's next start recreates them back. Set `PgAdmin:Enabled` to `false` to skip pgAdmin.
+
+## Certificates
+
+**HTTPS** uses the ASP.NET dev certificate (above). Nothing to generate.
+
+**UDAP certificates** come from the test PKI generator. Their SAN URIs name the servers' base URLs (for example `https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4`). Their CRL distribution points and AIA URLs point at `http://udap-cert-server.dev.localhost:5033`. After a fresh clone, generate everything once:
+
+```bash
+dotnet test _tests/Udap.PKI.Generator
+```
+
+To regenerate only the local communities, after changing a host name for example, run these tests and nothing else:
+
+```bash
+dotnet test _tests/Udap.PKI.Generator --filter "FullyQualifiedName~MakeCaWithIntermediateUdapForLocalhostCommunity|FullyQualifiedName~MakeNegativeTestCerts|FullyQualifiedName~MakeMultiDomainCertsForSureFhirLabs|FullyQualifiedName~BuildTefcaTestPkiDesk"
+```
+
+Then, as a separate run, reissue Udap.Proxy.Server's local cert from the new community 1 intermediate:
+
+```bash
+dotnet test _tests/Udap.PKI.Generator --filter "FullyQualifiedName~MakeUdapProxyLocalhostCert"
+```
+
+The SureFhirLabs CA is never replaced once it exists, because deployed servers trust it. Regenerated anchors change what the auth server and identity providers trust, so re-seed their databases afterwards: drop the `Udap.*` databases and start the AppHost again.
 
 ## Tiered OAuth
 
-There is a Tiered OAuth path that will work locally with this current setup.  In the [UdapEd](https://github.com/JoeShook/UdapEd) tool type ```https://host.docker.internal:5057``` in the ```OpenID Connect IdP``` field.  Then use username/password of ```bob/bob``` or ```alice/alice```.
+Tiered OAuth works locally. In [UdapEd](https://github.com/JoeShook/UdapEd), enter `https://udap-idp2.dev.localhost:5057` in the **OpenID Connect IdP** field, then sign in as `bob` / `bob` or `alicenewman@example.com` / `alice`. The sign-in page lists the test accounts.

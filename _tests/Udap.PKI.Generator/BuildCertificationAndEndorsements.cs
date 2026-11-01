@@ -145,11 +145,8 @@ public class BuildCertificationAndEndorsements : CertificateBase
 
 
 
-            var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-            subAltNameBuilder.AddUri(
-                new Uri("udap://fhirlabs.net")); // embedding a community uri in intermediate cert
-            var x509Extension = subAltNameBuilder.Build();
-            intermediateReq.CertificateExtensions.Add(x509Extension);
+            // embedding a community uri in intermediate cert
+            intermediateReq.CertificateExtensions.Add(SubjectAltName.FromUris(["udap://fhirlabs.net"]));
 
             var authorityInfoAccessBuilder = new AuthorityInformationAccessBuilder();
             authorityInfoAccessBuilder.AddCertificateAuthorityIssuerUri(
@@ -328,13 +325,7 @@ public class BuildCertificationAndEndorsements : CertificateBase
 
         if (subjectAltNames != null)
         {
-            var subAltNameBuilder = new SubjectAlternativeNameBuilder();
-            foreach (var subjectAltName in subjectAltNames)
-            {
-                subAltNameBuilder.AddUri(new Uri(subjectAltName)); //Same as iss claim
-            }
-            var x509Extension = subAltNameBuilder.Build();
-            clientCertRequest.CertificateExtensions.Add(x509Extension);
+            clientCertRequest.CertificateExtensions.Add(SubjectAltName.FromUris(subjectAltNames)); //Same as iss claim
         }
 
         var certificatePolicyBuilder = new CertificatePolicyBuilder();

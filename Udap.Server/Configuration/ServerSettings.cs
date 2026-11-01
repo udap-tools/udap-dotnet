@@ -68,9 +68,33 @@ public class ServerSettings
     public bool LogoRequired { get; set; } = true;
 
     /// <summary>
+    /// Accept http redirect URIs on a loopback host (localhost, 127.0.0.1, [::1]) at registration, as native apps
+    /// use them (RFC 8252 section 7.3). Off by default: SSRAA requires every redirect URI to use the https scheme.
+    /// </summary>
+    public bool AllowLoopbackHttpRedirectUris { get; set; }
+
+    /// <summary>
     /// By default the jti claim is required on registration requests.  And replay attacks are monitored.
     /// </summary>
     public bool RegistrationJtiRequired { get; set; } = true;
+
+    /// <summary>
+    /// Maximum allowed lifetime, in seconds, of a registration software statement, measured as
+    /// <c>exp</c> minus <c>iat</c>. UDAP Dynamic Client Registration section 4.3 recommends a
+    /// maximum of 5 minutes, so the default is 300. A software statement whose <c>exp</c> is further
+    /// than this from its <c>iat</c> is rejected with <c>invalid_software_statement</c>.
+    /// Set to 0 or a negative value to disable the check.
+    /// </summary>
+    public int SoftwareStatementMaxLifetimeSeconds { get; set; } = 300;
+
+    /// <summary>
+    /// Maximum allowed lifetime, in seconds, of a client assertion (Authentication Token) presented
+    /// at the token endpoint, measured as <c>exp</c> minus <c>iat</c>. UDAP JWT-Based Client
+    /// Authentication section 6.3 recommends a maximum of 5 minutes, so the default is 300.
+    /// A client assertion whose <c>exp</c> is further than this from its <c>iat</c> is rejected
+    /// with <c>invalid_client</c>. Set to 0 or a negative value to disable the check.
+    /// </summary>
+    public int ClientAssertionMaxLifetimeSeconds { get; set; } = 300;
 
 
     public bool AlwaysIncludeUserClaimsInIdToken { get; set; }
@@ -102,7 +126,16 @@ public class ServerSettings
     /// </summary>
     public bool IncludeCommunityClaim { get; set; }
 
-
+    /// <summary>
+    /// When true (the default), after a client's authorization extensions have been validated
+    /// at the token endpoint, every purpose-of-use code they declare is copied into the access
+    /// token as a repeated <c>purpose_of_use</c> claim (one claim per code, value verbatim as
+    /// declared), and the <c>hl7-b2b</c> <c>organization_id</c> / <c>organization_name</c> are
+    /// copied as claims of the same name. Without this the purpose is validated at issuance and
+    /// then discarded, leaving resource servers unable to enforce purpose of use per request or
+    /// forward it downstream. Set to false to keep the pre-0.9.7 token shape.
+    /// </summary>
+    public bool IncludePurposeOfUseClaims { get; set; } = true;
 }
 
 

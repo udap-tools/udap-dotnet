@@ -57,7 +57,9 @@ public static class UdapConfigurationServiceCollectionExtensions
             builder.Services.AddSingleton<UdapCertificateCacheMarker>();
         }
 
-        builder.Services.AddHttpClient<CertificateDownloadCache>();
+        // AIA and CRL URLs come from certificates, so a download must not be redirected somewhere else.
+        builder.Services.AddHttpClient<CertificateDownloadCache>()
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
         builder.Services.TryAddSingleton<ICertificateDownloadCache, CertificateDownloadCache>();
 
         return builder;

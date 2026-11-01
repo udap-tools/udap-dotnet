@@ -20,6 +20,24 @@
                     </div>
 
                     <div class="card-body">
+                        @if (Model.View.TestAccounts.Any())
+                        {
+                            <div class="test-accounts mb-3" role="group" aria-label="Test accounts">
+                                <div class="small text-muted mb-1">Test accounts: click one to fill in the form, then press Login.</div>
+                                @foreach (var account in Model.View.TestAccounts)
+                                {
+                                    <button type="button"
+                                            class="btn btn-outline-secondary btn-sm mr-1 mb-1"
+                                            data-test-account="true"
+                                            data-username="@account.Username"
+                                            data-password="@account.Password"
+                                            title="@account.Username">
+                                        @account.DisplayName
+                                    </button>
+                                }
+                            </div>
+                        }
+
                         <form asp-page="/Account/Login/Index">
                             <input type="hidden" asp-for="Input.ReturnUrl" />
 
@@ -87,3 +105,7 @@
         }
     </div>
 </div>
+
+@section scripts {
+    <script src="~/_content/Udap.UI/js/test-accounts.js" asp-append-version="true"></script>
+}

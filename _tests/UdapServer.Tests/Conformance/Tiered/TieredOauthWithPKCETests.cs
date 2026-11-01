@@ -637,12 +637,10 @@ public class TieredOauthWithPKCETests
 
         // Get a Access Token (Cash in the code)
 
-        var privateCerts = _mockAuthorServerPipeline.Resolve<IPrivateCertificateStore>();
-
         var tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
             clientId,
             "https://server/connect/token",
-            privateCerts.IssuedCertificates.Select(ic => ic.Certificate).First(),
+            LoadClientCertificate(),
             "https://code_client/callback",
             code)
             .Build();
@@ -951,12 +949,10 @@ public class TieredOauthWithPKCETests
 
         // Get a Access Token (Cash in the code)
 
-        var privateCerts = _mockAuthorServerPipeline.Resolve<IPrivateCertificateStore>();
-
         var tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
             clientId,
             "https://server/connect/token",
-            privateCerts.IssuedCertificates.Select(ic => ic.Certificate).First(),
+            LoadClientCertificate(),
             "https://code_client/callback",
             code)
             .Build();
@@ -1249,12 +1245,10 @@ public class TieredOauthWithPKCETests
 
         // Get a Access Token (Cash in the code)
 
-        var privateCerts = _mockAuthorServerPipeline.Resolve<IPrivateCertificateStore>();
-
         var tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
             clientId,
             "https://server/connect/token",
-            privateCerts.IssuedCertificates.Select(ic => ic.Certificate).First(),
+            LoadClientCertificate(),
             "https://code_client/callback",
             code)
             .Build();
@@ -1491,12 +1485,10 @@ public class TieredOauthWithPKCETests
         // ClientAuthAccess
         ///////////////////////////
 
-        var privateCerts = _mockAuthorServerPipeline.Resolve<IPrivateCertificateStore>();
-
         var tokenRequest = AccessTokenRequestForAuthorizationCodeBuilder.Create(
             clientId,
             "https://server/connect/token",
-            privateCerts.IssuedCertificates.Select(ic => ic.Certificate).First(),
+            LoadClientCertificate(),
             "https://code_client/callback",
             code)
             .Build();
@@ -1606,13 +1598,19 @@ public class TieredOauthWithPKCETests
         _mockIdPPipeline.Subject = new IdentityServerUser("bob").CreatePrincipal();
     }
 
-    private async Task<UdapDynamicClientRegistrationDocument?> RegisterClientWithAuthServer()
+    // The certificate the test client registers with; its client assertions must be signed with the same certificate.
+    private static X509Certificate2 LoadClientCertificate()
     {
 #if NET9_0_OR_GREATER
-        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test");
+        return X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test");
 #else
-        var clientCert = new X509Certificate2("CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test");
+        return new X509Certificate2("CertStore/issued/fhirLabsApiClientLocalhostCert.pfx", "udap-test");
 #endif
+    }
+
+    private async Task<UdapDynamicClientRegistrationDocument?> RegisterClientWithAuthServer()
+    {
+        var clientCert = LoadClientCertificate();
         var udapClient = _mockAuthorServerPipeline.Resolve<IUdapClient>();
 
         //

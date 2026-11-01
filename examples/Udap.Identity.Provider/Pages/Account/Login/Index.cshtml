@@ -1,89 +1,99 @@
 @page
 @model Udap.Identity.Provider.Pages.Login.Index
+@{
+    ViewData["Title"] = "Sign in";
+}
 
-<div class="login-page">
-    <div class="lead">
-        <h1>Login</h1>
-        <p>Choose how to login</p>
+<div class="sc-single sc-stack">
+    <div class="sc-stack-sm">
+        <h1>Sign in</h1>
+        <p class="sc-lede">with your SecuredControls Identity account</p>
     </div>
 
-    <partial name="_ValidationSummary" />
+    <partial name="_Errors" />
 
-    <div class="row">
+    @if (Model.View.EnableLocalLogin)
+    {
+        <section class="sc-panel sc-stack" aria-label="Your account">
+            <form asp-page="/Account/Login/Index" class="sc-stack" novalidate>
+                <input type="hidden" asp-for="Input.ReturnUrl" />
 
-        @if (Model.View.EnableLocalLogin)
-        {
-            <div class="col-sm-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h2>Local Account</h2>
-                    </div>
-
-                    <div class="card-body">
-                        <form asp-page="/Account/Login/Index">
-                            <input type="hidden" asp-for="Input.ReturnUrl" />
-
-                            <div class="form-group">
-                                <label asp-for="Input.Username"></label>
-                                <input class="form-control" placeholder="Username" asp-for="Input.Username" autofocus>
-                            </div>
-                            <div class="form-group">
-                                <label asp-for="Input.Password"></label>
-                                <input type="password" class="form-control" placeholder="Password" asp-for="Input.Password" autocomplete="off">
-                            </div>
-                            
-                            @if (Model.View.AllowRememberLogin)
-                            {
-                                <div class="form-group">
-                                    <div class="form-check">
-                                        <input class="form-check-input" asp-for="Input.RememberLogin">
-                                        <label class="form-check-label" asp-for="Input.RememberLogin">
-                                            Remember My Login
-                                        </label>
-                                    </div>
-                                </div>
-                            }
-                            
-                            <button class="btn btn-primary" name="Input.Button" value="login">Login</button>
-                            <button class="btn btn-secondary" name="Input.Button" value="cancel">Cancel</button>
-                        </form>
-                    </div>
+                <div class="sc-field">
+                    <label asp-for="Input.Username">Username</label>
+                    <input class="sc-input" asp-for="Input.Username" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus />
+                    <span asp-validation-for="Input.Username"></span>
                 </div>
-            </div>
-        }
 
-        @if (Model.View.VisibleExternalProviders.Any())
-        {
-            <div class="col-sm-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h2>External Account</h2>
-                    </div>
-                    <div class="card-body">
-                        <ul class="list-inline">
-                            @foreach (var provider in Model.View.VisibleExternalProviders)
-                            {
-                                <li class="list-inline-item">
-                                    <a class="btn btn-secondary"
-                                       asp-page="/ExternalLogin/Challenge"
-                                       asp-route-scheme="@provider.AuthenticationScheme"
-                                       asp-route-returnUrl="@Model.Input.ReturnUrl">
-                                        @provider.DisplayName
-                                    </a>
-                                </li>
-                            }
-                        </ul>
-                    </div>
+                <div class="sc-field">
+                    <label asp-for="Input.Password">Password</label>
+                    <input class="sc-input" asp-for="Input.Password" type="password" autocomplete="current-password" />
+                    <span asp-validation-for="Input.Password"></span>
                 </div>
-            </div>
-        }
 
-        @if (!Model.View.EnableLocalLogin && !Model.View.VisibleExternalProviders.Any())
-        {
-            <div class="alert alert-warning">
-                <strong>Invalid login request</strong>
-                There are no login schemes configured for this request.
+                @if (Model.View.AllowRememberLogin)
+                {
+                    <label class="sc-check">
+                        <input asp-for="Input.RememberLogin" />
+                        <span>Keep me signed in on this device</span>
+                    </label>
+                }
+
+                <div class="sc-actions">
+                    <button class="sc-button" name="Input.Button" value="login">Sign in</button>
+                    <button class="sc-button sc-button--quiet" name="Input.Button" value="cancel" formnovalidate>Cancel</button>
+                </div>
+            </form>
+
+            @if (Model.View.TestAccounts.Any())
+            {
+                <section class="sc-quick" aria-labelledby="quick-title">
+                    <h2 id="quick-title" class="sc-quick-title">Sign in with a test account</h2>
+                    <p class="sc-small sc-muted">One click signs you in as that person. No password to type.</p>
+                    <ul role="list" class="sc-accounts">
+                        @foreach (var account in Model.View.TestAccounts)
+                        {
+                            <li>
+                                <form asp-page="/Account/Login/Index" method="post">
+                                    <input type="hidden" name="Input.ReturnUrl" value="@Model.Input?.ReturnUrl" />
+                                    <input type="hidden" name="Input.Username" value="@account.Username" />
+                                    <input type="hidden" name="Input.Password" value="@account.Password" />
+                                    <button class="sc-account" name="Input.Button" value="login" aria-label="Sign in as @account.DisplayName (@account.Username)">
+                                        <span class="sc-account-who">
+                                            <span class="sc-account-name">@account.DisplayName</span>
+                                            <span class="sc-account-user">@account.Username</span>
+                                        </span>
+                                        <span class="sc-account-go" aria-hidden="true">Sign in</span>
+                                    </button>
+                                </form>
+                            </li>
+                        }
+                    </ul>
+                </section>
+            }
+        </section>
+    }
+
+    @if (Model.View.VisibleExternalProviders.Any())
+    {
+        <div class="sc-stack-sm">
+            <p class="sc-divider">or sign in with</p>
+            <div class="sc-actions">
+                @foreach (var provider in Model.View.VisibleExternalProviders)
+                {
+                    <a class="sc-button sc-button--quiet"
+                       asp-page="/ExternalLogin/Challenge"
+                       asp-route-scheme="@provider.AuthenticationScheme"
+                       asp-route-returnUrl="@Model.Input?.ReturnUrl">@provider.DisplayName</a>
+                }
             </div>
-        }
-    </div>
+        </div>
+    }
+
+    @if (!Model.View.EnableLocalLogin && !Model.View.VisibleExternalProviders.Any())
+    {
+        <div class="sc-alert sc-alert--error" role="alert">
+            <strong>This app can't sign you in here</strong>
+            No sign-in method is set up for this request.
+        </div>
+    }
 </div>

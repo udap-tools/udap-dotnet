@@ -1,0 +1,36 @@
+@page
+@model Udap.Auth.Server.Pages.Home.Error.Index
+@{
+    ViewData["Title"] = "Sign-in problem";
+    var (title, advice) = Model.Explain();
+}
+
+<section class="sc-stack" aria-labelledby="error-title">
+    <h1 id="error-title">@title</h1>
+    <p class="sc-lede">@advice</p>
+
+    @if (Model.Error != null)
+    {
+        <dl class="sc-credential-fields">
+            @if (!string.IsNullOrEmpty(Model.Error.Error))
+            {
+                <div><dt>Error code</dt><dd><code>@Model.Error.Error</code></dd></div>
+            }
+            @if (Model.ShowDetails && !string.IsNullOrEmpty(Model.Error.ErrorDescription))
+            {
+                <div><dt>Details (shown in Development only)</dt><dd>@Model.Error.ErrorDescription</dd></div>
+            }
+            @if (!string.IsNullOrEmpty(Model.Error.RequestId))
+            {
+                <div><dt>Request ID</dt><dd><code>@Model.Error.RequestId</code></dd></div>
+            }
+        </dl>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Error?.RedirectUri))
+    {
+        <div class="sc-actions">
+            <a class="sc-button" href="@Model.Error.RedirectUri">Back to the app</a>
+        </div>
+    }
+</section>

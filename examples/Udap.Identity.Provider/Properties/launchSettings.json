@@ -4,23 +4,23 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "https://host.docker.internal:5055",
+      "applicationUrl": "https://udap-idp1.dev.localhost:5055",
       "environmentVariables": {
         "GCPDeploy": "false",
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "UdapIdpBaseUrl": "https://host.docker.internal:5055"
+        "UdapIdpBaseUrl": "https://udap-idp1.dev.localhost:5055"
       }
     },
     "Docker": {
       "commandName": "Docker",
       "launchBrowser": true,
-      "launchUrl": "{Scheme}://host.docker.internal:{ServicePort}",
+      "launchUrl": "{Scheme}://udap-idp1.dev.localhost:{ServicePort}",
       "useSSL": true,
       "environmentVariables": {
         "GCPDeploy": "false",
         "ASPNETCORE_URLS": "http://*:80;https://*:443",
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "UdapIdpBaseUrl": "https://host.docker.internal:5055"
+        "UdapIdpBaseUrl": "https://udap-idp1.dev.localhost:5055"
       }
     }
   }

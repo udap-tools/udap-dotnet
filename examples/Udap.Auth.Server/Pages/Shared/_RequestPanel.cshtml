@@ -1,0 +1,24 @@
+@model Udap.Auth.Server.Ui.RequestPanelModel
+@*
+    The request panel: which app is asking and on what terms. Client logos are not loaded here; the
+    page CSP only allows this server's images plus logos of clients the user already granted.
+*@
+<section class="sc-panel" aria-labelledby="request-title">
+    <h2 id="request-title" class="sc-panel-title">@Model.Title</h2>
+    @if (!string.IsNullOrEmpty(Model.Subtitle))
+    {
+        <p class="sc-panel-sub">@Model.Subtitle</p>
+    }
+    @if (Model.Facts.Count > 0)
+    {
+        <dl class="sc-facts">
+            @foreach (var fact in Model.Facts)
+            {
+                <div>
+                    <dt>@fact.Label</dt>
+                    <dd>@fact.Value</dd>
+                </div>
+            }
+        </dl>
+    }
+</section>

@@ -1,4 +1,5 @@
 using Udap.Server.Security.Authentication.TieredOAuth;
+using Udap.UI.Pages.Account.Login;
 
 namespace Udap.UI.Pages.UdapAccount.Login;
 
@@ -6,6 +7,11 @@ public class ViewModel
 {
     public bool AllowRememberLogin { get; set; } = true;
     public bool EnableLocalLogin { get; set; } = true;
+
+    /// <summary>
+    /// Test credentials offered as fill-in buttons on the login form. Empty hides the helper.
+    /// </summary>
+    public IEnumerable<TestAccount> TestAccounts { get; set; } = Enumerable.Empty<TestAccount>();
 
     public IEnumerable<ExternalProvider> ExternalProviders { get; set; } = Enumerable.Empty<ExternalProvider>();
     

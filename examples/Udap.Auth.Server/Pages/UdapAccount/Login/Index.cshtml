@@ -1,0 +1,134 @@
+@page
+@model Udap.Auth.Server.Pages.UdapAccount.Login.Index
+@{
+    ViewData["Title"] = "Sign in";
+    var panel = Model.AppName == null
+        ? RequestPanelModel.ForClient(null, ("For", "Your SecuredControls Auth session"), ("Next step", "Sign in"))
+        : RequestPanelModel.ForClient(Model.View.Client,
+            ("Wants", "To reach your records"),
+            ("Next step", Model.TieredProvider != null ? "Sign in at your identity provider" : "Sign in"));
+}
+
+<div class="sc-page @(Model.AppName != null ? "sc-page--aside-first" : null)">
+    <section class="sc-stack" aria-labelledby="sign-in-title">
+        <div class="sc-stack-sm">
+            <h1 id="sign-in-title">Sign in</h1>
+            <p class="sc-lede">@(Model.AppName == null ? "to SecuredControls Auth" : $"so {Model.AppName} can reach your records")</p>
+        </div>
+
+        <partial name="_Errors" />
+
+        @if (Model.TieredProvider is { } tiered)
+        {
+            <div class="sc-panel sc-handoff">
+                <h2>Continue with your identity provider</h2>
+                <p>
+                    @(Model.AppName ?? "The app") named the identity provider below. You'll sign in there, then come
+                    back here to choose what to share.
+                </p>
+                <p class="sc-handoff-host">@Udap.Auth.Server.Pages.UdapAccount.Login.Index.HostOf(tiered.TieredOAuthIdp)</p>
+                <div class="sc-actions">
+                    <a class="sc-button"
+                       asp-page="/UdapTieredLogin/Challenge"
+                       asp-route-scheme="@tiered.AuthenticationScheme"
+                       asp-route-returnUrl="@tiered.ReturnUrl">Continue to @Udap.Auth.Server.Pages.UdapAccount.Login.Index.HostOf(tiered.TieredOAuthIdp)</a>
+                </div>
+            </div>
+        }
+
+        @if (Model.View.EnableLocalLogin)
+        {
+            @if (Model.TieredProvider != null)
+            {
+                <p class="sc-divider">or use an account on this server</p>
+            }
+
+            <form method="post" class="sc-login-form" novalidate>
+                <input type="hidden" asp-for="Input.ReturnUrl" />
+
+                <div class="sc-field">
+                    <label asp-for="Input.Username"></label>
+                    <input class="sc-input" asp-for="Input.Username" autocomplete="username" autocapitalize="none" spellcheck="false" autofocus="@(Model.TieredProvider == null)" />
+                    <span asp-validation-for="Input.Username"></span>
+                </div>
+
+                <div class="sc-field">
+                    <label asp-for="Input.Password"></label>
+                    <input class="sc-input" asp-for="Input.Password" type="password" autocomplete="current-password" />
+                    <span asp-validation-for="Input.Password"></span>
+                </div>
+
+                @if (Model.View.AllowRememberLogin)
+                {
+                    <label class="sc-check">
+                        <input asp-for="Input.RememberLogin" />
+                        <span>Keep me signed in on this device</span>
+                    </label>
+                }
+
+                <div class="sc-actions">
+                    <button class="sc-button @(Model.TieredProvider != null ? "sc-button--quiet" : null)" name="Input.Button" value="login">Sign in</button>
+                    <button class="sc-button sc-button--quiet" name="Input.Button" value="cancel" formnovalidate>
+                        @(Model.AppName == null ? "Cancel" : "Cancel and go back")
+                    </button>
+                </div>
+            </form>
+
+            @if (Model.TestAccounts.Count > 0)
+            {
+                <section class="sc-quick" aria-labelledby="quick-title">
+                    <h2 id="quick-title" class="sc-quick-title">Sign in with a test account</h2>
+                    <p class="sc-small sc-muted">One click signs you in as that person. No password to type.</p>
+                    <ul role="list" class="sc-accounts">
+                        @foreach (var account in Model.TestAccounts)
+                        {
+                            <li>
+                                <form method="post">
+                                    <input type="hidden" name="Input.ReturnUrl" value="@Model.Input.ReturnUrl" />
+                                    <input type="hidden" name="Input.Username" value="@account.Username" />
+                                    <input type="hidden" name="Input.Password" value="@account.Password" />
+                                    <button class="sc-account" name="Input.Button" value="login" aria-label="Sign in as @account.DisplayName (@account.Username)">
+                                        <span class="sc-account-who">
+                                            <span class="sc-account-name">@account.DisplayName</span>
+                                            <span class="sc-account-user">@account.Username</span>
+                                        </span>
+                                        <span class="sc-account-go" aria-hidden="true">Sign in</span>
+                                    </button>
+                                </form>
+                            </li>
+                        }
+                    </ul>
+                </section>
+            }
+        }
+
+        @if (Model.OtherProviders.Any())
+        {
+            <div class="sc-stack-sm">
+                <p class="sc-divider">or sign in with</p>
+                <div class="sc-actions">
+                    @foreach (var provider in Model.OtherProviders)
+                    {
+                        <a class="sc-button sc-button--quiet"
+                           asp-page="/UdapTieredLogin/Challenge"
+                           asp-route-scheme="@provider.AuthenticationScheme"
+                           asp-route-returnUrl="@provider.ReturnUrl">@provider.DisplayName</a>
+                    }
+                </div>
+            </div>
+        }
+
+        @if (!Model.View.EnableLocalLogin && Model.TieredProvider == null && !Model.OtherProviders.Any())
+        {
+            <div class="sc-alert sc-alert--error" role="alert">
+                <strong>This app can't sign you in here</strong>
+                No sign-in method is set up for this request. Ask the app's developer to check its client
+                configuration, or to name your identity provider with the <code>idp</code> parameter.
+            </div>
+        }
+    </section>
+
+    <aside class="sc-aside" aria-label="The app asking">
+        <partial name="_RequestPanel" model="panel" />
+    </aside>
+</div>

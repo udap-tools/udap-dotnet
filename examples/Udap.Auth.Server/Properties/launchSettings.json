@@ -6,10 +6,10 @@
       "environmentVariables": {
         "GCPDeploy": "false",
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "UdapIdpBaseUrl": "https://host.docker.internal:5002"
+        "UdapIdpBaseUrl": "https://udap-auth-server.dev.localhost:5002"
       },
       "sslPort": 5002,
-      "applicationUrl": "https://host.docker.internal:5002"
+      "applicationUrl": "https://udap-auth-server.dev.localhost:5002"
     },
     "Localhost_UDAPServerMode": {
       "commandName": "Project",
@@ -20,10 +20,10 @@
         "ServerSettings:DefaultSystemScopes": "udap system.cruds system/*.rs",
         "ServerSettings:DefaultUserScopes": "udap user.cruds",
         "ServerSettings:ForceStateParamOnAuthorizationCode": "true",
-        "UdapIdpBaseUrl": "https://host.docker.internal:5002"
+        "UdapIdpBaseUrl": "https://udap-auth-server.dev.localhost:5002"
       },
       "sslPort": 5002,
-      "applicationUrl": "https://host.docker.internal:5002"
+      "applicationUrl": "https://udap-auth-server.dev.localhost:5002"
     },
     "UDAPServerMode.GCP": {
       "commandName": "Project",
@@ -33,10 +33,10 @@
         "ASPNETCORE_ENVIRONMENT": "Development",
         "ServerSettings:DefaultSystemScopes": "udap system.cruds",
         "ServerSettings:DefaultUserScopes": "udap user.cruds",
-        "UdapIdpBaseUrl": "https://host.docker.internal:5002"
+        "UdapIdpBaseUrl": "https://udap-auth-server.dev.localhost:5002"
       },
       "sslPort": 5002,
-      "applicationUrl": "https://host.docker.internal:5002"
+      "applicationUrl": "https://udap-auth-server.dev.localhost:5002"
     },
     "Localhost_noSSL": {
       "commandName": "Project",
@@ -64,7 +64,7 @@
       "environmentVariables": {
         "ASPNETCORE_URLS": "http://*:80;https://*:443",
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "UdapIdpBaseUrl": "https://host.docker.internal:5002"
+        "UdapIdpBaseUrl": "https://udap-auth-server.dev.localhost:5002"
       },
       "publishAllPorts": true,
       "useSSL": true

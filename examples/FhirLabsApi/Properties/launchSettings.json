@@ -4,18 +4,7 @@
       "commandName": "Project",
       "launchBrowser": true,
       "launchUrl": "fhir/r4/.well-known/udap/communities/ashtml",
-      "applicationUrl": "https://localhost:7016;http://localhost:5016",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "dotnetRunMessages": true,
-      "targetFramework": "net10.0"
-    },
-    "FhirLabsApi_Local_docker": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "launchUrl": "fhir/r4/.well-known/udap/communities/ashtml",
-      "applicationUrl": "https://host.docker.internal:7016;http://host.docker.internal:5016",
+      "applicationUrl": "https://udap-fhirlabs-api.dev.localhost:7016;http://udap-fhirlabs-api.dev.localhost:5016",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
@@ -46,7 +35,7 @@
       "launchUrl": "fhir/r4/swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "ASPNETCORE_URLS": "https://localhost:7016;http://localhost:5016"
+        "ASPNETCORE_URLS": "https://udap-fhirlabs-api.dev.localhost:7016;http://udap-fhirlabs-api.dev.localhost:5016"
       },
       "distributionName": "Ubuntu-20.04"
     }

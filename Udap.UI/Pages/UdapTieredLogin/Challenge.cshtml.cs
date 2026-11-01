@@ -7,13 +7,11 @@
 // */
 #endregion
 
-using Duende.IdentityServer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
-using Udap.Client;
-using Udap.Server.Security.Authentication.TieredOAuth;
+using Udap.UI.Services;
 
 namespace Udap.UI.Pages.UdapTieredLogin;
 
@@ -21,36 +19,30 @@ namespace Udap.UI.Pages.UdapTieredLogin;
 [SecurityHeaders]
 public class Challenge : PageModel
 {
-    private readonly IIdentityServerInteractionService _interactionService;
-    private readonly IUdapClient _udapClient;
+    private readonly IServiceProvider _services;
     private readonly ILogger<Challenge> _logger;
 
-    public Challenge(IIdentityServerInteractionService interactionService, IUdapClient udapClient, ILogger<Challenge> logger)
+    public Challenge(IServiceProvider services, ILogger<Challenge> logger)
     {
-        _interactionService = interactionService;
-        _udapClient = udapClient;
+        _services = services;
         _logger = logger;
     }
         
     public async Task<IActionResult> OnGetAsync(string scheme, string returnUrl)
     {
-        if (string.IsNullOrEmpty(returnUrl)) returnUrl = "~/";
-
         try
         {
-            var props = await TieredOAuthHelpers.BuildDynamicTieredOAuthOptions(
-                _interactionService,
-                _udapClient,
-                scheme,
-                "/udaptieredlogin/callback",
-                returnUrl);
+            var props = await _services.GetUdapExternalLoginService()
+                .BuildTieredChallengeAsync(scheme, returnUrl, "/udaptieredlogin/callback");
 
             // start challenge and roundtrip the return URL and scheme 
             return Challenge(props, scheme);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning($"Failed Tiered Oauth for returnUrl: {returnUrl}");
+            // returnUrl comes from the query string: strip line breaks so it cannot forge log lines.
+            _logger.LogWarning(ex, "Failed Tiered OAuth for returnUrl: {ReturnUrl}",
+                returnUrl?.Replace("\r", "").Replace("\n", ""));
         }
 
         return Page();

@@ -1,72 +1,91 @@
-name: Tagged Release to Nuget.org
+# Publishes every Udap.* package to nuget.org from a version tag:
+#   v1.2.3             release
+#   v1.2.3-preview001  prerelease
+# The packages are refused if any dependency has a known vulnerability or the public API breaks
+# against the package validation baseline (Common.props). Each .nupkg carries its CycloneDX SBOM;
+# the packages and SBOMs also get a build provenance attestation and are attached to a GitHub release.
+
+name: Release to Nuget.org
+run-name: "Release ${{ github.ref_name }} to nuget.org"
 
 on:
   push:
     tags:
     - "v[0-9]+.[0-9]+.[0-9]+"
+    - "v[0-9]+.[0-9]+.[0-9]+-preview[0-9][0-9][0-9]"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
-  build:
-
+  release:
+    # Packages are published only from JoeShook/udap-dotnet. In any other copy of this repository,
+    # such as udap-tools/udap-dotnet, a v* tag skips the job instead of attempting a release.
+    if: github.repository == 'JoeShook/udap-dotnet'
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 30
+    # The release environment only deploys from v* tags and holds the nuget.org publishing secret.
+    environment: release
+    permissions:
+      contents: write       # create the GitHub release
+      id-token: write       # sign the provenance attestation
+      attestations: write   # store the provenance attestation
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-dotnet@v4
+    - name: Checkout
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        persist-credentials: false
+    - name: Setup .NET
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
       with:
         dotnet-version: |
           8.0.x
           9.0.x
           10.0.x
-      env:
-        NUGET_AUTH_TOKEN: ${{secrets.GITHUB_TOKEN}}
-    - name: Set VERSION variable from tag
-      run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_ENV
-
-    
+    - name: Set VERSION from tag
+      run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+    - name: Restore
+      run: |
+        dotnet tool restore
+        dotnet restore Udap.sln
+    - name: Refuse vulnerable packages
+      run: bash .github/scripts/check-vulnerable.sh
     - name: Pack
-      run: |
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Model/Udap.Model.csproj
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Util/Udap.Util.csproj 
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Common/Udap.Common.csproj 
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Metadata.Server/Udap.Metadata.Server.csproj 
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Server/Udap.Server.csproj 
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Server.Storage/Udap.Server.Storage.csproj 
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0${VERSION} ./Udap.Client/Udap.Client.csproj
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=0${VERSION} ./Udap.UI/Udap.UI.csproj
-
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Smart.Model/Udap.Smart.Model.csproj
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Smart.Metadata/Udap.Smart.Metadata.csproj 
-
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.CdsHooks.Endpoint/Udap.CdsHooks.Endpoint.csproj
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.CdsHooks.Model/Udap.CdsHooks.Model.csproj
-
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Tefca.Model/Udap.Tefca.Model.csproj
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Tefca.Server/Udap.Tefca.Server.csproj
-
-        dotnet pack -v normal -c Release --include-source -p:PackageVersion=${VERSION} ./Udap.Ssraa.Server/Udap.Ssraa.Server.csproj
-
+      run: bash .github/scripts/pack.sh "$VERSION" artifacts
+    - name: Attest build provenance
+      uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+      with:
+        subject-path: |
+          artifacts/*.nupkg
+          artifacts/*.snupkg
+          artifacts/sbom/*.cdx.json
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+      with:
+        name: packages
+        path: artifacts
+    # Pushing a .nupkg also pushes the .snupkg beside it to the symbol server.
     - name: Push
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       run: |
-        dotnet nuget push ./Udap.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.Util/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.Common/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.Metadata.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.Server.Storage/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.Client/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.UI/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-
-        dotnet nuget push ./Udap.Smart.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.Smart.Metadata/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-
-        dotnet nuget push ./Udap.CdsHooks.Endpoint/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.CdsHooks.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-
-        dotnet nuget push ./Udap.Tefca.Model/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-        dotnet nuget push ./Udap.Tefca.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-
-        dotnet nuget push ./Udap.Ssraa.Server/bin/Release/*.symbols.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGET_API_KEY }}
-
-
-      
+        for package in artifacts/*.nupkg; do
+          dotnet nuget push "$package" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate
+        done
+    - name: GitHub release
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        prerelease=()
+        if [[ "$GITHUB_REF_NAME" == *-preview* ]]; then prerelease=(--prerelease); fi
+        gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1 ||
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes "${prerelease[@]}"
+        gh release upload "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --clobber \
+          artifacts/*.nupkg artifacts/*.snupkg artifacts/sbom/*.cdx.json

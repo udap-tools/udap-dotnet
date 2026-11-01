@@ -28,6 +28,7 @@ public static class UdapDynamicClientRegistrationErrorDescriptions
     public const string InvalidMatchAud = "software_statement aud does not match registration endpoint";
     public const string ExpMissing = "software_statement exp is missing";
     public const string ExpExpired = "software_statement exp is expired";
+    public const string ExpExceedsMaxLifetime = "software_statement exp exceeds the maximum lifetime of {0} seconds from iat";
     public const string CannotFindorParseX5c = "software_statement x5c cannot find or parse";
     public const string IssuedAtMissing = "software_statement iat is missing";
     public const string IssuedAtInFuture = "software_statement iat is in the future";
@@ -52,6 +53,9 @@ public static class UdapDynamicClientRegistrationErrorDescriptions
     public const string ClientCredentialsRefreshError = "Client credentials does not support refresh tokens";
     public const string UnsupportedGrantType = "Unsupported grant type";
     public const string MalformedRedirectUri = "Malformed redirect uri";
+    public const string RedirectUriSchemeNotHttps = "Redirect uri must use the https scheme";
+    public const string RedirectUriHasFragment = "Redirect uri must not contain a fragment";
+    public const string RedirectUriHasWildcard = "Redirect uri must be fully specified, without wildcards";
     public const string RedirectUriRequiredForAuthCode = "Redirect uri is required for authorization_code grant type";
     public const string UnsupportedUdapVersion = "Unsupported UDAP version. Server supports: {0}";
     public const string MissingUdapVersion = "udap version is missing from registration request";

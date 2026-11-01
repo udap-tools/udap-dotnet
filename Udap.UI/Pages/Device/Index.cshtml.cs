@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.UI.Pages.Consent;
+using Udap.UI.Options;
+using Udap.UI.Services;
 
 namespace Udap.UI.Pages.Device;
 
@@ -142,71 +144,36 @@ public class Index : PageModel
 
     private ViewModel CreateConsentViewModel(InputModel model, DeviceFlowAuthorizationRequest request)
     {
-        var vm = new ViewModel
+        var options = new UdapUIConsentOptions
+        {
+            EnableOfflineAccess = DeviceOptions.EnableOfflineAccess,
+            OfflineAccessDisplayName = DeviceOptions.OfflineAccessDisplayName,
+            OfflineAccessDescription = DeviceOptions.OfflineAccessDescription
+        };
+
+        var scopes = UdapScopeListBuilder.Build(request.ValidatedResources, null, model == null ? null : model.ScopesConsented ?? Array.Empty<string>(), options);
+
+        return new ViewModel
         {
             ClientName = request.Client.ClientName ?? request.Client.ClientId,
             ClientUrl = request.Client.ClientUri,
             ClientLogoUrl = request.Client.LogoUri,
-            AllowRememberConsent = request.Client.AllowRememberConsent
-        };
-
-        vm.IdentityScopes = request.ValidatedResources.Resources.IdentityResources.Select(x => CreateScopeViewModel(x, model == null || model.ScopesConsented?.Contains(x.Name) == true)).ToArray();
-
-        var apiScopes = new List<ScopeViewModel>();
-        foreach (var parsedScope in request.ValidatedResources.ParsedScopes)
-        {
-            var apiScope = request.ValidatedResources.Resources.FindApiScope(parsedScope.ParsedName);
-            if (apiScope != null)
-            {
-                var scopeVm = CreateScopeViewModel(parsedScope, apiScope, model == null || model.ScopesConsented?.Contains(parsedScope.RawValue) == true);
-                apiScopes.Add(scopeVm);
-            }
-        }
-        if (DeviceOptions.EnableOfflineAccess && request.ValidatedResources.Resources.OfflineAccess)
-        {
-            apiScopes.Add(GetOfflineAccessScope(model == null || model.ScopesConsented?.Contains(Duende.IdentityServer.IdentityServerConstants.StandardScopes.OfflineAccess) == true));
-        }
-        vm.ApiScopes = apiScopes;
-
-        return vm;
-    }
-
-    private ScopeViewModel CreateScopeViewModel(IdentityResource identity, bool check)
-    {
-        return new ScopeViewModel
-        {
-            Value = identity.Name,
-            DisplayName = identity.DisplayName ?? identity.Name,
-            Description = identity.Description,
-            Emphasize = identity.Emphasize,
-            Required = identity.Required,
-            Checked = check || identity.Required
+            AllowRememberConsent = request.Client.AllowRememberConsent,
+            IdentityScopes = scopes.IdentityScopes.Select(ToViewModel).ToArray(),
+            ApiScopes = scopes.ApiScopes.Select(ToViewModel).ToArray()
         };
     }
 
-    public ScopeViewModel CreateScopeViewModel(ParsedScopeValue parsedScopeValue, ApiScope apiScope, bool check)
+    private static ScopeViewModel ToViewModel(UdapScope scope)
     {
         return new ScopeViewModel
         {
-            Value = parsedScopeValue.RawValue,
-            // todo: use the parsed scope value in the display?
-            DisplayName = apiScope.DisplayName ?? apiScope.Name,
-            Description = apiScope.Description,
-            Emphasize = apiScope.Emphasize,
-            Required = apiScope.Required,
-            Checked = check || apiScope.Required
-        };
-    }
-
-    private ScopeViewModel GetOfflineAccessScope(bool check)
-    {
-        return new ScopeViewModel
-        {
-            Value = Duende.IdentityServer.IdentityServerConstants.StandardScopes.OfflineAccess,
-            DisplayName = DeviceOptions.OfflineAccessDisplayName,
-            Description = DeviceOptions.OfflineAccessDescription,
-            Emphasize = true,
-            Checked = check
+            Value = scope.Value,
+            DisplayName = scope.DisplayName,
+            Description = scope.Description,
+            Emphasize = scope.Emphasize,
+            Required = scope.Required,
+            Checked = scope.Checked
         };
     }
 }

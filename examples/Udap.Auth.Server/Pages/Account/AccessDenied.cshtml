@@ -1,0 +1,14 @@
+@page
+@model Udap.UI.Pages.Account.AccessDeniedModel
+@{
+    ViewData["Title"] = "No access";
+}
+
+<section class="sc-stack" aria-labelledby="denied-title">
+    <h1 id="denied-title">You can't open this page</h1>
+    <p class="sc-lede">Your account doesn't have access to it. Sign in as a different user, or go back.</p>
+    <div class="sc-actions">
+        <a class="sc-button sc-button--quiet" href="~/udapaccount/logout">Sign in as someone else</a>
+        <a class="sc-button sc-button--quiet" href="~/">Go to the start page</a>
+    </div>
+</section>

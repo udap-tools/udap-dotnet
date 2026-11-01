@@ -27,34 +27,37 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Duende.IdentityServer" Version="8.0.6" />
-    <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="8.0.6" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+    <PackageReference Include="Duende.IdentityServer" Version="8.0.10" />
+    <PackageReference Include="Duende.IdentityServer.EntityFramework" Version="8.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.14">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.14" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-    <PackageReference Include="OpenTelemetry" Version="1.18.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.18.0" />
-    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
-    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.17.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.18.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
-    <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.17.0" />
+    <PackageReference Include="OpenTelemetry" Version="1.20.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.20.1" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.20.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.SqlClient" Version="1.20.1" />
     <PackageReference Include="Serilog.AspNetCore" version="10.0.0" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == 'true'">
     <PackageReference Include="Udap.Server" Version="0.9.*" />
     <PackageReference Include="Udap.Metadata.Server" Version="0.9.*" />
+    <PackageReference Include="Udap.UI" Version="0.9.*" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(GCPDeploy)' == '' OR '$(GCPDeploy)' != 'true' ">
     <ProjectReference Include="../../Udap.Server/Udap.Server.csproj" />
     <ProjectReference Include="../../Udap.Metadata.Server/Udap.Metadata.Server.csproj" />
+    <ProjectReference Include="../../Udap.UI/Udap.UI.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -74,9 +77,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="CertStore\issued\udap-sandbox-surescripts-2.p12">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="host.docker.internal.pfx">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

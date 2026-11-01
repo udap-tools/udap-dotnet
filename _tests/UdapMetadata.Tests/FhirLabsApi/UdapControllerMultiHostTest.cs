@@ -96,7 +96,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
 
         foreach (var segment in DomainSegments)
         {
-            var baseUrl = $"https://localhost:7016/{segment}/fhir/r4";
+            var baseUrl = $"https://udap-fhirlabs-api.dev.localhost:7016/{segment}/fhir/r4";
 
             var disco = await udapClient.ValidateResource(baseUrl, "udap://multihost/");
 
@@ -145,7 +145,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
         var client = _fixture.CreateClient();
 
         var response = await client.GetAsync(
-            "https://localhost:7016/eleven/fhir/r4/.well-known/udap?community=udap://multihost/");
+            "https://udap-fhirlabs-api.dev.localhost:7016/eleven/fhir/r4/.well-known/udap?community=udap://multihost/");
 
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -156,7 +156,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
         var client = _fixture.CreateClient();
 
         var response = await client.GetAsync(
-            "https://localhost:7016/one/fhir/r4/.well-known/udap/communities");
+            "https://udap-fhirlabs-api.dev.localhost:7016/one/fhir/r4/.well-known/udap/communities");
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         var communities = await response.Content.ReadFromJsonAsync<List<string>>();
@@ -170,7 +170,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
         var client = _fixture.CreateClient();
 
         var response = await client.GetAsync(
-            "https://localhost:7016/five/fhir/r4/.well-known/udap/communities/ashtml");
+            "https://udap-fhirlabs-api.dev.localhost:7016/five/fhir/r4/.well-known/udap/communities/ashtml");
 
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("text/html", response.Content.Headers.ContentType?.MediaType);
@@ -184,7 +184,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
         var client = _fixture.CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Options,
-            "https://localhost:7016/two/fhir/r4/.well-known/udap");
+            "https://udap-fhirlabs-api.dev.localhost:7016/two/fhir/r4/.well-known/udap");
         var response = await client.SendAsync(request);
 
         Assert.Equal(System.Net.HttpStatusCode.NoContent, response.StatusCode);
@@ -200,7 +200,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
         var client = _fixture.CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Options,
-            "https://localhost:7016/three/fhir/r4/.well-known/udap/communities");
+            "https://udap-fhirlabs-api.dev.localhost:7016/three/fhir/r4/.well-known/udap/communities");
         var response = await client.SendAsync(request);
 
         Assert.Equal(System.Net.HttpStatusCode.NoContent, response.StatusCode);
@@ -214,7 +214,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
         var client = _fixture.CreateClient();
 
         var request = new HttpRequestMessage(HttpMethod.Options,
-            "https://localhost:7016/four/fhir/r4/.well-known/udap/communities/ashtml");
+            "https://udap-fhirlabs-api.dev.localhost:7016/four/fhir/r4/.well-known/udap/communities/ashtml");
         var response = await client.SendAsync(request);
 
         Assert.Equal(System.Net.HttpStatusCode.NoContent, response.StatusCode);
@@ -228,7 +228,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
         var client = _fixture.CreateClient();
 
         var response = await client.GetAsync(
-            "https://localhost:7016/one/fhir/r4/.well-known/udap?community=udap://nonexistent/");
+            "https://udap-fhirlabs-api.dev.localhost:7016/one/fhir/r4/.well-known/udap?community=udap://nonexistent/");
 
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
     }
@@ -239,7 +239,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
         var client = _fixture.CreateClient();
 
         var response = await client.PostAsync(
-            "https://localhost:7016/one/fhir/r4/.well-known/udap", null);
+            "https://udap-fhirlabs-api.dev.localhost:7016/one/fhir/r4/.well-known/udap", null);
 
         // POST is not handled by the middleware — passes through to next middleware
         Assert.NotEqual(System.Net.HttpStatusCode.OK, response.StatusCode);
@@ -251,7 +251,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
         var client = _fixture.CreateClient();
 
         var response = await client.PostAsync(
-            "https://localhost:7016/one/fhir/r4/.well-known/udap/communities", null);
+            "https://udap-fhirlabs-api.dev.localhost:7016/one/fhir/r4/.well-known/udap/communities", null);
 
         Assert.NotEqual(System.Net.HttpStatusCode.OK, response.StatusCode);
     }
@@ -262,7 +262,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
         var client = _fixture.CreateClient();
 
         var response = await client.PostAsync(
-            "https://localhost:7016/one/fhir/r4/.well-known/udap/communities/ashtml", null);
+            "https://udap-fhirlabs-api.dev.localhost:7016/one/fhir/r4/.well-known/udap/communities/ashtml", null);
 
         Assert.NotEqual(System.Net.HttpStatusCode.OK, response.StatusCode);
     }
@@ -272,7 +272,7 @@ public class UdapControllerMultiHostTest : IClassFixture<ApiForCommunityTestFixt
     {
         var client = _fixture.CreateClient();
 
-        var response = await client.GetAsync("https://localhost:7016/some/other/path");
+        var response = await client.GetAsync("https://udap-fhirlabs-api.dev.localhost:7016/some/other/path");
 
         // Should not be handled by the UDAP middleware - passes through to next middleware
         Assert.NotEqual(System.Net.HttpStatusCode.OK, response.StatusCode);

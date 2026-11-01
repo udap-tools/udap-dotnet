@@ -9,9 +9,9 @@
     {
       "Community": "udap://Provider2",
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://idp2.securedcontrols.net/connect/authorize",
-        "TokenEndpoint": "https://idp2.securedcontrols.net/connect/token",
-        "RegistrationEndpoint": "https://idp2.securedcontrols.net/connect/register"
+        "AuthorizationEndpoint": "https://udap-idp2.dev.localhost:5057/connect/authorize",
+        "TokenEndpoint": "https://udap-idp2.dev.localhost:5057/connect/token",
+        "RegistrationEndpoint": "https://udap-idp2.dev.localhost:5057/connect/register"
       }
     }
   ]

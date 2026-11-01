@@ -37,3 +37,77 @@
 .grants-page .card label {
   font-weight: bold;
 }
+
+/*
+ * Identity Provider 1 theme.
+ * Deliberately distinct from the FhirLabs Authorization Server (light navbar, default Bootstrap)
+ * so a tester in a Tiered OAuth flow can tell at a glance which server is asking them to log in.
+ */
+body {
+  background-color: #f0f7f4;
+}
+
+.idp-navbar {
+  background: linear-gradient(90deg, #00695c 0%, #00897b 100%);
+  border-bottom: 4px solid #ffb300;
+}
+
+.idp-navbar .navbar-brand {
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+
+.idp-badge {
+  display: inline-block;
+  background-color: #ffb300;
+  color: #263238;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  border-radius: 3px;
+  padding: 2px 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.login-page .lead h1 {
+  color: #00695c;
+}
+
+.login-page .card {
+  border-color: #00897b;
+  box-shadow: 0 2px 6px rgba(0, 105, 92, .15);
+}
+
+.login-page .card-header {
+  background-color: #00695c;
+  color: #fff;
+}
+
+.login-page .card-header h2 {
+  color: #fff;
+}
+
+.login-page .btn-primary {
+  background-color: #00897b;
+  border-color: #00695c;
+}
+
+.login-page .btn-primary:hover,
+.login-page .btn-primary:focus {
+  background-color: #00695c;
+  border-color: #004d40;
+}
+
+.test-accounts .btn-outline-secondary {
+  border-color: #00897b;
+  color: #00695c;
+}
+
+.test-accounts .btn-outline-secondary:hover,
+.test-accounts .btn-outline-secondary:focus {
+  background-color: #00897b;
+  border-color: #00695c;
+  color: #fff;
+}

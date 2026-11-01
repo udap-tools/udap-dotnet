@@ -1,0 +1,21 @@
+@page
+@model Udap.UI.Pages.UdapTieredLogin.Challenge
+@*
+    Shown only when the hand-off to the upstream identity provider (UDAP Tiered OAuth) could not start.
+    The page model is Udap.UI's; it logs the reason.
+*@
+@{
+    ViewData["Title"] = "Can't reach your identity provider";
+}
+
+<section class="sc-stack" aria-labelledby="challenge-title">
+    <h1 id="challenge-title">We couldn't send you to your identity provider</h1>
+    <p class="sc-lede">
+        The sign-in request didn't name a provider SecuredControls Auth can reach. Go back to the app and try again.
+    </p>
+    <div class="sc-alert">
+        <strong>For the app's developer</strong>
+        UDAP Tiered OAuth needs the <code>udap</code> scope and an <code>idp</code> parameter naming a
+        reachable identity provider on the authorize request. The server log has the details.
+    </div>
+</section>

@@ -71,7 +71,7 @@ public class CertificateDownloadCache : ICertificateDownloadCache
         try
         {
             _logger.LogDebug("Downloading intermediate certificate from {Url}", url);
-            var data = await _httpClient.GetByteArrayAsync(url, cancellationToken);
+            var data = await CertificateDownloader.GetBytesAsync(_httpClient, url, CertificateDownloader.MaxCertificateBytes, cancellationToken);
 #if NET9_0_OR_GREATER
             var cert = X509CertificateLoader.LoadCertificate(data);
 #else
@@ -110,7 +110,7 @@ public class CertificateDownloadCache : ICertificateDownloadCache
         try
         {
             _logger.LogDebug("Downloading CRL from {Url}", url);
-            var data = await _httpClient.GetByteArrayAsync(url, cancellationToken);
+            var data = await CertificateDownloader.GetBytesAsync(_httpClient, url, CertificateDownloader.MaxCrlBytes, cancellationToken);
 
             var crl = new X509CrlParser().ReadCrl(data);
             var expiry = crl.NextUpdate ?? DateTime.UtcNow.Add(_defaultCrlTtl);

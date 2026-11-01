@@ -1,0 +1,206 @@
+[
+  {
+    "State": "Alaska Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.2"
+  },
+  {
+    "State": "Alabama Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.1"
+  },
+  {
+    "State": "Arkansas Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.5"
+  },
+  {
+    "State": "Arizona Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.4"
+  },
+  {
+    "State": "California Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.6"
+  },
+  {
+    "State": "Colorado Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.8"
+  },
+  {
+    "State": "Connecticut Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.9"
+  },
+  {
+    "State": "DC Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.11"
+  },
+  {
+    "State": "Delaware Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.10"
+  },
+  {
+    "State": "Florida Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.12"
+  },
+  {
+    "State": "Georgia Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.13"
+  },
+  {
+    "State": "Hawaii Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.15"
+  },
+  {
+    "State": "Indiana Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.18"
+  },
+  {
+    "State": "Iowa Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.19"
+  },
+  {
+    "State": "Idaho Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.16"
+  },
+  {
+    "State": "Illinois Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.17"
+  },
+  {
+    "State": "Kansas Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.20"
+  },
+  {
+    "State": "Kentucky Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.21"
+  },
+  {
+    "State": "Louisiana Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.22"
+  },
+  {
+    "State": "Massachusetts Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.25"
+  },
+  {
+    "State": "Maryland Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.24"
+  },
+  {
+    "State": "Maine Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.23"
+  },
+  {
+    "State": "Michigan Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.26"
+  },
+  {
+    "State": "Minnesota Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.27"
+  },
+  {
+    "State": "Missouri Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.29"
+  },
+  {
+    "State": "Mississippi Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.28"
+  },
+  {
+    "State": "Montana Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.30"
+  },
+  {
+    "State": "New York Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.36"
+  },
+  {
+    "State": "North Carolina Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.37"
+  },
+  {
+    "State": "North Dakota Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.38"
+  },
+  {
+    "State": "Nebraska Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.31"
+  },
+  {
+    "State": "New Hampshire Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.33"
+  },
+  {
+    "State": "New Jersey Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.34"
+  },
+  {
+    "State": "New Mexico Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.35"
+  },
+  {
+    "State": "Nevada Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.32"
+  },
+  {
+    "State": "Ohio Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.39"
+  },
+  {
+    "State": "Oklahoma Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.40"
+  },
+  {
+    "State": "Oregon Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.41"
+  },
+  {
+    "State": "Pennsylvania Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.42"
+  },
+  {
+    "State": "Rhode Island Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.44"
+  },
+  {
+    "State": "South Carolina Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.45"
+  },
+  {
+    "State": "South Dakota Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.46"
+  },
+  {
+    "State": "Tennessee Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.47"
+  },
+  {
+    "State": "Texas Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.48"
+  },
+  {
+    "State": "Utah Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.49"
+  },
+  {
+    "State": "Virginia Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.51"
+  },
+  {
+    "State": "Vermont Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.50"
+  },
+  {
+    "State": "Washington Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.53"
+  },
+  {
+    "State": "Wisconsin Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.55"
+  },
+  {
+    "State": "West Virginia Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.54"
+  },
+  {
+    "State": "Wyoming Driver\u0027s License",
+    "Oid": "urn:oid:2.16.840.1.113883.4.3.56"
+  }
+]

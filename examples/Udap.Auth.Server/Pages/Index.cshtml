@@ -1,0 +1,43 @@
+@page
+@model Udap.Auth.Server.Pages.Index
+@{
+    ViewData["Title"] = "Start";
+}
+
+<div class="sc-page">
+    <section class="sc-stack" aria-labelledby="home-title">
+        <div class="sc-stack-sm">
+            <h1 id="home-title">SecuredControls Auth</h1>
+            <p class="sc-lede">
+                A UDAP authorization server. Apps register with it using UDAP dynamic client registration,
+                and people sign in here, or at their own identity provider through UDAP Tiered OAuth, before
+                choosing what an app may see.
+            </p>
+        </div>
+
+        <div class="sc-actions">
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a class="sc-button sc-button--quiet" href="~/grants">Apps you've allowed</a>
+                <a class="sc-button sc-button--quiet" href="~/udapaccount/logout">Sign out</a>
+            }
+            else
+            {
+                <a class="sc-button" href="~/udapaccount/login">Sign in</a>
+            }
+        </div>
+    </section>
+
+    <aside class="sc-aside" aria-label="For developers">
+        <section class="sc-panel">
+            <h2 class="sc-panel-title">For developers</h2>
+            <ul class="sc-stack-sm">
+                <li><a href="~/.well-known/udap">UDAP discovery</a></li>
+                <li><a href="~/.well-known/openid-configuration">OpenID Connect discovery</a></li>
+                <li><a href="~/diagnostics">Claims in your current session</a></li>
+                <li><a href="~/grants">Apps you've allowed</a></li>
+                <li><a href="https://github.com/JoeShook/udap-dotnet">udap-dotnet on GitHub</a></li>
+            </ul>
+        </section>
+    </aside>
+</div>

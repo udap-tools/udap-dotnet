@@ -216,6 +216,27 @@ public static class UdapConstants
         /// belongs to. Emitted when <c>ServerSettings.IncludeCommunityClaim</c> is enabled.
         /// </summary>
         public const string UdapCommunity = "udap_community";
+
+        /// <summary>
+        /// Access-token claim carrying the purpose-of-use codes the client declared in its
+        /// authorization extension(s) (for example <c>hl7-b2b.purpose_of_use</c>). Repeated once
+        /// per code, value verbatim as declared (e.g. <c>urn:oid:2.16.840.1.113883.5.8#TREAT</c>),
+        /// so resource servers can enforce purpose of use per request and propagate it downstream.
+        /// Emitted when <c>ServerSettings.IncludePurposeOfUseClaims</c> is enabled (the default).
+        /// </summary>
+        public const string PurposeOfUse = "purpose_of_use";
+
+        /// <summary>
+        /// Access-token claim carrying <c>hl7-b2b.organization_id</c>, the organizational
+        /// requestor's identifier. Emitted with <see cref="PurposeOfUse"/>.
+        /// </summary>
+        public const string OrganizationId = "organization_id";
+
+        /// <summary>
+        /// Access-token claim carrying <c>hl7-b2b.organization_name</c> when the client supplied one.
+        /// Emitted with <see cref="PurposeOfUse"/>.
+        /// </summary>
+        public const string OrganizationName = "organization_name";
     }
 
     public static class TokenRequest

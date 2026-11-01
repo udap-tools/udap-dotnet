@@ -284,13 +284,25 @@ public static class X509Extensions
         return names;
     }
 
+    /// <summary>
+    /// True when the certificate carries <paramref name="uri"/> as a uniformResourceIdentifier SAN, compared exactly.
+    /// </summary>
+    public static bool HasUriSubjectAltName(this X509Certificate2 cert, string uri)
+    {
+        return cert.GetSubjectAltNames(n => n.TagNo == (int)GeneralNameType.URI)
+            .Any(san => string.Equals(san.Item2, uri, StringComparison.Ordinal));
+    }
+
     public static string ResolveUriSubjAltName(this X509Certificate2 cert, string baseUrl)
     {
         var sans = cert.GetSubjectAltNames(n => n.TagNo == (int)GeneralNameType.URI);
 
         foreach (var san in sans.Select(s => s.Item2))
         {
+            // Exact match first (SSRAA says iss must match the SAN exactly); then tolerate a
+            // trailing slash on either side, which callers often add to a base URL.
             if (baseUrl == san ||
+                baseUrl.TrimEnd('/') == san.TrimEnd('/') ||
                 new Uri(baseUrl.TrimEnd('/')).AbsoluteUri == san)
             {
                 return san;

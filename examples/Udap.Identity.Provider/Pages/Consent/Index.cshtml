@@ -1,107 +1,61 @@
 @page
 @model Udap.Identity.Provider.Pages.Consent.Index
 @{
+    ViewData["Title"] = $"Allow {Model.View.ClientName}?";
 }
 
-<div class="page-consent">
-    <div class="lead">
-        @if (Model.View.ClientLogoUrl != null)
-        {
-            <div class="client-logo"><img src="@Model.View.ClientLogoUrl"></div>
-        }
-        <h1>
-            @Model.View.ClientName
-            <small class="text-muted">is requesting your permission</small>
-        </h1>
-        <p>Uncheck the permissions you do not wish to grant.</p>
+<div class="sc-single sc-stack">
+    <div class="sc-stack-sm">
+        <h1>Share your identity with @Model.View.ClientName?</h1>
+        <p class="sc-lede">Untick anything you don't want to share. Required items are needed to sign you in.</p>
     </div>
 
-    <div class="row">
-        <div class="col-sm-8">
-            <partial name="_ValidationSummary" />
-        </div>
-    </div>
+    <partial name="_Errors" />
 
-    <form asp-page="/Consent/Index">
+    <form asp-page="/Consent/Index" class="sc-panel sc-stack">
         <input type="hidden" asp-for="Input.ReturnUrl" />
-        <div class="row">
-            <div class="col-sm-8">
-                @if (Model.View.IdentityScopes.Any())
-                {
-                    <div class="form-group">
-                        <div class="card">
-                            <div class="card-header">
-                                <span class="glyphicon glyphicon-user"></span>
-                                Personal Information
-                            </div>
-                            <ul class="list-group list-group-flush">
-                                @foreach (var scope in Model.View.IdentityScopes)
-                                {
-                                    <partial name="_ScopeListItem" model="@scope" />
-                                }
-                            </ul>
-                        </div>
-                    </div>
-                }
 
-                @if (Model.View.ApiScopes.Any())
-                {
-                    <div class="form-group">
-                        <div class="card">
-                            <div class="card-header">
-                                <span class="glyphicon glyphicon-tasks"></span>
-                                Application Access
-                            </div>
-                            <ul class="list-group list-group-flush">
-                                @foreach (var scope in Model.View.ApiScopes)
-                                {
-                                    <partial name="_ScopeListItem" model="scope" />
-                                }
-                            </ul>
-                        </div>
-                    </div>
-                }
-
-                <div class="form-group">
-                    <div class="card">
-                        <div class="card-header">
-                            <span class="glyphicon glyphicon-pencil"></span>
-                            Description
-                        </div>
-                        <div class="card-body">
-                            <input class="form-control" placeholder="Description or name of device" asp-for="Input.Description" autofocus>
-                        </div>
-                    </div>
-                </div>
-
-                @if (Model.View.AllowRememberConsent)
-                {
-                    <div class="form-group">
-                        <div class="form-check">
-                            <input class="form-check-input" asp-for="Input.RememberConsent">
-                            <label class="form-check-label" asp-for="Input.RememberConsent">
-                                <strong>Remember My Decision</strong>
-                            </label>
-                        </div>
-                    </div>
-                }
-            </div>
+        <div class="sc-labels" role="group" aria-label="How permissions are described" data-labels-toggle hidden>
+            <button type="button" data-labels="plain" aria-pressed="true">Plain language</button>
+            <button type="button" data-labels="technical" aria-pressed="false">Technical</button>
         </div>
 
-        <div class="row">
-            <div class="col-sm-4">
-                <button name="Input.button" value="yes" class="btn btn-primary" autofocus>Yes, Allow</button>
-                <button name="Input.button" value="no" class="btn btn-secondary">No, Do Not Allow</button>
-            </div>
-            <div class="col-sm-4 col-lg-auto">
-                @if (Model.View.ClientUrl != null)
-                {
-                    <a class="btn btn-outline-info" href="@Model.View.ClientUrl">
-                        <span class="glyphicon glyphicon-info-sign"></span>
-                        <strong>@Model.View.ClientName</strong>
-                    </a>
-                }
-            </div>
+        @if (Model.View.IdentityScopes.Any())
+        {
+            <fieldset class="sc-stack-sm">
+                <legend><h2>About you</h2></legend>
+                <partial name="_ScopeList" model="Model.View.IdentityScopes" />
+            </fieldset>
+        }
+
+        @if (Model.View.ApiScopes.Any())
+        {
+            <fieldset class="sc-stack-sm">
+                <legend><h2>Access</h2></legend>
+                <partial name="_ScopeList" model="Model.View.ApiScopes" />
+            </fieldset>
+        }
+
+        @if (Model.View.AllowRememberConsent)
+        {
+            <label class="sc-check">
+                <input asp-for="Input.RememberConsent" />
+                <span>Remember my choice for @Model.View.ClientName</span>
+            </label>
+        }
+
+        <div class="sc-actions">
+            <button class="sc-button" name="Input.button" value="yes" autofocus>Allow</button>
+            <button class="sc-button sc-button--quiet" name="Input.button" value="no">Don't allow</button>
         </div>
     </form>
+
+    @if (Model.View.ClientUrl != null)
+    {
+        <p class="sc-small sc-muted">Learn about this app at <a href="@Model.View.ClientUrl" rel="noopener noreferrer" target="_blank">@Model.View.ClientUrl</a>.</p>
+    }
 </div>
+
+@section scripts {
+    <script type="module" src="~/js/labels.js" asp-append-version="true"></script>
+}

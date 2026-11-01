@@ -164,20 +164,9 @@ See the [`examples/`](./examples) folder. Full list below.
 </details>
 
 <details open>
-<summary><h3>Sigil — PKI Management Tool</h3></summary>
+<summary><h3>Sigyll — PKI Management Tool</h3></summary>
 
-[**Sigil**](./examples/CA/) is a modern certificate authority and PKI management tool built with .NET, Blazor Server, FluentUI v4, and PostgreSQL.
-
-:arrow_right: [Full feature list](./examples/CA/Sigil/docs/FEATURES.md) | [Roadmap](./examples/CA/ROADMAP.md)
-
-| Capability | Details |
-|:---|:---|
-| **Certificate Explorer** | Hierarchical tree view, color-coded status badges, chain validation, ASN.1 viewer |
-| **Certificate Issuance** | Configurable templates (Root CA, Intermediate CA, UDAP Client, SSL Server), RSA & ECDSA |
-| **Certificate Lifecycle** | Import (drag & drop, batch), renewal (re-key / re-sign), archive, revocation |
-| **CRL Management** | Import, online resolution via CDP, revocation status tracking |
-| **Remote Signing** | Pluggable `ISigningProvider` — HashiCorp Vault Transit and Google Cloud KMS |
-| **Aspire Orchestration** | Dev / Docker / GCP launch profiles via `Sigil.AppHost` |
+The certificate authority and PKI management tool once developed here as Sigil is now [**Sigyll**](https://github.com/JoeShook/Sigyll), in its own repository.
 
 </details>
 
@@ -207,13 +196,11 @@ dotnet test _tests/UdapServer.Tests
 ### Run Examples Locally
 
 ```bash
-# Install Tye (one-time)
-dotnet tool install -g Microsoft.Tye --version "0.12.0-*" \
-  --add-source https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet6/nuget/v3/index.json
-
-# Start all services with hot reload
-tye run --watch
+dotnet dev-certs https --trust              # one-time: HTTPS for *.dev.localhost
+dotnet run --project examples/Udap.AppHost  # Aspire: Postgres, pgAdmin and every example server
 ```
+
+Each server answers on its own `*.dev.localhost` name, such as `https://udap-auth-server.dev.localhost:5002`. See [examples/README.md](./examples/README.md).
 
 ### Quick Start — Tiered OAuth
 

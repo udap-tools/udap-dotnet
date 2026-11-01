@@ -18,16 +18,16 @@ public class X509ExtensionTests
         var certificate = new X509Certificate2($"{CertStore}/localhost_fhirlabs_community1/issued/fhirLabsApiClientLocalhostCert.cer");
 #endif
 
-        // Both should succeed.
-        // The C# code cannot generated a SAN without the trailing slash on a URI without a path.
-        // TODO: Need to consider issuing a PR to correct MS code base.  I think asp.net is the place.
-        // But regardless I think Postels law applies here.
-        Assert.Equal("https://localhost:5055/", certificate.ResolveUriSubjAltName("https://localhost:5055"));
-        Assert.Equal("https://localhost:5055/", certificate.ResolveUriSubjAltName("https://localhost:5055/"));
+        // Both should succeed and resolve to the SAN exactly as issued.
+        // The PKI generator writes SAN URIs verbatim (no trailing slash on a URI without a path,
+        // which .NET's SubjectAlternativeNameBuilder.AddUri would otherwise add), and the lookup
+        // tolerates a trailing slash on the input.
+        Assert.Equal("https://udap-idp1.dev.localhost:5055", certificate.ResolveUriSubjAltName("https://udap-idp1.dev.localhost:5055"));
+        Assert.Equal("https://udap-idp1.dev.localhost:5055", certificate.ResolveUriSubjAltName("https://udap-idp1.dev.localhost:5055/"));
 
 
-        Assert.Equal("https://localhost:7016/fhir/r4", certificate.ResolveUriSubjAltName("https://localhost:7016/fhir/r4"));
-        Assert.Equal("https://localhost:7016/fhir/r4", certificate.ResolveUriSubjAltName("https://localhost:7016/fhir/r4/"));
+        Assert.Equal("https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4", certificate.ResolveUriSubjAltName("https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4"));
+        Assert.Equal("https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4", certificate.ResolveUriSubjAltName("https://udap-fhirlabs-api.dev.localhost:7016/fhir/r4/"));
     }
 
     [Fact]

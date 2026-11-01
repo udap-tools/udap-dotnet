@@ -10,17 +10,17 @@
     {
       "Community": "udap://fhirlabs1/",
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5002/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register"
+        "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+        "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token",
+        "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register"
       }
     },
     {
       "Community": "udap://stage.healthtogo.me/",
       "SignedMetadataConfig": {
-        "AuthorizationEndpoint": "https://host.docker.internal:5002/connect/authorize",
-        "TokenEndpoint": "https://host.docker.internal:5002/connect/token",
-        "RegistrationEndpoint": "https://host.docker.internal:5002/connect/register"
+        "AuthorizationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/authorize",
+        "TokenEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/token",
+        "RegistrationEndpoint": "https://udap-auth-server.dev.localhost:5002/connect/register"
       }
     },
     {

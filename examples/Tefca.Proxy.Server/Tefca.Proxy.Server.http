@@ -1,4 +1,4 @@
-@Udap.Proxy.Server_HostAddress = http://localhost:7075
+@Udap.Proxy.Server_HostAddress = http://udap-tefca-proxy.dev.localhost:7075
 
 GET {{Udap.Proxy.Server_HostAddress}}/weatherforecast/
 Accept: application/json

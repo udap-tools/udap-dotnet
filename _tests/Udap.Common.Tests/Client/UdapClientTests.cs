@@ -379,7 +379,10 @@ public class UdapClientTests
         HttpClient httpClientMock,
         UdapClientDiscoveryValidator udapClientDiscoveryValidator,
         IOptionsMonitor<UdapClientOptions> udapClientIOptions,
-        ITrustAnchorStore trustAnchorFileStore)> BuildClientSupport(string baseUrl = "https://fhirlabs.net/fhir/r4", string? community = null)
+        ITrustAnchorStore trustAnchorFileStore)> BuildClientSupport(
+            string baseUrl = "https://fhirlabs.net/fhir/r4",
+            string? community = null,
+            Action<UdapMetadata>? alterPlainJson = null)
     {
         //
         // Metadata for describing different UDAP metadata per community
@@ -422,6 +425,12 @@ public class UdapClientTests
             privateCertificateStore,
             _serviceProvider.GetRequiredService<ILogger<UdapMetaDataBuilder<UdapMetadataOptions, UdapMetadata>>>());
         var signedMetadata = await metaDataBuilder.SignMetaData(baseUrl, community);
+
+        // Changes the plain JSON after signing, leaving signed_metadata as the server signed it.
+        if (signedMetadata != null)
+        {
+            alterPlainJson?.Invoke(signedMetadata);
+        }
 
         //
         // Mock an HttpClient used by UdapClient.  The mock will return the signed Metadata rather than rely on aa UDAP Metadata service.
@@ -596,6 +605,52 @@ public class UdapClientTests
             cert, "system/*.read", null, null);
 
         Assert.NotNull(result);
+    }
+
+    [Fact]
+    public async Task ValidateResource_SignedEndpointsTakePrecedenceOverPlainJson()
+    {
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) =
+            await BuildClientSupport(alterPlainJson: m =>
+            {
+                m.RegistrationEndpoint = "https://attacker.example/register";
+                m.TokenEndpoint = "https://attacker.example/token";
+            });
+
+        Uri? postedTo = null;
+        httpClientMock.SendAsync(Arg.Is<HttpRequestMessage>(r => r.Method == HttpMethod.Post), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                postedTo = call.Arg<HttpRequestMessage>().RequestUri;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.Created)
+                {
+                    Content = new StringContent("""{"client_id":"cc-client"}""",
+                        System.Text.Encoding.UTF8, "application/json")
+                });
+            });
+
+        udapClientIOptions.CurrentValue.Returns(new UdapClientOptions { ClientName = "Test Client" });
+
+        var udapClient = new UdapClient(
+            httpClientMock, udapClientDiscoveryValidator, udapClientIOptions,
+            _serviceProvider.GetRequiredService<ILogger<UdapClient>>());
+
+        var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4", trustAnchorStore);
+
+        Assert.False(disco.IsError, disco.Error);
+        var signed = new JsonWebToken(disco.SignedMetadata);
+        var signedRegistration = signed.GetPayloadValue<string>(UdapConstants.Discovery.RegistrationEndpoint);
+        var signedToken = signed.GetPayloadValue<string>(UdapConstants.Discovery.TokenEndpoint);
+
+        Assert.Equal(signedRegistration, disco.RegistrationEndpoint);
+        Assert.Equal(signedToken, disco.TokenEndpoint);
+        Assert.Equal(signedRegistration, udapClient.UdapServerMetadata!.RegistrationEndpoint);
+        Assert.Equal(signedToken, udapClient.UdapServerMetadata.TokenEndpoint);
+
+        var cert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+        await udapClient.RegisterClientCredentialsClient(cert, "system/*.read", null, null);
+
+        Assert.Equal(new Uri(signedRegistration), postedTo);
     }
 
     [Fact]

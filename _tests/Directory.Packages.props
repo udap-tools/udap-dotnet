@@ -9,7 +9,7 @@
     <PackageVersion Include="Duende.IdentityServer" Version="8.0.10" />
     <PackageVersion Include="Duende.IdentityServer.Storage" Version="8.0.10" />
     <PackageVersion Include="Firely.Fhir.Packages" Version="4.9.1" />
-    <PackageVersion Include="Firely.Fhir.Validation.R4B" Version="2.7.1" />
+    <PackageVersion Include="Firely.Fhir.Validation.R4B" Version="2.7.3" />
     <PackageVersion Include="Hl7.Fhir.Specification.R4B" Version="5.13.3" />
     <PackageVersion Include="Duende.IdentityModel" Version="8.1.0" />
     <PackageVersion Include="HtmlAgilityPack" Version="1.13.1" />

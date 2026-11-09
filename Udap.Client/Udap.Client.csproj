@@ -34,6 +34,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="Udap.Common.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Udap.Common\Udap.Common.csproj" />
     <ProjectReference Include="..\Udap.Model\Udap.Model.csproj" />
     <None Include="docs/README.md" Pack="true" PackagePath="\" />

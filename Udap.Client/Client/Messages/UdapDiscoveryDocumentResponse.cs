@@ -132,17 +132,32 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     /// <summary>
     /// Gets the authorization endpoint URL used to initiate the authorization code flow.
     /// </summary>
-    public string? AuthorizeEndpoint => TryGetString(UdapConstants.Discovery.AuthorizationEndpoint);
+    public string? AuthorizeEndpoint => Endpoint(UdapConstants.Discovery.AuthorizationEndpoint);
 
     /// <summary>
     /// Gets the FHIR Authorization Server's token endpoint URL.
     /// </summary>
-    public string? TokenEndpoint => TryGetString(UdapConstants.Discovery.TokenEndpoint);
+    public string? TokenEndpoint => Endpoint(UdapConstants.Discovery.TokenEndpoint);
 
     /// <summary>
     /// Gets the UDAP dynamic client registration endpoint URL.
     /// </summary>
-    public string? RegistrationEndpoint => TryGetString(UdapConstants.Discovery.RegistrationEndpoint);
+    public string? RegistrationEndpoint => Endpoint(UdapConstants.Discovery.RegistrationEndpoint);
+
+    // Endpoint values taken from validated signed_metadata. The UDAP Security IG gives them
+    // precedence over the plain JSON, so once set they are what the endpoint properties return.
+    private Dictionary<string, string>? _signedEndpoints;
+
+    /// <summary>
+    /// Replaces the endpoint values read from the plain JSON with those from validated signed metadata.
+    /// </summary>
+    internal void UseSignedEndpoints(IReadOnlyDictionary<string, string> endpoints)
+    {
+        _signedEndpoints = new Dictionary<string, string>(endpoints);
+    }
+
+    private string? Endpoint(string name) =>
+        _signedEndpoints != null && _signedEndpoints.TryGetValue(name, out var value) ? value : TryGetString(name);
 
     // generic
     private string? TryGetString(string name) => Json?.TryGetString(name);

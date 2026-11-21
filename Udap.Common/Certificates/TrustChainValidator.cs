@@ -87,7 +87,8 @@ namespace Udap.Common.Certificates
             ChainProblemStatus.NotSignatureValid |
             ChainProblemStatus.InvalidBasicConstraints |
             ChainProblemStatus.OfflineRevocation |
-            ChainProblemStatus.RevocationStatusUnknown;
+            ChainProblemStatus.RevocationStatusUnknown |
+            ChainProblemStatus.PathLengthConstraintExceeded;
 
         /// <summary>
         /// Creates an instance with default problem flags and online revocation checking.
@@ -370,7 +371,7 @@ namespace Udap.Common.Certificates
                             if (intermediatesBelow > pathLenConstraint)
                             {
                                 problems.Add(new ChainProblem(
-                                    ChainProblemStatus.InvalidBasicConstraints,
+                                    ChainProblemStatus.PathLengthConstraintExceeded,
                                     $"Certificate pathLenConstraint of {pathLenConstraint} is exceeded: " +
                                     $"{intermediatesBelow} intermediate CA certificate(s) follow it in the chain"));
                             }

@@ -227,8 +227,30 @@ public class TrustChainLengthTests
 
         Assert.False(result.IsValid);
         Assert.Equal(4, result.ChainElements.Count);
-        Assert.Contains(result.ChainElements[2].Problems, p => p.Status == ChainProblemStatus.InvalidBasicConstraints);
-        Assert.DoesNotContain(result.ChainElements[1].Problems, p => p.Status == ChainProblemStatus.InvalidBasicConstraints);
+        Assert.Contains(result.ChainElements[2].Problems, p => p.Status == ChainProblemStatus.PathLengthConstraintExceeded);
+        Assert.DoesNotContain(result.ChainElements[2].Problems, p => p.Status == ChainProblemStatus.InvalidBasicConstraints);
+        Assert.DoesNotContain(result.ChainElements[1].Problems, p => p.Status == ChainProblemStatus.PathLengthConstraintExceeded);
+    }
+
+    [Fact]
+    public async Task PathLenConstraintCheck_CanBeMaskedWithCustomProblemFlags()
+    {
+        var pki = BuildFourCertificateChain(intermediate1PathLen: 0);
+        var flagsWithoutPathLen = TrustChainValidator.DefaultProblemFlags & ~ChainProblemStatus.PathLengthConstraintExceeded;
+        var validator = new TrustChainValidator(flagsWithoutPathLen, false, CreateLogger());
+
+        var result = await validator.IsTrustedCertificateAsync("test", pki.Leaf, pki.Intermediates, pki.Anchors, null);
+
+        // The violation is still reported on the chain element, but no longer fails validation.
+        Assert.True(result.IsValid);
+        Assert.Contains(result.ChainElements[2].Problems, p => p.Status == ChainProblemStatus.PathLengthConstraintExceeded);
+    }
+
+    [Fact]
+    public void DefaultProblemFlags_IncludePathLengthConstraintExceeded()
+    {
+        Assert.True(TrustChainValidator.DefaultProblemFlags.HasFlag(ChainProblemStatus.PathLengthConstraintExceeded));
+        Assert.True(TrustChainValidator.DefaultProblemFlags.HasFlag(ChainProblemStatus.InvalidBasicConstraints));
     }
 
     [Fact]

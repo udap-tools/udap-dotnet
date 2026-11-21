@@ -274,7 +274,8 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
                             : a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate)))
                     .ToArray().ToX509Collection(),
                 anchorCertificates,
-                anchors);
+                anchors,
+                community);
         }
         finally
         {

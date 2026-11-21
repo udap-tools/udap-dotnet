@@ -295,17 +295,43 @@ public class UdapJwtSecretValidator : ISecretValidator
         //
         // PKI chain validation, including CRL checking
         //
-        if (!await _trustChainValidator.IsTrustedCertificateAsync(
-                parsedSecret.Id,
-                endCertificate,
-                new X509Certificate2Collection(certChainList.ToArray()),
-                new X509Certificate2Collection(certChainList.ToRootCertArray())))
+        var chainResult = await _trustChainValidator.IsTrustedCertificateAsync(
+            parsedSecret.Id,
+            endCertificate,
+            new X509Certificate2Collection(certChainList.ToArray()),
+            new X509Certificate2Collection(certChainList.ToRootCertArray()),
+            null,
+            await ResolveCommunityNameForChainPolicyAsync(secretList, ct),
+            ct);
+
+        if (!chainResult.IsValid)
         {
             SetErrorDescription("Certificate chain validation failed");
             return fail;
         }
 
         return success;
+    }
+
+    /// <summary>
+    /// Resolves the client's community name so a per-community chain-length limit can be applied.
+    /// The lookup is skipped when no community has its own limit.
+    /// </summary>
+    private async Task<string?> ResolveCommunityNameForChainPolicyAsync(IReadOnlyCollection<Secret> secretList, CancellationToken ct)
+    {
+        if (_trustChainValidator.Options?.HasCommunityLimits != true)
+        {
+            return null;
+        }
+
+        var communityId = secretList.FirstOrDefault(s => s.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY)?.Value;
+
+        if (string.IsNullOrEmpty(communityId))
+        {
+            return null;
+        }
+
+        return await _clientStore.GetCommunityName(communityId, ct);
     }
 
     /// <summary>

@@ -27,6 +27,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Security;
@@ -50,6 +51,7 @@ namespace Udap.Common.Certificates
         private readonly HttpClient? _httpClient;
         private readonly ILogger<TrustChainValidator> _logger;
         private readonly TimeSpan _downloadTimeout;
+        private readonly Func<TrustChainValidatorOptions?> _optionsAccessor = () => null;
         private const int MaxChainDepth = 10;
 
         // AIA URLs come from certificates that are not trusted yet, so one validation downloads at most this many.
@@ -97,6 +99,23 @@ namespace Udap.Common.Certificates
             ICertificateDownloadCache? downloadCache = null)
             : this(DefaultProblemFlags, true, logger, downloadCache, downloadCache == null ? new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false }) : null)
         {
+        }
+
+        /// <summary>
+        /// Creates an instance with default problem flags, online revocation checking and the
+        /// <see cref="TrustChainValidatorOptions"/> policy (for example a maximum chain length per community).
+        /// The current options value is read on every validation.
+        /// When no <see cref="ICertificateDownloadCache"/> is registered, a default HttpClient
+        /// is created for direct CRL/AIA downloads.
+        /// </summary>
+        public TrustChainValidator(
+            ILogger<TrustChainValidator> logger,
+            IOptionsMonitor<TrustChainValidatorOptions> options,
+            ICertificateDownloadCache? downloadCache = null)
+            : this(logger, downloadCache)
+        {
+            ArgumentNullException.ThrowIfNull(options);
+            _optionsAccessor = () => options.CurrentValue;
         }
 
         /// <summary>
@@ -148,6 +167,30 @@ namespace Udap.Common.Certificates
         }
 
         /// <summary>
+        /// Creates an instance with custom problem flags, revocation settings, an optional HttpClient,
+        /// a per-request download timeout, and a <see cref="TrustChainValidatorOptions"/> policy
+        /// (for example a maximum chain length per community).
+        /// </summary>
+        public TrustChainValidator(
+            ChainProblemStatus problemFlags,
+            bool checkRevocation,
+            ILogger<TrustChainValidator> logger,
+            ICertificateDownloadCache? downloadCache,
+            HttpClient? httpClient,
+            TimeSpan downloadTimeout,
+            TrustChainValidatorOptions? options)
+            : this(problemFlags, checkRevocation, logger, downloadCache, httpClient, downloadTimeout)
+        {
+            _optionsAccessor = () => options;
+        }
+
+        /// <summary>
+        /// The <see cref="TrustChainValidatorOptions"/> this validator currently applies, or <c>null</c> when none
+        /// were supplied.
+        /// </summary>
+        public TrustChainValidatorOptions? Options => _optionsAccessor();
+
+        /// <summary>
         /// Validates whether the specified certificate is trusted by building and verifying a chain
         /// against the provided anchor certificates.
         /// </summary>
@@ -183,12 +226,47 @@ namespace Udap.Common.Certificates
         /// <param name="anchors">Optional <see cref="Anchor"/> models to resolve a <see cref="ChainValidationResult.CommunityId"/>.</param>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
         /// <returns>A <see cref="ChainValidationResult"/> containing the validation outcome, chain elements, and community identifier.</returns>
-        public async Task<ChainValidationResult> IsTrustedCertificateAsync(
+        public Task<ChainValidationResult> IsTrustedCertificateAsync(
             string clientName,
             X509Certificate2 certificate,
             X509Certificate2Collection? intermediateCertificates,
             X509Certificate2Collection anchorCertificates,
             IEnumerable<Anchor>? anchors = null,
+            CancellationToken cancellationToken = default)
+        {
+            return IsTrustedCertificateAsync(
+                clientName,
+                certificate,
+                intermediateCertificates,
+                anchorCertificates,
+                anchors,
+                null,
+                cancellationToken);
+        }
+
+        /// <summary>
+        /// Validates whether the specified certificate is trusted, applying the chain-length limit configured
+        /// for <paramref name="communityName"/> in <see cref="TrustChainValidatorOptions"/>.
+        /// </summary>
+        /// <param name="clientName">A display name for the client, used in log messages.</param>
+        /// <param name="certificate">The end-entity certificate to validate.</param>
+        /// <param name="intermediateCertificates">Optional intermediate certificates to include in chain building.</param>
+        /// <param name="anchorCertificates">The trust anchor (root CA) certificates to validate against.</param>
+        /// <param name="anchors">Optional <see cref="Anchor"/> models to resolve a <see cref="ChainValidationResult.CommunityId"/>.</param>
+        /// <param name="communityName">
+        /// The community (URI) the certificate is validated for, used to select the chain-length limit.
+        /// When <c>null</c>, the community of the matching <see cref="Anchor"/> in <paramref name="anchors"/> is used,
+        /// and when that is unknown too, only <see cref="TrustChainValidatorOptions.MaxChainLength"/> applies.
+        /// </param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>A <see cref="ChainValidationResult"/> containing the validation outcome, chain elements, and community identifier.</returns>
+        public async Task<ChainValidationResult> IsTrustedCertificateAsync(
+            string clientName,
+            X509Certificate2 certificate,
+            X509Certificate2Collection? intermediateCertificates,
+            X509Certificate2Collection anchorCertificates,
+            IEnumerable<Anchor>? anchors,
+            string? communityName,
             CancellationToken cancellationToken = default)
         {
             var roots = new X509Certificate2Collection(anchorCertificates);
@@ -234,13 +312,25 @@ namespace Udap.Common.Certificates
                 var chainElements = new List<ChainElementInfo>();
                 bool foundAnchor = false;
                 long? communityId = null;
-                string? communityName = null;
+                string? matchedCommunityName = null;
                 Anchor? matchedAnchor = null;
                 bool chainValid = true;
 
                 // Revocation is only checked for a chain that reaches a trust anchor. An untrusted chain fails
                 // anyway, and its CRL distribution points were chosen by whoever issued it.
                 bool reachesAnchor = IsAnchor(bcChain[^1], bcAnchors);
+
+                // Optional chain-length limit, selected by the community the chain is validated for.
+                int? maxChainLength = null;
+                if (reachesAnchor)
+                {
+                    var effectiveCommunity = communityName ?? FindAnchorModel(bcChain[^1], anchors)?.Community;
+                    maxChainLength = _optionsAccessor()?.GetMaxChainLength(effectiveCommunity);
+                }
+
+                // Number of intermediate CA certificates, excluding self-issued ones, seen so far between the
+                // end-entity certificate and the current certificate (RFC 5280 section 4.2.1.9).
+                int intermediatesBelow = 0;
 
                 for (int i = 0; i < bcChain.Count; i++)
                 {
@@ -271,6 +361,32 @@ namespace Udap.Common.Certificates
                                 ChainProblemStatus.InvalidBasicConstraints,
                                 "Certificate does not have valid CA basic constraints"));
                         }
+                        else
+                        {
+                            // pathLenConstraint limits how many intermediate CA certificates may follow this one
+                            // in the path down to the end-entity certificate. GetBasicConstraints returns
+                            // int.MaxValue when the constraint is absent.
+                            var pathLenConstraint = bcCert.GetBasicConstraints();
+                            if (intermediatesBelow > pathLenConstraint)
+                            {
+                                problems.Add(new ChainProblem(
+                                    ChainProblemStatus.InvalidBasicConstraints,
+                                    $"Certificate pathLenConstraint of {pathLenConstraint} is exceeded: " +
+                                    $"{intermediatesBelow} intermediate CA certificate(s) follow it in the chain"));
+                            }
+                        }
+
+                        if (!IsSelfIssued(bcCert))
+                        {
+                            intermediatesBelow++;
+                        }
+                    }
+
+                    if (isLeaf && maxChainLength.HasValue && bcChain.Count > maxChainLength.Value)
+                    {
+                        problems.Add(new ChainProblem(
+                            ChainProblemStatus.ChainLengthExceeded,
+                            $"Certificate chain has {bcChain.Count} certificates; the maximum allowed is {maxChainLength.Value}"));
                     }
 
                     // Check CRL revocation (skip for anchor/root, and for a chain that never reaches an anchor)
@@ -291,7 +407,7 @@ namespace Udap.Common.Certificates
                             if (matchingAnchor != null)
                             {
                                 communityId = matchingAnchor.CommunityId;
-                                communityName = matchingAnchor.Community;
+                                matchedCommunityName = matchingAnchor.Community;
                                 matchedAnchor = matchingAnchor;
                             }
                         }
@@ -341,7 +457,7 @@ namespace Udap.Common.Certificates
                     NotifyUntrusted(certificate);
                 }
 
-                return new ChainValidationResult(isValid, chainElements, communityId, communityName, matchedAnchor);
+                return new ChainValidationResult(isValid, chainElements, communityId, matchedCommunityName, matchedAnchor);
             }
             catch (Exception ex)
             {
@@ -818,6 +934,22 @@ namespace Udap.Common.Certificates
             return basicConstraints >= 0;
         }
 
+        private static bool IsSelfIssued(BcX509Certificate cert)
+        {
+            return cert.IssuerDN.Equivalent(cert.SubjectDN);
+        }
+
+        private static Anchor? FindAnchorModel(BcX509Certificate anchorCert, IEnumerable<Anchor>? anchors)
+        {
+            if (anchors == null)
+            {
+                return null;
+            }
+
+            var thumbprint = GetThumbprint(anchorCert);
+            return anchors.FirstOrDefault(a => string.Equals(a.Thumbprint, thumbprint, StringComparison.OrdinalIgnoreCase));
+        }
+
         private static bool IsAnchor(BcX509Certificate cert, List<BcX509Certificate> anchors)
         {
             var certThumbprint = GetThumbprint(cert);
@@ -867,7 +999,8 @@ namespace Udap.Common.Certificates
 
         private bool HasRelevantProblems(List<ChainProblem> problems)
         {
-            return problems.Any(p => (_problemFlags & p.Status) != 0);
+            // A configured chain-length limit is an explicit policy, so it fails validation regardless of the problem flags.
+            return problems.Any(p => (_problemFlags & p.Status) != 0 || p.Status == ChainProblemStatus.ChainLengthExceeded);
         }
 
         private void NotifyUntrusted(X509Certificate2 cert)

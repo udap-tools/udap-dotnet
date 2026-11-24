@@ -83,6 +83,9 @@ builder.Services.AddUdapCertificateCache()
 builder.Services.AddHttpClient<CertificateDownloadCache>();
 builder.Services.AddSingleton<ICertificateDownloadCache, CertificateDownloadCache>();
 
+// Per client IP rate limiting (replaces the Cloud Armor throttle rule). See "RateLimiting" in appsettings.json.
+builder.Services.AddClientIpRateLimiting(builder.Configuration);
+
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
@@ -287,6 +290,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
+// Rate limit first: rejects floods before any other work, and must run before UseForwardedHeaders,
+// which rewrites X-Forwarded-For.
+app.UseClientIpRateLimiting();
 app.UseForwardedHeaders();
 
 // Rewrite community-prefixed paths (e.g., /community-a/fhir/r4/Patient/123)

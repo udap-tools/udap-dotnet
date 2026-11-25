@@ -1261,7 +1261,126 @@ public class TieredOauthTests
             new List<string> { "https://code_client/callback" });
 
         Assert.Null(documentResponse.GetError());
-        
+
         return documentResponse;
+    }
+
+    /// <summary>
+    /// The IdP forgets the data holder's registration between authorize and the code exchange. The token endpoint
+    /// answers invalid_client, the data holder disables its registration, and the next sign-in registers again
+    /// (with the client_id the IdP issues then) and completes.
+    /// </summary>
+    [Fact]
+    public async Task Tiered_OAuth_IdP_Forgets_Client_Registers_Again()
+    {
+        BuildUdapAuthorizationServer();
+        BuildUdapIdentityProvider1();
+
+        var resultDocument = await RegisterClientWithAuthServer();
+        _mockAuthorServerPipeline.RemoveSessionCookie();
+        _mockAuthorServerPipeline.RemoveLoginCookie();
+        var clientId = resultDocument!.ClientId!;
+
+        var dynamicIdp = _mockAuthorServerPipeline.ApplicationServices.GetRequiredService<DynamicIdp>();
+        dynamicIdp.Name = _mockIdPPipeline.BaseUrl;
+
+        var store = _mockAuthorServerPipeline.Resolve<Udap.Server.Storage.Stores.IUdapClientRegistrationStore>();
+
+        // First sign-in: registers with the IdP and gets a code back.
+        var challengeUrl = await BuildTieredChallengeUrl(clientId);
+        var codeCallback = await RunTieredChallengeToCodeCallback(challengeUrl);
+
+        var tieredClient = await store.FindTieredClientByIdPBaseUrl("https://idpserver");
+        Assert.NotNull(tieredClient);
+        Assert.True(tieredClient!.Enabled);
+        var firstClientId = tieredClient.ClientId;
+
+        // The IdP loses the registration before the code exchange.
+        _mockIdPPipeline.Clients.RemoveAll(c => c.ClientName == "AuthServer Client");
+
+        _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
+        try
+        {
+            var failed = await _mockAuthorServerPipeline.BrowserClient.GetAsync(codeCallback);
+            Assert.False(failed.Headers.Location?.OriginalString.StartsWith("/connect/authorize/callback?") == true,
+                "the sign-in must not succeed with a client the IdP rejected");
+        }
+        catch (Exception)
+        {
+            // The remote authentication failure surfaces as an unhandled exception in the test host.
+        }
+
+        tieredClient = await store.FindTieredClientByIdPBaseUrl("https://idpserver");
+        Assert.False(tieredClient!.Enabled);
+
+        // Next sign-in registers again and completes.
+        challengeUrl = await BuildTieredChallengeUrl(clientId);
+        codeCallback = await RunTieredChallengeToCodeCallback(challengeUrl);
+
+        var reRegistered = Assert.Single(_mockIdPPipeline.Clients, c => c.ClientName == "AuthServer Client");
+        tieredClient = await store.FindTieredClientByIdPBaseUrl("https://idpserver");
+        Assert.True(tieredClient!.Enabled);
+        Assert.Equal(reRegistered.ClientId, tieredClient.ClientId);
+        Assert.NotEqual(firstClientId, tieredClient.ClientId);
+
+        _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = true;
+        _mockAuthorServerPipeline.BrowserClient.StopRedirectingAfter = 1;
+        var schemeCallbackResult = await _mockAuthorServerPipeline.BrowserClient.GetAsync(codeCallback);
+
+        Assert.Equal(HttpStatusCode.Redirect, schemeCallbackResult.StatusCode);
+        Assert.StartsWith("/connect/authorize/callback?", schemeCallbackResult.Headers.Location!.OriginalString);
+    }
+
+    /// <summary>The data holder's external login challenge URL for an authorize request naming https://idpserver.</summary>
+    private async Task<string> BuildTieredChallengeUrl(string clientId)
+    {
+        var clientAuthorizeUrl = _mockAuthorServerPipeline.CreateAuthorizeUrl(
+            clientId: clientId,
+            responseType: "code",
+            scope: "udap openid user/*.read",
+            redirectUri: "https://code_client/callback",
+            state: Guid.NewGuid().ToString(),
+            extra: new { idp = "https://idpserver" });
+
+        _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
+        _mockAuthorServerPipeline.BrowserClient.AllowCookies = false;
+        var response = await _mockAuthorServerPipeline.BrowserClient.GetAsync(clientAuthorizeUrl);
+        var returnUrl = QueryHelpers.ParseQuery(response.Headers.Location!.Query)
+            .Single(p => p.Key == "ReturnUrl").Value.ToString();
+
+        var schemes = await _mockAuthorServerPipeline.Resolve<IAuthenticationSchemeProvider>().GetAllSchemesAsync();
+
+        return $"https://server/externallogin/challenge?scheme={schemes.First().Name}&returnUrl={Uri.EscapeDataString(returnUrl)}";
+    }
+
+    /// <summary>
+    /// Runs the challenge (discovery and, when needed, registration with the IdP), the IdP login and authorize
+    /// callback, and returns the data holder callback URL carrying the code.
+    /// </summary>
+    private async Task<string> RunTieredChallengeToCodeCallback(string challengeUrl)
+    {
+        _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
+        _mockAuthorServerPipeline.BrowserClient.AllowCookies = true;
+        var challenge = await _mockAuthorServerPipeline.BrowserClient.GetAsync(challengeUrl);
+        Assert.Equal(HttpStatusCode.Redirect, challenge.StatusCode);
+        Assert.StartsWith("https://idpserver/connect/authorize", challenge.Headers.Location!.AbsoluteUri);
+
+        var next = challenge.Headers.Location!.AbsoluteUri;
+
+        for (var hop = 0; hop < 6; hop++)
+        {
+            var result = await _mockIdPPipeline.BrowserClient!.GetAsync(next);
+            var location = result.Headers.Location!;
+            var absolute = location.IsAbsoluteUri ? location.AbsoluteUri : $"https://idpserver{location.OriginalString}";
+
+            if (absolute.StartsWith("https://server/federation/udap-tiered/signin?"))
+            {
+                return absolute;
+            }
+
+            next = absolute;
+        }
+
+        throw new InvalidOperationException("The IdP did not redirect back to the data holder callback.");
     }
 }

@@ -81,6 +81,55 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
 
     [Theory]
     [MemberData(nameof(TestDatabaseProviders))]
+    public async Task UpsertTieredClient_DisableThenReRegister_StoresTheIdPsCurrentRegistration(DbContextOptions<UdapDbContext> options)
+    {
+        var idpBaseUrl = $"https://idp-{Guid.NewGuid():N}.example.com";
+
+        await using var context = new UdapDbContext(options);
+        var community = new Udap.Server.Storage.Entities.Community { Name = $"udap://{Guid.NewGuid():N}/", Enabled = true };
+        context.Communities.Add(community);
+        await context.SaveChangesAsync();
+
+        var store = new UdapClientRegistrationStore(context, Substitute.For<ILogger<UdapClientRegistrationStore>>());
+
+        Udap.Common.Models.TieredClient Registration(string clientId, string tokenEndpoint, bool enabled) => new()
+        {
+            ClientName = "AuthServer Client",
+            ClientId = clientId,
+            IdPBaseUrl = idpBaseUrl,
+            RedirectUri = "https://client.example.com/callback",
+            ClientUriSan = "https://auth.example.com",
+            CommunityId = community.Id,
+            Enabled = enabled,
+            TokenEndpoint = tokenEndpoint
+        };
+
+        Assert.False(await store.UpsertTieredClient(Registration("first", "https://idp.example.com/connect/token", true)));
+
+        // Disabled after invalid_client: everything else is kept.
+        var disabled = (await store.FindTieredClientByIdPBaseUrl(idpBaseUrl))!;
+        disabled.Enabled = false;
+        Assert.True(await store.UpsertTieredClient(disabled));
+
+        var stored = (await store.FindTieredClientByIdPBaseUrl(idpBaseUrl))!;
+        Assert.False(stored.Enabled);
+        Assert.Equal("first", stored.ClientId);
+        Assert.Equal("https://idp.example.com/connect/token", stored.TokenEndpoint);
+
+        // Registered again: the IdP issued a new client_id and token endpoint, and the row is enabled.
+        var reRegistration = Registration("second", "https://idp.example.com/oauth/token", true);
+        Assert.True(await store.UpsertTieredClient(reRegistration));
+        Assert.Equal("second", reRegistration.ClientId);
+
+        stored = (await store.FindTieredClientByIdPBaseUrl(idpBaseUrl))!;
+        Assert.True(stored.Enabled);
+        Assert.Equal("second", stored.ClientId);
+        Assert.Equal("https://idp.example.com/oauth/token", stored.TokenEndpoint);
+        Assert.Null(await store.FindTieredClientById("first"));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestDatabaseProviders))]
     public async Task ConcurrentRegistrationsOfTheSameClient_CreateOneClient(DbContextOptions<UdapDbContext> options)
     {
         var issuer = $"https://client.example.com/{Guid.NewGuid():N}";

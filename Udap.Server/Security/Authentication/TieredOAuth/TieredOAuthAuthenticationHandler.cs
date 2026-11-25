@@ -462,6 +462,20 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         var authTokenResponse = await _udapClient.ExchangeCodeForAuthTokenResponse(tokenRequest, Context.RequestAborted);
 
+        // The IdP no longer knows this client (it was reset, or the registration was removed). Disable the
+        // registration so the next sign-in registers again through the normal UDAP checks; this sign-in still fails.
+        if (authTokenResponse.Error?.Data["error"] is string tokenError &&
+            string.Equals(tokenError, OidcConstants.TokenErrors.InvalidClient, StringComparison.Ordinal))
+        {
+            Logger.LogWarning(
+                "IdP {IdPBaseUrl} rejected client {ClientId} as invalid_client; the registration is disabled and the next sign-in registers again",
+                tieredClient.IdPBaseUrl,
+                tieredClient.ClientId);
+
+            tieredClient.Enabled = false;
+            await _udapClientRegistrationStore.UpsertTieredClient(tieredClient, Context.RequestAborted);
+        }
+
         return  authTokenResponse.ToMSAuthTokenResponse();
     }
 
@@ -605,11 +619,9 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                 return;
             }
 
-            if (idpClient == null)
-            {
-                idpClientId = document.ClientId;
-            }
-          
+            // Use the client_id the IdP just issued: after a reset it need not be the one stored before.
+            idpClientId = document.ClientId;
+
             var tokenHandler = new JsonWebTokenHandler();
             var jsonWebToken = tokenHandler.ReadJsonWebToken(document.SoftwareStatement);
             var publicCert = jsonWebToken.GetPublicCertificate() ?? throw new MissingFieldException("Missing x5c public certificate");

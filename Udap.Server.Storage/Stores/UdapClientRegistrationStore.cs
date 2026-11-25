@@ -167,11 +167,15 @@ namespace Udap.Server.Storage.Stores
             
             if (existingClient != null)
             {
+                // A re-registration (or a disable after invalid_client) replaces what the IdP issued and the
+                // enabled flag; only values the caller left empty are kept.
+                existingClient.ClientId = string.IsNullOrEmpty(client.ClientId) ? existingClient.ClientId : client.ClientId;
+                existingClient.ClientName = client.ClientName ?? existingClient.ClientName;
+                existingClient.RedirectUri = client.RedirectUri ?? existingClient.RedirectUri;
+                existingClient.ClientUriSan = client.ClientUriSan ?? existingClient.ClientUriSan;
+                existingClient.TokenEndpoint = string.IsNullOrEmpty(client.TokenEndpoint) ? existingClient.TokenEndpoint : client.TokenEndpoint;
+                existingClient.Enabled = client.Enabled;
                 client.ClientId = existingClient.ClientId;
-                if (client.RedirectUri != null)
-                {
-                    existingClient.RedirectUri = client.RedirectUri;
-                }
 
                 await _dbContext.SaveChangesAsync(token);
                 _logger.LogInformation("Updated client: {Id}", existingClient.Id);

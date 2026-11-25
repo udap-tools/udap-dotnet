@@ -164,8 +164,19 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
         if (existingClient != null)
         {
+            // A re-registration (or a disable after invalid_client) replaces what the IdP issued and the
+            // enabled flag; only values the caller left empty are kept.
+            if (!ReferenceEquals(existingClient, client))
+            {
+                existingClient.ClientId = string.IsNullOrEmpty(client.ClientId) ? existingClient.ClientId : client.ClientId;
+                existingClient.ClientName = client.ClientName ?? existingClient.ClientName;
+                existingClient.RedirectUri = client.RedirectUri ?? existingClient.RedirectUri;
+                existingClient.ClientUriSan = client.ClientUriSan ?? existingClient.ClientUriSan;
+                existingClient.TokenEndpoint = string.IsNullOrEmpty(client.TokenEndpoint) ? existingClient.TokenEndpoint : client.TokenEndpoint;
+                existingClient.Enabled = client.Enabled;
+            }
+
             client.ClientId = existingClient.ClientId;
-            existingClient.RedirectUri = client.RedirectUri;
             return Task.FromResult(true);
         }
 

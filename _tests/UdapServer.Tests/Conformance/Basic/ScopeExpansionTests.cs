@@ -150,6 +150,22 @@ public class ScopeExpansionTests
         }
     }
 
+    [Fact]
+    public void GenerateCombinations_IgnoresRepeatedCharacters()
+    {
+        Assert.Equal(31, ScopeExtensions.GenerateCombinations("cruds").Count);
+        Assert.Equal(["r"], ScopeExtensions.GenerateCombinations(new string('r', 64)));
+        Assert.Equal(["rs", "r", "s"], ScopeExtensions.GenerateCombinations("rsrsrsrsrsrsrsrsrsrsrsrs"));
+    }
+
+    [Fact]
+    public void Expand_Long_Repeated_Suffix_Stays_Small()
+    {
+        var expanded = new HL7SmartScopeExpander().Expand([$"system/Patient.{new string('r', 40)}s"]).Order().ToList();
+
+        Assert.Equal(["system/Patient.r", "system/Patient.rs", "system/Patient.s"], expanded);
+    }
+
    
     [Fact]
     public async Task ScopeV2WithClientCredentialsTest()

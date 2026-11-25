@@ -29,8 +29,18 @@ public class SecurityHeadersAttribute : ActionFilterAttribute
                 var client = await clients.FindClientByIdAsync(grant.ClientId, context.HttpContext.RequestAborted);
                 if (client != null && client.ClientSecrets.Any(s => s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                 {
-                    if (client.LogoUri != null) {
-                        logoList.Add(client.LogoUri);}
+                    // Only the logo's https origin goes into the CSP: a raw URI could carry ';' or
+                    // spaces and add directives of its own.
+                    if (Uri.TryCreate(client.LogoUri, UriKind.Absolute, out var logoUri) &&
+                        logoUri.Scheme == Uri.UriSchemeHttps)
+                    {
+                        var origin = logoUri.GetLeftPart(UriPartial.Authority);
+
+                        if (!logoList.Contains(origin))
+                        {
+                            logoList.Add(origin);
+                        }
+                    }
                 }
             }
 

@@ -1,11 +1,16 @@
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Udap.UI.Pages.ServerSideSessions
 {
+    // Lists and ends every user's session, so it is limited to signed-in users on the local machine,
+    // like the Diagnostics page.
+    [SecurityHeaders]
+    [Authorize]
     public class IndexModel : PageModel
     {
         private readonly ISessionManagementService _sessionManagementService;
@@ -26,8 +31,13 @@ namespace Udap.UI.Pages.ServerSideSessions
         [BindProperty(SupportsGet = true)]
         public string Prev { get; set; }
 
-        public async Task OnGet()
+        public async Task<IActionResult> OnGet()
         {
+            if (!IsLocalRequest())
+            {
+                return NotFound();
+            }
+
             if (_sessionManagementService != null)
             {
                 UserSessions = await _sessionManagementService.QuerySessionsAsync(new SessionQuery
@@ -39,6 +49,8 @@ namespace Udap.UI.Pages.ServerSideSessions
                     SubjectId = Filter,
                 }, HttpContext.RequestAborted);
             }
+
+            return Page();
         }
 
         [BindProperty]
@@ -46,10 +58,26 @@ namespace Udap.UI.Pages.ServerSideSessions
 
         public async Task<IActionResult> OnPost()
         {
+            if (!IsLocalRequest() || _sessionManagementService == null)
+            {
+                return NotFound();
+            }
+
             await _sessionManagementService.RemoveSessionsAsync(new RemoveSessionsContext {
                 SessionId = SessionId,
             }, HttpContext.RequestAborted);
             return RedirectToPage("/ServerSideSessions/Index", new { Token, Filter, Prev });
+        }
+
+        private bool IsLocalRequest()
+        {
+            var remote = HttpContext.Connection.RemoteIpAddress;
+            if (remote == null)
+            {
+                return false;
+            }
+
+            return System.Net.IPAddress.IsLoopback(remote) || remote.Equals(HttpContext.Connection.LocalIpAddress);
         }
     }
 }

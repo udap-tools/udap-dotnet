@@ -272,7 +272,11 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             validationParameters.IssuerSigningKeys = keys;
 
             var tokenEndpointUser =
-                ValidateToken(idToken, tieredClient.IdPBaseUrl, clientId, validationParameters); //out var tokenEndpointJwt);
+                ValidateToken(idToken, tieredClient.IdPBaseUrl, clientId, validationParameters, out var issuer);
+
+            // Every upstream IdP signs in through this one scheme, so the scheme name alone does not say
+            // who vouched for the user. Carry the validated issuer so the host can link accounts on iss + sub.
+            properties.Items[TieredOAuthAuthenticationDefaults.IdPIssuerItem] = issuer;
 
             // nonce = tokenEndpointJwt.Payload.Nonce;
             // if (!string.IsNullOrEmpty(nonce))
@@ -305,7 +309,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         string idToken, 
         string idpBaseUrl,
         string clientId,
-        TokenValidationParameters validationParameters)
+        TokenValidationParameters validationParameters,
+        out string issuer)
     {
         if (!Options.SecurityTokenValidator.CanReadToken(idToken))
         {
@@ -330,9 +335,9 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         
         var principal = Options.SecurityTokenValidator.ValidateToken(idToken, validationParameters, out SecurityToken validatedToken);
 
-        if (validatedToken is JwtSecurityToken)
+        if (validatedToken is JwtSecurityToken validatedJwt && !string.IsNullOrEmpty(validatedJwt.Issuer))
         {
-            // jwt = validatedJwt;
+            issuer = validatedJwt.Issuer;
         }
         else
         {

@@ -129,15 +129,16 @@ public class UdapExternalLoginService : IUdapExternalLoginService
 
         var provider = result.Properties!.Items["scheme"]!;
         var providerUserId = userIdClaim.Value;
+        var providerKey = await GetExternalProviderKeyAsync(httpContext, provider, result.Properties);
 
-        var user = await _users.FindByExternalProviderAsync(provider, providerUserId, httpContext.RequestAborted);
+        var user = await _users.FindByExternalProviderAsync(providerKey, providerUserId, httpContext.RequestAborted);
         if (user == null)
         {
             // this is where a custom registration workflow could start; by default the user is
             // auto-provisioned. Remove the user id claim so it is not stored as an extra claim.
             var claims = externalUser.Claims.ToList();
             claims.Remove(userIdClaim);
-            user = await _users.AutoProvisionAsync(provider, providerUserId, claims, httpContext.RequestAborted);
+            user = await _users.AutoProvisionAsync(providerKey, providerUserId, claims, httpContext.RequestAborted);
         }
 
         // collect protocol data needed later (e.g. for sign-out) into the local auth cookie
@@ -169,6 +170,31 @@ public class UdapExternalLoginService : IUdapExternalLoginService
         }
 
         return UdapInteractionResult.Redirect(returnUrl);
+    }
+
+    /// <summary>
+    /// The provider name local accounts are linked on. For a Tiered OAuth login it is the scheme plus the
+    /// upstream IdP's issuer, since one scheme serves every IdP; a Tiered OAuth login without the issuer is
+    /// refused rather than linked on the scheme name alone. Other schemes keep the scheme name.
+    /// </summary>
+    private async Task<string> GetExternalProviderKeyAsync(HttpContext httpContext, string scheme, AuthenticationProperties properties)
+    {
+        if (properties.Items.TryGetValue(TieredOAuthAuthenticationDefaults.IdPIssuerItem, out var issuer) &&
+            !string.IsNullOrEmpty(issuer))
+        {
+            return TieredOAuthAuthenticationDefaults.ExternalProviderKey(scheme, issuer);
+        }
+
+        var schemes = httpContext.RequestServices?.GetService(typeof(IAuthenticationSchemeProvider)) as IAuthenticationSchemeProvider
+                      ?? _serviceProvider.GetService(typeof(IAuthenticationSchemeProvider)) as IAuthenticationSchemeProvider;
+        var handlerType = schemes == null ? null : (await schemes.GetSchemeAsync(scheme))?.HandlerType;
+
+        if (handlerType != null && typeof(TieredOAuthAuthenticationHandler).IsAssignableFrom(handlerType))
+        {
+            throw new Exception("Tiered OAuth login is missing the upstream IdP issuer");
+        }
+
+        return scheme;
     }
 
     // if the external login is OIDC-based, there are certain things we need to preserve to make logout work

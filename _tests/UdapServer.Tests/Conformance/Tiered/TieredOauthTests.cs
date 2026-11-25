@@ -607,6 +607,13 @@ public class TieredOauthTests
         Assert.Contains(_mockIdPPipeline.IdToken!.Claims, c => c.Type == "hl7_identifier");
         Assert.Equal("123", _mockIdPPipeline.IdToken.Claims.Single(c => c.Type == "hl7_identifier").Value);
 
+        // The local account is linked on the upstream IdP's issuer as well as its sub.
+        var provisioned = Assert.Single(_mockAuthorServerPipeline.Users, u => u.ProviderName != null);
+        Assert.Equal(
+            TieredOAuthAuthenticationDefaults.ExternalProviderKey(TieredOAuthAuthenticationDefaults.AuthenticationScheme, _mockIdPPipeline.IdToken.Issuer),
+            provisioned.ProviderName);
+        Assert.Equal(_mockIdPPipeline.IdToken.Subject, provisioned.ProviderSubjectId);
+
         // Run the authServer  https://server/connect/authorize/callback 
         _mockAuthorServerPipeline.BrowserClient.AllowAutoRedirect = false;
         

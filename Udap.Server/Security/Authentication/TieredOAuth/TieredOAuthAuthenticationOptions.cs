@@ -56,8 +56,10 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions
     /// <summary>
     /// The public base URL of this server, e.g. <c>https://auth.example.com</c>. The callback URL registered with
     /// upstream IdPs is this plus <see cref="Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions.CallbackPath"/>.
-    /// Defaults to the base URL given to <c>AddUdapServer</c> or the <c>UdapIdpBaseUrl</c> environment variable.
-    /// The callback is never built from the request's Host header; a challenge fails when this is not set.
+    /// Taken, in order, from code, the <c>TieredOAuth:CallbackBaseUrl</c> configuration value, and the base URL given to
+    /// <c>AddUdapServer</c> or the <c>UdapIdpBaseUrl</c> environment variable. Set it when this server's public origin
+    /// differs from <c>UdapIdpBaseUrl</c> (for example behind a gateway). The callback is never built from the request's
+    /// Host header; a challenge fails when none of these is set.
     /// </summary>
     public string? CallbackBaseUrl { get; set; }
 
@@ -65,7 +67,8 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions
     /// The upstream IdP base URLs this server may federate with, e.g. <c>https://idp.example.com</c>. When the
     /// list is empty (the default), any IdP whose UDAP metadata chains to a trusted anchor is accepted. When it is
     /// not empty, an <c>idp</c> that is not listed is refused before this server sends any request to it.
-    /// Compared case-insensitively, ignoring a trailing slash.
+    /// Compared case-insensitively, ignoring a trailing slash. Can be set from the <c>TieredOAuth:AllowedIdPs</c>
+    /// configuration array.
     /// </summary>
     public ICollection<string> AllowedIdPs { get; set; } = new List<string>();
 

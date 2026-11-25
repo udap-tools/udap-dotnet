@@ -26,6 +26,12 @@ public static class TieredOAuthAuthenticationDefaults
     public static readonly string CallbackPath = "/federation/udap-tiered/signin";
 
     /// <summary>
+    /// Configuration section <c>AddTieredOAuth</c> reads <see cref="TieredOAuthAuthenticationOptions.CallbackBaseUrl"/>
+    /// and <see cref="TieredOAuthAuthenticationOptions.AllowedIdPs"/> from.
+    /// </summary>
+    public const string ConfigurationSection = "TieredOAuth";
+
+    /// <summary>
     /// <see cref="AuthenticationProperties.Items"/> key holding the <c>iss</c> of the upstream IdP's validated
     /// id_token. Hosts link local accounts on this issuer plus <c>sub</c>, because every upstream IdP shares
     /// the one Tiered OAuth scheme name.

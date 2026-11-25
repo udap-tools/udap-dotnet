@@ -786,7 +786,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
         else
         {
-            await _replayCache.AddAsync(Purpose, jti, DateTimeOffset.FromUnixTimeSeconds(exp),
+            // The software statement is accepted until exp plus the token handler's clock skew, so the jti must be
+            // remembered at least that long or the same statement could be replayed in between.
+            await _replayCache.AddAsync(Purpose, jti, DateTimeOffset.FromUnixTimeSeconds(exp).Add(TokenValidationParameters.DefaultClockSkew),
                 _httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None);
         }
 

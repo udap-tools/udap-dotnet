@@ -279,6 +279,12 @@ public class UdapDcrValidatorTests
         Assert.NotNull(result);
         Assert.Equal(UdapDynamicClientRegistrationErrors.InvalidClientMetadata, result.Error);
         Assert.Equal(UdapDynamicClientRegistrationErrorDescriptions.Replay, result.ErrorDescription);
+
+        // The statement is still accepted for the token handler's clock skew after exp, so the jti must still be
+        // remembered then.
+        _clock.UtcNowFunc = () => expires.Add(TokenValidationParameters.DefaultClockSkew).AddSeconds(-1);
+        result = await validator.ValidateJti(document, EpochTime.GetIntDate(expires));
+        Assert.Equal(UdapDynamicClientRegistrationErrorDescriptions.Replay, result.ErrorDescription);
     }
 
     [Theory]

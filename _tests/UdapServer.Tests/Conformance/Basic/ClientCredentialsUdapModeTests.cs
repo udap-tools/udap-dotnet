@@ -483,6 +483,67 @@ public class ClientCredentialsUdapModeTests
         Assert.Contains("exceeds the maximum lifetime of 300 seconds from iat", tokenResponse.ErrorDescription);
     }
 
+    /// <summary>
+    /// iat is a required AnT claim; without it the maximum-lifetime check cannot be applied,
+    /// so an assertion with no iat is rejected.
+    /// </summary>
+    [Fact]
+    public async Task GetAccessToken_ClientAssertion_Missing_iat()
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
+
+        Assert.Null(regDocumentResult.GetError());
+
+        var now = DateTime.UtcNow;
+        var jwtPayload = new JwtPayLoadExtension(
+            regDocumentResult.ClientId,
+            IdentityServerPipeline.TokenEndpoint,
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, regDocumentResult.ClientId!),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+            },
+            now.ToUniversalTime(),
+            now.AddMinutes(1).ToUniversalTime()
+        );
+
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build("RS384");
+
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = IdentityServerPipeline.TokenEndpoint,
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.rs"
+        };
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        Assert.True(tokenResponse.IsError);
+        Assert.Equal("invalid_client", tokenResponse.Error);
+        Assert.Contains("iat claim is missing", tokenResponse.ErrorDescription);
+    }
+
     [Fact]
     public async Task GetAccessToken_Without_x5c()
     {

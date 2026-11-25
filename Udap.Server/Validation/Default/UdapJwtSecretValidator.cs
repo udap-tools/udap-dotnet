@@ -173,9 +173,17 @@ public class UdapJwtSecretValidator : ISecretValidator
 
         // UDAP JWT-Based Client Authentication section 6.3: a maximum AnT lifetime of 5 minutes is RECOMMENDED.
         // TokenValidationParameters only checks that exp has not already passed, so bound exp against iat here.
+        // UDAP JWT-Based Client Authentication section 4 lists iat as an AnT claim and 6.3 has the AS validate it;
+        // without it the lifetime bound below could not be applied.
         var iat = jwtToken.IssuedAt;
+        if (iat == DateTime.MinValue)
+        {
+            _logger.LogError("iat is missing.");
+            SetErrorDescription("iat claim is missing from client assertion");
+            return fail;
+        }
+
         if (_serverSettings.ClientAssertionMaxLifetimeSeconds > 0
-            && iat != DateTime.MinValue
             && exp > iat.AddSeconds(_serverSettings.ClientAssertionMaxLifetimeSeconds))
         {
             _logger.LogError("Client assertion exp exceeds the maximum lifetime of {MaxLifetimeSeconds} seconds from iat for client_id: {ClientId}. iat={Iat:O} exp={Exp:O}",

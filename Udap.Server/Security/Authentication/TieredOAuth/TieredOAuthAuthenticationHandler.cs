@@ -98,18 +98,14 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                            throw new InvalidOperationException("Missing IdP authorization endpoint.");
 
         var community = properties.GetParameter<string>(UdapConstants.Community);
-        
-        if (string.IsNullOrEmpty(community))
+
+        if (!string.IsNullOrEmpty(community))
         {
-            queryStrings.Add(UdapConstants.Community, community!);
+            queryStrings.Add(UdapConstants.Community, community);
         }
 
-        var tokenEndpoint = properties.GetParameter<string>(UdapConstants.Discovery.TokenEndpoint);
-
-        if (string.IsNullOrEmpty(tokenEndpoint))
-        {
-            Options.TokenEndpoint = tokenEndpoint!;
-        } 
+        // The token endpoint is not written to Options here: the options instance is shared by every
+        // request, and the code exchange reads the endpoint from the stored tiered client instead.
 
         // Dynamic options
         return QueryHelpers.AddQueryString(authEndpoint, queryStrings!);

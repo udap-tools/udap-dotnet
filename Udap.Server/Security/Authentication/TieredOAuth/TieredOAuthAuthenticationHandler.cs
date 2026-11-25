@@ -74,7 +74,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var queryStrings = new Dictionary<string, string>
         {
             { "response_type", "code" },
-            { "redirect_uri", redirectUri }
+            // The base class builds redirectUri from the request's Host header; use the configured callback.
+            { "redirect_uri", BuildCallbackUrl() }
         };
 
         AddQueryString(queryStrings, properties, "client_id", true);
@@ -224,7 +225,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
 
             var codeExchangeContext =
-                new OAuthCodeExchangeContext(properties, code.ToString(), BuildRedirectUri(Options.CallbackPath));
+                new OAuthCodeExchangeContext(properties, code.ToString(), BuildCallbackUrl());
 
             // UDAP
             using var tokens = await ExchangeCodeAsync(codeExchangeContext);
@@ -421,8 +422,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var communityParam = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
 
         var clientId = context.Properties.Items["client_id"] ?? throw new InvalidOperationException("client_id is null");
-        var resourceHolderRedirectUrl =
-            $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
+        var resourceHolderRedirectUrl = BuildCallbackUrl();
 
         var requestParams = Context.Request.Query;
         var code = requestParams["code"];
@@ -465,6 +465,24 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         return  authTokenResponse.ToMSAuthTokenResponse();
     }
 
+    /// <summary>
+    /// Builds the callback URL from <see cref="TieredOAuthAuthenticationOptions.CallbackBaseUrl"/> and the callback path, not from the
+    /// request's scheme and Host header: this URL is registered with the IdP and receives its authorization codes.
+    /// </summary>
+    protected string BuildCallbackUrl()
+    {
+        var baseUrl = Options.CallbackBaseUrl;
+
+        if (string.IsNullOrEmpty(baseUrl) || !Uri.TryCreate(baseUrl, UriKind.Absolute, out _))
+        {
+            throw new InvalidOperationException(
+                "TieredOAuthAuthenticationOptions.CallbackBaseUrl is not set to an absolute URL. " +
+                "Pass baseUrl to AddUdapServer, set the UdapIdpBaseUrl environment variable, or set CallbackBaseUrl.");
+        }
+
+        return $"{baseUrl.TrimEnd('/')}{Options.CallbackPath}";
+    }
+
     /// <inheritdoc />
     protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
     {
@@ -475,7 +493,9 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         _ = scope.FromSpaceSeparatedString().FirstOrDefault(s => s == UdapConstants.StandardScopes.Udap) ?? throw new Exception("Missing required udap scope from client for Tiered OAuth");
         var clientRedirectUrl = (requestParams.GetValues("redirect_uri") ?? throw new InvalidOperationException()).Last();
-        var updateRegistration = requestParams.GetValues("update_registration")?.Last();
+
+        // Fails before any IdP is contacted when the server's own base URL is not configured.
+        var resourceHolderRedirectUrl = BuildCallbackUrl();
 
         // Validate idp Server;
         var idpUri = new Uri(idpParam);
@@ -499,9 +519,6 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         _udapClient.TokenError += message => properties.Parameters["TokenError"] = message;
         
         var response = await _udapClient.ValidateResource(idp, communityParam, cancellationToken: Context.RequestAborted);
-        
-        var resourceHolderRedirectUrl =
-            $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Options.CallbackPath}";
 
         if (response.IsError)
         {
@@ -542,9 +559,9 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             idpClientId = idpClient.ClientId;
         }
 
-        // TODO Special provision query param updateRegistration to enable update registration.
-        // Not sure if it stays here or lives in an Admin tool.
-        if (idpClient == null || !idpClient.Enabled || updateRegistration == "true")
+        // Register with the IdP only when this server has no enabled registration there yet. The request
+        // cannot force a re-registration.
+        if (idpClient == null || !idpClient.Enabled)
         {
             await _certificateStore.Resolve(Context.RequestAborted);
             var communityName = communityParam ?? _certificateStore.IssuedCertificates.First().Community; //TODO: query by 

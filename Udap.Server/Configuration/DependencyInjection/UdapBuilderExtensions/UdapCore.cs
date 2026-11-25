@@ -25,6 +25,7 @@ using Udap.Common.Extensions;
 using Udap.Server;
 using Udap.Server.Configuration.DependencyInjection;
 using Udap.Server.ResponseHandling;
+using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Server.Storage.DbContexts;
 using Udap.Server.Storage.Options;
 using Udap.Server.Storage.Stores;
@@ -54,6 +55,16 @@ public static  class UdapServiceBuilderExtensionsCore
                     "Missing UdapIdpBaseUrl parameter or environment variable in AddUdapServer extension method.");
             }
         }
+
+        // Tiered OAuth builds the callback it registers with upstream IdPs from this server's own base URL.
+        var serverBaseUrl = udapIdpBaseUrl;
+        builder.Services.PostConfigureAll<TieredOAuthAuthenticationOptions>(options =>
+        {
+            if (string.IsNullOrEmpty(options.CallbackBaseUrl))
+            {
+                options.CallbackBaseUrl = serverBaseUrl;
+            }
+        });
 
         udapIdpBaseUrl = $"{udapIdpBaseUrl.EnsureTrailingSlash()}{Constants.ProtocolRoutePaths.Register}";
 

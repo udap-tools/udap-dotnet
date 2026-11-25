@@ -53,6 +53,14 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions
     /// <summary>
     /// Gets or sets the <see cref="ISecurityTokenValidator"/> used to validate identity tokens.
     /// </summary>
+    /// <summary>
+    /// The public base URL of this server, e.g. <c>https://auth.example.com</c>. The callback URL registered with
+    /// upstream IdPs is this plus <see cref="Microsoft.AspNetCore.Authentication.RemoteAuthenticationOptions.CallbackPath"/>.
+    /// Defaults to the base URL given to <c>AddUdapServer</c> or the <c>UdapIdpBaseUrl</c> environment variable.
+    /// The callback is never built from the request's Host header; a challenge fails when this is not set.
+    /// </summary>
+    public string? CallbackBaseUrl { get; set; }
+
     public ISecurityTokenValidator SecurityTokenValidator { get; set; }
 
     /// <summary>

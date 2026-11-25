@@ -51,6 +51,9 @@ public static class UdapConfigurationServiceCollectionExtensions
         builder.Services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
         builder.Services.TryAddTransient<IUdapDynamicClientRegistrationValidator, UdapDynamicClientRegistrationValidator>();
         builder.Services.TryAddTransient<IUdapDynamicClientRegistrationProcessor, UdapDynamicClientRegistrationProcessor>();
+        // Optional chain policy (for example a per-community maximum chain length). Nothing is enforced until
+        // the application configures TrustChainValidatorOptions.
+        builder.Services.AddOptions<TrustChainValidatorOptions>();
         builder.Services.TryAddSingleton<TrustChainValidator>();
 
         if (!builder.Services.Any(sd => sd.ServiceType == typeof(UdapCertificateCacheMarker)))

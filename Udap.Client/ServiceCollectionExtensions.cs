@@ -27,6 +27,9 @@ public static class ServiceCollectionExtensions
     /// <returns>An <see cref="IHttpClientBuilder"/> for further configuration.</returns>
     public static IHttpClientBuilder AddUdapClient(this IServiceCollection services)
     {
+        // Optional chain policy (for example a per-community maximum chain length). Nothing is enforced until
+        // the application configures TrustChainValidatorOptions.
+        services.AddOptions<TrustChainValidatorOptions>();
         services.TryAddScoped<TrustChainValidator>();
         services.TryAddScoped<UdapClientDiscoveryValidator>();
 

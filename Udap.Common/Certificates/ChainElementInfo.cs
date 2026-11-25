@@ -106,7 +106,19 @@ public enum ChainProblemStatus
     /// <summary>The CRL could not be downloaded.</summary>
     CrlFetchFailed = 256,
     /// <summary>The revocation status of the certificate could not be determined.</summary>
-    RevocationStatusUnknown = 512
+    RevocationStatusUnknown = 512,
+    /// <summary>
+    /// The chain has more certificates than the configured maximum chain length
+    /// (<see cref="TrustChainValidatorOptions.MaxChainLength"/>). A configured limit always fails validation,
+    /// whether or not this flag is among the validator's problem flags.
+    /// </summary>
+    ChainLengthExceeded = 1024,
+    /// <summary>
+    /// An intermediate CA certificate's basic constraints <c>pathLenConstraint</c> is exceeded: more intermediate CA
+    /// certificates follow it in the chain than it allows (RFC 5280 section 4.2.1.9). Included in
+    /// <see cref="TrustChainValidator.DefaultProblemFlags"/>; leave it out of custom problem flags to not enforce it.
+    /// </summary>
+    PathLengthConstraintExceeded = 2048
 }
 
 /// <summary>

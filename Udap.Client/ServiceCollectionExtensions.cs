@@ -31,7 +31,9 @@ public static class ServiceCollectionExtensions
         // the application configures TrustChainValidatorOptions.
         services.AddOptions<TrustChainValidatorOptions>();
         services.TryAddScoped<TrustChainValidator>();
-        services.TryAddScoped<UdapClientDiscoveryValidator>();
+        // Transient: the validator holds the server's certificate between ValidateJwtToken and ValidateTrustChain,
+        // so two clients in one scope (e.g. a Blazor Server circuit) must not share an instance.
+        services.TryAddTransient<UdapClientDiscoveryValidator>();
 
         return services.AddHttpClient<IUdapClient, UdapClient>();
     }

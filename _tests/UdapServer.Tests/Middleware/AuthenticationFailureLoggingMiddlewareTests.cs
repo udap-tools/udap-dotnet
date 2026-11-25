@@ -187,7 +187,9 @@ public class SecurityEventMiddlewareTests
 
         await middleware.InvokeAsync(context);
 
-        Assert.Contains(_logMessages, m => m.Contains("POST") && m.Contains("?_count=10&_sort=name"));
+        // Parameter names only: search values are often patient details.
+        Assert.Contains(_logMessages, m => m.Contains("POST") && m.Contains("Query=_count,_sort"));
+        Assert.DoesNotContain(_logMessages, m => m.Contains("=10") || m.Contains("=name"));
     }
 
     [Fact]
@@ -370,9 +372,65 @@ public class SecurityEventMiddlewareTests
         Assert.Contains("200", logEntry);
         Assert.Contains("GET", logEntry);
         Assert.Contains("/fhir/r4/Patient", logEntry);
-        Assert.Contains("?_count=5", logEntry);
+        Assert.Contains("Query=_count", logEntry);
+        Assert.DoesNotContain("=5", logEntry);
+        Assert.Contains("LoginVerified=True", logEntry);
         Assert.Contains("gzip", logEntry);
         Assert.Contains("br", logEntry);
+    }
+
+    [Fact]
+    public async Task FailedAuth_LoginFromUnvalidatedToken_IsMarkedUnverified()
+    {
+        var token = CreateTestJwt("claimed-client");
+        var middleware = new SecurityEventMiddleware(_ => Task.CompletedTask, _logger);
+
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/fhir/r4/Patient";
+        context.Request.Method = "GET";
+        context.Request.Headers.Authorization = $"Bearer {token}";
+
+        await middleware.InvokeAsync(context);
+
+        var logEntry = Assert.Single(_logMessages, m => m.StartsWith("SecurityEvent="));
+        Assert.Contains("Login=claimed-client", logEntry);
+        Assert.Contains("LoginVerified=False", logEntry);
+    }
+
+    [Fact]
+    public async Task FailedAuth_LoginWithLineBreaks_CannotForgeLogLines()
+    {
+        var token = CreateTestJwt("evil\r\nSecurityEvent=SuccessfulAccess, Login=admin");
+        var middleware = new SecurityEventMiddleware(_ => Task.CompletedTask, _logger);
+
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/fhir/r4/Patient";
+        context.Request.Method = "GET";
+        context.Request.Headers.Authorization = $"Bearer {token}";
+
+        await middleware.InvokeAsync(context);
+
+        var logEntry = Assert.Single(_logMessages, m => m.StartsWith("SecurityEvent="));
+        Assert.Contains("evilSecurityEvent=SuccessfulAccess", logEntry);
+        Assert.DoesNotContain("\r", logEntry);
+        Assert.DoesNotContain("\n", logEntry);
+    }
+
+    [Fact]
+    public async Task LongHeaderValues_AreCapped()
+    {
+        var middleware = new SecurityEventMiddleware(_ => Task.CompletedTask, _logger);
+
+        var context = new DefaultHttpContext();
+        context.Request.Path = "/fhir/r4/Patient";
+        context.Request.Method = "GET";
+        context.Request.Headers.AcceptEncoding = new string('x', 1000);
+
+        await middleware.InvokeAsync(context);
+
+        var logEntry = Assert.Single(_logMessages, m => m.StartsWith("SecurityEvent="));
+        Assert.Contains(new string('x', 256) + "...", logEntry);
+        Assert.DoesNotContain(new string('x', 257), logEntry);
     }
 
     private static string CreateTestJwt(string clientId)

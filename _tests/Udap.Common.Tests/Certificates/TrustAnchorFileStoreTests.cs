@@ -56,4 +56,41 @@ public class TrustAnchorFileStoreTests
 
         await Assert.ThrowsAsync<FileNotFoundException>(() => store.Resolve());
     }
+
+    [Fact]
+    public async Task Resolve_After_Manifest_Change_Drops_Removed_Anchors()
+    {
+        static Community CommunityWithAnchor(string name) => new()
+        {
+            Name = name,
+            Anchors = new List<AnchoFile> { new AnchoFile { FilePath = "CertStore/anchors/SureFhirLabs_CA.cer" } }
+        };
+
+        var before = new UdapFileCertStoreManifest
+        {
+            Communities = new List<Community> { CommunityWithAnchor("udap://one"), CommunityWithAnchor("udap://two") }
+        };
+        var after = new UdapFileCertStoreManifest
+        {
+            Communities = new List<Community> { CommunityWithAnchor("udap://one") }
+        };
+
+        Action<UdapFileCertStoreManifest, string?>? onChange = null;
+        var monitor = Substitute.For<IOptionsMonitor<UdapFileCertStoreManifest>>();
+        monitor.CurrentValue.Returns(before);
+        monitor.OnChange(Arg.Do<Action<UdapFileCertStoreManifest, string?>>(listener => onChange = listener));
+
+        var store = new TrustAnchorFileStore(monitor, Substitute.For<ILogger<TrustAnchorFileStore>>());
+
+        var resolved = await store.Resolve();
+        Assert.Equal(2, resolved.AnchorCertificates.Count);
+
+        monitor.CurrentValue.Returns(after);
+        Assert.NotNull(onChange);
+        onChange(after, null);
+
+        resolved = await store.Resolve();
+        var anchor = Assert.Single(resolved.AnchorCertificates);
+        Assert.Equal("udap://one", anchor.Community);
+    }
 }

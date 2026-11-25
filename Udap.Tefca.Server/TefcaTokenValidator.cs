@@ -125,9 +125,10 @@ public class TefcaTokenValidator : ICommunityTokenValidator
 
         // id_token is Required in the tefca_ias AEO; respond with invalid_grant if missing
         // (SOP v2.0 Section 6.11, Table 4)
+        // When no typed deserializer is registered for tefca_ias the value arrives as raw JSON;
+        // read id_token from it too, so the check is not skipped.
         if (context.Extensions.TryGetValue(TefcaConstants.UdapAuthorizationExtensions.TEFCAIAS, out var iasValue)
-            && iasValue is TEFCAIASAuthorizationExtension ias
-            && IsMissing(ias.IdToken))
+            && IsMissing(GetIasIdToken(iasValue)))
         {
             return Task.FromResult(AuthorizationExtensionValidationResult.Failure(
                 "invalid_grant",
@@ -196,6 +197,17 @@ public class TefcaTokenValidator : ICommunityTokenValidator
     /// Matches an NPI (10 digits) or TIN (9 digits) appended to organization_name.
     /// </summary>
     private static readonly Regex NpiOrTinPattern = new(@"\d{9,10}", RegexOptions.Compiled);
+
+    private static JsonElement? GetIasIdToken(object? iasValue)
+    {
+        return iasValue switch
+        {
+            TEFCAIASAuthorizationExtension ias => ias.IdToken,
+            JsonElement { ValueKind: JsonValueKind.Object } json
+                when json.TryGetProperty(TefcaConstants.TEFCAIASAuthorizationExtension.IdToken, out var idToken) => idToken,
+            _ => null
+        };
+    }
 
     private static bool IsMissing(JsonElement? idToken)
     {

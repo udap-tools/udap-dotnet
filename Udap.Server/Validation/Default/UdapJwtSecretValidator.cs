@@ -255,6 +255,17 @@ public class UdapJwtSecretValidator : ISecretValidator
                     "UDAP identity secrets are missing or expired for client_id: {ClientId}. Attempting secret rollover.",
                     parsedSecret.Id);
 
+                // Rollover saves the presented certificate, so it must chain to a trusted anchor first. The full
+                // validation against the client's own community still runs below.
+                if (!await IsTrustedByAnEnabledAnchorAsync(parsedSecret.Id, endCertificate, ct))
+                {
+                    _logger.LogError(
+                        "Certificate presented for secret rollover is not trusted by any enabled anchor for client_id: {ClientId}",
+                        parsedSecret.Id);
+                    SetErrorDescription("Certificate chain validation failed");
+                    return fail;
+                }
+
                 var rolledSecrets = await _clientStore.RolloverClientSecrets(udapSecret, ct);
 
                 if (rolledSecrets == null || rolledSecrets.Count == 0)
@@ -319,6 +330,29 @@ public class UdapJwtSecretValidator : ISecretValidator
         }
 
         return success;
+    }
+
+    /// <summary>
+    /// <c>true</c> when <paramref name="certificate"/> chains to one of the server's enabled trust anchors.
+    /// </summary>
+    private async Task<bool> IsTrustedByAnEnabledAnchorAsync(string clientId, X509Certificate2 certificate, CancellationToken ct)
+    {
+        var anchorCertificates = await _clientStore.GetAnchorsCertificates(null, ct);
+
+        if (anchorCertificates == null || anchorCertificates.Count == 0)
+        {
+            return false;
+        }
+
+        var result = await _trustChainValidator.IsTrustedCertificateAsync(
+            clientId,
+            certificate,
+            await _clientStore.GetIntermediateCertificates(ct),
+            anchorCertificates,
+            await _clientStore.GetAnchors(null, ct),
+            ct);
+
+        return result.IsValid;
     }
 
     /// <summary>

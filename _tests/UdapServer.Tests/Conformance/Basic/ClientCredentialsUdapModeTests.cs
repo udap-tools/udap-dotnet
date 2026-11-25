@@ -1868,6 +1868,51 @@ public class ClientCredentialsUdapModeTests
         Assert.Equal(Convert.ToBase64String(clientCert.Export(X509ContentType.Cert)), storedCertificate);
     }
 
+    /// <summary>
+    /// Secret rollover saves the presented certificate, so a certificate that names the registered issuer but does
+    /// not chain to a trusted anchor must be refused before anything is saved.
+    /// </summary>
+    [Fact]
+    public async Task GetAccessToken_Rollover_With_Untrusted_Certificate_Is_Rejected_And_Not_Saved()
+    {
+        var clientCert = LoadPfx("CertStore/issued/fhirLabsApiClientLocalhostCert2.pfx");
+        var regDocumentResult = await RegisterClientCredentialsClient(clientCert);
+
+        var client = _mockPipeline.Clients.Single(c => c.ClientId == regDocumentResult.ClientId);
+        var registeredIssuer = client.ClientSecrets
+            .Single(s => s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME).Value;
+        var expired = DateTime.Now + TimeSpan.FromDays(-1);
+        foreach (var secret in client.ClientSecrets)
+        {
+            secret.Expiration = expired;
+        }
+
+        using var rsa = System.Security.Cryptography.RSA.Create(2048);
+        var request = new CertificateRequest("CN=untrusted", rsa, System.Security.Cryptography.HashAlgorithmName.SHA256,
+            System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+        var san = new SubjectAlternativeNameBuilder();
+        san.AddUri(new Uri(registeredIssuer));
+        request.CertificateExtensions.Add(san.Build());
+        using var untrustedCert = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
+
+        var clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
+                regDocumentResult.ClientId,
+                IdentityServerPipeline.TokenEndpoint,
+                untrustedCert)
+            .WithScope("system/Patient.rs")
+            .Build("RS384");
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        Assert.True(tokenResponse.IsError, "an untrusted certificate authenticated the client through rollover");
+        Assert.Equal("invalid_client", tokenResponse.Error);
+
+        var storedCertificate = client.ClientSecrets
+            .Single(s => s.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE).Value;
+        Assert.Equal(Convert.ToBase64String(clientCert.Export(X509ContentType.Cert)), storedCertificate);
+        Assert.All(client.ClientSecrets, s => Assert.Equal(expired, s.Expiration));
+    }
+
     private async Task<UdapDynamicClientRegistrationDocument> RegisterClientCredentialsClient(X509Certificate2 clientCert)
     {
         var udapClient = _mockPipeline.Resolve<IUdapClient>();

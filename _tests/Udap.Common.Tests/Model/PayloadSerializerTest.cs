@@ -108,4 +108,17 @@ public class PayloadSerializerTest
         Assert.Equal(b2bHl7User.PurposeOfUse!.ToList(), b2bHl7UserResult.PurposeOfUse!.ToList());
         Assert.Equal(b2bHl7User.ConsentPolicy!.ToList(), b2bHl7UserResult.ConsentPolicy!.ToList());
     }
+
+    [Theory]
+    [InlineData("""{"version":"1","organization_id":"https://example.org","purpose_of_use":null}""")]
+    [InlineData("""{"version":"1","organization_id":"https://example.org","purpose_of_use":[]}""")]
+    [InlineData("""{"version":"1","organization_id":"https://example.org"}""")]
+    public void Hl7B2B_Validate_Requires_PurposeOfUse(string json)
+    {
+        var b2b = JsonSerializer.Deserialize<HL7B2BAuthorizationExtension>(json)!;
+
+        Assert.Contains(
+            $"Missing required {UdapConstants.HL7B2BAuthorizationExtension.PurposeOfUse}",
+            b2b.Validate());
+    }
 }

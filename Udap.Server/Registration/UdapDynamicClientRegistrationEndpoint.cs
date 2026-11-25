@@ -7,7 +7,6 @@
 // */
 #endregion
 
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Http;
@@ -52,14 +51,6 @@ public class UdapDynamicClientRegistrationEndpoint
     /// <returns></returns>
     public async Task Process(HttpContext httpContext, CancellationToken token)
     {
-
-        if (_logger.IsEnabled(LogLevel.Debug))
-        {
-            var bodyStr = await GetBody(httpContext);
-            _logger.LogDebug("Registration Request: {Request}", bodyStr);
-            _logger.LogDebug("Registration Request Content-Type: {contentType}", httpContext.Request.ContentType);
-        }
-
         //
         // Can't tell if this is truly required from specifications.
         // Maybe search the DCR RFC's
@@ -68,6 +59,7 @@ public class UdapDynamicClientRegistrationEndpoint
         //
         if (!httpContext.Request.HasJsonContentType())
         {
+            _logger.LogDebug("Registration rejected: unsupported Content-Type {ContentType}", httpContext.Request.ContentType);
             httpContext.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
             return;
         }
@@ -81,7 +73,6 @@ public class UdapDynamicClientRegistrationEndpoint
         catch (Exception ex)
         {
             _logger.LogWarning(ex, UdapDynamicClientRegistrationErrorDescriptions.MalformedMetaDataDocument);
-            _logger.LogDebug("Request: {Request}", await GetBody(httpContext));
 
             httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
             await httpContext.Response.WriteAsJsonAsync(new UdapDynamicClientRegistrationErrorResponse
@@ -232,16 +223,6 @@ public class UdapDynamicClientRegistrationEndpoint
 
         await httpContext.Response.WriteAsJsonAsync(registrationResponse, options, "application/json", cancellationToken: token);
     }
-
-    private static async Task<string> GetBody(HttpContext context)
-    {
-        context.Request.EnableBuffering();
-        using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, true, 1024, true);
-        var bodyStr = await reader.ReadToEndAsync();
-        context.Request.Body.Seek(0, SeekOrigin.Begin);
-        return bodyStr;
-    }
-
 
     //
     // RFC7591 DCR, states,

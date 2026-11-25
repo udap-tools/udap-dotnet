@@ -26,6 +26,24 @@ public class CertificateDownloadCache : ICertificateDownloadCache
     /// </summary>
     public const string CacheName = "UdapCertificates";
 
+    /// <summary>
+    /// Name of the <see cref="HttpClient"/> registered for AIA and CRL downloads.
+    /// </summary>
+    public const string HttpClientName = "UdapCertificateDownloads";
+
+    /// <summary>
+    /// Longest time a downloaded certificate or CRL stays cached, whatever its NotAfter or
+    /// NextUpdate says. Downloads happen before the chain is trusted, so the server that
+    /// answered does not get to choose how long its answer is kept.
+    /// </summary>
+    public static readonly TimeSpan MaxCacheDuration = TimeSpan.FromHours(24);
+
+    /// <summary>
+    /// Memory budget, in bytes, of the default in-memory certificate cache. Each entry is sized
+    /// by its downloaded length, so the cache cannot grow without bound.
+    /// </summary>
+    public const long DefaultMemoryCacheSizeLimit = 64L * 1024 * 1024;
+
     private const string IntermediatePrefix = "intermediate:";
     private const string CrlPrefix = "crl:";
 
@@ -79,13 +97,8 @@ public class CertificateDownloadCache : ICertificateDownloadCache
 #endif
 
             var timeToExpiry = cert.NotAfter.ToUniversalTime() - DateTime.UtcNow;
-            var options = new FusionCacheEntryOptions();
-            if (timeToExpiry > TimeSpan.Zero)
-            {
-                options.Duration = timeToExpiry;
-            }
 
-            await _cache.SetAsync(cacheKey, data, options, cancellationToken);
+            await _cache.SetAsync(cacheKey, data, EntryOptions(timeToExpiry, data.Length), cancellationToken);
 
             return cert;
         }
@@ -116,13 +129,7 @@ public class CertificateDownloadCache : ICertificateDownloadCache
             var expiry = crl.NextUpdate ?? DateTime.UtcNow.Add(_defaultCrlTtl);
             var timeToExpiry = expiry.ToUniversalTime() - DateTime.UtcNow;
 
-            var options = new FusionCacheEntryOptions();
-            if (timeToExpiry > TimeSpan.Zero)
-            {
-                options.Duration = timeToExpiry;
-            }
-
-            await _cache.SetAsync(cacheKey, data, options, cancellationToken);
+            await _cache.SetAsync(cacheKey, data, EntryOptions(timeToExpiry, data.Length), cancellationToken);
 
             return crl;
         }
@@ -131,6 +138,18 @@ public class CertificateDownloadCache : ICertificateDownloadCache
             _logger.LogWarning(ex, "Failed to download CRL from {Url}", url);
             return null;
         }
+    }
+
+    private static FusionCacheEntryOptions EntryOptions(TimeSpan timeToExpiry, long size)
+    {
+        var options = new FusionCacheEntryOptions { Size = size };
+
+        if (timeToExpiry > TimeSpan.Zero)
+        {
+            options.Duration = timeToExpiry < MaxCacheDuration ? timeToExpiry : MaxCacheDuration;
+        }
+
+        return options;
     }
 
     /// <inheritdoc />

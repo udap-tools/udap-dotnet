@@ -12,7 +12,9 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Stores;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Udap.Common.Certificates;
@@ -53,14 +55,31 @@ public static class UdapConfigurationServiceCollectionExtensions
 
         if (!builder.Services.Any(sd => sd.ServiceType == typeof(UdapCertificateCacheMarker)))
         {
-            builder.Services.AddFusionCache(CertificateDownloadCache.CacheName);
+            builder.Services.AddFusionCache(CertificateDownloadCache.CacheName)
+                .WithMemoryCache(_ => new MemoryCache(new MemoryCacheOptions
+                {
+                    SizeLimit = CertificateDownloadCache.DefaultMemoryCacheSizeLimit
+                }))
+                // A size limit requires every entry to carry a size; downloads set their own.
+                .WithDefaultEntryOptions(options => options.Size = 1);
             builder.Services.AddSingleton<UdapCertificateCacheMarker>();
         }
 
         // AIA and CRL URLs come from certificates, so a download must not be redirected somewhere else.
-        builder.Services.AddHttpClient<CertificateDownloadCache>()
-            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
-        builder.Services.TryAddSingleton<ICertificateDownloadCache, CertificateDownloadCache>();
+        builder.Services.AddHttpClient(CertificateDownloadCache.HttpClientName)
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                // The singleton cache keeps one client; recycling connections lets DNS changes through.
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5)
+            });
+
+        // Built from the named client explicitly: a type-activated singleton would be handed the
+        // default HttpClient instead, which follows redirects.
+        builder.Services.TryAddSingleton<ICertificateDownloadCache>(sp => new CertificateDownloadCache(
+            sp.GetRequiredService<IFusionCacheProvider>(),
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(CertificateDownloadCache.HttpClientName),
+            sp.GetRequiredService<ILogger<CertificateDownloadCache>>()));
 
         return builder;
     }

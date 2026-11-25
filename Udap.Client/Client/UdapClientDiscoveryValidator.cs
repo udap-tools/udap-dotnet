@@ -73,9 +73,10 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
     {
         var tokenHandler = new JsonWebTokenHandler();
 
-        if (udapServerMetaData.SignedMetadata == null)
+        if (string.IsNullOrEmpty(udapServerMetaData.SignedMetadata))
         {
             NotifyTokenError($"SignedMetadata is missing at {baseUrl}");
+            return false;
         }
 
         var jwt = tokenHandler.ReadJsonWebToken(udapServerMetaData.SignedMetadata);
@@ -156,6 +157,10 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
         }
     }
 
+    // Signing algorithms UDAP allows for signed metadata, by key type.
+    private static readonly string[] RsaAlgorithms = [UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384];
+    private static readonly string[] EcdsaAlgorithms = [UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384];
+
     private async Task<TokenValidationResult> ValidateToken(
         UdapMetadata udapServerMetaData,
         JsonWebTokenHandler tokenHandler,
@@ -178,7 +183,8 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new RsaSecurityKey(publicKey),
-                    ValidAlgorithms = [jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)], //must match signing algorithm
+                    // The UDAP RSA algorithms, not whatever the token's own alg header names.
+                    ValidAlgorithms = RsaAlgorithms,
                 });
 
             return validatedToken;
@@ -199,7 +205,8 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new ECDsaSecurityKey(ecdsaPublicKey),
-                    ValidAlgorithms = [jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)], //must match signing algorithm
+                    // The UDAP ECDSA algorithms, not whatever the token's own alg header names.
+                    ValidAlgorithms = EcdsaAlgorithms,
                 });
 
             return validatedToken;

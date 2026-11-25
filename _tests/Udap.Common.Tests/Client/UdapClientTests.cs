@@ -926,8 +926,46 @@ public class UdapClientTests
 
         var metadata = new UdapMetadata { SignedMetadata = null };
 
-        await Assert.ThrowsAnyAsync<Exception>(
-            () => discoveryValidator.ValidateJwtToken(metadata, "https://fhirlabs.net/fhir/r4"));
+        var result = await discoveryValidator.ValidateJwtToken(metadata, "https://fhirlabs.net/fhir/r4");
+
+        Assert.False(result);
+        Assert.Contains("SignedMetadata is missing", capturedError);
+    }
+
+    [Fact]
+    public async Task ValidateJwtToken_AlgorithmOutsideUdapList_ReturnsFalse()
+    {
+        var (_, udapClientDiscoveryValidator, _, _) = await BuildClientSupport();
+
+        string? capturedError = null;
+        udapClientDiscoveryValidator.TokenError += msg => capturedError = msg;
+
+        var cert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+        using var rsa = cert.GetRSAPrivateKey()!;
+
+        // Correctly signed with the certificate's key, but with RS512, which UDAP does not list.
+        var handler = new JsonWebTokenHandler();
+        var jwt = handler.CreateToken(new SecurityTokenDescriptor
+        {
+            Issuer = "https://fhirlabs.net/fhir/r4",
+            Claims = new Dictionary<string, object> { ["sub"] = "https://fhirlabs.net/fhir/r4" },
+            SigningCredentials = new SigningCredentials(
+                new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha512)
+            {
+                CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false }
+            },
+            AdditionalHeaderClaims = new Dictionary<string, object>
+            {
+                ["x5c"] = new[] { Convert.ToBase64String(cert.RawData) }
+            }
+        });
+
+        var result = await udapClientDiscoveryValidator.ValidateJwtToken(
+            new UdapMetadata { SignedMetadata = jwt }, "https://fhirlabs.net/fhir/r4");
+
+        // Accepted before the allowed algorithms were fixed to the UDAP list.
+        Assert.False(result);
+        Assert.Contains("Signature validation failed", capturedError);
     }
 
     [Fact]

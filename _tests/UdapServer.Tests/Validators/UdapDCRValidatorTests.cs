@@ -9,6 +9,7 @@
 
 using System.Net;
 using System.Reflection;
+using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
 using Duende.IdentityModel;
 using Microsoft.AspNetCore.Http;
@@ -316,6 +317,47 @@ public class UdapDcrValidatorTests
         var validator = BuildValidator(new ServerSettings { AllowLoopbackHttpRedirectUris = true });
 
         Assert.Equal(expectedError, validator.ValidateRedirectUri(redirectUri));
+    }
+
+    [Fact]
+    public async Task ValidateJti_ConcurrentRequestsWithSameJti_OnlyOneSucceeds()
+    {
+        var validator = new UdapDynamicClientRegistrationValidator(
+            Substitute.For<TrustChainValidator>(Substitute.For<ILogger<TrustChainValidator>>(), null),
+            new HttpClient(),
+            new SlowReplayCache(),
+            new ServerSettings(),
+            Substitute.For<IHttpContextAccessor>(),
+            new DefaultScopeExpander(),
+            Substitute.For<IResourceStore>(),
+            Substitute.For<ILogger<UdapDynamicClientRegistrationValidator>>());
+
+        var expires = EpochTime.GetIntDate(DateTime.UtcNow.AddMinutes(1));
+        var jti = CryptoRandom.CreateUniqueId();
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Task.Run(() =>
+            validator.ValidateJti(new UdapDynamicClientRegistrationDocument { JwtId = jti }, expires))));
+
+        Assert.Single(results, r => string.IsNullOrEmpty(r.Error));
+        Assert.Equal(4, results.Count(r => r.ErrorDescription == UdapDynamicClientRegistrationErrorDescriptions.Replay));
+    }
+
+    /// <summary>A replay cache whose lookup is slow enough for concurrent check-then-add to overlap.</summary>
+    private sealed class SlowReplayCache : IReplayCache
+    {
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> _values = new();
+
+        public Task AddAsync(string purpose, string handle, DateTimeOffset expiration, CancellationToken ct)
+        {
+            _values[purpose + handle] = expiration;
+            return Task.CompletedTask;
+        }
+
+        public async Task<bool> ExistsAsync(string purpose, string handle, CancellationToken ct)
+        {
+            await Task.Delay(50, ct);
+            return _values.ContainsKey(purpose + handle);
+        }
     }
 
     private UdapDynamicClientRegistrationValidator BuildValidator(ServerSettings serverSettings)

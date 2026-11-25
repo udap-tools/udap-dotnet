@@ -775,6 +775,10 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         }
 
+        // Check-then-add: concurrent requests with the same jti would otherwise both pass.
+        using var jtiLock = await StripedAsyncLock.AcquireAsync(jti,
+            _httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None);
+
         if (await _replayCache.ExistsAsync(Purpose, jti,
                 _httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None))
         {

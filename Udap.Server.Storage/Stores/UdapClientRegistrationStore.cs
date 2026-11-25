@@ -60,13 +60,19 @@ namespace Udap.Server.Storage.Stores
             client.Properties.TryGetValue(UdapServerConstants.ClientPropertyConstants.Organization, out var org);
             client.Properties.TryGetValue(UdapServerConstants.ClientPropertyConstants.DataHolder, out var dataHolder);
 
+            // Find-then-insert: concurrent registrations of the same client would otherwise both insert.
+            using var upsertLock = await StripedAsyncLock.AcquireAsync($"client|{iss}|{community}|{org}|{dataHolder}", token);
+
             var existingClient = await _dbContext.Clients
                 .Include(c => c.AllowedScopes)
                 .Include(c => c.RedirectUris)
                 .Include(c => c.AllowedGrantTypes)
                 .Include(c => c.ClientSecrets)
                 .Include(c => c.Properties)
-                .SingleOrDefaultAsync(c =>
+                // First, not Single: a store that already holds duplicates keeps updating the oldest
+                // instead of failing every later registration for this client.
+                .OrderBy(c => c.Id)
+                .FirstOrDefaultAsync(c =>
                     // ISS
                     c.ClientSecrets.Any(cs =>
                     cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
@@ -150,9 +156,11 @@ namespace Udap.Server.Storage.Stores
             activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
             activity?.SetTag(Tracing.Properties.ClientId, client.IdPBaseUrl);
 
+            using var upsertLock = await StripedAsyncLock.AcquireAsync($"tiered|{client.IdPBaseUrl}|{client.CommunityId}", token);
 
             var existingClient = await _dbContext.TieredClients
-                .SingleOrDefaultAsync(t => 
+                .OrderBy(t => t.Id)
+                .FirstOrDefaultAsync(t =>
                     t.IdPBaseUrl == client.IdPBaseUrl  &&
                     t.CommunityId == client.CommunityId, 
                     cancellationToken: token);

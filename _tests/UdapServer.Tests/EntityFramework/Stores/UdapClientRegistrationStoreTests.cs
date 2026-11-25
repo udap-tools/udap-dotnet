@@ -81,6 +81,43 @@ public class UdapClientRegistrationStoreTests : StorageFixture<UdapClientRegistr
 
     [Theory]
     [MemberData(nameof(TestDatabaseProviders))]
+    public async Task ConcurrentRegistrationsOfTheSameClient_CreateOneClient(DbContextOptions<UdapDbContext> options)
+    {
+        var issuer = $"https://client.example.com/{Guid.NewGuid():N}";
+
+        // Each registration request gets a new client_id, a new DbContext and a new store, as the endpoint does.
+        var results = await Task.WhenAll(Enumerable.Range(0, 4).Select(i => Task.Run(async () =>
+        {
+            await using var context = new UdapDbContext(options);
+            var store = new UdapClientRegistrationStore(context, Substitute.For<ILogger<UdapClientRegistrationStore>>());
+
+            return await store.UpsertClient(new Client
+            {
+                ClientId = $"concurrent_{Guid.NewGuid():N}",
+                ClientName = "Concurrent Client",
+                AllowedGrantTypes = new List<string> { GrantType.ClientCredentials },
+                ClientSecrets = new List<Secret>
+                {
+                    new Secret(issuer) { Type = UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME },
+                    new Secret("http://community_1") { Type = UdapServerConstants.SecretTypes.UDAP_COMMUNITY }
+                },
+                Properties = new Dictionary<string, string>
+                {
+                    { UdapServerConstants.ClientPropertyConstants.Organization, UdapServerConstants.ClientPropertyConstants.DefaultOrgMap },
+                    { UdapServerConstants.ClientPropertyConstants.DataHolder, UdapServerConstants.ClientPropertyConstants.DefaultOrgMap }
+                }
+            });
+        })));
+
+        Assert.Single(results, created => !created);
+
+        await using var verify = new UdapDbContext(options);
+        Assert.Equal(1, await verify.Clients.CountAsync(c => c.ClientSecrets.Any(s =>
+            s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME && s.Value == issuer)));
+    }
+
+    [Theory]
+    [MemberData(nameof(TestDatabaseProviders))]
     public async Task RegisterTwoCommunitiesWithSameISS_AndCancelOne(DbContextOptions<UdapDbContext> options)
     {
         var testClient_community1 = new Client

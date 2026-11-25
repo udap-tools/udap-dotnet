@@ -1501,8 +1501,7 @@ public class ClientCredentialsUdapModeTests
 
         //
         // Break the trust chain at token time: remove every community's anchors so chain resolution
-        // fails. (Disabling the community is not enough — the token-time lookup resolves the client's
-        // community by id and does not consult Enabled.)
+        // fails. (Disabling the anchor or community is covered separately below.)
         //
         foreach (var community in _mockPipeline.Communities)
         {
@@ -1521,6 +1520,69 @@ public class ClientCredentialsUdapModeTests
         Assert.True(tokenResponse.IsError,
             "token was issued even though the UDAP trust chain could not be validated — " +
             "the stock PrivateKeyJwtSecretValidator must not be able to validate UDAP client secrets");
+        Assert.Equal("invalid_client", tokenResponse.Error);
+    }
+
+    /// <summary>
+    /// Disabling an anchor or a whole community after a client registered must stop that client
+    /// from getting tokens, the same way it already stops new registrations.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task GetAccessToken_Fails_After_Anchor_Or_Community_Disabled(bool disableCommunity)
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+            { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
+
+        Assert.Null(regDocumentResult.GetError());
+
+        var clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
+                regDocumentResult.ClientId,
+                IdentityServerPipeline.TokenEndpoint,
+                clientCert)
+            .WithScope("system/Patient.rs")
+            .Build("RS384");
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+        Assert.False(tokenResponse.IsError, tokenResponse.Error);
+
+        foreach (var community in _mockPipeline.Communities)
+        {
+            if (disableCommunity)
+            {
+                community.Enabled = false;
+            }
+            else
+            {
+                foreach (var anchor in community.Anchors!)
+                {
+                    anchor.Enabled = false;
+                }
+            }
+        }
+
+        clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
+                regDocumentResult.ClientId,
+                IdentityServerPipeline.TokenEndpoint,
+                clientCert)
+            .WithScope("system/Patient.rs")
+            .Build("RS384");
+
+        tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        Assert.True(tokenResponse.IsError, "token was issued after the client's anchor or community was disabled");
         Assert.Equal("invalid_client", tokenResponse.Error);
     }
 

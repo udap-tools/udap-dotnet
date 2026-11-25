@@ -273,8 +273,13 @@ namespace Udap.Server.Storage.Stores
             using var activity = Tracing.StoreActivitySource.StartActivity();
             activity?.SetTag(Tracing.Properties.Community, communityId);
 
+            // Same Enabled rules as GetAnchors, so disabling an anchor or a community also stops
+            // already-registered clients from authenticating at the token endpoint.
             var encodedCerts = await _dbContext.Anchors
-                .Where(c => c.CommunityId == communityId)
+                .Where(c => c.CommunityId == communityId
+                            && c.Enabled
+                            && c.Community != null
+                            && c.Community.Enabled)
                 .Include(c => c.Intermediates)
                 .ToListAsync(token);
 

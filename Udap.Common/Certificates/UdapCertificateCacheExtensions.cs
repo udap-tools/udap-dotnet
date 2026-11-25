@@ -31,8 +31,12 @@ public static class UdapCertificateCacheExtensions
     /// For standalone use (without <c>AddUdapServer()</c>), also register the HttpClient and
     /// <see cref="ICertificateDownloadCache"/>:
     /// <code>
-    /// services.AddHttpClient&lt;CertificateDownloadCache&gt;();
-    /// services.AddSingleton&lt;ICertificateDownloadCache, CertificateDownloadCache&gt;();
+    /// services.AddHttpClient(CertificateDownloadCache.HttpClientName)
+    ///     .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+    /// services.AddSingleton&lt;ICertificateDownloadCache&gt;(sp => new CertificateDownloadCache(
+    ///     sp.GetRequiredService&lt;IFusionCacheProvider&gt;(),
+    ///     sp.GetRequiredService&lt;IHttpClientFactory&gt;().CreateClient(CertificateDownloadCache.HttpClientName),
+    ///     sp.GetRequiredService&lt;ILogger&lt;CertificateDownloadCache&gt;&gt;()));
     /// </code>
     /// </para>
     /// </summary>

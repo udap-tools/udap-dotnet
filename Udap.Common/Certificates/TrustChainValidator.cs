@@ -546,6 +546,11 @@ namespace Udap.Common.Certificates
                         catch
                         {
                             _logger.LogWarning("AIA-fetched certificate from {Url} did not verify as issuer", url);
+
+                            if (_downloadCache != null)
+                            {
+                                await _downloadCache.RemoveIntermediateAsync(url, cancellationToken);
+                            }
                         }
                     }
                 }
@@ -723,6 +728,13 @@ namespace Udap.Common.Certificates
                             catch (Exception ex)
                             {
                                 _logger.LogWarning(ex, "CRL from {Url} failed signature verification against expected issuer", url);
+
+                                // Don't keep serving a CRL that failed verification from the cache.
+                                if (_downloadCache != null)
+                                {
+                                    await _downloadCache.RemoveCrlAsync(url, cancellationToken);
+                                }
+
                                 continue;
                             }
                         }
@@ -731,6 +743,12 @@ namespace Udap.Common.Certificates
                         if (crl.ThisUpdate.ToUniversalTime() > now)
                         {
                             _logger.LogWarning("CRL from {Url} has ThisUpdate in the future ({ThisUpdate}), treating as unknown", url, crl.ThisUpdate);
+
+                            if (_downloadCache != null)
+                            {
+                                await _downloadCache.RemoveCrlAsync(url, cancellationToken);
+                            }
+
                             problems.Add(new ChainProblem(
                                 ChainProblemStatus.RevocationStatusUnknown,
                                 $"CRL from {url} has ThisUpdate in the future ({crl.ThisUpdate:O})"));

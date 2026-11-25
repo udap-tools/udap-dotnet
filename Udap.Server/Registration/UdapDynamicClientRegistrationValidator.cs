@@ -56,6 +56,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
     private const string Purpose = nameof(UdapDynamicClientRegistrationValidator);
 
+    private const int MaxLogoRedirects = 3;
+    private static readonly TimeSpan LogoFetchTimeout = TimeSpan.FromSeconds(10);
+
     public UdapDynamicClientRegistrationValidator(
         TrustChainValidator trustChainValidator,
         HttpClient httpClient,
@@ -435,10 +438,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //
         if (hasAuthorizationCode)
         {
-            var (successFlag, errorResult) = await ValidateLogoUri(document);
-
+            // The logo is only fetched when it is required; otherwise nothing it could say changes the result.
             if (_serverSettings.LogoRequired)
             {
+                var (successFlag, errorResult) = await ValidateLogoUri(document);
+
                 if (!successFlag)
                 {
                     return errorResult!;
@@ -668,11 +672,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 return (false, errorResult);
             }
 
-            var response = await _httpClient.GetAsync(logoUri.OriginalString);
-            response.Content.Headers.TryGetValues("Content-Type", out var contentTypes);
-            var contentType = contentTypes?.FirstOrDefault();
+            using var response = await GetLogoResponseAsync(logoUri);
 
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
+            if (response == null || response.StatusCode != System.Net.HttpStatusCode.OK)
             {
                 errorResult = new UdapDynamicClientRegistrationValidationResult(
                    UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -680,6 +682,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
                 return (false, errorResult);
             }
+
+            response.Content.Headers.TryGetValues("Content-Type", out var contentTypes);
+            var contentType = contentTypes?.FirstOrDefault();
 
             if (contentType == null ||
                 !contentType.Equals("image/png", StringComparison.OrdinalIgnoreCase) &&
@@ -709,6 +714,49 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         _logger.LogDebug("Logo validation succeeded: {LogoUri}", logoUri.OriginalString);
 
         return (true, null);
+    }
+
+    /// <summary>
+    /// Requests the logo and reads only the response headers, within <see cref="LogoFetchTimeout"/>.
+    /// A redirect the HttpClient hands back is followed here, up to <see cref="MaxLogoRedirects"/>
+    /// hops and only to https URLs. Returns null when the logo cannot be reached within those limits.
+    /// </summary>
+    private async Task<HttpResponseMessage?> GetLogoResponseAsync(Uri logoUri)
+    {
+        using var timeout = new CancellationTokenSource(LogoFetchTimeout);
+        var current = logoUri;
+
+        try
+        {
+            for (var hop = 0; ; hop++)
+            {
+                var response = await _httpClient.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+                var status = (int)response.StatusCode;
+
+                if (status is < 300 or >= 400 || response.Headers.Location == null)
+                {
+                    return response;
+                }
+
+                var next = response.Headers.Location.IsAbsoluteUri
+                    ? response.Headers.Location
+                    : new Uri(current, response.Headers.Location);
+                response.Dispose();
+
+                if (hop >= MaxLogoRedirects || !next.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogDebug("Logo redirect not followed: {LogoUri}", next.OriginalString);
+                    return null;
+                }
+
+                current = next;
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
+        {
+            _logger.LogDebug(ex, "Logo could not be fetched: {LogoUri}", current.OriginalString);
+            return null;
+        }
     }
 
     public async Task<UdapDynamicClientRegistrationValidationResult> ValidateJti(

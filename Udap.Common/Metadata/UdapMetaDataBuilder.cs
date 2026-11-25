@@ -7,6 +7,7 @@
 // */
 #endregion
 
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -112,20 +113,20 @@ public class UdapMetaDataBuilder<TUdapMetadataOptions, TUdapMetadata>
 
             if (matchingSans.Count > 1)
             {
-                sb.AppendLine($"  <div class=\"community-name\">{community}</div>");
+                sb.AppendLine($"  <div class=\"community-name\">{WebUtility.HtmlEncode(community)}</div>");
                 sb.AppendLine("  <div class=\"san-list\">");
                 foreach (var san in matchingSans)
                 {
                     var sanPath = san.TrimEnd('/');
                     var href = $"{sanPath}/.well-known/udap?community={community}";
-                    sb.AppendLine($"    <a href=\"{href}\" target=\"_blank\">{sanPath}</a><br/>");
+                    sb.AppendLine($"    <a href=\"{WebUtility.HtmlEncode(href)}\" target=\"_blank\">{WebUtility.HtmlEncode(sanPath)}</a><br/>");
                 }
                 sb.AppendLine("  </div>");
             }
             else
             {
                 var href = $"{path.TrimEnd('/')}/.well-known/udap?community={community}";
-                sb.AppendLine($"  <a href=\"{href}\" target=\"_blank\">{community}</a>");
+                sb.AppendLine($"  <a href=\"{WebUtility.HtmlEncode(href)}\" target=\"_blank\">{WebUtility.HtmlEncode(community)}</a>");
             }
 
             sb.AppendLine("</div>");

@@ -9,6 +9,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -349,7 +350,7 @@ public class UdapMetadata
         foreach (var community in Communities())
         {
             var href = $"{path.TrimEnd('/')}/.well-known/udap?community={community}";
-            sb.AppendLine($"<div class=\"community\"><a href=\"{href}\" target=\"_blank\">{community}</a></div>");
+            sb.AppendLine($"<div class=\"community\"><a href=\"{WebUtility.HtmlEncode(href)}\" target=\"_blank\">{WebUtility.HtmlEncode(community)}</a></div>");
         }
 
         sb.AppendLine("</body></html>");

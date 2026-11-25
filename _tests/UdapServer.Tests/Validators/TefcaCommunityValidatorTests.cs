@@ -462,6 +462,35 @@ public class TefcaCommunityValidatorTests
         Assert.Contains("id_token", result.ErrorDescription);
     }
 
+    /// <summary>
+    /// Without a typed deserializer for tefca_ias the extension arrives as raw JSON. The
+    /// id_token requirement must still apply to it.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"version":"1","id_token":"mock-oidc-id-token"}""", true)]
+    [InlineData("""{"version":"1"}""", false)]
+    [InlineData("""{"version":"1","id_token":null}""", false)]
+    public async Task Token_TefcaIas_As_Raw_Json_Still_Requires_IdToken(string iasJson, bool expectedValid)
+    {
+        var validator = new TefcaTokenValidator(DefaultOptions);
+        var context = CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-IAS",
+            purposeOfUse: "T-IAS",
+            grantType: "client_credentials",
+            includeTefcaIas: false);
+
+        context.Extensions![TefcaConstants.UdapAuthorizationExtensions.TEFCAIAS] =
+            JsonDocument.Parse(iasJson).RootElement.Clone();
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.Equal(expectedValid, result.IsValid);
+        if (!expectedValid)
+        {
+            Assert.Contains("id_token", result.ErrorDescription);
+        }
+    }
+
     #endregion
 
     #region Treatment organization identifiers (Treatment XP SOP v2.0 Section 6.2)

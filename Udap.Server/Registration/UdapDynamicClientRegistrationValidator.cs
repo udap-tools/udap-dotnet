@@ -828,6 +828,29 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     return false;
                 }
 
+                // The client is stored under one community, and that community's registration and token rules
+                // apply to it. An anchor configured in more than one community cannot say which one, so refuse
+                // rather than pick one whose rules may be weaker.
+                var matchedThumbprint = result.MatchedAnchor?.Thumbprint;
+                var anchorCommunities = matchedThumbprint == null
+                    ? 0
+                    : (anchors ?? Enumerable.Empty<Anchor>())
+                        .Where(a => string.Equals(a.Thumbprint, matchedThumbprint, StringComparison.OrdinalIgnoreCase))
+                        .Select(a => a.CommunityId)
+                        .Distinct()
+                        .Count();
+
+                if (anchorCommunities > 1)
+                {
+                    _logger.LogError(
+                        "Trust anchor {Thumbprint} is configured in {Count} enabled communities; registration cannot choose one. " +
+                        "Give each community its own anchor, or disable the anchor in all but one.",
+                        matchedThumbprint,
+                        anchorCommunities);
+
+                    return false;
+                }
+
                 context.Issuer = jwtSecurityToken.Issuer;
                 context.CommunityId = result.CommunityId;
                 context.CommunityName = result.CommunityName;

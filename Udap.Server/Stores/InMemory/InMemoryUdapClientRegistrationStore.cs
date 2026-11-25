@@ -236,13 +236,15 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             anchors = _communities
                 .Where(c => c.Enabled && c.Anchors != null)
                 .SelectMany(c => c.Anchors!)
+                .Where(a => a.Enabled)
                 .ToList();
         }
         else
         {
             anchors = _communities
-                .Where(c => c.Name == community && c.Anchors != null)
+                .Where(c => c.Name == community && c.Enabled && c.Anchors != null)
                 .SelectMany(c => c.Anchors!)
+                .Where(a => a.Enabled)
                 .ToList();
         }
 
@@ -255,8 +257,9 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         activity?.SetTag(Tracing.Properties.CommunityId, communityId);
 
         var anchors = _communities
-            .Where(c => c.Id == communityId && c.Anchors != null)
+            .Where(c => c.Id == communityId && c.Enabled && c.Anchors != null)
             .SelectMany(c => c.Anchors!)
+            .Where(a => a.Enabled)
             .ToList();
 
         if (anchors.Count == 0)

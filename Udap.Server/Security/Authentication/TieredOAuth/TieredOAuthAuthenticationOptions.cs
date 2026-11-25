@@ -61,6 +61,36 @@ public class TieredOAuthAuthenticationOptions : OAuthOptions
     /// </summary>
     public string? CallbackBaseUrl { get; set; }
 
+    /// <summary>
+    /// The upstream IdP base URLs this server may federate with, e.g. <c>https://idp.example.com</c>. When the
+    /// list is empty (the default), any IdP whose UDAP metadata chains to a trusted anchor is accepted. When it is
+    /// not empty, an <c>idp</c> that is not listed is refused before this server sends any request to it.
+    /// Compared case-insensitively, ignoring a trailing slash.
+    /// </summary>
+    public ICollection<string> AllowedIdPs { get; set; } = new List<string>();
+
+    /// <summary>
+    /// <c>true</c> when <paramref name="idpBaseUrl"/> may be used: <see cref="AllowedIdPs"/> is empty or lists it.
+    /// </summary>
+    public bool IsIdPAllowed(string idpBaseUrl)
+    {
+        if (AllowedIdPs.Count == 0)
+        {
+            return true;
+        }
+
+        var candidate = NormalizeIdP(idpBaseUrl);
+        return AllowedIdPs.Any(a => string.Equals(NormalizeIdP(a), candidate, StringComparison.OrdinalIgnoreCase));
+    }
+
+    // Scheme, host, non-default port and path; no query, and no trailing slash.
+    private static string NormalizeIdP(string url)
+    {
+        return Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            ? uri.GetLeftPart(UriPartial.Path).TrimEnd('/')
+            : url.TrimEnd('/');
+    }
+
     public ISecurityTokenValidator SecurityTokenValidator { get; set; }
 
     /// <summary>

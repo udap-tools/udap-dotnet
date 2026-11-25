@@ -15,6 +15,7 @@ using Duende.IdentityServer.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Udap.Client;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.UI.Pages;
@@ -72,12 +73,17 @@ public class UdapExternalLoginService : IUdapExternalLoginService
         var udapClient = _serviceProvider.GetService(typeof(IUdapClient)) as IUdapClient
                          ?? throw new InvalidOperationException("IUdapClient is not registered. Call AddTieredOAuth(...) to enable UDAP Tiered OAuth.");
 
+        // The scheme's options carry AllowedIdPs, checked before any request is sent to the requested idp.
+        var options = (_serviceProvider.GetService(typeof(IOptionsMonitor<TieredOAuthAuthenticationOptions>))
+                as IOptionsMonitor<TieredOAuthAuthenticationOptions>)?.Get(scheme);
+
         return TieredOAuthHelpers.BuildDynamicTieredOAuthOptions(
             _interaction,
             udapClient,
             scheme,
             callbackPath,
-            string.IsNullOrEmpty(returnUrl) ? "~/" : returnUrl);
+            string.IsNullOrEmpty(returnUrl) ? "~/" : returnUrl,
+            options);
     }
 
     public AuthenticationProperties BuildExternalChallenge(string scheme, string? returnUrl, string callbackUrl)

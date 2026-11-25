@@ -497,8 +497,17 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         // Fails before any IdP is contacted when the server's own base URL is not configured.
         var resourceHolderRedirectUrl = BuildCallbackUrl();
 
-        // Validate idp Server;
-        var idpUri = new Uri(idpParam);
+        // Validate idp Server; it comes from the anonymous request, so check it before contacting it.
+        var idpUri = TieredOAuthHelpers.ValidateIdPUri(idpParam);
+
+        if (!Options.IsIdPAllowed(idpUri.GetLeftPart(UriPartial.Path)))
+        {
+            Logger.LogWarning("Tiered OAuth IdP is not in AllowedIdPs: {Idp}", idpUri.GetLeftPart(UriPartial.Path));
+            Response.StatusCode = StatusCodes.Status400BadRequest;
+            await Response.WriteAsync("The requested idp is not allowed.");
+            return;
+        }
+
         var communityParam = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
         var idp = idpUri.OriginalString;
         if (communityParam != null)

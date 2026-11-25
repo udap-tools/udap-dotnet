@@ -61,7 +61,11 @@ public class TrustAnchorFileStore : ITrustAnchorStore
     // TODO convert to Lazy<T> to protect from race conditions
     private void LoadCertificates(UdapFileCertStoreManifest manifestCurrentValue)
     {
-       var communities = manifestCurrentValue.Communities;
+        var communities = manifestCurrentValue.Communities;
+
+        // Build the new set and swap it in, so a reload replaces the anchors instead of adding
+        // to them: an anchor removed from the manifest stops being trusted.
+        var anchors = new HashSet<Anchor>();
 
         _logger.LogInformation("{Count} communities loaded", communities.Count);
 
@@ -95,15 +99,17 @@ public class TrustAnchorFileStore : ITrustAnchorStore
                 }
 
 #if NET9_0_OR_GREATER
-                AnchorCertificates.Add(new Anchor(X509CertificateLoader.LoadCertificateFromFile(path), community.Name)
+                anchors.Add(new Anchor(X509CertificateLoader.LoadCertificateFromFile(path), community.Name)
 #else
-                AnchorCertificates.Add(new Anchor(new X509Certificate2(path), community.Name)
+                anchors.Add(new Anchor(new X509Certificate2(path), community.Name)
 #endif
                 {
                     Intermediates = intermediates
                 });
             }
         }
+
+        AnchorCertificates = anchors;
     }
 
 }

@@ -28,7 +28,8 @@ namespace Udap.Tefca.Server;
 ///    coded in the client's registered SAN URI.
 /// 5. If the registered exchange purpose is <c>T-IAS</c> and the grant type is
 ///    <c>client_credentials</c>, the <c>tefca_ias</c> AEO must be present.
-/// 6. A <c>tefca_ias</c> AEO, when present, must carry an <c>id_token</c> (Table 4).
+/// 6. A <c>tefca_ias</c> AEO, when present, must carry an <c>id_token</c> (Table 4). Only its presence is checked
+///    unless an <see cref="ITefcaIasIdTokenValidator"/> is registered, which then verifies the token.
 /// 7. Optionally (see <see cref="TefcaValidationOptions.EnforceTreatmentOrganizationIdentifiers"/>),
 ///    Treatment token requests must carry the NPI/TIN in <c>organization_name</c> and an
 ///    <c>organization_id</c> per the Treatment XP Implementation SOP v2.0 Section 6.2.
@@ -51,9 +52,20 @@ public class TefcaTokenValidator : ICommunityTokenValidator
             $"urn:oid:{TefcaConstants.ExchangePurposeCodes.Oid}#{code}"),
         StringComparer.Ordinal);
 
+    private readonly ITefcaIasIdTokenValidator? _iasIdTokenValidator;
+
     public TefcaTokenValidator(IOptions<TefcaValidationOptions> options)
     {
         _options = options.Value;
+    }
+
+    /// <summary>
+    /// Creates the validator with a host-supplied check for the <c>tefca_ias</c> <c>id_token</c>.
+    /// </summary>
+    public TefcaTokenValidator(IOptions<TefcaValidationOptions> options, ITefcaIasIdTokenValidator iasIdTokenValidator)
+        : this(options)
+    {
+        _iasIdTokenValidator = iasIdTokenValidator;
     }
 
     /// <inheritdoc />
@@ -127,14 +139,47 @@ public class TefcaTokenValidator : ICommunityTokenValidator
         // (SOP v2.0 Section 6.11, Table 4)
         // When no typed deserializer is registered for tefca_ias the value arrives as raw JSON;
         // read id_token from it too, so the check is not skipped.
-        if (context.Extensions.TryGetValue(TefcaConstants.UdapAuthorizationExtensions.TEFCAIAS, out var iasValue)
-            && IsMissing(GetIasIdToken(iasValue)))
+        if (context.Extensions.TryGetValue(TefcaConstants.UdapAuthorizationExtensions.TEFCAIAS, out var iasValue))
         {
-            return Task.FromResult(AuthorizationExtensionValidationResult.Failure(
-                "invalid_grant",
-                "TEFCA 'tefca_ias' authorization extension requires an 'id_token'"));
+            var idToken = GetIasIdToken(iasValue);
+
+            if (IsMissing(idToken))
+            {
+                return Task.FromResult(AuthorizationExtensionValidationResult.Failure(
+                    "invalid_grant",
+                    "TEFCA 'tefca_ias' authorization extension requires an 'id_token'"));
+            }
+
+            if (_iasIdTokenValidator != null)
+            {
+                return ValidateIasIdTokenThenRestAsync(IdTokenText(idToken!.Value), context, registeredXp);
+            }
         }
 
+        return Task.FromResult(ValidateOrganizationAndPurposeOfUse(context, registeredXp));
+    }
+
+    private async Task<AuthorizationExtensionValidationResult> ValidateIasIdTokenThenRestAsync(
+        string idToken,
+        UdapAuthorizationExtensionValidationContext context,
+        string registeredXp)
+    {
+        var result = await _iasIdTokenValidator!.ValidateAsync(idToken, context);
+
+        if (result is not { IsValid: true })
+        {
+            return result ?? AuthorizationExtensionValidationResult.Failure(
+                "invalid_grant",
+                "TEFCA 'tefca_ias' id_token was not accepted");
+        }
+
+        return ValidateOrganizationAndPurposeOfUse(context, registeredXp);
+    }
+
+    private AuthorizationExtensionValidationResult ValidateOrganizationAndPurposeOfUse(
+        UdapAuthorizationExtensionValidationContext context,
+        string registeredXp)
+    {
         // Treatment XP Implementation SOP v2.0 Section 6.2: the hl7-b2b extension must carry
         // the provider's NPI and/or TIN appended to organization_name, and organization_id
         // must reference the RCE Directory Organization entry. Opt-in via
@@ -147,16 +192,16 @@ public class TefcaTokenValidator : ICommunityTokenValidator
         {
             if (string.IsNullOrWhiteSpace(b2b.OrganizationId))
             {
-                return Task.FromResult(AuthorizationExtensionValidationResult.Failure(
+                return AuthorizationExtensionValidationResult.Failure(
                     "invalid_grant",
-                    "TEFCA Treatment token request requires 'organization_id' referencing the RCE Directory Organization entry"));
+                    "TEFCA Treatment token request requires 'organization_id' referencing the RCE Directory Organization entry");
             }
 
             if (b2b.OrganizationName == null || !NpiOrTinPattern.IsMatch(b2b.OrganizationName))
             {
-                return Task.FromResult(AuthorizationExtensionValidationResult.Failure(
+                return AuthorizationExtensionValidationResult.Failure(
                     "invalid_grant",
-                    "TEFCA Treatment token request requires the NPI and/or TIN appended to 'organization_name'"));
+                    "TEFCA Treatment token request requires the NPI and/or TIN appended to 'organization_name'");
             }
         }
 
@@ -182,15 +227,15 @@ public class TefcaTokenValidator : ICommunityTokenValidator
 
                     if (!string.Equals(pouCode, registeredXp, StringComparison.Ordinal))
                     {
-                        return Task.FromResult(AuthorizationExtensionValidationResult.Failure(
+                        return AuthorizationExtensionValidationResult.Failure(
                             "invalid_grant",
-                            $"purpose_of_use '{pouCode}' does not match registered exchange purpose '{registeredXp}'"));
+                            $"purpose_of_use '{pouCode}' does not match registered exchange purpose '{registeredXp}'");
                     }
                 }
             }
         }
 
-        return Task.FromResult(AuthorizationExtensionValidationResult.Success());
+        return AuthorizationExtensionValidationResult.Success();
     }
 
     /// <summary>
@@ -208,6 +253,9 @@ public class TefcaTokenValidator : ICommunityTokenValidator
             _ => null
         };
     }
+
+    private static string IdTokenText(JsonElement idToken)
+        => idToken.ValueKind == JsonValueKind.String ? idToken.GetString()! : idToken.GetRawText();
 
     private static bool IsMissing(JsonElement? idToken)
     {

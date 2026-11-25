@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using NSubstitute;
 using Udap.Model;
 using Udap.Model.Registration;
 using Udap.Model.UdapAuthenticationExtensions;
@@ -489,6 +490,97 @@ public class TefcaCommunityValidatorTests
         {
             Assert.Contains("id_token", result.ErrorDescription);
         }
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task Token_TefcaIas_IdTokenValidator_DecidesTheRequest(bool accept)
+    {
+        var iasValidator = Substitute.For<ITefcaIasIdTokenValidator>();
+        iasValidator.ValidateAsync(Arg.Any<string>(), Arg.Any<UdapAuthorizationExtensionValidationContext>())
+            .Returns(accept
+                ? AuthorizationExtensionValidationResult.Success()
+                : AuthorizationExtensionValidationResult.Failure("invalid_grant", "id_token signature is not valid"));
+
+        var validator = new TefcaTokenValidator(DefaultOptions, iasValidator);
+        var context = CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-IAS",
+            purposeOfUse: "T-IAS",
+            grantType: "client_credentials",
+            includeTefcaIas: true);
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.Equal(accept, result.IsValid);
+        if (!accept)
+        {
+            Assert.Equal("id_token signature is not valid", result.ErrorDescription);
+        }
+
+        await iasValidator.Received(1).ValidateAsync(Arg.Is<string>(t => !string.IsNullOrEmpty(t)), context);
+    }
+
+    [Fact]
+    public async Task Token_TefcaIas_IdTokenValidator_AcceptedToken_StillChecksPurposeOfUse()
+    {
+        var iasValidator = Substitute.For<ITefcaIasIdTokenValidator>();
+        iasValidator.ValidateAsync(Arg.Any<string>(), Arg.Any<UdapAuthorizationExtensionValidationContext>())
+            .Returns(AuthorizationExtensionValidationResult.Success());
+
+        var validator = new TefcaTokenValidator(DefaultOptions, iasValidator);
+        var context = CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-IAS",
+            purposeOfUse: "T-TREAT",
+            grantType: "client_credentials",
+            includeTefcaIas: true);
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.False(result.IsValid);
+        Assert.Contains("does not match registered exchange purpose", result.ErrorDescription);
+    }
+
+    [Fact]
+    public async Task Token_TefcaIas_MissingIdToken_RejectedBeforeIdTokenValidator()
+    {
+        var iasValidator = Substitute.For<ITefcaIasIdTokenValidator>();
+        var validator = new TefcaTokenValidator(DefaultOptions, iasValidator);
+        var context = CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-IAS",
+            purposeOfUse: "T-IAS",
+            grantType: "client_credentials",
+            includeTefcaIas: true,
+            includeIasIdToken: false);
+
+        var result = await validator.ValidateAsync(context);
+
+        Assert.False(result.IsValid);
+        await iasValidator.DidNotReceiveWithAnyArgs().ValidateAsync(default!, default!);
+    }
+
+    [Fact]
+    public async Task AddUdapTefcaValidation_UsesRegisteredIdTokenValidator()
+    {
+        var iasValidator = Substitute.For<ITefcaIasIdTokenValidator>();
+        iasValidator.ValidateAsync(Arg.Any<string>(), Arg.Any<UdapAuthorizationExtensionValidationContext>())
+            .Returns(AuthorizationExtensionValidationResult.Failure("invalid_grant", "rejected by host"));
+
+        var services = new ServiceCollection();
+        services.AddSingleton(iasValidator);
+        services.AddUdapTefcaValidation();
+
+        using var provider = services.BuildServiceProvider();
+        var tokenValidator = provider.GetServices<ICommunityTokenValidator>().OfType<TefcaTokenValidator>().Single();
+
+        var result = await tokenValidator.ValidateAsync(CreateTokenContext(
+            sanUri: "urn:oid:2.999#T-IAS",
+            purposeOfUse: "T-IAS",
+            grantType: "client_credentials",
+            includeTefcaIas: true));
+
+        Assert.False(result.IsValid);
+        Assert.Equal("rejected by host", result.ErrorDescription);
     }
 
     #endregion

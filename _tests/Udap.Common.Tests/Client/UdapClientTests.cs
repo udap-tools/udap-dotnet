@@ -327,7 +327,9 @@ public class UdapClientTests
         var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4", trustAnchorStore, "udap://Iss.Mismatch.To.SubjAltName/");
 
         Assert.True(disco.IsError, disco.Raw);
-        Assert.NotNull(udapClient.UdapServerMetadata);
+        // Failed validation: nothing to register with, but the downloaded metadata is on the response.
+        Assert.Null(udapClient.UdapServerMetadata);
+        Assert.NotNull(disco.UnvalidatedMetadata);
         Assert.True(_diagnosticsValidator.TokenErrorCalled);
         Assert.Contains(_diagnosticsValidator.ActualErrorMessages, m => m.Contains("Failed JWT Validation"));
         // https://san.mismatch.fhirlabs.net/fhir/r4 is the subject alt used to sign software statement
@@ -349,9 +351,38 @@ public class UdapClientTests
         var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4", trustAnchorStore, "udap://Iss.Mismatch.To.BaseUrl/");
 
         Assert.True(disco.IsError, disco.Raw);
-        Assert.NotNull(udapClient.UdapServerMetadata);
+        Assert.Null(udapClient.UdapServerMetadata);
+        Assert.NotNull(disco.UnvalidatedMetadata);
         Assert.True(_diagnosticsValidator.TokenErrorCalled);
         Assert.Contains(_diagnosticsValidator.ActualErrorMessages, m => m.Contains("JWT iss does not match baseUrl."));
+    }
+
+    [Fact]
+    public async Task FailedValidation_ClearsEarlierMetadata_AndRegistrationIsRefused()
+    {
+        var (httpClientMock, udapClientDiscoveryValidator, udapClientIOptions, trustAnchorStore) = await BuildClientSupport("http://fhirlabs.net/IssMismatchToBaseUrl/r4", "udap://Iss.Mismatch.To.BaseUrl/");
+
+        var udapClient = new UdapClient(
+            httpClientMock,
+            udapClientDiscoveryValidator,
+            udapClientIOptions,
+            _serviceProvider.GetRequiredService<ILogger<UdapClient>>());
+
+        // Metadata left over from an earlier server must not survive a failed validation of the next one.
+        udapClient.UdapServerMetadata = new UdapMetadata { RegistrationEndpoint = "https://earlier.example.com/connect/register" };
+
+        var disco = await udapClient.ValidateResource("https://fhirlabs.net/fhir/r4", trustAnchorStore, "udap://Iss.Mismatch.To.BaseUrl/");
+
+        Assert.True(disco.IsError);
+        Assert.Null(udapClient.UdapServerMetadata);
+
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+        var ex = await Assert.ThrowsAnyAsync<Exception>(() => ((IUdapClient)udapClient).RegisterClientCredentialsClient(clientCert, "system/Patient.rs"));
+        Assert.Contains("Call ValidateResource first", ex.Message);
     }
 
     // [Fact]

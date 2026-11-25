@@ -3,6 +3,7 @@ using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Udap.UI.Pages.ServerSideSessions
@@ -31,13 +32,20 @@ namespace Udap.UI.Pages.ServerSideSessions
         [BindProperty(SupportsGet = true)]
         public string Prev { get; set; }
 
-        public async Task<IActionResult> OnGet()
+        public override void OnPageHandlerExecuting(PageHandlerExecutingContext context)
         {
+            // Checked here rather than in each handler so OnGet keeps its signature.
             if (!IsLocalRequest())
             {
-                return NotFound();
+                context.Result = NotFound();
+                return;
             }
 
+            base.OnPageHandlerExecuting(context);
+        }
+
+        public async Task OnGet()
+        {
             if (_sessionManagementService != null)
             {
                 UserSessions = await _sessionManagementService.QuerySessionsAsync(new SessionQuery
@@ -49,8 +57,6 @@ namespace Udap.UI.Pages.ServerSideSessions
                     SubjectId = Filter,
                 }, HttpContext.RequestAborted);
             }
-
-            return Page();
         }
 
         [BindProperty]
@@ -58,7 +64,7 @@ namespace Udap.UI.Pages.ServerSideSessions
 
         public async Task<IActionResult> OnPost()
         {
-            if (!IsLocalRequest() || _sessionManagementService == null)
+            if (_sessionManagementService == null)
             {
                 return NotFound();
             }

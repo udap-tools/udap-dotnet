@@ -219,6 +219,22 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             .FirstOrDefault());
     }
 
+    public Task<TieredClient?> FindTieredClient(string idpBaseUrl, int communityId, CancellationToken token = default)
+    {
+        return Task.FromResult(_tieredClients
+            .Where(t => t.IdPBaseUrl == idpBaseUrl && t.CommunityId == communityId)
+            .OrderByDescending(t => t.Enabled)
+            .FirstOrDefault());
+    }
+
+    public Task<TieredClient?> FindTieredClientById(string clientId, string idpBaseUrl, CancellationToken token = default)
+    {
+        return Task.FromResult(_tieredClients
+            .Where(t => t.ClientId == clientId && t.IdPBaseUrl == idpBaseUrl)
+            .OrderByDescending(t => t.Enabled)
+            .FirstOrDefault());
+    }
+
     public Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
     {
 

@@ -214,6 +214,28 @@ namespace Udap.Server.Storage.Stores
             return entity?.ToModel();
         }
 
+        public async Task<TieredClient?> FindTieredClient(string idpBaseUrl, int communityId, CancellationToken token = default)
+        {
+            var entity = await _dbContext.TieredClients
+                .Where(t => t.IdPBaseUrl == idpBaseUrl && t.CommunityId == communityId)
+                .OrderByDescending(t => t.Enabled)
+                .ThenByDescending(t => t.Id)
+                .FirstOrDefaultAsync(token);
+
+            return entity?.ToModel();
+        }
+
+        public async Task<TieredClient?> FindTieredClientById(string clientId, string idpBaseUrl, CancellationToken token = default)
+        {
+            var entity = await _dbContext.TieredClients
+                .Where(t => t.ClientId == clientId && t.IdPBaseUrl == idpBaseUrl)
+                .OrderByDescending(t => t.Enabled)
+                .ThenByDescending(t => t.Id)
+                .FirstOrDefaultAsync(token);
+
+            return entity?.ToModel();
+        }
+
         public async Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
         {
             //TODO: combine into one query

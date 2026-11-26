@@ -41,6 +41,30 @@ public interface IUdapClientRegistrationStore
     /// Returns null when no matching record exists.
     /// </summary>
     Task<TieredClient?> FindTieredClientByIdPBaseUrl(string idpBaseUrl, CancellationToken token = default);
+
+    /// <summary>
+    /// Finds the Tiered client registered at <paramref name="idpBaseUrl"/> for <paramref name="communityId"/>, the key
+    /// <see cref="UpsertTieredClient"/> stores records under. Returns null when there is none.
+    /// The default implementation filters <see cref="FindTieredClientByIdPBaseUrl"/>; stores should override it with
+    /// a query on both values.
+    /// </summary>
+    async Task<TieredClient?> FindTieredClient(string idpBaseUrl, int communityId, CancellationToken token = default)
+    {
+        var client = await FindTieredClientByIdPBaseUrl(idpBaseUrl, token);
+        return client != null && client.CommunityId == communityId ? client : null;
+    }
+
+    /// <summary>
+    /// Finds the Tiered client with <paramref name="clientId"/> registered at <paramref name="idpBaseUrl"/>. Two IdPs
+    /// can issue the same client_id, so a callback looks its registration up by both. Returns null when there is none.
+    /// The default implementation filters <see cref="FindTieredClientById"/>; stores should override it with a query
+    /// on both values.
+    /// </summary>
+    async Task<TieredClient?> FindTieredClientById(string clientId, string idpBaseUrl, CancellationToken token = default)
+    {
+        var client = await FindTieredClientById(clientId, token);
+        return client != null && string.Equals(client.IdPBaseUrl, idpBaseUrl, StringComparison.Ordinal) ? client : null;
+    }
     /// <summary>
     /// Cancel registration by passing an empty grant_types claim.  The cancel registration will cancel the
     /// community specific registration based on the signed_software statement. 

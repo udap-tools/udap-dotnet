@@ -250,7 +250,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             var validationParameters = Options.TokenValidationParameters.Clone();
 
             var clientId = properties.Items["client_id"] ?? throw new InvalidOperationException($"client_id not found in properties");
-            var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId, Context.RequestAborted) ?? throw new InvalidOperationException($"client_id not found in registration store: {clientId}");
+            var tieredClient = await FindStateTieredClient(properties, clientId) ?? throw new InvalidOperationException($"client_id not found in registration store: {clientId}");
 
             if (string.IsNullOrEmpty(tieredClient.IdPBaseUrl))
             {
@@ -426,7 +426,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         var requestParams = Context.Request.Query;
         var code = requestParams["code"];
-        var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId, Context.RequestAborted) ?? throw new InvalidOperationException($"client_id not found: {clientId}");
+        var tieredClient = await FindStateTieredClient(context.Properties, clientId) ?? throw new InvalidOperationException($"client_id not found: {clientId}");
         var tieredClientId = tieredClient.ClientId;
             
         await _certificateStore.Resolve(Context.RequestAborted);
@@ -437,10 +437,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         // Sign with the certificate this server registered with: the IdP only accepts a client assertion
         // whose certificate carries the issuer (URI SAN) the client registered.
-        var signingCertificate = (tieredClient.ClientUriSan == null
-                                     ? null
-                                     : communityCertificates.FirstOrDefault(c => c.HasUriSubjectAltName(tieredClient.ClientUriSan)))
-                                 ?? communityCertificates.First();
+        var registeredCertificate = tieredClient.ClientUriSan == null
+            ? null
+            : communityCertificates.FirstOrDefault(c => c.HasUriSubjectAltName(tieredClient.ClientUriSan));
+        var signingCertificate = registeredCertificate ?? communityCertificates.First();
 
         // Sign request for token
         var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
@@ -464,7 +464,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         // The IdP no longer knows this client (it was reset, or the registration was removed). Disable the
         // registration so the next sign-in registers again through the normal UDAP checks; this sign-in still fails.
-        if (authTokenResponse.Error?.Data["error"] is string tokenError &&
+        // Only when the assertion was signed with the certificate this registration was made with: otherwise the
+        // rejection says nothing about the registration, and a forged callback could disable it.
+        if (registeredCertificate != null &&
+            authTokenResponse.Error?.Data["error"] is string tokenError &&
             string.Equals(tokenError, OidcConstants.TokenErrors.InvalidClient, StringComparison.Ordinal))
         {
             Logger.LogWarning(
@@ -565,7 +568,22 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         // if not registered with IdP, then register.
         //
 
-        var idpClient = await _udapClientRegistrationStore.FindTieredClientByIdPBaseUrl(idp, Context.RequestAborted);
+        // A registration belongs to one IdP and one community, so look it up by both: a request for another
+        // community must neither reuse this one nor be able to disable it.
+        await _certificateStore.Resolve(Context.RequestAborted);
+        var communityName = communityParam ?? _certificateStore.IssuedCertificates.First().Community; //TODO: query by
+        var communityId = await _udapClientRegistrationStore.GetCommunityId(communityName, Context.RequestAborted);
+
+        if (communityId == null)
+        {
+            Logger.LogInformation(
+                "Tiered Oauth: Cannot find communityId for community: {communityName}",
+                communityName);
+            //Todo: return strategy?
+            return;
+        }
+
+        var idpClient = await _udapClientRegistrationStore.FindTieredClient(idp, communityId.Value, Context.RequestAborted);
 
         var idpClientId = null as string;
 
@@ -578,19 +596,6 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         // cannot force a re-registration.
         if (idpClient == null || !idpClient.Enabled)
         {
-            await _certificateStore.Resolve(Context.RequestAborted);
-            var communityName = communityParam ?? _certificateStore.IssuedCertificates.First().Community; //TODO: query by 
-            var communityId = await _udapClientRegistrationStore.GetCommunityId(communityName, Context.RequestAborted);
-
-            if (communityId == null)
-            {
-                Logger.LogInformation(
-                    "Tiered Oauth: Cannot find communityId for community: {communityName}",
-                    communityName);
-                //Todo: return strategy?
-                return;
-            }
-            
             var document = await _udapClient.RegisterTieredClient(
                 resourceHolderRedirectUrl,
 
@@ -636,8 +641,24 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
 
         properties.SetString("client_id", idpClientId);
+        // Kept in the protected state so the callback finds this IdP's registration, not another IdP's that was
+        // issued the same client_id.
+        properties.SetString(IdPBaseUrlItem, idp);
 
         await base.HandleChallengeAsync(properties);
+    }
+
+    private const string IdPBaseUrlItem = "idp_base_url";
+
+    /// <summary>
+    /// The registration named by the protected state: by client_id and IdP base URL, or by client_id alone for a
+    /// state issued before the IdP base URL was kept in it.
+    /// </summary>
+    private Task<TieredClient?> FindStateTieredClient(AuthenticationProperties properties, string clientId)
+    {
+        return properties.Items.TryGetValue(IdPBaseUrlItem, out var idpBaseUrl) && !string.IsNullOrEmpty(idpBaseUrl)
+            ? _udapClientRegistrationStore.FindTieredClientById(clientId, idpBaseUrl, Context.RequestAborted)
+            : _udapClientRegistrationStore.FindTieredClientById(clientId, Context.RequestAborted);
     }
 
 

@@ -94,9 +94,14 @@ public class SecurityEventMiddleware
     /// </summary>
     internal static string? Sanitize(string? value, int maxLength = MaxFieldLength)
     {
-        if (string.IsNullOrEmpty(value))
+        if (value == null)
         {
-            return value;
+            return null;
+        }
+
+        if (value.Length == 0)
+        {
+            return string.Empty;
         }
 
         // Line breaks first, in the form log-forging analyzers recognize, then any other control characters.

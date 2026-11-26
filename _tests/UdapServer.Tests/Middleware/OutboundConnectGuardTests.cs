@@ -37,9 +37,19 @@ public class OutboundConnectGuardTests
     [InlineData("::ffff:169.254.169.254")]
     [InlineData("64:ff9b::a00:1")]
     [InlineData("2002:a00:1::")]
+    [InlineData("64:ff9b:1::a9fe:a9fe")]
     public void Non_public_addresses_are_not_public(string address)
     {
         Assert.False(OutboundConnectGuard.IsPublic(IPAddress.Parse(address)));
+    }
+
+    [Fact]
+    public void Handler_connects_directly_so_the_guard_sees_the_destination()
+    {
+        using var handler = OutboundConnectGuard.CreateHandler(new OutboundConnectionOptions(), environment: null);
+
+        Assert.False(handler.UseProxy);
+        Assert.NotNull(handler.ConnectCallback);
     }
 
     [Theory]

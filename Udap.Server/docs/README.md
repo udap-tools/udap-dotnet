@@ -322,6 +322,20 @@ replaces the default:
 builder.Services.AddSingleton<IReplayCache, MyAtomicRedisReplayCache>();
 ```
 
+### Concurrent registrations across instances
+
+A registration that matches an existing client on all four [identity values](#client-identity-matching) updates
+that client instead of creating a new one. Udap.Server serializes this find-then-update within one process, but
+the database has no unique constraint on the four values: they live in Duende client secrets and properties, and
+Duende's schema only guarantees a unique `client_id`. So if two instances receive the same registration within
+milliseconds of each other, both can create a client, and the caller ends up with two `client_id`s for one
+identity. Both belong to the same certificate holder, so no trust boundary is crossed. The caller keeps whichever
+`client_id` it processed last, and an administrator can delete the other.
+
+Duende's own dynamic client registration never merges registrations, and its replay check makes the same two
+calls described above, so this matches Duende's behaviour. With a set-if-absent `IReplayCache` the second request
+fails at the replay check before any client is written, which closes the window for the same software statement.
+
 ## Outbound Connections
 
 Some URLs the server fetches are chosen by someone else. The Tiered OAuth idp comes from an anonymous request, and
@@ -333,6 +347,11 @@ metadata address 169.254.169.254), carrier-grade NAT (100.64.0.0/10), multicast,
 resolved address when the connection opens, and the socket connects to that same address. So a redirect, or a DNS
 answer that changes after the check, cannot reach an internal host. Loopback is allowed only when the host
 environment is Development.
+
+These clients always connect directly and ignore `HTTP_PROXY`, `HTTPS_PROXY` and the system proxy. Through a
+proxy, the check would only ever see the proxy's address, never the destination. If your servers can reach the
+internet only through a proxy, these fetches will fail; list the hosts you need in `AllowedPrivateHosts` only if
+they are internal, and never list the proxy itself.
 
 To reach a server inside your own network, list it in the `UdapOutboundConnections` section:
 
@@ -353,7 +372,8 @@ To reach a server inside your own network, list it in the `UdapOutboundConnectio
 | `BlockNonPublicAddresses` | Set to `false` to turn the check off. |
 
 The rule applies to the Tiered OAuth `IUdapClient`, the registration logo client
-(`UdapDynamicClientRegistrationValidator.LogoHttpClientName`) and the certificate download client. It does not apply
+(`UdapDynamicClientRegistrationValidator.LogoHttpClientName`), the certificate download client and, with
+Udap.Tefca.Server, the TEFCA IAS issuer key client. It does not apply
 to `Udap.Client` used on its own: a client application such as a test tool may need to reach a local server.
 
 ## Database Configuration

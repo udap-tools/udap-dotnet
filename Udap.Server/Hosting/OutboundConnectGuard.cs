@@ -31,6 +31,8 @@ public static class OutboundConnectGuard
         return new SocketsHttpHandler
         {
             AllowAutoRedirect = allowAutoRedirect,
+            // Through a proxy, ConnectCallback would see the proxy's endpoint and never the destination.
+            UseProxy = false,
             // Long-lived clients: recycling connections lets DNS changes through, and each new connection is checked.
             PooledConnectionLifetime = TimeSpan.FromMinutes(5),
             ConnectCallback = (context, token) => ConnectAsync(context.DnsEndPoint, options, allowLoopback, token)

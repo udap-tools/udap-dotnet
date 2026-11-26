@@ -39,6 +39,10 @@ Each release is built and published by the `release.yml` workflow from a version
 
   nuget.org adds its own repository signature to every package it accepts, which changes the file, so verify the
   copies from the GitHub release rather than the ones restored from nuget.org.
+- **Publishing:** packages reach nuget.org through trusted publishing. The release job exchanges its GitHub OIDC
+  token for a nuget.org key that lasts one hour, and nuget.org issues one only to `release.yml` in this
+  repository running in the `release` environment, which requires a maintainer's approval. No long-lived
+  publishing key exists.
 - **Source:** the packages are built with SourceLink and deterministic build settings, and each `.nuspec`
   records the repository commit it was built from.
 - **Dependencies:** a release is refused if any dependency, direct or transitive, on any target framework has a

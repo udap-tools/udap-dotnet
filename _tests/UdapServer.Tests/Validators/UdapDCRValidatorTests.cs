@@ -7,7 +7,9 @@
 // */
 #endregion
 
+using System.Net;
 using System.Reflection;
+using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
 using Duende.IdentityModel;
 using Microsoft.AspNetCore.Http;
@@ -94,6 +96,92 @@ public class UdapDcrValidatorTests
         Assert.NotNull(errorResponse);
         Assert.Equal(UdapDynamicClientRegistrationErrors.InvalidClientMetadata, errorResponse!.Error);
         Assert.Equal($"{UdapDynamicClientRegistrationErrorDescriptions.LogoInvalidUri}", errorResponse.ErrorDescription);
+    }
+
+    [Fact]
+    public async Task ValidateLogo_Follows_Https_Redirect()
+    {
+        var handler = new LogoRoutingHandler()
+            .Redirect("https://logo.example/a.png", "https://cdn.example/a.png")
+            .Image("https://cdn.example/a.png", "image/png");
+        var document = BuildUdapDcrValidator(new HttpClient(handler), out var validator);
+        document.LogoUri = "https://logo.example/a.png";
+
+        var (successFlag, errorResponse) = await validator.ValidateLogoUri(document);
+
+        Assert.True(successFlag);
+        Assert.Null(errorResponse);
+    }
+
+    [Theory]
+    [InlineData("http://cdn.example/a.png")]   // downgrade to http
+    [InlineData("https://hop1.example/a.png")] // more hops than allowed
+    public async Task ValidateLogo_Rejects_Redirect_Outside_Limits(string firstHop)
+    {
+        var handler = new LogoRoutingHandler()
+            .Redirect("https://logo.example/a.png", firstHop)
+            .Redirect("https://hop1.example/a.png", "https://hop2.example/a.png")
+            .Redirect("https://hop2.example/a.png", "https://hop3.example/a.png")
+            .Redirect("https://hop3.example/a.png", "https://hop4.example/a.png")
+            .Image("https://hop4.example/a.png", "image/png")
+            .Image("http://cdn.example/a.png", "image/png");
+        var document = BuildUdapDcrValidator(new HttpClient(handler), out var validator);
+        document.LogoUri = "https://logo.example/a.png";
+
+        var (successFlag, errorResponse) = await validator.ValidateLogoUri(document);
+
+        Assert.False(successFlag);
+        Assert.Equal(UdapDynamicClientRegistrationErrorDescriptions.LogoCannotBeResolved, errorResponse!.ErrorDescription);
+    }
+
+    [Fact]
+    public async Task ValidateLogo_Unreachable_Host_Is_A_Validation_Error()
+    {
+        var document = BuildUdapDcrValidator(new HttpClient(new LogoRoutingHandler()), out var validator);
+        document.LogoUri = "https://nowhere.example/a.png";
+
+        var (successFlag, errorResponse) = await validator.ValidateLogoUri(document);
+
+        Assert.False(successFlag);
+        Assert.Equal(UdapDynamicClientRegistrationErrorDescriptions.LogoCannotBeResolved, errorResponse!.ErrorDescription);
+    }
+
+    /// <summary>Answers fixed URLs with a redirect or an image; anything else fails to connect.</summary>
+    private sealed class LogoRoutingHandler : HttpMessageHandler
+    {
+        private readonly Dictionary<string, Func<HttpResponseMessage>> _routes = new();
+
+        public LogoRoutingHandler Redirect(string from, string to)
+        {
+            _routes[from] = () =>
+            {
+                var response = new HttpResponseMessage(HttpStatusCode.Found);
+                response.Headers.Location = new Uri(to);
+                return response;
+            };
+            return this;
+        }
+
+        public LogoRoutingHandler Image(string url, string contentType)
+        {
+            _routes[url] = () =>
+            {
+                var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([1, 2, 3]) };
+                response.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+                return response;
+            };
+            return this;
+        }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (_routes.TryGetValue(request.RequestUri!.AbsoluteUri, out var route))
+            {
+                return Task.FromResult(route());
+            }
+
+            throw new HttpRequestException($"No route to {request.RequestUri}");
+        }
     }
 
 
@@ -192,6 +280,12 @@ public class UdapDcrValidatorTests
         Assert.NotNull(result);
         Assert.Equal(UdapDynamicClientRegistrationErrors.InvalidClientMetadata, result.Error);
         Assert.Equal(UdapDynamicClientRegistrationErrorDescriptions.Replay, result.ErrorDescription);
+
+        // The statement is still accepted for the token handler's clock skew after exp, so the jti must still be
+        // remembered then.
+        _clock.UtcNowFunc = () => expires.Add(TokenValidationParameters.DefaultClockSkew).AddSeconds(-1);
+        result = await validator.ValidateJti(document, EpochTime.GetIntDate(expires));
+        Assert.Equal(UdapDynamicClientRegistrationErrorDescriptions.Replay, result.ErrorDescription);
     }
 
     [Theory]
@@ -223,6 +317,47 @@ public class UdapDcrValidatorTests
         var validator = BuildValidator(new ServerSettings { AllowLoopbackHttpRedirectUris = true });
 
         Assert.Equal(expectedError, validator.ValidateRedirectUri(redirectUri));
+    }
+
+    [Fact]
+    public async Task ValidateJti_ConcurrentRequestsWithSameJti_OnlyOneSucceeds()
+    {
+        var validator = new UdapDynamicClientRegistrationValidator(
+            Substitute.For<TrustChainValidator>(Substitute.For<ILogger<TrustChainValidator>>(), null),
+            new HttpClient(),
+            new SlowReplayCache(),
+            new ServerSettings(),
+            Substitute.For<IHttpContextAccessor>(),
+            new DefaultScopeExpander(),
+            Substitute.For<IResourceStore>(),
+            Substitute.For<ILogger<UdapDynamicClientRegistrationValidator>>());
+
+        var expires = EpochTime.GetIntDate(DateTime.UtcNow.AddMinutes(1));
+        var jti = CryptoRandom.CreateUniqueId();
+
+        var results = await Task.WhenAll(Enumerable.Range(0, 5).Select(_ => Task.Run(() =>
+            validator.ValidateJti(new UdapDynamicClientRegistrationDocument { JwtId = jti }, expires))));
+
+        Assert.Single(results, r => string.IsNullOrEmpty(r.Error));
+        Assert.Equal(4, results.Count(r => r.ErrorDescription == UdapDynamicClientRegistrationErrorDescriptions.Replay));
+    }
+
+    /// <summary>A replay cache whose lookup is slow enough for concurrent check-then-add to overlap.</summary>
+    private sealed class SlowReplayCache : IReplayCache
+    {
+        private readonly System.Collections.Concurrent.ConcurrentDictionary<string, DateTimeOffset> _values = new();
+
+        public Task AddAsync(string purpose, string handle, DateTimeOffset expiration, CancellationToken ct)
+        {
+            _values[purpose + handle] = expiration;
+            return Task.CompletedTask;
+        }
+
+        public async Task<bool> ExistsAsync(string purpose, string handle, CancellationToken ct)
+        {
+            await Task.Delay(50, ct);
+            return _values.ContainsKey(purpose + handle);
+        }
     }
 
     private UdapDynamicClientRegistrationValidator BuildValidator(ServerSettings serverSettings)

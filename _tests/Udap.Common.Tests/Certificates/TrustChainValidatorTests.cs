@@ -192,6 +192,12 @@ public class TrustChainValidatorTests
         Assert.False(string.IsNullOrWhiteSpace(communityHtml));
         Assert.Contains("href=\"https://baseurl/.well-known/udap?community=udap://fhirlabs.net\"", communityHtml);
         Assert.Contains("href=\"https://baseurl/.well-known/udap?community=udap://untrusted.fhirlabs.net/\"", communityHtml);
+
+        // The base URL comes from the request path; markup in it must come back encoded.
+        var hostileHtml = await metaDataBuilder.GetCommunitiesAsHtml("https://baseurl/x\"><script>alert(1)</script>");
+
+        Assert.DoesNotContain("<script>", hostileHtml);
+        Assert.Contains("&quot;&gt;&lt;script&gt;", hostileHtml);
     }
 
     [Fact]

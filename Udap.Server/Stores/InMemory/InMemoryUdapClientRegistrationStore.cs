@@ -23,6 +23,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 {
     private readonly List<Duende.IdentityServer.Models.Client> _clients;
     private readonly ICollection<TieredClient> _tieredClients;
+    private readonly object _upsertLock = new();
     private readonly IEnumerable<Community> _communities;
     private readonly IEnumerable<Intermediate> _intermediateCertificates;
 
@@ -70,6 +71,15 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
     {
+        // Find-then-add on a plain list: two concurrent identical registrations would otherwise both add.
+        lock (_upsertLock)
+        {
+            return UpsertClientUnlocked(client);
+        }
+    }
+
+    private Task<bool> UpsertClientUnlocked(Duende.IdentityServer.Models.Client client)
+    {
         using var activity = Tracing.StoreActivitySource.StartActivity();
         activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
 
@@ -84,7 +94,8 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         client.Properties.TryGetValue(UdapServerConstants.ClientPropertyConstants.Organization, out var org);
         client.Properties.TryGetValue(UdapServerConstants.ClientPropertyConstants.DataHolder, out var dataHolder);
         
-        var existingClient = _clients.SingleOrDefault(c => 
+        // FirstOrDefault, like the EF store: an existing duplicate must not make every later registration throw.
+        var existingClient = _clients.FirstOrDefault(c =>
             // ISS
             c.ClientSecrets.Any(cs =>
                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME && 
@@ -152,20 +163,39 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<bool> UpsertTieredClient(TieredClient client, CancellationToken token = default)
     {
+        lock (_upsertLock)
+        {
+            return UpsertTieredClientUnlocked(client);
+        }
+    }
+
+    private Task<bool> UpsertTieredClientUnlocked(TieredClient client)
+    {
         using var activity = Tracing.StoreActivitySource.StartActivity();
         activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
         activity?.SetTag(Tracing.Properties.ClientId, client.IdPBaseUrl);
 
 
         var existingClient = _tieredClients
-            .SingleOrDefault(t =>
+            .FirstOrDefault(t =>
                     t.IdPBaseUrl == client.IdPBaseUrl &&
                     t.CommunityId == client.CommunityId);
 
         if (existingClient != null)
         {
+            // A re-registration (or a disable after invalid_client) replaces what the IdP issued and the
+            // enabled flag; only values the caller left empty are kept.
+            if (!ReferenceEquals(existingClient, client))
+            {
+                existingClient.ClientId = string.IsNullOrEmpty(client.ClientId) ? existingClient.ClientId : client.ClientId;
+                existingClient.ClientName = client.ClientName ?? existingClient.ClientName;
+                existingClient.RedirectUri = client.RedirectUri ?? existingClient.RedirectUri;
+                existingClient.ClientUriSan = client.ClientUriSan ?? existingClient.ClientUriSan;
+                existingClient.TokenEndpoint = string.IsNullOrEmpty(client.TokenEndpoint) ? existingClient.TokenEndpoint : client.TokenEndpoint;
+                existingClient.Enabled = client.Enabled;
+            }
+
             client.ClientId = existingClient.ClientId;
-            existingClient.RedirectUri = client.RedirectUri;
             return Task.FromResult(true);
         }
 
@@ -175,12 +205,34 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<TieredClient?> FindTieredClientById(string clientId, CancellationToken token = default)
     {
-        return Task.FromResult(_tieredClients.SingleOrDefault(t => t.ClientId == clientId));
+        return Task.FromResult(_tieredClients
+            .Where(t => t.ClientId == clientId)
+            .OrderByDescending(t => t.Enabled)
+            .FirstOrDefault());
     }
 
     public Task<TieredClient?> FindTieredClientByIdPBaseUrl(string idpBaseUrl, CancellationToken token = default)
     {
-        return Task.FromResult(_tieredClients.SingleOrDefault(t => t.IdPBaseUrl == idpBaseUrl));
+        return Task.FromResult(_tieredClients
+            .Where(t => t.IdPBaseUrl == idpBaseUrl)
+            .OrderByDescending(t => t.Enabled)
+            .FirstOrDefault());
+    }
+
+    public Task<TieredClient?> FindTieredClient(string idpBaseUrl, int communityId, CancellationToken token = default)
+    {
+        return Task.FromResult(_tieredClients
+            .Where(t => t.IdPBaseUrl == idpBaseUrl && t.CommunityId == communityId)
+            .OrderByDescending(t => t.Enabled)
+            .FirstOrDefault());
+    }
+
+    public Task<TieredClient?> FindTieredClientById(string clientId, string idpBaseUrl, CancellationToken token = default)
+    {
+        return Task.FromResult(_tieredClients
+            .Where(t => t.ClientId == clientId && t.IdPBaseUrl == idpBaseUrl)
+            .OrderByDescending(t => t.Enabled)
+            .FirstOrDefault());
     }
 
     public Task<int> CancelRegistration(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
@@ -236,13 +288,15 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
             anchors = _communities
                 .Where(c => c.Enabled && c.Anchors != null)
                 .SelectMany(c => c.Anchors!)
+                .Where(a => a.Enabled)
                 .ToList();
         }
         else
         {
             anchors = _communities
-                .Where(c => c.Name == community && c.Anchors != null)
+                .Where(c => c.Name == community && c.Enabled && c.Anchors != null)
                 .SelectMany(c => c.Anchors!)
+                .Where(a => a.Enabled)
                 .ToList();
         }
 
@@ -255,8 +309,9 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         activity?.SetTag(Tracing.Properties.CommunityId, communityId);
 
         var anchors = _communities
-            .Where(c => c.Id == communityId && c.Anchors != null)
+            .Where(c => c.Id == communityId && c.Enabled && c.Anchors != null)
             .SelectMany(c => c.Anchors!)
+            .Where(a => a.Enabled)
             .ToList();
 
         if (anchors.Count == 0)

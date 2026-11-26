@@ -8,6 +8,11 @@
 #endregion
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Udap.Server.Configuration;
+using Udap.Server.Hosting;
 using Udap.Server.Registration;
 using Udap.Server.Validation;
 
@@ -45,6 +50,15 @@ public static class ServiceCollectionExtensions
         services.Configure(configure);
         services.AddSingleton<ICommunityRegistrationValidator, TefcaRegistrationValidator>();
         services.AddSingleton<ICommunityTokenValidator, TefcaTokenValidator>();
+
+        // The tefca_ias id_token is verified against TefcaValidationOptions.TrustedIasIssuers unless the host
+        // registers its own ITefcaIasIdTokenValidator. Issuer keys are fetched through the outbound connection guard.
+        services.AddUdapOutboundConnectionOptions();
+        services.AddHttpClient(DefaultTefcaIasIdTokenValidator.HttpClientName)
+            .ConfigurePrimaryHttpMessageHandler(sp => OutboundConnectGuard.CreateHandler(
+                sp.GetRequiredService<IOptions<OutboundConnectionOptions>>().Value,
+                sp.GetService<IHostEnvironment>()));
+        services.TryAddSingleton<ITefcaIasIdTokenValidator, DefaultTefcaIasIdTokenValidator>();
 
         return services;
     }

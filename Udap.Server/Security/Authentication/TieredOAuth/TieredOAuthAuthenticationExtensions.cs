@@ -9,12 +9,16 @@
 
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Client;
 using Udap.Client.Configuration;
+using Udap.Server.Configuration;
+using Udap.Server.Hosting;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 public static class TieredOAuthAuthenticationExtensions
@@ -79,7 +83,14 @@ public static class TieredOAuthAuthenticationExtensions
     {
 
         builder.Services.TryAddTransient<HeaderAugmentationHandler>();
-        builder.Services.AddHttpClient<IUdapClient, UdapClient>().AddHttpMessageHandler<HeaderAugmentationHandler>();
+        // The idp comes from an anonymous request, and discovery names the registration, token and JWKS endpoints, so
+        // every connection this client makes refuses non-public addresses unless OutboundConnectionOptions allows them.
+        builder.Services.AddUdapOutboundConnectionOptions();
+        builder.Services.AddHttpClient<IUdapClient, UdapClient>()
+            .ConfigurePrimaryHttpMessageHandler(sp => OutboundConnectGuard.CreateHandler(
+                sp.GetRequiredService<IOptions<OutboundConnectionOptions>>().Value,
+                sp.GetService<IHostEnvironment>()))
+            .AddHttpMessageHandler<HeaderAugmentationHandler>();
         
         builder.Services.TryAddSingleton<UdapClientMessageHandler>(sp =>
             {
@@ -94,6 +105,53 @@ public static class TieredOAuthAuthenticationExtensions
             });
         
         builder.Services.TryAddSingleton<IPostConfigureOptions<TieredOAuthAuthenticationOptions>, TieredOAuthPostConfigureOptions>();
+
+        // Registered before the code's configure action, so a value set in code wins over configuration, and
+        // configuration wins over the UdapIdpBaseUrl default applied in post-configure.
+        builder.Services.AddOptions<TieredOAuthAuthenticationOptions>(scheme)
+            .Configure<IServiceProvider>((options, services) =>
+                BindConfiguration(options, services.GetService<IConfiguration>()));
+
         return builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>(scheme, caption, configuration);
+    }
+
+    /// <summary>
+    /// Reads <see cref="TieredOAuthAuthenticationOptions.CallbackBaseUrl"/> and
+    /// <see cref="TieredOAuthAuthenticationOptions.AllowedIdPs"/> from the
+    /// <see cref="TieredOAuthAuthenticationDefaults.ConfigurationSection"/> section, e.g.
+    /// <code>
+    /// "TieredOAuth": {
+    ///   "CallbackBaseUrl": "https://auth.example.com",
+    ///   "AllowedIdPs": [ "https://idp.example.com" ]
+    /// }
+    /// </code>
+    /// or the environment variable <c>TieredOAuth__CallbackBaseUrl</c>.
+    /// </summary>
+    private static void BindConfiguration(TieredOAuthAuthenticationOptions options, IConfiguration? configuration)
+    {
+        var section = configuration?.GetSection(TieredOAuthAuthenticationDefaults.ConfigurationSection);
+
+        if (section == null)
+        {
+            return;
+        }
+
+        var callbackBaseUrl = section[nameof(TieredOAuthAuthenticationOptions.CallbackBaseUrl)];
+        if (!string.IsNullOrWhiteSpace(callbackBaseUrl))
+        {
+            options.CallbackBaseUrl = callbackBaseUrl;
+        }
+
+        var allowedIdPs = section.GetSection(nameof(TieredOAuthAuthenticationOptions.AllowedIdPs))
+            .GetChildren()
+            .Select(c => c.Value)
+            .Where(v => !string.IsNullOrWhiteSpace(v))
+            .Select(v => v!)
+            .ToList();
+
+        if (allowedIdPs.Count > 0)
+        {
+            options.AllowedIdPs = allowedIdPs;
+        }
     }
 }

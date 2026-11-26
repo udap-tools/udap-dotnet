@@ -2,6 +2,7 @@ using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace Udap.Identity.Provider.Pages.ServerSideSessions
@@ -32,6 +33,18 @@ namespace Udap.Identity.Provider.Pages.ServerSideSessions
         [BindProperty(SupportsGet = true)]
         public string Prev { get; set; }
 
+        // Lists and ends every user's session, so it answers only requests from the local machine.
+        public override void OnPageHandlerExecuting(PageHandlerExecutingContext context)
+        {
+            if (!IsLocalRequest())
+            {
+                context.Result = NotFound();
+                return;
+            }
+
+            base.OnPageHandlerExecuting(context);
+        }
+
         public async Task OnGet()
         {
             if (_sessionManagementService != null)
@@ -52,10 +65,26 @@ namespace Udap.Identity.Provider.Pages.ServerSideSessions
 
         public async Task<IActionResult> OnPost()
         {
+            if (_sessionManagementService == null)
+            {
+                return NotFound();
+            }
+
             await _sessionManagementService.RemoveSessionsAsync(new RemoveSessionsContext {
                 SessionId = SessionId,
             }, HttpContext.RequestAborted);
             return RedirectToPage("/ServerSideSessions/Index", new { Token, DisplayNameFilter, SessionIdFilter, SubjectIdFilter, Prev });
+        }
+
+        private bool IsLocalRequest()
+        {
+            var remote = HttpContext.Connection.RemoteIpAddress;
+            if (remote == null)
+            {
+                return false;
+            }
+
+            return System.Net.IPAddress.IsLoopback(remote) || remote.Equals(HttpContext.Connection.LocalIpAddress);
         }
     }
 }

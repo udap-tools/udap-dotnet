@@ -118,17 +118,30 @@ public class UdapDcrBuilderForClientCredentials
     /// If the certificate has more than one uniformResourceIdentifier in the Subject Alternative Name
     /// extension of the client certificate then this will allow one to be picked.
     /// </summary>
-    /// <param name="issuer"></param>
+    /// <param name="issuer">One of the certificate's URI SANs, exactly as it appears in the certificate.</param>
     /// <returns></returns>
     public UdapDcrBuilderForClientCredentials WithIssuer(Uri issuer)
     {
-        var uriNames = _certificates!.First().GetSubjectAltNames(n=>n.TagNo == (int)X509Extensions.GeneralNameType.URI);
-        if (!uriNames.Select(u => u.Item2).Contains(issuer.AbsoluteUri))
+        // OriginalString, not AbsoluteUri: AbsoluteUri adds "/" to a URI with no path, and iss must equal the SAN exactly.
+        return WithIssuer(issuer.OriginalString);
+    }
+
+    /// <summary>
+    /// If the certificate has more than one uniformResourceIdentifier in the Subject Alternative Name
+    /// extension of the client certificate then this will allow one to be picked.
+    /// </summary>
+    /// <param name="issuer">One of the certificate's URI SANs, exactly as it appears in the certificate.
+    /// iss and sub are set to this value unchanged; the comparison with the SANs is ordinal.</param>
+    /// <returns></returns>
+    public UdapDcrBuilderForClientCredentials WithIssuer(string issuer)
+    {
+        var uriNames = _certificates!.First().GetSubjectAltNames(n => n.TagNo == (int)X509Extensions.GeneralNameType.URI);
+        if (!uriNames.Any(u => string.Equals(u.Item2, issuer, StringComparison.Ordinal)))
         {
-            throw new Exception($"End certificate does not contain a URI Subject Alternative Name of, {issuer.AbsoluteUri}");
+            throw new Exception($"End certificate does not contain a URI Subject Alternative Name of, {issuer}");
         }
-        _document.Issuer = issuer.AbsoluteUri;
-        _document.Subject = issuer.AbsoluteUri;
+        _document.Issuer = issuer;
+        _document.Subject = issuer;
         return this;
     }
 

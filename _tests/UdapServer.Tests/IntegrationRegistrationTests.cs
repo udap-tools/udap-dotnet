@@ -283,8 +283,10 @@ namespace UdapServer.Tests
         }
 
 
-        [Fact]
-        public async Task GoodIUdapClientRegistrationStore()
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public async Task GoodIUdapClientRegistrationStore(bool anchorInSecondCommunity)
         {
             var services = new ServiceCollection();
 
@@ -382,6 +384,23 @@ namespace UdapServer.Tests
             var store = sp.GetRequiredService<IUdapClientRegistrationStore>();
             var communityAnchors = await store.GetAnchorsCertificates("http://localhost");
             var anchors = (await store.GetAnchors("http://localhost")).ToArray();
+
+            if (anchorInSecondCommunity)
+            {
+                // The same anchor configured in another community: registration cannot tell which
+                // community's rules apply, so it is refused.
+                var shared = anchors.First();
+                anchors = anchors.Append(new Udap.Common.Models.Anchor
+                {
+                    Enabled = true,
+                    Name = shared.Name,
+                    Certificate = shared.Certificate,
+                    Thumbprint = shared.Thumbprint,
+                    Community = "udap://second-community/",
+                    CommunityId = shared.CommunityId + 1000,
+                    Intermediates = shared.Intermediates
+                }).ToArray();
+            }
             var intermediateCerts = new X509Certificate2Collection(anchors.First().Intermediates!
                 .Select(s => X509Certificate2.CreateFromPem(s.Certificate)).ToArray());
 
@@ -391,6 +410,13 @@ namespace UdapServer.Tests
                 intermediateCerts,
                 communityAnchors!,
                 anchors);
+
+            if (anchorInSecondCommunity)
+            {
+                Assert.True(result.IsError);
+                Assert.Equal(UdapDynamicClientRegistrationErrors.UnapprovedSoftwareStatement, result.Error);
+                return;
+            }
 
             Assert.False(result.IsError, $"{result.Error} : {result.ErrorDescription}");
             Assert.Equal(document, result.Document);

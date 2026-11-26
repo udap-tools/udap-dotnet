@@ -483,6 +483,136 @@ public class ClientCredentialsUdapModeTests
         Assert.Contains("exceeds the maximum lifetime of 300 seconds from iat", tokenResponse.ErrorDescription);
     }
 
+    /// <summary>
+    /// The maximum-lifetime check is measured from iat, so an iat in the future would let exp sit
+    /// far out while still passing it. An iat beyond the clock skew is rejected.
+    /// </summary>
+    [Fact]
+    public async Task GetAccessToken_ClientAssertion_iat_InFuture()
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
+
+        Assert.Null(regDocumentResult.GetError());
+
+        //
+        // iat one hour ahead, exp within the maximum lifetime of that iat
+        //
+        var now = DateTime.UtcNow;
+        var iat = now.AddHours(1);
+        var jwtPayload = new JwtPayLoadExtension(
+            regDocumentResult.ClientId,
+            IdentityServerPipeline.TokenEndpoint,
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, regDocumentResult.ClientId!),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(iat.ToUniversalTime()).ToString(),
+                    ClaimValueTypes.Integer),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+            },
+            now.ToUniversalTime(),
+            iat.AddMinutes(4).ToUniversalTime()
+        );
+
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build("RS384");
+
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = IdentityServerPipeline.TokenEndpoint,
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.rs"
+        };
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        Assert.True(tokenResponse.IsError);
+        Assert.Equal(HttpStatusCode.BadRequest, tokenResponse.HttpStatusCode);
+        Assert.Equal("invalid_client", tokenResponse.Error);
+        Assert.NotNull(tokenResponse.ErrorDescription);
+        Assert.Contains("iat is in the future", tokenResponse.ErrorDescription);
+    }
+
+    /// <summary>
+    /// iat is a required AnT claim; without it the maximum-lifetime check cannot be applied,
+    /// so an assertion with no iat is rejected.
+    /// </summary>
+    [Fact]
+    public async Task GetAccessToken_ClientAssertion_Missing_iat()
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
+
+        Assert.Null(regDocumentResult.GetError());
+
+        var now = DateTime.UtcNow;
+        var jwtPayload = new JwtPayLoadExtension(
+            regDocumentResult.ClientId,
+            IdentityServerPipeline.TokenEndpoint,
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, regDocumentResult.ClientId!),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+            },
+            now.ToUniversalTime(),
+            now.AddMinutes(1).ToUniversalTime()
+        );
+
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build("RS384");
+
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = IdentityServerPipeline.TokenEndpoint,
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.rs"
+        };
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        Assert.True(tokenResponse.IsError);
+        Assert.Equal("invalid_client", tokenResponse.Error);
+        Assert.Contains("iat claim is missing", tokenResponse.ErrorDescription);
+    }
+
     [Fact]
     public async Task GetAccessToken_Without_x5c()
     {
@@ -1501,8 +1631,7 @@ public class ClientCredentialsUdapModeTests
 
         //
         // Break the trust chain at token time: remove every community's anchors so chain resolution
-        // fails. (Disabling the community is not enough — the token-time lookup resolves the client's
-        // community by id and does not consult Enabled.)
+        // fails. (Disabling the anchor or community is covered separately below.)
         //
         foreach (var community in _mockPipeline.Communities)
         {
@@ -1521,6 +1650,69 @@ public class ClientCredentialsUdapModeTests
         Assert.True(tokenResponse.IsError,
             "token was issued even though the UDAP trust chain could not be validated — " +
             "the stock PrivateKeyJwtSecretValidator must not be able to validate UDAP client secrets");
+        Assert.Equal("invalid_client", tokenResponse.Error);
+    }
+
+    /// <summary>
+    /// Disabling an anchor or a whole community after a client registered must stop that client
+    /// from getting tokens, the same way it already stops new registrations.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task GetAccessToken_Fails_After_Anchor_Or_Community_Disabled(bool disableCommunity)
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+            { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
+
+        Assert.Null(regDocumentResult.GetError());
+
+        var clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
+                regDocumentResult.ClientId,
+                IdentityServerPipeline.TokenEndpoint,
+                clientCert)
+            .WithScope("system/Patient.rs")
+            .Build("RS384");
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+        Assert.False(tokenResponse.IsError, tokenResponse.Error);
+
+        foreach (var community in _mockPipeline.Communities)
+        {
+            if (disableCommunity)
+            {
+                community.Enabled = false;
+            }
+            else
+            {
+                foreach (var anchor in community.Anchors!)
+                {
+                    anchor.Enabled = false;
+                }
+            }
+        }
+
+        clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
+                regDocumentResult.ClientId,
+                IdentityServerPipeline.TokenEndpoint,
+                clientCert)
+            .WithScope("system/Patient.rs")
+            .Build("RS384");
+
+        tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        Assert.True(tokenResponse.IsError, "token was issued after the client's anchor or community was disabled");
         Assert.Equal("invalid_client", tokenResponse.Error);
     }
 
@@ -1743,6 +1935,51 @@ public class ClientCredentialsUdapModeTests
         var storedCertificate = client.ClientSecrets
             .Single(s => s.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE).Value;
         Assert.Equal(Convert.ToBase64String(clientCert.Export(X509ContentType.Cert)), storedCertificate);
+    }
+
+    /// <summary>
+    /// Secret rollover saves the presented certificate, so a certificate that names the registered issuer but does
+    /// not chain to a trusted anchor must be refused before anything is saved.
+    /// </summary>
+    [Fact]
+    public async Task GetAccessToken_Rollover_With_Untrusted_Certificate_Is_Rejected_And_Not_Saved()
+    {
+        var clientCert = LoadPfx("CertStore/issued/fhirLabsApiClientLocalhostCert2.pfx");
+        var regDocumentResult = await RegisterClientCredentialsClient(clientCert);
+
+        var client = _mockPipeline.Clients.Single(c => c.ClientId == regDocumentResult.ClientId);
+        var registeredIssuer = client.ClientSecrets
+            .Single(s => s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME).Value;
+        var expired = DateTime.Now + TimeSpan.FromDays(-1);
+        foreach (var secret in client.ClientSecrets)
+        {
+            secret.Expiration = expired;
+        }
+
+        using var rsa = System.Security.Cryptography.RSA.Create(2048);
+        var request = new CertificateRequest("CN=untrusted", rsa, System.Security.Cryptography.HashAlgorithmName.SHA256,
+            System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+        var san = new SubjectAlternativeNameBuilder();
+        san.AddUri(new Uri(registeredIssuer));
+        request.CertificateExtensions.Add(san.Build());
+        using var untrustedCert = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
+
+        var clientRequest = AccessTokenRequestForClientCredentialsBuilder.Create(
+                regDocumentResult.ClientId,
+                IdentityServerPipeline.TokenEndpoint,
+                untrustedCert)
+            .WithScope("system/Patient.rs")
+            .Build("RS384");
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        Assert.True(tokenResponse.IsError, "an untrusted certificate authenticated the client through rollover");
+        Assert.Equal("invalid_client", tokenResponse.Error);
+
+        var storedCertificate = client.ClientSecrets
+            .Single(s => s.Type == UdapServerConstants.SecretTypes.UDAP_X509_CERTIFICATE).Value;
+        Assert.Equal(Convert.ToBase64String(clientCert.Export(X509ContentType.Cert)), storedCertificate);
+        Assert.All(client.ClientSecrets, s => Assert.Equal(expired, s.Expiration));
     }
 
     private async Task<UdapDynamicClientRegistrationDocument> RegisterClientCredentialsClient(X509Certificate2 clientCert)

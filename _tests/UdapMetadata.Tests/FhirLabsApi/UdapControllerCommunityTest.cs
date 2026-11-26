@@ -239,7 +239,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://IssMismatchToSubjAltName/");
 
         Assert.True(disco.IsError, disco.Raw);
-        Assert.NotNull(udapClient.UdapServerMetadata);
+        Assert.Null(udapClient.UdapServerMetadata);
+        Assert.NotNull(disco.UnvalidatedMetadata);
         Assert.True(_diagnosticsValidator.TokenErrorCalled);
         Assert.Contains(_diagnosticsValidator.ActualErrorMessages, m => m.Contains("Failed JWT Validation"));
         // http://localhost/fhir/r99 is the subject alt used to sign software statement
@@ -257,7 +258,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://IssMismatchToBaseUrl/");
 
         Assert.True(disco.IsError, disco.Raw);
-        Assert.NotNull(udapClient.UdapServerMetadata);
+        Assert.Null(udapClient.UdapServerMetadata);
+        Assert.NotNull(disco.UnvalidatedMetadata);
         Assert.True(_diagnosticsValidator.TokenErrorCalled);
         Assert.Contains(_diagnosticsValidator.ActualErrorMessages, m => m.Contains("JWT iss does not match baseUrl."));
     }
@@ -291,7 +293,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://Untrusted/"); // the client community picked from the UdapMetadata.Tests appsettings.json is different from the FhirLabsApi server community
 
         Assert.True(disco.IsError, disco.Raw);
-        Assert.NotNull(udapClient.UdapServerMetadata);
+        Assert.Null(udapClient.UdapServerMetadata);
+        Assert.NotNull(disco.UnvalidatedMetadata);
         Assert.True(_diagnosticsValidator.UntrustedCalled);
         Assert.Equal("CN=localhost3, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US", _diagnosticsValidator.UnTrustedCertificate);
         Assert.False(_diagnosticsValidator.ProblemCalled);
@@ -365,7 +368,8 @@ public class UdapControllerCommunityTest : IClassFixture<ApiForCommunityTestFixt
             "udap://Provider2");
 
         Assert.True(disco.IsError, $"\nError: {disco.Error} \nError Type: {disco.ErrorType}\n{disco.Raw}");
-        Assert.NotNull(udapClient.UdapServerMetadata);
+        Assert.Null(udapClient.UdapServerMetadata);
+        Assert.NotNull(disco.UnvalidatedMetadata);
 
         Assert.Contains(_diagnosticsValidator.ActualErrorMessages, m =>
                 m.Contains("OfflineRevocation") || m.Contains("CrlNotFound") || m.Contains("CrlFetchFailed"));
@@ -647,7 +651,8 @@ public async Task ValidateChainWithMyAnchorTest()
         "udap://Provider2");
 
     Assert.True(disco.IsError, disco.Raw);
-    Assert.NotNull(udapClient.UdapServerMetadata);
+    Assert.Null(udapClient.UdapServerMetadata);
+    Assert.NotNull(disco.UnvalidatedMetadata);
     Assert.True(_diagnosticsValidator.UntrustedCalled);
 }
 
@@ -737,7 +742,8 @@ public async Task ValidateChainWithMyAnchorAndIntermediateFailTest()
         "udap://Provider2");
 
     Assert.True(disco.IsError, disco.Raw);
-    Assert.NotNull(udapClient.UdapServerMetadata);
+    Assert.Null(udapClient.UdapServerMetadata);
+    Assert.NotNull(disco.UnvalidatedMetadata);
     Assert.False(_diagnosticsValidator.ProblemCalled);
     Assert.True(_diagnosticsValidator.UntrustedCalled);
     Assert.Equal("CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US", _diagnosticsValidator.UnTrustedCertificate);
@@ -817,7 +823,8 @@ public async Task ValidateChainWithMyAnchorFailTest()
         "udap://Provider2");
 
     Assert.True(disco.IsError, disco.Raw);
-    Assert.NotNull(udapClient.UdapServerMetadata);
+    Assert.Null(udapClient.UdapServerMetadata);
+    Assert.NotNull(disco.UnvalidatedMetadata);
     Assert.False(_diagnosticsValidator.ProblemCalled);
     Assert.True(_diagnosticsValidator.UntrustedCalled);
     Assert.Equal("CN=IdProvider2, OU=fhirlabs.net, O=Fhir Coding, L=Portland, S=Oregon, C=US", _diagnosticsValidator.UnTrustedCertificate);

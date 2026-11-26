@@ -286,6 +286,96 @@ Or via configuration:
 The setting defaults to `false`, so existing tokens are unchanged unless it is explicitly enabled.
 The emitted claim is unprefixed (`udap_community`, not `client_udap_community`).
 
+## Replay Protection Across Instances
+
+A `jti` is accepted once. Client assertions at the token endpoint and software statements at the
+registration endpoint are both checked against Duende's `IReplayCache`. Each `jti` is remembered until the
+token's `exp` plus the clock skew, and a second use is rejected.
+
+Duende's default `IReplayCache` (`DefaultReplayCache`) stores entries in whatever `IDistributedCache` is
+registered. Unless the host registers one, that is an in-memory cache, so **each instance remembers only the
+`jti`s it has seen itself**. Behind a load balancer, the same assertion could be used once on every instance.
+
+When more than one instance serves the token or registration endpoint, register a shared distributed cache.
+For example, Redis:
+
+```csharp
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("redis");
+    options.InstanceName = "udap-auth:";
+});
+```
+
+The replay check then holds across instances with no other change.
+
+`IReplayCache` offers only `ExistsAsync` and `AddAsync`, so checking and recording a `jti` are two calls.
+Udap.Server serializes them within one process. Across instances, two requests carrying the same `jti` that
+arrive within milliseconds of each other could both pass. To close that window, register your own
+`IReplayCache` whose `AddAsync` is set-if-absent. With Redis that is `SET key value NX PX <ttl>`. Have
+`AddAsync` throw when the key already exists. The throw fails the request, so no token is issued and no
+client is registered. The same applies when the cache is unreachable: throwing from either method fails
+closed. Register your implementation after `AddUdapServer()` / `AddUdapJwtBearerClientAuthentication()` so it
+replaces the default:
+
+```csharp
+builder.Services.AddSingleton<IReplayCache, MyAtomicRedisReplayCache>();
+```
+
+### Concurrent registrations across instances
+
+A registration that matches an existing client on all four [identity values](#client-identity-matching) updates
+that client instead of creating a new one. Udap.Server serializes this find-then-update within one process, but
+the database has no unique constraint on the four values: they live in Duende client secrets and properties, and
+Duende's schema only guarantees a unique `client_id`. So if two instances receive the same registration within
+milliseconds of each other, both can create a client, and the caller ends up with two `client_id`s for one
+identity. Both belong to the same certificate holder, so no trust boundary is crossed. The caller keeps whichever
+`client_id` it processed last, and an administrator can delete the other.
+
+Duende's own dynamic client registration never merges registrations, and its replay check makes the same two
+calls described above, so this matches Duende's behaviour. With a set-if-absent `IReplayCache` the second request
+fails at the replay check before any client is written, which closes the window for the same software statement.
+
+## Outbound Connections
+
+Some URLs the server fetches are chosen by someone else. The Tiered OAuth idp comes from an anonymous request, and
+its discovery document names the registration, token and JWKS endpoints. A registering client supplies its
+`logo_uri`. AIA and CRL URLs come from certificates the server has not trusted yet.
+
+These fetches refuse to connect to non-public addresses: loopback, private ranges, link-local (including the cloud
+metadata address 169.254.169.254), carrier-grade NAT (100.64.0.0/10), multicast, and similar. The check runs on the
+resolved address when the connection opens, and the socket connects to that same address. So a redirect, or a DNS
+answer that changes after the check, cannot reach an internal host. Loopback is allowed only when the host
+environment is Development.
+
+These clients always connect directly and ignore `HTTP_PROXY`, `HTTPS_PROXY` and the system proxy. Through a
+proxy, the check would only ever see the proxy's address, never the destination. If your servers can reach the
+internet only through a proxy, these fetches will fail; list the hosts you need in `AllowedPrivateHosts` only if
+they are internal, and never list the proxy itself.
+
+To reach a server inside your own network, list it in the `UdapOutboundConnections` section:
+
+```json
+{
+  "UdapOutboundConnections": {
+    "AllowedPrivateHosts": [ "crl.corp.internal", "idp.corp.internal:8443" ],
+    "AllowLoopback": false,
+    "BlockNonPublicAddresses": true
+  }
+}
+```
+
+| Setting | Meaning |
+|---|---|
+| `AllowedPrivateHosts` | Exact host names or IP literals that may resolve to non-public addresses. An entry without a port allows any port; with a port it allows only that port. There are no wildcards. |
+| `AllowLoopback` | Allow loopback addresses. When unset, loopback is allowed only in Development. |
+| `BlockNonPublicAddresses` | Set to `false` to turn the check off. |
+
+The rule applies to the Tiered OAuth `IUdapClient`, the registration logo client
+(`UdapDynamicClientRegistrationValidator.LogoHttpClientName`), the certificate download client and, with
+Udap.Tefca.Server, the TEFCA IAS issuer key client. It does not apply
+to `Udap.Client` used on its own: a client application such as a test tool may need to reach a local server.
+
 ## Database Configuration
 
 EF Core migration projects are available for both database providers:

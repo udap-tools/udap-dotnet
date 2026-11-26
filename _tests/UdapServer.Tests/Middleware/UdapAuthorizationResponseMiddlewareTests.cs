@@ -141,6 +141,39 @@ public class UdapAuthorizationResponseMiddlewareTests
         Assert.Contains("error", body);
     }
 
+    /// <summary>
+    /// An error is only redirected to a redirect_uri registered for the client. Any other
+    /// redirect_uri gets a 400 JSON error and no Location header.
+    /// </summary>
+    [Theory]
+    [InlineData(AuthorizeHttpMethod.Get, false)]
+    [InlineData(AuthorizeHttpMethod.Post, false)]
+    [InlineData(AuthorizeHttpMethod.Get, true)]
+    [InlineData(AuthorizeHttpMethod.Post, true)]
+    public async Task UnregisteredRedirectUri_ErrorIsNotRedirected(AuthorizeHttpMethod method, bool unsupportedResponseType)
+    {
+        var pipeline = BuildPipeline(ForceStateSettings());
+        var clientId = await RegisterAuthorizationCodeClientAsync(pipeline, Scopes, RedirectUri);
+        await pipeline.LoginAsync("bob");
+
+        var url = pipeline.CreateAuthorizeUrl(
+            clientId: clientId,
+            responseType: unsupportedResponseType ? "invalid_response_type" : "code",
+            scope: Scopes,
+            redirectUri: "https://elsewhere.example/callback",
+            state: unsupportedResponseType ? Guid.NewGuid().ToString() : null, // no state → missing-state path
+            nonce: Guid.NewGuid().ToString());
+
+        var response = await pipeline.BrowserClient.AuthorizeAsync(url, method);
+
+        Assert.NotEqual(HttpStatusCode.Redirect, response.StatusCode);
+        Assert.NotEqual(HttpStatusCode.SeeOther, response.StatusCode);
+        Assert.False(
+            response.Headers.Location?.AbsoluteUri.StartsWith("https://elsewhere.example") ?? false,
+            $"redirected to {response.Headers.Location}");
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Theory]
     [MemberData(nameof(Transports))]
     public async Task ValidRequest_AfterLogin_IssuesCode(AuthorizeHttpMethod method)

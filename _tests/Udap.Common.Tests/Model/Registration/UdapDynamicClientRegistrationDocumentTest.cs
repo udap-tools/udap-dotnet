@@ -214,6 +214,56 @@ public class UdapDynamicClientRegistrationDocumentTest
 
     }
 
+    /// <summary>
+    /// A URI SAN with no path, such as https://client.example, is the issuer exactly as written:
+    /// System.Uri.AbsoluteUri would add "/", and the server compares iss with the SANs exactly.
+    /// </summary>
+    [Fact]
+    public void PathlessSanIsUsedExactlyAsIssuer()
+    {
+        const string san = "https://payer-system-test-client";
+        using var clientCert = CertificateWithUriSans(san, "https://other.example/fhir/r4");
+
+        foreach (var issuer in new Func<UdapDynamicClientRegistrationDocument>[]
+                 {
+                     () => UdapDcrBuilderForClientCredentials.Create(clientCert).WithIssuer(new Uri(san)).Build(),
+                     () => UdapDcrBuilderForClientCredentials.Create(clientCert).WithIssuer(san).Build(),
+                     () => UdapDcrBuilderForAuthorizationCode.Create(clientCert).WithIssuer(new Uri(san)).Build(),
+                     () => UdapDcrBuilderForAuthorizationCode.Create(clientCert).WithIssuer(san).Build()
+                 })
+        {
+            var document = issuer();
+            Assert.Equal(san, document.Issuer);
+            Assert.Equal(san, document.Subject);
+        }
+
+        // The SAN has no trailing slash, so an issuer with one is not a SAN of this certificate.
+        var ex = Assert.Throws<Exception>(() =>
+            UdapDcrBuilderForClientCredentials.Create(clientCert).WithIssuer(san + "/"));
+        Assert.StartsWith($"End certificate does not contain a URI Subject Alternative Name of, {san}/", ex.Message);
+    }
+
+    // A self-signed certificate whose URI SANs are written verbatim. .NET's SubjectAlternativeNameBuilder.AddUri
+    // would canonicalize a path-less URI to end in "/", so the extension is encoded directly.
+    private static X509Certificate2 CertificateWithUriSans(params string[] uris)
+    {
+        var writer = new System.Formats.Asn1.AsnWriter(System.Formats.Asn1.AsnEncodingRules.DER);
+        using (writer.PushSequence())
+        {
+            foreach (var uri in uris)
+            {
+                writer.WriteCharacterString(System.Formats.Asn1.UniversalTagNumber.IA5String, uri,
+                    new System.Formats.Asn1.Asn1Tag(System.Formats.Asn1.TagClass.ContextSpecific, 6));
+            }
+        }
+
+        using var key = System.Security.Cryptography.RSA.Create(2048);
+        var request = new CertificateRequest("CN=pathless-san-test", key,
+            System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+        request.CertificateExtensions.Add(new X509Extension("2.5.29.17", writer.Encode(), false));
+        return request.CreateSelfSigned(DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddHours(1));
+    }
+
     [Fact]
     public void ControlTimesClientCredentialsTest()
     {

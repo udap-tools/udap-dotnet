@@ -73,9 +73,10 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
     {
         var tokenHandler = new JsonWebTokenHandler();
 
-        if (udapServerMetaData.SignedMetadata == null)
+        if (string.IsNullOrEmpty(udapServerMetaData.SignedMetadata))
         {
             NotifyTokenError($"SignedMetadata is missing at {baseUrl}");
+            return false;
         }
 
         var jwt = tokenHandler.ReadJsonWebToken(udapServerMetaData.SignedMetadata);
@@ -109,15 +110,14 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
             return false;
         }
 
-        if (udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported != null && !udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported
-                .Contains(jwt.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)))
+        var alg = jwt.GetHeaderValue<string>(JwtHeaderParameterNames.Alg);
+
+        if (udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported != null
+            && !udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.Contains(alg))
         {
-            if (udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported != null)
-            {
-                NotifyTokenError(
-                    $"The x5c header does not match one of the algorithms listed in {UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported}:" +
-                    $"{string.Join(", ", udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported)} ");
-            }
+            NotifyTokenError(
+                $"The signed_metadata alg {alg} is not one of the algorithms listed in {UdapConstants.Discovery.RegistrationEndpointJwtSigningAlgValuesSupported}: " +
+                $"{string.Join(", ", udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported)}");
 
             return false;
         }
@@ -156,6 +156,10 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
         }
     }
 
+    // Signing algorithms UDAP allows for signed metadata, by key type.
+    private static readonly string[] RsaAlgorithms = [UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384];
+    private static readonly string[] EcdsaAlgorithms = [UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384];
+
     private async Task<TokenValidationResult> ValidateToken(
         UdapMetadata udapServerMetaData,
         JsonWebTokenHandler tokenHandler,
@@ -178,7 +182,8 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new RsaSecurityKey(publicKey),
-                    ValidAlgorithms = [jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)], //must match signing algorithm
+                    // The UDAP RSA algorithms, not whatever the token's own alg header names.
+                    ValidAlgorithms = RsaAlgorithms,
                 });
 
             return validatedToken;
@@ -199,7 +204,8 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new ECDsaSecurityKey(ecdsaPublicKey),
-                    ValidAlgorithms = [jwt!.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)], //must match signing algorithm
+                    // The UDAP ECDSA algorithms, not whatever the token's own alg header names.
+                    ValidAlgorithms = EcdsaAlgorithms,
                 });
 
             return validatedToken;
@@ -274,7 +280,8 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
                             : a.Intermediates.Select(i => X509Certificate2.CreateFromPem(i.Certificate)))
                     .ToArray().ToX509Collection(),
                 anchorCertificates,
-                anchors);
+                anchors,
+                community);
         }
         finally
         {

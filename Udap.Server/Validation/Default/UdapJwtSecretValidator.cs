@@ -24,6 +24,7 @@ using Udap.Common.Extensions;
 using Udap.Model;
 using Udap.Server.Configuration;
 using Udap.Server.Extensions;
+using Udap.Server.Registration;
 using Udap.Server.Storage;
 using Udap.Server.Storage.Extensions;
 using Udap.Server.Storage.Stores;
@@ -47,6 +48,7 @@ public class UdapJwtSecretValidator : ISecretValidator
     private readonly ILogger _logger;
 
     private const string Purpose = nameof(UdapJwtSecretValidator);
+    private static readonly TimeSpan ClockSkew = TimeSpan.FromMinutes(5);
 
     public UdapJwtSecretValidator(
         IIssuerNameService issuerNameService,
@@ -127,7 +129,7 @@ public class UdapJwtSecretValidator : ISecretValidator
                 UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384
             ],
 
-            ClockSkew = TimeSpan.FromMinutes(5),
+            ClockSkew = ClockSkew,
 
             ValidateSignatureLast = true
         };
@@ -173,9 +175,27 @@ public class UdapJwtSecretValidator : ISecretValidator
 
         // UDAP JWT-Based Client Authentication section 6.3: a maximum AnT lifetime of 5 minutes is RECOMMENDED.
         // TokenValidationParameters only checks that exp has not already passed, so bound exp against iat here.
+        // UDAP JWT-Based Client Authentication section 4 lists iat as an AnT claim and 6.3 has the AS validate it;
+        // without it the lifetime bound below could not be applied.
         var iat = jwtToken.IssuedAt;
+        if (iat == DateTime.MinValue)
+        {
+            _logger.LogError("iat is missing.");
+            SetErrorDescription("iat claim is missing from client assertion");
+            return fail;
+        }
+
+        // The lifetime bound below is measured from iat, so an iat in the future would let exp sit
+        // arbitrarily far out. Allow the same clock skew the token handler allows for exp and nbf.
+        if (iat > DateTime.UtcNow.Add(ClockSkew))
+        {
+            _logger.LogError("Client assertion iat is in the future for client_id: {ClientId}. iat={Iat:O}",
+                parsedSecret.Id, iat);
+            SetErrorDescription("Client assertion iat is in the future");
+            return fail;
+        }
+
         if (_serverSettings.ClientAssertionMaxLifetimeSeconds > 0
-            && iat != DateTime.MinValue
             && exp > iat.AddSeconds(_serverSettings.ClientAssertionMaxLifetimeSeconds))
         {
             _logger.LogError("Client assertion exp exceeds the maximum lifetime of {MaxLifetimeSeconds} seconds from iat for client_id: {ClientId}. iat={Iat:O} exp={Exp:O}",
@@ -192,15 +212,17 @@ public class UdapJwtSecretValidator : ISecretValidator
             return fail;
         }
 
-        if (await _replayCache.ExistsAsync(Purpose, jti, ct))
+        // Check-then-add: concurrent requests carrying the same assertion would otherwise both pass.
+        using (await StripedAsyncLock.AcquireAsync($"{Purpose}|{jti}", ct))
         {
-            _logger.LogError("jti is found in replay cache. Possible replay attack.");
-            SetErrorDescription("jti is found in replay cache. Possible replay attack");
-            return fail;
-        }
-        else
-        {
-            await _replayCache.AddAsync(Purpose, jti, exp.AddMinutes(5), ct);
+            if (await _replayCache.ExistsAsync(Purpose, jti, ct))
+            {
+                _logger.LogError("jti is found in replay cache. Possible replay attack.");
+                SetErrorDescription("jti is found in replay cache. Possible replay attack");
+                return fail;
+            }
+
+            await _replayCache.AddAsync(Purpose, jti, exp.Add(ClockSkew), ct);
         }
 
         var udapSecret = parsedSecret.ToModel();
@@ -246,6 +268,17 @@ public class UdapJwtSecretValidator : ISecretValidator
                 _logger.LogInformation(
                     "UDAP identity secrets are missing or expired for client_id: {ClientId}. Attempting secret rollover.",
                     parsedSecret.Id);
+
+                // Rollover saves the presented certificate, so it must chain to a trusted anchor first. The full
+                // validation against the client's own community still runs below.
+                if (!await IsTrustedByAnEnabledAnchorAsync(parsedSecret.Id, endCertificate, ct))
+                {
+                    _logger.LogError(
+                        "Certificate presented for secret rollover is not trusted by any enabled anchor for client_id: {ClientId}",
+                        parsedSecret.Id);
+                    SetErrorDescription("Certificate chain validation failed");
+                    return fail;
+                }
 
                 var rolledSecrets = await _clientStore.RolloverClientSecrets(udapSecret, ct);
 
@@ -295,17 +328,66 @@ public class UdapJwtSecretValidator : ISecretValidator
         //
         // PKI chain validation, including CRL checking
         //
-        if (!await _trustChainValidator.IsTrustedCertificateAsync(
-                parsedSecret.Id,
-                endCertificate,
-                new X509Certificate2Collection(certChainList.ToArray()),
-                new X509Certificate2Collection(certChainList.ToRootCertArray())))
+        var chainResult = await _trustChainValidator.IsTrustedCertificateAsync(
+            parsedSecret.Id,
+            endCertificate,
+            new X509Certificate2Collection(certChainList.ToArray()),
+            new X509Certificate2Collection(certChainList.ToRootCertArray()),
+            null,
+            await ResolveCommunityNameForChainPolicyAsync(secretList, ct),
+            ct);
+
+        if (!chainResult.IsValid)
         {
             SetErrorDescription("Certificate chain validation failed");
             return fail;
         }
 
         return success;
+    }
+
+    /// <summary>
+    /// <c>true</c> when <paramref name="certificate"/> chains to one of the server's enabled trust anchors.
+    /// </summary>
+    private async Task<bool> IsTrustedByAnEnabledAnchorAsync(string clientId, X509Certificate2 certificate, CancellationToken ct)
+    {
+        var anchorCertificates = await _clientStore.GetAnchorsCertificates(null, ct);
+
+        if (anchorCertificates == null || anchorCertificates.Count == 0)
+        {
+            return false;
+        }
+
+        var result = await _trustChainValidator.IsTrustedCertificateAsync(
+            clientId,
+            certificate,
+            await _clientStore.GetIntermediateCertificates(ct),
+            anchorCertificates,
+            await _clientStore.GetAnchors(null, ct),
+            ct);
+
+        return result.IsValid;
+    }
+
+    /// <summary>
+    /// Resolves the client's community name so a per-community chain-length limit can be applied.
+    /// The lookup is skipped when no community has its own limit.
+    /// </summary>
+    private async Task<string?> ResolveCommunityNameForChainPolicyAsync(IReadOnlyCollection<Secret> secretList, CancellationToken ct)
+    {
+        if (_trustChainValidator.Options?.HasCommunityLimits != true)
+        {
+            return null;
+        }
+
+        var communityId = secretList.FirstOrDefault(s => s.Type == UdapServerConstants.SecretTypes.UDAP_COMMUNITY)?.Value;
+
+        if (string.IsNullOrEmpty(communityId))
+        {
+            return null;
+        }
+
+        return await _clientStore.GetCommunityName(communityId, ct);
     }
 
     /// <summary>

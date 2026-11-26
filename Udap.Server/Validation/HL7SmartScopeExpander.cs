@@ -50,13 +50,17 @@ public partial class HL7SmartScopeExpander : IScopeExpander
                 foreach (Match match in smartV2Matches)
                 {
                     var value = match.Value;
-                    var parts = value.Split('.');
-                    
-                    var combinations = ScopeExtensions.GenerateCombinations(parts[1]);
+                    // Expand only the trailing [cruds]+ group the regex matched. The resource part may
+                    // itself contain dots, so splitting on the first dot would expand arbitrary text.
+                    var lastDot = value.LastIndexOf('.');
+                    var prefix = value[..lastDot];
+                    var suffix = value[(lastDot + 1)..];
+
+                    var combinations = ScopeExtensions.GenerateCombinations(suffix);
 
                     foreach (var parameter in combinations)
                     {
-                        expandedScopes.Add($"{parts[0]}.{parameter}");
+                        expandedScopes.Add($"{prefix}.{parameter}");
                     }
                 }
             }

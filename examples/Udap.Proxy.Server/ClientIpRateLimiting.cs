@@ -105,7 +105,9 @@ public static class ClientIpRateLimitingExtensions
                 http.Response.Headers.RetryAfter = ((int)window.TotalSeconds).ToString();
                 var logger = http.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("ClientIpRateLimiting");
                 logger.LogWarning("Rate limit exceeded for client {ClientIp} on {Method} {Path}",
-                    ClientIpResolver.Resolve(http, options, lbIps), http.Request.Method, http.Request.Path);
+                    ClientIpResolver.Resolve(http, options, lbIps),
+                    http.Request.Method.Replace("\r", string.Empty).Replace("\n", string.Empty),
+                    (http.Request.Path.Value ?? string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty));
                 return ValueTask.CompletedTask;
             };
         });

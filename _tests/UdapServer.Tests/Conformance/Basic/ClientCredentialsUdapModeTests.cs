@@ -484,6 +484,75 @@ public class ClientCredentialsUdapModeTests
     }
 
     /// <summary>
+    /// The maximum-lifetime check is measured from iat, so an iat in the future would let exp sit
+    /// far out while still passing it. An iat beyond the clock skew is rejected.
+    /// </summary>
+    [Fact]
+    public async Task GetAccessToken_ClientAssertion_iat_InFuture()
+    {
+#if NET9_0_OR_GREATER
+        var clientCert = X509CertificateLoader.LoadPkcs12FromFile("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#else
+        var clientCert = new X509Certificate2("CertStore/issued/fhirlabs.net.client.pfx", "udap-test");
+#endif
+
+        var udapClient = _mockPipeline.Resolve<IUdapClient>();
+
+        udapClient.UdapServerMetadata = new UdapMetadata(Substitute.For<UdapMetadataOptions>())
+        { RegistrationEndpoint = UdapAuthServerPipeline.RegistrationEndpoint };
+
+        var regDocumentResult = await udapClient.RegisterClientCredentialsClient(
+            clientCert,
+            "system/Patient.rs");
+
+        Assert.Null(regDocumentResult.GetError());
+
+        //
+        // iat one hour ahead, exp within the maximum lifetime of that iat
+        //
+        var now = DateTime.UtcNow;
+        var iat = now.AddHours(1);
+        var jwtPayload = new JwtPayLoadExtension(
+            regDocumentResult.ClientId,
+            IdentityServerPipeline.TokenEndpoint,
+            new List<Claim>()
+            {
+                new Claim(JwtClaimTypes.Subject, regDocumentResult.ClientId!),
+                new Claim(JwtClaimTypes.IssuedAt, EpochTime.GetIntDate(iat.ToUniversalTime()).ToString(),
+                    ClaimValueTypes.Integer),
+                new Claim(JwtClaimTypes.JwtId, CryptoRandom.CreateUniqueId()),
+            },
+            now.ToUniversalTime(),
+            iat.AddMinutes(4).ToUniversalTime()
+        );
+
+        var clientAssertion =
+            SignedSoftwareStatementBuilder<JwtPayLoadExtension>
+                .Create(clientCert, jwtPayload)
+                .Build("RS384");
+
+        var clientRequest = new UdapClientCredentialsTokenRequest
+        {
+            Address = IdentityServerPipeline.TokenEndpoint,
+            ClientAssertion = new ClientAssertion()
+            {
+                Type = OidcConstants.ClientAssertionTypes.JwtBearer,
+                Value = clientAssertion
+            },
+            Udap = UdapConstants.UdapVersionsSupportedValue,
+            Scope = "system/Patient.rs"
+        };
+
+        var tokenResponse = await _mockPipeline.BackChannelClient.UdapRequestClientCredentialsTokenAsync(clientRequest);
+
+        Assert.True(tokenResponse.IsError);
+        Assert.Equal(HttpStatusCode.BadRequest, tokenResponse.HttpStatusCode);
+        Assert.Equal("invalid_client", tokenResponse.Error);
+        Assert.NotNull(tokenResponse.ErrorDescription);
+        Assert.Contains("iat is in the future", tokenResponse.ErrorDescription);
+    }
+
+    /// <summary>
     /// iat is a required AnT claim; without it the maximum-lifetime check cannot be applied,
     /// so an assertion with no iat is rejected.
     /// </summary>

@@ -24,6 +24,7 @@ using Udap.Common.Extensions;
 using Udap.Model;
 using Udap.Server.Configuration;
 using Udap.Server.Extensions;
+using Udap.Server.Registration;
 using Udap.Server.Storage;
 using Udap.Server.Storage.Extensions;
 using Udap.Server.Storage.Stores;
@@ -47,6 +48,7 @@ public class UdapJwtSecretValidator : ISecretValidator
     private readonly ILogger _logger;
 
     private const string Purpose = nameof(UdapJwtSecretValidator);
+    private static readonly TimeSpan ClockSkew = TimeSpan.FromMinutes(5);
 
     public UdapJwtSecretValidator(
         IIssuerNameService issuerNameService,
@@ -127,7 +129,7 @@ public class UdapJwtSecretValidator : ISecretValidator
                 UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384
             ],
 
-            ClockSkew = TimeSpan.FromMinutes(5),
+            ClockSkew = ClockSkew,
 
             ValidateSignatureLast = true
         };
@@ -183,6 +185,16 @@ public class UdapJwtSecretValidator : ISecretValidator
             return fail;
         }
 
+        // The lifetime bound below is measured from iat, so an iat in the future would let exp sit
+        // arbitrarily far out. Allow the same clock skew the token handler allows for exp and nbf.
+        if (iat > DateTime.UtcNow.Add(ClockSkew))
+        {
+            _logger.LogError("Client assertion iat is in the future for client_id: {ClientId}. iat={Iat:O}",
+                parsedSecret.Id, iat);
+            SetErrorDescription("Client assertion iat is in the future");
+            return fail;
+        }
+
         if (_serverSettings.ClientAssertionMaxLifetimeSeconds > 0
             && exp > iat.AddSeconds(_serverSettings.ClientAssertionMaxLifetimeSeconds))
         {
@@ -200,15 +212,17 @@ public class UdapJwtSecretValidator : ISecretValidator
             return fail;
         }
 
-        if (await _replayCache.ExistsAsync(Purpose, jti, ct))
+        // Check-then-add: concurrent requests carrying the same assertion would otherwise both pass.
+        using (await StripedAsyncLock.AcquireAsync($"{Purpose}|{jti}", ct))
         {
-            _logger.LogError("jti is found in replay cache. Possible replay attack.");
-            SetErrorDescription("jti is found in replay cache. Possible replay attack");
-            return fail;
-        }
-        else
-        {
-            await _replayCache.AddAsync(Purpose, jti, exp.AddMinutes(5), ct);
+            if (await _replayCache.ExistsAsync(Purpose, jti, ct))
+            {
+                _logger.LogError("jti is found in replay cache. Possible replay attack.");
+                SetErrorDescription("jti is found in replay cache. Possible replay attack");
+                return fail;
+            }
+
+            await _replayCache.AddAsync(Purpose, jti, exp.Add(ClockSkew), ct);
         }
 
         var udapSecret = parsedSecret.ToModel();

@@ -213,7 +213,7 @@ internal static class HostingExtensions
                 options.SignInScheme = IdentityServerConstants.ExternalCookieAuthenticationScheme;
             });
 
-        builder.Services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+        builder.Services.AddSingleton<IRateLimitConfiguration, CloudLoadBalancerRateLimitConfiguration>();
 
         //
         // You don't need this unless you are down with OTEL

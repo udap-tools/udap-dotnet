@@ -66,18 +66,27 @@ public class UdapExternalLoginService : IUdapExternalLoginService
         _logger = logger;
     }
 
-    public Task<AuthenticationProperties> BuildTieredChallengeAsync(string scheme, string? returnUrl, string callbackPath)
+    public async Task<AuthenticationProperties> BuildTieredChallengeAsync(string scheme, string? returnUrl, string callbackPath)
     {
         // IUdapClient is registered by AddTieredOAuth; resolve it lazily so hosts without Tiered OAuth
         // can still use the rest of this service.
         var udapClient = _serviceProvider.GetService(typeof(IUdapClient)) as IUdapClient
                          ?? throw new InvalidOperationException("IUdapClient is not registered. Call AddTieredOAuth(...) to enable UDAP Tiered OAuth.");
 
+        // The scheme comes from the request. Options for an unregistered name are unbound defaults with an
+        // empty AllowedIdPs, so accept only a scheme that is actually registered as Tiered OAuth.
+        var schemeProvider = _serviceProvider.GetService(typeof(IAuthenticationSchemeProvider)) as IAuthenticationSchemeProvider;
+        var authScheme = schemeProvider == null ? null : await schemeProvider.GetSchemeAsync(scheme);
+        if (authScheme == null || !typeof(TieredOAuthAuthenticationHandler).IsAssignableFrom(authScheme.HandlerType))
+        {
+            throw new InvalidOperationException($"{scheme} is not a registered Tiered OAuth scheme.");
+        }
+
         // The scheme's options carry AllowedIdPs, checked before any request is sent to the requested idp.
         var options = (_serviceProvider.GetService(typeof(IOptionsMonitor<TieredOAuthAuthenticationOptions>))
                 as IOptionsMonitor<TieredOAuthAuthenticationOptions>)?.Get(scheme);
 
-        return TieredOAuthHelpers.BuildDynamicTieredOAuthOptions(
+        return await TieredOAuthHelpers.BuildDynamicTieredOAuthOptions(
             _interaction,
             udapClient,
             scheme,

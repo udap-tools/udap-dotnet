@@ -191,8 +191,13 @@ namespace Udap.Server.Storage.Stores
 
         public async Task<TieredClient?> FindTieredClientById(string clientId, CancellationToken token = default)
         {
+            // Rows written before IdP URLs were normalized can share a client_id; prefer the newest enabled one
+            // rather than throw.
             var entity = await _dbContext.TieredClients
-                .SingleOrDefaultAsync(t => t.ClientId == clientId, token);
+                .Where(t => t.ClientId == clientId)
+                .OrderByDescending(t => t.Enabled)
+                .ThenByDescending(t => t.Id)
+                .FirstOrDefaultAsync(token);
 
             // ToModel() returns a non-null empty object for a null entity, so map only when found.
             return entity?.ToModel();
@@ -201,7 +206,10 @@ namespace Udap.Server.Storage.Stores
         public async Task<TieredClient?> FindTieredClientByIdPBaseUrl(string idpBaseUrl, CancellationToken token = default)
         {
             var entity = await _dbContext.TieredClients
-                .SingleOrDefaultAsync(t => t.IdPBaseUrl == idpBaseUrl, token);
+                .Where(t => t.IdPBaseUrl == idpBaseUrl)
+                .OrderByDescending(t => t.Enabled)
+                .ThenByDescending(t => t.Id)
+                .FirstOrDefaultAsync(token);
 
             return entity?.ToModel();
         }

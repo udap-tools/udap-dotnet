@@ -523,18 +523,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         }
 
         var communityParam = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
-        var idp = idpUri.OriginalString;
-        if (communityParam != null)
-        {
-            if (idp.Contains($":{idpUri.Port}"))
-            {
-                idp = $"{idpUri.Scheme}{Uri.SchemeDelimiter}{idpUri.Host}:{idpUri.Port}{idpUri.LocalPath}";
-            }
-            else
-            {
-                idp = $"{idpUri.Scheme}{Uri.SchemeDelimiter}{idpUri.Host}{idpUri.LocalPath}";
-            }
-        }
+        // One form per IdP: the registration is stored and looked up by this string, so a trailing slash or a
+        // ?community= query must not produce a second registration for the same IdP. Base URLs carry no
+        // trailing slash.
+        var idp = idpUri.GetLeftPart(UriPartial.Path).TrimEnd('/');
         
         // Assign rather than Add: one validation can report the same kind of event more than once.
         _udapClient.Problem += element => properties.Parameters["Problem"] = element.Problems.Summarize(TrustChainValidator.DefaultProblemFlags);

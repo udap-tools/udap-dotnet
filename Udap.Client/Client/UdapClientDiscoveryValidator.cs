@@ -110,15 +110,14 @@ public class UdapClientDiscoveryValidator : IUdapClientEvents
             return false;
         }
 
-        if (udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported != null && !udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported
-                .Contains(jwt.GetHeaderValue<string>(JwtHeaderParameterNames.Alg)))
+        var alg = jwt.GetHeaderValue<string>(JwtHeaderParameterNames.Alg);
+
+        if (udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported != null
+            && !udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported.Contains(alg))
         {
-            if (udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported != null)
-            {
-                NotifyTokenError(
-                    $"The x5c header does not match one of the algorithms listed in {UdapConstants.Discovery.TokenEndpointAuthSigningAlgValuesSupported}:" +
-                    $"{string.Join(", ", udapServerMetaData.TokenEndpointAuthSigningAlgValuesSupported)} ");
-            }
+            NotifyTokenError(
+                $"The signed_metadata alg {alg} is not one of the algorithms listed in {UdapConstants.Discovery.RegistrationEndpointJwtSigningAlgValuesSupported}: " +
+                $"{string.Join(", ", udapServerMetaData.RegistrationEndpointJwtSigningAlgValuesSupported)}");
 
             return false;
         }

@@ -1090,7 +1090,7 @@ public class UdapClientTests
 
         Assert.False(result);
         Assert.NotNull(capturedError);
-        Assert.Contains("does not match", capturedError);
+        Assert.Contains("is not one of the algorithms listed in registration_endpoint_jwt_signing_alg_values_supported", capturedError);
     }
 
     [Fact]

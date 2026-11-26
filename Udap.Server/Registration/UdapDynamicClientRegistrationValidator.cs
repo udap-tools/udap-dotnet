@@ -160,7 +160,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new X509SecurityKey(publicCert),
-                    ValidAlgorithms = [jsonWebToken.Alg], //must match signing algorithm
+                    // A fixed list rather than the token's own alg header: only RSA algorithms fit this key.
+                    ValidAlgorithms = [UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384],
                     // AudienceValidator = (audiences, token, parameters) =>  Potential enhanced validation.  or replace inline validation code below
                 }
             );
@@ -179,7 +180,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new ECDsaSecurityKey(ecdsaPublicKey),
-                    ValidAlgorithms = [jsonWebToken.Alg], //must match signing algorithm
+                    // A fixed list rather than the token's own alg header: only ECDSA algorithms fit this key.
+                    ValidAlgorithms = [UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384],
                 });
         }
 
@@ -348,7 +350,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         context.JwtHeader = jwtHeader;
         context.ClientCertificate = publicCert;
 
-        _logger.LogDebug("Validating chain. x5c {X5c}", jwtHeader.X5c);
+        _logger.LogDebug("Validating chain for client certificate {Thumbprint}", publicCert.Thumbprint);
 
         if (!await ValidateChainAsync(context, jsonWebToken, jwtHeader, intermediateCertificates, anchorCertificates, anchors))
         {
@@ -842,8 +844,10 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     ? 0
                     : (anchors ?? Enumerable.Empty<Anchor>())
                         .Where(a => string.Equals(a.Thumbprint, matchedThumbprint, StringComparison.OrdinalIgnoreCase))
-                        .Select(a => a.CommunityId)
-                        .Distinct()
+                        // In-memory anchors carry the community name but leave CommunityId at 0, so key on the
+                        // name when there is one.
+                        .Select(a => a.Community ?? $"#{a.CommunityId}")
+                        .Distinct(StringComparer.OrdinalIgnoreCase)
                         .Count();
 
                 if (anchorCommunities > 1)
@@ -865,9 +869,6 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 return true;
             }
         }
-
-        _logger.LogDebug("JWT payload: {EncodedPayload}", jwtSecurityToken.EncodedPayload);
-        _logger.LogDebug("x5c: {X5c}", jwtHeader.X5c);
 
         return false;
     }

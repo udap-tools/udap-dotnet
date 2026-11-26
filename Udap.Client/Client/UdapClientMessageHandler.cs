@@ -55,7 +55,7 @@ public class UdapClientMessageHandler : DelegatingHandler, IUdapClientEvents
 {
     private readonly UdapClientDiscoveryValidator _clientDiscoveryValidator;
     private readonly ILogger<UdapClient> _logger;
-
+    private readonly SemaphoreSlim _validationLock = new(1, 1);
 
     public UdapClientMessageHandler(
         UdapClientDiscoveryValidator clientDiscoveryValidator,
@@ -110,17 +110,30 @@ public class UdapClientMessageHandler : DelegatingHandler, IUdapClientEvents
 
         if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
         {
-            _clientDiscoveryValidator.UdapServerMetadata = disco.Json?.Deserialize<UdapMetadata>();
-            _logger.LogDebug("UdapServerMetadata: {UdapServerMetadataJson}", _clientDiscoveryValidator.UdapServerMetadata?.SerializeToJson());
+            var udapServerMetadata = disco.Json?.Deserialize<UdapMetadata>();
+            _logger.LogDebug("UdapServerMetadata: {UdapServerMetadataJson}", udapServerMetadata?.SerializeToJson());
 
-            if (!await _clientDiscoveryValidator.ValidateJwtToken(_clientDiscoveryValidator.UdapServerMetadata!, baseUrl!))
+            // The validator keeps the server's certificate between ValidateJwtToken and ValidateTrustChain, and
+            // this handler can be shared (Tiered OAuth registers it as a singleton backchannel handler), so
+            // one response must finish both steps before another starts.
+            await _validationLock.WaitAsync(cancellationToken);
+            try
             {
-                throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
+                _clientDiscoveryValidator.UdapServerMetadata = udapServerMetadata;
+
+                if (!await _clientDiscoveryValidator.ValidateJwtToken(udapServerMetadata!, baseUrl!))
+                {
+                    throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
+                }
+
+                if (!await _clientDiscoveryValidator.ValidateTrustChain(community))
+                {
+                    throw new UnauthorizedAccessException("Failed Trust Chain Validation");
+                }
             }
-
-            if (!await _clientDiscoveryValidator.ValidateTrustChain(community))
+            finally
             {
-                throw new UnauthorizedAccessException("Failed Trust Chain Validation");
+                _validationLock.Release();
             }
         }
         else

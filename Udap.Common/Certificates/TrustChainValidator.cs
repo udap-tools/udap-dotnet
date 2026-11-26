@@ -644,7 +644,8 @@ namespace Udap.Common.Certificates
                 var ski = SubjectKeyIdentifier.GetInstance(
                     Asn1OctetString.GetInstance(skiValue).GetOctets());
 
-                return aki.GetKeyIdentifier().SequenceEqual(ski.GetKeyIdentifier());
+                var akiId = aki.KeyIdentifier?.GetOctets();
+                return akiId != null && akiId.SequenceEqual(ski.GetKeyIdentifier());
             }
             catch
             {
@@ -682,7 +683,7 @@ namespace Udap.Common.Certificates
                     }
 
                     var url = location.Name.ToString();
-                    if (!CertificateDownloader.IsHttpUrl(url))
+                    if (url == null || !CertificateDownloader.IsHttpUrl(url))
                     {
                         _logger.LogDebug("Skipping AIA location that is not an http or https URL: {Url}", url);
                         continue;
@@ -1071,16 +1072,16 @@ namespace Udap.Common.Certificates
                     var constraints = NameConstraints.GetInstance(
                         Org.BouncyCastle.X509.Extension.X509ExtensionUtilities.FromExtensionValue(ncValue));
 
-                    if (constraints.PermittedSubtrees != null)
+                    if (constraints.PermittedSubtreesValue != null)
                     {
-                        validator.IntersectPermittedSubtree(constraints.PermittedSubtrees);
+                        validator.IntersectPermittedSubtree(constraints.PermittedSubtreesValue.Elements);
                     }
 
-                    if (constraints.ExcludedSubtrees != null)
+                    if (constraints.ExcludedSubtreesValue != null)
                     {
-                        foreach (var subtree in constraints.ExcludedSubtrees)
+                        foreach (var subtree in constraints.ExcludedSubtreesValue.GetElements())
                         {
-                            validator.AddExcludedSubtree(GeneralSubtree.GetInstance(subtree));
+                            validator.AddExcludedSubtree(subtree);
                         }
                     }
                 }

@@ -88,7 +88,10 @@ namespace Udap.Common.Certificates
             ChainProblemStatus.InvalidBasicConstraints |
             ChainProblemStatus.OfflineRevocation |
             ChainProblemStatus.RevocationStatusUnknown |
-            ChainProblemStatus.PathLengthConstraintExceeded;
+            ChainProblemStatus.PathLengthConstraintExceeded |
+            ChainProblemStatus.InvalidKeyUsage |
+            ChainProblemStatus.NameConstraintViolation |
+            ChainProblemStatus.UnsupportedCriticalExtension;
 
         /// <summary>
         /// Creates an instance with default problem flags and online revocation checking.
@@ -329,6 +332,12 @@ namespace Udap.Common.Certificates
                     maxChainLength = _optionsAccessor()?.GetMaxChainLength(effectiveCommunity);
                 }
 
+                // Name constraints apply from the top of the chain down, so they are worked out before the
+                // per-certificate loop and reported on the certificate whose names break them.
+                var nameConstraintProblems = reachesAnchor
+                    ? CheckNameConstraints(bcChain)
+                    : new Dictionary<int, ChainProblem>();
+
                 // Number of intermediate CA certificates, excluding self-issued ones, seen so far between the
                 // end-entity certificate and the current certificate (RFC 5280 section 4.2.1.9).
                 int intermediatesBelow = 0;
@@ -381,6 +390,45 @@ namespace Udap.Common.Certificates
                         {
                             intermediatesBelow++;
                         }
+                    }
+
+                    // Key usage, when present, must allow the certificate's role: an issuer signs certificates,
+                    // the end-entity certificate signs UDAP JWTs.
+                    var keyUsage = bcCert.GetKeyUsage();
+                    if (keyUsage != null)
+                    {
+                        if (!isLeaf && !keyUsage[KeyCertSignBit])
+                        {
+                            problems.Add(new ChainProblem(
+                                ChainProblemStatus.InvalidKeyUsage,
+                                "CA certificate key usage does not include keyCertSign"));
+                        }
+                        else if (isLeaf && !keyUsage[DigitalSignatureBit])
+                        {
+                            problems.Add(new ChainProblem(
+                                ChainProblemStatus.InvalidKeyUsage,
+                                "End-entity certificate key usage does not include digitalSignature"));
+                        }
+                    }
+
+                    // A trust anchor is configuration, not input, so its extensions are not second-guessed.
+                    if (!isAnchor)
+                    {
+                        var unsupported = (bcCert.GetCriticalExtensionOids() ?? new HashSet<string>())
+                            .Where(oid => !ProcessedCriticalExtensions.Contains(oid))
+                            .ToList();
+
+                        if (unsupported.Count != 0)
+                        {
+                            problems.Add(new ChainProblem(
+                                ChainProblemStatus.UnsupportedCriticalExtension,
+                                $"Certificate marks unsupported extension(s) critical: {string.Join(", ", unsupported)}"));
+                        }
+                    }
+
+                    if (nameConstraintProblems.TryGetValue(i, out var nameConstraintProblem))
+                    {
+                        problems.Add(nameConstraintProblem);
                     }
 
                     if (isLeaf && maxChainLength.HasValue && bcChain.Count > maxChainLength.Value)
@@ -944,6 +992,101 @@ namespace Udap.Common.Certificates
         {
             var now = DateTime.UtcNow;
             return now >= cert.NotBefore && now <= cert.NotAfter;
+        }
+
+        private const int DigitalSignatureBit = 0;
+        private const int KeyCertSignBit = 5;
+
+        // Critical extensions this validator processes or that carry no constraint it must enforce. Any other
+        // critical extension fails the certificate (RFC 5280 section 4.2). Certificate policies are accepted
+        // without policy processing, as most deployments mark them critical without relying on policy mapping.
+        private static readonly HashSet<string> ProcessedCriticalExtensions = new(StringComparer.Ordinal)
+        {
+            BcX509Extensions.BasicConstraints.Id,
+            BcX509Extensions.KeyUsage.Id,
+            BcX509Extensions.ExtendedKeyUsage.Id,
+            BcX509Extensions.SubjectAlternativeName.Id,
+            BcX509Extensions.IssuerAlternativeName.Id,
+            BcX509Extensions.NameConstraints.Id,
+            BcX509Extensions.CertificatePolicies.Id,
+            BcX509Extensions.PolicyConstraints.Id,
+            BcX509Extensions.PolicyMappings.Id,
+            BcX509Extensions.InhibitAnyPolicy.Id,
+            BcX509Extensions.SubjectKeyIdentifier.Id,
+            BcX509Extensions.AuthorityKeyIdentifier.Id
+        };
+
+        /// <summary>
+        /// Applies name constraints from the trust anchor down (RFC 5280 section 6.1.3 b/c and 6.1.4 g). Returns the
+        /// first violation found for each certificate, keyed by its index in the chain (0 = end-entity).
+        /// </summary>
+        private static Dictionary<int, ChainProblem> CheckNameConstraints(IList<BcX509Certificate> chain)
+        {
+            var problems = new Dictionary<int, ChainProblem>();
+            var validator = new Org.BouncyCastle.Pkix.PkixNameConstraintValidator();
+
+            for (int i = chain.Count - 1; i >= 0; i--)
+            {
+                var cert = chain[i];
+                bool isTop = i == chain.Count - 1;
+                bool isLeaf = i == 0;
+
+                // Names of every certificate below the top are checked, except self-issued intermediates.
+                if (!isTop && (isLeaf || !IsSelfIssued(cert)))
+                {
+                    try
+                    {
+                        var subject = Asn1Sequence.GetInstance(cert.SubjectDN.ToAsn1Object());
+                        validator.CheckPermittedDN(subject);
+                        validator.CheckExcludedDN(subject);
+
+                        var sanValue = cert.GetExtensionValue(BcX509Extensions.SubjectAlternativeName);
+                        if (sanValue != null)
+                        {
+                            var names = GeneralNames.GetInstance(
+                                Org.BouncyCastle.X509.Extension.X509ExtensionUtilities.FromExtensionValue(sanValue));
+                            foreach (var name in names.GetNames())
+                            {
+                                validator.CheckPermittedName(name);
+                                validator.CheckExcludedName(name);
+                            }
+                        }
+                    }
+                    catch (Org.BouncyCastle.Pkix.PkixNameConstraintValidatorException ex)
+                    {
+                        problems[i] = new ChainProblem(
+                            ChainProblemStatus.NameConstraintViolation,
+                            $"Certificate name is outside the issuer's name constraints: {ex.Message}");
+                    }
+                }
+
+                if (isLeaf)
+                {
+                    break;
+                }
+
+                var ncValue = cert.GetExtensionValue(BcX509Extensions.NameConstraints);
+                if (ncValue != null)
+                {
+                    var constraints = NameConstraints.GetInstance(
+                        Org.BouncyCastle.X509.Extension.X509ExtensionUtilities.FromExtensionValue(ncValue));
+
+                    if (constraints.PermittedSubtrees != null)
+                    {
+                        validator.IntersectPermittedSubtree(constraints.PermittedSubtrees);
+                    }
+
+                    if (constraints.ExcludedSubtrees != null)
+                    {
+                        foreach (var subtree in constraints.ExcludedSubtrees)
+                        {
+                            validator.AddExcludedSubtree(GeneralSubtree.GetInstance(subtree));
+                        }
+                    }
+                }
+            }
+
+            return problems;
         }
 
         private static bool HasValidBasicConstraints(BcX509Certificate cert)

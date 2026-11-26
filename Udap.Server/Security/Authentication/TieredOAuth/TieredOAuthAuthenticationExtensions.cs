@@ -12,10 +12,13 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Udap.Client;
 using Udap.Client.Configuration;
+using Udap.Server.Configuration;
+using Udap.Server.Hosting;
 
 namespace Udap.Server.Security.Authentication.TieredOAuth;
 public static class TieredOAuthAuthenticationExtensions
@@ -80,7 +83,14 @@ public static class TieredOAuthAuthenticationExtensions
     {
 
         builder.Services.TryAddTransient<HeaderAugmentationHandler>();
-        builder.Services.AddHttpClient<IUdapClient, UdapClient>().AddHttpMessageHandler<HeaderAugmentationHandler>();
+        // The idp comes from an anonymous request, and discovery names the registration, token and JWKS endpoints, so
+        // every connection this client makes refuses non-public addresses unless OutboundConnectionOptions allows them.
+        builder.Services.AddUdapOutboundConnectionOptions();
+        builder.Services.AddHttpClient<IUdapClient, UdapClient>()
+            .ConfigurePrimaryHttpMessageHandler(sp => OutboundConnectGuard.CreateHandler(
+                sp.GetRequiredService<IOptions<OutboundConnectionOptions>>().Value,
+                sp.GetService<IHostEnvironment>()))
+            .AddHttpMessageHandler<HeaderAugmentationHandler>();
         
         builder.Services.TryAddSingleton<UdapClientMessageHandler>(sp =>
             {

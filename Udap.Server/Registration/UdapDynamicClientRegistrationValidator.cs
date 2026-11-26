@@ -56,6 +56,12 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
     private const string Purpose = nameof(UdapDynamicClientRegistrationValidator);
 
+    /// <summary>
+    /// Name of the HttpClient that fetches registration logos. Its handler refuses non-public addresses unless
+    /// <see cref="OutboundConnectionOptions"/> allows them.
+    /// </summary>
+    public const string LogoHttpClientName = "Udap.Registration.Logo";
+
     private const int MaxLogoRedirects = 3;
     private static readonly TimeSpan LogoFetchTimeout = TimeSpan.FromSeconds(10);
 

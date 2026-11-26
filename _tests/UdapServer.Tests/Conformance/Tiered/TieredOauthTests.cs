@@ -37,6 +37,7 @@ using Udap.Server.Configuration;
 using Udap.Server.Models;
 using Udap.Server.Security.Authentication.TieredOAuth;
 using Udap.Util.Extensions;
+using Udap.Server.Registration;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
 
@@ -101,6 +102,8 @@ public class TieredOauthTests
             // Allow logo resolve back to udap.auth server
             //
             services.AddSingleton<HttpClient>(_ => _mockAuthorServerPipeline.BrowserClient);
+            services.AddHttpClient(UdapDynamicClientRegistrationValidator.LogoHttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => new ForwardingHandler(_mockAuthorServerPipeline.Handler));
 
             if (tieredOAuthScopes != null)
             {
@@ -264,6 +267,8 @@ public class TieredOauthTests
             // Allow logo resolve back to udap.auth server
             //
             services.AddSingleton<HttpClient>(_ => _mockAuthorServerPipeline.BrowserClient);
+            services.AddHttpClient(UdapDynamicClientRegistrationValidator.LogoHttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => new ForwardingHandler(_mockAuthorServerPipeline.Handler));
         };
         
 
@@ -349,6 +354,8 @@ public class TieredOauthTests
             // Allow logo resolve back to udap.auth server
             //
             services.AddSingleton<HttpClient>(_ => _mockAuthorServerPipeline.BrowserClient);
+            services.AddHttpClient(UdapDynamicClientRegistrationValidator.LogoHttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => new ForwardingHandler(_mockAuthorServerPipeline.Handler));
         };
 
        

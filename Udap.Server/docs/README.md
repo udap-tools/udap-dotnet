@@ -322,6 +322,40 @@ replaces the default:
 builder.Services.AddSingleton<IReplayCache, MyAtomicRedisReplayCache>();
 ```
 
+## Outbound Connections
+
+Some URLs the server fetches are chosen by someone else. The Tiered OAuth idp comes from an anonymous request, and
+its discovery document names the registration, token and JWKS endpoints. A registering client supplies its
+`logo_uri`. AIA and CRL URLs come from certificates the server has not trusted yet.
+
+These fetches refuse to connect to non-public addresses: loopback, private ranges, link-local (including the cloud
+metadata address 169.254.169.254), carrier-grade NAT (100.64.0.0/10), multicast, and similar. The check runs on the
+resolved address when the connection opens, and the socket connects to that same address. So a redirect, or a DNS
+answer that changes after the check, cannot reach an internal host. Loopback is allowed only when the host
+environment is Development.
+
+To reach a server inside your own network, list it in the `UdapOutboundConnections` section:
+
+```json
+{
+  "UdapOutboundConnections": {
+    "AllowedPrivateHosts": [ "crl.corp.internal", "idp.corp.internal:8443" ],
+    "AllowLoopback": false,
+    "BlockNonPublicAddresses": true
+  }
+}
+```
+
+| Setting | Meaning |
+|---|---|
+| `AllowedPrivateHosts` | Exact host names or IP literals that may resolve to non-public addresses. An entry without a port allows any port; with a port it allows only that port. There are no wildcards. |
+| `AllowLoopback` | Allow loopback addresses. When unset, loopback is allowed only in Development. |
+| `BlockNonPublicAddresses` | Set to `false` to turn the check off. |
+
+The rule applies to the Tiered OAuth `IUdapClient`, the registration logo client
+(`UdapDynamicClientRegistrationValidator.LogoHttpClientName`) and the certificate download client. It does not apply
+to `Udap.Client` used on its own: a client application such as a test tool may need to reach a local server.
+
 ## Database Configuration
 
 EF Core migration projects are available for both database providers:

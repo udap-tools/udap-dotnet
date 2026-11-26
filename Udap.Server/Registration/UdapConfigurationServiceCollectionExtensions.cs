@@ -13,7 +13,9 @@ using System.Security.Cryptography.X509Certificates;
 using Duende.IdentityServer.Models;
 using Duende.IdentityServer.Stores;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -21,6 +23,8 @@ using Udap.Common.Certificates;
 using Udap.Common.Models;
 using ZiggyCreatures.Caching.Fusion;
 using Udap.Model;
+using Udap.Server.Configuration;
+using Udap.Server.Hosting;
 using Udap.Server.Registration;
 using Udap.Server.Validation;
 using Udap.Server.Validation.Default;
@@ -36,6 +40,25 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class UdapConfigurationServiceCollectionExtensions
 {
+    /// <summary>
+    /// Registers <see cref="OutboundConnectionOptions"/>, bound from the
+    /// <see cref="OutboundConnectionOptions.SectionName"/> configuration section. Safe to call more than once.
+    /// </summary>
+    public static IServiceCollection AddUdapOutboundConnectionOptions(this IServiceCollection services)
+    {
+        services.AddOptions<OutboundConnectionOptions>();
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IConfigureOptions<OutboundConnectionOptions>, OutboundConnectionOptionsSetup>());
+        return services;
+    }
+
+    // Binds the section when the host has an IConfiguration; hosts without one keep the defaults.
+    private sealed class OutboundConnectionOptionsSetup(IServiceProvider serviceProvider) : IConfigureOptions<OutboundConnectionOptions>
+    {
+        public void Configure(OutboundConnectionOptions options)
+        {
+            serviceProvider.GetService<IConfiguration>()?.GetSection(OutboundConnectionOptions.SectionName).Bind(options);
+        }
+    }
 
     /// <summary>
     /// Register a <see cref="UdapDynamicClientRegistrationEndpoint"/> and a
@@ -49,7 +72,17 @@ public static class UdapConfigurationServiceCollectionExtensions
     {
         builder.Services.TryAddSingleton<IScopeExpander, DefaultScopeExpander>();
         builder.Services.AddScoped<UdapDynamicClientRegistrationEndpoint>();
-        builder.Services.TryAddTransient<IUdapDynamicClientRegistrationValidator, UdapDynamicClientRegistrationValidator>();
+        // logo_uri comes from the registering client, so the logo fetch goes through a client that refuses
+        // non-public addresses (OutboundConnectionOptions).
+        builder.Services.AddUdapOutboundConnectionOptions();
+        builder.Services.AddHttpClient(UdapDynamicClientRegistrationValidator.LogoHttpClientName)
+            .ConfigurePrimaryHttpMessageHandler(sp => OutboundConnectGuard.CreateHandler(
+                sp.GetRequiredService<IOptions<OutboundConnectionOptions>>().Value,
+                sp.GetService<IHostEnvironment>()));
+        builder.Services.TryAddTransient<IUdapDynamicClientRegistrationValidator>(sp =>
+            ActivatorUtilities.CreateInstance<UdapDynamicClientRegistrationValidator>(
+                sp,
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(UdapDynamicClientRegistrationValidator.LogoHttpClientName)));
         builder.Services.TryAddTransient<IUdapDynamicClientRegistrationProcessor, UdapDynamicClientRegistrationProcessor>();
         // Optional chain policy (for example a per-community maximum chain length). Nothing is enforced until
         // the application configures TrustChainValidatorOptions.
@@ -68,14 +101,14 @@ public static class UdapConfigurationServiceCollectionExtensions
             builder.Services.AddSingleton<UdapCertificateCacheMarker>();
         }
 
-        // AIA and CRL URLs come from certificates, so a download must not be redirected somewhere else.
+        // AIA and CRL URLs come from certificates, which a registering client presents before they are trusted, so a
+        // download must not be redirected somewhere else and must not reach non-public addresses
+        // (OutboundConnectionOptions). The handler recycles connections, so DNS changes get through.
         builder.Services.AddHttpClient(CertificateDownloadCache.HttpClientName)
-            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
-            {
-                AllowAutoRedirect = false,
-                // The singleton cache keeps one client; recycling connections lets DNS changes through.
-                PooledConnectionLifetime = TimeSpan.FromMinutes(5)
-            });
+            .ConfigurePrimaryHttpMessageHandler(sp => OutboundConnectGuard.CreateHandler(
+                sp.GetRequiredService<IOptions<OutboundConnectionOptions>>().Value,
+                sp.GetService<IHostEnvironment>(),
+                allowAutoRedirect: false));
 
         // Built from the named client explicitly: a type-activated singleton would be handed the
         // default HttpClient instead, which follows redirects.

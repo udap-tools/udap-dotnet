@@ -166,7 +166,24 @@ public class ScopeExpansionTests
         Assert.Equal(["system/Patient.r", "system/Patient.rs", "system/Patient.s"], expanded);
     }
 
-   
+    [Fact]
+    public void Expand_Only_The_Trailing_Cruds_Group()
+    {
+        // A dotted segment between the resource and the permissions must not be expanded.
+        var expanded = new HL7SmartScopeExpander()
+            .Expand(["system/Patient.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN.rs"])
+            .Order()
+            .ToList();
+
+        Assert.Equal(
+        [
+            "system/Patient.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN.r",
+            "system/Patient.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN.rs",
+            "system/Patient.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN.s"
+        ], expanded);
+    }
+
+
     [Fact]
     public async Task ScopeV2WithClientCredentialsTest()
     {

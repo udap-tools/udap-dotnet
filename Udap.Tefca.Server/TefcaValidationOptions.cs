@@ -46,13 +46,9 @@ public class TefcaValidationOptions
     public HashSet<string> TrustedIasIssuers { get; set; } = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// When non-empty, the <c>tefca_ias</c> <c>id_token</c> <c>aud</c> must contain one of these values.
-    /// </summary>
-    public HashSet<string> IasIdTokenAudiences { get; set; } = new(StringComparer.Ordinal);
-
-    /// <summary>
     /// When true (the default), <see cref="DefaultTefcaIasIdTokenValidator"/> verifies the <c>tefca_ias</c>
-    /// <c>id_token</c>: trusted issuer, signature, and lifetime. Set to false to only require that an
+    /// <c>id_token</c>: trusted issuer, RS256 signature, lifetime, and an audience equal to the requesting IAS Provider's
+    /// HCID. Set to false to only require that an
     /// <c>id_token</c> is present, as before.
     /// </summary>
     public bool RequireVerifiedIasIdToken { get; set; } = true;

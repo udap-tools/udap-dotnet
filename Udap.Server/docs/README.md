@@ -286,6 +286,42 @@ Or via configuration:
 The setting defaults to `false`, so existing tokens are unchanged unless it is explicitly enabled.
 The emitted claim is unprefixed (`udap_community`, not `client_udap_community`).
 
+## Replay Protection Across Instances
+
+A `jti` is accepted once. Client assertions at the token endpoint and software statements at the
+registration endpoint are both checked against Duende's `IReplayCache`. Each `jti` is remembered until the
+token's `exp` plus the clock skew, and a second use is rejected.
+
+Duende's default `IReplayCache` (`DefaultReplayCache`) stores entries in whatever `IDistributedCache` is
+registered. Unless the host registers one, that is an in-memory cache, so **each instance remembers only the
+`jti`s it has seen itself**. Behind a load balancer, the same assertion could be used once on every instance.
+
+When more than one instance serves the token or registration endpoint, register a shared distributed cache.
+For example, Redis:
+
+```csharp
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration.GetConnectionString("redis");
+    options.InstanceName = "udap-auth:";
+});
+```
+
+The replay check then holds across instances with no other change.
+
+`IReplayCache` offers only `ExistsAsync` and `AddAsync`, so checking and recording a `jti` are two calls.
+Udap.Server serializes them within one process. Across instances, two requests carrying the same `jti` that
+arrive within milliseconds of each other could both pass. To close that window, register your own
+`IReplayCache` whose `AddAsync` is set-if-absent. With Redis that is `SET key value NX PX <ttl>`. Have
+`AddAsync` throw when the key already exists. The throw fails the request, so no token is issued and no
+client is registered. The same applies when the cache is unreachable: throwing from either method fails
+closed. Register your implementation after `AddUdapServer()` / `AddUdapJwtBearerClientAuthentication()` so it
+replaces the default:
+
+```csharp
+builder.Services.AddSingleton<IReplayCache, MyAtomicRedisReplayCache>();
+```
+
 ## Database Configuration
 
 EF Core migration projects are available for both database providers:

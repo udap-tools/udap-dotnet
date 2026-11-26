@@ -23,6 +23,7 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 {
     private readonly List<Duende.IdentityServer.Models.Client> _clients;
     private readonly ICollection<TieredClient> _tieredClients;
+    private readonly object _upsertLock = new();
     private readonly IEnumerable<Community> _communities;
     private readonly IEnumerable<Intermediate> _intermediateCertificates;
 
@@ -70,6 +71,15 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<bool> UpsertClient(Duende.IdentityServer.Models.Client client, CancellationToken token = default)
     {
+        // Find-then-add on a plain list: two concurrent identical registrations would otherwise both add.
+        lock (_upsertLock)
+        {
+            return UpsertClientUnlocked(client);
+        }
+    }
+
+    private Task<bool> UpsertClientUnlocked(Duende.IdentityServer.Models.Client client)
+    {
         using var activity = Tracing.StoreActivitySource.StartActivity();
         activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
 
@@ -84,7 +94,8 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
         client.Properties.TryGetValue(UdapServerConstants.ClientPropertyConstants.Organization, out var org);
         client.Properties.TryGetValue(UdapServerConstants.ClientPropertyConstants.DataHolder, out var dataHolder);
         
-        var existingClient = _clients.SingleOrDefault(c => 
+        // FirstOrDefault, like the EF store: an existing duplicate must not make every later registration throw.
+        var existingClient = _clients.FirstOrDefault(c =>
             // ISS
             c.ClientSecrets.Any(cs =>
                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME && 
@@ -152,13 +163,21 @@ public class InMemoryUdapClientRegistrationStore : IUdapClientRegistrationStore
 
     public Task<bool> UpsertTieredClient(TieredClient client, CancellationToken token = default)
     {
+        lock (_upsertLock)
+        {
+            return UpsertTieredClientUnlocked(client);
+        }
+    }
+
+    private Task<bool> UpsertTieredClientUnlocked(TieredClient client)
+    {
         using var activity = Tracing.StoreActivitySource.StartActivity();
         activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
         activity?.SetTag(Tracing.Properties.ClientId, client.IdPBaseUrl);
 
 
         var existingClient = _tieredClients
-            .SingleOrDefault(t =>
+            .FirstOrDefault(t =>
                     t.IdPBaseUrl == client.IdPBaseUrl &&
                     t.CommunityId == client.CommunityId);
 

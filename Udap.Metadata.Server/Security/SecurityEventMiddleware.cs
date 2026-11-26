@@ -99,9 +99,12 @@ public class SecurityEventMiddleware
             return value;
         }
 
-        var cleaned = value.Any(char.IsControl)
-            ? new string(value.Where(c => !char.IsControl(c)).ToArray())
-            : value;
+        // Line breaks first, in the form log-forging analyzers recognize, then any other control characters.
+        var cleaned = value.Replace("\r", string.Empty).Replace("\n", string.Empty);
+        if (cleaned.Any(char.IsControl))
+        {
+            cleaned = new string(cleaned.Where(c => !char.IsControl(c)).ToArray());
+        }
 
         return cleaned.Length > maxLength ? cleaned[..maxLength] + "..." : cleaned;
     }

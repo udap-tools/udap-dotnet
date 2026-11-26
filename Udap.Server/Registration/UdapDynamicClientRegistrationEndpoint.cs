@@ -59,7 +59,8 @@ public class UdapDynamicClientRegistrationEndpoint
         //
         if (!httpContext.Request.HasJsonContentType())
         {
-            _logger.LogDebug("Registration rejected: unsupported Content-Type {ContentType}", httpContext.Request.ContentType);
+            _logger.LogDebug("Registration rejected: unsupported Content-Type {ContentType}",
+                httpContext.Request.ContentType?.Replace("\r", string.Empty).Replace("\n", string.Empty));
             httpContext.Response.StatusCode = StatusCodes.Status415UnsupportedMediaType;
             return;
         }

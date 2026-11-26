@@ -14,10 +14,10 @@ namespace Udap.Tefca.Server;
 /// <summary>
 /// Validates the <c>id_token</c> carried in a <c>tefca_ias</c> authorization extension object.
 /// <para>
-/// <see cref="TefcaTokenValidator"/> on its own only checks that the <c>id_token</c> is present: verifying it needs
-/// the identity provider's keys and the host's rules for which identity providers it accepts, which the SDK does not
-/// have. Register an implementation to verify the token's signature, issuer, audience and lifetime, and to bind it to
-/// the request:
+/// <c>AddUdapTefcaValidation</c> registers <see cref="DefaultTefcaIasIdTokenValidator"/>, which accepts only issuers
+/// listed in <see cref="TefcaValidationOptions.TrustedIasIssuers"/> and checks signature, lifetime and, when
+/// configured, audience. Register your own implementation instead to apply other rules, for example binding the token
+/// to the request:
 /// </para>
 /// <code>
 /// builder.Services.AddSingleton&lt;ITefcaIasIdTokenValidator, MyIasIdTokenValidator&gt;();

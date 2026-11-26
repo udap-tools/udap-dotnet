@@ -28,8 +28,9 @@ namespace Udap.Tefca.Server;
 ///    coded in the client's registered SAN URI.
 /// 5. If the registered exchange purpose is <c>T-IAS</c> and the grant type is
 ///    <c>client_credentials</c>, the <c>tefca_ias</c> AEO must be present.
-/// 6. A <c>tefca_ias</c> AEO, when present, must carry an <c>id_token</c> (Table 4). Only its presence is checked
-///    unless an <see cref="ITefcaIasIdTokenValidator"/> is registered, which then verifies the token.
+/// 6. A <c>tefca_ias</c> AEO, when present, must carry an <c>id_token</c> (Table 4). When an
+///    <see cref="ITefcaIasIdTokenValidator"/> is registered (AddUdapTefcaValidation registers
+///    <see cref="DefaultTefcaIasIdTokenValidator"/>), it verifies the token.
 /// 7. Optionally (see <see cref="TefcaValidationOptions.EnforceTreatmentOrganizationIdentifiers"/>),
 ///    Treatment token requests must carry the NPI/TIN in <c>organization_name</c> and an
 ///    <c>organization_id</c> per the Treatment XP Implementation SOP v2.0 Section 6.2.

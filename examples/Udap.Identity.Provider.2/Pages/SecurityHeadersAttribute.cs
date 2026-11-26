@@ -29,11 +29,15 @@ public class SecurityHeadersAttribute : ActionFilterAttribute
                 if (client != null && client.ClientSecrets.Any(s => s.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                 {
                     // Only the logo's https origin goes into the CSP: a raw URI could carry ';' or
-                    // spaces and add directives of its own.
+                    // spaces and add directives of its own. The origin is built from the punycode host
+                    // and port, never GetLeftPart, which keeps userinfo (where ';' is not escaped).
                     if (Uri.TryCreate(client.LogoUri, UriKind.Absolute, out var logoUri) &&
-                        logoUri.Scheme == Uri.UriSchemeHttps)
+                        logoUri.Scheme == Uri.UriSchemeHttps &&
+                        string.IsNullOrEmpty(logoUri.UserInfo))
                     {
-                        var origin = logoUri.GetLeftPart(UriPartial.Authority);
+                        var origin = logoUri.IsDefaultPort
+                            ? $"https://{logoUri.IdnHost}"
+                            : $"https://{logoUri.IdnHost}:{logoUri.Port}";
 
                         if (!logoList.Contains(origin))
                         {

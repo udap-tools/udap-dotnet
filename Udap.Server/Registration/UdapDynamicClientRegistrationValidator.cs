@@ -665,7 +665,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         {
             _logger.LogDebug("Validating logo: {LogoUri}", logoUri.OriginalString);
 
-            if (!logoUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+            // A logo URL has no business carrying credentials, and userinfo is where ';' survives unescaped.
+            if (!logoUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) || !string.IsNullOrEmpty(logoUri.UserInfo))
             {
                 errorResult = new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,

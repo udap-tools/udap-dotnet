@@ -59,6 +59,23 @@ public class TrustChainConstraintTests
         Assert.Contains(result.ChainElements[0].Problems, p => p.Status == ChainProblemStatus.NameConstraintViolation);
     }
 
+    [Theory]
+    [InlineData("https://evil.example/@fhirlabs.net")]
+    [InlineData("https://evil.example/fhir/@fhirlabs.net/r4")]
+    [InlineData("https://fhirlabs.net@evil.example/fhir/r4")]
+    public async Task Leaf_whose_uri_names_the_permitted_host_outside_its_authority_is_rejected(string san)
+    {
+        var root = CreateCa("CN=Constrained Root", null, permittedUriHost: "fhirlabs.net");
+        var intermediate = CreateCa("CN=Constrained Intermediate", root);
+        var leaf = CreateLeaf("CN=Leaf", intermediate, san: san);
+        Assert.Contains(san, leaf.Extensions["2.5.29.17"]!.Format(false));
+
+        var result = await CreateValidator().IsTrustedCertificateAsync("test", leaf, new X509Certificate2Collection(intermediate), new X509Certificate2Collection(root), NoAnchors);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.ChainElements[0].Problems, p => p.Status == ChainProblemStatus.NameConstraintViolation);
+    }
+
     [Fact]
     public async Task Intermediate_without_keyCertSign_is_rejected()
     {

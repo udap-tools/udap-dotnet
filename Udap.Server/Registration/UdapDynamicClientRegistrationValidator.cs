@@ -844,10 +844,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     ? 0
                     : (anchors ?? Enumerable.Empty<Anchor>())
                         .Where(a => string.Equals(a.Thumbprint, matchedThumbprint, StringComparison.OrdinalIgnoreCase))
-                        // In-memory anchors carry the community name but leave CommunityId at 0, so key on the
-                        // name when there is one.
-                        .Select(a => a.Community ?? $"#{a.CommunityId}")
-                        .Distinct(StringComparer.OrdinalIgnoreCase)
+                        // Stored anchors carry their community's id. In-memory anchors leave CommunityId at 0, so
+                        // fall back to the community name for them. Names compare ordinally, as the community
+                        // validators match them.
+                        .Select(a => a.CommunityId != 0 ? $"#{a.CommunityId}" : a.Community ?? string.Empty)
+                        .Distinct(StringComparer.Ordinal)
                         .Count();
 
                 if (anchorCommunities > 1)

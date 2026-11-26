@@ -4,6 +4,8 @@
 # The packages are refused if any dependency has a known vulnerability or the public API breaks
 # against the package validation baseline (Common.props). Each .nupkg carries its CycloneDX SBOM;
 # the packages and SBOMs also get a build provenance attestation and are attached to a GitHub release.
+# Publishing uses nuget.org trusted publishing (OIDC). The policy, under the JoeShook account on nuget.org
+# (Trusted Publishing), is: owner JoeShook, repository udap-dotnet, workflow release.yml, environment release.
 
 name: Release to Nuget.org
 run-name: "Release ${{ github.ref_name }} to nuget.org"
@@ -32,11 +34,13 @@ jobs:
     if: github.repository == 'JoeShook/udap-dotnet'
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # The release environment only deploys from v* tags and holds the nuget.org publishing secret.
+    # The release environment only deploys from v* tags and needs a reviewer's approval. nuget.org's
+    # trusted publishing policy names this repository, release.yml and this environment, so no other
+    # workflow, repository or environment can get a key to publish.
     environment: release
     permissions:
       contents: write       # create the GitHub release
-      id-token: write       # sign the provenance attestation
+      id-token: write       # sign the provenance attestation; request the nuget.org OIDC token
       attestations: write   # store the provenance attestation
     steps:
     - name: Checkout
@@ -44,7 +48,7 @@ jobs:
       with:
         persist-credentials: false
     - name: Setup .NET
-      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+      uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
       with:
         dotnet-version: |
           8.0.x
@@ -71,10 +75,17 @@ jobs:
       with:
         name: packages
         path: artifacts
+    # Trusted publishing: the job's GitHub OIDC token is exchanged for a nuget.org API key that lasts
+    # one hour, so there is no long-lived key to store, rotate or leak. Requested right before the push.
+    - name: NuGet login
+      id: nuget-login
+      uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+      with:
+        user: JoeShook  # nuget.org profile name of the package owner (not an email)
     # Pushing a .nupkg also pushes the .snupkg beside it to the symbol server.
     - name: Push
       env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
       run: |
         for package in artifacts/*.nupkg; do
           dotnet nuget push "$package" --source https://api.nuget.org/v3/index.json --api-key "$NUGET_API_KEY" --skip-duplicate

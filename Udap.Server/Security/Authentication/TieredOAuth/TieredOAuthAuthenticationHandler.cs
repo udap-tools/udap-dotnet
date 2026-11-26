@@ -74,7 +74,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var queryStrings = new Dictionary<string, string>
         {
             { "response_type", "code" },
-            { "redirect_uri", redirectUri }
+            // The base class builds redirectUri from the request's Host header; use the configured callback.
+            { "redirect_uri", BuildCallbackUrl() }
         };
 
         AddQueryString(queryStrings, properties, "client_id", true);
@@ -98,18 +99,14 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                            throw new InvalidOperationException("Missing IdP authorization endpoint.");
 
         var community = properties.GetParameter<string>(UdapConstants.Community);
-        
-        if (string.IsNullOrEmpty(community))
+
+        if (!string.IsNullOrEmpty(community))
         {
-            queryStrings.Add(UdapConstants.Community, community!);
+            queryStrings.Add(UdapConstants.Community, community);
         }
 
-        var tokenEndpoint = properties.GetParameter<string>(UdapConstants.Discovery.TokenEndpoint);
-
-        if (string.IsNullOrEmpty(tokenEndpoint))
-        {
-            Options.TokenEndpoint = tokenEndpoint!;
-        } 
+        // The token endpoint is not written to Options here: the options instance is shared by every
+        // request, and the code exchange reads the endpoint from the stored tiered client instead.
 
         // Dynamic options
         return QueryHelpers.AddQueryString(authEndpoint, queryStrings!);
@@ -228,7 +225,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
 
             var codeExchangeContext =
-                new OAuthCodeExchangeContext(properties, code.ToString(), BuildRedirectUri(Options.CallbackPath));
+                new OAuthCodeExchangeContext(properties, code.ToString(), BuildCallbackUrl());
 
             // UDAP
             using var tokens = await ExchangeCodeAsync(codeExchangeContext);
@@ -253,7 +250,7 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             var validationParameters = Options.TokenValidationParameters.Clone();
 
             var clientId = properties.Items["client_id"] ?? throw new InvalidOperationException($"client_id not found in properties");
-            var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId, Context.RequestAborted) ?? throw new InvalidOperationException($"client_id not found in registration store: {clientId}");
+            var tieredClient = await FindStateTieredClient(properties, clientId) ?? throw new InvalidOperationException($"client_id not found in registration store: {clientId}");
 
             if (string.IsNullOrEmpty(tieredClient.IdPBaseUrl))
             {
@@ -276,7 +273,11 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             validationParameters.IssuerSigningKeys = keys;
 
             var tokenEndpointUser =
-                ValidateToken(idToken, tieredClient.IdPBaseUrl, clientId, validationParameters); //out var tokenEndpointJwt);
+                ValidateToken(idToken, tieredClient.IdPBaseUrl, clientId, validationParameters, out var issuer);
+
+            // Every upstream IdP signs in through this one scheme, so the scheme name alone does not say
+            // who vouched for the user. Carry the validated issuer so the host can link accounts on iss + sub.
+            properties.Items[TieredOAuthAuthenticationDefaults.IdPIssuerItem] = issuer;
 
             // nonce = tokenEndpointJwt.Payload.Nonce;
             // if (!string.IsNullOrEmpty(nonce))
@@ -309,7 +310,8 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         string idToken, 
         string idpBaseUrl,
         string clientId,
-        TokenValidationParameters validationParameters)
+        TokenValidationParameters validationParameters,
+        out string issuer)
     {
         if (!Options.SecurityTokenValidator.CanReadToken(idToken))
         {
@@ -334,9 +336,9 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         
         var principal = Options.SecurityTokenValidator.ValidateToken(idToken, validationParameters, out SecurityToken validatedToken);
 
-        if (validatedToken is JwtSecurityToken)
+        if (validatedToken is JwtSecurityToken validatedJwt && !string.IsNullOrEmpty(validatedJwt.Issuer))
         {
-            // jwt = validatedJwt;
+            issuer = validatedJwt.Issuer;
         }
         else
         {
@@ -420,12 +422,11 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         var communityParam = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
 
         var clientId = context.Properties.Items["client_id"] ?? throw new InvalidOperationException("client_id is null");
-        var resourceHolderRedirectUrl =
-            $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Context.Request.PathBase}{Options.CallbackPath}";
+        var resourceHolderRedirectUrl = BuildCallbackUrl();
 
         var requestParams = Context.Request.Query;
         var code = requestParams["code"];
-        var tieredClient = await _udapClientRegistrationStore.FindTieredClientById(clientId, Context.RequestAborted) ?? throw new InvalidOperationException($"client_id not found: {clientId}");
+        var tieredClient = await FindStateTieredClient(context.Properties, clientId) ?? throw new InvalidOperationException($"client_id not found: {clientId}");
         var tieredClientId = tieredClient.ClientId;
             
         await _certificateStore.Resolve(Context.RequestAborted);
@@ -436,10 +437,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         // Sign with the certificate this server registered with: the IdP only accepts a client assertion
         // whose certificate carries the issuer (URI SAN) the client registered.
-        var signingCertificate = (tieredClient.ClientUriSan == null
-                                     ? null
-                                     : communityCertificates.FirstOrDefault(c => c.HasUriSubjectAltName(tieredClient.ClientUriSan)))
-                                 ?? communityCertificates.First();
+        var registeredCertificate = tieredClient.ClientUriSan == null
+            ? null
+            : communityCertificates.FirstOrDefault(c => c.HasUriSubjectAltName(tieredClient.ClientUriSan));
+        var signingCertificate = registeredCertificate ?? communityCertificates.First();
 
         // Sign request for token
         var tokenRequestBuilder = AccessTokenRequestForAuthorizationCodeBuilder.Create(
@@ -461,7 +462,42 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         var authTokenResponse = await _udapClient.ExchangeCodeForAuthTokenResponse(tokenRequest, Context.RequestAborted);
 
+        // The IdP no longer knows this client (it was reset, or the registration was removed). Disable the
+        // registration so the next sign-in registers again through the normal UDAP checks; this sign-in still fails.
+        // Only when the assertion was signed with the certificate this registration was made with: otherwise the
+        // rejection says nothing about the registration, and a forged callback could disable it.
+        if (registeredCertificate != null &&
+            authTokenResponse.Error?.Data["error"] is string tokenError &&
+            string.Equals(tokenError, OidcConstants.TokenErrors.InvalidClient, StringComparison.Ordinal))
+        {
+            Logger.LogWarning(
+                "IdP {IdPBaseUrl} rejected client {ClientId} as invalid_client; the registration is disabled and the next sign-in registers again",
+                tieredClient.IdPBaseUrl,
+                tieredClient.ClientId);
+
+            tieredClient.Enabled = false;
+            await _udapClientRegistrationStore.UpsertTieredClient(tieredClient, Context.RequestAborted);
+        }
+
         return  authTokenResponse.ToMSAuthTokenResponse();
+    }
+
+    /// <summary>
+    /// Builds the callback URL from <see cref="TieredOAuthAuthenticationOptions.CallbackBaseUrl"/> and the callback path, not from the
+    /// request's scheme and Host header: this URL is registered with the IdP and receives its authorization codes.
+    /// </summary>
+    protected string BuildCallbackUrl()
+    {
+        var baseUrl = Options.CallbackBaseUrl;
+
+        if (string.IsNullOrEmpty(baseUrl) || !Uri.TryCreate(baseUrl, UriKind.Absolute, out _))
+        {
+            throw new InvalidOperationException(
+                "TieredOAuthAuthenticationOptions.CallbackBaseUrl is not set to an absolute URL. " +
+                "Pass baseUrl to AddUdapServer, set the UdapIdpBaseUrl environment variable, or set CallbackBaseUrl.");
+        }
+
+        return $"{baseUrl.TrimEnd('/')}{Options.CallbackPath}";
     }
 
     /// <inheritdoc />
@@ -474,23 +510,26 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
         _ = scope.FromSpaceSeparatedString().FirstOrDefault(s => s == UdapConstants.StandardScopes.Udap) ?? throw new Exception("Missing required udap scope from client for Tiered OAuth");
         var clientRedirectUrl = (requestParams.GetValues("redirect_uri") ?? throw new InvalidOperationException()).Last();
-        var updateRegistration = requestParams.GetValues("update_registration")?.Last();
 
-        // Validate idp Server;
-        var idpUri = new Uri(idpParam);
-        var communityParam = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
-        var idp = idpUri.OriginalString;
-        if (communityParam != null)
+        // Fails before any IdP is contacted when the server's own base URL is not configured.
+        var resourceHolderRedirectUrl = BuildCallbackUrl();
+
+        // Validate idp Server; it comes from the anonymous request, so check it before contacting it.
+        var idpUri = TieredOAuthHelpers.ValidateIdPUri(idpParam);
+
+        if (!Options.IsIdPAllowed(idpUri.GetLeftPart(UriPartial.Path)))
         {
-            if (idp.Contains($":{idpUri.Port}"))
-            {
-                idp = $"{idpUri.Scheme}{Uri.SchemeDelimiter}{idpUri.Host}:{idpUri.Port}{idpUri.LocalPath}";
-            }
-            else
-            {
-                idp = $"{idpUri.Scheme}{Uri.SchemeDelimiter}{idpUri.Host}{idpUri.LocalPath}";
-            }
+            Logger.LogWarning("Tiered OAuth IdP is not in AllowedIdPs: {Idp}", idpUri.GetLeftPart(UriPartial.Path));
+            Response.StatusCode = StatusCodes.Status400BadRequest;
+            await Response.WriteAsync("The requested idp is not allowed.");
+            return;
         }
+
+        var communityParam = (HttpUtility.ParseQueryString(idpUri.Query).GetValues("community") ?? Array.Empty<string>()).LastOrDefault();
+        // One form per IdP: the registration is stored and looked up by this string, so a trailing slash or a
+        // ?community= query must not produce a second registration for the same IdP. Base URLs carry no
+        // trailing slash.
+        var idp = idpUri.GetLeftPart(UriPartial.Path).TrimEnd('/');
         
         // Assign rather than Add: one validation can report the same kind of event more than once.
         _udapClient.Problem += element => properties.Parameters["Problem"] = element.Problems.Summarize(TrustChainValidator.DefaultProblemFlags);
@@ -498,9 +537,6 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         _udapClient.TokenError += message => properties.Parameters["TokenError"] = message;
         
         var response = await _udapClient.ValidateResource(idp, communityParam, cancellationToken: Context.RequestAborted);
-        
-        var resourceHolderRedirectUrl =
-            $"{Context.Request.Scheme}{Uri.SchemeDelimiter}{Context.Request.Host}{Options.CallbackPath}";
 
         if (response.IsError)
         {
@@ -532,7 +568,22 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
         // if not registered with IdP, then register.
         //
 
-        var idpClient = await _udapClientRegistrationStore.FindTieredClientByIdPBaseUrl(idp, Context.RequestAborted);
+        // A registration belongs to one IdP and one community, so look it up by both: a request for another
+        // community must neither reuse this one nor be able to disable it.
+        await _certificateStore.Resolve(Context.RequestAborted);
+        var communityName = communityParam ?? _certificateStore.IssuedCertificates.First().Community; //TODO: query by
+        var communityId = await _udapClientRegistrationStore.GetCommunityId(communityName, Context.RequestAborted);
+
+        if (communityId == null)
+        {
+            Logger.LogInformation(
+                "Tiered Oauth: Cannot find communityId for community: {communityName}",
+                communityName);
+            //Todo: return strategy?
+            return;
+        }
+
+        var idpClient = await _udapClientRegistrationStore.FindTieredClient(idp, communityId.Value, Context.RequestAborted);
 
         var idpClientId = null as string;
 
@@ -541,23 +592,10 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
             idpClientId = idpClient.ClientId;
         }
 
-        // TODO Special provision query param updateRegistration to enable update registration.
-        // Not sure if it stays here or lives in an Admin tool.
-        if (idpClient == null || !idpClient.Enabled || updateRegistration == "true")
+        // Register with the IdP only when this server has no enabled registration there yet. The request
+        // cannot force a re-registration.
+        if (idpClient == null || !idpClient.Enabled)
         {
-            await _certificateStore.Resolve(Context.RequestAborted);
-            var communityName = communityParam ?? _certificateStore.IssuedCertificates.First().Community; //TODO: query by 
-            var communityId = await _udapClientRegistrationStore.GetCommunityId(communityName, Context.RequestAborted);
-
-            if (communityId == null)
-            {
-                Logger.LogInformation(
-                    "Tiered Oauth: Cannot find communityId for community: {communityName}",
-                    communityName);
-                //Todo: return strategy?
-                return;
-            }
-            
             var document = await _udapClient.RegisterTieredClient(
                 resourceHolderRedirectUrl,
 
@@ -578,11 +616,9 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
                 return;
             }
 
-            if (idpClient == null)
-            {
-                idpClientId = document.ClientId;
-            }
-          
+            // Use the client_id the IdP just issued: after a reset it need not be the one stored before.
+            idpClientId = document.ClientId;
+
             var tokenHandler = new JsonWebTokenHandler();
             var jsonWebToken = tokenHandler.ReadJsonWebToken(document.SoftwareStatement);
             var publicCert = jsonWebToken.GetPublicCertificate() ?? throw new MissingFieldException("Missing x5c public certificate");
@@ -605,8 +641,24 @@ public class TieredOAuthAuthenticationHandler : OAuthHandler<TieredOAuthAuthenti
 
 
         properties.SetString("client_id", idpClientId);
+        // Kept in the protected state so the callback finds this IdP's registration, not another IdP's that was
+        // issued the same client_id.
+        properties.SetString(IdPBaseUrlItem, idp);
 
         await base.HandleChallengeAsync(properties);
+    }
+
+    private const string IdPBaseUrlItem = "idp_base_url";
+
+    /// <summary>
+    /// The registration named by the protected state: by client_id and IdP base URL, or by client_id alone for a
+    /// state issued before the IdP base URL was kept in it.
+    /// </summary>
+    private Task<TieredClient?> FindStateTieredClient(AuthenticationProperties properties, string clientId)
+    {
+        return properties.Items.TryGetValue(IdPBaseUrlItem, out var idpBaseUrl) && !string.IsNullOrEmpty(idpBaseUrl)
+            ? _udapClientRegistrationStore.FindTieredClientById(clientId, idpBaseUrl, Context.RequestAborted)
+            : _udapClientRegistrationStore.FindTieredClientById(clientId, Context.RequestAborted);
     }
 
 

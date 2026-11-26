@@ -349,6 +349,11 @@ namespace Udap.Client
 
             baseUrl.AssertUri();
 
+            // UdapServerMetadata only ever holds metadata that passed validation: registration and token
+            // requests go to its endpoints. The downloaded document is returned on the response either way.
+            UdapServerMetadata = null;
+            UdapMetadata? downloadedMetadata = null;
+
             try
             {
                 if (discoveryPolicy != null)
@@ -367,8 +372,9 @@ namespace Udap.Client
 
                 if (disco.HttpStatusCode == HttpStatusCode.OK && !disco.IsError)
                 {
-                    UdapServerMetadata = disco.Json?.Deserialize<UdapMetadata>();
-                    _logger.LogDebug("UdapServerMetadata: {UdapServerMetadataJson}", UdapServerMetadata?.SerializeToJson());
+                    downloadedMetadata = disco.Json?.Deserialize<UdapMetadata>();
+                    disco.UnvalidatedMetadata = downloadedMetadata;
+                    _logger.LogDebug("UdapServerMetadata: {UdapServerMetadataJson}", downloadedMetadata?.SerializeToJson());
 
                     if (baseUrl.Contains(UdapConstants.Discovery.DiscoveryEndpoint))
                     {
@@ -376,12 +382,12 @@ namespace Udap.Client
                         baseUrl = baseUrl.Substring(0, i).RemoveTrailingSlash();
                     }
 
-                    if (UdapServerMetadata == null)
+                    if (downloadedMetadata == null)
                     {
                         throw new NullReferenceException("Missing UDAP Metadata");
                     }
 
-                    if (!await _clientDiscoveryValidator.ValidateJwtToken(UdapServerMetadata, baseUrl))
+                    if (!await _clientDiscoveryValidator.ValidateJwtToken(downloadedMetadata, baseUrl))
                     {
                         throw new SecurityTokenInvalidTypeException("Failed JWT Token Validation");
                     }
@@ -397,12 +403,15 @@ namespace Udap.Client
                     // Signed metadata takes precedence over the plain JSON (UDAP Security IG 2.3): from here
                     // on, registration and token requests go to the endpoints the server signed.
                     var signedEndpoints = SignedMetadataEndpoints.Resolve(
-                        UdapServerMetadata.SignedMetadata!,
-                        UdapServerMetadata,
+                        downloadedMetadata.SignedMetadata!,
+                        downloadedMetadata,
                         disco.Policy ?? _discoveryPolicy,
                         _logger);
-                    SignedMetadataEndpoints.Apply(UdapServerMetadata, signedEndpoints);
+                    SignedMetadataEndpoints.Apply(downloadedMetadata, signedEndpoints);
                     disco.UseSignedEndpoints(signedEndpoints);
+
+                    // Validated: from here on, registration and token requests use this metadata.
+                    UdapServerMetadata = downloadedMetadata;
                 }
                 else
                 {
@@ -414,7 +423,9 @@ namespace Udap.Client
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed validating resource metadata");
-                return ProtocolResponse.FromException<UdapDiscoveryDocumentResponse>(ex);
+                var failed = ProtocolResponse.FromException<UdapDiscoveryDocumentResponse>(ex);
+                failed.UnvalidatedMetadata = downloadedMetadata;
+                return failed;
             }
          }
 

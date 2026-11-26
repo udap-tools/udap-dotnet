@@ -33,6 +33,14 @@ public class UdapDiscoveryDocumentResponse : ProtocolResponse
     /// </summary>
     public DiscoveryPolicy? Policy { get; set; }
 
+    /// <summary>
+    /// The UDAP metadata as downloaded, whether or not it passed validation. Set by
+    /// <c>UdapClient.ValidateResource</c> so a tool can show a server's metadata next to the problems found.
+    /// Never use it to register or request tokens: only <c>IUdapClient.UdapServerMetadata</c> holds metadata
+    /// that passed signature and trust chain validation.
+    /// </summary>
+    public UdapMetadata? UnvalidatedMetadata { get; set; }
+
     protected override Task InitializeAsync(object? initializationData = null)
     {
         if (HttpResponse == null || !HttpResponse.IsSuccessStatusCode)

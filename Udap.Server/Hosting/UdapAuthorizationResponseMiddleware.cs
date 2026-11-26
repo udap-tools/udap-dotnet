@@ -13,8 +13,10 @@ using Duende.IdentityServer.Configuration;
 using Duende.IdentityServer.Extensions;
 using Duende.IdentityServer.Services;
 using Duende.IdentityServer.Stores;
+using Duende.IdentityServer.Validation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using Udap.Model;
@@ -111,7 +113,7 @@ internal class UdapAuthorizationResponseMiddleware
 
                         if (requireState)
                         {
-                            RenderMissingStateErrorResponse(context, requestParams);
+                            await RenderMissingStateErrorResponse(context, client, requestParams);
                             _logger.LogInformation("{Middleware} rejected an authorization request with no state", nameof(UdapAuthorizationResponseMiddleware));
 
                             return;
@@ -141,7 +143,7 @@ internal class UdapAuthorizationResponseMiddleware
                     {
                         if (string.IsNullOrEmpty(udap) || string.IsNullOrEmpty(openid))
                         {
-                            RenderRequiredScopeErrorResponse(context, requestParams);
+                            await RenderRequiredScopeErrorResponse(context, client, requestParams);
                             _logger.LogInformation("{Middleware} rejected a tiered OAuth request missing the udap or openid scope", nameof(UdapAuthorizationResponseMiddleware));
 
                             return;
@@ -175,14 +177,14 @@ internal class UdapAuthorizationResponseMiddleware
 
                         if (client == null)
                         {
-                            await RenderErrorResponse(context, interactionService, errorId, requestParams);
+                            await RenderErrorResponse(context, interactionService, errorId, null, requestParams);
                             return;
                         }
 
                         if (client.ClientSecrets.Any(cs =>
                                 cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME))
                         {
-                            await RenderErrorResponse(context, interactionService, errorId, requestParams);
+                            await RenderErrorResponse(context, interactionService, errorId, client, requestParams);
                         }
                     }
                 }
@@ -224,42 +226,96 @@ internal class UdapAuthorizationResponseMiddleware
         return parameters;
     }
 
-    private static void RenderRequiredScopeErrorResponse(HttpContext context, NameValueCollection requestParams)
+    private static Task RenderRequiredScopeErrorResponse(
+        HttpContext context,
+        Duende.IdentityServer.Models.Client client,
+        NameValueCollection requestParams)
     {
-        var redirectUri = requestParams.Get(AuthorizeRequest.RedirectUri);
-
-        if (redirectUri != null)
-        {
-            var url = BuildRedirectUrl(
-                requestParams,
-                redirectUri,
-                AuthorizeErrors.InvalidRequest,
-                "Missing udap and/or openid scope between data holder and IdP");
-
-            context.Response.Redirect(url);
-        }
+        return RedirectOrRenderError(
+            context,
+            client,
+            requestParams,
+            AuthorizeErrors.InvalidRequest,
+            "Missing udap and/or openid scope between data holder and IdP");
     }
 
-    private static void RenderMissingStateErrorResponse(HttpContext context, NameValueCollection requestParams)
+    private static Task RenderMissingStateErrorResponse(
+        HttpContext context,
+        Duende.IdentityServer.Models.Client client,
+        NameValueCollection requestParams)
+    {
+        return RedirectOrRenderError(
+            context,
+            client,
+            requestParams,
+            AuthorizeErrors.InvalidRequest,
+            "Missing state");
+    }
+
+    /// <summary>
+    /// Sends the error to the client's redirect_uri only when that URI is registered for the
+    /// client (checked with the host's <see cref="IRedirectUriValidator"/>, the same rule the
+    /// authorize endpoint applies). Otherwise the error is returned as a 400 JSON response, so
+    /// an unregistered redirect_uri never receives a redirect.
+    /// </summary>
+    private static async Task RedirectOrRenderError(
+        HttpContext context,
+        Duende.IdentityServer.Models.Client? client,
+        NameValueCollection requestParams,
+        string error,
+        string? errorDescription)
     {
         var redirectUri = requestParams.Get(AuthorizeRequest.RedirectUri);
 
-        if (redirectUri != null)
+        if (redirectUri != null && await IsRegisteredRedirectUriAsync(context, client, redirectUri, requestParams))
         {
-            var url = BuildRedirectUrl(
-                requestParams,
-                redirectUri,
-                AuthorizeErrors.InvalidRequest,
-                "Missing state");
-
-            context.Response.Redirect(url);
+            context.Response.Redirect(BuildRedirectUrl(requestParams, redirectUri, error, errorDescription));
+            return;
         }
+
+        context.Response.Headers.Location = StringValues.Empty;
+        context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+        await context.Response.WriteAsJsonAsync(new Dictionary<string, string?>
+        {
+            [AuthorizeResponse.Error] = error,
+            [AuthorizeResponse.ErrorDescription] = errorDescription
+        });
+        await context.Response.Body.FlushAsync();
+    }
+
+    private static async Task<bool> IsRegisteredRedirectUriAsync(
+        HttpContext context,
+        Duende.IdentityServer.Models.Client? client,
+        string redirectUri,
+        NameValueCollection requestParams)
+    {
+        if (client == null)
+        {
+            return false;
+        }
+
+        var validator = context.RequestServices.GetService<IRedirectUriValidator>();
+
+        if (validator == null)
+        {
+            return client.RedirectUris.Contains(redirectUri, StringComparer.Ordinal);
+        }
+
+        return await validator.IsRedirectUriValidAsync(
+            new RedirectUriValidationContext
+            {
+                RequestedUri = redirectUri,
+                Client = client,
+                RequestParameters = requestParams
+            },
+            context.RequestAborted);
     }
 
     private static async Task RenderErrorResponse(
         HttpContext context,
         IIdentityServerInteractionService interactionService,
         StringValues errorId,
+        Duende.IdentityServer.Models.Client? client,
         NameValueCollection requestParams)
     {
         var errorMessage = await interactionService.GetErrorContextAsync(errorId, context.RequestAborted);
@@ -271,18 +327,12 @@ internal class UdapAuthorizationResponseMiddleware
             //
             // Include error in redirect
             //
-            var redirectUri = requestParams.Get(AuthorizeRequest.RedirectUri);
-
-            if (redirectUri != null)
-            {
-                var url = BuildRedirectUrl(
-                    requestParams,
-                    redirectUri,
-                    AuthorizeErrors.InvalidRequest,
-                    errorMessage.ErrorDescription);
-
-                context.Response.Redirect(url);
-            }
+            await RedirectOrRenderError(
+                context,
+                client,
+                requestParams,
+                AuthorizeErrors.InvalidRequest,
+                errorMessage.ErrorDescription);
 
             return;
         }

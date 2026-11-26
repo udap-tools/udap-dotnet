@@ -60,13 +60,19 @@ namespace Udap.Server.Storage.Stores
             client.Properties.TryGetValue(UdapServerConstants.ClientPropertyConstants.Organization, out var org);
             client.Properties.TryGetValue(UdapServerConstants.ClientPropertyConstants.DataHolder, out var dataHolder);
 
+            // Find-then-insert: concurrent registrations of the same client would otherwise both insert.
+            using var upsertLock = await StripedAsyncLock.AcquireAsync($"client|{iss}|{community}|{org}|{dataHolder}", token);
+
             var existingClient = await _dbContext.Clients
                 .Include(c => c.AllowedScopes)
                 .Include(c => c.RedirectUris)
                 .Include(c => c.AllowedGrantTypes)
                 .Include(c => c.ClientSecrets)
                 .Include(c => c.Properties)
-                .SingleOrDefaultAsync(c =>
+                // First, not Single: a store that already holds duplicates keeps updating the oldest
+                // instead of failing every later registration for this client.
+                .OrderBy(c => c.Id)
+                .FirstOrDefaultAsync(c =>
                     // ISS
                     c.ClientSecrets.Any(cs =>
                     cs.Type == UdapServerConstants.SecretTypes.UDAP_SAN_URI_ISS_NAME &&
@@ -150,20 +156,26 @@ namespace Udap.Server.Storage.Stores
             activity?.SetTag(Tracing.Properties.ClientId, client.ClientId);
             activity?.SetTag(Tracing.Properties.ClientId, client.IdPBaseUrl);
 
+            using var upsertLock = await StripedAsyncLock.AcquireAsync($"tiered|{client.IdPBaseUrl}|{client.CommunityId}", token);
 
             var existingClient = await _dbContext.TieredClients
-                .SingleOrDefaultAsync(t => 
+                .OrderBy(t => t.Id)
+                .FirstOrDefaultAsync(t =>
                     t.IdPBaseUrl == client.IdPBaseUrl  &&
                     t.CommunityId == client.CommunityId, 
                     cancellationToken: token);
             
             if (existingClient != null)
             {
+                // A re-registration (or a disable after invalid_client) replaces what the IdP issued and the
+                // enabled flag; only values the caller left empty are kept.
+                existingClient.ClientId = string.IsNullOrEmpty(client.ClientId) ? existingClient.ClientId : client.ClientId;
+                existingClient.ClientName = client.ClientName ?? existingClient.ClientName;
+                existingClient.RedirectUri = client.RedirectUri ?? existingClient.RedirectUri;
+                existingClient.ClientUriSan = client.ClientUriSan ?? existingClient.ClientUriSan;
+                existingClient.TokenEndpoint = string.IsNullOrEmpty(client.TokenEndpoint) ? existingClient.TokenEndpoint : client.TokenEndpoint;
+                existingClient.Enabled = client.Enabled;
                 client.ClientId = existingClient.ClientId;
-                if (client.RedirectUri != null)
-                {
-                    existingClient.RedirectUri = client.RedirectUri;
-                }
 
                 await _dbContext.SaveChangesAsync(token);
                 _logger.LogInformation("Updated client: {Id}", existingClient.Id);
@@ -179,8 +191,13 @@ namespace Udap.Server.Storage.Stores
 
         public async Task<TieredClient?> FindTieredClientById(string clientId, CancellationToken token = default)
         {
+            // Rows written before IdP URLs were normalized can share a client_id; prefer the newest enabled one
+            // rather than throw.
             var entity = await _dbContext.TieredClients
-                .SingleOrDefaultAsync(t => t.ClientId == clientId, token);
+                .Where(t => t.ClientId == clientId)
+                .OrderByDescending(t => t.Enabled)
+                .ThenByDescending(t => t.Id)
+                .FirstOrDefaultAsync(token);
 
             // ToModel() returns a non-null empty object for a null entity, so map only when found.
             return entity?.ToModel();
@@ -189,7 +206,32 @@ namespace Udap.Server.Storage.Stores
         public async Task<TieredClient?> FindTieredClientByIdPBaseUrl(string idpBaseUrl, CancellationToken token = default)
         {
             var entity = await _dbContext.TieredClients
-                .SingleOrDefaultAsync(t => t.IdPBaseUrl == idpBaseUrl, token);
+                .Where(t => t.IdPBaseUrl == idpBaseUrl)
+                .OrderByDescending(t => t.Enabled)
+                .ThenByDescending(t => t.Id)
+                .FirstOrDefaultAsync(token);
+
+            return entity?.ToModel();
+        }
+
+        public async Task<TieredClient?> FindTieredClient(string idpBaseUrl, int communityId, CancellationToken token = default)
+        {
+            var entity = await _dbContext.TieredClients
+                .Where(t => t.IdPBaseUrl == idpBaseUrl && t.CommunityId == communityId)
+                .OrderByDescending(t => t.Enabled)
+                .ThenByDescending(t => t.Id)
+                .FirstOrDefaultAsync(token);
+
+            return entity?.ToModel();
+        }
+
+        public async Task<TieredClient?> FindTieredClientById(string clientId, string idpBaseUrl, CancellationToken token = default)
+        {
+            var entity = await _dbContext.TieredClients
+                .Where(t => t.ClientId == clientId && t.IdPBaseUrl == idpBaseUrl)
+                .OrderByDescending(t => t.Enabled)
+                .ThenByDescending(t => t.Id)
+                .FirstOrDefaultAsync(token);
 
             return entity?.ToModel();
         }
@@ -273,8 +315,13 @@ namespace Udap.Server.Storage.Stores
             using var activity = Tracing.StoreActivitySource.StartActivity();
             activity?.SetTag(Tracing.Properties.Community, communityId);
 
+            // Same Enabled rules as GetAnchors, so disabling an anchor or a community also stops
+            // already-registered clients from authenticating at the token endpoint.
             var encodedCerts = await _dbContext.Anchors
-                .Where(c => c.CommunityId == communityId)
+                .Where(c => c.CommunityId == communityId
+                            && c.Enabled
+                            && c.Community != null
+                            && c.Community.Enabled)
                 .Include(c => c.Intermediates)
                 .ToListAsync(token);
 

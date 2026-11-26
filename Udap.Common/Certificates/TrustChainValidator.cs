@@ -27,6 +27,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Org.BouncyCastle.Asn1;
 using Org.BouncyCastle.Asn1.X509;
 using Org.BouncyCastle.Security;
@@ -50,6 +51,7 @@ namespace Udap.Common.Certificates
         private readonly HttpClient? _httpClient;
         private readonly ILogger<TrustChainValidator> _logger;
         private readonly TimeSpan _downloadTimeout;
+        private readonly Func<TrustChainValidatorOptions?> _optionsAccessor = () => null;
         private const int MaxChainDepth = 10;
 
         // AIA URLs come from certificates that are not trusted yet, so one validation downloads at most this many.
@@ -85,7 +87,11 @@ namespace Udap.Common.Certificates
             ChainProblemStatus.NotSignatureValid |
             ChainProblemStatus.InvalidBasicConstraints |
             ChainProblemStatus.OfflineRevocation |
-            ChainProblemStatus.RevocationStatusUnknown;
+            ChainProblemStatus.RevocationStatusUnknown |
+            ChainProblemStatus.PathLengthConstraintExceeded |
+            ChainProblemStatus.InvalidKeyUsage |
+            ChainProblemStatus.NameConstraintViolation |
+            ChainProblemStatus.UnsupportedCriticalExtension;
 
         /// <summary>
         /// Creates an instance with default problem flags and online revocation checking.
@@ -97,6 +103,23 @@ namespace Udap.Common.Certificates
             ICertificateDownloadCache? downloadCache = null)
             : this(DefaultProblemFlags, true, logger, downloadCache, downloadCache == null ? new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false }) : null)
         {
+        }
+
+        /// <summary>
+        /// Creates an instance with default problem flags, online revocation checking and the
+        /// <see cref="TrustChainValidatorOptions"/> policy (for example a maximum chain length per community).
+        /// The current options value is read on every validation.
+        /// When no <see cref="ICertificateDownloadCache"/> is registered, a default HttpClient
+        /// is created for direct CRL/AIA downloads.
+        /// </summary>
+        public TrustChainValidator(
+            ILogger<TrustChainValidator> logger,
+            IOptionsMonitor<TrustChainValidatorOptions> options,
+            ICertificateDownloadCache? downloadCache = null)
+            : this(logger, downloadCache)
+        {
+            ArgumentNullException.ThrowIfNull(options);
+            _optionsAccessor = () => options.CurrentValue;
         }
 
         /// <summary>
@@ -148,6 +171,30 @@ namespace Udap.Common.Certificates
         }
 
         /// <summary>
+        /// Creates an instance with custom problem flags, revocation settings, an optional HttpClient,
+        /// a per-request download timeout, and a <see cref="TrustChainValidatorOptions"/> policy
+        /// (for example a maximum chain length per community).
+        /// </summary>
+        public TrustChainValidator(
+            ChainProblemStatus problemFlags,
+            bool checkRevocation,
+            ILogger<TrustChainValidator> logger,
+            ICertificateDownloadCache? downloadCache,
+            HttpClient? httpClient,
+            TimeSpan downloadTimeout,
+            TrustChainValidatorOptions? options)
+            : this(problemFlags, checkRevocation, logger, downloadCache, httpClient, downloadTimeout)
+        {
+            _optionsAccessor = () => options;
+        }
+
+        /// <summary>
+        /// The <see cref="TrustChainValidatorOptions"/> this validator currently applies, or <c>null</c> when none
+        /// were supplied.
+        /// </summary>
+        public TrustChainValidatorOptions? Options => _optionsAccessor();
+
+        /// <summary>
         /// Validates whether the specified certificate is trusted by building and verifying a chain
         /// against the provided anchor certificates.
         /// </summary>
@@ -183,12 +230,47 @@ namespace Udap.Common.Certificates
         /// <param name="anchors">Optional <see cref="Anchor"/> models to resolve a <see cref="ChainValidationResult.CommunityId"/>.</param>
         /// <param name="cancellationToken">A token to cancel the operation.</param>
         /// <returns>A <see cref="ChainValidationResult"/> containing the validation outcome, chain elements, and community identifier.</returns>
-        public async Task<ChainValidationResult> IsTrustedCertificateAsync(
+        public Task<ChainValidationResult> IsTrustedCertificateAsync(
             string clientName,
             X509Certificate2 certificate,
             X509Certificate2Collection? intermediateCertificates,
             X509Certificate2Collection anchorCertificates,
             IEnumerable<Anchor>? anchors = null,
+            CancellationToken cancellationToken = default)
+        {
+            return IsTrustedCertificateAsync(
+                clientName,
+                certificate,
+                intermediateCertificates,
+                anchorCertificates,
+                anchors,
+                null,
+                cancellationToken);
+        }
+
+        /// <summary>
+        /// Validates whether the specified certificate is trusted, applying the chain-length limit configured
+        /// for <paramref name="communityName"/> in <see cref="TrustChainValidatorOptions"/>.
+        /// </summary>
+        /// <param name="clientName">A display name for the client, used in log messages.</param>
+        /// <param name="certificate">The end-entity certificate to validate.</param>
+        /// <param name="intermediateCertificates">Optional intermediate certificates to include in chain building.</param>
+        /// <param name="anchorCertificates">The trust anchor (root CA) certificates to validate against.</param>
+        /// <param name="anchors">Optional <see cref="Anchor"/> models to resolve a <see cref="ChainValidationResult.CommunityId"/>.</param>
+        /// <param name="communityName">
+        /// The community (URI) the certificate is validated for, used to select the chain-length limit.
+        /// When <c>null</c>, the community of the matching <see cref="Anchor"/> in <paramref name="anchors"/> is used,
+        /// and when that is unknown too, only <see cref="TrustChainValidatorOptions.MaxChainLength"/> applies.
+        /// </param>
+        /// <param name="cancellationToken">A token to cancel the operation.</param>
+        /// <returns>A <see cref="ChainValidationResult"/> containing the validation outcome, chain elements, and community identifier.</returns>
+        public async Task<ChainValidationResult> IsTrustedCertificateAsync(
+            string clientName,
+            X509Certificate2 certificate,
+            X509Certificate2Collection? intermediateCertificates,
+            X509Certificate2Collection anchorCertificates,
+            IEnumerable<Anchor>? anchors,
+            string? communityName,
             CancellationToken cancellationToken = default)
         {
             var roots = new X509Certificate2Collection(anchorCertificates);
@@ -234,13 +316,31 @@ namespace Udap.Common.Certificates
                 var chainElements = new List<ChainElementInfo>();
                 bool foundAnchor = false;
                 long? communityId = null;
-                string? communityName = null;
+                string? matchedCommunityName = null;
                 Anchor? matchedAnchor = null;
                 bool chainValid = true;
 
                 // Revocation is only checked for a chain that reaches a trust anchor. An untrusted chain fails
                 // anyway, and its CRL distribution points were chosen by whoever issued it.
                 bool reachesAnchor = IsAnchor(bcChain[^1], bcAnchors);
+
+                // Optional chain-length limit, selected by the community the chain is validated for.
+                int? maxChainLength = null;
+                if (reachesAnchor)
+                {
+                    var effectiveCommunity = communityName ?? FindAnchorModel(bcChain[^1], anchors)?.Community;
+                    maxChainLength = _optionsAccessor()?.GetMaxChainLength(effectiveCommunity);
+                }
+
+                // Name constraints apply from the top of the chain down, so they are worked out before the
+                // per-certificate loop and reported on the certificate whose names break them.
+                var nameConstraintProblems = reachesAnchor
+                    ? CheckNameConstraints(bcChain)
+                    : new Dictionary<int, ChainProblem>();
+
+                // Number of intermediate CA certificates, excluding self-issued ones, seen so far between the
+                // end-entity certificate and the current certificate (RFC 5280 section 4.2.1.9).
+                int intermediatesBelow = 0;
 
                 for (int i = 0; i < bcChain.Count; i++)
                 {
@@ -271,6 +371,71 @@ namespace Udap.Common.Certificates
                                 ChainProblemStatus.InvalidBasicConstraints,
                                 "Certificate does not have valid CA basic constraints"));
                         }
+                        else
+                        {
+                            // pathLenConstraint limits how many intermediate CA certificates may follow this one
+                            // in the path down to the end-entity certificate. GetBasicConstraints returns
+                            // int.MaxValue when the constraint is absent.
+                            var pathLenConstraint = bcCert.GetBasicConstraints();
+                            if (intermediatesBelow > pathLenConstraint)
+                            {
+                                problems.Add(new ChainProblem(
+                                    ChainProblemStatus.PathLengthConstraintExceeded,
+                                    $"Certificate pathLenConstraint of {pathLenConstraint} is exceeded: " +
+                                    $"{intermediatesBelow} intermediate CA certificate(s) follow it in the chain"));
+                            }
+                        }
+
+                        if (!IsSelfIssued(bcCert))
+                        {
+                            intermediatesBelow++;
+                        }
+                    }
+
+                    // Key usage, when present, must allow the certificate's role: an issuer signs certificates,
+                    // the end-entity certificate signs UDAP JWTs.
+                    var keyUsage = bcCert.GetKeyUsage();
+                    if (keyUsage != null)
+                    {
+                        if (!isLeaf && !keyUsage[KeyCertSignBit])
+                        {
+                            problems.Add(new ChainProblem(
+                                ChainProblemStatus.InvalidKeyUsage,
+                                "CA certificate key usage does not include keyCertSign"));
+                        }
+                        else if (isLeaf && !keyUsage[DigitalSignatureBit])
+                        {
+                            problems.Add(new ChainProblem(
+                                ChainProblemStatus.InvalidKeyUsage,
+                                "End-entity certificate key usage does not include digitalSignature"));
+                        }
+                    }
+
+                    // A trust anchor is configuration, not input, so its extensions are not second-guessed.
+                    if (!isAnchor)
+                    {
+                        var unsupported = (bcCert.GetCriticalExtensionOids() ?? new HashSet<string>())
+                            .Where(oid => !ProcessedCriticalExtensions.Contains(oid))
+                            .ToList();
+
+                        if (unsupported.Count != 0)
+                        {
+                            problems.Add(new ChainProblem(
+                                ChainProblemStatus.UnsupportedCriticalExtension,
+                                $"Certificate marks unsupported extension(s) critical: {string.Join(", ", unsupported)}"));
+                        }
+                    }
+
+                    if (nameConstraintProblems.TryGetValue(i, out var nameConstraintProblem))
+                    {
+                        problems.Add(nameConstraintProblem);
+                    }
+
+                    if (isLeaf && maxChainLength.HasValue && bcChain.Count > maxChainLength.Value)
+                    {
+                        problems.Add(new ChainProblem(
+                            ChainProblemStatus.ChainLengthExceeded,
+                            $"Certificate chain has {bcChain.Count} certificates; the maximum allowed is {maxChainLength.Value}"));
                     }
 
                     // Check CRL revocation (skip for anchor/root, and for a chain that never reaches an anchor)
@@ -291,7 +456,7 @@ namespace Udap.Common.Certificates
                             if (matchingAnchor != null)
                             {
                                 communityId = matchingAnchor.CommunityId;
-                                communityName = matchingAnchor.Community;
+                                matchedCommunityName = matchingAnchor.Community;
                                 matchedAnchor = matchingAnchor;
                             }
                         }
@@ -341,7 +506,7 @@ namespace Udap.Common.Certificates
                     NotifyUntrusted(certificate);
                 }
 
-                return new ChainValidationResult(isValid, chainElements, communityId, communityName, matchedAnchor);
+                return new ChainValidationResult(isValid, chainElements, communityId, matchedCommunityName, matchedAnchor);
             }
             catch (Exception ex)
             {
@@ -479,7 +644,8 @@ namespace Udap.Common.Certificates
                 var ski = SubjectKeyIdentifier.GetInstance(
                     Asn1OctetString.GetInstance(skiValue).GetOctets());
 
-                return aki.GetKeyIdentifier().SequenceEqual(ski.GetKeyIdentifier());
+                var akiId = aki.KeyIdentifier?.GetOctets();
+                return akiId != null && akiId.SequenceEqual(ski.GetKeyIdentifier());
             }
             catch
             {
@@ -517,7 +683,7 @@ namespace Udap.Common.Certificates
                     }
 
                     var url = location.Name.ToString();
-                    if (!CertificateDownloader.IsHttpUrl(url))
+                    if (url == null || !CertificateDownloader.IsHttpUrl(url))
                     {
                         _logger.LogDebug("Skipping AIA location that is not an http or https URL: {Url}", url);
                         continue;
@@ -546,6 +712,11 @@ namespace Udap.Common.Certificates
                         catch
                         {
                             _logger.LogWarning("AIA-fetched certificate from {Url} did not verify as issuer", url);
+
+                            if (_downloadCache != null)
+                            {
+                                await _downloadCache.RemoveIntermediateAsync(url, cancellationToken);
+                            }
                         }
                     }
                 }
@@ -723,6 +894,13 @@ namespace Udap.Common.Certificates
                             catch (Exception ex)
                             {
                                 _logger.LogWarning(ex, "CRL from {Url} failed signature verification against expected issuer", url);
+
+                                // Don't keep serving a CRL that failed verification from the cache.
+                                if (_downloadCache != null)
+                                {
+                                    await _downloadCache.RemoveCrlAsync(url, cancellationToken);
+                                }
+
                                 continue;
                             }
                         }
@@ -731,6 +909,12 @@ namespace Udap.Common.Certificates
                         if (crl.ThisUpdate.ToUniversalTime() > now)
                         {
                             _logger.LogWarning("CRL from {Url} has ThisUpdate in the future ({ThisUpdate}), treating as unknown", url, crl.ThisUpdate);
+
+                            if (_downloadCache != null)
+                            {
+                                await _downloadCache.RemoveCrlAsync(url, cancellationToken);
+                            }
+
                             problems.Add(new ChainProblem(
                                 ChainProblemStatus.RevocationStatusUnknown,
                                 $"CRL from {url} has ThisUpdate in the future ({crl.ThisUpdate:O})"));
@@ -811,11 +995,122 @@ namespace Udap.Common.Certificates
             return now >= cert.NotBefore && now <= cert.NotAfter;
         }
 
+        private const int DigitalSignatureBit = 0;
+        private const int KeyCertSignBit = 5;
+
+        // Critical extensions this validator processes or that carry no constraint it must enforce. Any other
+        // critical extension fails the certificate (RFC 5280 section 4.2). Certificate policies are accepted
+        // without policy processing, as most deployments mark them critical without relying on policy mapping.
+        private static readonly HashSet<string> ProcessedCriticalExtensions = new(StringComparer.Ordinal)
+        {
+            BcX509Extensions.BasicConstraints.Id,
+            BcX509Extensions.KeyUsage.Id,
+            BcX509Extensions.ExtendedKeyUsage.Id,
+            BcX509Extensions.SubjectAlternativeName.Id,
+            BcX509Extensions.IssuerAlternativeName.Id,
+            BcX509Extensions.NameConstraints.Id,
+            BcX509Extensions.CertificatePolicies.Id,
+            BcX509Extensions.PolicyConstraints.Id,
+            BcX509Extensions.PolicyMappings.Id,
+            BcX509Extensions.InhibitAnyPolicy.Id,
+            BcX509Extensions.SubjectKeyIdentifier.Id,
+            BcX509Extensions.AuthorityKeyIdentifier.Id
+        };
+
+        /// <summary>
+        /// Applies name constraints from the trust anchor down (RFC 5280 section 6.1.3 b/c and 6.1.4 g). Returns the
+        /// first violation found for each certificate, keyed by its index in the chain (0 = end-entity).
+        /// </summary>
+        private static Dictionary<int, ChainProblem> CheckNameConstraints(IList<BcX509Certificate> chain)
+        {
+            var problems = new Dictionary<int, ChainProblem>();
+            var validator = new Org.BouncyCastle.Pkix.PkixNameConstraintValidator();
+
+            for (int i = chain.Count - 1; i >= 0; i--)
+            {
+                var cert = chain[i];
+                bool isTop = i == chain.Count - 1;
+                bool isLeaf = i == 0;
+
+                // Names of every certificate below the top are checked, except self-issued intermediates.
+                if (!isTop && (isLeaf || !IsSelfIssued(cert)))
+                {
+                    try
+                    {
+                        var subject = Asn1Sequence.GetInstance(cert.SubjectDN.ToAsn1Object());
+                        validator.CheckPermittedDN(subject);
+                        validator.CheckExcludedDN(subject);
+
+                        var sanValue = cert.GetExtensionValue(BcX509Extensions.SubjectAlternativeName);
+                        if (sanValue != null)
+                        {
+                            var names = GeneralNames.GetInstance(
+                                Org.BouncyCastle.X509.Extension.X509ExtensionUtilities.FromExtensionValue(sanValue));
+                            foreach (var name in names.GetNames())
+                            {
+                                validator.CheckPermittedName(name);
+                                validator.CheckExcludedName(name);
+                            }
+                        }
+                    }
+                    catch (Org.BouncyCastle.Pkix.PkixNameConstraintValidatorException ex)
+                    {
+                        problems[i] = new ChainProblem(
+                            ChainProblemStatus.NameConstraintViolation,
+                            $"Certificate name is outside the issuer's name constraints: {ex.Message}");
+                    }
+                }
+
+                if (isLeaf)
+                {
+                    break;
+                }
+
+                var ncValue = cert.GetExtensionValue(BcX509Extensions.NameConstraints);
+                if (ncValue != null)
+                {
+                    var constraints = NameConstraints.GetInstance(
+                        Org.BouncyCastle.X509.Extension.X509ExtensionUtilities.FromExtensionValue(ncValue));
+
+                    if (constraints.PermittedSubtreesValue != null)
+                    {
+                        validator.IntersectPermittedSubtree(constraints.PermittedSubtreesValue.Elements);
+                    }
+
+                    if (constraints.ExcludedSubtreesValue != null)
+                    {
+                        foreach (var subtree in constraints.ExcludedSubtreesValue.GetElements())
+                        {
+                            validator.AddExcludedSubtree(subtree);
+                        }
+                    }
+                }
+            }
+
+            return problems;
+        }
+
         private static bool HasValidBasicConstraints(BcX509Certificate cert)
         {
             var basicConstraints = cert.GetBasicConstraints();
             // GetBasicConstraints returns -1 if not a CA, or pathLen (>= 0) if CA
             return basicConstraints >= 0;
+        }
+
+        private static bool IsSelfIssued(BcX509Certificate cert)
+        {
+            return cert.IssuerDN.Equivalent(cert.SubjectDN);
+        }
+
+        private static Anchor? FindAnchorModel(BcX509Certificate anchorCert, IEnumerable<Anchor>? anchors)
+        {
+            if (anchors == null)
+            {
+                return null;
+            }
+
+            var thumbprint = GetThumbprint(anchorCert);
+            return anchors.FirstOrDefault(a => string.Equals(a.Thumbprint, thumbprint, StringComparison.OrdinalIgnoreCase));
         }
 
         private static bool IsAnchor(BcX509Certificate cert, List<BcX509Certificate> anchors)
@@ -867,7 +1162,8 @@ namespace Udap.Common.Certificates
 
         private bool HasRelevantProblems(List<ChainProblem> problems)
         {
-            return problems.Any(p => (_problemFlags & p.Status) != 0);
+            // A configured chain-length limit is an explicit policy, so it fails validation regardless of the problem flags.
+            return problems.Any(p => (_problemFlags & p.Status) != 0 || p.Status == ChainProblemStatus.ChainLengthExceeded);
         }
 
         private void NotifyUntrusted(X509Certificate2 cert)

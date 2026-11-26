@@ -47,6 +47,28 @@ At dynamic client registration time, `TefcaRegistrationValidator` validates that
 
 When a client is registered with exchange purpose `T-IAS` and requests a `client_credentials` token, the `tefca_ias` authorization extension object must be present in the request (SOP v2.0 Section 6.11). Whenever a `tefca_ias` extension is present, it must carry an `id_token` (SOP v2.0 Table 4).
 
+### Verifying the IAS `id_token`
+
+`AddUdapTefcaValidation` registers `DefaultTefcaIasIdTokenValidator`, which follows the IAS Exchange Purpose Implementation SOP v3.0 Section 4.9. It accepts a `tefca_ias` `id_token` only when:
+
+- its `iss` is listed in `TrustedIasIssuers`, compared exactly;
+- it is signed with RS256 by a key from that issuer's `{iss}/.well-known/openid-configuration`;
+- it is within its lifetime, allowing 5 minutes of clock skew;
+- its `aud` is the requesting IAS Provider's HCID, `urn:oid:<oid>`.
+
+The SOP has the CSP set `aud` to the HCID of the IAS Provider's RCE Directory entry. The validator takes that HCID from the `hl7-b2b` `organization_id` in the same request (`Organization/<oid>`), so a token the CSP issued to a different IAS Provider is rejected. A request without an `organization_id` in that form is rejected, with one exception: the Facilitated FHIR SOP requires `hl7-b2b` only for client credentials, so an authorization code request that omits `hl7-b2b` has its `id_token` checked for issuer, signature and lifetime but not audience. In that flow the patient also signs in at this server.
+
+With no trusted issuers configured, every `tefca_ias` token request is rejected. To keep the earlier presence-only check, set `RequireVerifiedIasIdToken = false`. To apply your own rules, register your own `ITefcaIasIdTokenValidator`.
+
+```csharp
+builder.Services.AddUdapTefcaValidation(options =>
+{
+    options.TrustedIasIssuers.Add("https://ias.example.org");
+});
+```
+
+Issuer keys are fetched through the outbound connection guard (see Udap.Server, "Outbound Connections"). An issuer on a private network must be listed in `UdapOutboundConnections:AllowedPrivateHosts`.
+
 ### Treatment organization identifiers (opt-in)
 
 The [Treatment XP Implementation SOP v2.0](https://rce.sequoiaproject.org/wp-content/uploads/2026/07/Treatment-XP-SOP-v2.0_7.1.2026_508.pdf) Section 6.2 requires Treatment FHIR Queries to carry the provider's NPI and/or TIN appended to `organization_name` and the RCE Directory Organization ResourceID as `organization_id` in the `hl7-b2b` extension. Because the SOP does not prescribe an exact format for the appended identifiers, enforcement is opt-in:

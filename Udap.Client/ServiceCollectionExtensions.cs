@@ -27,8 +27,13 @@ public static class ServiceCollectionExtensions
     /// <returns>An <see cref="IHttpClientBuilder"/> for further configuration.</returns>
     public static IHttpClientBuilder AddUdapClient(this IServiceCollection services)
     {
+        // Optional chain policy (for example a per-community maximum chain length). Nothing is enforced until
+        // the application configures TrustChainValidatorOptions.
+        services.AddOptions<TrustChainValidatorOptions>();
         services.TryAddScoped<TrustChainValidator>();
-        services.TryAddScoped<UdapClientDiscoveryValidator>();
+        // Transient: the validator holds the server's certificate between ValidateJwtToken and ValidateTrustChain,
+        // so two clients in one scope (e.g. a Blazor Server circuit) must not share an instance.
+        services.TryAddTransient<UdapClientDiscoveryValidator>();
 
         return services.AddHttpClient<IUdapClient, UdapClient>();
     }

@@ -23,6 +23,7 @@ using Udap.Server.Storage.DbContexts;
 using Udap.Server.Storage.Mappers;
 using Udap.Server.Storage.Options;
 using Udap.Server.Storage.Stores;
+using Udap.Server.Stores;
 
 //
 // See reason for Microsoft.Extensions.DependencyInjection namespace
@@ -111,22 +112,9 @@ public static class UdapServerServiceCollectionExtensions
         builder.Services.TryAddTransient<UdapClientDiscoveryValidator>();
         builder.Services.AddTransient<ITokenResponseGenerator, UdapTokenResponseGenerator>();
 
-        // TODO: TrustAnchor has to be singleton because
-        // builder.AddOAuth<TieredOAuthAuthenticationOptions, TieredOAuthAuthenticationHandler>
-        // forces IOptionsMonitor<TieredOAuthAuthenticationOptions> to be singleton.
-        // So I would have to get very creative in creating a background thread to keep a monitor
-        // on the database.  .... Future
-        builder.Services.TryAddSingleton<ITrustAnchorStore>(sp =>
-        {
-            using var scope = sp.CreateScope();
-            using var db =  scope.ServiceProvider.GetService<IUdapDbContext>();
-            
-            if (db == null)            {
-                return new TrustAnchorStore(new List<Anchor>());  //Some unit tests don't care about this. //TODO
-
-            }
-            return new TrustAnchorStore(db.Anchors.Select(a => a.ToModel()).ToList());
-        });
+        // Singleton because the Tiered OAuth handler's options are, but it reads the database on
+        // every Resolve, so anchor and community changes apply without a restart.
+        builder.Services.TryAddSingleton<ITrustAnchorStore, UdapDbTrustAnchorStore>();
 
 
         builder.AddUdapJwtBearerClientAuthentication()
@@ -164,7 +152,9 @@ public static class UdapServerServiceCollectionExtensions
         }
 
         builder.Services.TryAddSingleton<IPostConfigureOptions<ServerSettings>, TieredIdpServerSettings>();
-        builder.AddUdapSigningCredentials<UdapMetadataOptions>();
+        // No AddUdapSigningCredentials: an identity provider signs its tokens and publishes its JWKS with IdentityServer's
+        // own keys. The UDAP PKI certificates sign UDAP artifacts (signed metadata) through the certificate store, and are
+        // not IdentityServer signing keys.
         services.AddSingleton(resolver => resolver.GetRequiredService<IOptions<ServerSettings>>().Value);
         builder.AddRegistrationEndpointToOpenIdConnectMetadata(baseUrl);
         builder.AddUdapServerConfiguration();

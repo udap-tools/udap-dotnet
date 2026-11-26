@@ -55,7 +55,9 @@ public interface IUdapClient : IUdapClientEvents
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// The validated UDAP server metadata. Populated after a successful call to <see cref="ValidateResource"/>.
+    /// The validated UDAP server metadata. Populated after a successful call to <see cref="ValidateResource"/>, and
+    /// <c>null</c> after a failed one; the metadata as downloaded is on the returned
+    /// <see cref="UdapDiscoveryDocumentResponse.UnvalidatedMetadata"/>.
     /// </summary>
     UdapMetadata? UdapServerMetadata { get; set; }
 

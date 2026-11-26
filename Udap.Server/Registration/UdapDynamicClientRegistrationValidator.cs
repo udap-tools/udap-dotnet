@@ -56,6 +56,15 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
     private const string Purpose = nameof(UdapDynamicClientRegistrationValidator);
 
+    /// <summary>
+    /// Name of the HttpClient that fetches registration logos. Its handler refuses non-public addresses unless
+    /// <see cref="OutboundConnectionOptions"/> allows them.
+    /// </summary>
+    public const string LogoHttpClientName = "Udap.Registration.Logo";
+
+    private const int MaxLogoRedirects = 3;
+    private static readonly TimeSpan LogoFetchTimeout = TimeSpan.FromSeconds(10);
+
     public UdapDynamicClientRegistrationValidator(
         TrustChainValidator trustChainValidator,
         HttpClient httpClient,
@@ -157,7 +166,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new X509SecurityKey(publicCert),
-                    ValidAlgorithms = [jsonWebToken.Alg], //must match signing algorithm
+                    // A fixed list rather than the token's own alg header: only RSA algorithms fit this key.
+                    ValidAlgorithms = [UdapConstants.SupportedAlgorithm.RS256, UdapConstants.SupportedAlgorithm.RS384],
                     // AudienceValidator = (audiences, token, parameters) =>  Potential enhanced validation.  or replace inline validation code below
                 }
             );
@@ -176,7 +186,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     ValidateAudience = false, // No aud for UDAP metadata
                     ValidateLifetime = true,
                     IssuerSigningKey = new ECDsaSecurityKey(ecdsaPublicKey),
-                    ValidAlgorithms = [jsonWebToken.Alg], //must match signing algorithm
+                    // A fixed list rather than the token's own alg header: only ECDSA algorithms fit this key.
+                    ValidAlgorithms = [UdapConstants.SupportedAlgorithm.ES256, UdapConstants.SupportedAlgorithm.ES384],
                 });
         }
 
@@ -345,7 +356,7 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         context.JwtHeader = jwtHeader;
         context.ClientCertificate = publicCert;
 
-        _logger.LogDebug("Validating chain. x5c {X5c}", jwtHeader.X5c);
+        _logger.LogDebug("Validating chain for client certificate {Thumbprint}", publicCert.Thumbprint);
 
         if (!await ValidateChainAsync(context, jsonWebToken, jwtHeader, intermediateCertificates, anchorCertificates, anchors))
         {
@@ -435,10 +446,11 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         //
         if (hasAuthorizationCode)
         {
-            var (successFlag, errorResult) = await ValidateLogoUri(document);
-
+            // The logo is only fetched when it is required; otherwise nothing it could say changes the result.
             if (_serverSettings.LogoRequired)
             {
+                var (successFlag, errorResult) = await ValidateLogoUri(document);
+
                 if (!successFlag)
                 {
                     return errorResult!;
@@ -659,7 +671,8 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         {
             _logger.LogDebug("Validating logo: {LogoUri}", logoUri.OriginalString);
 
-            if (!logoUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase))
+            // A logo URL has no business carrying credentials, and userinfo is where ';' survives unescaped.
+            if (!logoUri.Scheme.Equals("https", StringComparison.OrdinalIgnoreCase) || !string.IsNullOrEmpty(logoUri.UserInfo))
             {
                 errorResult = new UdapDynamicClientRegistrationValidationResult(
                     UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -668,11 +681,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 return (false, errorResult);
             }
 
-            var response = await _httpClient.GetAsync(logoUri.OriginalString);
-            response.Content.Headers.TryGetValues("Content-Type", out var contentTypes);
-            var contentType = contentTypes?.FirstOrDefault();
+            using var response = await GetLogoResponseAsync(logoUri);
 
-            if (response.StatusCode != System.Net.HttpStatusCode.OK)
+            if (response == null || response.StatusCode != System.Net.HttpStatusCode.OK)
             {
                 errorResult = new UdapDynamicClientRegistrationValidationResult(
                    UdapDynamicClientRegistrationErrors.InvalidClientMetadata,
@@ -680,6 +691,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
                 return (false, errorResult);
             }
+
+            response.Content.Headers.TryGetValues("Content-Type", out var contentTypes);
+            var contentType = contentTypes?.FirstOrDefault();
 
             if (contentType == null ||
                 !contentType.Equals("image/png", StringComparison.OrdinalIgnoreCase) &&
@@ -711,6 +725,49 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         return (true, null);
     }
 
+    /// <summary>
+    /// Requests the logo and reads only the response headers, within <see cref="LogoFetchTimeout"/>.
+    /// A redirect the HttpClient hands back is followed here, up to <see cref="MaxLogoRedirects"/>
+    /// hops and only to https URLs. Returns null when the logo cannot be reached within those limits.
+    /// </summary>
+    private async Task<HttpResponseMessage?> GetLogoResponseAsync(Uri logoUri)
+    {
+        using var timeout = new CancellationTokenSource(LogoFetchTimeout);
+        var current = logoUri;
+
+        try
+        {
+            for (var hop = 0; ; hop++)
+            {
+                var response = await _httpClient.GetAsync(current, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+                var status = (int)response.StatusCode;
+
+                if (status is < 300 or >= 400 || response.Headers.Location == null)
+                {
+                    return response;
+                }
+
+                var next = response.Headers.Location.IsAbsoluteUri
+                    ? response.Headers.Location
+                    : new Uri(current, response.Headers.Location);
+                response.Dispose();
+
+                if (hop >= MaxLogoRedirects || !next.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogDebug("Logo redirect not followed: {LogoUri}", next.OriginalString);
+                    return null;
+                }
+
+                current = next;
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException)
+        {
+            _logger.LogDebug(ex, "Logo could not be fetched: {LogoUri}", current.OriginalString);
+            return null;
+        }
+    }
+
     public async Task<UdapDynamicClientRegistrationValidationResult> ValidateJti(
         UdapDynamicClientRegistrationDocument document,
         long exp)
@@ -727,6 +784,10 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
 
         }
 
+        // Check-then-add: concurrent requests with the same jti would otherwise both pass.
+        using var jtiLock = await StripedAsyncLock.AcquireAsync(jti,
+            _httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None);
+
         if (await _replayCache.ExistsAsync(Purpose, jti,
                 _httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None))
         {
@@ -738,7 +799,9 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
         }
         else
         {
-            await _replayCache.AddAsync(Purpose, jti, DateTimeOffset.FromUnixTimeSeconds(exp),
+            // The software statement is accepted until exp plus the token handler's clock skew, so the jti must be
+            // remembered at least that long or the same statement could be replayed in between.
+            await _replayCache.AddAsync(Purpose, jti, DateTimeOffset.FromUnixTimeSeconds(exp).Add(TokenValidationParameters.DefaultClockSkew),
                 _httpContextAccessor.HttpContext?.RequestAborted ?? CancellationToken.None);
         }
 
@@ -780,6 +843,32 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                     return false;
                 }
 
+                // The client is stored under one community, and that community's registration and token rules
+                // apply to it. An anchor configured in more than one community cannot say which one, so refuse
+                // rather than pick one whose rules may be weaker.
+                var matchedThumbprint = result.MatchedAnchor?.Thumbprint;
+                var anchorCommunities = matchedThumbprint == null
+                    ? 0
+                    : (anchors ?? Enumerable.Empty<Anchor>())
+                        .Where(a => string.Equals(a.Thumbprint, matchedThumbprint, StringComparison.OrdinalIgnoreCase))
+                        // Stored anchors carry their community's id. In-memory anchors leave CommunityId at 0, so
+                        // fall back to the community name for them. Names compare ordinally, as the community
+                        // validators match them.
+                        .Select(a => a.CommunityId != 0 ? $"#{a.CommunityId}" : a.Community ?? string.Empty)
+                        .Distinct(StringComparer.Ordinal)
+                        .Count();
+
+                if (anchorCommunities > 1)
+                {
+                    _logger.LogError(
+                        "Trust anchor {Thumbprint} is configured in {Count} enabled communities; registration cannot choose one. " +
+                        "Give each community its own anchor, or disable the anchor in all but one.",
+                        matchedThumbprint,
+                        anchorCommunities);
+
+                    return false;
+                }
+
                 context.Issuer = jwtSecurityToken.Issuer;
                 context.CommunityId = result.CommunityId;
                 context.CommunityName = result.CommunityName;
@@ -788,9 +877,6 @@ public class UdapDynamicClientRegistrationValidator : IUdapDynamicClientRegistra
                 return true;
             }
         }
-
-        _logger.LogDebug("JWT payload: {EncodedPayload}", jwtSecurityToken.EncodedPayload);
-        _logger.LogDebug("x5c: {X5c}", jwtHeader.X5c);
 
         return false;
     }

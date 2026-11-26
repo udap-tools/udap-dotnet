@@ -47,8 +47,9 @@ public class Callback : PageModel
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
-            var externalClaims = externalUser.Claims.Select(c => $"{c.Type}: {c.Value}");
-            _logger.LogDebug("External claims: {@claims}", externalClaims);
+            // Claim types only: the values are the user's personal details.
+            var externalClaimTypes = externalUser.Claims.Select(c => c.Type).Distinct();
+            _logger.LogDebug("External claim types: {@claimTypes}", externalClaimTypes);
         }
 
         // lookup our user and external provider info

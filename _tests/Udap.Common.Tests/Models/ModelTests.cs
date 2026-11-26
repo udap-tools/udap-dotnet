@@ -40,7 +40,9 @@ public class ModelTests
 
         Assert.Equal(certificate.NotAfter, anchor!.EndDate);
         Assert.Equal(certificate.NotBefore, anchor.BeginDate);
-        Assert.False(anchor.Enabled);
+        // An anchor built from a certificate is meant to be trusted.
+        Assert.True(anchor.Enabled);
+        Assert.False(new Anchor().Enabled);
         Assert.Equal(0, anchor.Id);
 
         Assert.Contains("Name CN=SureFhir-CA, OU=Root, O=Fhir Coding, L=Portland, S=Oregon, C=US | Community community1", anchor.ToString());

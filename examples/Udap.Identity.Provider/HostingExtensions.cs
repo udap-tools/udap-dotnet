@@ -40,6 +40,9 @@ internal static class HostingExtensions
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
         Log.Logger.Debug($"ConnectionString:: {connectionString}");
 
+        // Per client IP rate limiting. See "RateLimiting" in appsettings.json.
+        builder.Services.AddClientIpRateLimiting(builder.Configuration);
+
         builder.Services.AddHttpLogging(o => { });
         builder.Services.AddOptions();
         builder.Services.AddMemoryCache();
@@ -193,6 +196,9 @@ internal static class HostingExtensions
 
     public static WebApplication ConfigurePipeline(this WebApplication app, string[] args)
     {
+        // Rate limit first so floods are rejected before any other work.
+        app.UseClientIpRateLimiting();
+
         if (Environment.GetEnvironmentVariable("GCLOUD_PROJECT") != null)
         {
             app.Use(async (ctx, next) =>

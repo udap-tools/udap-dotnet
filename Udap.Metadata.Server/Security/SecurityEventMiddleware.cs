@@ -55,19 +55,63 @@ public class SecurityEventMiddleware
             login = ResolveLoginFromHeader(context);
         }
 
+        // Every value below except SrcIp and HttpResponse comes from the request, so control characters are removed
+        // and lengths capped before they reach a log line.
         return new SecurityEvent
         {
             EventType = isAuthenticated ? SecurityEventType.SuccessfulAccess : SecurityEventType.AuthenticationFailure,
-            Login = login,
-            AuthType = authType,
+            Login = Sanitize(login),
+            LoginVerified = isAuthenticated && login != null,
+            AuthType = Sanitize(authType),
             SrcIp = context.Connection.RemoteIpAddress?.ToString(),
             HttpResponse = context.Response.StatusCode,
-            Method = context.Request.Method,
-            Path = context.Request.Path.Value,
-            Query = context.Request.QueryString.HasValue ? context.Request.QueryString.Value : null,
-            AcceptEncoding = context.Request.Headers.AcceptEncoding.FirstOrDefault(),
-            ContentEncoding = context.Response.Headers.ContentEncoding.FirstOrDefault()
+            Method = Sanitize(context.Request.Method),
+            Path = Sanitize(context.Request.Path.Value, MaxPathLength),
+            Query = QueryParameterNames(context.Request),
+            AcceptEncoding = Sanitize(context.Request.Headers.AcceptEncoding.FirstOrDefault()),
+            ContentEncoding = Sanitize(context.Response.Headers.ContentEncoding.FirstOrDefault())
         };
+    }
+
+    private const int MaxFieldLength = 256;
+    private const int MaxPathLength = 1024;
+
+    /// <summary>
+    /// The query parameter names, comma separated, without their values.
+    /// </summary>
+    internal static string? QueryParameterNames(HttpRequest request)
+    {
+        if (!request.QueryString.HasValue || request.Query.Count == 0)
+        {
+            return null;
+        }
+
+        return Sanitize(string.Join(",", request.Query.Keys), MaxPathLength);
+    }
+
+    /// <summary>
+    /// Removes control characters (including CR and LF, which could forge extra log lines) and caps the length.
+    /// </summary>
+    internal static string? Sanitize(string? value, int maxLength = MaxFieldLength)
+    {
+        if (value == null)
+        {
+            return null;
+        }
+
+        if (value.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        // Line breaks first, in the form log-forging analyzers recognize, then any other control characters.
+        var cleaned = value.Replace("\r", string.Empty).Replace("\n", string.Empty);
+        if (cleaned.Any(char.IsControl))
+        {
+            cleaned = new string(cleaned.Where(c => !char.IsControl(c)).ToArray());
+        }
+
+        return cleaned.Length > maxLength ? cleaned[..maxLength] + "..." : cleaned;
     }
 
     internal void LogSecurityEvent(SecurityEvent securityEvent)
@@ -75,11 +119,12 @@ public class SecurityEventMiddleware
         if (securityEvent.EventType == SecurityEventType.SuccessfulAccess)
         {
             _logger.LogInformation(
-                "SecurityEvent={EventType}, Login={Login}, AuthType={AuthType}, SrcIp={SrcIp}, " +
+                "SecurityEvent={EventType}, Login={Login}, LoginVerified={LoginVerified}, AuthType={AuthType}, SrcIp={SrcIp}, " +
                 "HttpResponse={HttpResponse}, Method={Method}, Path={Path}, Query={Query}, " +
                 "AcceptEncoding={AcceptEncoding}, ContentEncoding={ContentEncoding}",
                 securityEvent.EventType,
                 securityEvent.Login,
+                securityEvent.LoginVerified,
                 securityEvent.AuthType,
                 securityEvent.SrcIp,
                 securityEvent.HttpResponse,
@@ -92,11 +137,12 @@ public class SecurityEventMiddleware
         else
         {
             _logger.LogWarning(
-                "SecurityEvent={EventType}, Login={Login}, AuthType={AuthType}, SrcIp={SrcIp}, " +
+                "SecurityEvent={EventType}, Login={Login}, LoginVerified={LoginVerified}, AuthType={AuthType}, SrcIp={SrcIp}, " +
                 "HttpResponse={HttpResponse}, Method={Method}, Path={Path}, Query={Query}, " +
                 "AcceptEncoding={AcceptEncoding}, ContentEncoding={ContentEncoding}",
                 securityEvent.EventType,
                 securityEvent.Login,
+                securityEvent.LoginVerified,
                 securityEvent.AuthType,
                 securityEvent.SrcIp,
                 securityEvent.HttpResponse,

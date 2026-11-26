@@ -219,6 +219,91 @@ public class UdapUIServicesTests
         Assert.False(provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<UdapUIOptions>>().Value.Login.AllowRememberLogin);
     }
 
+    [Fact]
+    public async Task ExternalCallback_TieredLogin_LinksAccountOnIssuerAndSub()
+    {
+        var store = new TestUserStoreAdapter(new TestUserStore(new List<TestUser>()));
+
+        var fromHospital = await RunExternalCallback(store, TieredOAuthAuthenticationDefaults.AuthenticationScheme, "https://idp.hospital.example", "1001");
+        var fromOther = await RunExternalCallback(store, TieredOAuthAuthenticationDefaults.AuthenticationScheme, "https://other-idp.example", "1001");
+        var hospitalAgain = await RunExternalCallback(store, TieredOAuthAuthenticationDefaults.AuthenticationScheme, "https://idp.hospital.example", "1001");
+
+        Assert.NotEqual(fromHospital, fromOther);
+        Assert.Equal(fromHospital, hospitalAgain);
+        Assert.NotNull(await store.FindByExternalProviderAsync("TieredOAuth|https://idp.hospital.example", "1001"));
+        Assert.Null(await store.FindByExternalProviderAsync("TieredOAuth", "1001"));
+    }
+
+    [Fact]
+    public async Task ExternalCallback_TieredLoginWithoutIssuer_IsRefused()
+    {
+        var store = new TestUserStoreAdapter(new TestUserStore(new List<TestUser>()));
+
+        var ex = await Assert.ThrowsAsync<Exception>(() =>
+            RunExternalCallback(store, TieredOAuthAuthenticationDefaults.AuthenticationScheme, issuer: null, "1001"));
+
+        Assert.Contains("issuer", ex.Message);
+        Assert.Null(await store.FindByExternalProviderAsync("TieredOAuth", "1001"));
+    }
+
+    [Fact]
+    public async Task ExternalCallback_OtherScheme_KeepsSchemeName()
+    {
+        var store = new TestUserStoreAdapter(new TestUserStore(new List<TestUser>()));
+
+        await RunExternalCallback(store, "oidc", issuer: null, "abc");
+
+        Assert.NotNull(await store.FindByExternalProviderAsync("oidc", "abc"));
+    }
+
+    /// <summary>Runs ProcessCallbackAsync for an external login and returns the local subject id it signed in.</summary>
+    private static async Task<string> RunExternalCallback(IUdapUserStore store, string scheme, string? issuer, string sub)
+    {
+        var properties = new AuthenticationProperties();
+        properties.Items["scheme"] = scheme;
+        properties.Items["returnUrl"] = "~/";
+        if (issuer != null)
+        {
+            properties.Items[TieredOAuthAuthenticationDefaults.IdPIssuerItem] = issuer;
+        }
+
+        var externalUser = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("sub", sub) }, "external"));
+        var ticket = new AuthenticationTicket(externalUser, properties, IdentityServerConstants.ExternalCookieAuthenticationScheme);
+
+        ClaimsPrincipal? signedIn = null;
+        var auth = Substitute.For<IAuthenticationService>();
+        auth.AuthenticateAsync(Arg.Any<HttpContext>(), IdentityServerConstants.ExternalCookieAuthenticationScheme)
+            .Returns(AuthenticateResult.Success(ticket));
+        auth.SignInAsync(Arg.Any<HttpContext>(), Arg.Any<string?>(), Arg.Do<ClaimsPrincipal>(p => signedIn = p), Arg.Any<AuthenticationProperties?>())
+            .Returns(Task.CompletedTask);
+
+        var schemes = Substitute.For<IAuthenticationSchemeProvider>();
+        schemes.GetSchemeAsync(TieredOAuthAuthenticationDefaults.AuthenticationScheme)
+            .Returns(new AuthenticationScheme(TieredOAuthAuthenticationDefaults.AuthenticationScheme, null, typeof(TieredOAuthAuthenticationHandler)));
+        schemes.GetDefaultAuthenticateSchemeAsync()
+            .Returns(new AuthenticationScheme("idsrv", null, typeof(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationHandler)));
+
+        var services = new ServiceCollection()
+            .AddSingleton(auth)
+            .AddSingleton(schemes)
+            .AddSingleton(TimeProvider.System)
+            .AddSingleton(new Duende.IdentityServer.Configuration.IdentityServerOptions())
+            .BuildServiceProvider();
+
+        var httpContext = new DefaultHttpContext { RequestServices = services };
+
+        var service = new UdapExternalLoginService(
+            Substitute.For<IIdentityServerInteractionService>(),
+            Substitute.For<IEventService>(),
+            store,
+            services,
+            Substitute.For<Microsoft.Extensions.Logging.ILogger<UdapExternalLoginService>>());
+
+        await service.ProcessCallbackAsync(httpContext);
+
+        return signedIn!.FindFirst("sub")!.Value;
+    }
+
     private static UdapLoginService CreateLoginService(
         IIdentityServerInteractionService? interaction = null,
         IAuthenticationSchemeProvider? schemeProvider = null,

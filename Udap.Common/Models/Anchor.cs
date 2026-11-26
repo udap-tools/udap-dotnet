@@ -29,8 +29,10 @@ public class Anchor: IEquatable<Anchor>
     /// <param name="cert">The X.509 certificate to use as a trust anchor.</param>
     /// <param name="communityName">The UDAP community this anchor belongs to.</param>
     /// <param name="name">A display name for the anchor. Defaults to the certificate subject.</param>
+    /// <remarks>An anchor built from a certificate is enabled. Set <see cref="Enabled"/> to false to keep it but not trust it.</remarks>
     public Anchor(X509Certificate2 cert, string? communityName = null, string? name = null)
     {
+        Enabled = true;
         Certificate = cert.ToPemFormat();
         BeginDate = cert.NotBefore;
         EndDate = cert.NotAfter;
@@ -42,7 +44,11 @@ public class Anchor: IEquatable<Anchor>
     /// <summary>Gets or sets the database identifier.</summary>
     public long Id { get; set; }
 
-    /// <summary>Gets or sets whether this anchor is enabled for validation.</summary>
+    /// <summary>
+    /// Gets or sets whether this anchor is trusted. Stores return only enabled anchors in enabled communities.
+    /// The certificate constructor sets it to true; the parameterless constructor (used for serialization and
+    /// storage) leaves it false until set.
+    /// </summary>
     public bool Enabled { get; set; }
 
     /// <summary>Gets or sets the display name, typically the certificate subject.</summary>

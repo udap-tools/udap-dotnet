@@ -37,6 +37,7 @@ using Udap.Model.Registration;
 using Udap.Server.Configuration;
 using Udap.Server.Models;
 using Udap.Server.Security.Authentication.TieredOAuth;
+using Udap.Server.Registration;
 using UdapServer.Tests.Common;
 using Xunit.Abstractions;
 
@@ -99,6 +100,8 @@ public class TieredOauthWithPKCETests
             // Allow logo resolve back to udap.auth server
             //
             services.AddSingleton<HttpClient>(_ => _mockAuthorServerPipeline.BrowserClient);
+            services.AddHttpClient(UdapDynamicClientRegistrationValidator.LogoHttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => new ForwardingHandler(_mockAuthorServerPipeline.Handler));
 
             if (tieredOAuthScopes != null)
             {
@@ -262,6 +265,8 @@ public class TieredOauthWithPKCETests
             // Allow logo resolve back to udap.auth server
             //
             services.AddSingleton<HttpClient>(sp => _mockAuthorServerPipeline.BrowserClient);
+            services.AddHttpClient(UdapDynamicClientRegistrationValidator.LogoHttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => new ForwardingHandler(_mockAuthorServerPipeline.Handler));
         };
         
 
@@ -347,6 +352,8 @@ public class TieredOauthWithPKCETests
             // Allow logo resolve back to udap.auth server
             //
             services.AddSingleton<HttpClient>(sp => _mockAuthorServerPipeline.BrowserClient);
+            services.AddHttpClient(UdapDynamicClientRegistrationValidator.LogoHttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => new ForwardingHandler(_mockAuthorServerPipeline.Handler));
         };
 
        
@@ -1542,6 +1549,8 @@ public class TieredOauthWithPKCETests
 
             services.AddSingleton(_mockIdPPipeline.Clients);
             services.AddSingleton<HttpClient>(sp => _mockAuthorServerPipeline.BrowserClient);
+            services.AddHttpClient(UdapDynamicClientRegistrationValidator.LogoHttpClientName)
+                .ConfigurePrimaryHttpMessageHandler(() => new ForwardingHandler(_mockAuthorServerPipeline.Handler));
         };
 
 

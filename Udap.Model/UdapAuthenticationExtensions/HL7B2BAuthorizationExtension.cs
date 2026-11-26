@@ -174,7 +174,8 @@ public class HL7B2BAuthorizationExtension : IAuthorizationExtensionObject
             notes.Add($"Missing required {UdapConstants.HL7B2BAuthorizationExtension.OrganizationId}");
         }
 
-        if (PurposeOfUse != null && PurposeOfUse.Count == 0)
+        // An explicit JSON null deserializes to null; treat it the same as an empty array.
+        if (PurposeOfUse == null || PurposeOfUse.Count == 0)
         {
             notes.Add($"Missing required {UdapConstants.HL7B2BAuthorizationExtension.PurposeOfUse}");
         }
